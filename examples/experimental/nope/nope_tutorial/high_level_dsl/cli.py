@@ -10,14 +10,14 @@ from dagster_yaml.cli import register_vscode_plugin
 #     load_definitions_from_yaml,
 # )
 from dagster_yaml.yaml.pydantic_yaml import parse
-from manifest import HighLevelDSLGroupFileManifest
+from manifest import HighLevelDSLExecutableList
 
 
 @click.command()
 def schema() -> None:
-    from manifest import HighLevelDSLGroupFileManifest
+    from manifest import HighLevelDSLExecutableList
 
-    print(json.dumps(HighLevelDSLGroupFileManifest.schema(), indent=2))
+    print(json.dumps(HighLevelDSLExecutableList.schema(), indent=2))
 
 
 @click.command()
@@ -26,7 +26,7 @@ def validate(file: str):
     # file_path = Path(file)
     src = Path(file).read_text()
     pydantic_obj = parse(
-        cls=HighLevelDSLGroupFileManifest, src=src, filename=str(Path(file).resolve())
+        cls=HighLevelDSLExecutableList, src=src, filename=str(Path(file).resolve())
     )
     print(f"pydantic_obj: {pydantic_obj}")
     # load_definitions_from_yaml(file, plugin)
@@ -58,7 +58,7 @@ def configure_vscode(
 ) -> None:
     # hardcode
     project_path = Path(__file__) / Path("../../../../../.vscode")
-    json_schema = HighLevelDSLGroupFileManifest.schema()
+    json_schema = HighLevelDSLExecutableList.schema()
     register_vscode_plugin(
         extension=extension,
         project=str(project_path.resolve()),

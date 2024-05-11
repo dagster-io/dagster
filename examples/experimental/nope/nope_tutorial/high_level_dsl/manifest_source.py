@@ -6,7 +6,7 @@ from dagster._nope.definitions import (
 )
 from dagster._nope.parser import load_yaml_to_pydantic
 from manifest import (
-    HighLevelDSLGroupFileManifest,
+    HighLevelDSLExecutableList,
     HighLevelDSLManifest,
 )
 
@@ -32,7 +32,9 @@ class HighLevelDSLFileSystemManifestSource(ManifestSource):
             self.path
         )
         group_file_manifest = check.inst(
-            load_yaml_to_pydantic(str(single_group_yaml_file), HighLevelDSLGroupFileManifest),
-            HighLevelDSLGroupFileManifest,
+            load_yaml_to_pydantic(str(single_group_yaml_file), HighLevelDSLExecutableList),
+            HighLevelDSLExecutableList,
         )
-        return HighLevelDSLManifest(group_name=self.path.stem, manifest_file=group_file_manifest)
+        return HighLevelDSLManifest(
+            group_name=self.path.stem, executable_manifest_file=group_file_manifest
+        )

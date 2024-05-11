@@ -1,5 +1,7 @@
 from pathlib import Path
+from typing import Any, Dict, List, Union
 
+from dagster import _check as check
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.factory.executable import (
@@ -14,36 +16,64 @@ from dagster._nope.definitions import (
 )
 from manifest import (
     BespokeELTAssetManifest,
-    BespokeELTInvocationTargetManifest,
-    HighLevelDSLGroupFileManifest,
+    BespokeELTExecutableManifest,
+    DbtExecutableManifest,
+    HighLevelDSLExecutableList,
     HighLevelDSLManifest,
 )
 from manifest_source import HighLevelDSLFileSystemManifestSource
 
 
-# TODO use harness lexicon
+def definitions_from_executables(
+    executables: List[AssetGraphExecutable], resources: Dict[str, Any]
+) -> Definitions:
+    return Definitions(
+        assets=[executable.to_assets_def() for executable in executables], resources=resources
+    )
+
+
 class HighLevelDSLDefsBuilder(DefinitionsBuilder):
     @classmethod
-    def build(cls, manifest: HighLevelDSLManifest) -> Definitions:
-        # return make_definitions_from_manifest(manifest)
-        manifest_file = manifest.manifest_file
-        assert isinstance(manifest_file, HighLevelDSLGroupFileManifest)
-        assets_defs = []
-        for invocation in manifest_file.invocations:
-            assets_defs.append(
-                BespokeELTExecutable(
-                    group_name=manifest.group_name, manifest=invocation
-                ).to_assets_def()
-            )
-        return Definitions(assets_defs)
+    def build(cls, manifest: HighLevelDSLManifest, resources: Dict[str, Any]) -> Definitions:
+        manifest_file = check.inst(manifest.executable_manifest_file, HighLevelDSLExecutableList)
+        return definitions_from_executables(
+            executables=[
+                cls.create_executable(harness, manifest.group_name)
+                for harness in manifest_file.executables
+            ],
+            resources=resources,
+        )
+
+    @classmethod
+    def create_executable(
+        cls, harness: Union[BespokeELTExecutableManifest, DbtExecutableManifest], group_name: str
+    ) -> AssetGraphExecutable:
+        if harness.kind == "bespoke_elt":
+            return BespokeELTExecutable(group_name=group_name, manifest=harness)
+        elif harness.kind == "dbt_manifest":
+            return DbtManifestExecutable(group_name=group_name, manifest=harness)
+        else:
+            raise NotImplementedError(f"Unknown kind {harness.kind}")
+
+
+class DbtManifestExecutable(AssetGraphExecutable):
+    def __init__(self, group_name: str, manifest: DbtExecutableManifest):
+        super().__init__(
+            specs=[AssetSpec(key=asset_key, group_name=group_name) for asset_key in ["hardcoded"]]
+        )
+
+    def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
+        raise NotImplementedError("Not implemented")
 
 
 class BespokeELTExecutable(AssetGraphExecutable):
-    def __init__(self, group_name: str, manifest: BespokeELTInvocationTargetManifest):
-        specs = [
-            AssetSpec(key=asset_key, group_name=group_name) for asset_key in manifest.assets.keys()
-        ]
-        super().__init__(specs=specs)
+    def __init__(self, group_name: str, manifest: BespokeELTExecutableManifest):
+        super().__init__(
+            specs=[
+                AssetSpec(key=asset_key, group_name=group_name)
+                for asset_key in manifest.assets.keys()
+            ]
+        )
 
     def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
         raise NotImplementedError("Not implemented")
@@ -54,9 +84,9 @@ def make_definitions_from_python_api() -> Definitions:
         manifest_source=InMemoryManifestSource(
             HighLevelDSLManifest(
                 group_name="group_a",
-                manifest_file=HighLevelDSLGroupFileManifest(
-                    invocations=[
-                        BespokeELTInvocationTargetManifest(
+                executable_manifest_file=HighLevelDSLExecutableList(
+                    executables=[
+                        BespokeELTExecutableManifest(
                             name="transform_and_load",
                             kind="bespoke_elt",
                             source="file://example/file.csv",
@@ -71,6 +101,7 @@ def make_definitions_from_python_api() -> Definitions:
             )
         ),
         defs_builder_cls=HighLevelDSLDefsBuilder,
+        resources={},
     )
 
 
@@ -79,6 +110,7 @@ defs = make_nope_definitions(
         path=Path(__file__).resolve().parent / Path("defs")
     ),
     defs_builder_cls=HighLevelDSLDefsBuilder,
+    resources={},
 )
 
 

@@ -7,7 +7,7 @@ class BespokeELTAssetManifest(BaseModel):
     deps: Optional[List[str]]
 
 
-class BespokeELTInvocationTargetManifest(BaseModel):
+class BespokeELTExecutableManifest(BaseModel):
     kind: Literal["bespoke_elt"]
     name: str
     source: str
@@ -15,15 +15,15 @@ class BespokeELTInvocationTargetManifest(BaseModel):
     assets: Dict[str, BespokeELTAssetManifest]
 
 
-class DbtInvocationTargetManifest(BaseModel):
-    kind: Literal["dbt"]
+class DbtExecutableManifest(BaseModel):
+    kind: Literal["dbt_manifest"]
     manifest_json_path: str
 
 
-class HighLevelDSLGroupFileManifest(BaseModel):
-    invocations: List[Union[BespokeELTInvocationTargetManifest, DbtInvocationTargetManifest]]
+class HighLevelDSLExecutableList(BaseModel):
+    executables: List[Union[BespokeELTExecutableManifest, DbtExecutableManifest]]
 
 
 class HighLevelDSLManifest(BaseModel):
     group_name: str
-    manifest_file: HighLevelDSLGroupFileManifest
+    executable_manifest_file: HighLevelDSLExecutableList

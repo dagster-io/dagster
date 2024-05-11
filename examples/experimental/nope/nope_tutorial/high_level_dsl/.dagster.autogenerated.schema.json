@@ -23,7 +23,7 @@
       "title": "BespokeELTAssetManifest",
       "type": "object"
     },
-    "BespokeELTInvocationTargetManifest": {
+    "BespokeELTExecutableManifest": {
       "properties": {
         "kind": {
           "const": "bespoke_elt",
@@ -60,15 +60,15 @@
         "destination",
         "assets"
       ],
-      "title": "BespokeELTInvocationTargetManifest",
+      "title": "BespokeELTExecutableManifest",
       "type": "object"
     },
-    "DbtInvocationTargetManifest": {
+    "DbtExecutableManifest": {
       "properties": {
         "kind": {
-          "const": "dbt",
+          "const": "dbt_manifest",
           "enum": [
-            "dbt"
+            "dbt_manifest"
           ],
           "title": "Kind",
           "type": "string"
@@ -82,29 +82,29 @@
         "kind",
         "manifest_json_path"
       ],
-      "title": "DbtInvocationTargetManifest",
+      "title": "DbtExecutableManifest",
       "type": "object"
     }
   },
   "properties": {
-    "invocations": {
+    "executables": {
       "items": {
         "anyOf": [
           {
-            "$ref": "#/$defs/BespokeELTInvocationTargetManifest"
+            "$ref": "#/$defs/BespokeELTExecutableManifest"
           },
           {
-            "$ref": "#/$defs/DbtInvocationTargetManifest"
+            "$ref": "#/$defs/DbtExecutableManifest"
           }
         ]
       },
-      "title": "Invocations",
+      "title": "Executables",
       "type": "array"
     }
   },
   "required": [
-    "invocations"
+    "executables"
   ],
-  "title": "HighLevelDSLGroupFileManifest",
+  "title": "HighLevelDSLExecutableList",
   "type": "object"
 }

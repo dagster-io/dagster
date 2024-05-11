@@ -1,4 +1,4 @@
-from typing import Generic, Type, TypeVar
+from typing import Any, Dict, Generic, Type, TypeVar
 
 from dagster._core.definitions.definitions_class import Definitions
 
@@ -21,12 +21,13 @@ class InMemoryManifestSource(ManifestSource[T]):
 
 class DefinitionsBuilder(Generic[T]):
     @classmethod
-    def build(cls, manifest: T) -> Definitions:
+    def build(cls, manifest: T, resources: Dict[str, Any]) -> Definitions:
         raise NotImplementedError("Subclasses must implement this method.")
 
 
 def make_nope_definitions(
     manifest_source: ManifestSource,
     defs_builder_cls: Type,
+    resources: Dict[str, Any],
 ) -> Definitions:
-    return defs_builder_cls.build(manifest_source.get_manifest())
+    return defs_builder_cls.build(manifest=manifest_source.get_manifest(), resources=resources)

@@ -1,4 +1,4 @@
-invocations:
+executables:
   - kind: bespoke_elt 
     name: transform_and_load
     source: file://example/file.csv
@@ -8,7 +8,7 @@ invocations:
         deps: []
       root_two:
         deps: []
-  - kind: dbt
+  - kind: dbt_manifest
     manifest_json_path: /path/to/manifest.json
     
   # - target: dbt
