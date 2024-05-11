@@ -1,0 +1,8 @@
+target: subprocess
+
+script: asset_two.py
+
+assets:
+  asset_two:
+    deps:
+      - group_a/asset_one

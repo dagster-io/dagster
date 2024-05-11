@@ -1,0 +1,110 @@
+{
+  "$defs": {
+    "BespokeELTAssetManifest": {
+      "properties": {
+        "deps": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deps"
+        }
+      },
+      "required": [
+        "deps"
+      ],
+      "title": "BespokeELTAssetManifest",
+      "type": "object"
+    },
+    "BespokeELTExecutableManifest": {
+      "properties": {
+        "kind": {
+          "const": "bespoke_elt",
+          "enum": [
+            "bespoke_elt"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "destination": {
+          "title": "Destination",
+          "type": "string"
+        },
+        "assets": {
+          "additionalProperties": {
+            "$ref": "#/$defs/BespokeELTAssetManifest"
+          },
+          "title": "Assets",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "name",
+        "source",
+        "destination",
+        "assets"
+      ],
+      "title": "BespokeELTExecutableManifest",
+      "type": "object"
+    },
+    "DbtExecutableManifest": {
+      "properties": {
+        "kind": {
+          "const": "dbt_manifest",
+          "enum": [
+            "dbt_manifest"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "manifest_json_path": {
+          "title": "Manifest Json Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "manifest_json_path"
+      ],
+      "title": "DbtExecutableManifest",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "executables": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/BespokeELTExecutableManifest"
+          },
+          {
+            "$ref": "#/$defs/DbtExecutableManifest"
+          }
+        ]
+      },
+      "title": "Executables",
+      "type": "array"
+    }
+  },
+  "required": [
+    "executables"
+  ],
+  "title": "HighLevelDSLExecutableList",
+  "type": "object"
+}

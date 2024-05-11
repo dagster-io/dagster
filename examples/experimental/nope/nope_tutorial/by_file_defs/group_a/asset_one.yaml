@@ -1,0 +1,4 @@
+target: subprocess
+script: asset_one.py
+assets:
+  asset_one:

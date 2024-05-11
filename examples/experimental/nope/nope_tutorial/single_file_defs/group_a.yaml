@@ -1,0 +1,21 @@
+invocations:
+  - target: subprocess
+    script: asset_one.py
+    assets:
+      asset_one:
+        deps: []
+  - target: subprocess
+    script: asset_two.py
+    assets:
+      asset_two:
+        deps:
+          - group_a/asset_one
+  - target: subprocess 
+    script: assets_three_and_four.py
+    assets:
+      asset_three:
+        deps:
+          - group_a/asset_two
+      asset_four:
+        deps:
+          - group_a/asset_two

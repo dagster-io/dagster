@@ -1,0 +1,5 @@
+target: modal
+script: modal_asset_three.py
+
+deps:
+  - group_one/modal_asset_two
