@@ -1,13 +1,14 @@
 from pathlib import Path
 
+from dagster._nope.parser import load_yaml_to_pydantic
+
 
 def test_high_level_pydantic_parse() -> None:
     from examples.experimental.nope.nope_tutorial.high_level_dsl.definitions import (
         HighLevelDSLGroupFileManifest,
-        load_yaml_to_pydantic,
     )
 
-    yaml_manifest_path = Path(__file__).resolve().parent / Path("defs/group_a.yaml")
+    yaml_manifest_path = Path(__file__).resolve().parent / Path("defs/group_a.high_level.yaml")
 
     manifest = load_yaml_to_pydantic(
         str(yaml_manifest_path.resolve()), HighLevelDSLGroupFileManifest

@@ -21,6 +21,7 @@ from manifest import (
 from manifest_source import HighLevelDSLFileSystemManifestSource
 
 
+# TODO use harness lexicon
 class HighLevelDSLDefsBuilder(DefinitionsBuilder):
     @classmethod
     def build(cls, manifest: HighLevelDSLManifest) -> Definitions:

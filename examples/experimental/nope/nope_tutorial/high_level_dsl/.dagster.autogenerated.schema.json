@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "BespokeELTAssetManifest": {
+      "properties": {
+        "deps": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deps"
+        }
+      },
+      "required": [
+        "deps"
+      ],
+      "title": "BespokeELTAssetManifest",
+      "type": "object"
+    },
+    "BespokeELTInvocationTargetManifest": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "destination": {
+          "title": "Destination",
+          "type": "string"
+        },
+        "assets": {
+          "additionalProperties": {
+            "$ref": "#/$defs/BespokeELTAssetManifest"
+          },
+          "title": "Assets",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "target",
+        "source",
+        "destination",
+        "assets"
+      ],
+      "title": "BespokeELTInvocationTargetManifest",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "invocations": {
+      "items": {
+        "$ref": "#/$defs/BespokeELTInvocationTargetManifest"
+      },
+      "title": "Invocations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "invocations"
+  ],
+  "title": "HighLevelDSLGroupFileManifest",
+  "type": "object"
+}
