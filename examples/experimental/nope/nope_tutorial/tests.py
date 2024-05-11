@@ -41,12 +41,14 @@ def test_03_single_file_manifest_execute_in_process() -> None:
 
 
 def test_high_level_pydantic_parse() -> None:
-    from high_level import HighLevelDSLManifestFile, load_yaml_to_pydantic
+    from high_level import HighLevelDSLGroupFileManifest, load_yaml_to_pydantic
 
     yaml_manifest_path = Path(__file__).resolve().parent / Path("high_level_defs/group_a.yaml")
 
-    manifest = load_yaml_to_pydantic(str(yaml_manifest_path.resolve()), HighLevelDSLManifestFile)
-    assert isinstance(manifest, HighLevelDSLManifestFile)
+    manifest = load_yaml_to_pydantic(
+        str(yaml_manifest_path.resolve()), HighLevelDSLGroupFileManifest
+    )
+    assert isinstance(manifest, HighLevelDSLGroupFileManifest)
     assert len(manifest.invocations) == 1
     invocation = next(iter(manifest.invocations))
     assert invocation.target == "bespoke_elt"

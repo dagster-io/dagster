@@ -1,11 +1,15 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 import yaml
 from dagster import _check as check
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.factory.executable import (
+    AssetGraphExecutable,
+    AssetGraphExecutionContext,
+    AssetGraphExecutionResult,
+)
 from dagster._nope.project import NopeProject
 from pydantic import BaseModel, ValidationError
 
@@ -45,28 +49,13 @@ class BespokeELTInvocationTargetManifest(BaseModel):
     assets: Dict[str, BespokeELTAssetManifest]
 
 
-class HighLevelDSLManifestFile(BaseModel):
+class HighLevelDSLGroupFileManifest(BaseModel):
     invocations: List[BespokeELTInvocationTargetManifest]
 
 
 class HighLevelDSLManifest(BaseModel):
     group_name: str
-
-    manifest_file: HighLevelDSLManifestFile
-
-    def to_definitions(self) -> Definitions:
-        assets_defs = []
-        for invocation in self.manifest_file.invocations:
-
-            @multi_asset(
-                name=invocation.name,
-                specs=[AssetSpec(key=asset_key) for asset_key in invocation.assets.keys()],
-                group_name=self.group_name,
-            )
-            def _asset() -> Any: ...
-
-            assets_defs.append(_asset)
-        return Definitions(assets_defs)
+    manifest_file: HighLevelDSLGroupFileManifest
 
 
 def get_single_yaml_file(path: Path) -> Path:
@@ -85,30 +74,40 @@ class HighLevelDSLNopeProject(NopeProject):
     @classmethod
     def make_definitions(cls, defs_path: Path) -> Definitions:
         group_manifest_path = get_single_yaml_file(defs_path)
-        return HighLevelDSLManifest(
-            group_name=group_manifest_path.stem,
-            manifest_file=check.inst(
-                load_yaml_to_pydantic(str(group_manifest_path.resolve()), HighLevelDSLManifestFile),
-                HighLevelDSLManifestFile,
+        group_file_manifest = check.inst(
+            load_yaml_to_pydantic(
+                str(group_manifest_path.resolve()), HighLevelDSLGroupFileManifest
             ),
-        ).to_definitions()
-
-
-def make_definitions_from_group_manifest(
-    group_manifest: HighLevelDSLManifestFile, group_name: str
-) -> Definitions:
-    assert isinstance(group_manifest, HighLevelDSLManifestFile)
-    assets_defs = []
-    for invocation in group_manifest.invocations:
-
-        @multi_asset(
-            name=invocation.name,
-            specs=[AssetSpec(key=asset_key) for asset_key in invocation.assets.keys()],
-            group_name=group_name,
+            HighLevelDSLGroupFileManifest,
         )
-        def _asset() -> Any: ...
+        return make_definitions_from_manifest(
+            HighLevelDSLManifest(
+                group_name=group_manifest_path.stem, manifest_file=group_file_manifest
+            )
+        )
 
-        assets_defs.append(_asset)
+
+class BespokeELTExecutable(AssetGraphExecutable):
+    def __init__(self, group_name: str, manifest: BespokeELTInvocationTargetManifest):
+        specs = [
+            AssetSpec(key=asset_key, group_name=group_name) for asset_key in manifest.assets.keys()
+        ]
+        super().__init__(specs=specs)
+
+    def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
+        raise NotImplementedError("Not implemented")
+
+
+def make_definitions_from_manifest(manifest: HighLevelDSLManifest) -> Definitions:
+    manifest_file = manifest.manifest_file
+    assert isinstance(manifest_file, HighLevelDSLGroupFileManifest)
+    assets_defs = []
+    for invocation in manifest_file.invocations:
+        assets_defs.append(
+            BespokeELTExecutable(
+                group_name=manifest.group_name, manifest=invocation
+            ).to_assets_def()
+        )
     return Definitions(assets_defs)
 
 
@@ -119,26 +118,29 @@ def make_definitions_from_file_system() -> Definitions:
 
 
 def make_definitions_from_python_api() -> Definitions:
-    return HighLevelDSLManifest(
-        manifest_file=HighLevelDSLManifestFile(
-            invocations=[
-                BespokeELTInvocationTargetManifest(
-                    name="transform_and_load",
-                    target="bespoke_elt",
-                    source="file://example/file.csv",
-                    destination="s3://bucket/file.csv",
-                    assets={
-                        "root_one": BespokeELTAssetManifest(deps=None),
-                        "root_two": BespokeELTAssetManifest(deps=None),
-                    },
-                )
-            ]
-        ),
-        group_name="group_a",
-    ).to_definitions()
+    return make_definitions_from_manifest(
+        HighLevelDSLManifest(
+            manifest_file=HighLevelDSLGroupFileManifest(
+                invocations=[
+                    BespokeELTInvocationTargetManifest(
+                        name="transform_and_load",
+                        target="bespoke_elt",
+                        source="file://example/file.csv",
+                        destination="s3://bucket/file.csv",
+                        assets={
+                            "root_one": BespokeELTAssetManifest(deps=None),
+                            "root_two": BespokeELTAssetManifest(deps=None),
+                        },
+                    )
+                ]
+            ),
+            group_name="group_a",
+        )
+    )
 
 
 defs = make_definitions_from_file_system()
+assert make_definitions_from_python_api()
 
 
 if __name__ == "__main__":
