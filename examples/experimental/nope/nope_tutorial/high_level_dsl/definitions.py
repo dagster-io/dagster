@@ -58,7 +58,7 @@ def make_definitions_from_python_api() -> Definitions:
                     invocations=[
                         BespokeELTInvocationTargetManifest(
                             name="transform_and_load",
-                            target="bespoke_elt",
+                            kind="bespoke_elt",
                             source="file://example/file.csv",
                             destination="s3://bucket/file.csv",
                             assets={

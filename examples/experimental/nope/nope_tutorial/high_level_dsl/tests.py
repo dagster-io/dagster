@@ -16,7 +16,7 @@ def test_high_level_pydantic_parse() -> None:
     assert isinstance(manifest, HighLevelDSLGroupFileManifest)
     assert len(manifest.invocations) == 1
     invocation = next(iter(manifest.invocations))
-    assert invocation.target == "bespoke_elt"
+    assert invocation.kind == "bespoke_elt"
     assert invocation.name == "transform_and_load"
     assert invocation.source == "file://example/file.csv"
     assert invocation.destination == "s3://bucket/file.csv"

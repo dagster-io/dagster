@@ -1,6 +1,6 @@
 invocations:
-  - name: transform_and_load
-    target: bespoke_elt 
+  - kind: bespoke_elt 
+    name: transform_and_load
     source: file://example/file.csv
     destination: s3://bucket/file.csv
     assets:
@@ -8,6 +8,8 @@ invocations:
         deps: []
       root_two:
         deps: []
+  - kind: dbt
+    manifest_json_path: /path/to/manifest.json
     
   # - target: dbt
     # dbt_manifest:

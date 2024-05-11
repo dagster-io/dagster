@@ -25,12 +25,16 @@
     },
     "BespokeELTInvocationTargetManifest": {
       "properties": {
-        "name": {
-          "title": "Name",
+        "kind": {
+          "const": "bespoke_elt",
+          "enum": [
+            "bespoke_elt"
+          ],
+          "title": "Kind",
           "type": "string"
         },
-        "target": {
-          "title": "Target",
+        "name": {
+          "title": "Name",
           "type": "string"
         },
         "source": {
@@ -50,20 +54,49 @@
         }
       },
       "required": [
+        "kind",
         "name",
-        "target",
         "source",
         "destination",
         "assets"
       ],
       "title": "BespokeELTInvocationTargetManifest",
       "type": "object"
+    },
+    "DbtInvocationTargetManifest": {
+      "properties": {
+        "kind": {
+          "const": "dbt",
+          "enum": [
+            "dbt"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "manifest_json_path": {
+          "title": "Manifest Json Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "manifest_json_path"
+      ],
+      "title": "DbtInvocationTargetManifest",
+      "type": "object"
     }
   },
   "properties": {
     "invocations": {
       "items": {
-        "$ref": "#/$defs/BespokeELTInvocationTargetManifest"
+        "anyOf": [
+          {
+            "$ref": "#/$defs/BespokeELTInvocationTargetManifest"
+          },
+          {
+            "$ref": "#/$defs/DbtInvocationTargetManifest"
+          }
+        ]
       },
       "title": "Invocations",
       "type": "array"
