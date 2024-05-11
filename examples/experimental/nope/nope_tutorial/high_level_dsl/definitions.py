@@ -9,6 +9,7 @@ from dagster._core.definitions.factory.executable import (
     AssetGraphExecutionContext,
     AssetGraphExecutionResult,
 )
+from dagster._core.definitions.result import MaterializeResult
 from dagster._nope.definitions import (
     DefinitionsBuilder,
     InMemoryManifestSource,
@@ -63,7 +64,8 @@ class DbtManifestExecutable(AssetGraphExecutable):
         )
 
     def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
-        raise NotImplementedError("Not implemented")
+        context.log.info("Run dbt project")
+        return [MaterializeResult(asset_key="hardcoded")]
 
 
 class BespokeELTExecutable(AssetGraphExecutable):
@@ -76,7 +78,11 @@ class BespokeELTExecutable(AssetGraphExecutable):
         )
 
     def execute(self, context: AssetGraphExecutionContext) -> AssetGraphExecutionResult:
-        raise NotImplementedError("Not implemented")
+        context.log.info("Running bespoke ELT")
+        for spec in self.specs:
+            context.log.info(f"Running {spec.key}")
+            assert isinstance(spec, AssetSpec)  # only do assets right now
+            yield MaterializeResult(asset_key=spec.key)
 
 
 def make_definitions_from_python_api() -> Definitions:
