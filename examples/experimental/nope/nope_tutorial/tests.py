@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
@@ -38,4 +36,3 @@ def test_03_single_file_manifest_execute_in_process() -> None:
     assert key.path == ["group_a", "asset_one"]
     assert isinstance(defs.get_assets_def(key), AssetsDefinition)
     assert defs.get_implicit_global_asset_job_def().execute_in_process().success
-

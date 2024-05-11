@@ -1,19 +1,13 @@
 from pathlib import Path
 
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.definitions_class import Definitions
-
 
 def test_high_level_pydantic_parse() -> None:
-    from examples.experimental.nope.nope_tutorial.high_level_dsl.high_level import (
+    from examples.experimental.nope.nope_tutorial.high_level_dsl.definitions import (
         HighLevelDSLGroupFileManifest,
         load_yaml_to_pydantic,
     )
 
-    yaml_manifest_path = Path(__file__).resolve().parent / Path(
-        "defs/group_a.yaml"
-    )
+    yaml_manifest_path = Path(__file__).resolve().parent / Path("defs/group_a.yaml")
 
     manifest = load_yaml_to_pydantic(
         str(yaml_manifest_path.resolve()), HighLevelDSLGroupFileManifest
