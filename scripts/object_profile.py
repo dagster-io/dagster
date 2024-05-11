@@ -9,15 +9,24 @@ from tempfile import TemporaryDirectory
 # An example of when this is useful is measuring the impact of changing the backing class
 # for a model object from a NamedTuple to a dataclass or pydantic model (DagsterModel).
 import memray  # type: ignore
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import AssetSubset
+from object_profile_schema_cython import UnderTest
 
-fixed_key = AssetKey("asset_key")
+
+# fixed_key = AssetKey("asset_key")
+
+# class UnderTest(NamedTuple):
+#     name: str
+#     nick_names: List[str]
+
+# @dataclass(frozen=True)
+# class UnderTest():
+#     name: str
+#     nick_names: List[str]
 
 
 def make_one(i: int = 0):
     """Create an instance of the object you want to profile."""
-    return AssetSubset(asset_key=fixed_key, value=False)
+    return UnderTest(name="hello", nick_names=["abc", "def", "ghi"])
 
 
 def make_n(n: int):
@@ -71,8 +80,8 @@ def fmt_time(seconds):
 
 
 if __name__ == "__main__":
-    n = 50_000
-    print(f"\nObject profiling for target {make_one()=}\n")
+    n = 500_000
+    print(f"\nObject profiling for target {make_one()=} {type(make_one())}\n")
     cpu_profile(n)
     mem_profile(n)
     timing()
