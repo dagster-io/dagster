@@ -35,6 +35,8 @@ if TYPE_CHECKING:
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
 
+ASSET_RECORD_BATCH_SIZE = 100
+
 
 @dataclass
 class InputAssetVersionInfo:
@@ -102,10 +104,7 @@ class DataVersionCache:
             extract_data_version_from_entry,
         )
 
-        asset_records_by_key = {
-            record.asset_entry.asset_key: record
-            for record in self._context.instance.get_asset_records(asset_keys)
-        }
+        asset_records_by_key = self._fetch_asset_records(asset_keys)
         for key in asset_keys:
             asset_record = asset_records_by_key.get(key)
             event = self._get_input_asset_event(key, asset_record)
@@ -147,6 +146,18 @@ class DataVersionCache:
                     event.run_id,
                     event.timestamp,
                 )
+
+    def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> Dict[AssetKey, "AssetRecord"]:
+        asset_records_by_key = {}
+        to_fetch = asset_keys
+        while len(to_fetch):
+            for record in self._context.instance.get_asset_records(
+                to_fetch[:ASSET_RECORD_BATCH_SIZE]
+            ):
+                asset_records_by_key[record.asset_entry.asset_key] = record
+            to_fetch = to_fetch[ASSET_RECORD_BATCH_SIZE:]
+
+        return asset_records_by_key
 
     def _get_input_asset_event(
         self, key: AssetKey, asset_record: Optional["AssetRecord"]
