@@ -453,9 +453,10 @@ class CachingDataTimeResolver:
         ):
             return current_data_time
 
-        run_failure_time = datetime.datetime.utcfromtimestamp(
-            latest_run_record.end_time or datetime_as_float(latest_run_record.create_timestamp)
-        ).replace(tzinfo=datetime.timezone.utc)
+        run_failure_time = datetime.datetime.fromtimestamp(
+            latest_run_record.end_time or datetime_as_float(latest_run_record.create_timestamp),
+            datetime.timezone.utc,
+        )
         return self._get_in_progress_data_time_in_run(
             run_id=run_id, asset_key=asset_key, current_time=run_failure_time
         )
@@ -528,8 +529,8 @@ class CachingDataTimeResolver:
         if data_time is None:
             return None
         else:
-            return datetime.datetime.utcfromtimestamp(cast(float, data_time.value)).replace(
-                tzinfo=datetime.timezone.utc
+            return datetime.datetime.fromtimestamp(
+                cast(float, data_time.value), datetime.timezone.utc
             )
 
     def get_minutes_overdue(
