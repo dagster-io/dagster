@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.event_api import EventLogRecord
     from dagster._core.events import DagsterEventType
+    from dagster._core.storage.event_log.base import AssetRecord
 
 
 if TYPE_CHECKING:
@@ -101,37 +102,13 @@ class DataVersionCache:
             extract_data_version_from_entry,
         )
 
-        asset_records = self._context.instance.get_asset_records(asset_keys)
-        materialization_records_by_key: Dict[AssetKey, Optional[EventLogRecord]] = {
-            record.asset_entry.asset_key: record.asset_entry.last_materialization_record
-            for record in asset_records
+        asset_records_by_key = {
+            record.asset_entry.asset_key: record
+            for record in self._context.instance.get_asset_records(asset_keys)
         }
-
-        if self._context.instance.event_log_storage.asset_records_have_last_observation:
-            observations_records_by_key: Dict[AssetKey, Optional[EventLogRecord]] = {
-                record.asset_entry.asset_key: record.asset_entry.last_observation_record
-                for record in asset_records
-            }
-        else:
-            observations_records_by_key: Dict[AssetKey, Optional[EventLogRecord]] = {}
-            for key in asset_keys:
-                if key in materialization_records_by_key:
-                    # we only need to fetch the last observation record if we did not have a materialization record
-                    continue
-
-                last_observation_record = next(
-                    iter(self._context.instance.fetch_observations(key, limit=1).records), None
-                )
-                if last_observation_record:
-                    observations_records_by_key[key] = last_observation_record
-
-        records_by_key: Dict[AssetKey, Optional[EventLogRecord]] = {
-            **observations_records_by_key,
-            **materialization_records_by_key,
-        }
-
         for key in asset_keys:
-            event = records_by_key.get(key)
+            asset_record = asset_records_by_key.get(key)
+            event = self._get_input_asset_event(key, asset_record)
             if event is None:
                 self.input_asset_version_info[key] = None
             else:
@@ -171,8 +148,26 @@ class DataVersionCache:
                     event.timestamp,
                 )
 
-    def _get_input_asset_event(self, key: AssetKey) -> Optional["EventLogRecord"]:
-        event = self._context.instance.get_latest_data_version_record(key)
+    def _get_input_asset_event(
+        self, key: AssetKey, asset_record: Optional["AssetRecord"]
+    ) -> Optional["EventLogRecord"]:
+        event = None
+        if asset_record and asset_record.asset_entry.last_materialization_record:
+            event = asset_record.asset_entry.last_materialization_record
+        elif (
+            asset_record
+            and self._context.instance.event_log_storage.asset_records_have_last_observation
+        ):
+            event = asset_record.asset_entry.last_observation_record
+
+        if (
+            not event
+            and not self._context.instance.event_log_storage.asset_records_have_last_observation
+        ):
+            event = next(
+                iter(self._context.instance.fetch_observations(key, limit=1).records), None
+            )
+
         if event:
             self._check_input_asset_event(key, event)
         return event
