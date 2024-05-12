@@ -70,7 +70,7 @@ T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 
-EPOCH = datetime.datetime.utcfromtimestamp(0)
+EPOCH = datetime.datetime.fromtimestamp(0, timezone.utc).replace(tzinfo=None)
 
 PICKLE_PROTOCOL = 4
 
