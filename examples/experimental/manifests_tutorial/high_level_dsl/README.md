@@ -13,24 +13,31 @@ High-level a few changes:
   * Indicates a more foundational system. For example, I think we should have GraphQL/REST APIs for this subsystem, which will be a super powerful layer for tool building
 * In terms the yaml frontend, which is very important, I have integrated the schema registration system (albiet hardcoded for the single example for simplicity) in order to learn prove to myself that it will work. It is a pretty magical experience to build custom manifest formats and then get a typeahead and better error messages for free.
 * This is stacked on the AssetGraphExecutable PR (https://github.com/dagster-io/dagster/pull/21679). My conviction has only grown that an abstraction shaped like this is the path forward. Still do not have high conviction on the name. Feedback very welcome on that front.
-* The core system is much more pluggable and flexible.
+* The core system is much more pluggable and flexible than the previous Nope prototype.
   * There is a quite generic notion of a "manifest source", which is a class that produce a top-level manifest object. Sources can be arbitrary file formats or any durable store.
   * Similarly the manifest schema format is just Pydantic. The platform owner can designed whatever they want on this front.
     * Note: because it is all backed by plain python objects it is well-supported to construct manifests programmatically for those who violently object to YAML, which I sympathize with.
 
-I have _not_ a sequence of examples where complexity builds but I did write an "advanced" example that demonstrates the core primitives. We would build out-of-the-box solutions and sugar to craft a minimal hello world and default formats and scaffolding
+I have _not_ a madee sequence of examples where complexity builds but I did write an "advanced" example that demonstrates the core primitives and how flexible this is. We would build sugar and out-of-the-box solutions and sugar to craft a minimal hello world and default formats and scaffolding.
  
-I also invision this as a powerful layer for standardizing integrations. Consuming a dbt integration via a manifest was quite natural.  It would even be more natural to write it if a native "AssetGraphExecutable"-style abstraction exists.
+I also invision this as a powerful layer for standardizing integrations. Consuming a dbt integration via a manifest was quite natural.  It would even be more natural to write it if a native "AssetGraphExecutable"-style abstraction existed for that integration. 
 
-It is important that dagster-yaml and this effort converge ASAP. The time for parallel exploration has come to an end.
+It is important that dagster-yaml and this effort converge ASAP. The time for parallel exploration has come to an end IMO.
+
+Next up is the tutorial written in the voice of "talking to a platform owner user of Dagster".
 
 # Advanced Manifests Tutorial: Customizing the platform
 
-As a platform owner you can use Manifests to build a custom platform for your stakeholders. This means you have total control of the manifest format and control over how those manifest formats translate into executables. You can mix and match pre-built executables and custom executables in the same manifest format.
+As a platform owner you can use Manifests to build a custom platform for your stakeholders. This means you have total control of the manifest format and control over how those manifest formats translate into executables and assets. You can mix and match pre-built executables and custom executables in the same manifest format.
 
 ## Manifest Factory
 
-Let's look at `definitions.py`:
+Let's look at `definitions.py`. We need to define a manifest factory. 
+
+Manifest factories determine two things:
+
+1) Format for the manifest
+2) Given an instance of that manifest, how to create a `Definitions` object.
 
 ```python
 # elided other imports for brevity
@@ -51,11 +58,12 @@ class HighLevelDSLManifestFactory(ManifestBackedExecutableFactory[HighLevelDSLMa
 ```
 
 
-We're using the off-the-shelf `ManifestBackedExecutableFactory`. The user overrides the `executables` classmethod to return executable types. In this case we are using an off-the-shelf subprocess-based one, a dbt integration, and a custom integration we have built to interact with our ancient, bespoke ELT system.
+We're using the `ManifestBackedExecutableFactory` which is a light specialization of the `ManifestFactory` base class. It defines a schema with a top-level key `executables` that points to a list of executables where each entry is one of a set executable types. The user overrides the `executables` classmethod to return executable types. In this case we are using an off-the-shelf subprocess-based one, a dbt integration, and a custom integration we have built to interact with our ancient, bespoke ELT system.
 
 ## Manifest File and Schema 
 
 ```yaml
+# group_a.yaml
 executables:
   - kind: bespoke_elt 
     name: transform_and_load
@@ -76,7 +84,7 @@ executables:
         deps: ["customers"]
 ```
 
-This is the yaml we want users to be able to write. `dbt_manifest` and `subprocess` executable kinds already exist. Let's learn how to write a custom manifest-backed executable
+This is the yaml we want your stakeholders to be able to write and modify. `dbt_manifest` and `subprocess` executable kinds already exist. Let's learn how to write a custom manifest-backed executable
 
 By convention, custom executables live in the `executables` folder and the file is named after the `kind`. Hence `executables/bespoke_etl.py`:
 
@@ -99,7 +107,7 @@ An executable manifest must have a kind field (this is enforced via a protocol i
 
 ## Building a custom manifest-backed Executable
 
-Next you'll see that the custom executable:
+Next you'll see that the custom executable. It specifies a manifest type and then an `execute` method that is executed during a run.
 
 ```python
 class BespokeELTExecutable(ManifestBackedExecutable):
@@ -131,11 +139,15 @@ Let's go through the methods you need to implement in any subclass of `ManifestB
 2. `create_from_manifest`. Given a manifest object, return an instance of the executable.
 3. `execute`: Implement the `execute` method of `AssetGraphExecutable` as normal.
 
+_Note: I bet we could get this down to two methods with generics._
+
 Now that we have this class and imported it into `HighLevelDSLManifestFactory` we are good to go. This use can opt into this executable with `kind: bespoke_elt` in the manifest file. Pretty cool!
 
 Now that we have our manifest factory set up,
 
 ## Manifest Source
+
+Last let's the manifest source. We want to control the file layout. In this case we want the file name to determine the default group for any artifacts in that file:
 
 ```python
 from pathlib import Path
@@ -206,4 +218,5 @@ By convention, manifest files go into the `manifests` folder so that is where we
 
 # Future Directions
 
+* Support partitioning, scheduling, and other features in this system.
 * Prototype using the manifest layer to generate Airflow operators. The critical piece here is that there will be custom code to translate the yaml to the operators, rather than exposing the raw arguments to the Airflow operators.
