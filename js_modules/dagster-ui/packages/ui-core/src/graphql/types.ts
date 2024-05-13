@@ -1984,6 +1984,7 @@ export type InstigationTick = {
   error: Maybe<PythonError>;
   id: Scalars['ID']['output'];
   instigationType: InstigationType;
+  instigatorName: Scalars['String']['output'];
   logEvents: InstigationEventConnection;
   logKey: Maybe<Array<Scalars['String']['output']>>;
   originRunIds: Array<Scalars['String']['output']>;
@@ -8869,6 +8870,10 @@ export const buildInstigationTick = (
       overrides && overrides.hasOwnProperty('instigationType')
         ? overrides.instigationType!
         : InstigationType.AUTO_MATERIALIZE,
+    instigatorName:
+      overrides && overrides.hasOwnProperty('instigatorName')
+        ? overrides.instigatorName!
+        : 'tempora',
     logEvents:
       overrides && overrides.hasOwnProperty('logEvents')
         ? overrides.logEvents!

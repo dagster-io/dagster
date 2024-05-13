@@ -2532,6 +2532,7 @@ type InstigationTick {
   requestedMaterializationsForAssets: [RequestedMaterializationsForAsset!]!
   autoMaterializeAssetEvaluationId: Int
   instigationType: InstigationType!
+  instigatorName: String!
 }
 
 type InstigationEventConnection {

@@ -253,6 +253,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     requestedMaterializationsForAssets = non_null_list(GrapheneRequestedMaterializationsForAsset)
     autoMaterializeAssetEvaluationId = graphene.Field(graphene.Int)
     instigationType = graphene.NonNull(GrapheneInstigationType)
+    instigatorName = graphene.NonNull(graphene.String)
 
     class Meta:
         name = "InstigationTick"
@@ -273,6 +274,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             logKey=tick.log_key,
             endTimestamp=tick.end_timestamp,
             autoMaterializeAssetEvaluationId=tick.tick_data.auto_materialize_evaluation_id,
+            instigatorName=tick.instigator_name,
         )
 
     def resolve_id(self, _):
