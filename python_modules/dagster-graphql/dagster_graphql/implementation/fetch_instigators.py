@@ -52,11 +52,14 @@ def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigat
         return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
     records = get_instigation_log_records(graphene_info.context.instance, tick.log_key)
-
     events = []
     for record_dict in records:
         exc_info = record_dict.get("exc_info")
-        message = record_dict[LOG_RECORD_METADATA_ATTR]["orig_message"]
+        # todo, adding this condition is greasy, make it not do that
+        if LOG_RECORD_METADATA_ATTR in record_dict:
+            message = record_dict[LOG_RECORD_METADATA_ATTR]["orig_message"]
+        else:
+            message = record_dict.get("msg")
         if exc_info:
             message = f"{message}\n\n{exc_info}"
 
