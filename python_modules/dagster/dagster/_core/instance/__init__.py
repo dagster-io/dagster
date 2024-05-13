@@ -3139,42 +3139,46 @@ class DagsterInstance(DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.storage.event_log.base import AssetRecordsFilter
 
         # When we cant don't know whether the requested key corresponds to a source or regular
         # asset, we need to retrieve both the latest observation and materialization for all assets.
         # If there is a materialization, it's a regular asset and we can ignore the observation.
-
-        observation: Optional[EventLogRecord] = None
-        if is_source or is_source is None:
-            observations = self.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_OBSERVATION,
-                    asset_key=key,
-                    asset_partitions=[partition_key] if partition_key else None,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                ),
-                limit=1,
-            )
-            observation = next(iter(observations), None)
-
-        materialization: Optional[EventLogRecord] = None
         if not is_source:
-            materializations = self.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=key,
-                    asset_partitions=[partition_key] if partition_key else None,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
+            last_materialization = next(
+                iter(
+                    self.fetch_materializations(
+                        AssetRecordsFilter(
+                            asset_key=key,
+                            asset_partitions=[partition_key] if partition_key else None,
+                            before_storage_id=before_cursor,
+                            after_storage_id=after_cursor,
+                        ),
+                        limit=1,
+                    ).records
                 ),
-                limit=1,
+                None,
             )
-            materialization = next(iter(materializations), None)
+            if last_materialization:
+                return last_materialization
 
-        return materialization or observation
+        if is_source or is_source is None:
+            return next(
+                iter(
+                    self.fetch_observations(
+                        AssetRecordsFilter(
+                            asset_key=key,
+                            asset_partitions=[partition_key] if partition_key else None,
+                            before_storage_id=before_cursor,
+                            after_storage_id=after_cursor,
+                        ),
+                        limit=1,
+                    ).records
+                ),
+                None,
+            )
+
+        return None
 
     @public
     def get_latest_materialization_code_versions(
