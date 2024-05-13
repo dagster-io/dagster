@@ -1,9 +1,8 @@
-import {ComponentProps, ReactNode, memo, useMemo} from 'react';
+import {ComponentProps, ReactNode, memo, useLayoutEffect, useMemo} from 'react';
 import {Route as ReactRouterRoute, useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 
 import {currentPageAtom} from './analytics';
-import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
 
 export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
   const {render, children, component: Component} = props;
@@ -54,9 +53,9 @@ const Wrapper = memo(({children}: {children: ReactNode}) => {
   const {path} = useRouteMatch();
 
   const setCurrentPage = useSetRecoilState(currentPageAtom);
-  useDangerousRenderEffect(() => {
+  useLayoutEffect(() => {
     setCurrentPage(({specificPath}) => ({specificPath, path}));
-  }, [path]);
+  }, [path, setCurrentPage]);
 
   return children;
 });
