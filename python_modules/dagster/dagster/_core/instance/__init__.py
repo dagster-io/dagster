@@ -3141,44 +3141,34 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> Optional["EventLogRecord"]:
         from dagster._core.storage.event_log.base import AssetRecordsFilter
 
-        # When we cant don't know whether the requested key corresponds to a source or regular
-        # asset, we need to retrieve both the latest observation and materialization for all assets.
-        # If there is a materialization, it's a regular asset and we can ignore the observation.
-        if not is_source:
-            last_materialization = next(
-                iter(
-                    self.fetch_materializations(
-                        AssetRecordsFilter(
-                            asset_key=key,
-                            asset_partitions=[partition_key] if partition_key else None,
-                            before_storage_id=before_cursor,
-                            after_storage_id=after_cursor,
-                        ),
-                        limit=1,
-                    ).records
-                ),
-                None,
-            )
-            if last_materialization:
-                return last_materialization
+        records_filter = AssetRecordsFilter(
+            asset_key=key,
+            asset_partitions=[partition_key] if partition_key else None,
+            before_storage_id=before_cursor,
+            after_storage_id=after_cursor,
+        )
 
-        if is_source or is_source is None:
-            return next(
-                iter(
-                    self.fetch_observations(
-                        AssetRecordsFilter(
-                            asset_key=key,
-                            asset_partitions=[partition_key] if partition_key else None,
-                            before_storage_id=before_cursor,
-                            after_storage_id=after_cursor,
-                        ),
-                        limit=1,
-                    ).records
-                ),
-                None,
-            )
+        if is_source is True:
+            # this is a source asset, fetch latest observation record
+            return next(iter(self.fetch_observations(records_filter, limit=1).records), None)
 
-        return None
+        elif is_source is False:
+            # this is not a source asset, fetch latest materialization record
+            return next(iter(self.fetch_materializations(records_filter, limit=1).records), None)
+
+        else:
+            assert is_source is None
+            # if is_source is None, the requested key could correspond to either a source asset or
+            # materializable asset. If there is a non-null materialization, we are dealing with a
+            # materializable asset and should just return that.  If not, we should check for any
+            # observation records that may match.
+
+            materialization = next(
+                iter(self.fetch_materializations(records_filter, limit=1).records), None
+            )
+            if materialization:
+                return materialization
+            return next(iter(self.fetch_observations(records_filter, limit=1).records), None)
 
     @public
     def get_latest_materialization_code_versions(
