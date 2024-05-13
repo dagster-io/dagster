@@ -9,6 +9,7 @@ import {
   CursorPaginationProps,
   ExternalAnchorButton,
   Icon,
+  MiddleTruncate,
   NonIdealState,
   Spinner,
   Subtitle1,
@@ -229,7 +230,9 @@ export const AssetChecks = ({
                             >
                               {getCheckIcon(check)}
                             </Box>
-                            <Body2>{check.name}</Body2>
+                            <Body2 style={{overflow: 'hidden'}}>
+                              <MiddleTruncate text={check.name} />
+                            </Body2>
                           </Box>
                           <Box padding={{horizontal: 24}}>
                             <Caption
