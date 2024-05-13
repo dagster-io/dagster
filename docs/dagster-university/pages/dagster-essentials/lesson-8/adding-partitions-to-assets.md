@@ -12,7 +12,7 @@ Starting with `taxi_trips_file`, the asset code should currently look like this:
 
 ```python
 @asset
-def taxi_trips_file():
+def taxi_trips_file() -> None:
     """
       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
     """
@@ -52,7 +52,7 @@ To add the partition to the asset:
    @asset(
        partitions_def=monthly_partition
    )
-   def taxi_trips_file(context: AssetExecutionContext):
+   def taxi_trips_file(context: AssetExecutionContext) -> None:
    ```
 
    **Note**: The `context` argument isn’t specific to partitions. However, this is the first time you've used it in Dagster University. The `context` argument provides information about how Dagster is running and materializing your asset. For example, you can use it to find out which partition Dagster is materializing, which job triggered the materialization, or what metadata was attached to its previous materializations.
@@ -63,7 +63,7 @@ To add the partition to the asset:
    @asset(
        partitions_def=monthly_partition
    )
-   def taxi_trips_file(context):
+   def taxi_trips_file(context) -> None:
        partition_date_str = context.partition_key
    ```
 
@@ -73,7 +73,7 @@ To add the partition to the asset:
    @asset(
        partitions_def=monthly_partition
    )
-   def taxi_trips_file(context):
+   def taxi_trips_file(context) -> None:
        partition_date_str = context.partition_key
        month_to_fetch = partition_date_str[:-3]
    ```
@@ -86,7 +86,7 @@ from ..partitions import monthly_partition
 @asset(
     partitions_def=monthly_partition
 )
-def taxi_trips_file(context):
+def taxi_trips_file(context) -> None:
   """
       The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
   """
