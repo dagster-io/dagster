@@ -112,7 +112,7 @@ def load_assets_from_modules(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+) -> List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets from the given modules.
 
     Args:
@@ -132,7 +132,7 @@ def load_assets_from_modules(
             assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset]]:
+        List[Union[AssetsDefinition, SourceAsset]]:
             A list containing assets and source assets defined in the given modules.
     """
     group_name = check.opt_str_param(group_name, "group_name")
@@ -170,7 +170,7 @@ def load_assets_from_current_module(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+) -> List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets from the module where
     this function is called.
 
@@ -190,7 +190,7 @@ def load_assets_from_current_module(
             assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
+        List[Union[AssetsDefinition, SourceAsset, CachableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     caller = inspect.stack()[1]
@@ -240,7 +240,7 @@ def load_assets_from_package_module(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+) -> List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets and source assets that includes all asset
     definitions, source assets, and cacheable assets in all sub-modules of the given package module.
 
@@ -263,7 +263,7 @@ def load_assets_from_package_module(
             assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+        List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     group_name = check.opt_str_param(group_name, "group_name")
@@ -301,7 +301,7 @@ def load_assets_from_package_name(
     auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
     source_key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+) -> List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     """Constructs a list of assets, source assets, and cacheable assets that includes all asset
     definitions and source assets in all sub-modules of the given package.
 
@@ -322,7 +322,7 @@ def load_assets_from_package_name(
             assets will be copies of the loaded objects, with the prefix prepended.
 
     Returns:
-        Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+        List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
             A list containing assets, source assets, and cacheable assets defined in the module.
     """
     package_module = import_module(package_name)
@@ -459,7 +459,7 @@ def assets_with_attributes(
     auto_materialize_policy: Optional[AutoMaterializePolicy],
     backfill_policy: Optional[BackfillPolicy],
     source_key_prefix: Optional[Sequence[str]],
-) -> Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+) -> List[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
     # There is a tricky edge case here where if a non-cacheable asset depends on a cacheable asset,
     # and the assets are prefixed, the non-cacheable asset's dependency will not be prefixed since
     # at prefix-time it is not known that its dependency is one of the cacheable assets.
