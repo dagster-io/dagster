@@ -1,13 +1,19 @@
 ---
-title: "Quickstart: Run your dbt project with Dagster in 3 steps"
+title: "Quickstart: Run your dbt project with Dagster"
 description: Get started swiftly with this simple dbt + Dagster example.
 ---
 
-# Quickstart: Run your dbt project with Dagster in 3 steps
+# Quickstart: Run your dbt project with Dagster
+
+If you just want to see the code of the example, skip to the end on this guide.
+
+<div className="w-full inline-flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
+  <Button link="#using-dbt-with-dagster-in-a-single-file">See the code</Button>
+</div>
 
 ---
 
-## Step 1: Setup your environment
+## Setup your environment
 
 <Note>
   <strong>Note</strong>: We strongly recommend installing Dagster inside a
@@ -26,7 +32,40 @@ The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies
 
 ---
 
-## Step 2: Create your code location file
+## Run your dbt project in Dagster's UI
+
+Now that your code is ready, you can run Dagster's UI to take a look at your dbt project.
+
+1. To start Dagster's UI, run the following:
+
+   ```shell
+   dagster dev
+   ```
+
+   Which will result in output similar to:
+
+   ```shell
+   Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
+   ```
+
+2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the asset graph for the job created by the schedule definition:
+
+  <!--
+  ![Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/quickstart/asset_graph.png)
+  -->
+
+<Image
+alt="Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets"
+src="/images/integrations/dbt/quickstart/asset_graph.png"
+width={2688}
+height={1680}
+/>
+
+3. In Dagster, running a dbt model corresponds to _materializing_ an asset. Because a schedule definition has been added to your code location, your assets will be materialized at the next cron tick. The assets can also be materialized manually by click the **Materialize all** button near the top right corner of the page. This will launch a run to materialize the assets.
+
+---
+
+## Using dbt with Dagster in a single file
 
 Running your dbt project with Dagster can be easily done after creating a single file. For this example, let's consider a basic use case - say you want to represent your dbt models as Dagster assets and run them daily at midnight.
 
@@ -54,11 +93,11 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "./your-dbt-project"
+RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my-dbt-project"
 
 my_project = DbtProject(
     project_dir=Path(__file__)
-    .joinpath("..", RELATIVE_PATH_TO_YOUR_DBT_PROJECT)
+    .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
     .resolve(),
 )
 
@@ -83,41 +122,6 @@ defs = Definitions(
     },
 )
 ```
-
----
-
-## Step 3: Run your dbt project in Dagster's UI
-
-Now that your file is created, you can run Dagster's UI to take a look at your dbt project.
-
-The next steps assume that your file is named `definitions.py`, as recommended in [Step 2](#step-2-create-your-code-location-file). If that's not the case, update the code with the name of your file before running it.
-
-1. To start Dagster's UI, run the following:
-
-   ```shell
-   dagster dev -f definitions.py
-   ```
-
-   Which will result in output similar to:
-
-   ```shell
-   Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
-   ```
-
-2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the asset graph for the job created by the schedule definition:
-
-  <!--
-  ![Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/quickstart/asset_graph.png)
-  -->
-
-<Image
-alt="Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets"
-src="/images/integrations/dbt/quickstart/asset_graph.png"
-width={2688}
-height={1680}
-/>
-
-3. In Dagster, running a dbt model corresponds to _materializing_ an asset. Because a schedule definition has been added to your code location, your assets will be materialized at the next cron tick. The assets can also be materialized manually by click the **Materialize all** button near the top right corner of the page. This will launch a run to materialize the assets.
 
 ---
 
