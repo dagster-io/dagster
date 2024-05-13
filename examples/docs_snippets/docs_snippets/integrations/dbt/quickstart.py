@@ -11,7 +11,7 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "relative/path/to/your/dbt-project"
+RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "./your-dbt-project"
 
 my_project = DbtProject(
     project_dir=Path(__file__)

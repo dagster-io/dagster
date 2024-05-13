@@ -30,13 +30,17 @@ The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies
 
 Running your dbt project with Dagster can be easily done after creating a single file. For this example, let's consider a basic use case - say you want to represent your dbt models as Dagster assets and run them daily at midnight.
 
-With your text editor of choice, create a Python file and add the following code. Make sure to update the `RELATIVE_PATH_TO_YOUR_DBT_PROJECT` constant so that it points to your dbt project. Note that since this file contains [all Dagster definitions required for your code location](/concepts/code-locations), it is recommended to name it `definitions.py`.
+With your text editor of choice, create a Python file in the same directory as your dbt project directory and add the following code. Note that since this file contains [all Dagster definitions required for your code location](/concepts/code-locations), it is recommended to name it `definitions.py`.
+
+The following code assumes that your Python file and dbt project directory are adjacent in the same directory. If that's not the case, make sure to update the `RELATIVE_PATH_TO_YOUR_DBT_PROJECT` constant so that it points to your dbt project.
 
 <Note>
-  <strong>Note</strong>: This code uses the <code>DbtProject</code> class,
-  which is an experimental feature. Visit the{" "}
-  <a href="/\_apidocs/libraries/dagster-dbt">dagster-dbt library API reference</a> for more
-  info.
+  <strong>Note</strong>: This code uses the <code>DbtProject</code> class, which
+  is an experimental feature. Visit the{" "}
+  <a href="/\_apidocs/libraries/dagster-dbt">
+    dagster-dbt library API reference
+  </a>{" "}
+  for more info.
 </Note>
 
 ```python file=/integrations/dbt/quickstart.py startafter=start_example endbefore=end_example
@@ -50,7 +54,7 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "relative/path/to/your/dbt-project"
+RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "./your-dbt-project"
 
 my_project = DbtProject(
     project_dir=Path(__file__)
@@ -87,7 +91,6 @@ defs = Definitions(
 Now that your file is created, you can run Dagster's UI to take a look at your dbt project.
 
 The next steps assume that your file is named `definitions.py`, as recommended in [Step 2](#step-2-create-your-code-location-file). If that's not the case, update the code with the name of your file before running it.
-
 
 1. To start Dagster's UI, run the following:
 
