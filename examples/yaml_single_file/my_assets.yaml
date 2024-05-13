@@ -1,0 +1,9 @@
+type: multi
+defs:
+- type: shell_asset
+  key: asset1
+  command: "python asset1.py"
+- type: shell_asset
+  key: asset2
+  command: "python asset2.py"
+  deps: ["asset1"]
