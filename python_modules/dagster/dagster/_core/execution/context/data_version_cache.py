@@ -1,3 +1,4 @@
+import os
 from typing import TYPE_CHECKING
 
 """This module contains the execution context objects that are internal to the system.
@@ -34,8 +35,6 @@ if TYPE_CHECKING:
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext
-
-ASSET_RECORD_BATCH_SIZE = 100
 
 
 @dataclass
@@ -148,14 +147,13 @@ class DataVersionCache:
                 )
 
     def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> Dict[AssetKey, "AssetRecord"]:
+        batch_size = int(os.getenv("ASSET_RECORD_BATCH_SIZE", "100"))
         asset_records_by_key = {}
         to_fetch = asset_keys
         while len(to_fetch):
-            for record in self._context.instance.get_asset_records(
-                to_fetch[:ASSET_RECORD_BATCH_SIZE]
-            ):
+            for record in self._context.instance.get_asset_records(to_fetch[:batch_size]):
                 asset_records_by_key[record.asset_entry.asset_key] = record
-            to_fetch = to_fetch[ASSET_RECORD_BATCH_SIZE:]
+            to_fetch = to_fetch[batch_size:]
 
         return asset_records_by_key
 
