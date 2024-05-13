@@ -18,7 +18,7 @@ High-level a few changes:
   * Similarly the manifest schema format is just Pydantic. The platform owner can designed whatever they want on this front.
     * Note: because it is all backed by plain python objects it is well-supported to construct manifests programmatically for those who violently object to YAML, which I sympathize with.
 
-I have _not_ a madee sequence of examples where complexity builds but I did write an "advanced" example that demonstrates the core primitives and how flexible this is. We would build sugar and out-of-the-box solutions and sugar to craft a minimal hello world and default formats and scaffolding.
+I have _not_ wrtten sequence of examples where complexity builds from a hello world, but I did write an "advanced" example that demonstrates the core primitives and how flexible this is. We would build sugar and out-of-the-box solutions and sugar to craft a minimal hello world and default formats and scaffolding.
  
 I also invision this as a powerful layer for standardizing integrations. Consuming a dbt integration via a manifest was quite natural.  It would even be more natural to write it if a native "AssetGraphExecutable"-style abstraction existed for that integration. 
 
@@ -103,7 +103,7 @@ class BespokeELTExecutableManifest(BaseModel):
     assets: List[BespokeELTAssetManifest]
 ```
 
-An executable manifest must have a kind field (this is enforced via a protocol in the type system) to work with `ManifestBackedExecutableFactory` but the rest of this is user-defined. Once you have the pydnatic class written the yaml parser and typeahead just works.
+An executable manifest must have a kind field (this is enforced via a protocol in the type system) to work with `ManifestBackedExecutableFactory` but the rest of this is user-defined. Once you have the Pydantic class written the yaml parser and typeahead just works.
 
 ## Building a custom manifest-backed Executable
 
