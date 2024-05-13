@@ -36,7 +36,13 @@ The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies
 
 Now that your code is ready, you can run Dagster's UI to take a look at your dbt project.
 
-1. To start Dagster's UI, run the following:
+1. Change directories to the Dagster project directory:
+
+   ```shell
+   cd my-dagster-project/
+   ```
+
+2. To start Dagster's UI, run the following:
 
    ```shell
    dagster dev
@@ -48,7 +54,7 @@ Now that your code is ready, you can run Dagster's UI to take a look at your dbt
    Serving dagster-webserver on http://127.0.0.1:3000 in process 70635
    ```
 
-2. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the asset graph for the job created by the schedule definition:
+3. In your browser, navigate to <http://127.0.0.1:3000>. The page will display the asset graph for the job created by the schedule definition:
 
   <!--
   ![Asset graph for your job in Dagster's UI, containing dbt models loaded as Dagster assets](/images/integrations/dbt/quickstart/asset_graph.png)
