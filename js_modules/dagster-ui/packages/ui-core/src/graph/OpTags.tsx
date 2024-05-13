@@ -94,7 +94,14 @@ interface OpTagsProps {
   reversed?: boolean;
 }
 
-export const KNOWN_TAGS = {
+type KnownTag = {
+  color: string | null;
+  icon?: StaticImageData | string;
+  content: string;
+  reversed?: boolean;
+};
+
+export const KNOWN_TAGS: Record<string, KnownTag> = {
   jupyter: {
     color: '#929292',
     icon: jupyter,
@@ -412,6 +419,7 @@ export const KNOWN_TAGS = {
     color: '#24292E',
     icon: polars,
     content: 'Polars',
+    reversed: true,
   },
   catboost: {
     color: null,
@@ -577,6 +585,15 @@ export const AssetComputeKindTag = ({
   );
 };
 
+export const extractIconSrc = (knownTag: KnownTag | undefined) => {
+  // Storybook imports SVGs are string but nextjs imports them as object.
+  // This is a temporary work around until we can get storybook to import them the same way as nextjs
+  if (typeof knownTag?.icon !== 'undefined') {
+    return typeof knownTag.icon === 'string' ? (knownTag.icon as any) : knownTag.icon?.src;
+  }
+  return '';
+};
+
 export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTagsProps) => {
   return (
     <OpTagsContainer style={style}>
@@ -587,6 +604,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
         // This is useful when the icon requires mulltiple colors. like Airflow.
         const color = known?.color || null;
         const reversed = known && 'reversed' in known ? known.reversed : false;
+
         return (
           <Box
             key={tag.label}
@@ -602,7 +620,7 @@ export const OpTags = React.memo(({tags, style, reduceColor, reduceText}: OpTags
               <OpTagIconWrapper
                 role="img"
                 $size={16}
-                $img={known.icon.src}
+                $img={extractIconSrc(known)}
                 $color={reversed ? Colors.accentPrimary() : color}
                 $rotation={null}
                 aria-label={tag.label}
@@ -625,7 +643,7 @@ export const TagIcon = React.memo(({label}: {label: string}) => {
       <OpTagIconWrapper
         role="img"
         $size={16}
-        $img={known.icon.src}
+        $img={extractIconSrc(known)}
         $color={reversed ? Colors.accentPrimary() : color}
         $rotation={null}
         aria-label={label}

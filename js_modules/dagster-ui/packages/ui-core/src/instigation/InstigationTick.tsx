@@ -53,7 +53,7 @@ export const RunList = ({runIds}: {runIds: string[]}) => {
   );
 };
 
-export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
+export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
   if (!originRunIds || !originRunIds.length) {
     return null;
   }
@@ -61,12 +61,11 @@ export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
     <Group direction="column" spacing={16}>
       <Box padding={12} border={{side: 'bottom', color: Colors.textLighter()}}>
         <Body>
-          Failed Runs
-          <Tooltip content="Failed runs this tick reacted on and reported back to.">
+          Targeted Runs
+          <Tooltip content="Runs this tick reacted on and reported back to.">
             <Icon name="info" color={Colors.textLight()} />
           </Tooltip>
         </Body>
-
         <RunList runIds={originRunIds} />
       </Box>
       <Box padding={12} margin={{bottom: 8}}>

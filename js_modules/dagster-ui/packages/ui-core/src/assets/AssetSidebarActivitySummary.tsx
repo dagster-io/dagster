@@ -4,10 +4,6 @@ import {Link} from 'react-router-dom';
 
 import {AssetEventSystemTags} from './AssetEventSystemTags';
 import {AssetMaterializationGraphs} from './AssetMaterializationGraphs';
-import {
-  AutomaterializePolicyTag,
-  automaterializePolicyDescription,
-} from './AutomaterializePolicyTag';
 import {CurrentRunsBanner} from './CurrentRunsBanner';
 import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializationBanner';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
@@ -84,12 +80,6 @@ export const AssetSidebarActivitySummary = ({
             </Link>
             <Icon name="open_in_new" color={Colors.linkDefault()} />
           </Box>
-          <Box margin={{horizontal: 24}} flex={{gap: 12, alignItems: 'flex-start'}}>
-            <Body style={{flex: 1, marginBottom: 12}}>
-              {automaterializePolicyDescription(asset.autoMaterializePolicy)}
-            </Body>
-            <AutomaterializePolicyTag policy={asset.autoMaterializePolicy} />
-          </Box>
         </SidebarSection>
       )}
 
@@ -127,7 +117,7 @@ export const AssetSidebarActivitySummary = ({
             )}
           </SidebarSection>
           <SidebarSection
-            title={!isSourceAsset ? 'Materialization system tags' : 'Observation system tags'}
+            title={!isSourceAsset ? 'Materialization tags' : 'Observation tags'}
             collapsedByDefault
           >
             {displayedEvent ? (

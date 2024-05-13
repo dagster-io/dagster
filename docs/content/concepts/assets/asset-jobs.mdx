@@ -1,18 +1,18 @@
 ---
 title: Asset jobs | Dagster
-description: Asset jobs are the main unit for materializing and monitoring Software-defined assets in Dagster.
+description: Asset jobs are the main unit for materializing and monitoring asset definitions in Dagster.
 ---
 
 # Asset jobs
 
 <Note>
   Looking to execute a <a href="/concepts/ops-jobs-graphs/graphs">graph</a> of{" "}
-  <a href="/concepts/ops-jobs-graphs/ops">ops</a>, which aren't tied to
-  Software-defined Assets? Check out the{" "}
+  <a href="/concepts/ops-jobs-graphs/ops">ops</a>, which aren't tied to asset
+  definitions? Check out the{" "}
   <a href="/concepts/ops-jobs-graphs/op-jobs">Op jobs</a> documentation.
 </Note>
 
-[Jobs](/concepts/ops-jobs-graphs/jobs) are the main unit for executing and monitoring Software-defined assets in Dagster. An asset job is a type of \[job]\(/concepts/ops-jobs-graphs/jobs] that targets a selection of [Software-defined Assets](/concepts/assets/software-defined-assets) and can be launched:
+[Jobs](/concepts/ops-jobs-graphs/jobs) are the main unit for executing and monitoring [asset definitions](/concepts/assets/software-defined-assets) in Dagster. An asset job is a type of \[job]\(/concepts/ops-jobs-graphs/jobs] that targets a selection of assets and can be launched:
 
 - Manually from the Dagster UI
 - At fixed intervals, by [schedules](/concepts/partitions-schedules-sensors/schedules)

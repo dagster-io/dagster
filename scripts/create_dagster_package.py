@@ -1,4 +1,6 @@
+# pyright: reportUnnecessaryTypeIgnoreComment=false
 # ruff: noqa: T201
+
 import os
 
 import click
@@ -99,7 +101,7 @@ def _make_dagster_package(package_name: str):
         print(f"Writing {to_create}")
         template = jinja_env.get_template(f"{to_create}.tmpl")
         with open(variables["path"], "w") as f:
-            template.stream(**variables["kwargs"]).dump(f)
+            template.stream(**variables["kwargs"]).dump(f)  # type: ignore
 
         if variables["has_todos"]:
             has_todos.append(variables["path"])
@@ -124,7 +126,7 @@ def _make_dagster_package(package_name: str):
             hyphen_name=package_name,
             underscore_name=package_name_underscore,
             formal_name=formal_name,
-        ).dump(f)
+        ).dump(f)  # type: ignore
 
     has_todos.append(docs_path)
 

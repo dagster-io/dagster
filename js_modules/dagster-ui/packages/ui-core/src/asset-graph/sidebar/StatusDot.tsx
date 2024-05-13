@@ -1,9 +1,15 @@
 import {StatusCaseDot} from './util';
 import {useAssetBaseData} from '../../asset-data/AssetBaseDataProvider';
-import {StatusCase, buildAssetNodeStatusContent} from '../AssetNodeStatusContent';
-import {GraphNode} from '../Utils';
+import {AssetKeyInput} from '../../graphql/types';
+import {
+  StatusCase,
+  StatusContentArgs,
+  buildAssetNodeStatusContent,
+} from '../AssetNodeStatusContent';
 
-export function StatusDot({node}: {node: Pick<GraphNode, 'assetKey' | 'definition'>}) {
+export type StatusDotNode = {assetKey: AssetKeyInput; definition: StatusContentArgs['definition']};
+
+export function StatusDot({node}: {node: StatusDotNode}) {
   const {liveData} = useAssetBaseData(node.assetKey);
 
   if (!liveData) {

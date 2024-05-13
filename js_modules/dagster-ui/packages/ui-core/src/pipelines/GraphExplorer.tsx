@@ -10,7 +10,6 @@ import {
 } from '@dagster-io/ui-components';
 import qs from 'qs';
 import {useEffect, useMemo, useState} from 'react';
-import {Route} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LoadingNotice} from './GraphNotices';
@@ -19,6 +18,7 @@ import {SIDEBAR_ROOT_CONTAINER_FRAGMENT} from './SidebarContainerOverview';
 import {SidebarRoot} from './SidebarRoot';
 import {GraphExplorerFragment, GraphExplorerSolidHandleFragment} from './types/GraphExplorer.types';
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {Route} from '../app/Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {OP_GRAPH_OP_FRAGMENT, OpGraph} from '../graph/OpGraph';
 import {useOpLayout} from '../graph/asyncGraphLayout';

@@ -1,7 +1,14 @@
 import {ComponentProps} from 'react';
-import {NavLink} from 'react-router-dom';
+import {NavLink, matchPath} from 'react-router-dom';
 
 type MatcherFn = NonNullable<ComponentProps<typeof NavLink>['isActive']>;
+
+export const jobsPathMatcher: MatcherFn = (_, currentLocation) => {
+  const {pathname} = currentLocation;
+  return !!matchPath(pathname, {
+    path: ['/jobs', '/locations/:codeLocation/jobs/:jobName'],
+  });
+};
 
 export const assetsPathMatcher: MatcherFn = (_, currentLocation) => {
   const {pathname} = currentLocation;
@@ -17,7 +24,10 @@ export const settingsPathMatcher: MatcherFn = (_, currentLocation) => {
   const {pathname} = currentLocation;
   return (
     pathname.startsWith('/settings') ||
-    (pathname.startsWith('/locations') && !pathname.includes('/asset-groups/'))
+    (pathname.startsWith('/locations') &&
+      !pathname.includes('/asset-groups/') &&
+      !automationPathMatcher(_, currentLocation) &&
+      !jobsPathMatcher(_, currentLocation))
   );
 };
 
@@ -28,4 +38,15 @@ export const locationPathMatcher: MatcherFn = (_, currentLocation) => {
     pathname.startsWith('/health') ||
     pathname.startsWith('/config')
   );
+};
+
+export const automationPathMatcher: MatcherFn = (_, currentLocation) => {
+  const {pathname} = currentLocation;
+  return !!matchPath(pathname, {
+    path: [
+      '/automation',
+      '/locations/:codeLocation/sensors/:sensorName',
+      '/locations/:codeLocation/schedules/:scheduleName',
+    ],
+  });
 };

@@ -65,6 +65,7 @@ export * from './palettes/colorNameToVar';
 export * as Colors from './palettes/Color';
 
 // Global font styles, exported as styled-component components to render in
-// your app tree root. E.g. <GlobalInter />
+// your app tree root. E.g. <GlobalGeist />
 export * from './fonts/GlobalInter';
+export * from './fonts/GlobalGeist';
 export * from './fonts/GlobalGeistMono';

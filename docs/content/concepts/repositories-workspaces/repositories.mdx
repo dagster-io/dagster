@@ -13,11 +13,11 @@ description: A repository is a collection of jobs, schedules, and sensor definit
   info.
 </Note>
 
-A repository is a collection of software-defined assets, jobs, schedules, and sensors. Repositories are loaded as a unit by the Dagster CLI, Dagster webserver, and the Dagster daemon.
+A repository is a collection of asset definitions, jobs, schedules, and sensors. Repositories are loaded as a unit by the Dagster CLI, Dagster webserver, and the Dagster daemon.
 
 A convenient way to organize your job and other definitions, each repository:
 
-- Includes various definitions: [Software-defined assets](/concepts/assets/software-defined-assets), [Jobs](/concepts/ops-jobs-graphs/jobs), [Schedules](/concepts/partitions-schedules-sensors/schedules), and [Sensors](/concepts/partitions-schedules-sensors/sensors).
+- Includes various definitions: [Asset definitions](/concepts/assets/software-defined-assets), [Jobs](/concepts/ops-jobs-graphs/jobs), [Schedules](/concepts/partitions-schedules-sensors/schedules), and [Sensors](/concepts/partitions-schedules-sensors/sensors).
 - Is loaded in a different process than Dagster system processes like the webserver. Any communication between the Dagster system and repository code occurs over an RPC mechanism, ensuring that problems in repository code can't affect Dagster or other repositories.
 - Can be loaded in its own Python environment, so you can manage your dependencies (or even your own Python versions) separately.
 

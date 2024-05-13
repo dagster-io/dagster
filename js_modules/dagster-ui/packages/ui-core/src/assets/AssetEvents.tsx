@@ -22,7 +22,8 @@ import {FailedRunSinceMaterializationBanner} from './FailedRunSinceMaterializati
 import {AssetEventGroup, useGroupedEvents} from './groupByPartition';
 import {AssetKey, AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
-import {useRecentAssetEvents} from './useRecentAssetEvents';
+import {usePaginatedAssetEvents} from './usePaginatedAssetEvents';
+import {getXAxisForParams} from './useRecentAssetEvents';
 import {LiveDataForNode, stepKeyForAsset} from '../asset-graph/Utils';
 import {RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -51,15 +52,23 @@ export const AssetEvents = ({
   liveData,
   dataRefreshHint,
 }: Props) => {
-  const {xAxis, materializations, observations, loadedPartitionKeys, refetch, loading} =
-    useRecentAssetEvents(assetKey, params, {assetHasDefinedPartitions: false});
+  /**
+   * We have a separate "Asset > Partitions" tab, but that is only available for SDAs with
+   * pre-defined partitions. For non-SDAs, this Events page still displays a "Time | Partition"
+   * picker and this xAxis can still be `partitions`!
+   *
+   * The partitions behavior in this case isn't ideal because the UI only "sees" partition names
+   * in the events it has fetched. Users should upgrade to SDAs for a better experience.
+   *
+   * To test this easily, unload / break your code location so your SDA becomes a non-SDA :-)
+   */
+  const xAxis = getXAxisForParams(params, {defaultToPartitions: false});
+  const {materializations, observations, loadedPartitionKeys, fetchMore, fetchLatest, loading} =
+    usePaginatedAssetEvents(assetKey, params);
 
   React.useEffect(() => {
-    if (params.asOf) {
-      return;
-    }
-    refetch();
-  }, [params.asOf, dataRefreshHint, refetch]);
+    fetchLatest();
+  }, [params.asOf, dataRefreshHint, fetchLatest]);
 
   const [filters, setFilters] = useStateWithStorage<{types: EventType[]}>(
     'asset-event-filters',
@@ -182,7 +191,7 @@ export const AssetEvents = ({
               />
             </Box>
           )}
-          {loading ? (
+          {loading && grouped.length === 0 ? (
             <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{flex: 1}}>
               <Spinner purpose="section" />
             </Box>
@@ -193,6 +202,8 @@ export const AssetEvents = ({
               focused={focused}
               setFocused={onSetFocused}
               assetKey={assetKey}
+              loading={loading}
+              onLoadMore={fetchMore}
             />
           )}
         </Box>

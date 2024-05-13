@@ -265,13 +265,22 @@ def execute_sensor_iteration_loop(
             break
 
         yield SpanMarker.START_SPAN
-        yield from execute_sensor_iteration(
-            workspace_process_context,
-            logger,
-            threadpool_executor=threadpool_executor,
-            submit_threadpool_executor=submit_threadpool_executor,
-            sensor_tick_futures=sensor_tick_futures,
-        )
+
+        try:
+            yield from execute_sensor_iteration(
+                workspace_process_context,
+                logger,
+                threadpool_executor=threadpool_executor,
+                submit_threadpool_executor=submit_threadpool_executor,
+                sensor_tick_futures=sensor_tick_futures,
+            )
+        except Exception:
+            error_info = DaemonErrorCapture.on_exception(
+                exc_info=sys.exc_info(),
+                logger=logger,
+                log_message="SensorDaemon caught an error",
+            )
+            yield error_info
         # Yield to check for heartbeats in case there were no yields within
         # execute_sensor_iteration
         yield SpanMarker.END_SPAN

@@ -8,6 +8,7 @@ import {
   useExecutionSessionStorage,
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -18,8 +19,15 @@ export const LaunchpadSetupRoot = (props: {repoAddress: RepoAddress}) => {
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
+    loading,
   } = usePermissionsForLocation(repoAddress.location);
+
+  useBlockTraceUntilTrue('Permissions', loading);
+
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
+  if (loading) {
+    return null;
+  }
 
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;

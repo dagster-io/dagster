@@ -25,26 +25,24 @@ export const VirtualizedResourceTable = ({repoAddress, resources}: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <VirtualizedResourceHeader />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: ResourceEntryFragment = resources[index]!;
-              return (
-                <VirtualizedResourceRow
-                  key={key}
-                  repoAddress={repoAddress}
-                  height={size}
-                  start={start}
-                  {...row}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <VirtualizedResourceHeader />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: ResourceEntryFragment = resources[index]!;
+            return (
+              <VirtualizedResourceRow
+                key={key}
+                repoAddress={repoAddress}
+                height={size}
+                start={start}
+                {...row}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };

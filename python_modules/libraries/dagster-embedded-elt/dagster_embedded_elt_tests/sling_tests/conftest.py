@@ -55,6 +55,13 @@ def path_to_test_csv():
     return os.path.abspath(file_relative_path(__file__, "test.csv"))
 
 
+@pytest.fixture
+def path_to_dataworks_folder():
+    return os.path.abspath(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/dataworks/")
+    )
+
+
 def base_replication_config():
     with base_replication_config_path.open("r") as f:
         return yaml.safe_load(f)
@@ -83,4 +90,19 @@ def csv_to_sqlite_replication_config(path_to_test_csv):
         conf = yaml.safe_load(f)
 
     conf["streams"][f"file://{path_to_test_csv}"] = {"object": "main.tbl"}
+    return conf
+
+
+@pytest.fixture
+def csv_to_sqlite_dataworks_replication(path_to_dataworks_folder):
+    with open(
+        file_relative_path(__file__, "replication_configs/csv_to_sqlite_config/replication.yaml")
+    ) as f:
+        conf = yaml.safe_load(f)
+    conf_streams = {}
+    for file_name in os.listdir(path_to_dataworks_folder):
+        file_path = os.path.join(path_to_dataworks_folder, file_name)
+        table_name = file_name.split(".")[0].lower()
+        conf_streams[f"file://{file_path}"] = {"object": f"main.{table_name}"}
+    conf["streams"] = conf_streams
     return conf

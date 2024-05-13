@@ -9,7 +9,7 @@ A graph is a set of interconnected [ops](/concepts/ops-jobs-graphs/ops) or sub-g
 
 Graphs can be used in three different ways:
 
-- [**To back assets**](/concepts/assets/graph-backed-assets) - Basic software-defined assets are computed using a single op, but if computing one of your assets requires multiple discrete steps, you can compute it using a graph instead.
+- [**To back assets**](/concepts/assets/graph-backed-assets) - Basic assets are computed using a single op, but if computing one of your assets requires multiple discrete steps, you can compute it using a graph instead.
 - [**Directly inside a job**](/concepts/ops-jobs-graphs/op-jobs) - Each op job contains a graph.
 - [**Inside other graphs**](/concepts/ops-jobs-graphs/nesting-graphs) - You can build complex graphs out of simpler graphs.
 
@@ -401,9 +401,9 @@ def define_dep_dsl_graph() -> GraphDefinition:
 
 ### Inside assets
 
-Op graphs can be used to create [software-defined assets](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
+Op graphs can be used to create [asset definitions](/concepts/assets/software-defined-assets). Graph-backed assets are useful if you have an existing op graph that produces and consumes assets.
 
-Wrapping your graph inside a software-defined asset gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [graph-backed assets documentation](/concepts/assets/graph-backed-assets) for more info and examples.
+Wrapping your graph inside an asset definition gives you all the benefits of software-defined assets — like cross-job lineage — without requiring you to change the code inside your graph. Refer to the [graph-backed assets documentation](/concepts/assets/graph-backed-assets) for more info and examples.
 
 ### Directly inside op jobs
 

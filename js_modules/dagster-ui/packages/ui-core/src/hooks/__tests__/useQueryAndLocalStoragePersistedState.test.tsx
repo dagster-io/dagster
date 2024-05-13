@@ -62,7 +62,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             </MemoryRouter>
           );
         },
-      },
+      } as any,
     );
 
     let state, setter: any;
@@ -122,7 +122,7 @@ describe('useQueryAndLocalStoragePersistedState', () => {
             </MemoryRouter>
           );
         },
-      },
+      } as any,
     );
 
     const [state] = hookResult.result.current;

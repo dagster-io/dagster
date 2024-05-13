@@ -1,4 +1,4 @@
-import {Box, Colors, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
+import {Box, JoinedButtons, MiddleTruncate} from '@dagster-io/ui-components';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
@@ -15,7 +15,7 @@ import {
 } from './types/WorkspaceContext.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
-import {HeaderCell, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
 export type CodeLocationRowType =
   | {
@@ -120,22 +120,13 @@ export const VirtualizedCodeLocationRow = React.forwardRef(
 
 export const VirtualizedCodeLocationHeader = () => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Name</HeaderCell>
       <HeaderCell>Status</HeaderCell>
       <HeaderCell>Updated</HeaderCell>
       <HeaderCell>Definitions</HeaderCell>
       <HeaderCell style={{textAlign: 'right'}}>Actions</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

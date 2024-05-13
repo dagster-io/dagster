@@ -104,3 +104,7 @@ class DagsterDbtProjectNotFoundError(DagsterDbtError):
 
 class DagsterDbtManifestNotFoundError(DagsterDbtError):
     """Error when we expect manifest.json to generated already but it is absent."""
+
+
+class DagsterDbtProjectYmlFileNotFoundError(DagsterDbtError):
+    """Error when a dbt_project.yml file can not be found in the specified project directory."""

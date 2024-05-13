@@ -19,10 +19,12 @@ import dagster._check as check
 from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataValue,
 )
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
@@ -520,7 +522,7 @@ class ExternalJob(RepresentedJob):
         return self.get_mode_def_snap(DEFAULT_MODE_NAME).root_config_key
 
     @property
-    def tags(self) -> Mapping[str, object]:
+    def tags(self) -> Mapping[str, str]:
         return self._job_index.job_snapshot.tags
 
     @property
@@ -1011,6 +1013,10 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.job_name
 
     @property
+    def backfill_policy(self) -> Optional[BackfillPolicy]:
+        return self._external_partition_set_data.backfill_policy
+
+    @property
     def repository_handle(self) -> RepositoryHandle:
         return self._handle.repository_handle
 
@@ -1026,9 +1032,13 @@ class ExternalPartitionSet:
         # names
         return self._external_partition_set_data.external_partitions_data is not None
 
-    def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
-        check.invariant(self.has_partition_name_data())
-        partitions = (
+    def get_partitions_definition(self) -> PartitionsDefinition:
+        return (
             self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
         )
-        return partitions.get_partition_keys(dynamic_partitions_store=instance)
+
+    def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
+        check.invariant(self.has_partition_name_data())
+        return self.get_partitions_definition().get_partition_keys(
+            dynamic_partitions_store=instance
+        )

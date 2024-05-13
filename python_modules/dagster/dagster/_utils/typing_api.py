@@ -128,3 +128,21 @@ def is_typing_type(ttype):
         or ttype is typing.Dict
         or ttype is typing.List
     )
+
+
+def flatten_unions(ttype: typing.Type) -> typing.AbstractSet[typing.Type]:
+    """Accepts a type that may be a Union of other types, and returns those other types.
+    In addition to explicit Union annotations, works for Optional, which is represented as
+    Union[T, None] under the covers.
+
+    E.g. Optional[Union[str, Union[int, float]]] would result in (str, int, float, type(None))
+    """
+    return set(_flatten_unions_inner(ttype))
+
+
+def _flatten_unions_inner(ttype: typing.Type) -> typing.Iterable[typing.Type]:
+    if get_origin(ttype) is typing.Union:
+        for arg in get_args(ttype):
+            yield from flatten_unions(arg)
+    else:
+        yield ttype

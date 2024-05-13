@@ -5,8 +5,10 @@ from dagster import (
     AssetSpec,
     BackfillPolicy,
     PartitionsDefinition,
+    _check as check,
     multi_asset,
 )
+from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
@@ -26,10 +28,27 @@ def get_streams_from_replication(
         yield {"name": stream, "config": config}
 
 
+def streams_with_default_dagster_meta(
+    streams: Iterable[Mapping[str, Any]], replication_config: Mapping[str, Any]
+) -> Iterable[Mapping[str, Any]]:
+    """Ensures dagster meta configs in the `defaults` block of the replication_config are passed to
+    the assets definition object.
+    """
+    default_dagster_meta = replication_config.get("defaults", {}).get("meta", {}).get("dagster", {})
+    if not default_dagster_meta:
+        yield from streams
+    else:
+        for stream in streams:
+            name = stream["name"]
+            config = vars(stream["config"])
+            config["meta"] = deep_merge_dicts(default_dagster_meta, config["meta"])
+            yield {"name": name, "config": config}
+
+
 def sling_assets(
     *,
     replication_config: SlingReplicationParam,
-    dagster_sling_translator: DagsterSlingTranslator = DagsterSlingTranslator(),
+    dagster_sling_translator: Optional[DagsterSlingTranslator] = None,
     name: Optional[str] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     backfill_policy: Optional[BackfillPolicy] = None,
@@ -77,14 +96,25 @@ def sling_assets(
                 yield from sling.replicate(context=context)
     """
     replication_config = validate_replication(replication_config)
-    streams = get_streams_from_replication(replication_config)
+
+    raw_streams = get_streams_from_replication(replication_config)
+
+    streams = streams_with_default_dagster_meta(raw_streams, replication_config)
+
     code_version = non_secure_md5_hash_str(str(replication_config).encode())
+
+    dagster_sling_translator = (
+        check.opt_inst_param(
+            dagster_sling_translator, "dagster_sling_translator", DagsterSlingTranslator
+        )
+        or DagsterSlingTranslator()
+    )
 
     return multi_asset(
         name=name,
         compute_kind="sling",
         partitions_def=partitions_def,
-        can_subset=False,
+        can_subset=True,
         op_tags=op_tags,
         backfill_policy=backfill_policy,
         specs=[

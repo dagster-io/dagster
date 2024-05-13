@@ -1,9 +1,10 @@
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
 
 import {AutomationAutomaterializeRoot} from './AutomationAutomaterializeRoot';
 import {AutomationBackfillsRoot} from './AutomationBackfillsRoot';
 import {AutomationSchedulesRoot} from './AutomationSchedulesRoot';
 import {AutomationSensorsRoot} from './AutomationSensorsRoot';
+import {Route} from '../app/Route';
 import {BackfillPage} from '../instance/backfill/BackfillPage';
 
 export const AutomationRoot = () => {

@@ -1,9 +1,7 @@
-import hashlib
 from abc import ABC, abstractproperty
 from collections import defaultdict
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Dict,
     FrozenSet,
@@ -32,15 +30,13 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.security import non_secure_md5_hash_str
 
+from .declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationWithRunIds,
+    AssetConditionSnapshot,
+    AssetSubsetWithMetadata,
+)
 from .partition import PartitionsDefinition, SerializedPartitionsSubset
-
-if TYPE_CHECKING:
-    from .asset_condition.asset_condition import (
-        AssetConditionEvaluation,
-        AssetConditionEvaluationWithRunIds,
-        AssetConditionSnapshot,
-        AssetSubsetWithMetadata,
-    )
 
 
 @whitelist_for_serdes
@@ -149,7 +145,9 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
     objects into the new AssetConditionEvaluationWithRunIds objects.
     """
-    from .asset_condition.asset_condition import AssetConditionEvaluationWithRunIds
+    from .declarative_scheduling.serialized_objects import (
+        AssetConditionEvaluationWithRunIds,
+    )
 
     class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
         @property
@@ -214,7 +212,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .asset_condition.asset_condition import AssetConditionSnapshot, RuleCondition
+        from .declarative_scheduling.legacy.rule_condition import RuleCondition
+        from .declarative_scheduling.serialized_objects import AssetConditionSnapshot
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -234,9 +233,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
     ) -> "AssetConditionEvaluation":
-        from .asset_condition.asset_condition import (
-            AssetConditionEvaluation,
-            AssetSubsetWithMetadata,
+        from .declarative_scheduling.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
@@ -279,12 +276,12 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .asset_condition.asset_condition import (
-            AssetConditionEvaluation,
-            AssetConditionSnapshot,
-            HistoricalAllPartitionsSubsetSentinel,
+        from .declarative_scheduling.operators.boolean_operators import (
             NotAssetCondition,
             OrAssetCondition,
+        )
+        from .declarative_scheduling.serialized_objects import (
+            HistoricalAllPartitionsSubsetSentinel,
         )
 
         partition_subsets_by_condition_by_rule_snapshot = defaultdict(list)
@@ -314,7 +311,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
                 OrAssetCondition.__name__,
                 *[e.condition_snapshot.unique_id for e in child_evaluations],
             ]
-            unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+            unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
             decision_type_snapshot = AssetConditionSnapshot(
                 class_name=OrAssetCondition.__name__, description="Any of", unique_id=unique_id
             )
@@ -341,7 +338,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             NotAssetCondition.__name__,
             evaluation.condition_snapshot.unique_id,
         ]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
 
         if is_partitioned:
             # In reality, we'd like to invert the inner true_subset here, but this is an
@@ -372,10 +369,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .asset_condition.asset_condition import (
-            AndAssetCondition,
-            AssetConditionEvaluation,
-            AssetConditionSnapshot,
+        from .declarative_scheduling.operators.boolean_operators import AndAssetCondition
+        from .declarative_scheduling.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
@@ -432,7 +427,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             AndAssetCondition.__name__,
             *[e.condition_snapshot.unique_id for e in child_evaluations],
         ]
-        unique_id = hashlib.md5("".join(unique_id_parts).encode()).hexdigest()
+        unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
         condition_snapshot = AssetConditionSnapshot(
             class_name=AndAssetCondition.__name__, description="All of", unique_id=unique_id
         )
@@ -474,10 +469,8 @@ class BackcompatAutoMaterializeConditionSerializer(NamedTupleSerializer):
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> AutoMaterializeRuleEvaluation:
-        from .auto_materialize_rule import (
-            AutoMaterializeRule,
-            DiscardOnMaxMaterializationsExceededRule,
-        )
+        from .auto_materialize_rule import AutoMaterializeRule
+        from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
 
         if self.klass in (
             FreshnessAutoMaterializeCondition,

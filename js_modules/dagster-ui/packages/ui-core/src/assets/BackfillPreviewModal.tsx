@@ -17,8 +17,9 @@ import {
 } from './types/LaunchAssetExecutionButton.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {TargetPartitionsDisplay} from '../instance/backfill/TargetPartitionsDisplay';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {testId} from '../testing/testId';
-import {Container, HeaderCell, Inner, Row, RowCell} from '../ui/VirtualizedTable';
+import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../ui/VirtualizedTable';
 
 interface BackfillPreviewModalProps {
   isOpen: boolean;
@@ -50,13 +51,15 @@ export const BackfillPreviewModal = ({
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
 
-  const {data} = useQuery<BackfillPreviewQuery, BackfillPreviewQueryVariables>(
+  const queryResult = useQuery<BackfillPreviewQuery, BackfillPreviewQueryVariables>(
     BACKFILL_PREVIEW_QUERY,
     {
       variables: {partitionNames: keysFiltered, assetKeys},
       skip: !isOpen,
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'BackfillPreviewQuery', {skip: !isOpen});
+  const {data} = queryResult;
 
   const partitionsByAssetToken = useMemo(() => {
     return Object.fromEntries(
@@ -137,21 +140,12 @@ const RowGrid = styled(Box)`
 
 export const BackfillPreviewTableHeader = () => {
   return (
-    <Box
-      border="bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
-    >
+    <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
       <HeaderCell>Asset key</HeaderCell>
       <HeaderCell>Backfill policy</HeaderCell>
       <HeaderCell>Partition definition</HeaderCell>
       <HeaderCell>Partitions to launch</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

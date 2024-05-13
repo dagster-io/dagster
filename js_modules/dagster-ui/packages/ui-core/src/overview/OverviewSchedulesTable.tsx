@@ -82,9 +82,9 @@ export const OverviewScheduleTable = ({
 
   return (
     <>
-      <VirtualizedScheduleHeader checkbox={headerCheckbox} />
       <div style={{overflow: 'hidden'}}>
         <Container ref={parentRef}>
+          <VirtualizedScheduleHeader checkbox={headerCheckbox} />
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const row: RowType = flattened[index]!;

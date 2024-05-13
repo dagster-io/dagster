@@ -185,6 +185,7 @@ export const AssetNodeMinimal = ({
 }) => {
   const {isSource, assetKey} = definition;
   const {liveData} = useAssetLiveData(assetKey);
+
   const {border, background} = buildAssetNodeStatusContent({assetKey, definition, liveData});
   const displayName = assetKey.path[assetKey.path.length - 1]!;
 
@@ -218,8 +219,8 @@ export const AssetNodeMinimal = ({
               />
             ) : null}
             {isStale ? <MinimalNodeStaleDot assetKey={assetKey} liveData={liveData} /> : null}
-            <MinimalName style={{fontSize: 28}} $isSource={isSource}>
-              {withMiddleTruncation(displayName, {maxLength: 20})}
+            <MinimalName style={{fontSize: 24}} $isSource={isSource}>
+              {withMiddleTruncation(displayName, {maxLength: 18})}
             </MinimalName>
           </MinimalAssetNodeBox>
         </TooltipStyled>
@@ -362,19 +363,11 @@ const MinimalAssetNodeBox = styled.div<{
       ? `
       background-color: ${p.$background};
       &::after {
+        inset: 0;
         position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
         transform: translateX(-100%);
-        background-image: linear-gradient(90deg, ${Colors.replaceAlpha(
-          p.$background,
-          0,
-        )} 0, ${Colors.replaceAlpha(p.$background, 0)} 0%, ${Colors.replaceAlpha(
-          p.$background,
-          0.2,
-        )});
+        mask-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3));
+        background: ${p.$background};
         animation: shimmer 1.5s infinite;
         content: '';
       }
@@ -390,15 +383,23 @@ const MinimalAssetNodeBox = styled.div<{
   ${(p) =>
     p.$isQueued
       ? `
+      border: none;
+      &::after {
+        inset: 0;
+        position: absolute;
         animation: pulse 0.75s infinite alternate; 
-        @keyframes pulse {
-          0% {
-            border-color: ${Colors.replaceAlpha(p.$border, 0.2)};
-          }
-          100% {
-            border-color: ${Colors.replaceAlpha(p.$border, 1)};
-          }
+        border-radius: 16px;
+        border: 4px solid ${p.$border};
+        content: '';
+      }
+      @keyframes pulse {
+        0% {
+          opacity: 0.2;
         }
+        100% {
+          opacity: 1;
+        }
+      }
       `
       : ''}
   border-radius: 16px;

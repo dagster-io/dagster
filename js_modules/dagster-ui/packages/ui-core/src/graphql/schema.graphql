@@ -2195,6 +2195,8 @@ type DagsterLibraryVersion {
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
+union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
+
 input AssetKeyInput {
   path: [String!]!
 }
@@ -2676,6 +2678,20 @@ type JobMetadataEntry implements MetadataEntry {
   locationName: String!
 }
 
+type CodeReferencesMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  codeReferences: [SourceLocation!]!
+}
+
+union SourceLocation = LocalFileCodeReference
+
+type LocalFileCodeReference {
+  filePath: String!
+  lineNumber: Int!
+  label: String
+}
+
 type NullMetadataEntry implements MetadataEntry {
   label: String!
   description: String
@@ -2950,6 +2966,7 @@ type AssetSelection {
   assetSelectionString: String
   assetKeys: [AssetKey!]!
   assets: [Asset!]!
+  assetsOrError: AssetsOrError!
 }
 
 union SensorOrError = Sensor | SensorNotFoundError | UnauthorizedError | PythonError
@@ -3154,6 +3171,7 @@ type Query {
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   workspaceOrError: WorkspaceOrError!
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
+  workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(
     snapshotId: String

@@ -41,8 +41,6 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
-from dbt.version import __version__ as dbt_version
-from packaging import version
 
 from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 
@@ -591,6 +589,9 @@ def default_asset_check_fn(
     asset_key: AssetKey,
     test_unique_id: str,
 ) -> Optional[AssetCheckSpec]:
+    if not dagster_dbt_translator.settings.enable_asset_checks:
+        return None
+
     test_resource_props = dbt_nodes[test_unique_id]
     parent_unique_ids: Set[str] = set(manifest["parent_map"].get(test_unique_id, []))
 
@@ -600,11 +601,7 @@ def default_asset_check_fn(
         test_unique_id=test_unique_id,
     )
 
-    if not (
-        dagster_dbt_translator.settings.enable_asset_checks
-        and asset_check_key
-        and asset_check_key.asset_key == asset_key
-    ):
+    if not (asset_check_key and asset_check_key.asset_key == asset_key):
         return None
 
     additional_deps = {
@@ -642,6 +639,7 @@ def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
         [
             resource_type == "metric",
             resource_type == "semantic_model",
+            resource_type == "saved_query",
             resource_type == "model"
             and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
         ]
@@ -729,7 +727,7 @@ def get_asset_deps(
     group_names_by_key: Dict[AssetKey, str] = {}
     freshness_policies_by_key: Dict[AssetKey, FreshnessPolicy] = {}
     auto_materialize_policies_by_key: Dict[AssetKey, AutoMaterializePolicy] = {}
-    check_specs: List[AssetCheckSpec] = []
+    check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
     fqns_by_output_name: Dict[str, List[str]] = {}
     metadata_by_output_name: Dict[str, Dict[str, Any]] = {}
 
@@ -799,7 +797,7 @@ def get_asset_deps(
                     test_unique_id,
                 )
                 if check_spec:
-                    check_specs.append(check_spec)
+                    check_specs_by_key[check_spec.key] = check_spec
 
         for parent_unique_id in parent_unique_ids:
             parent_node_info = dbt_nodes[parent_unique_id]
@@ -814,7 +812,9 @@ def get_asset_deps(
 
     check_specs_by_output_name = cast(
         Dict[str, AssetCheckSpec],
-        _validate_and_assign_output_names_to_check_specs(check_specs, list(asset_outs.keys())),
+        _validate_and_assign_output_names_to_check_specs(
+            list(check_specs_by_key.values()), list(asset_outs.keys())
+        ),
     )
 
     return (
@@ -867,7 +867,7 @@ def get_asset_check_key_for_test(
     )
 
     # Attempt to find the attached node from the ref.
-    if attached_node_ref and version.parse(dbt_version) >= version.parse("1.6.0"):
+    if attached_node_ref:
         ref_name, ref_package, ref_version = (
             attached_node_ref["name"],
             attached_node_ref.get("package"),

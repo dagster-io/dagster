@@ -80,9 +80,9 @@ export class Description extends React.Component<IDescriptionProps, IDescription
           sel.removeAllRanges();
           sel.addRange(range);
         }}
+        $fontSize={this.props.fontSize || '0.8rem'}
         style={{
           maxHeight: expanded ? undefined : this.props.maxHeight || DEFAULT_MAX_HEIGHT,
-          fontSize: this.props.fontSize || '0.8rem',
         }}
       >
         {hasMore && (
@@ -101,11 +101,17 @@ export class Description extends React.Component<IDescriptionProps, IDescription
   }
 }
 
-const Container = styled.div`
+const Container = styled.div<{$fontSize: string | number}>`
   overflow: hidden;
   position: relative;
+  font-size: ${({$fontSize}) => (typeof $fontSize === 'number' ? `${$fontSize}px` : $fontSize)};
   p:last-child {
     margin-bottom: 0;
+  }
+
+  & code,
+  & pre {
+    font-size: ${({$fontSize}) => (typeof $fontSize === 'number' ? `${$fontSize}px` : $fontSize)};
   }
 `;
 

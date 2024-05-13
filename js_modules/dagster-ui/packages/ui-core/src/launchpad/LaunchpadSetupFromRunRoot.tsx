@@ -14,6 +14,7 @@ import {
 } from '../app/ExecutionSessionStorage';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -24,6 +25,7 @@ export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => 
   const {repoAddress} = props;
   const {
     permissions: {canLaunchPipelineExecution},
+    loading,
   } = usePermissionsForLocation(repoAddress.location);
   const {repoPath, pipelinePath, runId} = useParams<{
     repoPath: string;
@@ -31,6 +33,10 @@ export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => 
     runId: string;
   }>();
 
+  useBlockTraceUntilTrue('Permissions', loading);
+  if (loading) {
+    return null;
+  }
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }
@@ -67,7 +73,7 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
 
   const [_, onSave] = useExecutionSessionStorage(repoAddress, pipelineName);
 
-  const {data, loading} = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
+  const queryResult = useQuery<ConfigForRunQuery, ConfigForRunQueryVariables>(
     CONFIG_FOR_RUN_QUERY,
     {
       variables: {runId},
@@ -107,6 +113,8 @@ const LaunchpadSetupFromRunAllowedRoot = (props: Props) => {
       },
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'ConfigForRunQuery');
+  const {data, loading} = queryResult;
 
   const runOrError = data?.runOrError;
 

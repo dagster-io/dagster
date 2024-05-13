@@ -7,14 +7,14 @@ from dagster import (
 )
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_rule import (
-    AutoMaterializeRule,
-    DiscardOnMaxMaterializationsExceededRule,
-)
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
+)
+from dagster._core.definitions.auto_materialize_rule_impls import (
+    DiscardOnMaxMaterializationsExceededRule,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy

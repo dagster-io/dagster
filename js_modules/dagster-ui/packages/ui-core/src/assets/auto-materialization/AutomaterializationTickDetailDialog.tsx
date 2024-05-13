@@ -14,7 +14,8 @@ import {Timestamp} from '../../app/time/Timestamp';
 import {tokenForAssetKey} from '../../asset-graph/Utils';
 import {AssetKeyInput, InstigationTickStatus} from '../../graphql/types';
 import {TickDetailSummary} from '../../instigation/TickDetailsDialog';
-import {HeaderCell, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
+import {HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
 import {AssetLink} from '../AssetLink';
@@ -91,24 +92,11 @@ export const AutomaterializationTickDetailDialog = memo(
       }
       return (
         <div style={{overflow: 'scroll'}} ref={parentRef}>
-          <Box
-            border="top-and-bottom"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: TEMPLATE_COLUMNS,
-              height: '32px',
-              fontSize: '12px',
-              color: Colors.textLight(),
-              position: 'sticky',
-              top: 0,
-              zIndex: 1,
-              background: Colors.backgroundDefault(),
-            }}
-          >
+          <HeaderRow templateColumns={TEMPLATE_COLUMNS} sticky>
             <HeaderCell>Asset</HeaderCell>
             <HeaderCell>Group</HeaderCell>
             <HeaderCell>Result</HeaderCell>
-          </Box>
+          </HeaderRow>
           <Inner $totalHeight={totalHeight}>
             {items.map(({index, key, size, start}) => {
               const assetKey = filteredAssetKeys[index]!;
@@ -193,7 +181,7 @@ const AssetDetailRow = ({
   evaluationId: number;
 }) => {
   const numMaterializations = partitionKeys?.length || 1;
-  const {data} = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
+  const queryResult = useQuery<AssetGroupAndLocationQuery, AssetGroupAndLocationQueryVariables>(
     ASSET_GROUP_QUERY,
     {
       fetchPolicy: 'cache-and-network',
@@ -202,6 +190,9 @@ const AssetDetailRow = ({
       },
     },
   );
+  const {data} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'AssetGroupAndLocationQuery');
+
   const asset = data?.assetOrError.__typename === 'Asset' ? data.assetOrError : null;
   const definition = asset?.definition;
   const repoAddress = definition

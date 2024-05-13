@@ -165,11 +165,56 @@ query SensorQuery($sensorSelector: SensorSelector!) {
             }
           }
         }
+        assetsOrError {
+          ... on AssetConnection {
+            nodes {
+              key {
+                path
+              }
+            }
+          }
+          ... on PythonError {
+            message
+          }
+        }
       }
     }
   }
 }
 """
+
+
+GET_ASSET_SELECTION_ERROR_QUERY = """
+query SensorQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      name
+      assetSelection {
+        assetSelectionString
+        assetsOrError {
+          __typename
+          ... on AssetConnection {
+            nodes {
+              key {
+                path
+              }
+            }
+          }
+          ... on PythonError {
+            message
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 GET_SENSOR_STATUS_QUERY = """
 query SensorStateQuery($sensorSelector: SensorSelector!) {
@@ -1453,3 +1498,33 @@ def test_asset_selection(graphql_context):
             "definition": {"assetKey": {"path": ["fresh_diamond_bottom"]}},
         }
     ]
+    assert result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["nodes"] == [
+        {
+            "key": {"path": ["fresh_diamond_bottom"]},
+        }
+    ]
+
+
+def test_invalid_sensor_asset_selection(graphql_context):
+    sensor_name = "invalid_asset_selection_error"
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_ASSET_SELECTION_ERROR_QUERY,
+        variables={"sensorSelector": sensor_selector},
+    )
+
+    assert result.data
+    assert result.data["sensorOrError"]["__typename"] == "Sensor"
+    assert (
+        result.data["sensorOrError"]["assetSelection"]["assetSelectionString"] == "does_not_exist"
+    )
+    assert (
+        result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["__typename"]
+        == "PythonError"
+    )
+    assert (
+        "no AssetsDefinition objects supply these keys"
+        in result.data["sensorOrError"]["assetSelection"]["assetsOrError"]["message"]
+    )

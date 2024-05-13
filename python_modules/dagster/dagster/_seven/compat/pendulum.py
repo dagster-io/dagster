@@ -45,7 +45,12 @@ def mock_pendulum_timezone(override_timezone):
 
 def create_pendulum_time(year, month, day, *args, **kwargs):
     if "tz" in kwargs and "dst_rule" in kwargs and _IS_PENDULUM_1:
-        tz = pendulum.timezone(kwargs.pop("tz"))
+        tz_name_or_info = kwargs.pop("tz")
+        tz = (
+            pendulum.timezone(tz_name_or_info)
+            if isinstance(tz_name_or_info, str)
+            else tz_name_or_info
+        )
         dst_rule = kwargs.pop("dst_rule")
 
         return pendulum.instance(

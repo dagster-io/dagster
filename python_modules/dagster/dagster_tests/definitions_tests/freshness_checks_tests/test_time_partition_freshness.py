@@ -10,6 +10,12 @@ from dagster import (
     asset,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
+    build_time_partition_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.utils import (
+    unique_id_from_asset_keys,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_out import AssetOut
@@ -17,10 +23,10 @@ from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSel
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_checks.time_partition import (
-    build_time_partition_freshness_checks,
+from dagster._core.definitions.metadata import (
+    JsonMetadataValue,
+    TimestampMetadataValue,
 )
-from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import (
@@ -48,15 +54,17 @@ def test_params() -> None:
 
     check = build_time_partition_freshness_checks(
         assets=[my_partitioned_asset], deadline_cron="0 0 * * *"
-    )
+    )[0]
 
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
     assert next(iter(check.check_specs)).metadata == {
-        "dagster/freshness_params": {
-            "deadline_cron": "0 0 * * *",
-            "timezone": "UTC",
-        }
+        "dagster/freshness_params": JsonMetadataValue(
+            {
+                "deadline_cron": "0 0 * * *",
+                "timezone": "UTC",
+            }
+        )
     }
     assert (
         check.node_def.name
@@ -73,20 +81,20 @@ def test_params() -> None:
 
     other_check = build_time_partition_freshness_checks(
         assets=[other_partitioned_asset], deadline_cron="0 0 * * *", timezone="UTC"
-    )
+    )[0]
     assert isinstance(other_check, AssetChecksDefinition)
     assert not check.node_def.name == other_check.node_def.name
 
     check = build_time_partition_freshness_checks(
         assets=[my_partitioned_asset.key], deadline_cron="0 0 * * *", timezone="UTC"
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_partitioned_asset.key
 
     src_asset = SourceAsset("source_asset")
     check = build_time_partition_freshness_checks(
         assets=[src_asset], deadline_cron="0 0 * * *", timezone="UTC"
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {src_asset.key}
 
@@ -94,7 +102,7 @@ def test_params() -> None:
         assets=[my_partitioned_asset, src_asset],
         deadline_cron="0 0 * * *",
         timezone="UTC",
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {
         my_partitioned_asset.key,
@@ -123,11 +131,11 @@ def test_params() -> None:
 
     check = build_time_partition_freshness_checks(
         assets=[my_multi_asset], deadline_cron="0 0 * * *", timezone="UTC"
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == set(my_multi_asset.keys)
 
-    with pytest.raises(Exception, match="deadline_cron must be a valid cron string."):
+    with pytest.raises(Exception, match="Invalid cron string."):
         build_time_partition_freshness_checks(
             assets=[my_multi_asset], deadline_cron="0 0 * * * *", timezone="UTC"
         )
@@ -149,7 +157,7 @@ def test_params() -> None:
     coercible_key = "blah"
     check = build_time_partition_freshness_checks(
         assets=[coercible_key], deadline_cron="0 0 * * *", timezone="UTC"
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {
         AssetKey.from_coercible(coercible_key)
@@ -165,7 +173,7 @@ def test_params() -> None:
     regular_asset_key = AssetKey("regular_asset_key")
     check = build_time_partition_freshness_checks(
         assets=[regular_asset_key], deadline_cron="0 0 * * *", timezone="UTC"
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == regular_asset_key
 
@@ -187,11 +195,11 @@ def test_params() -> None:
     check_multiple_assets = build_time_partition_freshness_checks(
         assets=[my_partitioned_asset, my_other_partitioned_asset],
         deadline_cron="0 9 * * *",
-    )
+    )[0]
     check_multiple_assets_switched_order = build_time_partition_freshness_checks(
         assets=[my_partitioned_asset, my_other_partitioned_asset],
         deadline_cron="0 9 * * *",
-    )
+    )[0]
     assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
     unique_id = unique_id_from_asset_keys(
         [my_partitioned_asset.key, my_other_partitioned_asset.key]
@@ -222,7 +230,7 @@ def test_result_cron_param(
         assets=[my_asset],
         deadline_cron="0 9 * * *",  # 09:00 UTC
         timezone="UTC",
-    )
+    )[0]
 
     freeze_datetime = start_time
     with pendulum_freeze_time(freeze_datetime):
@@ -234,7 +242,18 @@ def test_result_cron_param(
             AssetCheckSeverity.WARN,
             False,
             # We expected the asset to arrive between the end of the partition window (2021-01-02) and the current time (2021-01-03).
-            description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 1 day, 1 hour.",
+            description_match="The asset has never been observed/materialized.",
+            metadata_match={
+                "dagster/freshness_params": JsonMetadataValue(
+                    {
+                        "timezone": "UTC",
+                        "deadline_cron": "0 9 * * *",
+                    }
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                    pendulum.datetime(2021, 1, 2, 9, 0, 0, tz="UTC").timestamp()
+                ),
+            },
         )
 
         # Add an event for an old partition. Still fails
@@ -245,7 +264,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-01 is overdue. Expected the partition to arrive within the last 1 day, 1 hour.",
+            description_match="Asset is overdue",
         )
 
         # Go back in time and add an event for the most recent completed partition previous the
@@ -260,7 +279,18 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
+            description_match="Asset is currently fresh",
+            metadata_match={
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    pendulum.datetime(2021, 1, 3, 9, 0, 0, tz="UTC").timestamp()
+                ),
+                "dagster/freshness_params": JsonMetadataValue(
+                    {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
+                    pendulum.datetime(2021, 1, 2, 9, 0, 0, tz="UTC").timestamp()
+                ),
+            },
         )
 
     # Advance a full day. By now, we would expect a new event to have been added.
@@ -273,7 +303,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 1 day, 1 hour, 1 second.",
+            description_match="Asset is overdue.",
         )
 
         # Add a partition for the most recently completed day, but before the cron has completed on
@@ -285,7 +315,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 1 day, 1 hour, 1 second.",
+            description_match="Asset is overdue.",
         )
 
         # Again, go back in time, and add an event for the most recently completed time window
@@ -300,7 +330,7 @@ def test_result_cron_param(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 2 seconds, and it arrived 1 second ago.",
+            description_match="Asset is currently fresh",
         )
 
 
@@ -316,9 +346,9 @@ def test_invalid_runtime_assets(
 
     check = build_time_partition_freshness_checks(
         assets=[non_partitioned_asset], deadline_cron="0 9 * * *", timezone="UTC"
-    )
+    )[0]
 
-    with pytest.raises(CheckError, match="Asset is not time-window partitioned."):
+    with pytest.raises(CheckError, match="not a TimeWindowPartitionsDefinition"):
         assert_check_result(
             non_partitioned_asset,
             instance,
@@ -333,9 +363,9 @@ def test_invalid_runtime_assets(
 
     check = build_time_partition_freshness_checks(
         assets=[static_partitioned_asset], deadline_cron="0 9 * * *", timezone="UTC"
-    )
+    )[0]
 
-    with pytest.raises(CheckError, match="Asset is not time-window partitioned."):
+    with pytest.raises(CheckError, match="not a TimeWindowPartitionsDefinition"):
         assert_check_result(
             static_partitioned_asset,
             instance,
@@ -361,7 +391,7 @@ def test_observations(
         assets=[my_asset],
         deadline_cron="0 9 * * *",
         timezone="UTC",  # 09:00 UTC
-    )
+    )[0]
 
     with pendulum_freeze_time(pendulum.datetime(2021, 1, 3, 1, 0, 0, tz="UTC")):
         add_new_event(instance, my_asset.key, "2021-01-01", is_materialization=False)
@@ -372,7 +402,7 @@ def test_observations(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
+            description_match="Asset is currently fresh",
         )
 
 
@@ -403,7 +433,7 @@ def test_differing_timezones(
         assets=[my_chicago_asset],
         deadline_cron="0 9 * * *",
         timezone="America/Los_Angeles",  # 09:00 Los Angeles time
-    )
+    )[0]
 
     # Start in a neutral hour in all timezones, such that the cron is on the same tick for all, and add a new event. expect the check to pass.
     # Current time is 2021-01-03 at 01:00:00 in America/Chicago, 2021-01-03 at 02:00:00 in America/New_York, and 2021-01-03 at 00:00:00 in America/Los_Angeles
@@ -418,7 +448,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 1 hour, 1 second, and it arrived 1 second ago.",
+            description_match="Asset is currently fresh",
         )
 
     # Move forward enough that only the process timezone would have ticked. The check should still pass.
@@ -431,7 +461,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 8 hours, 1 second, and it arrived 7 hours, 1 second ago.",
+            description_match="Asset is currently fresh",
         )
 
     # Then, move forward only enough that in the timezone of the partition, and the process timezone, the cron would have ticked, but not in the timezone of the cron. The check should still therefore pass.
@@ -444,7 +474,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-01 is fresh. Expected the partition to arrive within the last 1 day, 9 hours, 1 second, and it arrived 8 hours, 1 second ago.",
+            description_match="Asset is currently fresh",
         )
 
     # Finally, move forward enough that the cron has ticked in all timezones, and the new partition isn't present. The check should now fail.
@@ -457,7 +487,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 11 hours, 1 second.",
+            description_match="Asset is overdue.",
         )
 
         add_new_event(instance, my_chicago_asset.key, "2021-01-02")
@@ -468,7 +498,7 @@ def test_differing_timezones(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 11 hours, 2 seconds, and it arrived 1 second ago",
+            description_match="Asset is currently fresh",
         )
 
 
@@ -498,7 +528,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
         assets=[my_asset, my_other_asset],
         deadline_cron="0 9 * * *",
         timezone="UTC",  # 09:00 UTC
-    )
+    )[0]
     single_check_job = define_asset_job(
         "the_job", selection=AssetChecksForAssetKeysSelection(selected_asset_keys=[my_asset.key])
     )
@@ -551,10 +581,11 @@ def test_observation_descriptions(
     check = build_time_partition_freshness_checks(
         assets=[my_asset],
         deadline_cron="0 9 * * *",
-    )
+    )[0]
     # First, create an event that is outside of the allowed time window.
     with pendulum_freeze_time(pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")):
         add_new_event(instance, my_asset.key, is_materialization=False, partition_key="2021-01-01")
+    # Asset is in an unknown state since we haven't had any observation events during this time window.
     with pendulum_freeze_time(start_time):
         assert_check_result(
             my_asset,
@@ -562,7 +593,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 9 hours, 1 second.",
+            description_match="Asset is overdue.",
         )
 
         add_new_event(
@@ -578,7 +609,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Partition 2021-01-02 is overdue. Expected the partition to arrive within the last 9 hours, 1 second.",
+            description_match="Asset is overdue.",
         )
 
         # Create an observation event within the allotted time window, with an up to date last update time. Description should change.
@@ -595,5 +626,5 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Partition 2021-01-02 is fresh. Expected the partition to arrive within the last 9 hours, 1 second, and it arrived 1 minute ago.",
+            description_match="Asset is currently fresh",
         )

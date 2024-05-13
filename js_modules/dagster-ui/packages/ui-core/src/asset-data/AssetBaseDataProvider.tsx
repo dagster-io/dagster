@@ -9,6 +9,7 @@ import {buildLiveDataForNode, tokenForAssetKey, tokenToAssetKey} from '../asset-
 import {AssetKeyInput} from '../graphql/types';
 import {liveDataFactory} from '../live-data-provider/Factory';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 
 function init() {
   return liveDataFactory(
@@ -40,17 +41,24 @@ function init() {
 export const AssetBaseData = init();
 
 export function useAssetBaseData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
-  return AssetBaseData.useLiveDataSingle(tokenForAssetKey(assetKey), thread);
+  const result = AssetBaseData.useLiveDataSingle(tokenForAssetKey(assetKey), thread);
+  useBlockTraceUntilTrue('useAssetStaleData', !!result.liveData);
+  return result;
 }
 
 export function useAssetsBaseData(
   assetKeys: AssetKeyInput[],
   thread: LiveDataThreadID = 'default',
 ) {
-  return AssetBaseData.useLiveData(
+  const result = AssetBaseData.useLiveData(
     React.useMemo(() => assetKeys.map((key) => tokenForAssetKey(key)), [assetKeys]),
     thread,
   );
+  useBlockTraceUntilTrue(
+    'useAssetsBaseData',
+    !!(Object.keys(result.liveDataByNode).length === assetKeys.length),
+  );
+  return result;
 }
 
 export function AssetBaseDataRefreshButton() {

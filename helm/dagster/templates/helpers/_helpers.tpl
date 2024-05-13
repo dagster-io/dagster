@@ -43,7 +43,7 @@ If release name contains chart name it will be used as a full name.
 {{- define "dagster.webserver.dagsterWebserverCommand" -}}
 {{- $_ := include "dagster.backcompat" . | mustFromJson -}}
 {{- $userDeployments := index .Values "dagster-user-deployments" }}
-dagster-webserver -h 0.0.0.0 -p {{ $_.Values.dagsterWebserver.service.port }}
+{{- printf "dagster-webserver -h 0.0.0.0 -p"}} {{ $_.Values.dagsterWebserver.service.port }}
 {{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
 {{- with $_.Values.dagsterWebserver.dbStatementTimeout }} --db-statement-timeout {{ . }} {{- end -}}
 {{- with $_.Values.dagsterWebserver.dbPoolRecycle }} --db-pool-recycle {{ . }} {{- end -}}

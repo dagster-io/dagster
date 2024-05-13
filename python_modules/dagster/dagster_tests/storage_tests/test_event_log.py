@@ -159,6 +159,10 @@ class TestLegacyStorage(TestEventLogStorage):
     def is_sqlite(self, storage):
         return True
 
+    @pytest.mark.parametrize("dagster_event_type", ["dummy"])
+    def test_get_latest_tags_by_partition(self, storage, instance, dagster_event_type):
+        pytest.skip("skip this since legacy storage is harder to mock.patch")
+
 
 def _insert_slots(conn: Connection, concurrency_key: str, num: int, delete_num: int = 0):
     rows = [

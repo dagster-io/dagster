@@ -4,25 +4,26 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optiona
 import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
+from dagster._core.definitions.asset_job import (
+    build_asset_job,
+    get_asset_graph_for_job,
+)
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 
 from .config import ConfigMapping
 from .metadata import RawMetadataValue
+from .partition import PartitionedConfig
 from .policy import RetryPolicy
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import (
-        AssetSelection,
-        ExecutorDefinition,
-        HookDefinition,
-        JobDefinition,
-        PartitionedConfig,
-        PartitionsDefinition,
-        ResourceDefinition,
-    )
+    from dagster._core.definitions import JobDefinition
     from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
     from dagster._core.definitions.run_config import RunConfig
@@ -33,7 +34,7 @@ class UnresolvedAssetJobDefinition(
         "_UnresolvedAssetJobDefinition",
         [
             ("name", str),
-            ("selection", "AssetSelection"),
+            ("selection", AssetSelection),
             (
                 "config",
                 Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig"]],
@@ -41,9 +42,9 @@ class UnresolvedAssetJobDefinition(
             ("description", Optional[str]),
             ("tags", Optional[Mapping[str, Any]]),
             ("metadata", Optional[Mapping[str, RawMetadataValue]]),
-            ("partitions_def", Optional["PartitionsDefinition"]),
-            ("executor_def", Optional["ExecutorDefinition"]),
-            ("hooks", Optional[AbstractSet["HookDefinition"]]),
+            ("partitions_def", Optional[PartitionsDefinition]),
+            ("executor_def", Optional[ExecutorDefinition]),
+            ("hooks", Optional[AbstractSet[HookDefinition]]),
             ("op_retry_policy", Optional["RetryPolicy"]),
         ],
     )
@@ -51,24 +52,19 @@ class UnresolvedAssetJobDefinition(
     def __new__(
         cls,
         name: str,
-        selection: "AssetSelection",
+        selection: AssetSelection,
         config: Optional[
             Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]
         ] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-        partitions_def: Optional["PartitionsDefinition"] = None,
-        executor_def: Optional["ExecutorDefinition"] = None,
-        hooks: Optional[AbstractSet["HookDefinition"]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+        hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional["RetryPolicy"] = None,
     ):
-        from dagster._core.definitions import (
-            AssetSelection,
-            ExecutorDefinition,
-            HookDefinition,
-            PartitionsDefinition,
-        )
+        from dagster._core.definitions import ExecutorDefinition
         from dagster._core.definitions.run_config import convert_config_input
 
         return super(UnresolvedAssetJobDefinition, cls).__new__(
@@ -176,8 +172,8 @@ class UnresolvedAssetJobDefinition(
     def resolve(
         self,
         asset_graph: "AssetGraph",
-        default_executor_def: Optional["ExecutorDefinition"] = None,
-        resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
+        default_executor_def: Optional[ExecutorDefinition] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
         try:
@@ -186,6 +182,31 @@ class UnresolvedAssetJobDefinition(
             raise DagsterInvalidDefinitionError(
                 f'Error resolving selection for asset job "{self.name}": {e}'
             ) from e
+
+        # Require that all assets in the job have the same backfill policy
+        executable_nodes = {job_asset_graph.get(k) for k in job_asset_graph.executable_asset_keys}
+        backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
+        if len(backfill_policies) > 1:
+            raise DagsterInvalidDefinitionError(
+                f"Asset job {self.name} materializes assets with varying BackfillPolicies. All assets"
+                " in a job must share the same BackfillPolicy."
+            )
+
+        # Error if a PartitionedConfig is defined and any target asset has a backfill policy that
+        # materializes anything other than a single partition per run. This is because
+        # PartitionedConfig is a function that maps single partition keys to run config, so it's
+        # behavior is undefined for multiple-partition runs.
+        backfill_policy = next(iter(backfill_policies), None)
+        if (
+            backfill_policy
+            and backfill_policy.max_partitions_per_run != 1
+            and isinstance(self.config, PartitionedConfig)
+        ):
+            raise DagsterInvalidDefinitionError(
+                f"Asset job {self.name} materializes an asset with a BackfillPolicy targeting multiple partitions per run,"
+                "but a PartitionedConfig was provided. PartitionedConfigs are not supported for "
+                "jobs with multi-partition-per-run backfill policies."
+            )
 
         return build_asset_job(
             self.name,
@@ -211,9 +232,9 @@ def define_asset_job(
     description: Optional[str] = None,
     tags: Optional[Mapping[str, Any]] = None,
     metadata: Optional[Mapping[str, RawMetadataValue]] = None,
-    partitions_def: Optional["PartitionsDefinition"] = None,
-    executor_def: Optional["ExecutorDefinition"] = None,
-    hooks: Optional[AbstractSet["HookDefinition"]] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
+    executor_def: Optional[ExecutorDefinition] = None,
+    hooks: Optional[AbstractSet[HookDefinition]] = None,
     op_retry_policy: Optional["RetryPolicy"] = None,
 ) -> UnresolvedAssetJobDefinition:
     """Creates a definition of a job which will either materialize a selection of assets or observe

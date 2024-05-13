@@ -20,10 +20,6 @@ from dagster import (
     RunRequest,
     RunsFilter,
 )
-from dagster._core.definitions.asset_condition.asset_condition import (
-    AssetConditionEvaluation,
-    AssetSubsetWithMetadata,
-)
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
 )
@@ -37,6 +33,10 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetSubsetWithMetadata,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,

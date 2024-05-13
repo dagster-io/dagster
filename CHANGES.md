@@ -1,5 +1,110 @@
 # Changelog
 
+# 1.7.5 (core) / 0.23.5 (libraries)
+
+### New
+
+- The Asset > Checks tab now allows you to view plots of numeric metadata emitted by your checks.
+- The Asset > Events tab now supports infinite-scrolling, making it possible to view all historical materialization and observation events.
+- When constructing a `MaterializeResult`, `ObserveResult`, or `Output`, you can now include tags that will be attached to the corresponding `AssetMaterialization` or `AssetObservation` event. These tags will be rendered on these events in the UI.
+
+### Bugfixes
+
+- Fixed an issue where backfills would sometimes fail if a partition definition was changed in the middle of the backfill.
+- Fixed an issue where if the code server became unavailable during the first tick of a backfill, the backfill would stall and be unable to submit runs once the code server became available.
+- Fixed an issue where the status of an external asset would not get updated correctly.
+- Fixed an issue where run status sensors would sometimes fall behind in deployments with large numbers of runs.
+- The descriptions and metadata on the experimental `build_last_update_freshness_checks` and `build_time_partition_freshness_checks` APIs have been updated to be clearer.
+- The headers of tables no longer become misaligned when a scrollbar is present in some scenarios.
+- The sensor type, instigation type, and backfill status filters on their respective pages are now saved to the URL, so sharing the view or reloading the page preserve your filters.
+- Typing a `%` into the asset graph’s query selector no longer crashes the UI.
+- “Materializing” states on the asset graph animate properly in both light and dark themes.
+- Thanks to [@lautaro79](https://github.com/lautaro79) for fixing a helm chart issue.
+
+### Breaking Changes
+
+- Subclasses of `MetadataValue` have been changed from `NamedTuple`s to Pydantic models. `NamedTuple` functionality on these classes was not part of Dagster’s stable public API, but usages relying on their tuple-ness may break. For example: calling `json.dumps` on collections that include them.
+
+### Deprecations
+
+- [dagster-dbt] Support for `dbt-core==1.5.*` has been removed, as it has reached [end of life in April 2024](https://docs.getdbt.com/docs/dbt-versions/core).
+
+### Dagster Plus
+
+- Fixed an issue in the `dagster-cloud` CLI where the `--deployment` argument was ignored when the `DAGSTER_CLOUD_URL` environment variable was set.
+- Fixed an issue where `dagster-cloud-cli` package wouldn’t work unless the `dagster-cloud` package was installed as well.
+- A new “budget alerts” feature has launched for users on self-serve plans. This feature will alert you when you hit your credit limit.
+- The experimental asset health overview now allows you to group assets by compute kind, tag, and tag value.
+- The concurrency and locations pages in settings correctly show Dagster Plus-specific options when experimental navigation is enabled.
+
+# 1.7.4 (core) / 0.23.4 (libraries)
+
+### New
+
+- `TimeWindowPartitionMapping` now supports the `start_offset` and `end_offset` parameters even when the upstream `PartitionsDefinition` is different than the downstream `PartitionsDefinition`. The offset is expressed in units of downstream partitions, so `TimeWindowPartitionMapping(start_offset=-1)` between an hourly upstream and a daily downstream would map each downstream partition to 48 upstream partitions – those for the same and preceding day.
+
+### Bugfixes
+
+- Fixed an issue where certain exceptions in the Dagster daemon would immediately retry instead of waiting for a fixed interval before retrying.
+- Fixed a bug with asset checks in complex asset graphs that include cycles in the underlying nodes.
+- Fixed an issue that would cause unnecessary failures on FIPS-enabled systems due to the use of md5 hashes in non-security-related contexts (thanks [@jlloyd-widen](https://github.com/jlloyd-widen)!)
+- Removed `path` metadata from `UPathIOManager` inputs. This eliminates the creation of `ASSET_OBSERVATION` events for every input on every step for the default I/O manager.
+- Added support for defining `owners` on `@graph_asset`.
+- Fixed an issue where having multiple partitions definitions in a location with the same start date but differing end dates could lead to “`DagsterInvalidSubsetError` when trying to launch runs.
+
+### Documentation
+
+- Fixed a few issues with broken pages as a result of the Dagster+ rename.
+- Renamed a few instances of Dagster Cloud to Dagster+.
+- Added a note about external asset + alert incompatibility to the Dagster+ alerting docs.
+- Fixed references to outdated apis in freshness checks docs.
+
+### Dagster Plus
+
+- When creating a Branch Deployment via GraphQL or the `dagster-cloud branch-deployment` CLI, you can now specify the base deployment. The base deployment will be used for comparing assets for Change Tracking. For example, to set the base deployment to a deployment named `staging`: `dagster-cloud branch-deployment create-or-update --base-deployment-name staging ...`. Note that once a Branch Deployment is created, the base deployment cannot be changed.
+- Fixed an issue where agents serving many branch deployments simultaneously would sometimes raise a `413: Request Entity Too Large` error when uploading a heartbeat to the Dagster Plus servers.
+
+# 1.7.3 (core) / 0.23.3 (libraries)
+
+### New
+
+- `@graph_asset` now accepts a `tags` argument
+- [ui] For users whose light/dark mode theme setting is set to match their system setting, the theme will update automatically when the system changes modes (e.g. based on time of day), with no page reload required.
+- [ui] We have introduced the typefaces Geist and Geist Mono as our new default fonts throughout the Dagster app, with the goal of improving legibility, consistency, and maintainability.
+- [ui] [experimental] We have begun experimenting with a [new navigation structure](https://github.com/dagster-io/dagster/discussions/21370) for the Dagster UI. The change can be enabled via User Settings.
+- [ui] [experimental] Made performance improvements to the Concurrency settings page.
+- [dagster-azure] [community-contribution] ADLS2 IOManager supports custom timeout. Thanks @tomas-gajarsky!
+- [dagster-fivetran] [community-contribution] It’s now possible to specify destination ids in `load_asset_defs_from_fivetran_instance`. Thanks @lamalex!
+
+### Bugfixes
+
+- Fixed an issue where pressing the “Reset sensor status” button in the UI would also reset the sensor’s cursor.
+- Fixed a bug that caused input loading time not to be included in the reported step duration.
+- Pydantic warnings are no longer raised when importing Dagster with Pydantic 2.0+.
+- Fixed an issue which would cause incorrect behavior when auto-materializing partitioned assets based on updates to a parent asset in a different code location.
+- Fixed an issue which would cause every tick of the auto-materialize sensor to produce an evaluation for each asset, even if nothing had changed from the previous tick.
+- [dagster-dbt] Fixed a bug that could raise `Duplicate check specs` errors with singular tests ingested as asset checks.
+- [embedded-elt] resolved an issue where subset of resources were not recognized when using `source.with_resources(...)`
+- [ui] Fixed an issue where a sensor that targeted an invalid set of asset keys could cause the asset catalog to fail to load.
+- [ui] Fixed an issue in which runs in the Timeline that should have been considered overlapping were not correctly grouped together, leading to visual bugs.
+- [ui] On the asset overview page, job tags no longer render poorly when an asset appears in several jobs.
+- [ui] On the asset overview page, hovering over the timestamp tags in the metadata table explains where each entry originated.
+- [ui] Right clicking the background of the asset graph now consistently shows a context menu, and the lineage view supports vertical as well as horizontal layout.
+
+### Documentation
+
+- Sidebar navigation now appropriately handles command-click and middle-click to open links in a new tab.
+- Added a section for asset checks to the [Testing guide](https://docs.dagster.io/concepts/testing#testing-asset-checks).
+- Added a guide about [Column-level lineage for assets](https://docs.dagster.io/concepts/metadata-tags/asset-metadata/column-level-lineage).
+- Lots of updates to examples to reflect the new opt-in approach to I/O managers.
+
+### Dagster+
+
+- [ui] [experimental] A new Overview > Asset Health page provides visibility into failed and missing materializations, check warnings and check errors.
+- [ui] You can now share feedback with the Dagster team directly from the app. Open the Help menu in the top nav, then “Share feedback”. Bugs and feature requests are submitted directly to the Dagster team.
+- [ui] When editing a team, the list of team members is now virtualized, allowing for the UI to scale better for very large team sizes.
+- [ui] Fixed dark mode for billing components.
+
 # 1.7.2 (core) / 0.23.2 (libraries)
 
 ### New

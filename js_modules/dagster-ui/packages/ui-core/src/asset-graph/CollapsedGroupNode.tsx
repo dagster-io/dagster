@@ -62,7 +62,7 @@ export const GroupNodeNameAndRepo = ({group, minimal}: {minimal: boolean; group:
         </div>
       </Box>
       <Box style={{fontSize: 12, lineHeight: '1em', color: Colors.textLight()}}>
-        {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(14)})}
+        {withMiddleTruncation(location, {maxLength: maxLengthAtFontSize(16)})}
       </Box>
     </Box>
   );

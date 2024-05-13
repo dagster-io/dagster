@@ -15,6 +15,7 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {usePageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   const trace = usePageLoadTrace('WorkspaceJobsRoot');
@@ -37,6 +38,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       variables: {selector},
     },
   );
+  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceJobsQuery');
   const {data, loading} = queryResultOverview;
 
   useLayoutEffect(() => {

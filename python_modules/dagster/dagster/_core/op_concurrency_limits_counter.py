@@ -127,6 +127,27 @@ class GlobalOpConcurrencyLimitsCounter:
         # if we reached here, then every root concurrency key is blocked, so we should not dequeue
         return True
 
+    def get_blocked_run_debug_info(self, run: DagsterRun) -> Mapping:
+        if not run.run_op_concurrency:
+            return {}
+
+        log_info = {}
+        for concurrency_key in run.run_op_concurrency.root_key_counts.keys():
+            concurrency_info = self._concurrency_info_by_key.get(concurrency_key)
+            if not concurrency_info:
+                continue
+
+            log_info[concurrency_key] = {
+                "slot_count": concurrency_info.slot_count,
+                "pending_step_count": len(concurrency_info.pending_steps),
+                "pending_step_run_ids": list(
+                    {step.run_id for step in concurrency_info.pending_steps}
+                ),
+                "launched_count": self._launched_concurrency_key_counts[concurrency_key],
+                "in_progress_count": self._in_progress_concurrency_key_counts[concurrency_key],
+            }
+        return log_info
+
     def update_counters_with_launched_item(self, run: DagsterRun):
         if not run.run_op_concurrency:
             return

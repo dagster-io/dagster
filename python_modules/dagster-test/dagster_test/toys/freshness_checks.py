@@ -81,7 +81,7 @@ derived_asset_schedule = ScheduleDefinition(
 )
 
 freshness_sensor = build_sensor_for_freshness_checks(
-    freshness_checks=[derived_checks],
+    freshness_checks=derived_checks,
     minimum_interval_seconds=5,
 )
 

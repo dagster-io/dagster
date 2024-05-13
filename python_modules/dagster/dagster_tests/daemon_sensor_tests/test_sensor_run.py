@@ -79,7 +79,6 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
     BlockingThreadPoolExecutor,
     create_test_daemon_workspace_context,
@@ -1056,6 +1055,16 @@ def wait_for_all_runs_to_finish(instance, timeout=10):
             break
 
 
+def get_planned_asset_keys_for_run(instance: DagsterInstance, run_id: str):
+    return [
+        record.event_log_entry.dagster_event.event_specific_data.asset_key  # type: ignore[attr-defined]
+        for record in instance.get_records_for_run(
+            run_id=run_id,
+            of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+        ).records
+    ]
+
+
 def test_ignore_auto_materialize_sensor(instance, workspace_context, external_repo, executor):
     freeze_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
@@ -1854,13 +1863,10 @@ def test_run_request_asset_selection_sensor(executor, instance, workspace_contex
             TickStatus.SUCCESS,
             [run.run_id],
         )
-        planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+        assert set(get_planned_asset_keys_for_run(instance, run.run_id)) == {
+            AssetKey("a"),
+            AssetKey("b"),
         }
-        assert planned_asset_keys == {AssetKey("a"), AssetKey("b")}
 
 
 def test_run_request_check_selection_only_sensor(
@@ -1894,18 +1900,13 @@ def test_run_request_check_selection_only_sensor(
             TickStatus.SUCCESS,
             [run.run_id],
         )
-        planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key  # type: ignore[attr-defined]
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
-        }
-        assert planned_asset_keys == set()
+        assert get_planned_asset_keys_for_run(instance, run.run_id) == []
         planned_check_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_check_key  # type: ignore[attr-defined]
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                run_id=run.run_id,
+                of_type=DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED,
+            ).records
         }
         assert planned_check_keys == {AssetCheckKey(AssetKey("a"), "check_a")}
 
@@ -2003,10 +2004,8 @@ def test_targets_asset_selection_sensor(executor, instance, workspace_context, e
             [run.run_id for run in runs],
         )
         planned_asset_keys = [
-            record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            *get_planned_asset_keys_for_run(instance, runs[0].run_id),
+            *get_planned_asset_keys_for_run(instance, runs[1].run_id),
         ]
         assert len(planned_asset_keys) == 3
         assert set(planned_asset_keys) == {AssetKey("asset_a"), AssetKey("asset_b")}
@@ -2042,13 +2041,7 @@ def test_partitioned_asset_selection_sensor(executor, instance, workspace_contex
             [run.run_id],
         )
 
-        planned_asset_keys = {
-            record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
-        }
-        assert planned_asset_keys == {AssetKey("hourly_asset_3")}
+        assert get_planned_asset_keys_for_run(instance, run.run_id) == [AssetKey("hourly_asset_3")]
 
 
 def test_asset_sensor(executor, instance, workspace_context, external_repo):

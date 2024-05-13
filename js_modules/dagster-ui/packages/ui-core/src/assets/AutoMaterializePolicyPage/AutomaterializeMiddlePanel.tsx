@@ -43,6 +43,7 @@ import {formatElapsedTimeWithMsec} from '../../app/Util';
 import {Timestamp} from '../../app/time/Timestamp';
 import {DimensionPartitionKeys, SensorType} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {AnchorButton} from '../../ui/AnchorButton';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../../workspace/workspacePath';
@@ -72,10 +73,12 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     queryKey: SELECTED_PARTITION_QUERY_STRING_KEY,
   });
 
+  const skip = !!_selectedEvaluation || !!selectedPartition;
+
   // We receive the selected evaluation ID and retrieve it here because the middle panel
   // may be displaying an evaluation that was not retrieved at the page level for the
   // left panel, e.g. as we paginate away from it, we don't want to lose it.
-  const {data, loading, error} = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
+  const queryResult = useQuery<GetEvaluationsQuery, GetEvaluationsQueryVariables>(
     GET_EVALUATIONS_QUERY,
     {
       variables: {
@@ -83,11 +86,13 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
         cursor: selectedEvaluationId ? `${selectedEvaluationId + 1}` : undefined,
         limit: 2,
       },
-      skip: !!_selectedEvaluation || !!selectedPartition,
+      skip,
     },
   );
+  const {data, loading, error} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'GetEvaluationsQuery<Single>', {skip});
 
-  const {data: specificPartitionData, previousData: previousSpecificPartitionData} = useQuery<
+  const queryResult2 = useQuery<
     GetEvaluationsSpecificPartitionQuery,
     GetEvaluationsSpecificPartitionQueryVariables
   >(GET_EVALUATIONS_SPECIFIC_PARTITION_QUERY, {
@@ -98,6 +103,10 @@ export const AutomaterializeMiddlePanel = (props: Props) => {
     },
     skip: !selectedEvaluationId || !selectedPartition,
   });
+  useBlockTraceOnQueryResult(queryResult2, 'GetEvaluationsSpecificPartitionQuery', {
+    skip: !selectedEvaluationId || !selectedPartition,
+  });
+  const {data: specificPartitionData, previousData: previousSpecificPartitionData} = queryResult2;
 
   const sensorName = React.useMemo(
     () =>
@@ -288,7 +297,7 @@ export const AutomaterializeMiddlePanelWithData = ({
     selectedEvaluation?.numRequested,
   ]);
 
-  const {data} = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
+  const fullPartitionsQueryResult = useQuery<FullPartitionsQuery, FullPartitionsQueryVariables>(
     FULL_PARTITIONS_QUERY,
     {
       variables: definition
@@ -299,6 +308,11 @@ export const AutomaterializeMiddlePanelWithData = ({
       skip: !definition?.assetKey,
     },
   );
+  useBlockTraceOnQueryResult(fullPartitionsQueryResult, 'FullPartitionsQuery', {
+    skip: !definition?.assetKey,
+  });
+
+  const {data} = fullPartitionsQueryResult;
 
   let partitionKeys: DimensionPartitionKeys[] = emptyArray;
   if (data?.assetNodeOrError.__typename === 'AssetNode') {

@@ -179,7 +179,7 @@ def create_and_launch_partition_backfill(
                         graphene_info.context.instance,
                         create_workspace=lambda: graphene_info.context,
                         backfill_job=backfill,
-                        partition_names=chunk,
+                        partition_names_or_ranges=chunk,
                     )
                     if run_id is not None
                 )

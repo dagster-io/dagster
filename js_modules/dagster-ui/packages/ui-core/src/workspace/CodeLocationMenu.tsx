@@ -110,7 +110,7 @@ export const DagsterLibrariesDialog = ({
       <Table>
         <thead>
           <tr>
-            <th>Libray</th>
+            <th>Library</th>
             <th>Version</th>
           </tr>
         </thead>

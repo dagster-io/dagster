@@ -120,6 +120,6 @@ export const lightThemeColors = css`
   --color-data-viz-yellow-alt: var(--color-dataviz-yellow300);
   --color-blue-gradient: linear-gradient(
     var(--color-core-gray10),
-    var(--color-translucent-blue10) ; 100%
+    var(--color-translucent-blue10) 100%
   );
 `;

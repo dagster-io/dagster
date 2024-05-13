@@ -13,6 +13,6 @@ By the end of the course, you will:
 - Create dbt models and load them into Dagster as assets
 - Run dbt and store the transformed data in a DuckDB database
 - Apply partitions to incremental dbt models
-- Deploy the dbt + Dagster project to Dagster Cloud
+- Deploy the Dagster project to Dagster+
 
 If you get stuck or want to jump ahead, check out the [finished project here on GitHub](https://github.com/dagster-io/project-dagster-university/tree/module/dagster-and-dbt).

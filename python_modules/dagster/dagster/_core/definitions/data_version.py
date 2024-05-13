@@ -381,11 +381,12 @@ class CachingStaleStatusResolver:
         self,
         instance: "DagsterInstance",
         asset_graph: Union["BaseAssetGraph", Callable[[], "BaseAssetGraph"]],
+        instance_queryer: Optional["CachingInstanceQueryer"] = None,
     ):
         from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
         self._instance = instance
-        self._instance_queryer = None
+        self._instance_queryer = instance_queryer
         if isinstance(asset_graph, BaseAssetGraph):
             self._asset_graph = asset_graph
             self._asset_graph_load_fn = None
@@ -517,7 +518,10 @@ class CachingStaleStatusResolver:
         partition_deps = self._get_partition_dependencies(key=key)
         for dep_key in sorted(partition_deps):
             dep_asset = self.asset_graph.get(dep_key.asset_key)
-            if self._get_status(key=dep_key) == StaleStatus.STALE:
+            if (
+                self._instance.use_transitive_stale_causes
+                and self._get_status(key=dep_key) == StaleStatus.STALE
+            ):
                 yield StaleCause(
                     key,
                     StaleCauseCategory.DATA,

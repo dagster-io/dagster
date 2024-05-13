@@ -60,6 +60,17 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -228,6 +239,17 @@ export type LogsScrollingTableMessageFragment_EngineEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -391,6 +413,17 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -543,6 +576,17 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -692,6 +736,17 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -826,6 +881,17 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
           boolValue: boolean | null;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
         }
       | {
           __typename: 'FloatMetadataEntry';
@@ -1033,6 +1099,17 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1216,6 +1293,17 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1381,6 +1469,17 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1523,6 +1622,17 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
           boolValue: boolean | null;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
         }
       | {
           __typename: 'FloatMetadataEntry';
@@ -1673,6 +1783,17 @@ export type LogsScrollingTableMessageFragment_ObservationEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1816,6 +1937,17 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -1972,6 +2104,17 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2114,6 +2257,17 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -2343,6 +2497,17 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<{
+            __typename: 'LocalFileCodeReference';
+            filePath: string;
+            lineNumber: number;
+            label: string | null;
+          }>;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -2493,6 +2658,17 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2635,6 +2811,17 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
         boolValue: boolean | null;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<{
+          __typename: 'LocalFileCodeReference';
+          filePath: string;
+          lineNumber: number;
+          label: string | null;
+        }>;
       }
     | {
         __typename: 'FloatMetadataEntry';

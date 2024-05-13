@@ -2,7 +2,6 @@ from dagster import (
     AssetKey,
     AssetOut,
     DagsterEventType,
-    EventRecordsFilter,
     Output,
     asset,
     job,
@@ -27,14 +26,11 @@ def test_asset_mat_planned_event_step_key():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                AssetKey("my_asset"),
-            )
-        )
-        assert result.run_id == records[0].event_log_entry.run_id
-        assert records[0].event_log_entry.dagster_event.step_key == "my_asset"
+        planned_events = _get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 1
+        planned_event = planned_events[0]
+        assert planned_event.event_specific_data.asset_key == AssetKey("my_asset")
+        assert planned_event.step_key == "my_asset"
 
 
 def test_multi_asset_mat_planned_event_step_key():
@@ -50,28 +46,27 @@ def test_multi_asset_mat_planned_event_step_key():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                AssetKey("my_asset_name"),
-            )
-        )
-        assert result.run_id == records[0].event_log_entry.run_id
-        assert all(
-            record.event_log_entry.dagster_event.step_key == "my_asset" for record in records
-        )
+        planned_events = _get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 2
+        assert all(event.is_asset_materialization_planned for event in planned_events)
+        assert all(event.step_key == "my_asset" for event in planned_events)
+        assert set(event.asset_key for event in planned_events) == {
+            AssetKey("my_asset_name"),
+            AssetKey("my_other_asset"),
+        }
 
 
-def _get_planned_run_ids(instance, asset_key):
-    return [
-        record.run_id
-        for record in instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                asset_key=asset_key,
-            )
-        )
-    ]
+def _get_planned_events(instance, run_id):
+    records = instance.get_records_for_run(
+        run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+    ).records
+    planned_events = [record.event_log_entry.dagster_event for record in records]
+    assert all(event.is_asset_materialization_planned for event in planned_events)
+    return planned_events
+
+
+def _get_planned_asset_keys(instance, run_id):
+    return set(event.asset_key for event in _get_planned_events(instance, run_id))
 
 
 def test_asset_materialization_planned_event_yielded():
@@ -94,16 +89,17 @@ def test_asset_materialization_planned_event_yielded():
         )
         run_id = result.run_id
 
-        assert _get_planned_run_ids(instance, AssetKey("asset_one")) == [run_id]
-        assert _get_planned_run_ids(instance, AssetKey("never_runs_asset")) == []
+        assert _get_planned_asset_keys(instance, run_id) == {AssetKey("asset_one")}
 
     with instance_for_test() as instance:  # fresh event log storage
         # test with both assets selected
         result = asset_job.execute_in_process(instance=instance, raise_on_error=False)
         run_id = result.run_id
 
-        assert _get_planned_run_ids(instance, AssetKey("asset_one")) == [run_id]
-        assert _get_planned_run_ids(instance, AssetKey("never_runs_asset")) == [run_id]
+        assert _get_planned_asset_keys(instance, run_id) == {
+            AssetKey("asset_one"),
+            AssetKey("never_runs_asset"),
+        }
 
 
 def test_non_assets_job_no_register_event():
@@ -116,12 +112,8 @@ def test_non_assets_job_no_register_event():
         my_op()
 
     with instance_for_test() as instance:
-        my_job.execute_in_process(instance=instance)
-        intent_to_materialize_events = instance.get_event_records(
-            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-        )
-
-        assert intent_to_materialize_events == []
+        result = my_job.execute_in_process(instance=instance)
+        assert _get_planned_events(instance, result.run_id) == []
 
 
 def test_multi_asset_asset_materialization_planned_events():
@@ -136,9 +128,11 @@ def test_multi_asset_asset_materialization_planned_events():
         yield Output(2, "my_other_out_name")
 
     with instance_for_test() as instance:
-        materialize([my_asset], instance=instance)
-        [run_id] = _get_planned_run_ids(instance, AssetKey("my_asset_name"))
-        assert _get_planned_run_ids(instance, AssetKey("my_other_asset")) == [run_id]
+        result = materialize([my_asset], instance=instance)
+        assert _get_planned_asset_keys(instance, result.run_id) == {
+            AssetKey("my_asset_name"),
+            AssetKey("my_other_asset"),
+        }
 
 
 def test_asset_partition_materialization_planned_events():
@@ -151,22 +145,19 @@ def test_asset_partition_materialization_planned_events():
         pass
 
     with instance_for_test() as instance:
-        materialize_to_memory([my_asset, my_other_asset], instance=instance, partition_key="b")
-        [record] = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                AssetKey("my_asset"),
-            )
+        result = materialize_to_memory(
+            [my_asset, my_other_asset], instance=instance, partition_key="b"
         )
-        assert record.event_log_entry.dagster_event.event_specific_data.partition == "b"
-
-        [record] = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                AssetKey("my_other_asset"),
-            )
-        )
-        assert record.event_log_entry.dagster_event.event_specific_data.partition is None
+        planned_events = _get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 2
+        [my_asset_event] = [
+            event for event in planned_events if event.asset_key == AssetKey("my_asset")
+        ]
+        [my_other_asset_event] = [
+            event for event in planned_events if event.asset_key == AssetKey("my_other_asset")
+        ]
+        assert my_asset_event.event_specific_data.partition == "b"
+        assert my_other_asset_event.event_specific_data.partition is None
 
 
 def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_allowed():
@@ -177,20 +168,18 @@ def test_subset_on_asset_materialization_planned_event_for_single_run_backfill_a
         return 0
 
     with instance_for_test() as instance:
-        materialize_to_memory(
+        result = materialize_to_memory(
             [my_asset],
             instance=instance,
             tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
         )
 
-        [record] = instance.get_event_records(
-            EventRecordsFilter(
-                DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
-                AssetKey("my_asset"),
-            )
-        )
+        planned_events = _get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 1
+        planned_event = planned_events[0]
+        assert planned_event.asset_key == AssetKey("my_asset")
         assert (
-            record.event_log_entry.dagster_event.event_specific_data.partitions_subset
+            planned_event.event_specific_data.partitions_subset
             == partitions_def.subset_with_partition_keys(["a", "b"])
         )
 
@@ -207,21 +196,22 @@ def test_single_run_backfill_with_unpartitioned_and_partitioned_mix():
         return 0
 
     with instance_for_test() as instance:
-        materialize_to_memory(
+        result = materialize_to_memory(
             [partitioned, unpartitioned],
             instance=instance,
             tags={ASSET_PARTITION_RANGE_START_TAG: "a", ASSET_PARTITION_RANGE_END_TAG: "b"},
         )
 
-        [record] = instance.get_event_records(
-            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, partitioned.key)
-        )
+        planned_events = _get_planned_events(instance, result.run_id)
+        assert len(planned_events) == 2
+        [partitioned_event] = [
+            event for event in planned_events if event.asset_key == partitioned.key
+        ]
+        [unpartitioned_event] = [
+            event for event in planned_events if event.asset_key == unpartitioned.key
+        ]
         assert (
-            record.event_log_entry.dagster_event.event_specific_data.partitions_subset
+            partitioned_event.event_specific_data.partitions_subset
             == partitions_def.subset_with_partition_keys(["a", "b"])
         )
-
-        [record] = instance.get_event_records(
-            EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, unpartitioned.key)
-        )
-        assert record.event_log_entry.dagster_event.event_specific_data.partitions_subset is None
+        assert unpartitioned_event.event_specific_data.partitions_subset is None

@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from pathlib import Path
 
@@ -6,6 +7,7 @@ import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    Config,
     FreshnessPolicy,
     JsonMetadataValue,
     file_relative_path,
@@ -232,4 +234,132 @@ def test_base_with_custom_asset_key_prefix():
         AssetKey(["custom", "public", "all_users"]),
         AssetKey(["custom", "departments"]),
         AssetKey(["custom", "public", "transactions"]),
+    }
+
+
+def test_subset_with_asset_selection(
+    csv_to_sqlite_dataworks_replication: SlingReplicationParam,
+    path_to_temp_sqlite_db: str,
+):
+    @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
+    def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
+        yield from sling.replicate(context=context)
+
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(type="file", name="SLING_FILE"),
+            SlingConnectionResource(
+                type="sqlite",
+                name="SLING_SQLITE",
+                connection_string=f"sqlite://{path_to_temp_sqlite_db}",
+            ),
+        ]
+    )
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        selection=[AssetKey(["target", "main", "orders"])],
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 1
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {AssetKey(["target", "main", "orders"])}
+
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        selection=[
+            AssetKey(["target", "main", "employees"]),
+            AssetKey(["target", "main", "products"]),
+        ],
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 2
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {
+        AssetKey(["target", "main", "employees"]),
+        AssetKey(["target", "main", "products"]),
+    }
+
+
+def test_subset_with_run_config(
+    csv_to_sqlite_dataworks_replication: SlingReplicationParam,
+    path_to_temp_sqlite_db: str,
+    path_to_dataworks_folder: str,
+):
+    class MyAssetConfig(Config):
+        context_streams: dict = {}
+
+    @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
+    def my_sling_assets(
+        context: AssetExecutionContext, sling: SlingResource, config: MyAssetConfig
+    ):
+        yield from sling.replicate(context=context)
+
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(type="file", name="SLING_FILE"),
+            SlingConnectionResource(
+                type="sqlite",
+                name="SLING_SQLITE",
+                connection_string=f"sqlite://{path_to_temp_sqlite_db}",
+            ),
+        ]
+    )
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        run_config={},
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 3  # no 'context_streams', no subset performed
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {
+        AssetKey(["target", "main", "employees"]),
+        AssetKey(["target", "main", "orders"]),
+        AssetKey(["target", "main", "products"]),
+    }
+
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        run_config={
+            "ops": {
+                "my_sling_assets": {
+                    "config": {
+                        "context_streams": {
+                            f'file://{os.path.join(path_to_dataworks_folder, "Orders.csv")}': {
+                                "object": "main.orders"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 1
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {
+        AssetKey(["target", "main", "orders"]),
     }

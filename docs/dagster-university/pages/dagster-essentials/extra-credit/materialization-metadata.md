@@ -33,12 +33,12 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
        partitions_def=monthly_partition,
        group_name="raw_files",
    )
-   def taxi_trips_file(context):
+   def taxi_trips_file(context) -> None:
        """
          The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
        """
 
-       partition_date_str = context.asset_partition_key_for_output()
+       partition_date_str = context.partition_key
        month_to_fetch = partition_date_str[:-3]
 
        raw_trips = requests.get(
@@ -65,8 +65,22 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
    )
    ```
 
+5. Then, since we're now returning something, let's update the return type of the asset to `MaterializeResult`:
+
+   ```python
+   from dagster import asset, MaterializeResult
+
+   @asset(
+       partitions_def=monthly_partition,
+       group_name="raw_files",
+   )
+   def taxi_trips_file(context) -> MaterializeResult:
+   ```
+
+
    Let’s break down what’s happening here:
 
+   - Rather than returning nothing, we'll return some information about the materialization that happened with the `MaterializationResult` class.
    - The `metadata` parameter accepts a `dict`, where the key is the label or name of the metadata and the value is the data itself. In this case, the key is `Number of records`. The value in this example is everything after `Number of records`.
    - Using `MetadataValue.int`, the value of the `num_rows` variable is typed as an integer. This tells Dagster to render the data as an integer.
 
@@ -80,12 +94,12 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
        partitions_def=monthly_partition,
        group_name="raw_files",
    )
-   def taxi_trips_file(context):
+   def taxi_trips_file(context) -> MaterializeResult:
        """
          The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
        """
 
-       partition_date_str = context.asset_partition_key_for_output()
+       partition_date_str = context.partition_key
        month_to_fetch = partition_date_str[:-3]
 
        raw_trips = requests.get(

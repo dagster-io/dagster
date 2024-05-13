@@ -113,7 +113,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
-          <TabButton selected="timeline" />
+          {TabButton && <TabButton selected="timeline" />}
           {allRepos.length > 1 && <RepoFilterButton />}
           <TextInput
             icon="search"

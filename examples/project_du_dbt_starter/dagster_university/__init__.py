@@ -6,7 +6,6 @@ from .resources import database_resource
 from .schedules import trip_update_schedule, weekly_update_schedule
 from .sensors import adhoc_request_sensor
 
-## Lesson 5 -> prob every other section after that
 trip_assets = load_assets_from_modules([trips])
 metric_assets = load_assets_from_modules(
     modules=[metrics],
@@ -22,7 +21,7 @@ all_schedules = [trip_update_schedule, weekly_update_schedule]
 all_sensors = [adhoc_request_sensor]
 
 defs = Definitions(
-    assets=[*trip_assets, *metric_assets, *requests_assets],
+    assets=trip_assets + metric_assets + requests_assets,
     resources={
         "database": database_resource,
     },

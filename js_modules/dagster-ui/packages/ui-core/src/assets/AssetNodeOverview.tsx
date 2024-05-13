@@ -1,5 +1,4 @@
 // eslint-disable-next-line no-restricted-imports
-import {Collapse} from '@blueprintjs/core';
 import {
   Body,
   Body2,
@@ -10,14 +9,11 @@ import {
   Colors,
   ConfigTypeSchema,
   Icon,
-  IconName,
   MiddleTruncate,
   NonIdealState,
   Skeleton,
-  Subtitle1,
   Subtitle2,
   Tag,
-  UnstyledButton,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React, {useMemo, useState} from 'react';
@@ -28,8 +24,8 @@ import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNo
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
-import {AutomaterializePolicyTag} from './AutomaterializePolicyTag';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
+import {LargeCollapsibleSection} from './LargeCollapsibleSection';
 import {MaterializationTag} from './MaterializationTag';
 import {OverdueTag, freshnessPolicyDescription} from './OverdueTag';
 import {RecentUpdatesTimeline} from './RecentUpdatesTimeline';
@@ -56,7 +52,6 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -229,21 +224,19 @@ export const AssetNodeOverview = ({
         </Box>
       </AttributeAndValue>
       <AttributeAndValue label="Owners">
-        {assetNode.owners && assetNode.owners.length > 0 && (
-          <Box flex={{gap: 4, alignItems: 'center'}}>
-            {assetNode.owners.map((owner, idx) =>
-              owner.__typename === 'UserAssetOwner' ? (
-                <UserAssetOwnerWrapper key={idx}>
-                  <UserDisplay key={idx} email={owner.email} size="very-small" />
-                </UserAssetOwnerWrapper>
-              ) : (
-                <Tag icon="people" key={idx}>
-                  {owner.team}
-                </Tag>
-              ),
-            )}
-          </Box>
-        )}
+        {assetNode.owners &&
+          assetNode.owners.length > 0 &&
+          assetNode.owners.map((owner, idx) =>
+            owner.__typename === 'UserAssetOwner' ? (
+              <UserAssetOwnerWrapper key={idx}>
+                <UserDisplay key={idx} email={owner.email} size="very-small" />
+              </UserAssetOwnerWrapper>
+            ) : (
+              <Tag icon="people" key={idx}>
+                {owner.team}
+              </Tag>
+            ),
+          )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
@@ -251,13 +244,9 @@ export const AssetNodeOverview = ({
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
-        {assetNode.tags && assetNode.tags.length > 0 && (
-          <Box flex={{gap: 4, alignItems: 'center', wrap: 'wrap'}}>
-            {assetNode.tags.map((tag, idx) => (
-              <Tag key={idx}>{buildTagString(tag)}</Tag>
-            ))}
-          </Box>
-        )}
+        {assetNode.tags &&
+          assetNode.tags.length > 0 &&
+          assetNode.tags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
       </AttributeAndValue>
     </Box>
   );
@@ -286,12 +275,6 @@ export const AssetNodeOverview = ({
         label: 'Schedules',
         children: schedules.length > 0 && (
           <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
-        ),
-      },
-      {
-        label: 'Auto-materialize policy',
-        children: assetNode.autoMaterializePolicy && (
-          <AutomaterializePolicyTag policy={assetNode.autoMaterializePolicy} />
         ),
       },
       {
@@ -433,6 +416,7 @@ export const AssetNodeOverview = ({
               definitionMetadata={assetMetadata}
               definitionLoadTimestamp={assetNodeLoadTimestamp}
               assetHasDefinedPartitions={!!assetNode.partitionDefinition}
+              repoAddress={repoAddress}
               event={materialization || observation || null}
               emptyState={
                 <SectionEmptyState
@@ -523,7 +507,7 @@ const AttributeAndValue = ({
     <Box flex={{direction: 'column', gap: 6, alignItems: 'flex-start'}}>
       <Subtitle2>{label}</Subtitle2>
       <Body2 style={{maxWidth: '100%'}}>
-        <Box flex={{gap: 2}}>{children}</Box>
+        <Box flex={{gap: 4, wrap: 'wrap'}}>{children}</Box>
       </Body2>
     </Box>
   );
@@ -620,55 +604,6 @@ export const AssetNodeOverviewLoading = () => (
     }
   />
 );
-
-// BG: This should probably be moved to ui-components, but waiting to see if we
-// adopt it more broadly.
-
-const LargeCollapsibleSection = ({
-  header,
-  icon,
-  children,
-  right,
-  collapsedByDefault = false,
-}: {
-  header: string;
-  icon: IconName;
-  children: React.ReactNode;
-  right?: React.ReactNode;
-  collapsedByDefault?: boolean;
-}) => {
-  const [isCollapsed, setIsCollapsed] = useStateWithStorage<boolean>(
-    `collapsible-section-${header}`,
-    (storedValue) =>
-      storedValue === true || storedValue === false ? storedValue : collapsedByDefault,
-  );
-
-  return (
-    <Box flex={{direction: 'column'}}>
-      <UnstyledButton onClick={() => setIsCollapsed(!isCollapsed)}>
-        <Box
-          flex={{direction: 'row', alignItems: 'center', gap: 6}}
-          padding={{vertical: 12, right: 12}}
-          border="bottom"
-        >
-          <Icon size={20} name={icon} />
-          <Subtitle1 style={{flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis'}}>
-            {header}
-          </Subtitle1>
-          {right}
-          <Icon
-            name="arrow_drop_down"
-            size={20}
-            style={{transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)'}}
-          />
-        </Box>
-      </UnstyledButton>
-      <Collapse isOpen={!isCollapsed}>
-        <Box padding={{vertical: 12}}>{children}</Box>
-      </Collapse>
-    </Box>
-  );
-};
 
 const SectionEmptyState = ({
   title,

@@ -45,6 +45,7 @@ from typing import (
 )
 
 import packaging.version
+from filelock import FileLock
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -616,12 +617,30 @@ def process_is_alive(pid: int) -> bool:
         import psutil
 
         return psutil.pid_exists(pid=pid)
-    else:
-        try:
-            subprocess.check_output(["ps", str(pid)])
-        except subprocess.CalledProcessError as exc:
-            assert exc.returncode == 1
+
+    # https://stackoverflow.com/questions/568271/how-to-check-if-there-exists-a-process-with-a-given-pid-in-python
+    if pid < 0:
+        return False
+    if pid == 0:
+        # According to "man 2 kill" PID 0 refers to every process
+        # in the process group of the calling process.
+        # On certain systems 0 is a valid PID but we have no way
+        # to know that in a portable fashion.
+        raise ValueError("invalid PID 0")
+    try:
+        os.kill(pid, 0)
+    except OSError as err:
+        if err.errno == errno.ESRCH:
+            # ESRCH == No such process
             return False
+        elif err.errno == errno.EPERM:
+            # EPERM clearly means there's a process to deny access to
+            return True
+        else:
+            # According to "man 2 kill" possible error values are
+            # (EINVAL, EPERM, ESRCH)
+            raise
+    else:
         return True
 
 
@@ -780,3 +799,38 @@ def is_uuid(value: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def run_with_concurrent_update_guard(
+    target_file_path: Path,
+    update_fn: Callable[..., None],
+    *,
+    guard_timeout_seconds: float = 60,
+    **kwargs,
+) -> None:
+    """This function prevents multiple processes attempting to update the same target artifacts
+    from running concurrently. It uses a lock file to ensure that only one process can update the
+    target file at a time.
+
+    If the target file has been updated by another process while waiting for the lock, we skip
+    running the update_fn, assuming we are about to do redundant work.
+
+    Args:
+        target_file_path (Path): The path to the target file that needs to be updated.
+        update_fn (Callable[[Any], None]): The function that will update the target file.
+        guard_timeout_seconds (float): The maximum time to wait for the lock to be released.
+            Default: 60 seconds.
+        **kwargs: The keyword arguments to pass to the function.
+    """
+    start_mtime = 0
+    if target_file_path.exists():
+        start_mtime = target_file_path.lstat().st_mtime
+
+    with FileLock(target_file_path.with_suffix(".concurrent-update-lock")).acquire(
+        timeout=guard_timeout_seconds
+    ):
+        # double check if the target file has been updated by another process while waiting for lock
+        if target_file_path.exists() and target_file_path.lstat().st_mtime > start_mtime:
+            return
+        update_fn(**kwargs)
+        return

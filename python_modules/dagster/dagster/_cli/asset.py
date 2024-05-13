@@ -73,6 +73,11 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
 
         tags = partitions_def.get_tags_for_partition_key(partition)
     else:
+        if any(
+            implicit_job_def.asset_layer.get(asset_key).partitions_def is not None
+            for asset_key in asset_keys
+        ):
+            check.failed("Asset has partitions, but no '--partition' option was provided")
         tags = {}
 
     result = execute_job(

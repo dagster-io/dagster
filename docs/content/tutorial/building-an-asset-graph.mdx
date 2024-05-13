@@ -5,7 +5,7 @@ description: Learn how to build graphs of assets in Dagster
 
 # Tutorial, part four: Building an asset graph
 
-In the previous portion of the tutorial, you wrote your first Software-defined asset (SDA), looked at Dagster's UI, and manually materialized your asset.
+In the previous portion of the tutorial, you wrote your first asset definition, looked at Dagster's UI, and manually materialized your asset.
 
 Continuing from there, you will:
 
@@ -138,7 +138,7 @@ def most_frequent_words() -> None:
 
 Up until now, you've annotated your asset functions with `None`, meaning the asset doesn't return anything. In this section, you'll learn about the <PyObject object="MaterializeResult" /> object, which lets you record metadata about your asset.
 
-Software-defined Assets can be enriched with different types of metadata. Anything can be used as metadata for an asset. Common details to add are:
+Asset definitions can be enriched with different types of metadata. Anything can be used as metadata for an asset. Common details to add are:
 
 - Statistics about the data, such as row counts or other data profiling
 - Test results or assertions about the data

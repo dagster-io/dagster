@@ -149,6 +149,7 @@ const ErrorHeader = styled.h3`
 const Trace = styled.div`
   color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
+  font-size: 12px;
   white-space: pre;
   padding-bottom: 1em;
 `;

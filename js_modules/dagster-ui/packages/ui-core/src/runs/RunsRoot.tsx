@@ -37,6 +37,7 @@ import {
 import {useTrackPageView} from '../app/analytics';
 import {usePortalSlot} from '../hooks/usePortalSlot';
 import {usePageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
@@ -71,6 +72,7 @@ export const RunsRoot = () => {
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
+  useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
