@@ -7,6 +7,7 @@ from typing import Iterable, Mapping, Optional, Sequence, Type, cast
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.run_request import (
     InstigatorType,
     RunRequest,
@@ -146,53 +147,68 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        # create a logger that will always include the backfill_id as an `extra`
+        evaluation_time = pendulum.now("UTC")
 
-        backfill_logger = cast(
-            logging.Logger,
-            logging.LoggerAdapter(logger, extra={"backfill_id": backfill.backfill_id}),
-        )
-        # TODO make the logger here the InstigatorLogger so that we can store logs and fetch them for the UI
-        try:
-            evaluation_time = pendulum.now("UTC")
-            tick = instance.create_tick(
-                TickData(
-                    instigator_origin_id=_BACKFILL_ORIGIN_ID,
-                    instigator_name=backfill_id,
-                    instigator_type=InstigatorType.BACKFILL,
-                    status=TickStatus.STARTED,
-                    timestamp=evaluation_time.timestamp(),
-                    selector_id=backfill_id,
+        # TODO - probably need to scope by code location. for now just put everything together for testing
+        log_key = ["backfill", backfill_id, evaluation_time.strftime("%Y%m%d_%H%M%S")]
+        with InstigationLogger(
+            log_key,
+            instance,
+            repository_name=None,
+            name=backfill_id,
+        ) as _logger:
+            _logger = cast(logging.Logger, _logger)
+            # create a logger that will always include the backfill_id as an `extra`
+            backfill_logger = cast(
+                logging.Logger,
+                logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
+            )
+            try:
+                tick = instance.create_tick(
+                    TickData(
+                        instigator_origin_id=_BACKFILL_ORIGIN_ID,
+                        instigator_name=backfill_id,
+                        instigator_type=InstigatorType.BACKFILL,
+                        status=TickStatus.STARTED,
+                        timestamp=evaluation_time.timestamp(),
+                        selector_id=backfill_id,
+                        log_key=log_key,
+                    )
                 )
-            )
-            tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.BACKFILL)
-            with BackfillLaunchContext(
-                tick,
-                backfill_id,
-                instance,
-                backfill_logger,
-                tick_retention_settings,
-            ) as tick_context:
-                if backfill.is_asset_backfill:
-                    yield from execute_asset_backfill_iteration(
-                        backfill, backfill_logger, workspace_process_context, instance, tick_context
-                    )
-                else:
-                    yield from execute_job_backfill_iteration(
-                        backfill,
-                        backfill_logger,
-                        workspace_process_context,
-                        debug_crash_flags,
-                        instance,
-                        tick_context,
-                    )
-        except Exception:
-            error_info = DaemonErrorCapture.on_exception(
-                sys.exc_info(),
-                logger=backfill_logger,
-                log_message=f"Backfill failed for {backfill.backfill_id}",
-            )
-            instance.update_backfill(
-                backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
-            )
-            yield error_info
+                tick_retention_settings = instance.get_tick_retention_settings(
+                    InstigatorType.BACKFILL
+                )
+                with BackfillLaunchContext(
+                    tick,
+                    backfill_id,
+                    instance,
+                    backfill_logger,
+                    tick_retention_settings,
+                ) as tick_context:
+                    if backfill.is_asset_backfill:
+                        yield from execute_asset_backfill_iteration(
+                            backfill,
+                            backfill_logger,
+                            workspace_process_context,
+                            instance,
+                            tick_context,
+                        )
+                    else:
+                        yield from execute_job_backfill_iteration(
+                            backfill,
+                            backfill_logger,
+                            workspace_process_context,
+                            debug_crash_flags,
+                            instance,
+                            tick_context,
+                        )
+            except Exception:
+                error_info = DaemonErrorCapture.on_exception(
+                    sys.exc_info(),
+                    logger=backfill_logger,
+                    log_message=f"Backfill failed for {backfill.backfill_id}",
+                )
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                )
+                yield error_info
