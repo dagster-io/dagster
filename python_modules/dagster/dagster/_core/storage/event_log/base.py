@@ -381,6 +381,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         pass
 
     def get_asset_tags_to_index(self, tag_keys: Set[str]) -> Set[str]:
+        # make sure we update the list of tested tags in test_asset_tags_to_insert to match
         return {
             key
             for key in tag_keys
