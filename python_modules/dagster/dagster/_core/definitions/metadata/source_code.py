@@ -133,7 +133,7 @@ def _with_code_source_single_definition(
 @experimental
 def with_source_code_references(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
-) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
+) -> List[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which attaches source code metadata to the provided asset definitions.
 
     Args:
@@ -141,6 +141,6 @@ def with_source_code_references(
             The asset definitions to which source code metadata should be attached.
 
     Returns:
-        Sequence[AssetsDefinition]: The asset definitions with source code metadata attached.
+        List[AssetsDefinition]: The asset definitions with source code metadata attached.
     """
     return [_with_code_source_single_definition(assets_def) for assets_def in assets_defs]
