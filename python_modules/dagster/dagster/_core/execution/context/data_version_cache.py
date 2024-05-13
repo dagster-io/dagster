@@ -147,7 +147,7 @@ class DataVersionCache:
                 )
 
     def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> Dict[AssetKey, "AssetRecord"]:
-        batch_size = int(os.getenv("ASSET_RECORD_BATCH_SIZE", "100"))
+        batch_size = int(os.getenv("GET_ASSET_RECORDS_FOR_DATA_VERSION_BATCH_SIZE", "100"))
         asset_records_by_key = {}
         to_fetch = asset_keys
         while len(to_fetch):
