@@ -5,6 +5,15 @@ description: Get started swiftly with this simple dbt + Dagster example.
 
 # Quickstart: Run your dbt project with Dagster
 
+<Note>
+  <strong>Note</strong>: This guide uses the <code>DbtProject</code> class, which
+  is an experimental feature. Visit the{" "}
+  <a href="/\_apidocs/libraries/dagster-dbt">
+    dagster-dbt library API reference
+  </a>{" "}
+  for more info.
+</Note>
+
 If you just want to see the code of the example, skip to the end on this guide.
 
 <div className="w-full inline-flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
@@ -78,15 +87,6 @@ Running your dbt project with Dagster can be easily done after creating a single
 With your text editor of choice, create a Python file in the same directory as your dbt project directory and add the following code. Note that since this file contains [all Dagster definitions required for your code location](/concepts/code-locations), it is recommended to name it `definitions.py`.
 
 The following code assumes that your Python file and dbt project directory are adjacent in the same directory. If that's not the case, make sure to update the `RELATIVE_PATH_TO_YOUR_DBT_PROJECT` constant so that it points to your dbt project.
-
-<Note>
-  <strong>Note</strong>: This code uses the <code>DbtProject</code> class, which
-  is an experimental feature. Visit the{" "}
-  <a href="/\_apidocs/libraries/dagster-dbt">
-    dagster-dbt library API reference
-  </a>{" "}
-  for more info.
-</Note>
 
 ```python file=/integrations/dbt/quickstart.py startafter=start_example endbefore=end_example
 from pathlib import Path
