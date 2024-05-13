@@ -11,11 +11,11 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-RELATIVE_PATH_TO_YOUR_DBT_PROJECT = "./your-dbt-project"
+RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my-dbt-project"
 
 my_project = DbtProject(
     project_dir=Path(__file__)
-    .joinpath("..", RELATIVE_PATH_TO_YOUR_DBT_PROJECT)
+    .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
     .resolve(),
 )
 
