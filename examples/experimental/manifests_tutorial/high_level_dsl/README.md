@@ -143,11 +143,11 @@ _Note: I bet we could get this down to two methods with generics._
 
 Now that we have this class and imported it into `HighLevelDSLManifestFactory` we are good to go. This use can opt into this executable with `kind: bespoke_elt` in the manifest file. Pretty cool!
 
-Now that we have our manifest factory set up,
+Now that we have our manifest factory set up, we need to figure out how to load our manifests into the Python process. In this case we want a lightly opinionated file format layout to nudge our users to use groups.
 
 ## Manifest Source
 
-Last let's the manifest source. We want to control the file layout. In this case we want the file name to determine the default group for any artifacts in that file:
+Let's build the manifest source. We want to control the file layout. In this case we want the file name to determine the default group for any artifacts in that file:
 
 ```python
 from pathlib import Path
@@ -175,7 +175,7 @@ class HighLevelDSLFileSystemManifestSource(ManifestSource):
     def get_manifest(self) -> "HighLevelDSLManifest":
         all_executables = []
         manifests_by_default_group = {}
-        for yaml_file in HighLevelDSLFileSystemManifestSource.get_yaml_files(self.path):
+        for yaml_file in self.get_yaml_files(self.path):
             manifests_by_default_group[yaml_file.stem] = check.inst(
                 load_yaml_to_pydantic(str(yaml_file), HighLevelDSLManifest),
                 HighLevelDSLManifest,
@@ -197,18 +197,20 @@ This manifest source walks a folder structure and gets every yaml file and creat
 Finally we can put it all together to create the final `Definitions` object.
 
 ```python
+def manifests_path() -> Path:
+    return Path(__file__).resolve().parent / Path("manifests")
+
+def create_manifest() -> HighLevelDSLManifest:
+    return HighLevelDSLFileSystemManifestSource(path=manifests_path()).get_manifest()
 
 def make_high_level_dsl_definitions() -> Definitions:
     return HighLevelDSLManifestFactory().make_definitions(
-        manifest=HighLevelDSLFileSystemManifestSource(
-            path=Path(__file__).resolve().parent / Path("manifests")
-        ).get_manifest(),
+        manifest=create_manifest(),
         resources={
-            "dbt": DbtCliResource(str((Path(__file__).parent / Path("jaffle_shop")).resolve())),
+            "dbt": DbtCliResource(dbt_project_dir()),
             "subprocess_client": PipesSubprocessClient(),
         },
     )
-
 
 defs = make_high_level_dsl_definitions()
 ```

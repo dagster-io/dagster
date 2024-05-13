@@ -24,7 +24,7 @@ class HighLevelDSLFileSystemManifestSource(ManifestSource):
     def get_manifest(self) -> "HighLevelDSLManifest":
         all_executables = []
         manifests_by_default_group = {}
-        for yaml_file in HighLevelDSLFileSystemManifestSource.get_yaml_files(self.path):
+        for yaml_file in self.get_yaml_files(self.path):
             manifests_by_default_group[yaml_file.stem] = check.inst(
                 load_yaml_to_pydantic(str(yaml_file), HighLevelDSLManifest),
                 HighLevelDSLManifest,

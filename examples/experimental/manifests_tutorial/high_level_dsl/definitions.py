@@ -27,13 +27,23 @@ class HighLevelDSLManifestFactory(ManifestBackedExecutableFactory[HighLevelDSLMa
         ]
 
 
+def dbt_project_dir() -> str:
+    return str((Path(__file__).parent / Path("jaffle_shop")).resolve())
+
+
+def manifests_path() -> Path:
+    return Path(__file__).resolve().parent / Path("manifests")
+
+
+def create_manifest() -> HighLevelDSLManifest:
+    return HighLevelDSLFileSystemManifestSource(path=manifests_path()).get_manifest()
+
+
 def make_high_level_dsl_definitions() -> Definitions:
     return HighLevelDSLManifestFactory().make_definitions(
-        manifest=HighLevelDSLFileSystemManifestSource(
-            path=Path(__file__).resolve().parent / Path("manifests")
-        ).get_manifest(),
+        manifest=create_manifest(),
         resources={
-            "dbt": DbtCliResource(str((Path(__file__).parent / Path("jaffle_shop")).resolve())),
+            "dbt": DbtCliResource(dbt_project_dir()),
             "subprocess_client": PipesSubprocessClient(),
         },
     )
