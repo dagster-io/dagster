@@ -25,6 +25,7 @@ from dagster._core.execution.context.compute import (
     AssetExecutionContext,
     OpExecutionContext,
 )
+from dagster._core.log_manager import DagsterLogManager
 from dagster._utils.security import non_secure_md5_hash_str
 
 
@@ -53,13 +54,13 @@ class AssetGraphExecutionContext:
     def to_op_execution_context(self) -> OpExecutionContext:
         return self._context.op_execution_context
 
+    @property
+    def log(self) -> DagsterLogManager:
+        return self._context.log
 
-# Here are some example alternatives:
-#   - ExecutableSubgraph
-#   - ExecutableAssetGraphFragment
-#   - ExecutableDefinitionSet
-#   - AssetGraphExecutable
-#   - ExecutableDefinitionGroup
+
+# TODO: Build a version of this where the user takes complete control of assets definition creation
+# TODO: Create top-level spec class for composition purposes
 class AssetGraphExecutable(ABC):
     def __init__(
         self,
@@ -134,14 +135,23 @@ class AssetGraphExecutable(ABC):
                 partitions_def=self._partitions_def,
             )
             def _nope_multi_asset(context: AssetExecutionContext):
-                return self.execute(
-                    context=AssetGraphExecutionContext(context),
-                    **self._only_required_resources(context.resources.original_resource_dict),
-                )
+                return self.invoke_execute_method(context)
 
             return _nope_multi_asset
         else:
             return self.to_asset_checks_def()
+
+    def invoke_execute_method(self, context: AssetExecutionContext) -> AssetGraphExecutionResult:
+        result = self.execute(
+            context=AssetGraphExecutionContext(context),
+            **self._only_required_resources(context.resources.original_resource_dict),
+        )
+        context.log.info(f"Result: {result}")
+        # lists fail for some reason
+        if isinstance(result, (list, tuple)):
+            for item in result:
+                yield item
+        return result
 
     def to_asset_checks_def(self) -> AssetChecksDefinition:
         check.invariant(
@@ -158,10 +168,15 @@ class AssetGraphExecutable(ABC):
             can_subset=self.subsettable,
         )
         def _nope_multi_asset_check(context: AssetCheckExecutionContext):
-            return self.execute(
+            result = self.execute(
                 context=AssetGraphExecutionContext(context),
                 **self._only_required_resources(context.resources.original_resource_dict),
             )
+            # lists fail for some reason
+            if isinstance(result, (list, tuple)):
+                for item in result:
+                    yield item
+            return result
 
         return _nope_multi_asset_check
 

@@ -1,0 +1,192 @@
+{
+  "$defs": {
+    "BespokeELTAssetManifest": {
+      "properties": {
+        "deps": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Deps"
+        }
+      },
+      "required": [
+        "deps"
+      ],
+      "title": "BespokeELTAssetManifest",
+      "type": "object"
+    },
+    "BespokeELTExecutableManifest": {
+      "properties": {
+        "kind": {
+          "const": "bespoke_elt",
+          "enum": [
+            "bespoke_elt"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "group_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Group Name"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "destination": {
+          "title": "Destination",
+          "type": "string"
+        },
+        "assets": {
+          "additionalProperties": {
+            "$ref": "#/$defs/BespokeELTAssetManifest"
+          },
+          "title": "Assets",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "group_name",
+        "name",
+        "source",
+        "destination",
+        "assets"
+      ],
+      "title": "BespokeELTExecutableManifest",
+      "type": "object"
+    },
+    "DbtManifestJsonExecutableManifest": {
+      "properties": {
+        "kind": {
+          "const": "dbt_manifest",
+          "enum": [
+            "dbt_manifest"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "group_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Group Name"
+        },
+        "manifest_json_path": {
+          "title": "Manifest Json Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "group_name",
+        "manifest_json_path"
+      ],
+      "title": "DbtManifestJsonExecutableManifest",
+      "type": "object"
+    },
+    "SubprocessAssetManifest": {
+      "properties": {
+        "asset_key": {
+          "title": "Asset Key",
+          "type": "string"
+        },
+        "group_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Group Name"
+        }
+      },
+      "required": [
+        "asset_key",
+        "group_name"
+      ],
+      "title": "SubprocessAssetManifest",
+      "type": "object"
+    },
+    "SubprocessExecutableManifest": {
+      "properties": {
+        "kind": {
+          "const": "subprocess",
+          "enum": [
+            "subprocess"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "python_script_path": {
+          "title": "Python Script Path",
+          "type": "string"
+        },
+        "assets": {
+          "items": {
+            "$ref": "#/$defs/SubprocessAssetManifest"
+          },
+          "title": "Assets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "python_script_path",
+        "assets"
+      ],
+      "title": "SubprocessExecutableManifest",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "executables": {
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/BespokeELTExecutableManifest"
+          },
+          {
+            "$ref": "#/$defs/DbtManifestJsonExecutableManifest"
+          },
+          {
+            "$ref": "#/$defs/SubprocessExecutableManifest"
+          }
+        ]
+      },
+      "title": "Executables",
+      "type": "array"
+    }
+  },
+  "required": [
+    "executables"
+  ],
+  "title": "HighLevelDSLExecutableList",
+  "type": "object"
+}
