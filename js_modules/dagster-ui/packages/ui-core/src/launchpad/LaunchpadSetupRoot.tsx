@@ -21,9 +21,13 @@ export const LaunchpadSetupRoot = (props: {repoAddress: RepoAddress}) => {
     permissions: {canLaunchPipelineExecution},
     loading,
   } = usePermissionsForLocation(repoAddress.location);
+
   useBlockTraceUntilTrue('Permissions', loading);
 
   const {repoPath, pipelinePath} = useParams<{repoPath: string; pipelinePath: string}>();
+  if (loading) {
+    return null;
+  }
 
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
