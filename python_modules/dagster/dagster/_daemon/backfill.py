@@ -157,12 +157,12 @@ def execute_backfill_jobs(
             repository_name=None,
             name=backfill_id,
         ) as _logger:
-            _logger = cast(logging.Logger, _logger)
+            backfill_logger = cast(logging.Logger, _logger)
             # create a logger that will always include the backfill_id as an `extra`
-            backfill_logger = cast(
-                logging.Logger,
-                logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
-            )
+            # backfill_logger = cast(
+            #     logging.Logger,
+            #     logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
+            # )
             try:
                 tick = instance.create_tick(
                     TickData(
