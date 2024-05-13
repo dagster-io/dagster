@@ -38,7 +38,7 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
          The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
        """
 
-       partition_date_str = context.asset_partition_key_for_output()
+       partition_date_str = context.partition_key
        month_to_fetch = partition_date_str[:-3]
 
        raw_trips = requests.get(
@@ -85,7 +85,7 @@ Let’s add metadata to the `taxi_trips_file` asset to demonstrate further. This
          The raw parquet files for the taxi trips dataset. Sourced from the NYC Open Data portal.
        """
 
-       partition_date_str = context.asset_partition_key_for_output()
+       partition_date_str = context.partition_key
        month_to_fetch = partition_date_str[:-3]
 
        raw_trips = requests.get(
