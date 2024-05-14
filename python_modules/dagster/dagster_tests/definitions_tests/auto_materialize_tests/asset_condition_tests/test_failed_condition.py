@@ -4,11 +4,13 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def test_failed_unpartitioned() -> None:
-    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.failed())
+    state = SchedulingConditionScenarioState(
+        one_asset, scheduling_condition=SchedulingCondition.failed()
+    )
 
     # no failed partitions
     state, result = state.evaluate("A")
@@ -26,8 +28,8 @@ def test_failed_unpartitioned() -> None:
 
 
 def test_in_progress_static_partitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.failed()
+    state = SchedulingConditionScenarioState(
+        one_asset, scheduling_condition=SchedulingCondition.failed()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no failed_runs
