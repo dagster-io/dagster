@@ -1,6 +1,6 @@
 import datetime
 from abc import abstractmethod
-from typing import Optional
+from typing import Optional, Tuple
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -50,11 +50,36 @@ class InProgressSchedulingCondition(SliceSchedulingCondition):
 
 @whitelist_for_serdes
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
-    lookback_seconds: Optional[float] = None
+    # This is a serializable representation of the lookback timedelta object
+    lookback_days_second_microseconds: Optional[Tuple[int, int, int]] = None
+
+    @staticmethod
+    def from_lookback_delta(
+        lookback_delta: Optional[datetime.timedelta],
+    ) -> "InLatestTimeWindowCondition":
+        lookback_days_second_microseconds = (
+            (
+                lookback_delta.days,
+                lookback_delta.seconds,
+                lookback_delta.microseconds,
+            )
+            if lookback_delta
+            else None
+        )
+        return InLatestTimeWindowCondition(
+            lookback_days_second_microseconds=lookback_days_second_microseconds
+        )
 
     @property
     def timedelta(self) -> Optional[datetime.timedelta]:
-        return datetime.timedelta(seconds=self.lookback_seconds) if self.lookback_seconds else None
+        if self.lookback_days_second_microseconds:
+            return datetime.timedelta(
+                days=self.lookback_days_second_microseconds[0],
+                seconds=self.lookback_days_second_microseconds[1],
+                microseconds=self.lookback_days_second_microseconds[2],
+            )
+        else:
+            return None
 
     @property
     def description(self) -> str:

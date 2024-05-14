@@ -129,9 +129,7 @@ class SchedulingCondition(ABC, DagsterModel):
         """
         from .operands import InLatestTimeWindowCondition
 
-        return InLatestTimeWindowCondition(
-            lookback_seconds=lookback_delta.total_seconds() if lookback_delta else None
-        )
+        return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
 
 
 class SchedulingResult(DagsterModel):
