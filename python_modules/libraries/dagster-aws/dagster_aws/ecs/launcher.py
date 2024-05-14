@@ -731,9 +731,8 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
             return True
 
-        if (
-            "CannotPullContainerError" in stopped_reason
-            and "which reports content size of zero: invalid argument" in stopped_reason
+        if "CannotPullContainerError" in stopped_reason and (
+            "invalid argument" in stopped_reason or "EOF" in stopped_reason
         ):
             return True
 
