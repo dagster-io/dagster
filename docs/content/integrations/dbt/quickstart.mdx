@@ -64,6 +64,84 @@ dagster-dbt project scaffold --project-name my_dagster_project --dbt-project-dir
 This command creates a new directory called `my_dagster_project/` inside the current directory. The new `my_dagster_project/` directory will contain a set of files that define a Dagster project to load the dbt project provided in `./my_dbt_project`.
 
 </TabItem>
+<TabItem name="Option 2: Use an existing Dagster project">
+
+### Option 2: Load your dbt project in an existing Dagster project
+
+You can use an existing Dagster project to run your dbt project. To do so, you'll need to add some objects using the [dagster-dbt library](/\_apidocs/libraries/dagster-dbt) and update your `Definitions` object. This example assumes that your existing Dagster project includes both `assets.py` and `definitions.py` files, among other required files.
+
+```shell
+my_dagster_project
+├── __init__.py
+├── assets.py
+├── definitions.py
+├── pyproject.toml
+├── setup.cfg
+└── setup.py
+```
+
+1. Change directories to the Dagster project directory:
+
+   ```shell
+   cd my_dagster_project/
+   ```
+
+2. Create a Python file named `project.py` and add the following code. The DbtProject object is a representation of your dbt project that assist with managing `manifest.json` preparation.
+
+   ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_project_example endbefore=end_dbt_project_example
+   from pathlib import Path
+
+   from dagster_dbt import DbtProject
+
+   RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
+
+   my_project = DbtProject(
+       project_dir=Path(__file__)
+       .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
+       .resolve(),
+   )
+   ```
+
+3. In your `assets.py` file, add the following code. Using the `dbt_assets` decorator allows Dagster to create a definition for how to compute a set of dbt resources, described by a `manifest.json`.
+
+   ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_assets_example endbefore=end_dbt_assets_example
+   from dagster import AssetExecutionContext
+   from dagster_dbt import DbtCliResource, dbt_assets
+
+   from .project import my_project
+
+   @dbt_assets(manifest=my_project.manifest_path)
+   def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+       yield from dbt.cli(["build"], context=context).stream()
+   ```
+
+4. In your `definitions.py` file, update your Definitions object to include the newly created objects.
+
+   ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_definitions_example endbefore=end_dbt_definitions_example
+   from dagster import Definitions
+   from dagster_dbt import DbtCliResource
+
+   from .assets import my_dbt_assets
+   from .project import my_project
+
+   defs = Definitions(
+       ...,
+       assets=[
+           ...,
+           # Add the dbt assets alongside your other asset
+           my_dbt_assets
+       ],
+       resources={
+           ...,
+           # Add the dbt resource alongside your other resources
+           "dbt": DbtCliResource(project_dir=my_project),
+       },
+   )
+   ```
+
+With these changes, your existing Dagster project is ready to run your dbt project.
+
+</TabItem>
 </TabGroup>
 
 ---
