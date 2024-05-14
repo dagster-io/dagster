@@ -49,7 +49,7 @@ def dbt_project_example():
 
     from dagster_dbt import DbtProject
 
-    RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my-dbt-project"
+    RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
 
     my_project = DbtProject(
         project_dir=Path(__file__)
@@ -82,8 +82,15 @@ def dbt_definitions_example():
     from .project import my_project
 
     defs = Definitions(
-        assets=[my_dbt_assets],
+        assets=[
+            # your other assets here,
+            my_dbt_assets
+        ],
+        jobs=[
+            # your jobs here
+        ],
         resources={
+            # your other resources here,
             "dbt": DbtCliResource(project_dir=my_project),
         },
     )
