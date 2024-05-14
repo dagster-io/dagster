@@ -1,3 +1,4 @@
+import inspect
 from typing import Iterable, Tuple, Type
 
 from checked_named_tuple_spec import CheckedNamedTupleSpec
@@ -8,8 +9,9 @@ from dagster._utils import file_relative_path
 from dagster._utils.indenting_printer import IndentingPrinter
 
 
-class SerdesModelGen:
+class CNTTypeInfo:
     def __init__(self, spec_type) -> None:
+        check.class_param(spec_type, "spec_type", CheckedNamedTupleSpec)
         self.spec_type = spec_type
 
     @property
@@ -17,8 +19,12 @@ class SerdesModelGen:
         return self.spec_type.__name__
 
     def fields(self) -> Iterable[Tuple[str, Type]]:
-        for field_name, field_type in self.spec_type.__annotations__.items():
-            yield field_name, field_type
+        # iterates over based
+        for itype in inspect.getmro(self.spec_type):
+            if itype is CheckedNamedTupleSpec:
+                return
+            for field_name, field_type in itype.__annotations__.items():
+                yield field_name, field_type
 
 
 TYPE_STR_MAP = {
@@ -32,14 +38,17 @@ def str_for_type(t: Type) -> str:
 
 
 def check_line_for_type(t: Type, name: str) -> str:
-    if t in {int, str}:
-        return f"check.{t.__name__}_param({name}, {name})"
+    if t not in {int, str}:
+        raise Exception(f"Unsupported type {t}")
 
-    raise Exception(f"Unsupported type {t}")
+    arg_name = name
+    type_name = t.__name__
+
+    # return f'check.{type_name}_param({arg_name}, "{arg_name}")'
+    return f'{arg_name} if isinstance({arg_name}, {type_name}) else check.{type_name}_param({arg_name}, "{arg_name}"),'
 
 
-
-def generate_serdes_model(model_gen: SerdesModelGen) -> None:
+def generate_serdes_model(model_gen: CNTTypeInfo) -> None:
     preamble = """
 from typing import NamedTuple
 
@@ -57,7 +66,7 @@ from dagster import _check as check
         with printer.with_indent():
             for field_name, field_type in model_gen.fields():
                 printer.line(f'("{field_name}", {str_for_type(field_type)}),')
-        printer.line("],")
+        printer.line("],)")
     printer.line("):")
 
     with printer.with_indent():
@@ -68,7 +77,7 @@ from dagster import _check as check
         printer.line("def __new__(")
         with printer.with_indent():
             printer.line("cls,")
-            printer.line("*")
+            printer.line("*,")
             for field_name, field_type in model_gen.fields():
                 printer.line(f"{field_name}: {str_for_type(field_type)},")
         printer.line(f') -> "{model_gen.name}":')
@@ -78,7 +87,8 @@ from dagster import _check as check
                 printer.line("cls,")
                 for field_name, field_type in model_gen.fields():
                     printer.line(
-                        f'check.{field_type.__name__}_param({field_name}, "{field_name}"),'
+                        check_line_for_type(t=field_type, name=field_name)
+                        # f'check.{field_type.__name__}_param({field_name}, "{field_name}"),'
                     )
             printer.line(")")
 
@@ -86,13 +96,13 @@ from dagster import _check as check
 if __name__ == "__main__":
     mod = import_module_from_path("specs", file_relative_path(__file__, "specs.py"))
 
-    specs = []
+    specs = {}
     for symbol in mod.__dict__.values():
         if symbol is CheckedNamedTupleSpec:
             continue
         if is_subclass(symbol, CheckedNamedTupleSpec):
-            specs.append(symbol)
+            specs[symbol.__name__] = symbol
 
-    single_model_gen = SerdesModelGen(next(iter(specs)))
+    single_model_gen = CNTTypeInfo(next(iter(specs.values())))
 
-    generate_serdes_model(single_model_gen)
+    generate_serdes_model(CNTTypeInfo(specs["Derived"]))
