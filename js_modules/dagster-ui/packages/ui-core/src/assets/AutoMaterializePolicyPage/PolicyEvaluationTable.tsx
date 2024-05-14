@@ -96,7 +96,7 @@ const UnpartitionedPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, status, uniqueId} = evaluation;
+          const {description, label, status, uniqueId} = evaluation;
           let endTimestamp, startTimestamp;
           if ('endTimestamp' in evaluation) {
             endTimestamp = evaluation.endTimestamp;
@@ -117,7 +117,7 @@ const UnpartitionedPolicyEvaluationTable = ({
               <td>
                 <PolicyEvaluationCondition
                   icon={type === 'group' ? 'resource' : 'wysiwyg'}
-                  label={description}
+                  label={label ?? description}
                   skipped={status === AssetConditionEvaluationStatus.SKIPPED}
                   depth={depth}
                   type={type}
@@ -202,7 +202,7 @@ const PartitionedPolicyEvaluationTable = ({
       </thead>
       <tbody>
         {flattenedRecords.map(({evaluation, id, parentId, depth, type}) => {
-          const {description, candidateSubset, endTimestamp, startTimestamp, trueSubset, uniqueId} =
+          const {description, label, candidateSubset, endTimestamp, startTimestamp, trueSubset, uniqueId} =
             evaluation;
           const consideredPartitions = candidateSubset?.subsetValue.partitionKeys?.length;
 
@@ -221,7 +221,7 @@ const PartitionedPolicyEvaluationTable = ({
               <td>
                 <PolicyEvaluationCondition
                   icon={type === 'group' ? 'resource' : 'wysiwyg'}
-                  label={description}
+                  label={label ?? description}
                   depth={depth}
                   type={type}
                   isCollapsed={!collapsedRecords.has(evaluation.uniqueId)}
@@ -246,7 +246,7 @@ const PartitionedPolicyEvaluationTable = ({
                   style={{width: FULL_SEGMENTS_WIDTH}}
                 >
                   <PartitionSegmentWithPopover
-                    description={description}
+                    description={label ?? description}
                     status={AssetConditionEvaluationStatus.TRUE}
                     subset={trueSubset}
                     selectPartition={selectPartition}

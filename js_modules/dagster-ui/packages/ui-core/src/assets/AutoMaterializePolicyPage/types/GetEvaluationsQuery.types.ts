@@ -15,6 +15,7 @@ export type AssetSubsetFragment = {
 export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
   description: string;
+  label: string | null;
   status: Types.AssetConditionEvaluationStatus;
   uniqueId: string;
   childUniqueIds: Array<string>;
@@ -168,6 +169,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
 export type UnpartitionedAssetConditionEvaluationNodeFragment = {
   __typename: 'UnpartitionedAssetConditionEvaluationNode';
   description: string;
+  label: string | null;
   startTimestamp: number | null;
   endTimestamp: number | null;
   status: Types.AssetConditionEvaluationStatus;
@@ -323,6 +325,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
 export type PartitionedAssetConditionEvaluationNodeFragment = {
   __typename: 'PartitionedAssetConditionEvaluationNode';
   description: string;
+  label: string | null;
   startTimestamp: number | null;
   endTimestamp: number | null;
   numTrue: number;
@@ -375,6 +378,7 @@ export type AssetConditionEvaluationRecordFragment = {
       | {
           __typename: 'PartitionedAssetConditionEvaluationNode';
           description: string;
+          label: string | null;
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
@@ -412,6 +416,7 @@ export type AssetConditionEvaluationRecordFragment = {
       | {
           __typename: 'SpecificPartitionAssetConditionEvaluationNode';
           description: string;
+          label: string | null;
           status: Types.AssetConditionEvaluationStatus;
           uniqueId: string;
           childUniqueIds: Array<string>;
@@ -584,6 +589,7 @@ export type AssetConditionEvaluationRecordFragment = {
       | {
           __typename: 'UnpartitionedAssetConditionEvaluationNode';
           description: string;
+          label: string | null;
           startTimestamp: number | null;
           endTimestamp: number | null;
           status: Types.AssetConditionEvaluationStatus;
@@ -803,6 +809,7 @@ export type GetEvaluationsQuery = {
               | {
                   __typename: 'PartitionedAssetConditionEvaluationNode';
                   description: string;
+                  label: string | null;
                   startTimestamp: number | null;
                   endTimestamp: number | null;
                   numTrue: number;
@@ -840,6 +847,7 @@ export type GetEvaluationsQuery = {
               | {
                   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
                   description: string;
+                  label: string | null;
                   status: Types.AssetConditionEvaluationStatus;
                   uniqueId: string;
                   childUniqueIds: Array<string>;
@@ -1018,6 +1026,7 @@ export type GetEvaluationsQuery = {
               | {
                   __typename: 'UnpartitionedAssetConditionEvaluationNode';
                   description: string;
+                  label: string | null;
                   startTimestamp: number | null;
                   endTimestamp: number | null;
                   status: Types.AssetConditionEvaluationStatus;
@@ -1218,6 +1227,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
       | {
           __typename: 'PartitionedAssetConditionEvaluationNode';
           description: string;
+          label: string | null;
           startTimestamp: number | null;
           endTimestamp: number | null;
           numTrue: number;
@@ -1255,6 +1265,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
       | {
           __typename: 'SpecificPartitionAssetConditionEvaluationNode';
           description: string;
+          label: string | null;
           status: Types.AssetConditionEvaluationStatus;
           uniqueId: string;
           childUniqueIds: Array<string>;
@@ -1427,6 +1438,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
       | {
           __typename: 'UnpartitionedAssetConditionEvaluationNode';
           description: string;
+          label: string | null;
           startTimestamp: number | null;
           endTimestamp: number | null;
           status: Types.AssetConditionEvaluationStatus;

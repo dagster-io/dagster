@@ -3513,6 +3513,7 @@ union AssetConditionEvaluationNode =
 type UnpartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  label: String
   startTimestamp: Float
   endTimestamp: Float
   metadataEntries: [MetadataEntry!]!
@@ -3529,6 +3530,7 @@ enum AssetConditionEvaluationStatus {
 type PartitionedAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  label: String
   startTimestamp: Float
   endTimestamp: Float
   trueSubset: AssetSubset!
@@ -3554,6 +3556,7 @@ type AssetSubsetValue {
 type SpecificPartitionAssetConditionEvaluationNode {
   uniqueId: String!
   description: String!
+  label: String
   metadataEntries: [MetadataEntry!]!
   status: AssetConditionEvaluationStatus!
   childUniqueIds: [String!]!

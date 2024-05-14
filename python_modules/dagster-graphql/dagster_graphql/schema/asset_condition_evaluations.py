@@ -81,6 +81,7 @@ class GrapheneAssetSubset(graphene.ObjectType):
 class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    label = graphene.Field(graphene.String)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -108,6 +109,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            label=evaluation.condition_snapshot.label,
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             status=status,
@@ -129,6 +131,7 @@ class GrapheneUnpartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    label = graphene.Field(graphene.String)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -156,6 +159,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            label=evaluation.condition_snapshot.label,
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             trueSubset=GrapheneAssetSubset(evaluation.true_subset),
@@ -174,6 +178,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
     description = graphene.NonNull(graphene.String)
+    label = graphene.Field(graphene.String)
 
     metadataEntries = non_null_list(GrapheneMetadataEntry)
     status = graphene.NonNull(GrapheneAssetConditionEvaluationStatus)
@@ -200,6 +205,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
             description=evaluation.condition_snapshot.description,
+            label=evaluation.condition_snapshot.label,
             status=status,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
