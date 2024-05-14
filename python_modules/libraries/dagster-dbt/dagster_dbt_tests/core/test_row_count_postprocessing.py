@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, cast
 
+import pytest
 from dagster import (
     AssetExecutionContext,
     _check as check,
@@ -8,13 +9,40 @@ from dagster import (
 )
 from dagster._core.definitions.metadata import IntMetadataValue
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.core.resources_v2 import DbtCliInvocation, DbtCliResource
 
+from ..conftest import _create_dbt_invocation
 from ..dbt_projects import test_jaffle_shop_path
 
 
-def test_no_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
-    @dbt_assets(manifest=test_jaffle_shop_manifest)
+@pytest.fixture(name="standalone_duckdb_dbfile_path")
+def standalone_duckdb_dbfile_path_fixture(request) -> None:
+    """Generate a unique duckdb dbfile path for certain tests which need
+    it, rather than using the default one-file-per-worker approach.
+    """
+    jaffle_shop_duckdb_db_file_name = f"{request.node.name}_jaffle_shop"
+    jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
+
+    os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"] = jaffle_shop_duckdb_db_file_name
+    os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"] = jaffle_shop_duckdb_dbfile_path
+
+
+@pytest.fixture(name="test_jaffle_shop_invocation_standalone_duckdb_dbfile")
+def test_jaffle_shop_invocation_standalone_duckdb_dbfile_fixture(
+    standalone_duckdb_dbfile_path,
+) -> DbtCliInvocation:
+    return _create_dbt_invocation(test_jaffle_shop_path)
+
+
+@pytest.fixture(name="test_jaffle_shop_manifest_standalone_duckdb_dbfile")
+def test_jaffle_shop_manifest_standalone_duckdb_dbfile_fixture(
+    test_jaffle_shop_invocation_standalone_duckdb_dbfile: DbtCliInvocation,
+) -> Dict[str, Any]:
+    return test_jaffle_shop_invocation_standalone_duckdb_dbfile.get_artifact("manifest.json")
+
+
+def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
@@ -31,8 +59,10 @@ def test_no_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     )
 
 
-def test_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
-    @dbt_assets(manifest=test_jaffle_shop_manifest)
+def test_row_count(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).enable_fetch_row_count().stream()
 
