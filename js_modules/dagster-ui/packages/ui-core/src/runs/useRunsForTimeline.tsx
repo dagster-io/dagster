@@ -114,7 +114,7 @@ export const useRunsForTimeline = (
                 res(dataSoFar);
               } else {
                 const runs = data.unterminated.results;
-                dataSoFar.push(...runs);
+                dataSoFar.unshift(...runs);
                 if (!runs.length) {
                   hasMoreData = false;
                   res(dataSoFar);
