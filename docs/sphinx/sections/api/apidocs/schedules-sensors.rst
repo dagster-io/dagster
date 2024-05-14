@@ -1,12 +1,23 @@
 .. currentmodule:: dagster
 
-Run Requests
-============
+Schedules and sensors
+=====================
+
+Dagster offers several ways to run data pipelines without manual intervation, including traditional scheduling and event-based triggers. `Automating your Dagster pipelines </concepts/automation>`_ can boost efficiency and ensure that data is produced consistently and reliably.
+
+----
+
+Run requests
+------------
 .. autoclass:: RunRequest
 .. autoclass:: SkipReason
 
+----
+
 Schedules
-=========
+---------
+
+`Schedules </concepts/partitions-schedules-sensors/schedules>`__ are Dagster's imperative approach to automation, which allow you to specify when a job should run, such as Mondays at 9:00 AM. Jobs triggered by schedules can contain a subset of `assets </concepts/assets/software-defined-assets>`__ or `ops </concepts/ops-jobs-graphs/ops>`__.
 
 .. autodecorator:: schedule
 
@@ -16,32 +27,19 @@ Schedules
 
 .. autofunction:: build_schedule_context
 
+.. autofunction:: build_schedule_from_partitioned_job
+
 .. currentmodule:: dagster._core.scheduler
 
 .. autoconfigurable:: DagsterDaemonScheduler
   :annotation: Scheduler
 
-Partitioned Schedules
-=====================
-
-.. currentmodule:: dagster
-
-.. autofunction:: build_schedule_from_partitioned_job
-
-.. autodecorator:: hourly_partitioned_config
-    :noindex:
-
-.. autodecorator:: daily_partitioned_config
-    :noindex:
-
-.. autodecorator:: weekly_partitioned_config
-    :noindex:
-
-.. autodecorator:: monthly_partitioned_config
-    :noindex:
+----
 
 Sensors
-=======
+-------
+
+`Sensors </concepts/partitions-schedules-sensors/sensors>`_ allow you to run a job or materialize an asset in response to specific events. Sensors periodically check and execute logic to know whether to kick off a run.
 
 .. currentmodule:: dagster
 
@@ -82,6 +80,7 @@ Sensors
 .. autoclass:: RunFailureSensorContext
 
 .. autoclass:: JobSelector
+
 .. autoclass:: RepositorySelector
 
 .. autofunction:: build_run_status_sensor_context
