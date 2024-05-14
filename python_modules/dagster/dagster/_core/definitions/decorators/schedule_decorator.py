@@ -58,41 +58,40 @@ def schedule(
     The decorated function takes in a :py:class:`~dagster.ScheduleEvaluationContext` as its only
     argument, and does one of the following:
 
-    1. Return a `RunRequest` object.
-    2. Return a list of `RunRequest` objects.
-    3. Return a `SkipReason` object, providing a descriptive message of why no runs were requested.
+    1. Return a :py:class:`~dagster.RunRequest` object.
+    2. Return a list of :py:class:`~dagster.RunRequest` objects.
+    3. Return a :py:class:`~dagster.SkipReason` object, providing a descriptive message of why no runs were requested.
     4. Return nothing (skipping without providing a reason)
     5. Return a run config dictionary.
-    6. Yield a `SkipReason` or yield one ore more `RunRequest` objects.
+    6. Yield a :py:class:`~dagster.SkipReason` or yield one ore more :py:class:`~dagster.RunRequest` objects.
 
     Returns a :py:class:`~dagster.ScheduleDefinition`.
 
     Args:
         cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
-            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            specifying when the schedule will run, e.g., ``45 23 * * 6`` for a schedule that runs
             at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
             the union of all execution times for the provided cron strings, e.g.,
-            ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
+            ``['45 23 * * 6', '30 9 * * 0']`` for a schedule that runs at 11:45 PM every Saturday and
             9:30 AM every Sunday.
-        name (Optional[str]): The name of the schedule to create.
+        name (Optional[str]): The name of the schedule.
         tags (Optional[Dict[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Dict[str, str]]]]): A function
-            that generates tags to attach to the schedules runs. Takes a
+            that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
-            key-value pairs). You may set only one of ``tags`` and ``tags_fn``.
+            key-value pairs). **Note**: Either ``tags`` or ``tags_fn`` may be set, but not both.
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs at
             schedule execution time to determine whether a schedule should execute or skip. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. ``"America/Los_Angeles"``.
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
-            that should execute when this schedule runs.
-        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from the Dagster UI or via the GraphQL API.
+            that should execute when the schedule runs.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
