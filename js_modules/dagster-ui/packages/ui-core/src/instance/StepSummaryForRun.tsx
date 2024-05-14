@@ -9,6 +9,7 @@ import {
   StepSummaryForRunQueryVariables,
 } from './types/StepSummaryForRun.types';
 import {StepEventStatus} from '../graphql/types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {failedStatuses, inProgressStatuses} from '../runs/RunStatuses';
 
 interface Props {
@@ -17,12 +18,14 @@ interface Props {
 
 export const StepSummaryForRun = (props: Props) => {
   const {runId} = props;
-  const {data} = useQuery<StepSummaryForRunQuery, StepSummaryForRunQueryVariables>(
+  const queryResult = useQuery<StepSummaryForRunQuery, StepSummaryForRunQueryVariables>(
     STEP_SUMMARY_FOR_RUN_QUERY,
     {
       variables: {runId},
     },
   );
+  const {data} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'StepSummaryForRunQuery');
 
   const run = data?.pipelineRunOrError;
   const status = run?.__typename === 'Run' ? run.status : null;

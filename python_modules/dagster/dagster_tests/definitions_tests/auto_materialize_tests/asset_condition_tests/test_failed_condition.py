@@ -2,63 +2,64 @@ from dagster import SchedulingCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
+from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def
 from .asset_condition_scenario import AssetConditionScenarioState
 
 
-def test_in_progress_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_progress()
-    )
+def test_failed_unpartitioned() -> None:
+    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.failed())
 
-    # no run in progress
+    # no failed partitions
     state, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
-    # run now in progress
-    state = state.with_in_progress_run_for_asset("A")
+    # now a partition fails
+    state = state.with_failed_run_for_asset("A")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 
-    # run completes
-    state = state.with_in_progress_runs_completed()
+    # the next run completes successfully
+    state = state.with_runs(run_request("A"))
     _, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
 
 def test_in_progress_static_partitioned() -> None:
     state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_progress()
+        one_asset, asset_condition=SchedulingCondition.failed()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
-    # no run in progress
-    state, result = state.evaluate("A")
+    # no failed_runs
     state, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
-    # now in progress
-    state = state.with_in_progress_run_for_asset("A", partition_key="1")
+    # now one partition fails
+    state = state.with_failed_run_for_asset("A", partition_key="1")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
     assert result.true_subset.asset_partitions == {AssetKeyPartitionKey(AssetKey("A"), "1")}
 
-    # run completes
-    state = state.with_in_progress_runs_completed()
+    # now that partition succeeds
+    state = state.with_runs(run_request("A", partition_key="1"))
     state, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
-    # now both in progress
-    state = state.with_in_progress_run_for_asset(
+    # now both partitions fail
+    state = state.with_failed_run_for_asset(
         "A",
         partition_key="1",
-    ).with_in_progress_run_for_asset(
+    ).with_failed_run_for_asset(
         "A",
         partition_key="2",
     )
     state, result = state.evaluate("A")
     assert result.true_subset.size == 2
 
-    # both runs complete
-    state = state.with_in_progress_runs_completed()
+    # now both partitions succeed
+    state = state.with_runs(
+        run_request("A", partition_key="1"),
+        run_request("A", partition_key="2"),
+    )
     _, result = state.evaluate("A")
     assert result.true_subset.size == 0

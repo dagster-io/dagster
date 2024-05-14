@@ -1,12 +1,9 @@
+import dagster._check as check
 import pytest
+from dagster import SchedulingCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-    AssetCondition,
-)
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-    SchedulingResult,
-)
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
 )
@@ -19,7 +16,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 def get_hardcoded_condition():
     true_set = set()
 
-    class HardcodedCondition(AssetCondition):
+    class HardcodedCondition(SchedulingCondition):
         @property
         def description(self) -> str:
             return "..."
@@ -35,9 +32,11 @@ def get_hardcoded_condition():
             ).partitions_def
             return SchedulingResult.create(
                 context,
-                true_slice=context.asset_graph_view.get_asset_slice_from_subset(
-                    AssetSubset.from_asset_partitions_set(
-                        context.asset_key, partitions_def, true_candidates
+                true_slice=check.not_none(
+                    context.asset_graph_view.get_asset_slice_from_subset(
+                        AssetSubset.from_asset_partitions_set(
+                            context.asset_key, partitions_def, true_candidates
+                        )
                     )
                 ),
             )
@@ -49,9 +48,9 @@ def get_hardcoded_condition():
 def test_dep_missing_unpartitioned(is_any: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
-        AssetCondition.any_deps_match(inner_condition)
+        SchedulingCondition.any_deps_match(inner_condition)
         if is_any
-        else AssetCondition.all_deps_match(inner_condition)
+        else SchedulingCondition.all_deps_match(inner_condition)
     )
     state = AssetConditionScenarioState(one_asset_depends_on_two, asset_condition=condition)
 
@@ -77,9 +76,9 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
 def test_dep_missing_partitioned(is_any: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
-        AssetCondition.any_deps_match(inner_condition)
+        SchedulingCondition.any_deps_match(inner_condition)
         if is_any
-        else AssetCondition.all_deps_match(inner_condition)
+        else SchedulingCondition.all_deps_match(inner_condition)
     )
     state = AssetConditionScenarioState(
         one_asset_depends_on_two, asset_condition=condition

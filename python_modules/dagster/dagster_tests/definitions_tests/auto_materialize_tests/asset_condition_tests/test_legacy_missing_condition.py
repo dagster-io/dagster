@@ -1,4 +1,9 @@
-from dagster import AutoMaterializePolicy, Definitions, SchedulingCondition, asset
+import datetime
+
+from dagster import AutoMaterializePolicy, Definitions, asset
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+    AssetCondition,
+)
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
 )
@@ -17,7 +22,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
+    state = AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.missing())
 
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
@@ -45,7 +50,7 @@ def test_missing_unpartitioned() -> None:
 
 def test_missing_time_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
+        AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.missing())
         .with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_datetime)
         .with_current_time_advanced(days=6, minutes=1)
@@ -60,36 +65,39 @@ def test_missing_time_partitioned() -> None:
 
     # after two runs of A those partitions are now False
     state, result = state.with_runs(
-        run_request("A", day_partition_key(time_partitions_start_datetime, 1)),
+        run_request("A", day_partition_key(time_partitions_start_datetime, 2)),
         run_request("A", day_partition_key(time_partitions_start_datetime, 3)),
     ).evaluate("A")
     assert result.true_subset.size == 4
 
-    # if we evaluate from scratch, they're still False
-    _, result = state.without_previous_evaluation_state().evaluate("A")
+    # result is stable
+    state, result = state.evaluate("A")
     assert result.true_subset.size == 4
 
+    # if the partitions definition changes, then we have 1 fewer missing partition
+    state = state.with_asset_properties(
+        partitions_def=daily_partitions_def._replace(
+            start=time_partitions_start_datetime + datetime.timedelta(days=1)
+        )
+    )
+    state, result = state.evaluate("A")
+    assert result.true_subset.size == 3
 
-def test_serialize_definitions_with_asset_condition() -> None:
+    # if we evaluate from scratch, get the same answer
+    _, result = state.without_previous_evaluation_state().evaluate("A")
+    assert result.true_subset.size == 3
+
+
+def test_serialize_definitions_with_asset_condition():
     amp = AutoMaterializePolicy.from_asset_condition(
-        SchedulingCondition.parent_newer() & ~SchedulingCondition.updated_since_cron("0 * * * *")
+        AssetCondition.parent_newer() & ~AssetCondition.updated_since_cron("0 * * * *")
     )
 
     @asset(auto_materialize_policy=amp)
-    def my_asset() -> int:
+    def my_asset():
         return 0
 
-    serialized = serialize_value(amp)
-    assert isinstance(serialized, str)
-
-    serialized = serialize_value(
+    result = serialize_value(
         external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
-    assert isinstance(serialized, str)
-
-
-def test_deserialize_definitions_with_asset_condition() -> None:
-    serialized = """{"__class__": "AutoMaterializePolicy", "asset_condition": {"__class__": "AndAssetCondition", "operands": [{"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnParentUpdatedRule", "updated_parent_filter": null}}, {"__class__": "NotAssetCondition", "operand": {"__class__": "NotAssetCondition", "operand": {"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnCronRule", "all_partitions": false, "cron_schedule": "0 * * * *", "timezone": "UTC"}}}}]}, "max_materializations_per_minute": null, "rules": {"__frozenset__": []}, "time_window_partition_scope_minutes": 1e-06}"""
-
-    deserialized = deserialize_value(serialized, AutoMaterializePolicy)
-    assert isinstance(deserialized, AutoMaterializePolicy)
+    assert isinstance(result, str)
