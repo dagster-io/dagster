@@ -187,7 +187,10 @@ class SchedulingCondition(ABC, DagsterModel):
         return ParentNewerCondition()
 
     @staticmethod
-    def eager() -> "SchedulingCondition":
+    def eager_with_rate_limit(
+        *,
+        failure_retry_delta: datetime.timedelta = datetime.timedelta(hours=1),
+    ) -> "SchedulingCondition":
         """Returns a condition which will "eagerly" fill in missing partitions as they are created,
         and ensures unpartitioned assets are updated whenever their dependencies are updated (either
         via scheduled execution or ad-hoc runs).
@@ -201,6 +204,10 @@ class SchedulingCondition(ABC, DagsterModel):
         - None of its parent partitions are missing
         - None of its parent partitions are currently part of an in-progress run
         - It is not currently part of an in-progress run
+
+        It will also refuse to materialize an asset partition if the latest materialization attempt
+        failed and has not already been scheduled within the failure_retry_delta, to prevent
+        repeated failures.
         """
         missing_or_parent_updated = (
             SchedulingCondition.parent_newer()
@@ -213,12 +220,16 @@ class SchedulingCondition(ABC, DagsterModel):
         any_parent_in_progress = SchedulingCondition.any_deps_match(
             SchedulingCondition.in_progress()
         )
+        failed_recently = SchedulingCondition.failed() & SchedulingCondition.scheduled_since(
+            failure_retry_delta
+        )
         return (
             SchedulingCondition.in_latest_time_window()
             & missing_or_parent_updated
             & ~any_parent_missing
             & ~any_parent_in_progress
             & ~SchedulingCondition.in_progress()
+            & ~failed_recently
         )
 
     @staticmethod
