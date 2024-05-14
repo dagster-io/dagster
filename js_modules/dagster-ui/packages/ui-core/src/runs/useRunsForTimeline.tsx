@@ -29,7 +29,7 @@ const BATCH_LIMIT = 500;
 
 export const useRunsForTimeline = (
   range: [number, number],
-  filter: RunsFilter | undefined,
+  filter: RunsFilter | undefined = undefined,
   refreshInterval = FIFTEEN_SECONDS,
 ) => {
   const runsFilter = useMemo(() => {
@@ -84,13 +84,13 @@ export const useRunsForTimeline = (
       called: true,
       error: undefined,
     }));
+    let cursor: string | undefined = undefined;
     const results = await Promise.all(
       buckets.map(
         ([start, end]) =>
           new Promise<RunTimelineFragment[]>(async (res) => {
             let hasMoreData = true;
             const dataSoFar: RunTimelineFragment[] = [];
-            let nextEnd = end;
             while (hasMoreData) {
               const {data} = await client.query<
                 UnterminatedRunTimelineQuery,
@@ -103,9 +103,10 @@ export const useRunsForTimeline = (
                   inProgressFilter: {
                     ...runsFilter,
                     statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-                    createdBefore: nextEnd / 1000,
+                    createdBefore: end / 1000,
                     updatedAfter: start / 1000,
                   },
+                  cursor,
                   limit: BATCH_LIMIT,
                 },
               });
@@ -119,7 +120,7 @@ export const useRunsForTimeline = (
                   hasMoreData = false;
                   res(dataSoFar);
                 } else {
-                  nextEnd = runs[runs.length - 1]!.startTime!;
+                  cursor = runs[runs.length - 1]!.id;
                 }
               }
             }
@@ -147,7 +148,7 @@ export const useRunsForTimeline = (
           new Promise<RunTimelineFragment[]>(async (res) => {
             let hasMoreData = true;
             const dataSoFar: RunTimelineFragment[] = [];
-            let nextEnd = end;
+            let cursor: string | undefined = undefined;
             while (hasMoreData) {
               const {data} = await client.query<
                 TerminatedRunTimelineQuery,
@@ -160,9 +161,10 @@ export const useRunsForTimeline = (
                   terminatedFilter: {
                     ...runsFilter,
                     statuses: Array.from(doneStatuses),
-                    createdBefore: nextEnd / 1000,
+                    createdBefore: end / 1000,
                     updatedAfter: start / 1000,
                   },
+                  cursor,
                   limit: BATCH_LIMIT,
                 },
               });
@@ -176,7 +178,7 @@ export const useRunsForTimeline = (
                   hasMoreData = false;
                   res(dataSoFar);
                 } else {
-                  nextEnd = runs[runs.length - 1]!.startTime!;
+                  cursor = runs[runs.length - 1]!.id;
                 }
               }
             }
@@ -407,8 +409,12 @@ const RUN_TIMELINE_FRAGMENT = gql`
 `;
 
 const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
-  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!) {
-    unterminated: runsOrError(filter: $inProgressFilter, limit: $limit) {
+  query UnterminatedRunTimelineQuery(
+    $inProgressFilter: RunsFilter!
+    $limit: Int!
+    $cursor: String
+  ) {
+    unterminated: runsOrError(filter: $inProgressFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
         results {
           id
@@ -422,8 +428,8 @@ const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
 `;
 
 const TERMINATED_RUN_TIMELINE_QUERY = gql`
-  query TerminatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int!) {
-    terminated: runsOrError(filter: $terminatedFilter, limit: $limit) {
+  query TerminatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int!, $cursor: String) {
+    terminated: runsOrError(filter: $terminatedFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
         results {
           id

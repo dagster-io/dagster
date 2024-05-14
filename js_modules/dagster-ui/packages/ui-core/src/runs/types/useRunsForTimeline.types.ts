@@ -21,6 +21,7 @@ export type RunTimelineFragment = {
 export type UnterminatedRunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
   limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type UnterminatedRunTimelineQuery = {
@@ -51,6 +52,7 @@ export type UnterminatedRunTimelineQuery = {
 export type TerminatedRunTimelineQueryVariables = Types.Exact<{
   terminatedFilter: Types.RunsFilter;
   limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type TerminatedRunTimelineQuery = {
