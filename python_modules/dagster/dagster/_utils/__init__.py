@@ -46,6 +46,7 @@ from typing import (
 
 import packaging.version
 from filelock import FileLock
+from pydantic import BaseModel
 from typing_extensions import Literal, TypeAlias, TypeGuard
 
 import dagster._check as check
@@ -287,6 +288,8 @@ def make_hashable(value: Any) -> Any:
         return tuple(sorted((key, make_hashable(value)) for key, value in value.items()))
     elif isinstance(value, (list, tuple, set)):
         return tuple([make_hashable(x) for x in value])
+    elif isinstance(value, BaseModel):
+        return make_hashable(value.dict())
     else:
         return value
 
