@@ -64,7 +64,7 @@ def test_row_count(
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).enable_fetch_row_count().stream()
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
 
     result = materialize(
         [my_dbt_assets],
