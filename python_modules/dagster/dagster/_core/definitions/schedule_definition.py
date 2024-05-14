@@ -151,12 +151,12 @@ def get_or_create_schedule_context(
 
 
 class ScheduleEvaluationContext:
-    """The context object available as the first argument various functions defined on a :py:class:`dagster.ScheduleDefinition`.
+    """The context object available as the first argument to various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
-    A `ScheduleEvaluationContext` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
+    A ``ScheduleEvaluationContext`` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
     and ``should_execute``.
 
-    Users should not instantiate this object directly. To construct a `ScheduleEvaluationContext` for testing purposes, use :py:func:`dagster.build_schedule_context`.
+    **Users should not instantiate this object directly**. To construct a ``ScheduleEvaluationContext`` for testing purposes, use :py:func:`dagster.build_schedule_context`.
 
     Example:
         .. code-block:: python
@@ -307,7 +307,7 @@ class ScheduleEvaluationContext:
     @public
     @property
     def instance(self) -> "DagsterInstance":
-        """DagsterInstance: The current DagsterInstance."""
+        """DagsterInstance: The current :py:class:`~dagster.DagsterInstance`."""
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
         # constructed under test.
         if not self._instance_ref:
@@ -398,10 +398,10 @@ def build_schedule_context(
     """Builds schedule execution context using the provided parameters.
 
     The instance provided to ``build_schedule_context`` must be persistent;
-    DagsterInstance.ephemeral() will result in an error.
+    :py:class:`DagsterInstance.ephemeral() <DagsterInstance>` will result in an error.
 
     Args:
-        instance (Optional[DagsterInstance]): The dagster instance configured to run the schedule.
+        instance (Optional[DagsterInstance]): The Dagster instance configured to run the schedule.
         scheduled_execution_time (datetime): The time in which the execution was scheduled to
             happen. May differ slightly from both the actual execution time and the time at which
             the run config is computed.
