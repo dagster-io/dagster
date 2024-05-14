@@ -129,10 +129,10 @@ my_dagster_project
        assets=[
            ...,
            # Add the dbt assets alongside your other asset
-           my_dbt_assets
+           my_dbt_assets,
        ],
        resources={
-           ...,
+           ...: ...,
            # Add the dbt resource alongside your other resources
            "dbt": DbtCliResource(project_dir=my_project),
        },

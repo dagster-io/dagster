@@ -58,8 +58,7 @@ my_project = DbtProject(
 # end_dbt_project_example
 
 
-# Using a string to avoid ruff adding a second blank line before the dbt_assets.
-"""
+# fmt: off
 # start_dbt_assets_example
 from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, dbt_assets
@@ -70,12 +69,10 @@ from .project import my_project
 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 # end_dbt_assets_example
-"""
+# fmt: on
 
 
-# Using a string to avoid compilation error caused by the `...` placeholders
-"""# start_dbt_definitions_example
-
+# start_dbt_definitions_example
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 
@@ -87,14 +84,12 @@ defs = Definitions(
     assets=[
         ...,
         # Add the dbt assets alongside your other asset
-        my_dbt_assets
+        my_dbt_assets,
     ],
     resources={
-        ...,
+        ...: ...,
         # Add the dbt resource alongside your other resources
         "dbt": DbtCliResource(project_dir=my_project),
     },
 )
-
 # end_dbt_definitions_example
-"""
