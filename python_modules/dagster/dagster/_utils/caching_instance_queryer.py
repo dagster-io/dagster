@@ -911,6 +911,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
     def get_parent_asset_partitions_updated_after_child(
         self,
+        *,
         asset_partition: AssetKeyPartitionKey,
         parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         respect_materialization_data_versions: bool,
