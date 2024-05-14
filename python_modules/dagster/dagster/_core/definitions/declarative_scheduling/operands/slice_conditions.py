@@ -49,6 +49,16 @@ class InProgressSchedulingCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
+class FailedSchedulingCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Latest run failed"
+
+    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.asset_key)
+
+
+@whitelist_for_serdes
 class RequestedThisTickCondition(SliceSchedulingCondition):
     @property
     def description(self) -> str:
