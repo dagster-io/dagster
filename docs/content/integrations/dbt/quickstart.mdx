@@ -50,7 +50,12 @@ The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies
 
 You can create a Dagster project that wraps your dbt project by using the `dagster-dbt` command line interface.
 
-To use the command, you'll need to provide 2 options - `--project-name`, the name of your Dagster project to be created, and `--dbt-project-dir`, the path to your dbt project. In our example, our Dagster project is named `my_dagster_project`and the relative path to our dbt project is `./my_dbt_project`, meaning that we are in the directory where `my_dbt_project` is located.
+To use the command, you'll need to provide two options:
+
+- `--project-name`, the name of your Dagster project to be created, and
+- `--dbt-project-dir`, the path to your dbt project.
+
+In our example, our Dagster project is named `my_dagster_project` and the relative path to our dbt project is `./my_dbt_project`, meaning that we are in the directory where `my_dbt_project` is located.
 
 ```shell
 dagster-dbt project scaffold --project-name my_dagster_project --dbt-project-dir ./my_dbt_project --use-experimental-dbt-project
