@@ -4,6 +4,7 @@ from .operands import (
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
+    RequestedThisTickCondition as RequestedThisTickCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,
