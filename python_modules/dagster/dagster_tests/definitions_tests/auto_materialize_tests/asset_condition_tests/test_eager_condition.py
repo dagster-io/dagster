@@ -5,13 +5,13 @@ from dagster import SchedulingCondition
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def test_eager_with_rate_limit_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
+    state = SchedulingConditionScenarioState(
         two_assets_in_sequence,
-        asset_condition=SchedulingCondition.eager_with_rate_limit(),
+        scheduling_condition=SchedulingCondition.eager_with_rate_limit(),
         ensure_empty_result=False,
     )
 
@@ -50,9 +50,9 @@ def test_eager_with_rate_limit_unpartitioned() -> None:
 
 def test_eager_with_rate_limit_hourly_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(
+        SchedulingConditionScenarioState(
             two_assets_in_sequence,
-            asset_condition=SchedulingCondition.eager_with_rate_limit(
+            scheduling_condition=SchedulingCondition.eager_with_rate_limit(
                 failure_retry_delta=datetime.timedelta(minutes=10)
             ),
             ensure_empty_result=False,
