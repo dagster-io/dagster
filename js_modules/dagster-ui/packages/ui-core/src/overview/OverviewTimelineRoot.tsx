@@ -80,7 +80,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const {jobs, initialLoading} = useRunsForTimeline(range);
+  const {jobs, initialLoading, refreshState} = useRunsForTimeline(range);
 
   React.useEffect(() => {
     if (!initialLoading) {

@@ -297,6 +297,7 @@ const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
       }
     }
   }
+  ${RUN_TIME_FRAGMENT}
 `;
 
 const TERMINATED_RUN_TIMELINE_QUERY = gql`
