@@ -1,8 +1,9 @@
 from pathlib import Path
-from typing import Any, Mapping, Tuple
+from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
 from dagster import AssetKey
+from dagster._core.definitions.assets import UserAssetOwner
 from dagster_looker.asset_decorator import looker_assets
 from dagster_looker.dagster_looker_translator import DagsterLookerTranslator
 
@@ -286,7 +287,8 @@ def test_with_asset_key_replacements() -> None:
             return super().get_asset_key(lookml_element).with_prefix("prefix")
 
     @looker_assets(
-        project_dir=test_retail_demo_path, dagster_looker_translator=CustomDagsterLookerTranslator()
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
     )
     def my_looker_assets(): ...
 
@@ -297,3 +299,88 @@ def test_with_asset_key_replacements() -> None:
         for dep in deps
         if len(dep.path) > 1 and dep.path[1] in ["dashboard", "explore", "view"]
     )
+
+
+def test_with_description_replacements() -> None:
+    expected_description = "customized description"
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_description(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[str]:
+            return expected_description
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for description in my_looker_assets.descriptions_by_key.values():
+        assert description == expected_description
+
+
+def test_with_metadata_replacements() -> None:
+    expected_metadata = {"customized": "metadata"}
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_metadata(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[Mapping[str, Any]]:
+            return expected_metadata
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for metadata in my_looker_assets.metadata_by_key.values():
+        assert metadata == expected_metadata
+
+
+def test_with_group_replacements() -> None:
+    expected_group = "customized_group"
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_group_name(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[str]:
+            return expected_group
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for group in my_looker_assets.group_names_by_key.values():
+        assert group == expected_group
+
+
+def test_with_owner_replacements() -> None:
+    expected_owners = [UserAssetOwner("custom@custom.com")]
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_owners(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[Sequence[str]]:
+            return [owner.email for owner in expected_owners]
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for owners in my_looker_assets.owners_by_key.values():
+        assert owners == expected_owners
+
+
+def test_with_tag_replacements() -> None:
+    expected_tags = {"customized": "tag"}
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_tags(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[Mapping[str, str]]:
+            return expected_tags
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for tags in my_looker_assets.tags_by_key.values():
+        assert tags == expected_tags
