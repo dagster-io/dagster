@@ -52,8 +52,8 @@ class FalseAssetCondition(SchedulingCondition):
 
 
 @dataclass(frozen=True)
-class AssetConditionScenarioState(ScenarioState):
-    asset_condition: Optional[SchedulingCondition] = None
+class SchedulingConditionScenarioState(ScenarioState):
+    scheduling_condition: Optional[SchedulingCondition] = None
     previous_evaluation_state: Optional[AssetConditionEvaluationState] = None
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
     ensure_empty_result: bool = True
@@ -81,16 +81,16 @@ class AssetConditionScenarioState(ScenarioState):
 
     def evaluate(
         self, asset: CoercibleToAssetKey
-    ) -> Tuple["AssetConditionScenarioState", SchedulingResult]:
+    ) -> Tuple["SchedulingConditionScenarioState", SchedulingResult]:
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery
         asset_condition = (
             AndAssetCondition(
-                operands=[check.not_none(self.asset_condition), FalseAssetCondition()]
+                operands=[check.not_none(self.scheduling_condition), FalseAssetCondition()]
             )
             if self.ensure_empty_result
-            else check.not_none(self.asset_condition)
+            else check.not_none(self.scheduling_condition)
         )
         asset_graph = self.scenario_spec.with_asset_properties(
             asset,
@@ -150,7 +150,7 @@ class AssetConditionScenarioState(ScenarioState):
 
         return new_state, result
 
-    def without_previous_evaluation_state(self) -> "AssetConditionScenarioState":
+    def without_previous_evaluation_state(self) -> "SchedulingConditionScenarioState":
         """Removes the previous evaluation state from the state. This is useful for testing
         re-evaluating this data "from scratch" after much computation has occurred.
         """
@@ -158,5 +158,5 @@ class AssetConditionScenarioState(ScenarioState):
 
     def with_requested_asset_partitions(
         self, requested_asset_partitions: Sequence[AssetKeyPartitionKey]
-    ) -> "AssetConditionScenarioState":
+    ) -> "SchedulingConditionScenarioState":
         return dataclasses.replace(self, requested_asset_partitions=requested_asset_partitions)

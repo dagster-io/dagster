@@ -3,12 +3,13 @@ from dagster import SchedulingCondition
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def test_updated_since_cron_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *")
+    state = SchedulingConditionScenarioState(
+        one_asset,
+        scheduling_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *"),
     ).with_current_time("2020-02-02T01:05:00")
 
     state, result = state.evaluate("A")
@@ -29,9 +30,9 @@ def test_updated_since_cron_unpartitioned() -> None:
 
 def test_updated_since_cron_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(
+        SchedulingConditionScenarioState(
             one_asset,
-            asset_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *"),
+            scheduling_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *"),
         )
         .with_asset_properties(partitions_def=two_partitions_def)
         .with_current_time("2020-02-02T01:05:00")

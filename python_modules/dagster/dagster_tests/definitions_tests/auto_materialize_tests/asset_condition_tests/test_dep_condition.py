@@ -10,7 +10,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_context import 
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset_depends_on_two, two_partitions_def
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def get_hardcoded_condition():
@@ -52,7 +52,9 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
         if is_any
         else SchedulingCondition.all_deps_match(inner_condition)
     )
-    state = AssetConditionScenarioState(one_asset_depends_on_two, asset_condition=condition)
+    state = SchedulingConditionScenarioState(
+        one_asset_depends_on_two, scheduling_condition=condition
+    )
 
     # neither parent is true
     state, result = state.evaluate("C")
@@ -80,8 +82,8 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         if is_any
         else SchedulingCondition.all_deps_match(inner_condition)
     )
-    state = AssetConditionScenarioState(
-        one_asset_depends_on_two, asset_condition=condition
+    state = SchedulingConditionScenarioState(
+        one_asset_depends_on_two, scheduling_condition=condition
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no parents true
