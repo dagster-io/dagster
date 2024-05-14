@@ -2,14 +2,12 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunTimelineQueryVariables = Types.Exact<{
+export type UnterminatedRunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
-  terminatedFilter: Types.RunsFilter;
-  tickCursor?: Types.InputMaybe<Types.Scalars['Float']['input']>;
-  ticksUntil?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
-export type RunTimelineQuery = {
+export type UnterminatedRunTimelineQuery = {
   __typename: 'Query';
   unterminated:
     | {__typename: 'InvalidPipelineRunsFilterError'}
@@ -32,6 +30,15 @@ export type RunTimelineQuery = {
           } | null;
         }>;
       };
+};
+
+export type TerimatedRunTimelineQueryVariables = Types.Exact<{
+  terminatedFilter: Types.RunsFilter;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+}>;
+
+export type TerimatedRunTimelineQuery = {
+  __typename: 'Query';
   terminated:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}
@@ -53,6 +60,15 @@ export type RunTimelineQuery = {
           } | null;
         }>;
       };
+};
+
+export type FutureTicksQueryVariables = Types.Exact<{
+  tickCursor?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+  ticksUntil?: Types.InputMaybe<Types.Scalars['Float']['input']>;
+}>;
+
+export type FutureTicksQuery = {
+  __typename: 'Query';
   workspaceOrError:
     | {__typename: 'PythonError'}
     | {
