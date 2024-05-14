@@ -366,32 +366,11 @@ class AssetGraphView:
             ),
         )
 
-    def compute_missing_subslice(
-        self, asset_key: "AssetKey", from_slice: "AssetSlice"
-    ) -> "AssetSlice":
-        """Returns a slice which is the subset of the input slice that has never been materialized
-        (if it is a materializable asset) or observered (if it is an observable asset).
-        """
-        # TODO: this logic should be simplified once we have a unified way of detecting both
-        # materializations and observations through the parittion status cache. at that point, the
-        # definition will slightly change to search for materializations and observations regardless
-        # of the materializability of the asset
-        if self.asset_graph.get(asset_key).is_materializable:
-            # cheap call which takes advantage of the partition status cache
-            materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
-            materialized_slice = self.get_asset_slice_from_valid_subset(materialized_subset)
-            return from_slice.compute_difference(materialized_slice)
-        else:
-            # more expensive call
-            missing_asset_partitions = {
-                ap
-                for ap in from_slice.convert_to_valid_asset_subset().asset_partitions
-                if not self._queryer.asset_partition_has_materialization_or_observation(ap)
-            }
-            missing_subset = ValidAssetSubset.from_asset_partitions_set(
-                asset_key, self._get_partitions_def(asset_key), missing_asset_partitions
-            )
-            return self.get_asset_slice_from_valid_subset(missing_subset)
+    def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
+        return _slice_from_subset(
+            self,
+            AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
+        )
 
     def compute_parent_asset_slice(
         self, parent_asset_key: AssetKey, asset_slice: AssetSlice
@@ -417,11 +396,6 @@ class AssetGraphView:
                 current_time=self.effective_dt,
                 parent_asset_subset=asset_slice.convert_to_valid_asset_subset(),
             ),
-        )
-
-    def compute_in_progress_asset_slice(self, asset_key: "AssetKey") -> "AssetSlice":
-        return _slice_from_subset(
-            self, self._queryer.get_in_progress_asset_subset(asset_key=asset_key)
         )
 
     def compute_intersection_with_partition_keys(
@@ -490,9 +464,42 @@ class AssetGraphView:
         else:
             check.failed(f"Unsupported partitions_def: {partitions_def}")
 
+    def compute_missing_subslice(
+        self, asset_key: "AssetKey", from_slice: "AssetSlice"
+    ) -> "AssetSlice":
+        """Returns a slice which is the subset of the input slice that has never been materialized
+        (if it is a materializable asset) or observered (if it is an observable asset).
+        """
+        # TODO: this logic should be simplified once we have a unified way of detecting both
+        # materializations and observations through the parittion status cache. at that point, the
+        # definition will slightly change to search for materializations and observations regardless
+        # of the materializability of the asset
+        if self.asset_graph.get(asset_key).is_materializable:
+            # cheap call which takes advantage of the partition status cache
+            materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
+            materialized_slice = self.get_asset_slice_from_valid_subset(materialized_subset)
+            return from_slice.compute_difference(materialized_slice)
+        else:
+            # more expensive call
+            missing_asset_partitions = {
+                ap
+                for ap in from_slice.convert_to_valid_asset_subset().asset_partitions
+                if not self._queryer.asset_partition_has_materialization_or_observation(ap)
+            }
+            missing_subset = ValidAssetSubset.from_asset_partitions_set(
+                asset_key, self._get_partitions_def(asset_key), missing_asset_partitions
+            )
+            return self.get_asset_slice_from_valid_subset(missing_subset)
+
+    @cached_method
+    def compute_in_progress_asset_slice(self, *, asset_key: "AssetKey") -> "AssetSlice":
+        return _slice_from_subset(
+            self, self._queryer.get_in_progress_asset_subset(asset_key=asset_key)
+        )
+
     @cached_method
     def compute_updated_since_cursor_slice(
-        self, asset_key: AssetKey, cursor: Optional[int]
+        self, *, asset_key: AssetKey, cursor: Optional[int]
     ) -> AssetSlice:
         subset = self._queryer.get_asset_subset_updated_after_cursor(
             asset_key=asset_key, after_cursor=cursor
@@ -501,7 +508,7 @@ class AssetGraphView:
 
     @cached_method
     def compute_parent_updated_since_cursor_slice(
-        self, asset_key: AssetKey, cursor: Optional[int]
+        self, *, asset_key: AssetKey, cursor: Optional[int]
     ) -> AssetSlice:
         result_slice = self.create_empty_slice(asset_key)
         for parent_key in self.asset_graph.get(asset_key).parent_keys:
@@ -511,12 +518,6 @@ class AssetGraphView:
                 ).compute_child_slice(asset_key)
             )
         return result_slice
-
-    def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
-        return _slice_from_subset(
-            self,
-            AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
-        )
 
     class MultiDimInfo(NamedTuple):
         tw_dim: PartitionDimensionDefinition
@@ -577,9 +578,3 @@ class AssetGraphView:
                 )
             }
         )
-
-
-def _required_tw_partitions_def(
-    partitions_def: Optional["PartitionsDefinition"],
-) -> TimeWindowPartitionsDefinition:
-    return check.inst(partitions_def, TimeWindowPartitionsDefinition, "Must be time windowed.")
