@@ -370,8 +370,8 @@ def test_dbt_cli_asset_selection(
 ) -> None:
     dbt_select = " ".join(
         [
-            "fqn:jaffle_shop.raw_customers",
-            "fqn:jaffle_shop.staging.stg_customers",
+            "jaffle_shop.raw_customers",
+            "jaffle_shop.staging.stg_customers",
         ]
     )
 
@@ -391,8 +391,8 @@ def test_dbt_cli_subsetted_execution(
     test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
 ) -> None:
     dbt_select = [
-        "fqn:jaffle_shop.raw_customers",
-        "fqn:jaffle_shop.staging.stg_customers",
+        "jaffle_shop.raw_customers",
+        "jaffle_shop.staging.stg_customers",
     ]
 
     @dbt_assets(manifest=test_jaffle_shop_manifest)
