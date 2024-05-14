@@ -27,12 +27,18 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.scoped_resources_builder import (
+    Resources,
+    ScopedResourcesBuilder,
+)
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
+from dagster._utils.schedules import (
+    has_out_of_range_cron_interval,
+    is_valid_cron_schedule,
+)
 
 from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
@@ -281,7 +287,8 @@ class ScheduleEvaluationContext:
             resources_dict (Mapping[str, Any]): The resources to replace in the context.
         """
         check.invariant(
-            self._resources is None, "Cannot merge resources in context that has been initialized."
+            self._resources is None,
+            "Cannot merge resources in context that has been initialized.",
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -448,7 +455,8 @@ class ScheduleExecutionData(
         check.opt_str_param(skip_message, "skip_message")
         check.opt_list_param(log_key, "log_key", str)
         check.invariant(
-            not (run_requests and skip_message), "Found both skip data and run request data"
+            not (run_requests and skip_message),
+            "Found both skip data and run request data",
         )
         return super(ScheduleExecutionData, cls).__new__(
             cls,
@@ -482,47 +490,43 @@ def validate_and_get_schedule_resource_dict(
     ),
 )
 class ScheduleDefinition(IHasInternalInit):
-    """Define a schedule that targets a job.
+    """Defines a schedule that targets a job.
 
     Args:
         name (Optional[str]): The name of the schedule to create. Defaults to the job name plus
-            "_schedule".
+            ``_schedule``.
         cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
-            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            specifying when the schedule will run, e.g., ``45 23 * * 6`` for a schedule that runs
             at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
             the union of all execution times for the provided cron strings, e.g.,
             ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
             9:30 AM every Sunday.
-        execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the
-            schedule, which is run at an interval to determine whether a run should be launched or
-            not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
+        execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the schedule, which is run at an interval to determine whether a run should be launched or not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
 
-            This function must return a generator, which must yield either a single SkipReason
-            or one or more RunRequest objects.
+            This function must return a generator, which must yield either a single :py:class:`~dagster.SkipReason`
+            or one or more :py:class:`~dagster.RunRequest` objects.
         run_config (Optional[Mapping]): The config that parameterizes this execution,
             as a dict.
         run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
-            takes a ScheduleEvaluationContext object and returns the run configuration that
-            parameterizes this execution, as a dict. You may set only one of ``run_config``,
-            ``run_config_fn``, and ``execution_fn``.
+            takes a :py:class:`~dagster.ScheduleEvaluationContext` object and returns the run configuration that
+            parameterizes this execution, as a dict. **Note**: Only one of the following may be set: You may set ``run_config``, ``run_config_fn``, or ``execution_fn``.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]]): A
-            function that generates tags to attach to the schedules runs. Takes a
+            function that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
-            key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
+            key-value pairs). **Note**: Only one of the following may be set:  ``tags``, ``tags_fn``, or ``execution_fn``.
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. ``"America/Los_Angeles"``.
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
-        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from the Dagster UI or via the GraphQL API.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
@@ -649,7 +653,9 @@ class ScheduleDefinition(IHasInternalInit):
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
-                    tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
+                    tags_fn,
+                    "tags_fn",
+                    default=lambda _context: cast(Mapping[str, str], {}),
                 )
             self._tags_fn = tags_fn
             self._tags = tags
@@ -838,7 +844,9 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
+    def job(
+        self,
+    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
