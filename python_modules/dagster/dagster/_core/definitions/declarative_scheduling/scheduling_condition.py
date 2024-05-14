@@ -194,6 +194,35 @@ class SchedulingCondition(ABC, DagsterModel):
             & ~SchedulingCondition.in_progress()
         )
 
+    @staticmethod
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "SchedulingCondition":
+        """Returns a condition which will materialize asset partitions within the latest time window
+        on a given cron schedule, after their parents have been updated. For example, if the
+        cron_schedule is set to "0 0 * * *" (every day at midnight), then this rule will not become
+        true on a given day until all of its parents have been updated during that same day.
+
+        Specifically, this is a composite SchedulingCondition which is true for an asset partition
+        if all of the following are true:
+
+        - The asset partition is within the latest time window
+        - All parent asset partitions have been updated since the latest tick of the provided cron
+            schedule, or will be requested this tick
+        - The asset partition has not been updated since the latest tick of the provided cron schedule
+        - The asset partition is not currently part of an in-progress run
+        """
+        all_parents_updated_or_will_update = ~SchedulingCondition.any_deps_match(
+            ~(
+                SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
+                | SchedulingCondition.requested_this_tick()
+            )
+        )
+        return (
+            SchedulingCondition.in_latest_time_window()
+            & all_parents_updated_or_will_update
+            & ~SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
+            & ~SchedulingCondition.in_progress()
+        )
+
 
 class SchedulingResult(DagsterModel):
     condition: SchedulingCondition
