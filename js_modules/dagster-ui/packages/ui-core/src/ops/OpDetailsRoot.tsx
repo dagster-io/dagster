@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 import {OP_CARD_SOLID_DEFINITION_FRAGMENT, OpCard} from './OpCard';
 import {UsedSolidDetailsQuery, UsedSolidDetailsQueryVariables} from './types/OpDetailsRoot.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {
   SIDEBAR_OP_DEFINITION_FRAGMENT,
   SidebarOpDefinition,
@@ -31,6 +32,7 @@ export const UsedSolidDetails = (props: UsedSolidDetailsProps) => {
       },
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'UsedSolidDetailsQuery');
 
   return (
     <Loading queryResult={queryResult}>

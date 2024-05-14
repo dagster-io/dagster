@@ -4,13 +4,15 @@ import {
   InstanceSupportsCapturedLogsQuery,
   InstanceSupportsCapturedLogsQueryVariables,
 } from './types/useSupportsCapturedLogs.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const useSupportsCapturedLogs = () => {
-  const {data} = useQuery<
+  const queryResult = useQuery<
     InstanceSupportsCapturedLogsQuery,
     InstanceSupportsCapturedLogsQueryVariables
   >(INSTANCE_SUPPORTS_CAPTURED_LOGS);
-  return !!data?.instance.hasCapturedLogManager;
+  useBlockTraceOnQueryResult(queryResult, 'InstanceSupportsCapturedLogsQuery');
+  return !!queryResult.data?.instance.hasCapturedLogManager;
 };
 
 const INSTANCE_SUPPORTS_CAPTURED_LOGS = gql`
