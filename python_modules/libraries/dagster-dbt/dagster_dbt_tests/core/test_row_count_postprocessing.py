@@ -20,7 +20,7 @@ def standalone_duckdb_dbfile_path_fixture(request) -> None:
     """Generate a unique duckdb dbfile path for certain tests which need
     it, rather than using the default one-file-per-worker approach.
     """
-    jaffle_shop_duckdb_db_file_name = "cool_jaffle_shop"
+    jaffle_shop_duckdb_db_file_name = f"{request.node.name}_jaffle_shop"
     jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
 
     os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"] = jaffle_shop_duckdb_db_file_name
