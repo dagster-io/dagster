@@ -91,52 +91,52 @@ my_dagster_project
    ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_project_example endbefore=end_dbt_project_example
    from pathlib import Path
 
-       from dagster_dbt import DbtProject
+   from dagster_dbt import DbtProject
 
-       RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
+   RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my_dbt_project"
 
-       my_project = DbtProject(
-           project_dir=Path(__file__)
-           .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
-           .resolve(),
-       )
+   my_project = DbtProject(
+       project_dir=Path(__file__)
+       .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
+       .resolve(),
+   )
    ```
 
 3. In your `assets.py` file, add the following code. Using the `dbt_assets` decorator allows Dagster to create a definition for how to compute a set of dbt resources, described by a `manifest.json`.
 
    ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_assets_example endbefore=end_dbt_assets_example
    from dagster import AssetExecutionContext
-       from dagster_dbt import DbtCliResource, dbt_assets
+   from dagster_dbt import DbtCliResource, dbt_assets
 
-       from .project import my_project
+   from .project import my_project
 
-       @dbt_assets(manifest=my_project.manifest_path)
-       def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-           yield from dbt.cli(["build"], context=context).stream()
+   @dbt_assets(manifest=my_project.manifest_path)
+   def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+       yield from dbt.cli(["build"], context=context).stream()
    ```
 
 4. In your `definitions.py` file, update your Definitions object to include the newly created objects.
 
    ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_definitions_example endbefore=end_dbt_definitions_example
    from dagster import Definitions
-       from dagster_dbt import DbtCliResource
+   from dagster_dbt import DbtCliResource
 
-       from .assets import my_dbt_assets
-       from .project import my_project
+   from .assets import my_dbt_assets
+   from .project import my_project
 
-       defs = Definitions(
-           assets=[
-               # your other assets here,
-               my_dbt_assets
-           ],
-           jobs=[
-               # your jobs here
-           ],
-           resources={
-               # your other resources here,
-               "dbt": DbtCliResource(project_dir=my_project),
-           },
-       )
+   defs = Definitions(
+       ...,
+       assets=[
+           ...,
+           # Add the dbt assets alongside your other asset
+           my_dbt_assets
+       ],
+       resources={
+           ...,
+           # Add the dbt resource alongside your other resources
+           "dbt": DbtCliResource(project_dir=my_project),
+       },
+   )
    ```
 
 With these changes, your existing Dagster project is ready to run your dbt project.
