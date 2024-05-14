@@ -3,13 +3,13 @@ import datetime
 from dagster import SchedulingCondition
 
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def test_scheduled_since_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
+    state = SchedulingConditionScenarioState(
         one_asset,
-        asset_condition=~SchedulingCondition.scheduled_since(
+        scheduling_condition=~SchedulingCondition.scheduled_since(
             lookback_delta=datetime.timedelta(hours=1)
         ),
         # this condition depends on having non-empty results
@@ -38,9 +38,9 @@ def test_scheduled_since_unpartitioned() -> None:
 
 
 def test_scheduled_since_partitioned() -> None:
-    state = AssetConditionScenarioState(
+    state = SchedulingConditionScenarioState(
         one_asset,
-        asset_condition=~SchedulingCondition.scheduled_since(
+        scheduling_condition=~SchedulingCondition.scheduled_since(
             lookback_delta=datetime.timedelta(hours=1)
         ),
         # this condition depends on having non-empty results
