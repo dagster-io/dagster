@@ -79,8 +79,6 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  console.log({range});
-
   const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
 
