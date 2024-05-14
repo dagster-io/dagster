@@ -5,12 +5,11 @@ from typing import Optional, Tuple
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..legacy.asset_condition import AssetCondition
-from ..scheduling_condition import SchedulingResult
+from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
-class SliceSchedulingCondition(AssetCondition):
+class SliceSchedulingCondition(SchedulingCondition):
     """Base class for simple conditions which compute a simple slice of the asset graph."""
 
     @abstractmethod
