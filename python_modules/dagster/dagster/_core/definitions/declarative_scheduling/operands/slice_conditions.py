@@ -1,8 +1,9 @@
 import datetime
 from abc import abstractmethod
-from typing import Optional, Tuple
+from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.definitions.declarative_scheduling.utils import SerializableTimeDelta
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
@@ -74,46 +75,35 @@ class RequestedThisTickCondition(SliceSchedulingCondition):
 
 @whitelist_for_serdes
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
-    # This is a serializable representation of the lookback timedelta object
-    lookback_days_second_microseconds: Optional[Tuple[int, int, int]] = None
+    serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 
     @staticmethod
     def from_lookback_delta(
         lookback_delta: Optional[datetime.timedelta],
     ) -> "InLatestTimeWindowCondition":
-        lookback_days_second_microseconds = (
-            (
-                lookback_delta.days,
-                lookback_delta.seconds,
-                lookback_delta.microseconds,
-            )
+        return InLatestTimeWindowCondition(
+            serializable_lookback_timedelta=SerializableTimeDelta.from_timedelta(lookback_delta)
             if lookback_delta
             else None
         )
-        return InLatestTimeWindowCondition(
-            lookback_days_second_microseconds=lookback_days_second_microseconds
-        )
 
     @property
-    def timedelta(self) -> Optional[datetime.timedelta]:
-        if self.lookback_days_second_microseconds:
-            return datetime.timedelta(
-                days=self.lookback_days_second_microseconds[0],
-                seconds=self.lookback_days_second_microseconds[1],
-                microseconds=self.lookback_days_second_microseconds[2],
-            )
-        else:
-            return None
+    def lookback_timedelta(self) -> Optional[datetime.timedelta]:
+        return (
+            self.serializable_lookback_timedelta.to_timedelta()
+            if self.serializable_lookback_timedelta
+            else None
+        )
 
     @property
     def description(self) -> str:
         return (
-            f"Within {self.timedelta} of the end of the latest time window"
-            if self.timedelta
+            f"Within {self.lookback_timedelta} of the end of the latest time window"
+            if self.lookback_timedelta
             else "Within latest time window"
         )
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
         return context.asset_graph_view.compute_latest_time_window_slice(
-            context.asset_key, lookback_delta=self.timedelta
+            context.asset_key, lookback_delta=self.lookback_timedelta
         )

@@ -24,6 +24,7 @@ if TYPE_CHECKING:
         MissingSchedulingCondition,
         ParentNewerCondition,
         RequestedThisTickCondition,
+        ScheduledSinceCondition,
         UpdatedSinceCronCondition,
     )
     from .operators import (
@@ -146,6 +147,22 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import InLatestTimeWindowCondition
 
         return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
+
+    @staticmethod
+    def scheduled_since(lookback_delta: datetime.timedelta) -> "ScheduledSinceCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it has been requested
+        for materialization via the declarative scheduling system within the given time window.
+
+        Will only detect requests which have been made since this condition was added to the asset.
+
+        Args:
+            lookback_delta (datetime.timedelta): How far back in time to look for requests, e.g.
+                if this is set to 1 hour, this rule will be true for a given asset partition for
+                1 hour starting from the latest tick on which it gets requested.
+        """
+        from .operands import ScheduledSinceCondition
+
+        return ScheduledSinceCondition.from_lookback_delta(lookback_delta)
 
     @staticmethod
     def requested_this_tick() -> "RequestedThisTickCondition":

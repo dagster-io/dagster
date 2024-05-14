@@ -56,6 +56,7 @@ class AssetConditionScenarioState(ScenarioState):
     asset_condition: Optional[SchedulingCondition] = None
     previous_evaluation_state: Optional[AssetConditionEvaluationState] = None
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
+    ensure_empty_result: bool = True
 
     def _get_current_evaluation_state_by_key(
         self, asset_graph_view: AssetGraphView
@@ -84,8 +85,12 @@ class AssetConditionScenarioState(ScenarioState):
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery
-        asset_condition = AndAssetCondition(
-            operands=[check.not_none(self.asset_condition), FalseAssetCondition()]
+        asset_condition = (
+            AndAssetCondition(
+                operands=[check.not_none(self.asset_condition), FalseAssetCondition()]
+            )
+            if self.ensure_empty_result
+            else check.not_none(self.asset_condition)
         )
         asset_graph = self.scenario_spec.with_asset_properties(
             asset,
@@ -141,8 +146,9 @@ class AssetConditionScenarioState(ScenarioState):
                     context, full_result
                 ),
             )
+            result = full_result.child_results[0] if self.ensure_empty_result else full_result
 
-        return new_state, full_result.child_results[0]
+        return new_state, result
 
     def without_previous_evaluation_state(self) -> "AssetConditionScenarioState":
         """Removes the previous evaluation state from the state. This is useful for testing

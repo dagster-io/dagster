@@ -1,4 +1,5 @@
 from .parent_newer_condition import ParentNewerCondition as ParentNewerCondition
+from .scheduled_since_condition import ScheduledSinceCondition as ScheduledSinceCondition
 from .slice_conditions import (
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
