@@ -76,7 +76,7 @@ export function useQueryRefreshAtInterval(
   );
 }
 
-export function useRefreshAtInterval<T = void>({
+export function useRefreshAtInterval<T = any>({
   refresh,
   intervalMs,
   enabled = true,

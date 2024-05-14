@@ -1,7 +1,7 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
 
-import {FIFTEEN_SECONDS, RefreshState, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -80,8 +80,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
-  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
+  const {jobs, initialLoading} = useRunsForTimeline(range);
 
   React.useEffect(() => {
     if (!initialLoading) {
