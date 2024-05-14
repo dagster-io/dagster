@@ -1,6 +1,10 @@
+from pathlib import Path
+from typing import Any, Mapping, Tuple
+
 import pytest
 from dagster import AssetKey
 from dagster_looker.asset_decorator import looker_assets
+from dagster_looker.dagster_looker_translator import DagsterLookerTranslator
 
 from .looker_projects import test_exception_derived_table_path, test_retail_demo_path
 
@@ -274,3 +278,22 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
         " in file `exception_derived_table.view.lkml`."
         " The upstream dependencies for the view will be omitted."
     ) in caplog.text
+
+
+def test_with_asset_key_replacements() -> None:
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_asset_key(self, lookml_element: Tuple[Path, Mapping[str, Any]]) -> AssetKey:
+            return super().get_asset_key(lookml_element).with_prefix("prefix")
+
+    @looker_assets(
+        project_dir=test_retail_demo_path, dagster_looker_translator=CustomDagsterLookerTranslator()
+    )
+    def my_looker_assets(): ...
+
+    assert all(key.has_prefix(["prefix"]) for key in my_looker_assets.asset_deps.keys())
+    assert all(
+        dep.has_prefix(["prefix"])
+        for deps in my_looker_assets.asset_deps.values()
+        for dep in deps
+        if len(dep.path) > 1 and dep.path[1] in ["dashboard", "explore", "view"]
+    )

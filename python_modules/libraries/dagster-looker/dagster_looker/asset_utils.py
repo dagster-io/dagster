@@ -10,49 +10,61 @@ from dagster import AssetKey, AssetSpec
 from sqlglot import exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
+from .dagster_looker_translator import DagsterLookerTranslator
+
 logger = logging.getLogger("dagster_looker")
 
 
-def build_looker_dashboard_specs(project_dir: Path) -> Sequence[AssetSpec]:
+def build_looker_dashboard_specs(
+    project_dir: Path,
+    dagster_looker_translator: DagsterLookerTranslator,
+) -> Sequence[AssetSpec]:
     looker_dashboard_specs: List[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard
-    for dashboard_path in project_dir.rglob("*.dashboard.lookml"):
-        for lookml_dashboard in yaml.safe_load(dashboard_path.read_bytes()):
+    for lookml_dashboard_path in project_dir.rglob("*.dashboard.lookml"):
+        for lookml_dashboard_props in yaml.safe_load(lookml_dashboard_path.read_bytes()):
             looker_dashboard_specs.extend(
                 AssetSpec(
-                    key=AssetKey(["dashboard", lookml_dashboard["dashboard"]]),
-                    deps={AssetKey(["explore", dashboard_element["explore"]])},
+                    key=dagster_looker_translator.get_asset_key(
+                        lookml_element=(lookml_dashboard_path, lookml_dashboard_props)
+                    ),
+                    deps={AssetKey(["explore", lookml_dashboard_element_props["explore"]])},
                 )
-                for dashboard_element in itertools.chain(
+                for lookml_dashboard_element_props in itertools.chain(
                     # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#elements_2
-                    lookml_dashboard.get("elements", []),
+                    lookml_dashboard_props.get("elements", []),
                     # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#filters
-                    lookml_dashboard.get("filters", []),
+                    lookml_dashboard_props.get("filters", []),
                 )
-                if dashboard_element.get("explore")
+                if lookml_dashboard_element_props.get("explore")
             )
 
     return looker_dashboard_specs
 
 
-def build_looker_explore_specs(project_dir: Path) -> Sequence[AssetSpec]:
+def build_looker_explore_specs(
+    project_dir: Path,
+    dagster_looker_translator: DagsterLookerTranslator,
+) -> Sequence[AssetSpec]:
     looker_explore_specs: List[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-explore
-    for model_path in project_dir.rglob("*.model.lkml"):
-        for explore in lkml.load(model_path.read_text()).get("explores", []):
-            explore_asset_key = AssetKey(["explore", explore["name"]])
-
+    for lookml_model_path in project_dir.rglob("*.model.lkml"):
+        for lookml_explore_props in lkml.load(lookml_model_path.read_text()).get("explores", []):
             # https://cloud.google.com/looker/docs/reference/param-explore-from
-            explore_base_view = [{"name": explore.get("from") or explore["name"]}]
+            explore_base_view = [
+                {"name": lookml_explore_props.get("from") or lookml_explore_props["name"]}
+            ]
 
             # https://cloud.google.com/looker/docs/reference/param-explore-join
-            explore_join_views: Sequence[Mapping[str, Any]] = explore.get("joins", [])
+            explore_join_views: Sequence[Mapping[str, Any]] = lookml_explore_props.get("joins", [])
 
             looker_explore_specs.append(
                 AssetSpec(
-                    key=explore_asset_key,
+                    key=dagster_looker_translator.get_asset_key(
+                        lookml_element=(lookml_model_path, lookml_explore_props)
+                    ),
                     deps={
                         AssetKey(["view", view["name"]])
                         for view in itertools.chain(explore_base_view, explore_join_views)
@@ -118,16 +130,23 @@ def parse_upstream_asset_keys_from_looker_view(
     return {build_asset_key_from_sqlglot_table(table) for table in upstream_sqlglot_tables}
 
 
-def build_looker_view_specs(project_dir: Path) -> Sequence[AssetSpec]:
+def build_looker_view_specs(
+    project_dir: Path,
+    dagster_looker_translator: DagsterLookerTranslator,
+) -> Sequence[AssetSpec]:
     looker_view_specs: List[AssetSpec] = []
 
     # https://cloud.google.com/looker/docs/reference/param-view
-    for looker_view_path in project_dir.rglob("*.view.lkml"):
-        for looker_view in lkml.load(looker_view_path.read_text()).get("views", []):
+    for lookml_view_path in project_dir.rglob("*.view.lkml"):
+        for lookml_view_props in lkml.load(lookml_view_path.read_text()).get("views", []):
             looker_view_specs.append(
                 AssetSpec(
-                    key=AssetKey(["view", looker_view["name"]]),
-                    deps=parse_upstream_asset_keys_from_looker_view(looker_view, looker_view_path),
+                    key=dagster_looker_translator.get_asset_key(
+                        lookml_element=(lookml_view_path, lookml_view_props)
+                    ),
+                    deps=parse_upstream_asset_keys_from_looker_view(
+                        lookml_view_props, lookml_view_path
+                    ),
                 )
             )
 
