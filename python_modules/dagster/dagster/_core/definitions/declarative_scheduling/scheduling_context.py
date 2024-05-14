@@ -73,7 +73,9 @@ class SchedulingContext(DagsterModel):
         return SchedulingContext.model_construct(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key),
             condition=scheduling_condition,
-            condition_unique_id=scheduling_condition.get_unique_id(None),
+            condition_unique_id=scheduling_condition.get_unique_id(
+                parent_unique_id=None, index=None
+            ),
             asset_graph_view=asset_graph_view,
             parent_context=None,
             create_time=pendulum.now("UTC"),
@@ -84,14 +86,14 @@ class SchedulingContext(DagsterModel):
         )
 
     def for_child_condition(
-        self, child_condition: SchedulingCondition, candidate_slice: AssetSlice
+        self, child_condition: SchedulingCondition, child_index: int, candidate_slice: AssetSlice
     ) -> "SchedulingContext":
         # construct is used here for performance
         return SchedulingContext.model_construct(
             candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(
-                parent_unique_id=self.condition_unique_id
+                parent_unique_id=self.condition_unique_id, index=child_index
             ),
             asset_graph_view=self.asset_graph_view,
             parent_context=self,
@@ -101,7 +103,9 @@ class SchedulingContext(DagsterModel):
             current_tick_evaluation_info_by_key=self.current_tick_evaluation_info_by_key,
             inner_legacy_context=self.legacy_context.for_child(
                 child_condition,
-                child_condition.get_unique_id(self.condition_unique_id),
+                child_condition.get_unique_id(
+                    parent_unique_id=self.condition_unique_id, index=child_index
+                ),
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
         )

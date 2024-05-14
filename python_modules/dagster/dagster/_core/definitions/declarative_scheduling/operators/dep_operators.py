@@ -22,7 +22,7 @@ class DepConditionWrapperCondition(SchedulingCondition):
         # only evaluate parents of the current candidates
         dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
         dep_context = context.for_child_condition(
-            child_condition=self.operand, candidate_slice=dep_candidate_slice
+            child_condition=self.operand, child_index=0, candidate_slice=dep_candidate_slice
         )
 
         # evaluate condition against the dependency
@@ -50,11 +50,13 @@ class AnyDepsCondition(DepCondition):
         true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
 
         dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for dep_key in dep_keys:
+        for i, dep_key in enumerate(sorted(dep_keys)):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
-                    child_condition=dep_condition, candidate_slice=context.candidate_slice
+                    child_condition=dep_condition,
+                    child_index=i,
+                    candidate_slice=context.candidate_slice,
                 )
             )
             dep_results.append(dep_result)
@@ -77,11 +79,13 @@ class AllDepsCondition(DepCondition):
         true_slice = context.candidate_slice
 
         dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for dep_key in dep_keys:
+        for i, dep_key in enumerate(sorted(dep_keys)):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
-                    child_condition=dep_condition, candidate_slice=context.candidate_slice
+                    child_condition=dep_condition,
+                    child_index=i,
+                    candidate_slice=context.candidate_slice,
                 )
             )
             dep_results.append(dep_result)
