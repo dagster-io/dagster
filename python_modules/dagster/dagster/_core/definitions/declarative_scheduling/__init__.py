@@ -1,9 +1,14 @@
 from .legacy import RuleCondition as RuleCondition
 from .legacy.asset_condition import AssetCondition as AssetCondition
 from .operands import (
+    FailedSchedulingCondition as FailedSchedulingCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
+    ParentNewerCondition as ParentNewerCondition,
+    RequestedThisTickCondition as RequestedThisTickCondition,
+    ScheduledSinceCondition as ScheduledSinceCondition,
+    UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,

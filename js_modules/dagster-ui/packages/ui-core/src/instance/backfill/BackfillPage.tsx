@@ -38,6 +38,7 @@ import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../../assets/types';
 import {AssetKey, BulkActionStatus, RunStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 
@@ -55,6 +56,7 @@ export const BackfillPage = () => {
     BACKFILL_DETAILS_QUERY,
     {variables: {backfillId}},
   );
+  useBlockTraceOnQueryResult(queryResult, 'BackfillStatusesByAssetQuery');
 
   const {data} = queryResult;
 

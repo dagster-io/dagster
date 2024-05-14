@@ -66,7 +66,7 @@ RUN update-alternatives --install /usr/bin/java java /usr/local/openjdk-8/bin/ja
 # - assorted others-- some may no longer be required, but leaving in place for now
 #
 # deb.nodesource script adds node source to apt
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash - \
+RUN curl -sL https://deb.nodesource.com/setup_21.x | bash - \
     # Add yarn GPG key and apt source
     && curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | \
     gpg --dearmor -o /usr/share/keyrings/yarnkey.gpg \
@@ -161,8 +161,10 @@ RUN git clone --depth 1 https://github.com/dagster-io/dagster.git
 
 WORKDIR dagster
 
-RUN python scripts/install_dev_python_modules.py awscli \
-    && pip freeze --exclude-editable > /snapshot-reqs.txt
+ENV VIRTUAL_ENV=/usr/local
+ENV UV_HTTP_TIMEOUT=300
+RUN python scripts/install_dev_python_modules.py awscli || exit 1
+RUN pip freeze --exclude-editable > /snapshot-reqs.txt
 
 # Final image includes both system deps and preinstalled non-Dagster python deps
 FROM system_base

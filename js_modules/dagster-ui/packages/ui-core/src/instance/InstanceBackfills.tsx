@@ -27,6 +27,7 @@ import {BulkActionStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DaemonNotRunningAlertBody} from '../partitions/BackfillMessaging';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {useFilters} from '../ui/Filters';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
@@ -66,6 +67,7 @@ export const InstanceBackfills = () => {
     InstanceHealthForBackfillsQuery,
     InstanceHealthForBackfillsQueryVariables
   >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
+  useBlockTraceOnQueryResult(queryData, 'InstanceHealthForBackfillsQuery');
 
   const [statusState, setStatusState] = useQueryPersistedState<Set<BulkActionStatus>>({
     encode: (vals) => ({status: vals.size ? Array.from(vals).join(',') : undefined}),

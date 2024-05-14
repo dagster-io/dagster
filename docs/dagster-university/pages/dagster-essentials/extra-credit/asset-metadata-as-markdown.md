@@ -32,7 +32,7 @@ In Lesson 9, you created the `adhoc_request` asset. During materialization, the 
      end_date: str
 
    @asset
-   def adhoc_request(config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource):
+   def adhoc_request(config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource) -> None:
        """
          The response to an request made in the `requests` directory.
          See `requests/README.md` for more information.
@@ -148,7 +148,7 @@ class AdhocRequestConfig(Config):
     end_date: str
 
 @asset
-def adhoc_request(config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource):
+def adhoc_request(config: AdhocRequestConfig, taxi_zones, taxi_trips, database: DuckDBResource) -> None:
     """
       The response to an request made in the `requests` directory.
       See `requests/README.md` for more information.

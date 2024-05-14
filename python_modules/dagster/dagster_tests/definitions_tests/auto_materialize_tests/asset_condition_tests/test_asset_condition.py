@@ -1,4 +1,4 @@
-from dagster import AssetCondition, AutoMaterializePolicy, Definitions, asset
+from dagster import AutoMaterializePolicy, Definitions, SchedulingCondition, asset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
 )
@@ -17,7 +17,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.missing())
+    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
 
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
@@ -45,7 +45,7 @@ def test_missing_unpartitioned() -> None:
 
 def test_missing_time_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.missing())
+        AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
         .with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_datetime)
         .with_current_time_advanced(days=6, minutes=1)
@@ -72,7 +72,7 @@ def test_missing_time_partitioned() -> None:
 
 def test_serialize_definitions_with_asset_condition() -> None:
     amp = AutoMaterializePolicy.from_asset_condition(
-        AssetCondition.parent_newer() & ~AssetCondition.updated_since_cron("0 * * * *")
+        SchedulingCondition.parent_newer() & ~SchedulingCondition.updated_since_cron("0 * * * *")
     )
 
     @asset(auto_materialize_policy=amp)

@@ -66,7 +66,7 @@ import pandas as pd
 @asset(
     deps=["taxi_trips"]
 )
-def trips_by_week():
+def trips_by_week() -> None:
     conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
 
     current_date = datetime.strptime("2023-03-01", constants.DATE_FORMAT)
