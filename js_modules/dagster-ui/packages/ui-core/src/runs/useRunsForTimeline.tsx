@@ -115,7 +115,7 @@ export const useRunsForTimeline = (
               } else {
                 const runs = data.unterminated.results;
                 dataSoFar.unshift(...runs);
-                if (!runs.length) {
+                if (runs.length !== BATCH_LIMIT) {
                   hasMoreData = false;
                   res(dataSoFar);
                 } else {
@@ -172,7 +172,7 @@ export const useRunsForTimeline = (
               } else {
                 const runs = data.terminated.results;
                 dataSoFar.unshift(...runs);
-                if (!runs.length) {
+                if (runs.length !== BATCH_LIMIT) {
                   hasMoreData = false;
                   res(dataSoFar);
                 } else {
