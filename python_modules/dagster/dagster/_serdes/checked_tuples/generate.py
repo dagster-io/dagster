@@ -1,6 +1,6 @@
 from typing import Iterable, Tuple, Type
 
-from serdes_spec import SerdesModelSpec
+from checked_named_tuple_spec import CheckedNamedTupleSpec
 
 from dagster import _check as check
 from dagster._seven import import_module_from_path, is_subclass
@@ -35,7 +35,8 @@ def check_line_for_type(t: Type, name: str) -> str:
     if t in {int, str}:
         return f"check.{t.__name__}_param({name}, {name})"
 
-    check.invariant(f"Unsupported type {t}")
+    raise Exception(f"Unsupported type {t}")
+
 
 
 def generate_serdes_model(model_gen: SerdesModelGen) -> None:
@@ -87,9 +88,9 @@ if __name__ == "__main__":
 
     specs = []
     for symbol in mod.__dict__.values():
-        if symbol is SerdesModelSpec:
+        if symbol is CheckedNamedTupleSpec:
             continue
-        if is_subclass(symbol, SerdesModelSpec):
+        if is_subclass(symbol, CheckedNamedTupleSpec):
             specs.append(symbol)
 
     single_model_gen = SerdesModelGen(next(iter(specs)))
