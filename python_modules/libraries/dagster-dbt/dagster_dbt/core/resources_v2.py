@@ -1634,7 +1634,7 @@ def _get_subset_selection_for_context(
 
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
+        fqn_selector = ".".join(dbt_resource_props["fqn"])
 
         selected_dbt_non_test_resources.append(fqn_selector)
 
@@ -1644,7 +1644,7 @@ def _get_subset_selection_for_context(
 
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = f"fqn:{'.'.join(test_resource_props['fqn'])}"
+        fqn_selector = ".".join(test_resource_props["fqn"])
 
         selected_dbt_tests.append(fqn_selector)
 
