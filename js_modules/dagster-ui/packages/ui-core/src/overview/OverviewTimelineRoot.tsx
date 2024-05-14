@@ -49,7 +49,13 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     defaults: {search: ''},
   });
 
+  const isInitialRender = React.useRef(true);
   React.useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+    } else {
+      setNow(Date.now());
+    }
     const timer = setInterval(() => {
       setNow(Date.now());
     }, POLL_INTERVAL);
