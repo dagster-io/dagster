@@ -8,14 +8,9 @@ import {overlap} from './batchRunsForTimeline';
 import {
   FutureTicksQuery,
   FutureTicksQueryVariables,
-<<<<<<< HEAD
   RunTimelineFragment,
   TerminatedRunTimelineQuery,
   TerminatedRunTimelineQueryVariables,
-=======
-  TerimatedRunTimelineQuery,
-  TerimatedRunTimelineQueryVariables,
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
   UnterminatedRunTimelineQuery,
   UnterminatedRunTimelineQueryVariables,
 } from './types/useRunsForTimeline.types';
@@ -29,7 +24,6 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-<<<<<<< HEAD
 const BUCKET_SIZE = 3600 * 1000;
 const BATCH_LIMIT = 500;
 
@@ -41,19 +35,11 @@ export const useRunsForTimeline = (
   const runsFilter = useMemo(() => {
     return filter ?? {};
   }, [filter]);
-=======
-export const useRunsForTimeline = (
-  range: [number, number],
-  runsFilter: RunsFilter = {},
-  refreshInterval = FIFTEEN_SECONDS,
-) => {
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
   const [start, end] = range;
 
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-<<<<<<< HEAD
   const buckets = useMemo(() => {
     const buckets = [];
     for (let time = start; time < end; time += BUCKET_SIZE) {
@@ -75,43 +61,6 @@ export const useRunsForTimeline = (
     loading: true,
     error: undefined,
     called: false,
-=======
-  const unteriminatedRunsQueryData = useQuery<
-    UnterminatedRunTimelineQuery,
-    UnterminatedRunTimelineQueryVariables
-  >(UNTERMINATED_RUN_TIMELINE_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    // With a very large number of runs, operating on the Apollo cache is too expensive and
-    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-    // skip the cache entirely.
-    fetchPolicy: 'no-cache',
-    variables: {
-      inProgressFilter: {
-        ...runsFilter,
-        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-        createdBefore: endSec,
-      },
-    },
-  });
-
-  const terminatedRunsQueryData = useQuery<
-    TerimatedRunTimelineQuery,
-    TerimatedRunTimelineQueryVariables
-  >(TERMINATED_RUN_TIMELINE_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    // With a very large number of runs, operating on the Apollo cache is too expensive and
-    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-    // skip the cache entirely.
-    fetchPolicy: 'no-cache',
-    variables: {
-      terminatedFilter: {
-        ...runsFilter,
-        statuses: Array.from(doneStatuses),
-        createdBefore: endSec,
-        updatedAfter: startSec,
-      },
-    },
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
   });
   const [unterminatedRunsQueryData, setUnterminatedRunsData] = useState<{
     data: RunTimelineFragment[] | undefined;
@@ -128,7 +77,6 @@ export const useRunsForTimeline = (
     unterminatedRunsQueryData;
   const {data: terminatedRunsData, loading: loadingTerminatedRunsData} = terminatedRunsQueryData;
 
-<<<<<<< HEAD
   const fetchUnterminatedRunsQueryData = useCallback(async () => {
     setUnterminatedRunsData(({data}) => ({
       data,
@@ -267,39 +215,6 @@ export const useRunsForTimeline = (
   useBlockTraceOnQueryResult(terminatedRunsQueryData, 'TerminatedRunTimelineQuery');
   useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
 
-=======
-  const futureTicksQueryData = useQuery<FutureTicksQuery, FutureTicksQueryVariables>(
-    FUTURE_TICKS_QUERY,
-    {
-      notifyOnNetworkStatusChange: true,
-      // With a very large number of runs, operating on the Apollo cache is too expensive and
-      // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-      // skip the cache entirely.
-      fetchPolicy: 'no-cache',
-      variables: {
-        tickCursor: startSec,
-        ticksUntil: endSec,
-      },
-    },
-  );
-
-  useBlockTraceOnQueryResult(unteriminatedRunsQueryData, 'UnterminatedRunTimelineQuery');
-  useBlockTraceOnQueryResult(terminatedRunsQueryData, 'TerimatedRunTimelineQuery');
-  useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
-
-  const {
-    data: unterminatedRunsData,
-    previousData: previousUnterminatedRunsData,
-    loading: loadingUnterminatedRunsData,
-    refetch: refetchUnterminatedRuns,
-  } = unteriminatedRunsQueryData;
-  const {
-    data: terminatedRunsData,
-    previousData: previousTerminatedRunsData,
-    loading: loadingTerminatedRunsData,
-    refetch: refetchTerminatedRuns,
-  } = terminatedRunsQueryData;
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
   const {
     data: futureTicksData,
     previousData: previousFutureTicksData,
@@ -312,12 +227,6 @@ export const useRunsForTimeline = (
     (loadingTerminatedRunsData && !terminatedRunsQueryData) ||
     (loadingFutureTicksData && !futureTicksData);
 
-<<<<<<< HEAD
-=======
-  const {unterminated} = unterminatedRunsData ||
-    previousUnterminatedRunsData || {unterminated: undefined};
-  const {terminated} = terminatedRunsData || previousTerminatedRunsData || {terminated: undefined};
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
   const {workspaceOrError} = futureTicksData ||
     previousFutureTicksData || {workspaceOrError: undefined};
 
@@ -461,15 +370,11 @@ export const useRunsForTimeline = (
 
   const refreshState = useRefreshAtInterval({
     refresh: async () => {
-<<<<<<< HEAD
       await Promise.all([
         refetchFutureTicks(),
         fetchTerminatedRunsQueryData(),
         fetchUnterminatedRunsQueryData(),
       ]);
-=======
-      await Promise.all([refetchFutureTicks(), refetchTerminatedRuns(), refetchUnterminatedRuns()]);
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
     },
     intervalMs: refreshInterval,
   });
@@ -487,7 +392,6 @@ export const useRunsForTimeline = (
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
-<<<<<<< HEAD
 const RUN_TIMELINE_FRAGMENT = gql`
   fragment RunTimelineFragment on Run {
     id
@@ -504,10 +408,6 @@ const RUN_TIMELINE_FRAGMENT = gql`
 
 const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
   query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!) {
-=======
-const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
-  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int) {
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
     unterminated: runsOrError(filter: $inProgressFilter, limit: $limit) {
       ... on Runs {
         results {
@@ -517,20 +417,12 @@ const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
       }
     }
   }
-<<<<<<< HEAD
 
   ${RUN_TIMELINE_FRAGMENT}
 `;
 
 const TERMINATED_RUN_TIMELINE_QUERY = gql`
   query TerminatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int!) {
-=======
-  ${RUN_TIME_FRAGMENT}
-`;
-
-const TERMINATED_RUN_TIMELINE_QUERY = gql`
-  query TerimatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int) {
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
     terminated: runsOrError(filter: $terminatedFilter, limit: $limit) {
       ... on Runs {
         results {
@@ -541,11 +433,7 @@ const TERMINATED_RUN_TIMELINE_QUERY = gql`
     }
   }
 
-<<<<<<< HEAD
   ${RUN_TIMELINE_FRAGMENT}
-=======
-  ${RUN_TIME_FRAGMENT}
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
 `;
 
 const FUTURE_TICKS_QUERY = gql`

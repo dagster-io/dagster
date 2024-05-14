@@ -2,7 +2,6 @@
 
 import * as Types from '../../graphql/types';
 
-<<<<<<< HEAD
 export type RunTimelineFragment = {
   __typename: 'Run';
   id: string;
@@ -22,11 +21,6 @@ export type RunTimelineFragment = {
 export type UnterminatedRunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
   limit: Types.Scalars['Int']['input'];
-=======
-export type UnterminatedRunTimelineQueryVariables = Types.Exact<{
-  inProgressFilter: Types.RunsFilter;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
 }>;
 
 export type UnterminatedRunTimelineQuery = {
@@ -54,21 +48,12 @@ export type UnterminatedRunTimelineQuery = {
       };
 };
 
-<<<<<<< HEAD
 export type TerminatedRunTimelineQueryVariables = Types.Exact<{
   terminatedFilter: Types.RunsFilter;
   limit: Types.Scalars['Int']['input'];
 }>;
 
 export type TerminatedRunTimelineQuery = {
-=======
-export type TerimatedRunTimelineQueryVariables = Types.Exact<{
-  terminatedFilter: Types.RunsFilter;
-  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
-}>;
-
-export type TerimatedRunTimelineQuery = {
->>>>>>> d79d3b98e5f90f1e08688d5e62dda456e043b051
   __typename: 'Query';
   terminated:
     | {__typename: 'InvalidPipelineRunsFilterError'}
