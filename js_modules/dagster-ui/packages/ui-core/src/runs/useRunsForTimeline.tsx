@@ -23,8 +23,6 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-const BATCH_LIMIT = 500;
-
 export const useRunsForTimeline = (
   range: [number, number],
   runsFilter: RunsFilter = {},
@@ -45,7 +43,6 @@ export const useRunsForTimeline = (
     // skip the cache entirely.
     fetchPolicy: 'no-cache',
     variables: {
-      limit: BATCH_LIMIT,
       inProgressFilter: {
         ...runsFilter,
         statuses: [RunStatus.CANCELING, RunStatus.STARTED],
@@ -64,7 +61,6 @@ export const useRunsForTimeline = (
     // skip the cache entirely.
     fetchPolicy: 'no-cache',
     variables: {
-      limit: BATCH_LIMIT,
       terminatedFilter: {
         ...runsFilter,
         statuses: Array.from(doneStatuses),
@@ -285,7 +281,7 @@ export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
 const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
-  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!) {
+  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int) {
     unterminated: runsOrError(filter: $inProgressFilter, limit: $limit) {
       ... on Runs {
         results {
@@ -304,7 +300,7 @@ const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
 `;
 
 const TERMINATED_RUN_TIMELINE_QUERY = gql`
-  query TerimatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int!) {
+  query TerimatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int) {
     terminated: runsOrError(filter: $terminatedFilter, limit: $limit) {
       ... on Runs {
         results {

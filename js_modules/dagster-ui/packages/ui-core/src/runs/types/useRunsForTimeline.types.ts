@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type UnterminatedRunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
-  limit: Types.Scalars['Int']['input'];
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type UnterminatedRunTimelineQuery = {
@@ -34,7 +34,7 @@ export type UnterminatedRunTimelineQuery = {
 
 export type TerimatedRunTimelineQueryVariables = Types.Exact<{
   terminatedFilter: Types.RunsFilter;
-  limit: Types.Scalars['Int']['input'];
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type TerimatedRunTimelineQuery = {
