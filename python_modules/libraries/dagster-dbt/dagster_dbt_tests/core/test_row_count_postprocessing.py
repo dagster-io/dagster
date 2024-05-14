@@ -96,7 +96,8 @@ def test_row_count(
 
 
 def test_row_count_err(
-    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any], caplog
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     # test that we can handle exceptions in row count fetching
     # and still complete the dbt assets materialization

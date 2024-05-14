@@ -843,6 +843,9 @@ class DbtCliInvocation:
             )
 
 
+# We define DbtEventIterator as a generic type for the sake of type hinting.
+# This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
+# will be able to see the inner type of the iterator, rather than just `DbtEventIterator`.
 T = TypeVar("T", bound=DbtDagsterEventType)
 
 
@@ -918,7 +921,7 @@ class DbtEventIterator(abc.Iterator[T]):
             else:
                 return event._replace(metadata={**event.metadata, **additional_metadata})
         except Exception as e:
-            logger.warning(
+            logger.exception(
                 f"An error occurred while fetching row count for {unique_id}. Row count metadata"
                 " will not be included in the event.\n\n"
                 f"Exception: {e}"
@@ -1008,18 +1011,21 @@ class DbtEventIterator(abc.Iterator[T]):
                 if event_to_emit_idx < len(output_events_and_futures):
                     event_to_emit = output_events_and_futures[event_to_emit_idx]
 
-                    if isinstance(event_to_emit, Future):
+                    try:
                         # If the next event to emit is a Future (waiting on postprocessing),
                         # we need to wait for it to complete before yielding the event.
-                        try:
-                            event = event_to_emit.result(timeout=0.1)
-                            yield event
-                            event_to_emit_idx += 1
-                        except:
-                            pass
-                    else:
-                        yield event_to_emit
+                        event = (
+                            event_to_emit.result(timeout=0.1)
+                            if isinstance(event_to_emit, Future)
+                            else event_to_emit
+                        )
+                        yield event
                         event_to_emit_idx += 1
+                    except:
+                        # If the Future has not completed, it will raise a TimeoutError.
+                        # Any other exception will be reraised in the main thread as part
+                        # of get_future_completion_state_or_err.
+                        pass
 
 
 class DbtCliResource(ConfigurableResource):
