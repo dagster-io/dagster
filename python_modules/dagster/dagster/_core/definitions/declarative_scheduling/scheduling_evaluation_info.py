@@ -23,8 +23,8 @@ class SchedulingEvaluationResultNode(DagsterModel):
     asset_key: AssetKey
     condition_unique_id: str
 
-    true_slice: AssetSlice
-    candidate_slice: AssetSlice
+    true_slice: Optional[AssetSlice]
+    candidate_slice: Optional[AssetSlice]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
 
     extra_state: Any

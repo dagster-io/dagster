@@ -80,7 +80,7 @@ class MaterializeOnRequiredForFreshnessRule(
         true_subset, subsets_with_metadata = freshness_evaluation_results_for_asset_key(
             context.legacy_context.root_context
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice, subsets_with_metadata)
 
 
@@ -217,7 +217,9 @@ class MaterializeOnCronRule(
             - context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset
         )
 
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(asset_subset_to_request)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(
+            asset_subset_to_request
+        )
         return SchedulingResult.create(context, true_slice=true_slice)
 
 
@@ -435,7 +437,7 @@ class MaterializeOnParentUpdatedRule(
                 ignore_subset=context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset,
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice, subsets_with_metadata)
 
 
@@ -534,7 +536,9 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
 
         return SchedulingResult.create(
             context,
-            true_slice=context.asset_graph_view.get_asset_slice_from_subset(unhandled_candidates),
+            true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
+                unhandled_candidates
+            ),
             # we keep track of the handled subset instead of the unhandled subset because new
             # partitions may spontaneously jump into existence at any time
             extra_state=handled_subset,
@@ -588,7 +592,7 @@ class SkipOnParentOutdatedRule(AutoMaterializeRule, NamedTuple("_SkipOnParentOut
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice, subsets_with_metadata)
 
 
@@ -645,7 +649,7 @@ class SkipOnParentMissingRule(AutoMaterializeRule, NamedTuple("_SkipOnParentMiss
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice, subsets_with_metadata)
 
 
@@ -739,7 +743,7 @@ class SkipOnNotAllParentsUpdatedRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice, subsets_with_metadata)
 
 
@@ -965,7 +969,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
 
         return SchedulingResult.create(
             context,
-            true_slice=context.asset_graph_view.get_asset_slice_from_subset(
+            true_slice=context.asset_graph_view.get_asset_slice_from_valid_subset(
                 context.legacy_context.candidate_subset - all_parents_updated_subset
             ),
             extra_state=list(updated_subsets_by_key.values()),
@@ -1016,7 +1020,7 @@ class SkipOnRequiredButNonexistentParentsRule(
                 asset_partitions_by_evaluation_data, ignore_subset=subset_to_evaluate
             )
         )
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice, subsets_with_metadata)
 
 
@@ -1056,7 +1060,7 @@ class SkipOnBackfillInProgressRule(
         else:
             true_subset = context.legacy_context.candidate_subset & backfilling_subset
 
-        true_slice = context.asset_graph_view.get_asset_slice_from_subset(true_subset)
+        true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(true_subset)
         return SchedulingResult.create(context, true_slice)
 
 
@@ -1085,7 +1089,7 @@ class DiscardOnMaxMaterializationsExceededRule(
 
         return SchedulingResult.create(
             context,
-            context.asset_graph_view.get_asset_slice_from_subset(
+            context.asset_graph_view.get_asset_slice_from_valid_subset(
                 AssetSubset.from_asset_partitions_set(
                     context.legacy_context.asset_key,
                     context.legacy_context.partitions_def,
@@ -1123,13 +1127,13 @@ class SkipOnRunInProgressRule(AutoMaterializeRule, NamedTuple("_SkipOnRunInProgr
             if dagster_run and dagster_run.status in IN_PROGRESS_RUN_STATUSES:
                 return SchedulingResult.create(
                     context,
-                    context.asset_graph_view.get_asset_slice_from_subset(
+                    context.asset_graph_view.get_asset_slice_from_valid_subset(
                         context.legacy_context.candidate_subset
                     ),
                 )
         return SchedulingResult.create(
             context,
-            context.asset_graph_view.get_asset_slice_from_subset(
+            context.asset_graph_view.get_asset_slice_from_valid_subset(
                 context.legacy_context.empty_subset()
             ),
         )
