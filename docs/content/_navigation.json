@@ -1399,6 +1399,10 @@
             "path": "/_apidocs/libraries/dagster-k8s"
           },
           {
+            "title": "Looker (dagster-looker)",
+            "path": "/_apidocs/libraries/dagster-looker"
+          },
+          {
             "title": "MLflow (dagster-mlflow)",
             "path": "/_apidocs/libraries/dagster-mlflow"
           },

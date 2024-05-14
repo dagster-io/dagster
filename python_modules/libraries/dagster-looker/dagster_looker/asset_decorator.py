@@ -7,6 +7,7 @@ from typing import AbstractSet, Any, Callable, Iterator, Mapping, Optional, Sequ
 import lkml
 import yaml
 from dagster import AssetKey, AssetsDefinition, AssetSpec, multi_asset
+from dagster._annotations import experimental
 from sqlglot import exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
@@ -111,7 +112,23 @@ def build_looker_view_specs(project_dir: Path) -> Sequence[AssetSpec]:
     return looker_view_specs
 
 
+@experimental
 def looker_assets(*, project_dir: Path) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    """A decorator for defining Looker assets in a project.
+
+    Args:
+        project_dir (Path): The path to the Looker project directory.
+
+    Examples:
+        .. code-block:: python
+
+            from pathlib import Path
+
+            from dagster_looker import looker_assets
+
+            @looker_assets(project_dir=Path("my_looker_project"))
+            def my_looker_project_assets(): ...
+    """
     lookml_dashboard_specs = [
         AssetSpec(
             key=AssetKey(["dashboard", lookml_dashboard["dashboard"]]),
