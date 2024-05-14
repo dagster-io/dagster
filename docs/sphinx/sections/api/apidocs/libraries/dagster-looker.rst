@@ -13,3 +13,5 @@ Assets
 ======
 
 .. autodecorator:: looker_assets
+
+.. autoclass:: DagsterLookerTranslator
