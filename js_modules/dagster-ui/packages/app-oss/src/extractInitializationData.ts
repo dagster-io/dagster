@@ -32,6 +32,8 @@ export const extractInitializationData = (): {
   }
   if (value.telemetryEnabled) {
     const script = document.createElement('script');
+    script.defer = true;
+    script.async = true;
     script.src = 'https://dagster.io/oss-telemetry.js';
     document.head.appendChild(script);
   }
