@@ -4,12 +4,14 @@ import {
   InstanceConfigHasInfoQuery,
   InstanceConfigHasInfoQueryVariables,
 } from './types/useCanSeeConfig.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const useCanSeeConfig = () => {
-  const {data} = useQuery<InstanceConfigHasInfoQuery, InstanceConfigHasInfoQueryVariables>(
+  const queryResult = useQuery<InstanceConfigHasInfoQuery, InstanceConfigHasInfoQueryVariables>(
     INSTANCE_CONFIG_HAS_INFO,
   );
-  return !!data?.instance.hasInfo;
+  useBlockTraceOnQueryResult(queryResult, 'InstanceConfigHasInfoQuery');
+  return !!queryResult.data?.instance.hasInfo;
 };
 
 const INSTANCE_CONFIG_HAS_INFO = gql`

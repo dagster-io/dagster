@@ -79,11 +79,11 @@ const CaptionTextContainer = styled.div`
 
 const JOB_QUERY_DELAY = 100;
 
-export const useDelayedRowQuery = (lazyQueryFn: () => void) => {
+export const useDelayedRowQuery = (lazyQueryFn: () => Promise<any>) => {
   const dependency = useTraceDependency('DelayedRowQuery');
   React.useEffect(() => {
-    const timer = setTimeout(() => {
-      lazyQueryFn();
+    const timer = setTimeout(async () => {
+      await lazyQueryFn();
       dependency.completeDependency(CompletionType.SUCCESS);
     }, JOB_QUERY_DELAY);
 

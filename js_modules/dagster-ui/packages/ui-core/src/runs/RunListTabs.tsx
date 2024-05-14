@@ -10,6 +10,7 @@ import {runsPathWithFilters, useQueryPersistedRunFilters} from './RunsFilterInpu
 import {RunTabsCountQuery, RunTabsCountQueryVariables} from './types/RunListTabs.types';
 import {RunStatus, RunsFilter} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {AnchorButton} from '../ui/AnchorButton';
 
 const getDocumentTitle = (selected: ReturnType<typeof useSelectedRunsTab>) => {
@@ -39,6 +40,7 @@ export const useRunListTabs = (filter: RunsFilter = {}) => {
       },
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'RunTabsCountQuery');
 
   const {data: countData} = queryResult;
   const {queuedCount, inProgressCount} = useMemo(() => {
