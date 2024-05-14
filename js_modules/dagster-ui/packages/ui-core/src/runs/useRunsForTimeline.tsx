@@ -1,4 +1,4 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {ApolloQueryResult, gql, useApolloClient, useQuery} from '@apollo/client';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {doneStatuses} from './RunStatuses';
@@ -150,7 +150,7 @@ export const useRunsForTimeline = (
             const dataSoFar: RunTimelineFragment[] = [];
             let cursor: string | undefined = undefined;
             while (hasMoreData) {
-              const {data} = await client.query<
+              const {data} = (await client.query<
                 TerminatedRunTimelineQuery,
                 TerminatedRunTimelineQueryVariables
               >({
@@ -167,7 +167,8 @@ export const useRunsForTimeline = (
                   cursor,
                   limit: BATCH_LIMIT,
                 },
-              });
+              })) as ApolloQueryResult<TerminatedRunTimelineQuery>;
+
               if (data.terminated.__typename !== 'Runs') {
                 hasMoreData = false;
                 res(dataSoFar);
