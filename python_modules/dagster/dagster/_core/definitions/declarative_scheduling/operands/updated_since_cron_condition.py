@@ -1,19 +1,18 @@
 import datetime
 
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
-from ..scheduling_condition import SchedulingCondition, SchedulingResult
+from ..legacy.asset_condition import AssetCondition
+from ..scheduling_condition import SchedulingResult
 from ..scheduling_context import SchedulingContext
 
 
-@whitelist_for_serdes
-class UpdatedSinceCronCondition(SchedulingCondition):
+class UpdatedSinceCronCondition(AssetCondition):
     cron_schedule: str
     cron_timezone: str
 
     @property
-    def description(self) -> str:
+    def condition_description(self) -> str:
         return f"Updated since latest tick of {self.cron_schedule} ({self.cron_timezone})"
 
     def _get_previous_cron_tick(self, context: SchedulingContext) -> datetime.datetime:
@@ -28,14 +27,15 @@ class UpdatedSinceCronCondition(SchedulingCondition):
         previous_cron_tick = self._get_previous_cron_tick(context)
 
         if (
-            # never evaluated or evaluation info is no longer valid
+            # never evaluated
             context.previous_evaluation_info is None
             or context.previous_evaluation_node is None
-            or context.previous_evaluation_node.true_slice is None
             # not evaluated since latest schedule tick
             or context.previous_evaluation_info.temporal_context.effective_dt < previous_cron_tick
             # has new set of candidates
             or context.previous_evaluation_node.candidate_slice != context.candidate_slice
+            # asset updated since latest evaluation
+            or context.asset_updated_since_previous_tick()
         ):
             # do a full recomputation
             updated_subset = (
@@ -45,16 +45,10 @@ class UpdatedSinceCronCondition(SchedulingCondition):
                 )
             )
             # TODO: implement this on the AssetGraphView
-            true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(updated_subset)
-        else:
-            # do an incremental updated, adding in any asset partitions that have been materialized
-            # since the previous evaluation
-            true_slice = context.previous_evaluation_node.true_slice.compute_union(
-                context.asset_graph_view.compute_updated_since_cursor_slice(
-                    asset_key=context.asset_key, cursor=context.previous_evaluation_max_storage_id
-                )
+            true_slice = context.candidate_slice.compute_intersection(
+                context.asset_graph_view.get_asset_slice_from_subset(updated_subset)
             )
+        else:
+            true_slice = context.previous_evaluation_node.true_slice
 
-        return SchedulingResult.create(
-            context, context.candidate_slice.compute_intersection(true_slice)
-        )
+        return SchedulingResult.create(context, true_slice)

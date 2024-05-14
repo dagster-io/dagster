@@ -1,5 +1,5 @@
-from dagster import SchedulingCondition
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import AssetCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset, two_partitions_def
@@ -7,9 +7,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 
 
 def test_in_progress_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_progress()
-    )
+    state = AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.in_progress())
 
     # no run in progress
     state, result = state.evaluate("A")
@@ -28,7 +26,7 @@ def test_in_progress_unpartitioned() -> None:
 
 def test_in_progress_static_partitioned() -> None:
     state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_progress()
+        one_asset, asset_condition=AssetCondition.in_progress()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no run in progress

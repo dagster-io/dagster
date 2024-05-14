@@ -29,7 +29,7 @@ The asset you built should look similar to the following code. Click **View answ
 @asset(
     deps=["taxi_zones_file"]
 )
-def taxi_zones() -> None:
+def taxi_zones():
     sql_query = f"""
         create or replace table zones as (
             select

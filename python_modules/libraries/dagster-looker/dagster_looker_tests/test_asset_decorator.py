@@ -99,61 +99,84 @@ def test_asset_deps() -> None:
         AssetKey(["view", "customer_clustering_model"]): {
             AssetKey(["customer_clustering_model"]),
         },
-        AssetKey(["view", "customer_clustering_prediction"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_aggregates"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_base"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): set(),
+        AssetKey(["view", "customer_clustering_prediction"]): {
+            AssetKey(["customer_clustering_prediction"])
+        },
+        AssetKey(["view", "customer_clustering_prediction_aggregates"]): {
+            AssetKey(["customer_clustering_prediction_aggregates"])
+        },
+        AssetKey(["view", "customer_clustering_prediction_base"]): {
+            AssetKey(["customer_clustering_prediction_base"])
+        },
+        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): {
+            AssetKey(["customer_clustering_prediction_centroid_ranks"])
+        },
         AssetKey(["view", "customer_event_fact"]): {
             AssetKey(["customer_event_fact"]),
         },
-        AssetKey(["view", "customer_facts"]): set(),
+        AssetKey(["view", "customer_facts"]): {
+            AssetKey(["customer_facts"]),
+        },
         AssetKey(["view", "customer_support_fact"]): {
             AssetKey(["customer_support_fact"]),
         },
         AssetKey(["view", "customer_transaction_fact"]): {
             AssetKey(["customer_transaction_fact"]),
         },
-        AssetKey(["view", "customer_transaction_sequence"]): set(),
+        AssetKey(["view", "customer_transaction_sequence"]): {
+            AssetKey(["customer_transaction_sequence"]),
+        },
         AssetKey(["view", "customers"]): {
             AssetKey(["looker-private-demo", "retail", "customers"]),
         },
         AssetKey(["view", "date_comparison"]): {
             AssetKey(["date_comparison"]),
         },
-        AssetKey(["view", "distances"]): set(),
+        AssetKey(["view", "distances"]): {
+            AssetKey(["distances"]),
+        },
         AssetKey(["view", "events"]): {
             AssetKey(["looker-private-demo", "retail", "events"]),
         },
         AssetKey(["view", "omni_channel_events"]): {
-            AssetKey(["looker-private-demo", "ecomm", "events"])
+            AssetKey(["omni_channel_events"]),
         },
         AssetKey(["view", "omni_channel_support_calls"]): {
-            AssetKey(["looker-private-demo", "call_center", "transcript_with_messages"])
+            AssetKey(["omni_channel_support_calls"])
         },
         AssetKey(["view", "omni_channel_support_calls__messages"]): {
             AssetKey(["omni_channel_support_calls__messages"])
         },
         AssetKey(["view", "omni_channel_transactions"]): {
-            AssetKey(["looker-private-demo", "ecomm", "inventory_items"]),
-            AssetKey(["looker-private-demo", "ecomm", "order_items"]),
-            AssetKey(["looker-private-demo", "ecomm", "products"]),
-            AssetKey(["looker-private-demo", "ecomm", "users"]),
-            AssetKey(["looker-private-demo", "retail", "channels"]),
-            AssetKey(["looker-private-demo", "retail", "products"]),
-            AssetKey(["looker-private-demo", "retail", "transaction_detail"]),
-            AssetKey(["looker-private-demo", "retail", "us_stores"]),
+            AssetKey(["omni_channel_transactions"]),
         },
         AssetKey(["view", "omni_channel_transactions__transaction_details"]): {
             AssetKey(["omni_channel_transactions__transaction_details"])
         },
-        AssetKey(["view", "order_items"]): set(),
-        AssetKey(["view", "order_items_base"]): set(),
-        AssetKey(["view", "order_metrics"]): set(),
-        AssetKey(["view", "order_product"]): set(),
-        AssetKey(["view", "order_purchase_affinity"]): set(),
-        AssetKey(["view", "orders"]): set(),
-        AssetKey(["view", "orders_by_product_loyal_users"]): set(),
-        AssetKey(["view", "product_loyal_users"]): set(),
+        AssetKey(["view", "order_items"]): {
+            AssetKey(["order_items"]),
+        },
+        AssetKey(["view", "order_items_base"]): {
+            AssetKey(["order_items_base"]),
+        },
+        AssetKey(["view", "order_metrics"]): {
+            AssetKey(["order_metrics"]),
+        },
+        AssetKey(["view", "order_product"]): {
+            AssetKey(["order_product"]),
+        },
+        AssetKey(["view", "order_purchase_affinity"]): {
+            AssetKey(["order_purchase_affinity"]),
+        },
+        AssetKey(["view", "orders"]): {
+            AssetKey(["orders"]),
+        },
+        AssetKey(["view", "orders_by_product_loyal_users"]): {
+            AssetKey(["orders_by_product_loyal_users"])
+        },
+        AssetKey(["view", "product_loyal_users"]): {
+            AssetKey(["product_loyal_users"]),
+        },
         AssetKey(["view", "products"]): {
             AssetKey(["looker-private-demo", "retail", "products"]),
         },
@@ -169,7 +192,9 @@ def test_asset_deps() -> None:
         AssetKey(["view", "stock_forecasting_input"]): {
             AssetKey(["stock_forecasting_input"]),
         },
-        AssetKey(["view", "stock_forecasting_prediction"]): set(),
+        AssetKey(["view", "stock_forecasting_prediction"]): {
+            AssetKey(["stock_forecasting_prediction"])
+        },
         AssetKey(["view", "stock_forecasting_product_store_week_facts"]): {
             AssetKey(["stock_forecasting_product_store_week_facts"])
         },
@@ -182,10 +207,18 @@ def test_asset_deps() -> None:
         AssetKey(["view", "stock_forecasting_store_week_facts_prior_year"]): {
             AssetKey(["stock_forecasting_store_week_facts_prior_year"])
         },
-        AssetKey(["view", "store_weather"]): set(),
-        AssetKey(["view", "stores"]): set(),
-        AssetKey(["view", "total_order_product"]): set(),
-        AssetKey(["view", "total_orders"]): set(),
+        AssetKey(["view", "store_weather"]): {
+            AssetKey(["store_weather"]),
+        },
+        AssetKey(["view", "stores"]): {
+            AssetKey(["stores"]),
+        },
+        AssetKey(["view", "total_order_product"]): {
+            AssetKey(["total_order_product"]),
+        },
+        AssetKey(["view", "total_orders"]): {
+            AssetKey(["total_orders"]),
+        },
         AssetKey(["view", "transaction_detail"]): {
             AssetKey(["transaction_detail"]),
         },
@@ -195,12 +228,10 @@ def test_asset_deps() -> None:
         AssetKey(["view", "transactions__line_items"]): {
             AssetKey(["transactions__line_items"]),
         },
-        AssetKey(["view", "weather_pivoted"]): set(),
+        AssetKey(["view", "weather_pivoted"]): {
+            AssetKey(["weather_pivoted"]),
+        },
         AssetKey(["view", "weather_raw"]): {
-            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2016"]),
-            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2017"]),
-            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2018"]),
-            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2019"]),
-            AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_202_star"]),
+            AssetKey(["weather_raw"]),
         },
     }

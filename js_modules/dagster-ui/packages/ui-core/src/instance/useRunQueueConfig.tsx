@@ -4,14 +4,12 @@ import {
   InstanceRunQueueConfigQuery,
   InstanceRunQueueConfigQueryVariables,
 } from './types/useRunQueueConfig.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const useRunQueueConfig = () => {
-  const queryResult = useQuery<InstanceRunQueueConfigQuery, InstanceRunQueueConfigQueryVariables>(
+  const {data} = useQuery<InstanceRunQueueConfigQuery, InstanceRunQueueConfigQueryVariables>(
     INSTANCE_RUN_QUEUE_CONFIG,
   );
-  useBlockTraceOnQueryResult(queryResult, 'InstanceRunQueueConfigQuery');
-  return queryResult.data?.instance.runQueueConfig;
+  return data?.instance.runQueueConfig;
 };
 
 const INSTANCE_RUN_QUEUE_CONFIG = gql`

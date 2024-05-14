@@ -59,13 +59,11 @@ Now that cursors have been explained, let’s start writing the sensor.
    - The `json` standard library will be used to read the request’s JSON files as needed
    - `adhoc_request_job` is used to specify that the sensor will create runs from this job
 
-3. To define a sensor, create a new function definition that takes `context` as a parameter. Similar to how your asset definitions had a context argument of type `AssetExecutionContext`, sensor definitions also have a similar `SensorEvaluationContext` to provide information and metadata about the currently running sensor. Your code should look like the snippet below:
+3. To define a sensor, create a new function definition that takes `context` as a parameter. Your code should look like the snippet below:
 
    ```python
-   from dagster import sensor, SensorEvaluationContext
-
    @sensor
-   def adhoc_request_sensor(context: SensorEvaluationContext):
+   def adhoc_request_sensor(context):
    ```
 
 4. Annotate the function with the `@sensor` decorator and pass `adhoc_request_job` as an argument for the job parameter. At this point, your code should look like this:
@@ -74,7 +72,7 @@ Now that cursors have been explained, let’s start writing the sensor.
    @sensor(
        job=adhoc_request_job
    )
-   def adhoc_request_sensor(context: SensorEvaluationContext):
+   def adhoc_request_sensor(context):
    ```
 
 5. Let’s fill out the function’s body. Create a variable that resolves to the `data/requests` directory, which is the directory the sensor will observe:
@@ -83,7 +81,7 @@ Now that cursors have been explained, let’s start writing the sensor.
    @sensor(
        job=adhoc_request_job
    )
-   def adhoc_request_sensor(context: SensorEvaluationContext):
+   def adhoc_request_sensor(context):
        PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
    ```
 
@@ -169,7 +167,7 @@ from ..jobs import adhoc_request_job
 @sensor(
     job=adhoc_request_job
 )
-def adhoc_request_sensor(context: SensorEvaluationContext):
+def adhoc_request_sensor(context):
     PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
 
     previous_state = json.loads(context.cursor) if context.cursor else {}

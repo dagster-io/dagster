@@ -1,12 +1,13 @@
 import {LiveDataThreadManager} from './LiveDataThreadManager';
-import {BATCHING_INTERVAL, BATCH_PARALLEL_FETCHES} from './util';
+import {BATCHING_INTERVAL} from './util';
 
 export type LiveDataThreadID = string;
 
 export class LiveDataThread<T> {
+  private isFetching: boolean = false;
   private listenersCount: {[key: string]: number};
-  private activeFetches: number = 0;
-  private intervals: ReturnType<typeof setTimeout>[];
+  private isLooping: boolean = false;
+  private interval?: ReturnType<typeof setTimeout>;
   private manager: LiveDataThreadManager<any>;
   public pollRate: number = 30000;
 
@@ -23,7 +24,6 @@ export class LiveDataThread<T> {
     this.queryKeys = queryKeys;
     this.listenersCount = {};
     this.manager = manager;
-    this.intervals = [];
   }
 
   public setPollRate(pollRate: number) {
@@ -37,9 +37,6 @@ export class LiveDataThread<T> {
   }
 
   public unsubscribe(key: string) {
-    if (!this.listenersCount[key]) {
-      return;
-    }
     this.listenersCount[key] -= 1;
     if (this.listenersCount[key] === 0) {
       delete this.listenersCount[key];
@@ -54,36 +51,36 @@ export class LiveDataThread<T> {
   }
 
   public startFetchLoop() {
-    if (this.intervals.length === BATCH_PARALLEL_FETCHES) {
+    if (this.isLooping) {
       return;
     }
+    this.isLooping = true;
     const fetch = () => {
       this._batchedQueryKeys();
     };
     setTimeout(fetch, BATCHING_INTERVAL);
-    this.intervals.push(setInterval(fetch, 5000));
+    this.interval = setInterval(fetch, 5000);
   }
 
   public stopFetchLoop() {
-    this.intervals.forEach((id) => {
-      clearInterval(id);
-    });
-    this.intervals = [];
+    if (!this.isLooping) {
+      return;
+    }
+    this.isLooping = false;
+    clearInterval(this.interval);
+    this.interval = undefined;
   }
 
   private async _batchedQueryKeys() {
-    if (this.activeFetches >= BATCH_PARALLEL_FETCHES) {
-      return;
-    }
     const keys = this.manager.determineKeysToFetch(this.getObservedKeys());
-    if (!keys.length) {
+    if (!keys.length || this.isFetching) {
       return;
     }
-    this.activeFetches += 1;
+    this.isFetching = true;
     this.manager._markKeysRequested(keys);
 
     const doNextFetch = () => {
-      this.activeFetches -= 1;
+      this.isFetching = false;
       this._batchedQueryKeys();
     };
     try {

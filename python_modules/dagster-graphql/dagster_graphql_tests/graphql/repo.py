@@ -452,13 +452,6 @@ def integers():
     return_integer()
 
 
-@asset(partitions_def=integers_partitions, backfill_policy=BackfillPolicy.single_run())
-def integers_asset(context: AssetExecutionContext):
-    return {k: 1 for k in context.partition_keys}
-
-
-integers_asset_job = define_asset_job("integers_asset_job", selection=[integers_asset])
-
 alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
 
 
@@ -1948,7 +1941,6 @@ def define_asset_jobs() -> Sequence[UnresolvedAssetJobDefinition]:
         hanging_graph_asset_job,
         hanging_job,
         hanging_partition_asset_job,
-        integers_asset_job,
         output_then_hang_job,
         multi_partitions_fail_job,
         multi_partitions_job,
@@ -2035,7 +2027,6 @@ def define_assets():
         fresh_diamond_left,
         fresh_diamond_right,
         fresh_diamond_bottom,
-        integers_asset,
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,

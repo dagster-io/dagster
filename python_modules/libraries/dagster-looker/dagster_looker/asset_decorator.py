@@ -1,15 +1,10 @@
 import itertools
-import logging
 from pathlib import Path
-from typing import Any, Callable, Iterator, Mapping, Sequence, cast
+from typing import Any, Callable, Mapping, Sequence
 
 import lkml
 import yaml
 from dagster import AssetKey, AssetsDefinition, AssetSpec, multi_asset
-from sqlglot import exp, parse_one, to_table
-from sqlglot.optimizer import Scope, build_scope, optimize
-
-logger = logging.getLogger("dagster_looker")
 
 
 def build_looker_explore_specs(project_dir: Path) -> Sequence[AssetSpec]:
@@ -41,70 +36,17 @@ def build_looker_explore_specs(project_dir: Path) -> Sequence[AssetSpec]:
 
 def build_looker_view_specs(project_dir: Path) -> Sequence[AssetSpec]:
     looker_view_specs = []
-    sql_dialect = "bigquery"
 
     # https://cloud.google.com/looker/docs/reference/param-view
     for view_path in project_dir.rglob("*.view.lkml"):
         for view in lkml.load(view_path.read_text()).get("views", []):
-            upstream_tables: Sequence[exp.Table] = [to_table(view["name"], dialect=sql_dialect)]
-
-            # https://cloud.google.com/looker/docs/derived-tables
-            derived_table_sql = view.get("derived_table", {}).get("sql")
-
-            if derived_table_sql and "$" in derived_table_sql:
-                logger.warn(
-                    f"Failed to parse the derived table SQL for view `{view['name']}`"
-                    f" in file {view_path.name}, because the SQL in this view contains the"
-                    " LookML substitution operator, `$`."
-                    " The upstream dependencies for the view will be omitted."
-                )
-
-                upstream_tables = []
-            elif (
-                derived_table_sql
-                # We need to handle the Looker substitution operator ($) properly since the lkml
-                # compatible SQL may not be parsable yet by sqlglot.
-                #
-                # https://cloud.google.com/looker/docs/sql-and-referring-to-lookml#substitution_operator_
-                and "$" not in derived_table_sql
-            ):
-                try:
-                    optimized_derived_table_ast = optimize(
-                        parse_one(sql=derived_table_sql, dialect=sql_dialect),
-                        dialect=sql_dialect,
-                        validate_qualify_columns=False,
-                    )
-                    root_scope = build_scope(optimized_derived_table_ast)
-
-                    upstream_tables = [
-                        source
-                        for scope in cast(
-                            Iterator[Scope], root_scope.traverse() if root_scope else []
-                        )
-                        for (_, source) in scope.selected_sources.values()
-                        if isinstance(source, exp.Table)
-                    ]
-                except Exception as e:
-                    logger.warn(
-                        f"Failed to optimize derived table SQL for view `{view['name']}`"
-                        f" in file {view_path.name}."
-                        " The upstream dependencies for the view will be omitted.\n\n"
-                        f"Exception: {e}"
-                    )
-
-                    upstream_tables = []
-
-            # https://cloud.google.com/looker/docs/reference/param-view-sql-table-name
-            elif sql_table_name := view.get("sql_table_name"):
-                upstream_tables = [to_table(sql_table_name.replace("`", ""), dialect=sql_dialect)]
+            upstream_table = view.get("sql_table_name") or view["name"]
+            upstream_table_asset_key = AssetKey(upstream_table.replace("`", "").split("."))
 
             looker_view_specs.append(
                 AssetSpec(
                     key=AssetKey(["view", view["name"]]),
-                    deps={
-                        AssetKey([part.name.replace("*", "_star") for part in table.parts])
-                        for table in upstream_tables
-                    },
+                    deps={upstream_table_asset_key},
                 )
             )
 

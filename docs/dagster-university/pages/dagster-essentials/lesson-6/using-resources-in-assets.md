@@ -30,7 +30,7 @@ from dagster import asset
 @asset(
     deps=["taxi_trips_file"],
 )
-def taxi_trips() -> None:
+def taxi_trips():
     sql_query = """
         create or replace table taxi_trips as (
           select
@@ -71,7 +71,7 @@ from dagster import asset
 @asset(
     deps=["taxi_trips_file"],
 )
-def taxi_trips(database: DuckDBResource) -> None:
+def taxi_trips(database: DuckDBResource):
     sql_query = """
         create or replace table taxi_trips as (
           select

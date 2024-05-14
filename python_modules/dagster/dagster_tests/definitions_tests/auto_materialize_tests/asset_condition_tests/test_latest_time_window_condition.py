@@ -1,7 +1,9 @@
 import datetime
 
-from dagster import SchedulingCondition
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+    AssetCondition,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import (
@@ -15,7 +17,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 
 def test_in_latest_time_window_unpartitioned() -> None:
     state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_latest_time_window()
+        one_asset, asset_condition=AssetCondition.in_latest_time_window()
     )
 
     state, result = state.evaluate("A")
@@ -25,7 +27,7 @@ def test_in_latest_time_window_unpartitioned() -> None:
 def test_in_latest_time_window_unpartitioned_lookback() -> None:
     state = AssetConditionScenarioState(
         one_asset,
-        asset_condition=SchedulingCondition.in_latest_time_window(
+        asset_condition=AssetCondition.in_latest_time_window(
             lookback_delta=datetime.timedelta(days=3)
         ),
     )
@@ -36,7 +38,7 @@ def test_in_latest_time_window_unpartitioned_lookback() -> None:
 
 def test_in_latest_time_window_static_partitioned() -> None:
     state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_latest_time_window()
+        one_asset, asset_condition=AssetCondition.in_latest_time_window()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     state, result = state.evaluate("A")
@@ -46,7 +48,7 @@ def test_in_latest_time_window_static_partitioned() -> None:
 def test_in_latest_time_window_static_partitioned_lookback() -> None:
     state = AssetConditionScenarioState(
         one_asset,
-        asset_condition=SchedulingCondition.in_latest_time_window(
+        asset_condition=AssetCondition.in_latest_time_window(
             lookback_delta=datetime.timedelta(days=3)
         ),
     ).with_asset_properties(partitions_def=two_partitions_def)
@@ -57,7 +59,7 @@ def test_in_latest_time_window_static_partitioned_lookback() -> None:
 
 def test_in_latest_time_window_time_partitioned() -> None:
     state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.in_latest_time_window()
+        one_asset, asset_condition=AssetCondition.in_latest_time_window()
     ).with_asset_properties(partitions_def=daily_partitions_def)
 
     # no partitions exist yet
@@ -83,7 +85,7 @@ def test_in_latest_time_window_time_partitioned() -> None:
 def test_in_latest_time_window_time_partitioned_lookback() -> None:
     state = AssetConditionScenarioState(
         one_asset,
-        asset_condition=SchedulingCondition.in_latest_time_window(
+        asset_condition=AssetCondition.in_latest_time_window(
             lookback_delta=datetime.timedelta(days=3)
         ),
     ).with_asset_properties(partitions_def=daily_partitions_def)

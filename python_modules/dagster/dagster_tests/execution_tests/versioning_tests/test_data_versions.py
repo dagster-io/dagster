@@ -5,9 +5,7 @@ from unittest import mock
 
 import pytest
 from dagster import (
-    AssetIn,
     AssetMaterialization,
-    AssetOut,
     DagsterInstance,
     MaterializeResult,
     RunConfig,
@@ -18,6 +16,8 @@ from dagster import (
 )
 from dagster._config.field import Field
 from dagster._config.pythonic_config import Config
+from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
@@ -44,7 +44,6 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._utils import Counter, traced_counter
 from dagster._utils.test.data_versions import (
     assert_code_version,
     assert_data_version,
@@ -1176,33 +1175,3 @@ def test_output_overwrite_provenance_tag():
         assert extract_data_provenance_from_entry(record.event_log_entry).input_storage_ids == {
             AssetKey(["asset0"]): 500
         }
-
-
-def test_fan_in():
-    def create_upstream_asset(i: int):
-        @asset(name=f"upstream_asset_{i}", code_version="abc")
-        def upstream_asset():
-            return i
-
-        return upstream_asset
-
-    upstream_assets = [create_upstream_asset(i) for i in range(100)]
-
-    @asset(
-        ins={f"input_{i}": AssetIn(key=f"upstream_asset_{i}") for i in range(100)},
-        code_version="abc",
-    )
-    def downstream_asset(**kwargs):
-        return kwargs.values()
-
-    all_assets = [*upstream_assets, downstream_asset]
-    instance = DagsterInstance.ephemeral()
-    materialize_assets(all_assets, instance)
-
-    counter = Counter()
-    traced_counter.set(counter)
-    materialize_assets(all_assets, instance)[downstream_asset.key]
-    assert traced_counter.get().counts() == {
-        "DagsterInstance.get_asset_records": 1,
-        "DagsterInstance.get_run_record_by_id": 1,
-    }

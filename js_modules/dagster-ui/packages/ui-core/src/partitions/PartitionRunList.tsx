@@ -6,7 +6,6 @@ import {
   PartitionRunListQueryVariables,
 } from './types/PartitionRunList.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 
@@ -16,7 +15,7 @@ interface PartitionRunListProps {
 }
 
 export const PartitionRunList = (props: PartitionRunListProps) => {
-  const queryResult = useQuery<PartitionRunListQuery, PartitionRunListQueryVariables>(
+  const {data, loading} = useQuery<PartitionRunListQuery, PartitionRunListQueryVariables>(
     PARTITION_RUN_LIST_QUERY,
     {
       variables: {
@@ -27,9 +26,6 @@ export const PartitionRunList = (props: PartitionRunListProps) => {
       },
     },
   );
-
-  useBlockTraceOnQueryResult(queryResult, 'PartitionRunListQuery');
-  const {data, loading} = queryResult;
 
   if (loading || !data) {
     return <Spinner purpose="section" />;

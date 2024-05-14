@@ -32,7 +32,6 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "lkml",
-        "sqlglot",
     ],
     zip_safe=False,
 )

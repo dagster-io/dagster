@@ -23,7 +23,6 @@ import {
 } from './types/JobMetadata.types';
 import {tokenForAssetKey} from '../asset-graph/Utils';
 import {AutomaterializeDaemonStatusTag} from '../assets/AutomaterializeDaemonStatusTag';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
@@ -38,7 +37,7 @@ type JobMetadata = {
 };
 
 function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
-  const queryResult = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
+  const {data} = useQuery<JobMetadataQuery, JobMetadataQueryVariables>(JOB_METADATA_QUERY, {
     variables: {
       runsFilter: {
         pipelineName,
@@ -56,8 +55,6 @@ function useJobNavMetadata(repoAddress: RepoAddress, pipelineName: string) {
       },
     },
   });
-  const data = queryResult.data;
-  useBlockTraceOnQueryResult(queryResult, 'JobMetadataQuery');
 
   return useMemo<JobMetadata>(() => {
     return {

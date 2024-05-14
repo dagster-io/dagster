@@ -3,7 +3,6 @@ import {FontFamily, Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-compone
 import {Link} from 'react-router-dom';
 
 import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
@@ -36,12 +35,9 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   const currentPipelineState = useActivePipelineForName(pipelineName);
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
-  const queryResult = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
+  const {data, loading} = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
     variables: {snapshotId},
   });
-
-  const {data, loading} = queryResult;
-  useBlockTraceOnQueryResult(queryResult, 'SnapshotQuery');
 
   const tag = () => {
     if (loading) {

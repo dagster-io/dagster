@@ -17,7 +17,6 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
@@ -56,7 +55,6 @@ export const OverviewSchedules = () => {
     },
   );
   const {data, loading} = queryResultOverview;
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSchedulesQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

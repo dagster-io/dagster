@@ -30,7 +30,7 @@ We’ll assume your code looks like the following for the rest of the module. If
 @asset(
     deps=["taxi_zones_file"],
 )
-def taxi_zones(database: DuckDBResource) -> None:
+def taxi_zones(database: DuckDBResource):
     """
       The raw taxi zones dataset, loaded into a DuckDB database.
     """
@@ -69,7 +69,7 @@ Update the `manhattan_stats` asset:
 @asset(
     deps=["taxi_trips", "taxi_zones"]
 )
-def manhattan_stats(database: DuckDBResource) -> None:
+def manhattan_stats(database: DuckDBResource):
     """
       Metrics on taxi trips in Manhattan
     """
@@ -104,7 +104,7 @@ Update the `trips_by_week` asset:
 @asset(
     deps = ["taxi_trips"]
 )
-def trips_by_week(database: DuckDBResource) -> None:
+def trips_by_week(database: DuckDBResource):
 
     current_date = datetime.strptime("2023-01-01", constants.DATE_FORMAT)
     end_date = datetime.now()

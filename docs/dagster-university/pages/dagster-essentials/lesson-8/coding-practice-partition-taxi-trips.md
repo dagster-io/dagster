@@ -36,20 +36,19 @@ The updated asset should look similar to the following code. Click **View answer
 **If there are differences**, compare what you wrote to the asset below and change them, as this asset will be used as-is in future lessons.
 
 ```python {% obfuscated="true" %}
-from dagster import asset, AssetExecutionContext
-from dagster_duckdb import DuckDBResource
+from dagster import asset
 from ..partitions import monthly_partitions
 
 @asset(
   deps=["taxi_trips_file"],
   partitions_def=monthly_partition,
 )
-def taxi_trips(context: AssetExecutionContext, database: DuckDBResource) -> None:
+def taxi_trips(context, database: DuckDBResource):
     """
       The raw taxi trips dataset, loaded into a DuckDB database, partitioned by month.
     """
 
-    partition_date_str = context.partition_key
+    partition_date_str = context.asset_partition_key_for_output()
     month_to_fetch = partition_date_str[:-3]
 
     query = f"""

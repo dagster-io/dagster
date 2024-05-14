@@ -46,16 +46,14 @@ describe('Repository options', () => {
   });
 
   it('Correctly displays the current repository state', async () => {
-    await act(() =>
-      render(
-        <MemoryRouter initialEntries={['/locations/foo@bar/etc']}>
-          <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
-            <WorkspaceProvider>
-              <LeftNavRepositorySection />
-            </WorkspaceProvider>
-          </MockedProvider>
-        </MemoryRouter>,
-      ),
+    render(
+      <MemoryRouter initialEntries={['/locations/foo@bar/etc']}>
+        <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
+          <WorkspaceProvider>
+            <LeftNavRepositorySection />
+          </WorkspaceProvider>
+        </MockedProvider>
+      </MemoryRouter>,
     );
 
     const repoHeader = await screen.findByRole('button', {name: /lorem/i});
@@ -68,16 +66,14 @@ describe('Repository options', () => {
 
   describe('localStorage', () => {
     it('initializes with first repo option, if one option and no localStorage', async () => {
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const repoHeader = await screen.findByRole('button', {name: /lorem/i});
@@ -91,16 +87,14 @@ describe('Repository options', () => {
 
     it(`initializes with one repo if it's the only one, even though it's hidden`, async () => {
       window.localStorage.setItem(HIDDEN_REPO_KEYS, `["${repoOne}:${locationOne}"]`);
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const repoHeader = await screen.findByRole('button', {name: /lorem/i});
@@ -113,16 +107,14 @@ describe('Repository options', () => {
     });
 
     it('initializes with all repos visible, if multiple options and no localStorage', async () => {
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const loremHeader = await screen.findByRole('button', {name: /lorem/i});
@@ -148,16 +140,14 @@ describe('Repository options', () => {
         `["lorem:ipsum","${DUNDER_REPO_NAME}:abc_location"]`,
       );
 
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const fooHeader = await screen.findByRole('button', {name: /foo/i});
@@ -172,16 +162,14 @@ describe('Repository options', () => {
     it('initializes with all repo options, no matching `HIDDEN_REPO_KEYS` localStorage', async () => {
       window.localStorage.setItem(HIDDEN_REPO_KEYS, '["hello:world"]');
 
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const loremHeader = await screen.findByRole('button', {name: /lorem/i});
@@ -250,16 +238,14 @@ describe('Repository options', () => {
         buildWorkspaceQueryWithThreeLocations(),
       ];
 
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={mocks}>
-              <WorkspaceProvider>
-                <ReloadableTest />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={mocks}>
+            <WorkspaceProvider>
+              <ReloadableTest />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       // Zero repositories, so zero pipelines.
@@ -278,11 +264,9 @@ describe('Repository options', () => {
       const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
       expect(dunderHeader).toBeVisible();
 
-      await act(async () => {
-        await userEvent.click(loremHeader);
-        await userEvent.click(fooHeader);
-        await userEvent.click(dunderHeader);
-      });
+      await userEvent.click(loremHeader);
+      await userEvent.click(fooHeader);
+      await userEvent.click(dunderHeader);
 
       // After repositories are added and expanded, all become visible.
       await waitFor(() => {
@@ -303,16 +287,14 @@ describe('Repository options', () => {
 
       const mocks = [buildWorkspaceQueryWithOneLocation(), buildWorkspaceQueryWithZeroLocations()];
 
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={mocks}>
-              <WorkspaceProvider>
-                <ReloadableTest />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={mocks}>
+            <WorkspaceProvider>
+              <ReloadableTest />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const loremHeader = await screen.findByRole('button', {name: /lorem/i});
@@ -334,16 +316,14 @@ describe('Repository options', () => {
 
   describe('Asset groups', () => {
     it('renders asset groups alongside jobs', async () => {
-      await act(() =>
-        render(
-          <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithOneLocationAndAssetGroup()]}>
-              <WorkspaceProvider>
-                <LeftNavRepositorySection />
-              </WorkspaceProvider>
-            </MockedProvider>
-          </MemoryRouter>,
-        ),
+      render(
+        <MemoryRouter initialEntries={['/runs']}>
+          <MockedProvider mocks={[buildWorkspaceQueryWithOneLocationAndAssetGroup()]}>
+            <WorkspaceProvider>
+              <LeftNavRepositorySection />
+            </WorkspaceProvider>
+          </MockedProvider>
+        </MemoryRouter>,
       );
 
       const repoHeader = await screen.findByRole('button', {name: /lorem/i});

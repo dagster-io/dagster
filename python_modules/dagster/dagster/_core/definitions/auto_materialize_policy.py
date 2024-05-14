@@ -176,21 +176,15 @@ class AutoMaterializePolicy(
 
     @staticmethod
     def from_asset_condition(asset_condition: SchedulingCondition) -> "AutoMaterializePolicy":
-        return AutoMaterializePolicy.from_scheduling_condition(asset_condition)
-
-    @staticmethod
-    def from_scheduling_condition(
-        scheduling_condition: SchedulingCondition,
-    ) -> "AutoMaterializePolicy":
         """Constructs an AutoMaterializePolicy which will materialize an asset partition whenever
-        the provided scheduling_condition evaluates to True.
+        the provided asset_condition evaluates to True.
 
         Args:
-            scheduling_condition (SchedulingCondition): The condition which determines whether an asset
+            asset_condition (AssetCondition): The condition which determines whether an asset
                 partition should be materialized.
         """
         return AutoMaterializePolicy(
-            rules=set(), max_materializations_per_minute=None, asset_condition=scheduling_condition
+            rules=set(), max_materializations_per_minute=None, asset_condition=asset_condition
         )
 
     @public

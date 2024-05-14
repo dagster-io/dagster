@@ -81,7 +81,6 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
   >(INSTANCE_CONCURRENCY_LIMITS_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
-  useBlockTraceOnQueryResult(queryResult, 'InstanceConcurrencyLimitsQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;

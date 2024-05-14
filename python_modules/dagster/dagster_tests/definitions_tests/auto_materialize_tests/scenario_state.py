@@ -7,7 +7,7 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from typing import Iterable, NamedTuple, Optional, Sequence, Union, cast
 
 import mock
 import pendulum
@@ -259,45 +259,27 @@ class ScenarioState:
             self, scenario_spec=self.scenario_spec.with_asset_properties(keys, **kwargs)
         )
 
-    def _with_run_with_status_for_assets(
-        self,
-        asset_keys: AbstractSet[AssetKey],
-        partition_key: Optional[str],
-        status: DagsterRunStatus,
+    def with_in_progress_run_for_asset(
+        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
     ) -> Self:
-        run_id = make_new_run_id()
+        in_progress_run_id = make_new_run_id()
         with pendulum_freeze_time(self.current_time):
+            asset_key = AssetKey.from_coercible(asset_key)
             job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
-                asset_keys=list(asset_keys)
+                asset_keys=[asset_key]
             )
             assert job_def
             execution_plan = create_execution_plan(job_def, run_config={})
             self.instance.create_run_for_job(
                 job_def=job_def,
-                run_id=run_id,
-                status=status,
-                asset_selection=frozenset(asset_keys),
+                run_id=in_progress_run_id,
+                status=DagsterRunStatus.STARTED,
+                asset_selection=frozenset({AssetKey.from_coercible(asset_key)}),
                 execution_plan=execution_plan,
                 tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
             )
-            assert self.instance.get_run_by_id(run_id)
+            assert self.instance.get_run_by_id(in_progress_run_id)
         return self
-
-    def with_in_progress_run_for_asset(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
-    ) -> Self:
-        asset_key = AssetKey.from_coercible(asset_key)
-        return self._with_run_with_status_for_assets(
-            asset_keys={asset_key}, partition_key=partition_key, status=DagsterRunStatus.STARTED
-        )
-
-    def with_failed_run_for_asset(
-        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
-    ) -> Self:
-        asset_key = AssetKey.from_coercible(asset_key)
-        return self._with_run_with_status_for_assets(
-            asset_keys={asset_key}, partition_key=partition_key, status=DagsterRunStatus.FAILURE
-        )
 
     def with_runs(self, *run_requests: RunRequest) -> Self:
         start = datetime.datetime.now()

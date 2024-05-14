@@ -1,10 +1,8 @@
 // How many assets to fetch at once
 const urlParams = new URLSearchParams(window.location.search);
 const liveDataBatchSize = parseInt(urlParams.get('live-data-batch-size') ?? '10', 10);
-const batchThreads = parseInt(urlParams.get('live-data-parallel-fetches') ?? '1', 10);
 
 export const BATCH_SIZE = isNaN(liveDataBatchSize) ? 10 : liveDataBatchSize;
-export const BATCH_PARALLEL_FETCHES = isNaN(batchThreads) ? 1 : batchThreads;
 
 // Milliseconds we wait until sending a batched query
 export const BATCHING_INTERVAL = 250;

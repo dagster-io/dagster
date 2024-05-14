@@ -1,6 +1,7 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
+from ..legacy.asset_condition import AssetCondition
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
@@ -22,7 +23,7 @@ class DepConditionWrapperCondition(SchedulingCondition):
         # only evaluate parents of the current candidates
         dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
         dep_context = context.for_child_condition(
-            child_condition=self.operand, child_index=0, candidate_slice=dep_candidate_slice
+            child_condition=self.operand, candidate_slice=dep_candidate_slice
         )
 
         # evaluate condition against the dependency
@@ -35,12 +36,10 @@ class DepConditionWrapperCondition(SchedulingCondition):
         )
 
 
-class DepCondition(SchedulingCondition):
+@whitelist_for_serdes
+class AnyDepsCondition(AssetCondition):
     operand: SchedulingCondition
 
-
-@whitelist_for_serdes
-class AnyDepsCondition(DepCondition):
     @property
     def description(self) -> str:
         return "Any deps"
@@ -50,13 +49,11 @@ class AnyDepsCondition(DepCondition):
         true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
 
         dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for i, dep_key in enumerate(sorted(dep_keys)):
+        for dep_key in dep_keys:
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
-                    child_condition=dep_condition,
-                    child_index=i,
-                    candidate_slice=context.candidate_slice,
+                    child_condition=dep_condition, candidate_slice=context.candidate_slice
                 )
             )
             dep_results.append(dep_result)
@@ -69,7 +66,9 @@ class AnyDepsCondition(DepCondition):
 
 
 @whitelist_for_serdes
-class AllDepsCondition(DepCondition):
+class AllDepsCondition(SchedulingCondition):
+    operand: SchedulingCondition
+
     @property
     def description(self) -> str:
         return "All deps"
@@ -79,13 +78,11 @@ class AllDepsCondition(DepCondition):
         true_slice = context.candidate_slice
 
         dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for i, dep_key in enumerate(sorted(dep_keys)):
+        for dep_key in dep_keys:
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
-                    child_condition=dep_condition,
-                    child_index=i,
-                    candidate_slice=context.candidate_slice,
+                    child_condition=dep_condition, candidate_slice=context.candidate_slice
                 )
             )
             dep_results.append(dep_result)

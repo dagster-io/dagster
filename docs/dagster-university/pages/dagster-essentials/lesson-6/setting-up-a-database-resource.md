@@ -12,7 +12,7 @@ Throughout this module, you’ve used DuckDB to store and transform your data. E
 @asset(
     deps=["taxi_trips_file"],
 )
-def taxi_trips() -> None:
+def taxi_trips():
     ...
     conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
     ...

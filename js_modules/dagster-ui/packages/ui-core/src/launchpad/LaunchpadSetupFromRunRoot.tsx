@@ -34,9 +34,6 @@ export const LaunchpadSetupFromRunRoot = (props: {repoAddress: RepoAddress}) => 
   }>();
 
   useBlockTraceUntilTrue('Permissions', loading);
-  if (loading) {
-    return null;
-  }
   if (!canLaunchPipelineExecution) {
     return <Redirect to={`/locations/${repoPath}/pipeline_or_job/${pipelinePath}`} />;
   }

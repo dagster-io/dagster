@@ -11,7 +11,7 @@ Next, you’ll create a job that materializes the new `adhoc_request` asset. Thi
 Navigate to the `jobs/__init__.py` file and add the following lines to create a job for your ad-hoc requests
 
 ```python
-adhoc_request = AssetSelection.assets(["adhoc_request"])
+adhoc_request = AssetSelection.keys(["adhoc_request"])
 
 adhoc_request_job = define_asset_job(
     name="adhoc_request_job",

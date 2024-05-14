@@ -266,13 +266,6 @@
         dict({
           'key': dict({
             'path': list([
-              'integers_asset',
-            ]),
-          }),
-        }),
-        dict({
-          'key': dict({
-            'path': list([
               'middle_static_partitioned_asset_1',
             ]),
           }),
@@ -649,11 +642,6 @@
         'freshnessInfo': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["int_asset"]',
-      }),
-      dict({
-        'freshnessInfo': None,
-        'freshnessPolicy': None,
-        'id': 'test.test_repo.["integers_asset"]',
       }),
       dict({
         'freshnessInfo': None,

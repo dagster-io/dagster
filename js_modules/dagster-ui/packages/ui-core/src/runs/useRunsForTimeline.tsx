@@ -9,7 +9,6 @@ import {RunTimelineQuery, RunTimelineQueryVariables} from './types/useRunsForTim
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -43,8 +42,6 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
       ticksUntil: endSec,
     },
   });
-
-  useBlockTraceOnQueryResult(queryData, 'RunTimelineQuery');
 
   const {data, previousData, loading} = queryData;
 

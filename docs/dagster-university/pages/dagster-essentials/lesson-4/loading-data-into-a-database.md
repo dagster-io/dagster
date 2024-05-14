@@ -21,7 +21,7 @@ Now that you have a query that produces an asset, let’s use Dagster to manage 
    @asset(
        deps=["taxi_trips_file"]
    )
-   def taxi_trips() -> None:
+   def taxi_trips():
        """
          The raw taxi trips dataset, loaded into a DuckDB database
        """

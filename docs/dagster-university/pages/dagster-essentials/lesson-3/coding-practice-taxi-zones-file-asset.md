@@ -22,7 +22,7 @@ The asset you built should look similar to the following code. Click **View answ
 
 ```python {% obfuscated="true" %}
 @asset
-def taxi_zones_file() -> None:
+def taxi_zones_file():
     """
       The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
     """

@@ -25,7 +25,6 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 const InstanceConfigStyle = createGlobalStyle`
   .CodeMirror.cm-s-instance-config.cm-s-instance-config {
@@ -50,7 +49,6 @@ export const InstanceConfigContent = memo(() => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResult, 'InstanceConfigQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;

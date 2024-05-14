@@ -37,7 +37,7 @@ Having all of your assets in one file becomes difficult to manage. Let’s separ
    @asset(
        deps=["taxi_trips", "taxi_zones"]
    )
-   def manhattan_stats() -> None:
+   def manhattan_stats():
    ```
 
 4. Now, let’s add the logic to calculate `manhattan_stats`. Update the `manhattan_stats` asset definition to reflect the changes below:
@@ -46,7 +46,7 @@ Having all of your assets in one file becomes difficult to manage. Let’s separ
    @asset(
        deps=["taxi_trips", "taxi_zones"]
    )
-   def manhattan_stats() -> None:
+   def manhattan_stats():
        query = """
            select
                zones.zone,
@@ -96,7 +96,7 @@ In this section, you’ll create an asset that depends on `manhattan_stats`, loa
    @asset(
        deps=["manhattan_stats"],
    )
-   def manhattan_map() -> None:
+   def manhattan_map():
        trips_by_zone = gpd.read_file(constants.MANHATTAN_STATS_FILE_PATH)
 
        fig = px.choropleth_mapbox(trips_by_zone,
