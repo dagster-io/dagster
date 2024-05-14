@@ -15,7 +15,7 @@ models:
           group: customized_dagster_group
     columns:
       - name: customer_id
-        tests:
+        data_tests:
           - unique
           - not_null
 
@@ -27,11 +27,11 @@ models:
           asset_key: ["customized", "staging", "orders"]
     columns:
       - name: order_id
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: status
-        tests:
+        data_tests:
           - accepted_values:
               values:
                 ["placed", "shipped", "completed", "return_pending", "returned"]
@@ -46,10 +46,10 @@ models:
           owners: ["kafka@castle.com"]
     columns:
       - name: payment_id
-        tests:
+        data_tests:
           - unique
           - not_null
       - name: payment_method
-        tests:
+        data_tests:
           - accepted_values:
               values: ["credit_card", "coupon", "bank_transfer", "gift_card"]

@@ -123,6 +123,14 @@ class ConfigurableResourceWithCliFlags(ConfigurableResource):
             "additional debug information to the console."
         ),
     )
+    empty: bool = Field(
+        default=False,
+        description=(
+            "When True, dbt will invoked with the `--empty` flag, limiting the refs and sources to zero rows."
+            "dbt will still execute the model SQL against the target data warehouse but will avoid expensive reads of input data." 
+            "This validates dependencies and ensures your models will build properly."
+        ),
+    )
 
 
 class DbtCliClient(DbtClient):
@@ -149,6 +157,7 @@ class DbtCliClient(DbtClient):
         json_log_format: bool = True,
         capture_logs: bool = True,
         debug: bool = False,
+        empty: bool = False,
     ):
         self._default_flags = default_flags
         self._executable = executable
@@ -159,6 +168,7 @@ class DbtCliClient(DbtClient):
         self._json_log_format = json_log_format
         self._capture_logs = capture_logs
         self._debug = debug
+        self._empty = empty
         super().__init__(logger)
 
     @property
@@ -213,6 +223,7 @@ class DbtCliClient(DbtClient):
             json_log_format=self._json_log_format,
             capture_logs=self._capture_logs,
             debug=self._debug,
+            empty=self._empty,
         )
 
     def cli_stream_json(self, command: str, **kwargs) -> Iterator[Mapping[str, Any]]:
@@ -234,6 +245,8 @@ class DbtCliClient(DbtClient):
             json_log_format=self._json_log_format,
             capture_logs=self._capture_logs,
             debug=self._debug,
+            empty=self._empty,
+            
         ):
             if event.parsed_json_line is not None:
                 yield event.parsed_json_line
@@ -524,4 +537,5 @@ def dbt_cli_resource(context) -> DbtCliClient:
         capture_logs=context.resource_config["capture_logs"],
         json_log_format=context.resource_config["json_log_format"],
         debug=context.resource_config["debug"],
+        empty=context.resource_config["empty"],
     )

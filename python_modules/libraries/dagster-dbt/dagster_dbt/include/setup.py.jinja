@@ -15,6 +15,7 @@ setup(
         "dagster",
         "dagster-cloud",
         "dagster-dbt",
+        "dbt-core",
         {%- for dbt_adapter in dbt_adapter_packages %}
         "{{ dbt_adapter }}",
         {%- endfor %}
