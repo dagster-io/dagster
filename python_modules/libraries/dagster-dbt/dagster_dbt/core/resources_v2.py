@@ -865,15 +865,12 @@ class DbtEventIterator(abc.Iterator[T]):
         unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
         return check.not_none(self._dbt_cli_invocation.manifest["nodes"].get(unique_id))
 
-    def _attach_post_materialization_metadata(
+    def _fetch_and_attach_row_count_metadata(
         self,
         event: DbtDagsterEventType,
     ) -> DbtDagsterEventType:
-        """Threaded task which runs any postprocessing steps on the given event before it's
-        emitted to user code.
-
-        This is used to, for example, query the row count of a table after it has been
-        materialized by dbt.
+        """Threaded task which fetches row counts for materialized dbt models in a dbt run
+        once they are built, and attaches the row count as metadata to the event.
         """
         adapter = check.not_none(self._dbt_cli_invocation.adapter)
 
@@ -902,23 +899,31 @@ class DbtEventIterator(abc.Iterator[T]):
         logger.debug("Fetching row count for %s", unique_id)
         table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
 
-        with adapter.connection_named(f"row_count_{unique_id}"):
-            query_result = adapter.execute(
-                f"""
-                    SELECT
-                    count(*) as row_count
-                    FROM
-                    {table_str}
-                """,
-                fetch=True,
-            )
-        row_count = query_result[1][0]["row_count"]
-        additional_metadata = {**TableMetadataSet(row_count=row_count)}
+        try:
+            with adapter.connection_named(f"row_count_{unique_id}"):
+                query_result = adapter.execute(
+                    f"""
+                        SELECT
+                        count(*) as row_count
+                        FROM
+                        {table_str}
+                    """,
+                    fetch=True,
+                )
+            row_count = query_result[1][0]["row_count"]
+            additional_metadata = {**TableMetadataSet(row_count=row_count)}
 
-        if isinstance(event, Output):
-            return event.with_metadata(metadata={**event.metadata, **additional_metadata})
-        else:
-            return event._replace(metadata={**event.metadata, **additional_metadata})
+            if isinstance(event, Output):
+                return event.with_metadata(metadata={**event.metadata, **additional_metadata})
+            else:
+                return event._replace(metadata={**event.metadata, **additional_metadata})
+        except Exception as e:
+            logger.warning(
+                f"An error occurred while fetching row count for {unique_id}. Row count metadata"
+                " will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+            return event
 
     def _stream_dbt_events_and_enqueue_postprocessing(
         self,
@@ -935,7 +940,7 @@ class DbtEventIterator(abc.Iterator[T]):
             if isinstance(event, (AssetMaterialization, Output)):
                 output_events_and_futures.append(
                     executor.submit(
-                        self._attach_post_materialization_metadata,
+                        self._fetch_and_attach_row_count_metadata,
                         event,
                     )
                 )
