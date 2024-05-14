@@ -92,8 +92,9 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   useBlockTraceOnQueryResult(sensorAssetSelectionQueryResult, 'SensorAssetSelectionQuery');
 
   useDelayedRowQuery(
-    React.useCallback(async () => {
-      await Promise.all([querySensor(), querySensorAssetSelection()]);
+    React.useCallback(() => {
+      querySensor();
+      querySensorAssetSelection();
     }, [querySensor, querySensorAssetSelection]),
   );
 

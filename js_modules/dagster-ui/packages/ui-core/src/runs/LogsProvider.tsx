@@ -319,11 +319,10 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
           status !== RunStatus.CANCELED;
 
         dispatch({type: 'append', queued, hasMore, cursor});
+        dependency.completeDependency(CompletionType.SUCCESS);
 
         if (hasMore) {
           startPolling(POLL_INTERVAL);
-        } else {
-          dependency.completeDependency(CompletionType.SUCCESS);
         }
       },
     },
