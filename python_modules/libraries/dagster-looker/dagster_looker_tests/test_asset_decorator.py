@@ -1,7 +1,8 @@
+import pytest
 from dagster import AssetKey
 from dagster_looker.asset_decorator import looker_assets
 
-from .looker_projects import test_retail_demo_path
+from .looker_projects import test_exception_derived_table_path, test_retail_demo_path
 
 
 def test_asset_deps() -> None:
@@ -99,28 +100,45 @@ def test_asset_deps() -> None:
         AssetKey(["view", "customer_clustering_model"]): {
             AssetKey(["customer_clustering_model"]),
         },
-        AssetKey(["view", "customer_clustering_prediction"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_aggregates"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_base"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): set(),
+        AssetKey(["view", "customer_clustering_prediction"]): {
+            AssetKey(["view", "customer_clustering_prediction_base"]),
+            AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction_aggregates"]): {
+            AssetKey(["view", "customer_clustering_prediction_base"])
+        },
+        AssetKey(["view", "customer_clustering_prediction_base"]): {
+            AssetKey(["view", "customer_clustering_input"]),
+            AssetKey(["view", "customer_clustering_model"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): {
+            AssetKey(["view", "customer_clustering_prediction_aggregates"])
+        },
         AssetKey(["view", "customer_event_fact"]): {
             AssetKey(["customer_event_fact"]),
         },
-        AssetKey(["view", "customer_facts"]): set(),
+        AssetKey(["view", "customer_facts"]): {
+            AssetKey(["view", "transactions"]),
+        },
         AssetKey(["view", "customer_support_fact"]): {
             AssetKey(["customer_support_fact"]),
         },
         AssetKey(["view", "customer_transaction_fact"]): {
             AssetKey(["customer_transaction_fact"]),
         },
-        AssetKey(["view", "customer_transaction_sequence"]): set(),
+        AssetKey(["view", "customer_transaction_sequence"]): {
+            AssetKey(["view", "products"]),
+            AssetKey(["view", "transactions"]),
+        },
         AssetKey(["view", "customers"]): {
             AssetKey(["looker-private-demo", "retail", "customers"]),
         },
         AssetKey(["view", "date_comparison"]): {
             AssetKey(["date_comparison"]),
         },
-        AssetKey(["view", "distances"]): set(),
+        AssetKey(["view", "distances"]): {
+            AssetKey(["view", "stores"]),
+        },
         AssetKey(["view", "events"]): {
             AssetKey(["looker-private-demo", "retail", "events"]),
         },
@@ -146,14 +164,36 @@ def test_asset_deps() -> None:
         AssetKey(["view", "omni_channel_transactions__transaction_details"]): {
             AssetKey(["omni_channel_transactions__transaction_details"])
         },
-        AssetKey(["view", "order_items"]): set(),
-        AssetKey(["view", "order_items_base"]): set(),
-        AssetKey(["view", "order_metrics"]): set(),
-        AssetKey(["view", "order_product"]): set(),
-        AssetKey(["view", "order_purchase_affinity"]): set(),
-        AssetKey(["view", "orders"]): set(),
-        AssetKey(["view", "orders_by_product_loyal_users"]): set(),
-        AssetKey(["view", "product_loyal_users"]): set(),
+        AssetKey(["view", "order_items"]): {
+            AssetKey(["view", "order_items_base"]),
+        },
+        AssetKey(["view", "order_items_base"]): {
+            AssetKey(["view", "products"]),
+            AssetKey(["view", "stores"]),
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "order_metrics"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "order_product"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "order_purchase_affinity"]): {
+            AssetKey(["view", "order_product"]),
+            AssetKey(["view", "orders_by_product_loyal_users"]),
+            AssetKey(["view", "total_order_product"]),
+        },
+        AssetKey(["view", "orders"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "orders_by_product_loyal_users"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "product_loyal_users"]),
+        },
+        AssetKey(["view", "product_loyal_users"]): {
+            AssetKey(["view", "order_items"]),
+        },
         AssetKey(["view", "products"]): {
             AssetKey(["looker-private-demo", "retail", "products"]),
         },
@@ -169,7 +209,10 @@ def test_asset_deps() -> None:
         AssetKey(["view", "stock_forecasting_input"]): {
             AssetKey(["stock_forecasting_input"]),
         },
-        AssetKey(["view", "stock_forecasting_prediction"]): set(),
+        AssetKey(["view", "stock_forecasting_prediction"]): {
+            AssetKey(["view", "stock_forecasting_input"]),
+            AssetKey(["view", "stock_forecasting_regression"]),
+        },
         AssetKey(["view", "stock_forecasting_product_store_week_facts"]): {
             AssetKey(["stock_forecasting_product_store_week_facts"])
         },
@@ -182,10 +225,21 @@ def test_asset_deps() -> None:
         AssetKey(["view", "stock_forecasting_store_week_facts_prior_year"]): {
             AssetKey(["stock_forecasting_store_week_facts_prior_year"])
         },
-        AssetKey(["view", "store_weather"]): set(),
-        AssetKey(["view", "stores"]): set(),
-        AssetKey(["view", "total_order_product"]): set(),
-        AssetKey(["view", "total_orders"]): set(),
+        AssetKey(["view", "store_weather"]): {
+            AssetKey(["view", "distances"]),
+            AssetKey(["view", "weather_pivoted"]),
+        },
+        AssetKey(["view", "stores"]): {
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "total_order_product"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "order_metrics"]),
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "total_orders"]): {
+            AssetKey(["view", "orders"]),
+        },
         AssetKey(["view", "transaction_detail"]): {
             AssetKey(["transaction_detail"]),
         },
@@ -195,7 +249,9 @@ def test_asset_deps() -> None:
         AssetKey(["view", "transactions__line_items"]): {
             AssetKey(["transactions__line_items"]),
         },
-        AssetKey(["view", "weather_pivoted"]): set(),
+        AssetKey(["view", "weather_pivoted"]): {
+            AssetKey(["view", "weather_raw"]),
+        },
         AssetKey(["view", "weather_raw"]): {
             AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2016"]),
             AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2017"]),
@@ -204,3 +260,17 @@ def test_asset_deps() -> None:
             AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_202_star"]),
         },
     }
+
+
+def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) -> None:
+    @looker_assets(project_dir=test_exception_derived_table_path)
+    def my_looker_assets(): ...
+
+    assert my_looker_assets.asset_deps == {
+        AssetKey(["view", "exception_derived_table"]): set(),
+    }
+    assert (
+        "Failed to optimize derived table SQL for view `exception_derived_table`"
+        " in file `exception_derived_table.view.lkml`."
+        " The upstream dependencies for the view will be omitted."
+    ) in caplog.text
