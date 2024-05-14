@@ -128,3 +128,18 @@ def test_one_off_component_prefix() -> None:
     ):
         defs = Definitions(assets=[asset1], jobs=[my_job])
         defs.get_job_def("my_job")
+
+
+def test_select_without_prefix() -> None:
+    @asset(key_prefix=["my", "long", "prefix"])
+    def asset1(): ...
+
+    # Many more components in the prefix
+    my_job = define_asset_job("my_job", selection=AssetSelection.assets(["asset1"]))
+
+    with pytest.raises(
+        DagsterInvalidSubsetError,
+        match=(rf"did you mean one of the following\?\n\t{re.escape(asset1.key.to_string())}"),
+    ):
+        defs = Definitions(assets=[asset1], jobs=[my_job])
+        defs.get_job_def("my_job")

@@ -731,6 +731,11 @@ class EcsRunLauncher(RunLauncher[T_DagsterInstance], ConfigurableClass):
         if "CannotPullContainerError" in stopped_reason and "i/o timeout" in stopped_reason:
             return True
 
+        if "CannotPullContainerError" in stopped_reason and (
+            "invalid argument" in stopped_reason or "EOF" in stopped_reason
+        ):
+            return True
+
         return False
 
     def _is_transient_startup_failure(self, run, task):

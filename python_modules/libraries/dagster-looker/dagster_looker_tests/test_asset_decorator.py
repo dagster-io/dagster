@@ -1,7 +1,13 @@
-from dagster import AssetKey
-from dagster_looker.asset_decorator import looker_assets
+from pathlib import Path
+from typing import Any, Mapping, Optional, Sequence, Tuple
 
-from .looker_projects import test_retail_demo_path
+import pytest
+from dagster import AssetKey
+from dagster._core.definitions.assets import UserAssetOwner
+from dagster_looker.asset_decorator import looker_assets
+from dagster_looker.dagster_looker_translator import DagsterLookerTranslator
+
+from .looker_projects import test_exception_derived_table_path, test_retail_demo_path
 
 
 def test_asset_deps() -> None:
@@ -99,28 +105,45 @@ def test_asset_deps() -> None:
         AssetKey(["view", "customer_clustering_model"]): {
             AssetKey(["customer_clustering_model"]),
         },
-        AssetKey(["view", "customer_clustering_prediction"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_aggregates"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_base"]): set(),
-        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): set(),
+        AssetKey(["view", "customer_clustering_prediction"]): {
+            AssetKey(["view", "customer_clustering_prediction_base"]),
+            AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction_aggregates"]): {
+            AssetKey(["view", "customer_clustering_prediction_base"])
+        },
+        AssetKey(["view", "customer_clustering_prediction_base"]): {
+            AssetKey(["view", "customer_clustering_input"]),
+            AssetKey(["view", "customer_clustering_model"]),
+        },
+        AssetKey(["view", "customer_clustering_prediction_centroid_ranks"]): {
+            AssetKey(["view", "customer_clustering_prediction_aggregates"])
+        },
         AssetKey(["view", "customer_event_fact"]): {
             AssetKey(["customer_event_fact"]),
         },
-        AssetKey(["view", "customer_facts"]): set(),
+        AssetKey(["view", "customer_facts"]): {
+            AssetKey(["view", "transactions"]),
+        },
         AssetKey(["view", "customer_support_fact"]): {
             AssetKey(["customer_support_fact"]),
         },
         AssetKey(["view", "customer_transaction_fact"]): {
             AssetKey(["customer_transaction_fact"]),
         },
-        AssetKey(["view", "customer_transaction_sequence"]): set(),
+        AssetKey(["view", "customer_transaction_sequence"]): {
+            AssetKey(["view", "products"]),
+            AssetKey(["view", "transactions"]),
+        },
         AssetKey(["view", "customers"]): {
             AssetKey(["looker-private-demo", "retail", "customers"]),
         },
         AssetKey(["view", "date_comparison"]): {
             AssetKey(["date_comparison"]),
         },
-        AssetKey(["view", "distances"]): set(),
+        AssetKey(["view", "distances"]): {
+            AssetKey(["view", "stores"]),
+        },
         AssetKey(["view", "events"]): {
             AssetKey(["looker-private-demo", "retail", "events"]),
         },
@@ -146,14 +169,36 @@ def test_asset_deps() -> None:
         AssetKey(["view", "omni_channel_transactions__transaction_details"]): {
             AssetKey(["omni_channel_transactions__transaction_details"])
         },
-        AssetKey(["view", "order_items"]): set(),
-        AssetKey(["view", "order_items_base"]): set(),
-        AssetKey(["view", "order_metrics"]): set(),
-        AssetKey(["view", "order_product"]): set(),
-        AssetKey(["view", "order_purchase_affinity"]): set(),
-        AssetKey(["view", "orders"]): set(),
-        AssetKey(["view", "orders_by_product_loyal_users"]): set(),
-        AssetKey(["view", "product_loyal_users"]): set(),
+        AssetKey(["view", "order_items"]): {
+            AssetKey(["view", "order_items_base"]),
+        },
+        AssetKey(["view", "order_items_base"]): {
+            AssetKey(["view", "products"]),
+            AssetKey(["view", "stores"]),
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "order_metrics"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "order_product"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "order_purchase_affinity"]): {
+            AssetKey(["view", "order_product"]),
+            AssetKey(["view", "orders_by_product_loyal_users"]),
+            AssetKey(["view", "total_order_product"]),
+        },
+        AssetKey(["view", "orders"]): {
+            AssetKey(["view", "order_items"]),
+        },
+        AssetKey(["view", "orders_by_product_loyal_users"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "product_loyal_users"]),
+        },
+        AssetKey(["view", "product_loyal_users"]): {
+            AssetKey(["view", "order_items"]),
+        },
         AssetKey(["view", "products"]): {
             AssetKey(["looker-private-demo", "retail", "products"]),
         },
@@ -169,7 +214,10 @@ def test_asset_deps() -> None:
         AssetKey(["view", "stock_forecasting_input"]): {
             AssetKey(["stock_forecasting_input"]),
         },
-        AssetKey(["view", "stock_forecasting_prediction"]): set(),
+        AssetKey(["view", "stock_forecasting_prediction"]): {
+            AssetKey(["view", "stock_forecasting_input"]),
+            AssetKey(["view", "stock_forecasting_regression"]),
+        },
         AssetKey(["view", "stock_forecasting_product_store_week_facts"]): {
             AssetKey(["stock_forecasting_product_store_week_facts"])
         },
@@ -182,10 +230,21 @@ def test_asset_deps() -> None:
         AssetKey(["view", "stock_forecasting_store_week_facts_prior_year"]): {
             AssetKey(["stock_forecasting_store_week_facts_prior_year"])
         },
-        AssetKey(["view", "store_weather"]): set(),
-        AssetKey(["view", "stores"]): set(),
-        AssetKey(["view", "total_order_product"]): set(),
-        AssetKey(["view", "total_orders"]): set(),
+        AssetKey(["view", "store_weather"]): {
+            AssetKey(["view", "distances"]),
+            AssetKey(["view", "weather_pivoted"]),
+        },
+        AssetKey(["view", "stores"]): {
+            AssetKey(["view", "transactions"]),
+        },
+        AssetKey(["view", "total_order_product"]): {
+            AssetKey(["view", "order_items"]),
+            AssetKey(["view", "order_metrics"]),
+            AssetKey(["view", "orders"]),
+        },
+        AssetKey(["view", "total_orders"]): {
+            AssetKey(["view", "orders"]),
+        },
         AssetKey(["view", "transaction_detail"]): {
             AssetKey(["transaction_detail"]),
         },
@@ -195,7 +254,9 @@ def test_asset_deps() -> None:
         AssetKey(["view", "transactions__line_items"]): {
             AssetKey(["transactions__line_items"]),
         },
-        AssetKey(["view", "weather_pivoted"]): set(),
+        AssetKey(["view", "weather_pivoted"]): {
+            AssetKey(["view", "weather_raw"]),
+        },
         AssetKey(["view", "weather_raw"]): {
             AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2016"]),
             AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_2017"]),
@@ -204,3 +265,122 @@ def test_asset_deps() -> None:
             AssetKey(["bigquery-public-data", "ghcn_d", "ghcnd_202_star"]),
         },
     }
+
+
+def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) -> None:
+    @looker_assets(project_dir=test_exception_derived_table_path)
+    def my_looker_assets(): ...
+
+    assert my_looker_assets.asset_deps == {
+        AssetKey(["view", "exception_derived_table"]): set(),
+    }
+    assert (
+        "Failed to optimize derived table SQL for view `exception_derived_table`"
+        " in file `exception_derived_table.view.lkml`."
+        " The upstream dependencies for the view will be omitted."
+    ) in caplog.text
+
+
+def test_with_asset_key_replacements() -> None:
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_asset_key(self, lookml_element: Tuple[Path, Mapping[str, Any]]) -> AssetKey:
+            return super().get_asset_key(lookml_element).with_prefix("prefix")
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    assert all(key.has_prefix(["prefix"]) for key in my_looker_assets.asset_deps.keys())
+    assert all(
+        dep.has_prefix(["prefix"])
+        for deps in my_looker_assets.asset_deps.values()
+        for dep in deps
+        if len(dep.path) > 1 and dep.path[1] in ["dashboard", "explore", "view"]
+    )
+
+
+def test_with_description_replacements() -> None:
+    expected_description = "customized description"
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_description(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[str]:
+            return expected_description
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for description in my_looker_assets.descriptions_by_key.values():
+        assert description == expected_description
+
+
+def test_with_metadata_replacements() -> None:
+    expected_metadata = {"customized": "metadata"}
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_metadata(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[Mapping[str, Any]]:
+            return expected_metadata
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for metadata in my_looker_assets.metadata_by_key.values():
+        assert metadata == expected_metadata
+
+
+def test_with_group_replacements() -> None:
+    expected_group = "customized_group"
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_group_name(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[str]:
+            return expected_group
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for group in my_looker_assets.group_names_by_key.values():
+        assert group == expected_group
+
+
+def test_with_owner_replacements() -> None:
+    expected_owners = [UserAssetOwner("custom@custom.com")]
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_owners(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[Sequence[str]]:
+            return [owner.email for owner in expected_owners]
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for owners in my_looker_assets.owners_by_key.values():
+        assert owners == expected_owners
+
+
+def test_with_tag_replacements() -> None:
+    expected_tags = {"customized": "tag"}
+
+    class CustomDagsterLookerTranslator(DagsterLookerTranslator):
+        def get_tags(self, _: Tuple[Path, Mapping[str, Any]]) -> Optional[Mapping[str, str]]:
+            return expected_tags
+
+    @looker_assets(
+        project_dir=test_retail_demo_path,
+        dagster_looker_translator=CustomDagsterLookerTranslator(),
+    )
+    def my_looker_assets(): ...
+
+    for tags in my_looker_assets.tags_by_key.values():
+        assert tags == expected_tags
