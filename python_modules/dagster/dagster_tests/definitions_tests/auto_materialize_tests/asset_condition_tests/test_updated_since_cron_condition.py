@@ -1,114 +1,62 @@
-import datetime
+from dagster import SchedulingCondition
 
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
-    AssetCondition,
-)
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
-from ..scenario_specs import (
-    daily_partitions_def,
-    one_asset,
-    time_partitions_start_datetime,
-    two_partitions_def,
-)
+from ..scenario_specs import one_asset, two_partitions_def
 from .asset_condition_scenario import AssetConditionScenarioState
 
 
-def test_in_latest_time_window_unpartitioned() -> None:
+def test_updated_since_cron_unpartitioned() -> None:
     state = AssetConditionScenarioState(
-        one_asset, asset_condition=AssetCondition.in_latest_time_window()
-    )
+        one_asset, asset_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *")
+    ).with_current_time("2020-02-02T01:05:00")
 
-    state, result = state.evaluate("A")
-    assert result.true_subset.size == 1
-
-
-def test_in_latest_time_window_unpartitioned_lookback() -> None:
-    state = AssetConditionScenarioState(
-        one_asset,
-        asset_condition=AssetCondition.in_latest_time_window(
-            lookback_delta=datetime.timedelta(days=3)
-        ),
-    )
-
-    state, result = state.evaluate("A")
-    assert result.true_subset.size == 1
-
-
-def test_in_latest_time_window_static_partitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=AssetCondition.in_latest_time_window()
-    ).with_asset_properties(partitions_def=two_partitions_def)
-
-    state, result = state.evaluate("A")
-    assert result.true_subset.size == 2
-
-
-def test_in_latest_time_window_static_partitioned_lookback() -> None:
-    state = AssetConditionScenarioState(
-        one_asset,
-        asset_condition=AssetCondition.in_latest_time_window(
-            lookback_delta=datetime.timedelta(days=3)
-        ),
-    ).with_asset_properties(partitions_def=two_partitions_def)
-
-    state, result = state.evaluate("A")
-    assert result.true_subset.size == 2
-
-
-def test_in_latest_time_window_time_partitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=AssetCondition.in_latest_time_window()
-    ).with_asset_properties(partitions_def=daily_partitions_def)
-
-    # no partitions exist yet
-    state = state.with_current_time(time_partitions_start_datetime)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
-    state = state.with_current_time("2020-02-02T01:00:00")
+    state = state.with_runs(run_request("A"))
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-01")
-    }
 
-    state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-06")
-    }
 
-
-def test_in_latest_time_window_time_partitioned_lookback() -> None:
-    state = AssetConditionScenarioState(
-        one_asset,
-        asset_condition=AssetCondition.in_latest_time_window(
-            lookback_delta=datetime.timedelta(days=3)
-        ),
-    ).with_asset_properties(partitions_def=daily_partitions_def)
-
-    # no partitions exist yet
-    state = state.with_current_time(time_partitions_start_datetime)
+    # new cron tick, no longer materialized since it
+    state = state.with_current_time_advanced(hours=1)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
-    state = state.with_current_time("2020-02-07T01:00:00")
-    state, result = state.evaluate("A")
-    assert result.true_subset.size == 3
-    assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-06"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-05"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-04"),
-    }
 
-    state = state.with_current_time_advanced(days=5)
+def test_updated_since_cron_partitioned() -> None:
+    state = (
+        AssetConditionScenarioState(
+            one_asset,
+            asset_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *"),
+        )
+        .with_asset_properties(partitions_def=two_partitions_def)
+        .with_current_time("2020-02-02T01:05:00")
+    )
+
     state, result = state.evaluate("A")
-    assert result.true_subset.size == 3
-    assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-11"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-10"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-09"),
-    }
+    assert result.true_subset.size == 0
+
+    # one materialized
+    state = state.with_runs(run_request("A", "1"))
+    state, result = state.evaluate("A")
+    assert result.true_subset.size == 1
+
+    # now both materialized
+    state = state.with_runs(run_request("A", "2"))
+    state, result = state.evaluate("A")
+    assert result.true_subset.size == 2
+
+    # nothing changed
+    state, result = state.evaluate("A")
+    assert result.true_subset.size == 2
+
+    # A 1 materialized again before the hour, A 2 materialized after the hour
+    state = state.with_runs(run_request("A", "1"))
+    state = state.with_current_time_advanced(hours=1)
+    state = state.with_runs(run_request("A", "2"))
+    state, result = state.evaluate("A")
+    assert result.true_subset.size == 1

@@ -22,6 +22,7 @@ if TYPE_CHECKING:
         MissingSchedulingCondition,
         ParentNewerCondition,
         RequestedThisTickCondition,
+        UpdatedSinceCronCondition,
     )
     from .operators import (
         AllDepsCondition,
@@ -115,6 +116,17 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import InProgressSchedulingCondition
 
         return InProgressSchedulingCondition()
+
+    @staticmethod
+    def updated_since_cron(
+        cron_schedule: str, cron_timezone: str = "UTC"
+    ) -> "UpdatedSinceCronCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it has been updated
+        since the latest tick of the provided cron schedule.
+        """
+        from .operands import UpdatedSinceCronCondition
+
+        return UpdatedSinceCronCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
     @staticmethod
     def in_latest_time_window(
