@@ -226,7 +226,9 @@ class SchedulingCondition(ABC, DagsterModel):
         """
         missing_or_parent_updated = (
             SchedulingCondition.parent_newer()
-            | SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
+            | SchedulingCondition.any_deps_match(
+                SchedulingCondition.requested_this_tick()
+            ).with_label("Any dependency will be requested this tick")
             | SchedulingCondition.missing()
         )
         any_parent_missing = SchedulingCondition.any_deps_match(
@@ -240,11 +242,13 @@ class SchedulingCondition(ABC, DagsterModel):
         )
         return (
             SchedulingCondition.in_latest_time_window()
-            & missing_or_parent_updated
-            & ~any_parent_missing
-            & ~any_parent_in_progress
-            & ~SchedulingCondition.in_progress()
-            & ~failed_recently
+            & missing_or_parent_updated.with_label(
+                "Missing, or has a parent which has been updated"
+            )
+            & (~any_parent_missing).with_label("No parents are missing")
+            & (~any_parent_in_progress).with_label("No parents are in progress")
+            & (~SchedulingCondition.in_progress()).with_label("Is not currently in progress")
+            & (~failed_recently).with_label("Has not recently failed")
         )
 
     @staticmethod
@@ -271,9 +275,13 @@ class SchedulingCondition(ABC, DagsterModel):
         )
         return (
             SchedulingCondition.in_latest_time_window()
-            & all_parents_updated_or_will_update
-            & ~SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
-            & ~SchedulingCondition.in_progress()
+            & all_parents_updated_or_will_update.with_label(
+                "All parents have updated, or will be requested this tick"
+            )
+            & (~SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)).with_label(
+                f"Has not updated since latest tick of {cron_schedule} ({cron_timezone})"
+            )
+            & (~SchedulingCondition.in_progress()).with_label("Is not currently in progress")
         )
 
 
