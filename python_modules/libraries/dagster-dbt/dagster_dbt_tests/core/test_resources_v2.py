@@ -312,6 +312,35 @@ def test_dbt_cli_debug_execution(
     result = materialize([my_dbt_assets], resources={"dbt": dbt})
     assert result.success
 
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.8.0"),
+    reason="The `resource-type` flag is only available in `dbt-core>=1.8.0`",
+)
+def test_dbt_resource_type_execution(
+    test_jaffle_shop_manifest: Dict[str, Any],
+    dbt: DbtCliResource,       
+) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["--resource-type data_test", "build"], context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.8.0"),
+    reason="The `exclude-resource-type` flag is only available in `dbt-core>=1.8.0`",
+)
+def test_dbt_exclude_resource_type_execution(
+    test_jaffle_shop_manifest: Dict[str, Any],
+    dbt: DbtCliResource,       
+) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["--exclude-resource-type data_test", "build"], context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
 
 @pytest.mark.skipif(
     version.parse(dbt_version) < version.parse("1.7.9"),
