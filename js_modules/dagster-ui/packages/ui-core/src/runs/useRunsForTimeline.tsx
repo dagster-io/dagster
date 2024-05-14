@@ -1,5 +1,5 @@
-import {gql, useQuery} from '@apollo/client';
-import {useMemo} from 'react';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
@@ -8,8 +8,9 @@ import {overlap} from './batchRunsForTimeline';
 import {
   FutureTicksQuery,
   FutureTicksQueryVariables,
-  TerimatedRunTimelineQuery,
-  TerimatedRunTimelineQueryVariables,
+  RunTimelineFragment,
+  TerminatedRunTimelineQuery,
+  TerminatedRunTimelineQueryVariables,
   UnterminatedRunTimelineQuery,
   UnterminatedRunTimelineQueryVariables,
 } from './types/useRunsForTimeline.types';
@@ -23,52 +24,177 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
+const BUCKET_SIZE = 3600 * 1000;
+const BATCH_LIMIT = 500;
+
 export const useRunsForTimeline = (
   range: [number, number],
-  runsFilter: RunsFilter = {},
+  filter: RunsFilter | undefined,
   refreshInterval = FIFTEEN_SECONDS,
 ) => {
+  const runsFilter = useMemo(() => {
+    return filter ?? {};
+  }, [filter]);
   const [start, end] = range;
 
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const unteriminatedRunsQueryData = useQuery<
-    UnterminatedRunTimelineQuery,
-    UnterminatedRunTimelineQueryVariables
-  >(UNTERMINATED_RUN_TIMELINE_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    // With a very large number of runs, operating on the Apollo cache is too expensive and
-    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-    // skip the cache entirely.
-    fetchPolicy: 'no-cache',
-    variables: {
-      inProgressFilter: {
-        ...runsFilter,
-        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-        createdBefore: endSec,
-      },
-    },
-  });
+  const buckets = useMemo(() => {
+    const buckets = [];
+    for (let time = start; time < end; time += BUCKET_SIZE) {
+      buckets.push([time, Math.min(end, time + BUCKET_SIZE)] as const);
+    }
 
-  const terminatedRunsQueryData = useQuery<
-    TerimatedRunTimelineQuery,
-    TerimatedRunTimelineQueryVariables
-  >(TERMINATED_RUN_TIMELINE_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    // With a very large number of runs, operating on the Apollo cache is too expensive and
-    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-    // skip the cache entirely.
-    fetchPolicy: 'no-cache',
-    variables: {
-      terminatedFilter: {
-        ...runsFilter,
-        statuses: Array.from(doneStatuses),
-        createdBefore: endSec,
-        updatedAfter: startSec,
-      },
-    },
+    return buckets;
+  }, [start, end]);
+
+  const client = useApolloClient();
+
+  const [terminatedRunsQueryData, setTerminatedRunsData] = useState<{
+    data: RunTimelineFragment[] | undefined;
+    loading: boolean;
+    error: any;
+    called: boolean;
+  }>({
+    data: undefined,
+    loading: true,
+    error: undefined,
+    called: false,
   });
+  const [unterminatedRunsQueryData, setUnterminatedRunsData] = useState<{
+    data: RunTimelineFragment[] | undefined;
+    loading: boolean;
+    error: any;
+    called: boolean;
+  }>({
+    data: undefined,
+    loading: true,
+    error: undefined,
+    called: false,
+  });
+  const {data: unterminatedRunsData, loading: loadingUnterminatedRunsData} =
+    unterminatedRunsQueryData;
+  const {data: terminatedRunsData, loading: loadingTerminatedRunsData} = terminatedRunsQueryData;
+
+  const fetchUnterminatedRunsQueryData = useCallback(async () => {
+    setUnterminatedRunsData(({data}) => ({
+      data,
+      loading: true,
+      called: true,
+      error: undefined,
+    }));
+    const results = await Promise.all(
+      buckets.map(
+        ([start, end]) =>
+          new Promise<RunTimelineFragment[]>(async (res) => {
+            let hasMoreData = true;
+            const dataSoFar: RunTimelineFragment[] = [];
+            let nextEnd = end;
+            while (hasMoreData) {
+              const {data} = await client.query<
+                UnterminatedRunTimelineQuery,
+                UnterminatedRunTimelineQueryVariables
+              >({
+                query: UNTERMINATED_RUN_TIMELINE_QUERY,
+                notifyOnNetworkStatusChange: true,
+                fetchPolicy: 'no-cache',
+                variables: {
+                  inProgressFilter: {
+                    ...runsFilter,
+                    statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+                    createdBefore: nextEnd / 1000,
+                    updatedAfter: start / 1000,
+                  },
+                  limit: BATCH_LIMIT,
+                },
+              });
+              if (data.unterminated.__typename !== 'Runs') {
+                hasMoreData = false;
+                res(dataSoFar);
+              } else {
+                const runs = data.unterminated.results;
+                dataSoFar.push(...runs);
+                if (!runs.length) {
+                  hasMoreData = false;
+                  res(dataSoFar);
+                } else {
+                  nextEnd = runs[runs.length - 1]!.startTime!;
+                }
+              }
+            }
+          }),
+      ),
+    );
+    setUnterminatedRunsData({
+      data: results.flat(),
+      loading: false,
+      called: true,
+      error: undefined,
+    });
+  }, [buckets, client, runsFilter]);
+
+  const fetchTerminatedRunsQueryData = useCallback(async () => {
+    setTerminatedRunsData(({data}) => ({
+      data,
+      loading: true,
+      called: true,
+      error: undefined,
+    }));
+    const results = await Promise.all(
+      buckets.map(
+        ([start, end]) =>
+          new Promise<RunTimelineFragment[]>(async (res) => {
+            let hasMoreData = true;
+            const dataSoFar: RunTimelineFragment[] = [];
+            let nextEnd = end;
+            while (hasMoreData) {
+              const {data} = await client.query<
+                TerminatedRunTimelineQuery,
+                TerminatedRunTimelineQueryVariables
+              >({
+                query: TERMINATED_RUN_TIMELINE_QUERY,
+                notifyOnNetworkStatusChange: true,
+                fetchPolicy: 'no-cache',
+                variables: {
+                  terminatedFilter: {
+                    ...runsFilter,
+                    statuses: Array.from(doneStatuses),
+                    createdBefore: nextEnd / 1000,
+                    updatedAfter: start / 1000,
+                  },
+                  limit: BATCH_LIMIT,
+                },
+              });
+              if (data.terminated.__typename !== 'Runs') {
+                hasMoreData = false;
+                res(dataSoFar);
+              } else {
+                const runs = data.terminated.results;
+                dataSoFar.unshift(...runs);
+                if (!runs.length) {
+                  hasMoreData = false;
+                  res(dataSoFar);
+                } else {
+                  nextEnd = runs[runs.length - 1]!.startTime!;
+                }
+              }
+            }
+          }),
+      ),
+    );
+    setTerminatedRunsData({
+      data: results.flat(),
+      loading: false,
+      called: true,
+      error: undefined,
+    });
+  }, [buckets, client, runsFilter]);
+
+  useEffect(() => {
+    fetchTerminatedRunsQueryData();
+    fetchUnterminatedRunsQueryData();
+  }, [fetchTerminatedRunsQueryData, fetchUnterminatedRunsQueryData]);
 
   const futureTicksQueryData = useQuery<FutureTicksQuery, FutureTicksQueryVariables>(
     FUTURE_TICKS_QUERY,
@@ -85,22 +211,10 @@ export const useRunsForTimeline = (
     },
   );
 
-  useBlockTraceOnQueryResult(unteriminatedRunsQueryData, 'UnterminatedRunTimelineQuery');
-  useBlockTraceOnQueryResult(terminatedRunsQueryData, 'TerimatedRunTimelineQuery');
+  useBlockTraceOnQueryResult(unterminatedRunsQueryData, 'UnterminatedRunTimelineQuery');
+  useBlockTraceOnQueryResult(terminatedRunsQueryData, 'TerminatedRunTimelineQuery');
   useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
 
-  const {
-    data: unterminatedRunsData,
-    previousData: previousUnterminatedRunsData,
-    loading: loadingUnterminatedRunsData,
-    refetch: refetchUnterminatedRuns,
-  } = unteriminatedRunsQueryData;
-  const {
-    data: terminatedRunsData,
-    previousData: previousTerminatedRunsData,
-    loading: loadingTerminatedRunsData,
-    refetch: refetchTerminatedRuns,
-  } = terminatedRunsQueryData;
   const {
     data: futureTicksData,
     previousData: previousFutureTicksData,
@@ -113,9 +227,6 @@ export const useRunsForTimeline = (
     (loadingTerminatedRunsData && !terminatedRunsQueryData) ||
     (loadingFutureTicksData && !futureTicksData);
 
-  const {unterminated} = unterminatedRunsData ||
-    previousUnterminatedRunsData || {unterminated: undefined};
-  const {terminated} = terminatedRunsData || previousTerminatedRunsData || {terminated: undefined};
   const {workspaceOrError} = futureTicksData ||
     previousFutureTicksData || {workspaceOrError: undefined};
 
@@ -124,10 +235,7 @@ export const useRunsForTimeline = (
     const now = Date.now();
 
     // fetch all the runs in the given range
-    [
-      ...(unterminated?.__typename === 'Runs' ? unterminated.results : []),
-      ...(terminated?.__typename === 'Runs' ? terminated.results : []),
-    ].forEach((run) => {
+    [...(unterminatedRunsData ?? []), ...(terminatedRunsData ?? [])].forEach((run) => {
       if (!run.startTime) {
         return;
       }
@@ -167,7 +275,7 @@ export const useRunsForTimeline = (
     });
 
     return map;
-  }, [end, unterminated, terminated, start]);
+  }, [unterminatedRunsData, terminatedRunsData, start, end]);
 
   const jobsWithRuns: TimelineJob[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
@@ -262,7 +370,11 @@ export const useRunsForTimeline = (
 
   const refreshState = useRefreshAtInterval({
     refresh: async () => {
-      await Promise.all([refetchFutureTicks(), refetchTerminatedRuns(), refetchUnterminatedRuns()]);
+      await Promise.all([
+        refetchFutureTicks(),
+        fetchTerminatedRunsQueryData(),
+        fetchUnterminatedRunsQueryData(),
+      ]);
     },
     intervalMs: refreshInterval,
   });
@@ -280,45 +392,48 @@ export const useRunsForTimeline = (
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
-const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
-  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int) {
-    unterminated: runsOrError(filter: $inProgressFilter, limit: $limit) {
-      ... on Runs {
-        results {
-          id
-          pipelineName
-          repositoryOrigin {
-            id
-            repositoryName
-            repositoryLocationName
-          }
-          ...RunTimeFragment
-        }
-      }
+const RUN_TIMELINE_FRAGMENT = gql`
+  fragment RunTimelineFragment on Run {
+    id
+    pipelineName
+    repositoryOrigin {
+      id
+      repositoryName
+      repositoryLocationName
     }
+    ...RunTimeFragment
   }
   ${RUN_TIME_FRAGMENT}
 `;
 
-const TERMINATED_RUN_TIMELINE_QUERY = gql`
-  query TerimatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int) {
-    terminated: runsOrError(filter: $terminatedFilter, limit: $limit) {
+const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
+  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!) {
+    unterminated: runsOrError(filter: $inProgressFilter, limit: $limit) {
       ... on Runs {
         results {
           id
-          pipelineName
-          repositoryOrigin {
-            id
-            repositoryName
-            repositoryLocationName
-          }
-          ...RunTimeFragment
+          ...RunTimelineFragment
         }
       }
     }
   }
 
-  ${RUN_TIME_FRAGMENT}
+  ${RUN_TIMELINE_FRAGMENT}
+`;
+
+const TERMINATED_RUN_TIMELINE_QUERY = gql`
+  query TerminatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int!) {
+    terminated: runsOrError(filter: $terminatedFilter, limit: $limit) {
+      ... on Runs {
+        results {
+          id
+          ...RunTimelineFragment
+        }
+      }
+    }
+  }
+
+  ${RUN_TIMELINE_FRAGMENT}
 `;
 
 const FUTURE_TICKS_QUERY = gql`
