@@ -24,3 +24,4 @@ from .serialized_objects import (
     AssetSubsetWithMetadata as AssetSubsetWithMetadata,
     HistoricalAllPartitionsSubsetSentinel as HistoricalAllPartitionsSubsetSentinel,
 )
+from .utils import SerializableTimeDelta as SerializableTimeDelta

@@ -18,6 +18,7 @@ from dagster._serdes.serdes import PackableValue
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AssetSelection
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
     from .operands import (
@@ -96,22 +97,34 @@ class SchedulingCondition(ABC, DagsterModel):
         return NotAssetCondition(operand=self)
 
     @staticmethod
-    def any_deps_match(condition: "SchedulingCondition") -> "AnyDepsCondition":
+    def any_deps_match(
+        condition: "SchedulingCondition", dep_selection: Optional["AssetSelection"] = None
+    ) -> "AnyDepsCondition":
         """Returns a SchedulingCondition that is true for an asset partition if at least one partition
         of any of its dependencies evaluate to True for the given condition.
+
+        Args:
+            dep_selection (Optional["AssetSelection"]): A filter over the set of dependency keys. If
+                provided, any dependency not matching the provided selection will be ignored.
         """
         from .operators import AnyDepsCondition
 
-        return AnyDepsCondition(operand=condition)
+        return AnyDepsCondition(operand=condition, dep_selection=dep_selection)
 
     @staticmethod
-    def all_deps_match(condition: "SchedulingCondition") -> "AllDepsCondition":
+    def all_deps_match(
+        condition: "SchedulingCondition", dep_selection: Optional["AssetSelection"] = None
+    ) -> "AllDepsCondition":
         """Returns a SchedulingCondition that is true for an asset partition if at least one partition
         of all of its dependencies evaluate to True for the given condition.
+
+        Args:
+            dep_selection (Optional["AssetSelection"]): A filter over the set of dependency keys. If
+                provided, any dependency not matching the provided selection will be ignored.
         """
         from .operators import AllDepsCondition
 
-        return AllDepsCondition(operand=condition)
+        return AllDepsCondition(operand=condition, dep_selection=dep_selection)
 
     @staticmethod
     def missing() -> "MissingSchedulingCondition":
@@ -188,11 +201,16 @@ class SchedulingCondition(ABC, DagsterModel):
         return RequestedThisTickCondition()
 
     @staticmethod
-    def parent_newer() -> "ParentNewerCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if at least one of its parents is newer."""
+    def parent_newer(dep_selection: Optional["AssetSelection"] = None) -> "ParentNewerCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if at least one of its parents is newer.
+
+        Args:
+            dep_selection (Optional["AssetSelection"]): A filter over the set of dependency keys. If
+                provided, any dependency not matching the provided selection will be ignored.
+        """
         from .operands import ParentNewerCondition
 
-        return ParentNewerCondition()
+        return ParentNewerCondition(dep_selection=dep_selection)
 
     @staticmethod
     def eager_with_rate_limit(

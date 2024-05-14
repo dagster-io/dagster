@@ -1,6 +1,7 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
+from ..has_dep_selection import IHasDepSelection
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
 
@@ -35,7 +36,7 @@ class DepConditionWrapperCondition(SchedulingCondition):
         )
 
 
-class DepCondition(SchedulingCondition):
+class DepCondition(SchedulingCondition, IHasDepSelection):
     operand: SchedulingCondition
 
 
@@ -43,14 +44,18 @@ class DepCondition(SchedulingCondition):
 class AnyDepsCondition(DepCondition):
     @property
     def description(self) -> str:
-        return "Any deps"
+        description = "Any deps"
+        if self.dep_selection is not None:
+            description += f" within selection: {self.dep_selection}"
+        return description
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
         true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
 
-        dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for i, dep_key in enumerate(sorted(dep_keys)):
+        for i, dep_key in enumerate(
+            sorted(self.get_dep_keys(asset_key=context.asset_key, asset_graph=context.asset_graph))
+        ):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
@@ -72,14 +77,18 @@ class AnyDepsCondition(DepCondition):
 class AllDepsCondition(DepCondition):
     @property
     def description(self) -> str:
-        return "All deps"
+        description = "All deps"
+        if self.dep_selection is not None:
+            description += f" within selection: {self.dep_selection}"
+        return description
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
         true_slice = context.candidate_slice
 
-        dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for i, dep_key in enumerate(sorted(dep_keys)):
+        for i, dep_key in enumerate(
+            sorted(self.get_dep_keys(asset_key=context.asset_key, asset_graph=context.asset_graph))
+        ):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(

@@ -9,12 +9,17 @@ from dagster._core.definitions.declarative_scheduling.scheduling_context import 
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
+from ..has_dep_selection import IHasDepSelection
+
 
 @whitelist_for_serdes
-class ParentNewerCondition(SchedulingCondition):
+class ParentNewerCondition(SchedulingCondition, IHasDepSelection):
     @property
     def description(self) -> str:
-        return "At least one parent has been updated more recently than the candidate."
+        description = "At least one parent has been updated more recently than the candidate"
+        if self.dep_selection is not None:
+            description += f" within selection: {self.dep_selection}"
+        return description
 
     def compute_newer_parents(
         self, context: SchedulingContext, candidate: AssetKeyPartitionKey
@@ -24,10 +29,16 @@ class ParentNewerCondition(SchedulingCondition):
         candidate_slice = context.asset_graph_view.get_asset_slice_from_asset_partitions(
             {candidate}
         )
-        parent_slices = candidate_slice.compute_parent_slices()
+
+        parent_slices = [
+            candidate_slice.compute_parent_slice(dep_key)
+            for dep_key in self.get_dep_keys(
+                asset_key=context.asset_key, asset_graph=context.asset_graph
+            )
+        ]
         all_parent_asset_partitions = {
             ap
-            for parent_slice in parent_slices.values()
+            for parent_slice in parent_slices
             for ap in parent_slice.expensively_compute_asset_partitions()
         }
         return context.non_agv_instance_interface.get_parent_asset_partitions_updated_after_child(

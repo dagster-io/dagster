@@ -5,13 +5,13 @@ import pytz
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeDecisionType,
-    AutoMaterializeRuleSnapshot,
-)
 from dagster._utils.schedules import is_valid_cron_string
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_rule_evaluation import (
+        AutoMaterializeDecisionType,
+        AutoMaterializeRuleSnapshot,
+    )
     from dagster._core.definitions.auto_materialize_rule_impls import (
         AutoMaterializeAssetPartitionsFilter,
         MaterializeOnCronRule,
@@ -50,7 +50,7 @@ class AutoMaterializeRule(ABC):
     """
 
     @abstractproperty
-    def decision_type(self) -> AutoMaterializeDecisionType:
+    def decision_type(self) -> "AutoMaterializeDecisionType":
         """The decision type of the rule (either `MATERIALIZE` or `SKIP`)."""
         ...
 
@@ -252,8 +252,12 @@ class AutoMaterializeRule(ABC):
 
         return SkipOnRunInProgressRule()
 
-    def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
+    def to_snapshot(self) -> "AutoMaterializeRuleSnapshot":
         """Returns a serializable snapshot of this rule for historical evaluations."""
+        from dagster._core.definitions.auto_materialize_rule_evaluation import (
+            AutoMaterializeRuleSnapshot,
+        )
+
         return AutoMaterializeRuleSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,

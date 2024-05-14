@@ -1,4 +1,5 @@
-from dagster import SchedulingCondition
+import pytest
+from dagster import AssetSelection, SchedulingCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset_depends_on_two, two_partitions_def
@@ -88,3 +89,26 @@ def test_parent_newer_partitioned() -> None:
     state = state.without_previous_evaluation_state()
     state, result = state.evaluate("C")
     assert result.true_subset.size == 2
+
+
+@pytest.mark.parametrize("use_ignore", [True, False])
+def test_parent_newer_partitioned_with_selection(use_ignore: bool) -> None:
+    state = SchedulingConditionScenarioState(
+        one_asset_depends_on_two,
+        scheduling_condition=SchedulingCondition.parent_newer(
+            dep_selection=AssetSelection.keys("A")
+        ),
+    ).with_asset_properties(partitions_def=two_partitions_def)
+
+    state, result = state.evaluate("C")
+    assert result.true_subset.size == 0
+
+    # B updated, doesn't make a difference
+    state = state.with_runs(run_request("B", "1"))
+    state, result = state.evaluate("C")
+    assert result.true_subset.size == 0
+
+    # A updated, that gets caught
+    state = state.with_runs(run_request("A", "1"))
+    state, result = state.evaluate("C")
+    assert result.true_subset.size == 1
