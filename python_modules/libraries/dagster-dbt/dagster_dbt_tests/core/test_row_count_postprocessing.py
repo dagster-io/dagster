@@ -41,8 +41,8 @@ def test_jaffle_shop_manifest_standalone_duckdb_dbfile_fixture(
     return test_jaffle_shop_invocation_standalone_duckdb_dbfile.get_artifact("manifest.json")
 
 
-def test_no_row_count(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
-    @dbt_assets(manifest=test_jaffle_shop_manifest)
+def test_no_row_count(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream()
 
