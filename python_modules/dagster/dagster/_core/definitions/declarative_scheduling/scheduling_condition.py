@@ -18,6 +18,8 @@ from dagster._serdes.serdes import PackableValue
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+
     from .operands import (
         FailedSchedulingCondition,
         InLatestTimeWindowCondition,
@@ -61,6 +63,12 @@ class SchedulingCondition(ABC, DagsterModel):
         """Returns a unique identifier for this condition within the broader condition tree."""
         parts = [str(parent_unique_id), str(index), self.__class__.__name__, self.description]
         return non_secure_md5_hash_str("".join(parts).encode())
+
+    def as_auto_materialize_policy(self) -> "AutoMaterializePolicy":
+        """Returns an AutoMaterializePolicy which contains this condition."""
+        from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+
+        return AutoMaterializePolicy.from_scheduling_condition(self)
 
     @abstractmethod
     def evaluate(self, context: "SchedulingContext") -> "SchedulingResult":
