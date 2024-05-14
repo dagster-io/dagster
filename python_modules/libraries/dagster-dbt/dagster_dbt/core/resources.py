@@ -143,10 +143,6 @@ class ConfigurableResourceWithCliFlags(ConfigurableResource):
     )
 
 
-
-    #exclude-resource-type
-
-
 class DbtCliClient(DbtClient):
     """A resource that allows you to execute dbt cli commands.
 
@@ -264,7 +260,6 @@ class DbtCliClient(DbtClient):
             debug=self._debug,
             resource_type=self._resource_type,
             exclude_resource_type=self._exclude_resource_type,
-            
         ):
             if event.parsed_json_line is not None:
                 yield event.parsed_json_line
@@ -528,7 +523,7 @@ class DbtCliClientResource(ConfigurableResourceWithCliFlags, IAttachDifferentObj
             capture_logs=self.capture_logs,
             debug=self.debug,
             resource_type=self.resource_type,
-            exclude_resource_type=self.exclude_resource_type
+            exclude_resource_type=self.exclude_resource_type,
         )
 
     def get_object_to_set_on_execution_context(self) -> Any:
