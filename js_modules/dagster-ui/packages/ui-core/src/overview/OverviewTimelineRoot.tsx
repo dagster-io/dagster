@@ -50,7 +50,6 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   });
 
   React.useEffect(() => {
-    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, POLL_INTERVAL);
@@ -79,6 +78,8 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     ],
     [hourWindow, now, offsetMsec],
   );
+
+  console.log({range});
 
   const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
