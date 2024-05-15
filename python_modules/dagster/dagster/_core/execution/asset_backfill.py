@@ -913,7 +913,7 @@ def execute_asset_backfill_iteration(
     )
     if previous_asset_backfill_data is None:
         tick_context.update_state(
-            TickStatus.SUCCESS
+            TickStatus.SKIPPED
         )  # should this be a fail? it's bc the code location is unavailable?
         return
 
@@ -960,6 +960,11 @@ def execute_asset_backfill_iteration(
                     "Expected _submit_runs_and_update_backfill_in_chunks to return an"
                     " AssetBackfillData object"
                 )
+
+            tick_context.update_state(TickStatus.SUCCESS)
+        else:
+            # no runs requested, so mark the tick as skipped
+            tick_context.update_state(TickStatus.SKIPPED)
 
         # Update the backfill with new asset backfill data
         # Refetch, in case the backfill was canceled in the meantime
@@ -1060,13 +1065,14 @@ def execute_asset_backfill_iteration(
         logger.debug(
             f"Updated asset backfill data after cancellation iteration: {updated_asset_backfill_data}"
         )
+        # TODO - maybe this should be skipped
+        tick_context.update_state(TickStatus.SUCCESS)
     elif backfill.status == BulkActionStatus.CANCELING:
         # The backfill was forcibly canceled, skip iteration
+        tick_context.update_state(TickStatus.SKIPPED)
         pass
     else:
         check.failed(f"Unexpected backfill status: {backfill.status}")
-
-    tick_context.update_state(TickStatus.SUCCESS)
 
 
 def get_canceling_asset_backfill_iteration_data(
