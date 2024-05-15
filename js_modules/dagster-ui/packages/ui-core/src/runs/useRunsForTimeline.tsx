@@ -7,13 +7,13 @@ import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
 import {fetchPaginatedBucketData} from './fetchPaginatedBucketData';
 import {
+  CompletedRunTimelineQuery,
+  CompletedRunTimelineQueryVariables,
   FutureTicksQuery,
   FutureTicksQueryVariables,
   OngoingRunTimelineQuery,
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
-  TerminatedRunTimelineQuery,
-  TerminatedRunTimelineQueryVariables,
 } from './types/useRunsForTimeline.types';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -51,7 +51,7 @@ export const useRunsForTimeline = (
 
   const client = useApolloClient();
 
-  const [terminatedRunsQueryData, setTerminatedRunsData] = useState<{
+  const [completedRunsQueryData, setCompletedRunsData] = useState<{
     data: RunTimelineFragment[] | undefined;
     loading: boolean;
     error: any;
@@ -62,7 +62,7 @@ export const useRunsForTimeline = (
     error: undefined,
     called: false,
   });
-  const [OngoingRunsQueryData, setOngoingRunsData] = useState<{
+  const [ongoingRunsQueryData, setOngoingRunsData] = useState<{
     data: RunTimelineFragment[] | undefined;
     loading: boolean;
     error: any;
@@ -73,23 +73,23 @@ export const useRunsForTimeline = (
     error: undefined,
     called: false,
   });
-  const {data: OngoingRunsData, loading: loadingOngoingRunsData} = OngoingRunsQueryData;
-  const {data: terminatedRunsData, loading: loadingTerminatedRunsData} = terminatedRunsQueryData;
+  const {data: ongoingRunsData, loading: loadingOngoingRunsData} = ongoingRunsQueryData;
+  const {data: completedRunsData, loading: loadingCompletedRunsData} = completedRunsQueryData;
 
-  const fetchTerminatedRunsQueryData = useCallback(async () => {
+  const fetchCompletedRunsQueryData = useCallback(async () => {
     return await fetchPaginatedBucketData({
       buckets,
-      setQueryData: setTerminatedRunsData,
+      setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
         const {data} = await client.query<
-          TerminatedRunTimelineQuery,
-          TerminatedRunTimelineQueryVariables
+          CompletedRunTimelineQuery,
+          CompletedRunTimelineQueryVariables
         >({
-          query: TERMINATED_RUN_TIMELINE_QUERY,
+          query: COMPLETED_RUN_TIMELINE_QUERY,
           notifyOnNetworkStatusChange: true,
           fetchPolicy: 'no-cache',
           variables: {
-            terminatedFilter: {
+            completedFilter: {
               ...runsFilter,
               statuses: Array.from(doneStatuses),
               createdBefore: bucket[1] / 1000,
@@ -100,15 +100,15 @@ export const useRunsForTimeline = (
           },
         });
 
-        if (data.terminated.__typename !== 'Runs') {
+        if (data.completed.__typename !== 'Runs') {
           return {
             data: [],
             cursor: undefined,
             hasMore: false,
-            error: data.terminated,
+            error: data.completed,
           };
         }
-        const runs = data.terminated.results;
+        const runs = data.completed.results;
         const hasMoreData = runs.length === BATCH_LIMIT;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
         return {
@@ -130,7 +130,7 @@ export const useRunsForTimeline = (
           OngoingRunTimelineQuery,
           OngoingRunTimelineQueryVariables
         >({
-          query: Ongoing_RUN_TIMELINE_QUERY,
+          query: ONGOING_RUN_TIMELINE_QUERY,
           notifyOnNetworkStatusChange: true,
           fetchPolicy: 'no-cache',
           variables: {
@@ -145,15 +145,15 @@ export const useRunsForTimeline = (
           },
         });
 
-        if (data.Ongoing.__typename !== 'Runs') {
+        if (data.ongoing.__typename !== 'Runs') {
           return {
             data: [],
             cursor: undefined,
             hasMore: false,
-            error: data.Ongoing,
+            error: data.ongoing,
           };
         }
-        const runs = data.Ongoing.results;
+        const runs = data.ongoing.results;
         const hasMoreData = runs.length === BATCH_LIMIT;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
         return {
@@ -167,9 +167,9 @@ export const useRunsForTimeline = (
   }, [buckets, client, runsFilter]);
 
   useEffect(() => {
-    fetchTerminatedRunsQueryData();
+    fetchCompletedRunsQueryData();
     fetchOngoingRunsQueryData();
-  }, [fetchTerminatedRunsQueryData, fetchOngoingRunsQueryData]);
+  }, [fetchCompletedRunsQueryData, fetchOngoingRunsQueryData]);
 
   const futureTicksQueryData = useQuery<FutureTicksQuery, FutureTicksQueryVariables>(
     FUTURE_TICKS_QUERY,
@@ -186,8 +186,8 @@ export const useRunsForTimeline = (
     },
   );
 
-  useBlockTraceOnQueryResult(OngoingRunsQueryData, 'OngoingRunTimelineQuery');
-  useBlockTraceOnQueryResult(terminatedRunsQueryData, 'TerminatedRunTimelineQuery');
+  useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
+  useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
   useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
 
   const {
@@ -198,8 +198,8 @@ export const useRunsForTimeline = (
   } = futureTicksQueryData;
 
   const initialLoading =
-    (loadingOngoingRunsData && !OngoingRunsData) ||
-    (loadingTerminatedRunsData && !terminatedRunsQueryData) ||
+    (loadingOngoingRunsData && !ongoingRunsData) ||
+    (loadingCompletedRunsData && !completedRunsQueryData) ||
     (loadingFutureTicksData && !futureTicksData);
 
   const {workspaceOrError} = futureTicksData ||
@@ -210,7 +210,7 @@ export const useRunsForTimeline = (
     const now = Date.now();
 
     // fetch all the runs in the given range
-    [...(OngoingRunsData ?? []), ...(terminatedRunsData ?? [])].forEach((run) => {
+    [...(ongoingRunsData ?? []), ...(completedRunsData ?? [])].forEach((run) => {
       if (!run.startTime) {
         return;
       }
@@ -250,7 +250,7 @@ export const useRunsForTimeline = (
     });
 
     return map;
-  }, [OngoingRunsData, terminatedRunsData, start, end]);
+  }, [ongoingRunsData, completedRunsData, start, end]);
 
   const jobsWithRuns: TimelineJob[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
@@ -347,7 +347,7 @@ export const useRunsForTimeline = (
     refresh: async () => {
       await Promise.all([
         refetchFutureTicks(),
-        fetchTerminatedRunsQueryData(),
+        fetchCompletedRunsQueryData(),
         fetchOngoingRunsQueryData(),
       ]);
     },
@@ -381,9 +381,9 @@ const RUN_TIMELINE_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
 `;
 
-const Ongoing_RUN_TIMELINE_QUERY = gql`
+const ONGOING_RUN_TIMELINE_QUERY = gql`
   query OngoingRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!, $cursor: String) {
-    Ongoing: runsOrError(filter: $inProgressFilter, limit: $limit, cursor: $cursor) {
+    ongoing: runsOrError(filter: $inProgressFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
         results {
           id
@@ -396,9 +396,9 @@ const Ongoing_RUN_TIMELINE_QUERY = gql`
   ${RUN_TIMELINE_FRAGMENT}
 `;
 
-const TERMINATED_RUN_TIMELINE_QUERY = gql`
-  query TerminatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int!, $cursor: String) {
-    terminated: runsOrError(filter: $terminatedFilter, limit: $limit, cursor: $cursor) {
+const COMPLETED_RUN_TIMELINE_QUERY = gql`
+  query CompletedRunTimelineQuery($completedFilter: RunsFilter!, $limit: Int!, $cursor: String) {
+    completed: runsOrError(filter: $completedFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
         results {
           id

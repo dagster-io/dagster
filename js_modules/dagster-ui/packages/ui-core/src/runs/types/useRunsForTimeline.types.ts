@@ -26,7 +26,7 @@ export type OngoingRunTimelineQueryVariables = Types.Exact<{
 
 export type OngoingRunTimelineQuery = {
   __typename: 'Query';
-  Ongoing:
+  ongoing:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}
     | {
@@ -49,15 +49,15 @@ export type OngoingRunTimelineQuery = {
       };
 };
 
-export type TerminatedRunTimelineQueryVariables = Types.Exact<{
-  terminatedFilter: Types.RunsFilter;
+export type CompletedRunTimelineQueryVariables = Types.Exact<{
+  completedFilter: Types.RunsFilter;
   limit: Types.Scalars['Int']['input'];
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
-export type TerminatedRunTimelineQuery = {
+export type CompletedRunTimelineQuery = {
   __typename: 'Query';
-  terminated:
+  completed:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}
     | {
