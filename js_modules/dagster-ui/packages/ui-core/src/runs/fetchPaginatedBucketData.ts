@@ -28,28 +28,14 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
     called: true,
     error: undefined,
   }));
-
-  const fetchDataForBucket = async (bucket: BucketType): Promise<DataType[]> => {
-    let hasMoreData = true;
-    const dataSoFar: DataType[] = [];
-    let currentCursor: CursorType | undefined = undefined;
-
-    while (hasMoreData) {
-      const {cursor, hasMore, data, error} = await fetchData(bucket, currentCursor);
-      if (error) {
-        throw error;
-      }
-      dataSoFar.push(...data);
-      currentCursor = cursor;
-      hasMoreData = hasMore;
-    }
-
-    return dataSoFar;
-  };
-
   try {
-    const results = await Promise.all(buckets.map(fetchDataForBucket));
-
+    const results = await Promise.all(
+      buckets.map((bucket) =>
+        fetchPaginatedData<DataType, CursorType, ErrorType>({
+          fetchData: (cursor) => fetchData(bucket, cursor),
+        }),
+      ),
+    );
     setQueryData({
       data: results.flat(),
       loading: false,
@@ -64,4 +50,31 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
       error,
     }));
   }
+}
+
+export async function fetchPaginatedData<DataType, CursorType, ErrorType>({
+  fetchData,
+}: {
+  fetchData: (cursor: CursorType | undefined) => Promise<{
+    data: DataType[];
+    hasMore: boolean;
+    cursor: CursorType | undefined;
+    error: ErrorType;
+  }>;
+}): Promise<DataType[]> {
+  let hasMoreData = true;
+  const dataSoFar: DataType[] = [];
+  let currentCursor: CursorType | undefined = undefined;
+
+  while (hasMoreData) {
+    const {cursor, hasMore, data, error} = await fetchData(currentCursor);
+    if (error) {
+      throw error;
+    }
+    dataSoFar.push(...data);
+    currentCursor = cursor;
+    hasMoreData = hasMore;
+  }
+
+  return dataSoFar;
 }
