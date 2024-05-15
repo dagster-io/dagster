@@ -54,15 +54,6 @@ export const METADATA_ENTRY_FRAGMENT = gql`
       repositoryName
       locationName
     }
-    ... on CodeReferencesMetadataEntry {
-      codeReferences {
-        ... on LocalFileCodeReference {
-          filePath
-          lineNumber
-          label
-        }
-      }
-    }
     ... on TableColumnLineageMetadataEntry {
       lineage {
         columnName
@@ -91,6 +82,10 @@ export const METADATA_ENTRY_FRAGMENT = gql`
         ... on LocalFileCodeReference {
           filePath
           lineNumber
+          label
+        }
+        ... on UrlCodeReference {
+          url
           label
         }
       }

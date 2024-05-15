@@ -4972,7 +4972,7 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String']['output'];
 };
 
-export type SourceLocation = LocalFileCodeReference;
+export type SourceLocation = LocalFileCodeReference | UrlCodeReference;
 
 export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -5440,6 +5440,12 @@ export type UnpartitionedAssetStatus = {
   failed: Scalars['Boolean']['output'];
   inProgress: Scalars['Boolean']['output'];
   materialized: Scalars['Boolean']['output'];
+};
+
+export type UrlCodeReference = {
+  __typename: 'UrlCodeReference';
+  label: Maybe<Scalars['String']['output']>;
+  url: Scalars['String']['output'];
 };
 
 export type UrlMetadataEntry = MetadataEntry & {
@@ -14748,6 +14754,19 @@ export const buildUnpartitionedAssetStatus = (
     inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : false,
     materialized:
       overrides && overrides.hasOwnProperty('materialized') ? overrides.materialized! : false,
+  };
+};
+
+export const buildUrlCodeReference = (
+  overrides?: Partial<UrlCodeReference>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UrlCodeReference'} & UrlCodeReference => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UrlCodeReference');
+  return {
+    __typename: 'UrlCodeReference',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'alias',
+    url: overrides && overrides.hasOwnProperty('url') ? overrides.url! : 'quia',
   };
 };
 
