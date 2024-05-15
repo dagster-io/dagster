@@ -37,9 +37,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
             let hasMoreData = true;
             const dataSoFar: DataType[] = [];
             let currentCursor: CursorType | undefined = undefined;
-            let i = 0;
             while (hasMoreData) {
-              i++;
               const {cursor, hasMore, data, error} = await fetchData(bucket, currentCursor);
               if (error) {
                 rej(error);
@@ -48,7 +46,6 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
               dataSoFar.push(...data);
               currentCursor = cursor;
               hasMoreData = hasMore;
-              console.log({hasMoreData, currentCursor, dataSoFar, i});
             }
             res(dataSoFar);
           }),
