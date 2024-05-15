@@ -29,7 +29,7 @@ const BUCKET_SIZE = 3600 * 1000;
 const BATCH_LIMIT = 500;
 
 export const useRunsForTimeline = (
-  range: [number, number],
+  range: readonly [number, number],
   filter: RunsFilter | undefined = undefined,
   refreshInterval = 2 * FIFTEEN_SECONDS,
 ) => {
@@ -48,6 +48,8 @@ export const useRunsForTimeline = (
     }
     return buckets;
   }, [start, end]);
+
+  const singleBucket = useMemo(() => [range], [range]);
 
   const client = useApolloClient();
 
@@ -123,9 +125,9 @@ export const useRunsForTimeline = (
 
   const fetchOngoingRunsQueryData = useCallback(async () => {
     return await fetchPaginatedBucketData({
-      buckets,
+      buckets: singleBucket, // We don't actually bucket the ongoing runs since it doesn't matter when they start
       setQueryData: setOngoingRunsData,
-      async fetchData(bucket, cursor: string | undefined) {
+      async fetchData(_bucket, cursor: string | undefined) {
         const {data} = await client.query<
           OngoingRunTimelineQuery,
           OngoingRunTimelineQueryVariables
@@ -137,8 +139,6 @@ export const useRunsForTimeline = (
             inProgressFilter: {
               ...runsFilter,
               statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-              createdBefore: bucket[1] / 1000,
-              updatedAfter: bucket[0] / 1000,
             },
             cursor,
             limit: BATCH_LIMIT,
@@ -164,7 +164,7 @@ export const useRunsForTimeline = (
         };
       },
     });
-  }, [buckets, client, runsFilter]);
+  }, [singleBucket, client, runsFilter]);
 
   const [fetchFutureTicks, futureTicksQueryData] = useLazyQuery<
     FutureTicksQuery,
