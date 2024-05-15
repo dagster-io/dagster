@@ -328,7 +328,7 @@ def test_materialize_asset_and_checks(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])),
-        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
+        expected_dbt_selection={"test_dagster_asset_checks.customers"},
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -377,7 +377,7 @@ def test_materialize_asset_and_checks_with_python_check(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])),
-        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
+        expected_dbt_selection={"test_dagster_asset_checks.customers"},
         additional_assets=[my_python_check],
     )
     assert result.success
@@ -394,7 +394,7 @@ def test_materialize_asset_checks_disabled(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])),
-        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
+        expected_dbt_selection={"test_dagster_asset_checks.customers"},
         dagster_dbt_translator=dagster_dbt_translator_without_checks,
     )
     assert result.success
@@ -412,7 +412,7 @@ def test_materialize_asset_no_checks(
         test_asset_checks_manifest,
         dbt_commands,
         selection=AssetSelection.assets(AssetKey(["customers"])).without_checks(),
-        expected_dbt_selection={"fqn:test_dagster_asset_checks.customers"},
+        expected_dbt_selection={"test_dagster_asset_checks.customers"},
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 1
@@ -432,10 +432,10 @@ def test_materialize_checks_no_asset(
             - AssetSelection.assets(AssetKey(["customers"])).without_checks()
         ),
         expected_dbt_selection={
-            "fqn:test_dagster_asset_checks.not_null_customers_customer_id",
-            "fqn:test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
-            "fqn:test_dagster_asset_checks.singular_test_with_single_dependency",
-            "fqn:test_dagster_asset_checks.unique_customers_customer_id",
+            "test_dagster_asset_checks.not_null_customers_customer_id",
+            "test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
+            "test_dagster_asset_checks.singular_test_with_single_dependency",
+            "test_dagster_asset_checks.unique_customers_customer_id",
         },
     )
     assert result.success
