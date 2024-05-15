@@ -136,6 +136,7 @@ setup(
             "syrupy>=4.0.0",
             "tox==3.25.0",
             "morefs[asynclocal]",
+            "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
         ],
         "mypy": ["mypy==1.8.0"],
