@@ -850,8 +850,7 @@ class DbtCliInvocation:
 T = TypeVar("T", bound=DbtDagsterEventType)
 
 
-# if python 3.8, we can use the built-in typing.Iterator
-
+# In 3.8, the Iterator type is not generic, but we can instead implement typing.Iterator
 BaseIterator = abc.Iterator
 if sys.version_info >= (3, 9):
     BaseIterator = abc.Iterator[T]
