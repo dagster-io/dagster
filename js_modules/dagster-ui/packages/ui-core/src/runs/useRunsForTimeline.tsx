@@ -1,5 +1,5 @@
-import {gql, useApolloClient, useQuery} from '@apollo/client';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
+import {useCallback, useMemo, useState} from 'react';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
@@ -166,25 +166,20 @@ export const useRunsForTimeline = (
     });
   }, [buckets, client, runsFilter]);
 
-  useEffect(() => {
-    fetchCompletedRunsQueryData();
-    fetchOngoingRunsQueryData();
-  }, [fetchCompletedRunsQueryData, fetchOngoingRunsQueryData]);
-
-  const futureTicksQueryData = useQuery<FutureTicksQuery, FutureTicksQueryVariables>(
-    FUTURE_TICKS_QUERY,
-    {
-      notifyOnNetworkStatusChange: true,
-      // With a very large number of runs, operating on the Apollo cache is too expensive and
-      // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-      // skip the cache entirely.
-      fetchPolicy: 'no-cache',
-      variables: {
-        tickCursor: startSec,
-        ticksUntil: endSec,
-      },
+  const [fetchFutureTicks, futureTicksQueryData] = useLazyQuery<
+    FutureTicksQuery,
+    FutureTicksQueryVariables
+  >(FUTURE_TICKS_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    // With a very large number of runs, operating on the Apollo cache is too expensive and
+    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
+    // skip the cache entirely.
+    fetchPolicy: 'no-cache',
+    variables: {
+      tickCursor: startSec,
+      ticksUntil: endSec,
     },
-  );
+  });
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
   useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
@@ -194,7 +189,6 @@ export const useRunsForTimeline = (
     data: futureTicksData,
     previousData: previousFutureTicksData,
     loading: loadingFutureTicksData,
-    refetch: refetchFutureTicks,
   } = futureTicksQueryData;
 
   const initialLoading =
@@ -344,14 +338,15 @@ export const useRunsForTimeline = (
   }, [workspaceOrError, runsByJobKey, start, end]);
 
   const refreshState = useRefreshAtInterval({
-    refresh: async () => {
+    refresh: useCallback(async () => {
       await Promise.all([
-        refetchFutureTicks(),
+        fetchFutureTicks(),
         fetchCompletedRunsQueryData(),
         fetchOngoingRunsQueryData(),
       ]);
-    },
+    }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
     intervalMs: refreshInterval,
+    leading: true,
   });
 
   return useMemo(
