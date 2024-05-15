@@ -94,7 +94,7 @@ class AirbyteSyncMode(ABC):
         which records are new, and the primary key used to determine which records
         are duplicates.
 
-        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
+        https://docs.airbyte.com/using-airbyte/core-concepts/sync-modes/incremental-append-deduped
         """
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
         if isinstance(primary_key, str):
