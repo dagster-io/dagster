@@ -1,10 +1,11 @@
-import {ApolloQueryResult, gql, useApolloClient, useQuery} from '@apollo/client';
+import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {useCallback, useEffect, useMemo, useState} from 'react';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
+import {fetchPaginatedBucketData} from './fetchPaginatedBucketData';
 import {
   FutureTicksQuery,
   FutureTicksQueryVariables,
@@ -45,7 +46,6 @@ export const useRunsForTimeline = (
     for (let time = start; time < end; time += BUCKET_SIZE) {
       buckets.push([time, Math.min(end, time + BUCKET_SIZE)] as const);
     }
-
     return buckets;
   }, [start, end]);
 
@@ -77,120 +77,93 @@ export const useRunsForTimeline = (
     unterminatedRunsQueryData;
   const {data: terminatedRunsData, loading: loadingTerminatedRunsData} = terminatedRunsQueryData;
 
-  const fetchUnterminatedRunsQueryData = useCallback(async () => {
-    setUnterminatedRunsData(({data}) => ({
-      data,
-      loading: true,
-      called: true,
-      error: undefined,
-    }));
-    let cursor: string | undefined = undefined;
-    const results = await Promise.all(
-      buckets.map(
-        ([start, end]) =>
-          new Promise<RunTimelineFragment[]>(async (res) => {
-            let hasMoreData = true;
-            const dataSoFar: RunTimelineFragment[] = [];
-            while (hasMoreData) {
-              const {data} = await client.query<
-                UnterminatedRunTimelineQuery,
-                UnterminatedRunTimelineQueryVariables
-              >({
-                query: UNTERMINATED_RUN_TIMELINE_QUERY,
-                notifyOnNetworkStatusChange: true,
-                fetchPolicy: 'no-cache',
-                variables: {
-                  inProgressFilter: {
-                    ...runsFilter,
-                    statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-                    createdBefore: end / 1000,
-                    updatedAfter: start / 1000,
-                  },
-                  cursor,
-                  limit: BATCH_LIMIT,
-                },
-              });
-              if (data.unterminated.__typename !== 'Runs') {
-                hasMoreData = false;
-                res(dataSoFar);
-              } else {
-                const runs = data.unterminated.results;
-                dataSoFar.unshift(...runs);
-                if (runs.length !== BATCH_LIMIT) {
-                  hasMoreData = false;
-                  res(dataSoFar);
-                } else {
-                  cursor = runs[runs.length - 1]!.id;
-                }
-              }
-            }
-          }),
-      ),
-    );
-    setUnterminatedRunsData({
-      data: results.flat(),
-      loading: false,
-      called: true,
-      error: undefined,
+  const fetchTerminatedRunsQueryData = useCallback(async () => {
+    return await fetchPaginatedBucketData({
+      buckets,
+      setQueryData: setTerminatedRunsData,
+      async fetchData(bucket, cursor: string | undefined) {
+        const {data} = await client.query<
+          TerminatedRunTimelineQuery,
+          TerminatedRunTimelineQueryVariables
+        >({
+          query: TERMINATED_RUN_TIMELINE_QUERY,
+          notifyOnNetworkStatusChange: true,
+          fetchPolicy: 'no-cache',
+          variables: {
+            terminatedFilter: {
+              ...runsFilter,
+              statuses: Array.from(doneStatuses),
+              createdBefore: bucket[1] / 1000,
+              updatedAfter: bucket[0] / 1000,
+            },
+            cursor,
+            limit: BATCH_LIMIT,
+          },
+        });
+
+        if (data.terminated.__typename !== 'Runs') {
+          return {
+            data: [],
+            cursor: undefined,
+            hasMore: false,
+            error: data.terminated,
+          };
+        }
+        const runs = data.terminated.results;
+        const hasMoreData = runs.length === BATCH_LIMIT;
+        const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+        return {
+          data: runs,
+          cursor: nextCursor,
+          hasMore: hasMoreData,
+          error: undefined,
+        };
+      },
     });
   }, [buckets, client, runsFilter]);
 
-  const fetchTerminatedRunsQueryData = useCallback(async () => {
-    setTerminatedRunsData(({data}) => ({
-      data,
-      loading: true,
-      called: true,
-      error: undefined,
-    }));
-    const results = await Promise.all(
-      buckets.map(
-        ([start, end]) =>
-          new Promise<RunTimelineFragment[]>(async (res) => {
-            let hasMoreData = true;
-            const dataSoFar: RunTimelineFragment[] = [];
-            let cursor: string | undefined = undefined;
-            while (hasMoreData) {
-              const {data} = (await client.query<
-                TerminatedRunTimelineQuery,
-                TerminatedRunTimelineQueryVariables
-              >({
-                query: TERMINATED_RUN_TIMELINE_QUERY,
-                notifyOnNetworkStatusChange: true,
-                fetchPolicy: 'no-cache',
-                variables: {
-                  terminatedFilter: {
-                    ...runsFilter,
-                    statuses: Array.from(doneStatuses),
-                    createdBefore: end / 1000,
-                    updatedAfter: start / 1000,
-                  },
-                  cursor,
-                  limit: BATCH_LIMIT,
-                },
-              })) as ApolloQueryResult<TerminatedRunTimelineQuery>;
+  const fetchUnterminatedRunsQueryData = useCallback(async () => {
+    return await fetchPaginatedBucketData({
+      buckets,
+      setQueryData: setUnterminatedRunsData,
+      async fetchData(bucket, cursor: string | undefined) {
+        const {data} = await client.query<
+          UnterminatedRunTimelineQuery,
+          UnterminatedRunTimelineQueryVariables
+        >({
+          query: UNTERMINATED_RUN_TIMELINE_QUERY,
+          notifyOnNetworkStatusChange: true,
+          fetchPolicy: 'no-cache',
+          variables: {
+            inProgressFilter: {
+              ...runsFilter,
+              statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+              createdBefore: bucket[1] / 1000,
+              updatedAfter: bucket[0] / 1000,
+            },
+            cursor,
+            limit: BATCH_LIMIT,
+          },
+        });
 
-              if (data.terminated.__typename !== 'Runs') {
-                hasMoreData = false;
-                res(dataSoFar);
-              } else {
-                const runs = data.terminated.results;
-                dataSoFar.unshift(...runs);
-                if (runs.length !== BATCH_LIMIT) {
-                  hasMoreData = false;
-                  res(dataSoFar);
-                } else {
-                  cursor = runs[runs.length - 1]!.id;
-                }
-              }
-            }
-          }),
-      ),
-    );
-    setTerminatedRunsData({
-      data: results.flat(),
-      loading: false,
-      called: true,
-      error: undefined,
+        if (data.unterminated.__typename !== 'Runs') {
+          return {
+            data: [],
+            cursor: undefined,
+            hasMore: false,
+            error: data.unterminated,
+          };
+        }
+        const runs = data.unterminated.results;
+        const hasMoreData = runs.length === BATCH_LIMIT;
+        const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+        return {
+          data: runs,
+          cursor: nextCursor,
+          hasMore: hasMoreData,
+          error: undefined,
+        };
+      },
     });
   }, [buckets, client, runsFilter]);
 
