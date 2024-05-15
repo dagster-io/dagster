@@ -283,8 +283,8 @@ def test_asset_deps_exception_derived_table(caplog: pytest.LogCaptureFixture) ->
 
 def test_with_asset_key_replacements() -> None:
     class CustomDagsterLookerTranslator(DagsterLookerTranslator):
-        def get_asset_key(self, lookml_element: Tuple[Path, Mapping[str, Any]]) -> AssetKey:
-            return super().get_asset_key(lookml_element).with_prefix("prefix")
+        def get_asset_key(self, lookml_structure: Tuple[Path, Mapping[str, Any]]) -> AssetKey:
+            return super().get_asset_key(lookml_structure).with_prefix("prefix")
 
     @looker_assets(
         project_dir=test_retail_demo_path,
