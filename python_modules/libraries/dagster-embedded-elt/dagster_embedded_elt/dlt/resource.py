@@ -90,7 +90,8 @@ class DagsterDltResource(ConfigurableResource):
             job
             for load_package in load_info_dict.get("load_packages", [])
             for job in load_package.get("jobs", [])
-            if job.get("table_name") == resource.table_name
+            if resource.table_name
+            in [table.get("table_name") for table in load_package.get("tables", [])]
         ]
 
         return base_metadata
@@ -169,8 +170,13 @@ class DagsterDltResource(ConfigurableResource):
 
         for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(dlt_source_resource, load_info)
+            if any([job.state == "failed_jobs" for job in metadata.get("jobs", [])]):
+                context.log.error(f"Ingestion of table {dlt_source_resource.table_name} failed.")
+                continue
             if has_asset_def:
                 yield MaterializeResult(asset_key=asset_key, metadata=metadata)
 
             else:
                 yield AssetMaterialization(asset_key=asset_key, metadata=metadata)
+
+        load_info.raise_on_failed_jobs()
