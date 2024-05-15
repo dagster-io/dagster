@@ -28,6 +28,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TableColumnLineageMetadataValue,
 )
+from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
     DagsterEventType,
     HandledOutputData,
@@ -165,6 +166,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                         label=reference.label,
                     )
                     for reference in value.code_references
+                    if isinstance(reference, LocalFileCodeReference)
                 ],
             )
         elif isinstance(value, TableMetadataValue):
