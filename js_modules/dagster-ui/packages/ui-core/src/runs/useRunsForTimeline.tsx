@@ -31,7 +31,7 @@ const BATCH_LIMIT = 500;
 export const useRunsForTimeline = (
   range: [number, number],
   filter: RunsFilter | undefined = undefined,
-  refreshInterval = FIFTEEN_SECONDS,
+  refreshInterval = 2 * FIFTEEN_SECONDS,
 ) => {
   const runsFilter = useMemo(() => {
     return filter ?? {};
