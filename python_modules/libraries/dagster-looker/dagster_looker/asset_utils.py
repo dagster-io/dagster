@@ -26,23 +26,25 @@ def build_looker_dashboard_specs(
         for lookml_dashboard_props in yaml.safe_load(lookml_dashboard_path.read_bytes()):
             lookml_dashboard = (lookml_dashboard_path, lookml_dashboard_props)
 
-            looker_dashboard_specs.extend(
+            looker_dashboard_specs.append(
                 AssetSpec(
                     key=dagster_looker_translator.get_asset_key(lookml_dashboard),
-                    deps={AssetKey(["explore", lookml_dashboard_element_props["explore"]])},
+                    deps={
+                        AssetKey(["explore", lookml_dashboard_element_props["explore"]])
+                        for lookml_dashboard_element_props in itertools.chain(
+                            # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#elements_2
+                            lookml_dashboard_props.get("elements", []),
+                            # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#filters
+                            lookml_dashboard_props.get("filters", []),
+                        )
+                        if lookml_dashboard_element_props.get("explore")
+                    },
                     description=dagster_looker_translator.get_description(lookml_dashboard),
                     metadata=dagster_looker_translator.get_metadata(lookml_dashboard),
                     group_name=dagster_looker_translator.get_group_name(lookml_dashboard),
                     owners=dagster_looker_translator.get_owners(lookml_dashboard),
                     tags=dagster_looker_translator.get_tags(lookml_dashboard),
                 )
-                for lookml_dashboard_element_props in itertools.chain(
-                    # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#elements_2
-                    lookml_dashboard_props.get("elements", []),
-                    # https://cloud.google.com/looker/docs/reference/param-lookml-dashboard#filters
-                    lookml_dashboard_props.get("filters", []),
-                )
-                if lookml_dashboard_element_props.get("explore")
             )
 
     return looker_dashboard_specs
