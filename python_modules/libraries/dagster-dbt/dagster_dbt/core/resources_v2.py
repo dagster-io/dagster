@@ -17,6 +17,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Generic,
     Iterator,
     List,
     Mapping,
@@ -849,16 +850,7 @@ class DbtCliInvocation:
 # will be able to see the inner type of the iterator, rather than just `DbtEventIterator`.
 T = TypeVar("T", bound=DbtDagsterEventType)
 
-
-# In 3.8, the Iterator type is not generic, but we can instead implement typing.Iterator
-BaseIterator = abc.Iterator
-if sys.version_info >= (3, 9):
-    BaseIterator = abc.Iterator[T]
-else:
-    BaseIterator = typing.Iterator[T]
-
-
-class DbtEventIterator(BaseIterator):
+class DbtEventIterator(Generic[T], abc.Iterator):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.
     """
