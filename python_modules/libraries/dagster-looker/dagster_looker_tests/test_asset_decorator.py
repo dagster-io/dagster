@@ -23,10 +23,12 @@ def test_asset_deps() -> None:
             AssetKey(["explore", "omni_channel_transactions"])
         },
         AssetKey(["dashboard", "customer_360"]): {
-            AssetKey(["explore", "omni_channel_transactions"])
+            AssetKey(["explore", "omni_channel_events"]),
+            AssetKey(["explore", "omni_channel_transactions"]),
         },
         AssetKey(["dashboard", "customer_deep_dive"]): {
-            AssetKey(["explore", "customer_transaction_fact"])
+            AssetKey(["explore", "customer_transaction_fact"]),
+            AssetKey(["explore", "omni_channel_transactions"]),
         },
         AssetKey(["dashboard", "customer_segment_deepdive"]): {
             AssetKey(["explore", "transactions"])
@@ -38,6 +40,7 @@ def test_asset_deps() -> None:
             AssetKey(["explore", "order_purchase_affinity"])
         },
         AssetKey(["dashboard", "store_deepdive"]): {
+            AssetKey(["explore", "stock_forecasting_explore_base"]),
             AssetKey(["explore", "transactions"]),
         },
         # Explores
