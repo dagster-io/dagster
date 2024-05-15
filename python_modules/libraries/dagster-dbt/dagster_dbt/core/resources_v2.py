@@ -5,7 +5,6 @@ import shutil
 import signal
 import subprocess
 import sys
-import typing
 import uuid
 from argparse import Namespace
 from collections import abc
@@ -849,6 +848,7 @@ class DbtCliInvocation:
 # This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
 # will be able to see the inner type of the iterator, rather than just `DbtEventIterator`.
 T = TypeVar("T", bound=DbtDagsterEventType)
+
 
 class DbtEventIterator(Generic[T], abc.Iterator):
     """A wrapper around an iterator of dbt events which contains additional methods for
