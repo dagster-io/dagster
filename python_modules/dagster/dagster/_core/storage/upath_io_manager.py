@@ -361,6 +361,7 @@ class UPathIOManager(MemoizableIOManager):
             )
 
             results_without_errors = []
+            error_results = []
             found_errors = False
             for partition_key, result in zip(context.asset_partition_keys, results):
                 if isinstance(result, FileNotFoundError):
@@ -369,15 +370,17 @@ class UPathIOManager(MemoizableIOManager):
                     else:
                         context.log.error(str(result))
                         found_errors = True
+                        error_results.append(result)
                 elif isinstance(result, Exception):
                     context.log.error(str(result))
                     found_errors = True
+                    error_results.append(result)
                 else:
                     results_without_errors.append(result)
 
                 if found_errors:
                     raise RuntimeError(
-                        f"{len(paths) - len(results_without_errors)} partitions could not be loaded"
+                        f"{len(paths) - len(results_without_errors)} partitions could not be loaded. Errors: {error_results}"
                     )
 
             return results_without_errors
