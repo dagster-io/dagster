@@ -5,6 +5,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import typing
 import uuid
 from argparse import Namespace
 from collections import abc
@@ -849,7 +850,16 @@ class DbtCliInvocation:
 T = TypeVar("T", bound=DbtDagsterEventType)
 
 
-class DbtEventIterator(abc.Iterator[T]):
+# if python 3.8, we can use the built-in typing.Iterator
+
+BaseIterator = abc.Iterator
+if sys.version_info >= (3, 9):
+    BaseIterator = abc.Iterator[T]
+else:
+    BaseIterator = typing.Iterator[T]
+
+
+class DbtEventIterator(BaseIterator):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.
     """
