@@ -1,0 +1,60 @@
+---
+title: "Asset check alerting | Dagster+ Docs"
+description: Alert policies in Dagster+ will send notifications based on asset check results.
+---
+
+# Alerts in Dagster+
+
+After you've set up [asset checks](/concepts/assets/asset-checks/define-execute-asset-checks) to verify the quality of your data, you can create alert policies to notify you when data quality issues arise.
+
+In this guide, we'll show you how to set up dagster+ [alert policies](/dagster-plus/managing-deployments/alerts) that trigger based on asset check results.
+
+---
+
+## Defining an alert policy
+
+In Dagster+, an alert policy is a set of rules that define when to send notifications, and where to send them.
+
+Specifically for asset checks, alert policies provide the following filtering options:
+
+- Alert on the specific asset key(s) or asset group(s) which are relevant to you.
+- Alert on the severity level of the asset check failure (WARN, ERROR, or execution failure).
+
+Notifications can be configured to send to various popular services, such as Slack, PagerDuty, and email. A complete list of available integrations can be found [here](/dagster-plus/managing-deployments/alerts#supported-notification-services).
+
+To become more familiar with the various ways alert policies can be set up beyond asset checks, see the guide on [managing alert policies](/dagster-plus/managing-deployments/alerts/managing-alerts-in-ui).
+
+<TabGroup>
+<TabItem name="In the UI">
+
+1. Navigate to the **Deployments** in the top navigation
+2. Click the **Alerts** tab.
+3. Click **+Create alert policy**.
+4. Select the **Asset** alert policy type in the **Create alert policy** window.
+5. Select an asset (or set of assets) to target with the alert policy. You can target all assets, a specific asset key, or an asset group.
+6. Check the box for **Failed (WARN)** or **Failed (ERROR)** severity, depending on the severity set for freshness check failure.
+7. Select a [notification service](/dagster-plus/managing-deployments/alerts#supported-notification-services), provide the necessary information, and save the alert policy.
+
+</TabItem> 
+<TabItem name="Via the CLI/config">
+
+If you prefer to work in code, you can define an asset check-based alert policy in a YAML configuration file and use the `dagster-cloud` CLI to set the policy for the deployment. **Note**: Asset check-based policies also target freshness checks.
+
+```yaml
+alert_policies:
+  - name: "daily_rollup_warn_checks"
+    description: "Alert on WARN check failures for daily rollup table"
+    target:
+      asset_key: "daily_rollup"
+    severity: "WARN"
+    notification_config:
+      email:
+        email_addresses:
+          - "nelson.bighetti@hooli.com"
+          - "gavin.belson@hooli.com"
+```
+
+Refer to the [Managing alerts using the dagster-cloud CLI](/dagster-plus/managing-deployments/alerts/managing-alerts-cli#how-it-works) for more information.
+
+</TabItem>
+</TabGroup>
