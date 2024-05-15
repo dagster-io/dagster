@@ -23,6 +23,7 @@ from dagster_dbt.core.resources_v2 import (
     PARTIAL_PARSE_FILE_NAME,
     DbtCliResource,
 )
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster_dbt.dbt_project import DbtProject
 from dagster_dbt.errors import DagsterDbtCliRuntimeError
 from dbt.version import __version__ as dbt_version
@@ -392,15 +393,31 @@ def test_dbt_cli_asset_selection(
     assert result.success
 
 
+@pytest.mark.parametrize(
+    "dagster_dbt_translator",
+    [
+        DagsterDbtTranslator(),
+        DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(enable_dbt_selection_by_name=True)
+        ),
+    ],
+)
 def test_dbt_cli_subsetted_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    test_jaffle_shop_manifest: Dict[str, Any],
+    dbt: DbtCliResource,
+    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> None:
     dbt_select = [
         "jaffle_shop.raw_customers",
         "jaffle_shop.staging.stg_customers",
     ]
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        dbt_select = [
+            "raw_customers",
+            "stg_customers",
+        ]
 
-    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    @dbt_assets(manifest=test_jaffle_shop_manifest, dagster_dbt_translator=dagster_dbt_translator)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_cli_invocation = dbt.cli(["build"], context=context)
 
