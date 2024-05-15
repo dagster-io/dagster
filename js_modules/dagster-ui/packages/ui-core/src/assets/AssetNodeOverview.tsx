@@ -125,8 +125,8 @@ export const AssetNodeOverview = ({
 
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
-      <Box flex={{direction: 'row'}}>
-        <Box flex={{direction: 'column', gap: 6}} style={{width: '33.3%'}}>
+      <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
+        <Box flex={{direction: 'column', gap: 6}}>
           <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
@@ -140,7 +140,7 @@ export const AssetNodeOverview = ({
           </Box>
         </Box>
         {liveData?.assetChecks.length ? (
-          <Box flex={{direction: 'column', gap: 6}} style={{width: '33.3%'}}>
+          <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Check results</Subtitle2>
             <AssetChecksStatusSummary
               liveData={liveData}
@@ -150,7 +150,7 @@ export const AssetNodeOverview = ({
           </Box>
         ) : undefined}
         {rowCountMeta ? (
-          <Box flex={{direction: 'column', gap: 6}} style={{width: '33.3%'}}>
+          <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
             <Box>
               <Tag icon="table_rows">{rowCountMeta.intValue}</Tag>
