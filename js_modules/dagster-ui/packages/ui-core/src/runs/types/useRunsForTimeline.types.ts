@@ -18,15 +18,15 @@ export type RunTimelineFragment = {
   } | null;
 };
 
-export type UnterminatedRunTimelineQueryVariables = Types.Exact<{
+export type OngoingRunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
   limit: Types.Scalars['Int']['input'];
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
-export type UnterminatedRunTimelineQuery = {
+export type OngoingRunTimelineQuery = {
   __typename: 'Query';
-  unterminated:
+  Ongoing:
     | {__typename: 'InvalidPipelineRunsFilterError'}
     | {__typename: 'PythonError'}
     | {
