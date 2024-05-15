@@ -34,7 +34,7 @@ export const extractInitializationData = (): {
     const script = document.createElement('script');
     script.defer = true;
     script.async = true;
-    script.src = 'https://dagster.io/oss-telemetry.js';
+    script.src = `https://dagster.io/oss-telemetry.js?nonce=${(window as any).__webpack_nonce__}`;
     document.head.appendChild(script);
   }
   return value;
