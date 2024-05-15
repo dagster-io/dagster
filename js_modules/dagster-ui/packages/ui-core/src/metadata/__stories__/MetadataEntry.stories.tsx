@@ -7,6 +7,8 @@ import {
   IntMetadataEntry,
   JsonMetadataEntry,
   TableSchemaMetadataEntry,
+  buildLocalFileCodeReference,
+  buildUrlCodeReference,
 } from '../../graphql/types';
 import {MetadataEntries} from '../MetadataEntry';
 import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
@@ -264,17 +266,15 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_code_references',
         codeReferences: [
-          {
-            __typename: 'LocalFileCodeReference',
+          buildLocalFileCodeReference({
             filePath: '/path/to/file.py',
             lineNumber: 12,
             label: 'my_code_reference',
-          },
-          {
-            __typename: 'UrlCodeReference',
-            url: 'http://localhost:3000/assets/yoyo_singledim_staticla?partition=GA',
+          }),
+          buildUrlCodeReference({
+            url: 'http://localhost:3000/assets/',
             label: 'my_code_reference',
-          },
+          }),
         ],
       };
     default:
