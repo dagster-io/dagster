@@ -38,6 +38,7 @@ from dagster._core.definitions.time_window_partitions import (
     get_time_partitions_def,
 )
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.remote_representation.code_location import CodeLocation
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
@@ -103,6 +104,7 @@ class AssetDaemonContext:
         auto_materialize_asset_keys: Optional[AbstractSet[AssetKey]],
         respect_materialization_data_versions: bool,
         logger: logging.Logger,
+        code_location: CodeLocation,
         evaluation_time: Optional[datetime.datetime] = None,
     ):
         from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -132,6 +134,7 @@ class AssetDaemonContext:
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
+        self._code_location = code_location
 
         # cache data before the tick starts
         self.prefetch()

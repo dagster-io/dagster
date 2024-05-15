@@ -35,6 +35,11 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 import dagster._check as check
 import dagster._seven as seven
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionSnapshot,
+)
 from dagster._core.definitions.reconstruct import ReconstructableRepository
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.errors import (
@@ -628,6 +633,27 @@ class DagsterApiServer(DagsterApiServicer):
 
         return api_pb2.ExternalPartitionNamesReply(
             serialized_external_partition_names_or_external_partition_execution_error=serialized_response
+        )
+
+    def ExternalConditionEvaluation(
+        self, request: api_pb2.ExternalConditionEvaluationRequest, _context: grpc.ServicerContext
+    ) -> api_pb2.ExternalConditionEvaluationReply:
+        from dagster import AssetKey
+
+        return api_pb2.ExternalConditionEvaluationReply(
+            serialized_condition_evaluation=serialize_value(
+                AssetConditionEvaluation(
+                    condition_snapshot=AssetConditionSnapshot(
+                        class_name="foo", description="bar", unique_id="baz"
+                    ),
+                    start_timestamp=None,
+                    end_timestamp=None,
+                    true_subset=AssetSubset(asset_key=AssetKey("a"), value=False),
+                    candidate_subset=AssetSubset(asset_key=AssetKey("a"), value=False),
+                    subsets_with_metadata=[],
+                    child_evaluations=[],
+                )
+            )
         )
 
     def ExternalNotebookData(

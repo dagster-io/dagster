@@ -1,12 +1,16 @@
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+)
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
-from dagster._grpc.types import SensorExecutionArgs
+from dagster._grpc.types import ConditionEvaluationArgs, SensorExecutionArgs
 from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
@@ -81,6 +85,32 @@ def sync_get_external_sensor_execution_data_grpc(
             ),
         ),
         (SensorExecutionData, ExternalSensorExecutionErrorData),
+    )
+
+    if isinstance(result, ExternalSensorExecutionErrorData):
+        raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+    return result
+
+
+def sync_get_external_condition_evaluation_result_grpc(
+    api_client: "DagsterGrpcClient",
+    instance: "DagsterInstance",
+    repository_handle: RepositoryHandle,
+    asset_key: AssetKey,
+) -> AssetConditionEvaluation:
+    check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
+    check.inst_param(asset_key, "asset_key", AssetKey)
+
+    origin = repository_handle.get_external_origin()
+
+    result = deserialize_value(
+        api_client.external_condition_evaluation(
+            condition_evaluation_args=ConditionEvaluationArgs(
+                repository_origin=origin, instance_ref=instance.get_ref(), asset_key=asset_key
+            ),
+        ),
+        (AssetConditionEvaluation, ExternalSensorExecutionErrorData),
     )
 
     if isinstance(result, ExternalSensorExecutionErrorData):

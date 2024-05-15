@@ -13,6 +13,7 @@ service DagsterApi {
   rpc ListRepositories (ListRepositoriesRequest) returns (ListRepositoriesReply) {}
   rpc ExternalPartitionNames (ExternalPartitionNamesRequest) returns (ExternalPartitionNamesReply) {}
   rpc ExternalNotebookData (ExternalNotebookDataRequest) returns (ExternalNotebookDataReply) {}
+  rpc ExternalConditionEvaluation (ExternalConditionEvaluationRequest) returns (ExternalConditionEvaluationReply) {}
   rpc ExternalPartitionConfig (ExternalPartitionConfigRequest) returns (ExternalPartitionConfigReply) {}
   rpc ExternalPartitionTags (ExternalPartitionTagsRequest) returns (ExternalPartitionTagsReply) {}
   rpc ExternalPartitionSetExecutionParams (ExternalPartitionSetExecutionParamsRequest) returns (stream StreamingChunkEvent) {}
@@ -137,6 +138,14 @@ message ExternalScheduleExecutionRequest {
 
 message ExternalSensorExecutionRequest {
   string serialized_external_sensor_execution_args = 1;
+}
+
+message ExternalConditionEvaluationRequest {
+  string serialized_external_condition_evaluation_args = 1;
+}
+
+message ExternalConditionEvaluationReply {
+  string serialized_condition_evaluation = 1;
 }
 
 message StreamingChunkEvent {

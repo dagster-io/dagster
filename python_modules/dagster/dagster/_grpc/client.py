@@ -24,6 +24,7 @@ from .server import GrpcServerProcess
 from .types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
+    ConditionEvaluationArgs,
     ExecuteExternalJobArgs,
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
@@ -488,6 +489,18 @@ class DagsterGrpcClient:
                 return "".join([chunk.serialized_chunk for chunk in chunks])
             else:
                 raise
+
+    def external_condition_evaluation(
+        self, condition_evaluation_args: ConditionEvaluationArgs
+    ) -> str:
+        res = self._query(
+            "ExternalConditionEvaluation",
+            api_pb2.ExternalConditionEvaluationRequest,
+            serialized_external_condition_evaluation_args=serialize_value(
+                condition_evaluation_args
+            ),
+        )
+        return res.serialized_condition_evaluation
 
     def external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")

@@ -41,6 +41,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
     ExternalSensor,
 )
+from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
@@ -655,6 +656,7 @@ class AssetDaemon(DagsterDaemon):
         evaluation_time = pendulum.now("UTC")
 
         workspace = workspace_process_context.create_request_context()
+        CODE_LOCATION = list(workspace.get_workspace_snapshot().values())[0].code_location
 
         asset_graph = workspace.asset_graph
 
@@ -827,6 +829,7 @@ class AssetDaemon(DagsterDaemon):
                     stored_cursor,
                     auto_observe_asset_keys,
                     debug_crash_flags,
+                    code_location=check.not_none(CODE_LOCATION),
                     is_retry=(retry_tick is not None),
                 )
         except Exception:
@@ -849,6 +852,7 @@ class AssetDaemon(DagsterDaemon):
         stored_cursor: AssetDaemonCursor,
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
+        code_location: CodeLocation,
         is_retry: bool,
     ):
         evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
@@ -896,6 +900,7 @@ class AssetDaemon(DagsterDaemon):
                 observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
                 auto_observe_asset_keys=auto_observe_asset_keys,
                 respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+                code_location=code_location,
                 logger=self._logger,
             ).evaluate()
 

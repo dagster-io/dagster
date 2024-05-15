@@ -9,6 +9,7 @@ from .operands import (
     RequestedThisTickCondition as RequestedThisTickCondition,
     ScheduledSinceCondition as ScheduledSinceCondition,
     UpdatedSinceCronCondition as UpdatedSinceCronCondition,
+    UserCodeCondition as UserCodeCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,

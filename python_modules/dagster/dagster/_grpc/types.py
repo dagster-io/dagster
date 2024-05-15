@@ -586,6 +586,57 @@ class ExternalScheduleExecutionArgs(
 
 
 @whitelist_for_serdes
+class ConditionEvaluationArgs(
+    NamedTuple(
+        "_ConditionEvaluationArgs",
+        [
+            ("repository_origin", RemoteRepositoryOrigin),
+            ("instance_ref", Optional[InstanceRef]),
+            ("asset_key", AssetKey),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        repository_origin: RemoteRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        asset_key: AssetKey,
+    ):
+        return super(ConditionEvaluationArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
+            ),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+        )
+
+
+@whitelist_for_serdes
+class ExternalJobArgs(
+    NamedTuple(
+        "_ExternalJobArgs",
+        [
+            ("repository_origin", RemoteRepositoryOrigin),
+            ("instance_ref", InstanceRef),
+            ("name", str),
+        ],
+    )
+):
+    def __new__(
+        cls, repository_origin: RemoteRepositoryOrigin, instance_ref: InstanceRef, name: str
+    ):
+        return super(ExternalJobArgs, cls).__new__(
+            cls,
+            repository_origin=check.inst_param(
+                repository_origin, "repository_origin", RemoteRepositoryOrigin
+            ),
+            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
+            name=check.str_param(name, "name"),
+        )
+
+
+@whitelist_for_serdes
 class SensorExecutionArgs(
     NamedTuple(
         "_SensorExecutionArgs",
@@ -641,30 +692,6 @@ class SensorExecutionArgs(
                 last_sensor_start_time, "last_sensor_start_time"
             ),
             last_completion_time=normalized_last_tick_completion_time,
-        )
-
-
-@whitelist_for_serdes
-class ExternalJobArgs(
-    NamedTuple(
-        "_ExternalJobArgs",
-        [
-            ("repository_origin", RemoteRepositoryOrigin),
-            ("instance_ref", InstanceRef),
-            ("name", str),
-        ],
-    )
-):
-    def __new__(
-        cls, repository_origin: RemoteRepositoryOrigin, instance_ref: InstanceRef, name: str
-    ):
-        return super(ExternalJobArgs, cls).__new__(
-            cls,
-            repository_origin=check.inst_param(
-                repository_origin, "repository_origin", RemoteRepositoryOrigin
-            ),
-            instance_ref=check.inst_param(instance_ref, "instance_ref", InstanceRef),
-            name=check.str_param(name, "name"),
         )
 
 
