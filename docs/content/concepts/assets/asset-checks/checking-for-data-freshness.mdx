@@ -38,7 +38,7 @@ Freshness checks use an asset's latest update time to determine if it's overdue.
 
 Before continuing, you should be familiar with:
 
-- [Software-defined Assets](/concepts/assets/software-defined-assets)
+- [Asset definitions](/concepts/assets/software-defined-assets)
 - [Asset checks](/concepts/assets/asset-checks)
 - [Schedules](/concepts/partitions-schedules-sensors/schedules) and/or [sensors](/concepts/partitions-schedules-sensors/sensors)
 - [Alerts](/dagster-plus/managing-deployments/alerts) (Dagster+ only)
@@ -357,9 +357,15 @@ height={1944}
 
 ---
 
-## Alert on overdue assets (Dagster+ only)
+## Alerting on overdue assets (Dagster+ only)
 
-See the guide on [asset check alerting](/dagster-plus/managing-deployments/alerts) for more information. In Dagster+, you can set up [alert policies](/dagster-plus/managing-deployments/alerts) to notify you when an asset is overdue for an update. By default, a freshness check will fail with severity `WARN` if an asset is overdue, so in order to alert on overdue assets, you'll want to create an alert policy that triggers on asset check failures with severity `WARN` (or `ERROR` if you've overridden the default severity), for your specific assets which you've defined freshness checks for. Asset alert policies can currently be targeted at specific asset keys, asset groups, or all assets.
+In Dagster+, you can set up alerts to notify you when assets are overdue for an update. By default, freshness checks will fail with a severity of `WARN`, but you can override this to fail with `ERROR`.
+
+To alert on overdue assets, create an alert policy with the following settings:
+
+<AssetCheckAlerts />
+
+---
 
 ## APIs in this guide
 
