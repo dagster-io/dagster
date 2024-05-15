@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, cast
 
+import mock
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -64,7 +65,7 @@ def test_row_count(
 ) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).enable_fetch_row_count().stream()
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
 
     result = materialize(
         [my_dbt_assets],
@@ -92,3 +93,33 @@ def test_row_count(
         if "stg" not in check.not_none(event.asset_key).path[-1]
     ]
     assert all(row_count and row_count > 0 for row_count in row_counts), row_counts
+
+
+def test_row_count_err(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # test that we can handle exceptions in row count fetching
+    # and still complete the dbt assets materialization
+    with mock.patch("dbt.adapters.duckdb.DuckDBAdapter.execute") as mock_execute:
+        mock_execute.side_effect = Exception("mock_execute exception")
+
+        @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+        def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+            yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+
+        result = materialize(
+            [my_dbt_assets],
+            resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        )
+
+        assert result.success
+
+        # Validate that no row counts were fetched due to the exception
+        assert not any(
+            "dagster/row_count" in event.materialization.metadata
+            for event in result.get_asset_materialization_events()
+        )
+
+        # assert we have warning message in logs
+        assert "An error occurred while fetching row count for " in caplog.text
