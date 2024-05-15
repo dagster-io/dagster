@@ -31,11 +31,14 @@ export const extractInitializationData = (): {
     }
   }
   if (value.telemetryEnabled) {
-    const script = document.createElement('script');
-    script.defer = true;
-    script.async = true;
-    script.src = 'https://dagster.io/oss-telemetry.js';
-    document.head.appendChild(script);
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://dagster.io/dagit_iframes/oss-telemetry';
+    iframe.height = '0';
+    iframe.width = '0';
+    iframe.tabIndex = -1;
+    iframe.title = 'Analytics';
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
   }
   return value;
 };
