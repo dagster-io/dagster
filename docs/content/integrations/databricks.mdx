@@ -52,7 +52,7 @@ databricks_client_instance = databricks_client.configured(
 
 In this step, we'll demonstrate several ways to model a Databricks API call as either a Dagster [op](/concepts/ops-jobs-graphs/ops) or the computation backing an [asset definition](/concepts/assets/software-defined-assets). You can either:
 
-- Use the `dagster-databricks` op factories, which create ops that invoke the Databricks Jobs' [Run Now](https://docs.databricks.com/api-explorer/workspace/jobs/runnow) ([`create_databricks_run_now_op`](/\_apidocs/libraries/dagster-databricks)) or [Submit Run](https://docs.databricks.com/api-explorer/workspace/jobs/submit) ([`create_databricks_submit_run_op`](/\_apidocs/libraries/dagster-databricks)) APIs, or
+- Use the `dagster-databricks` op factories, which create ops that invoke the Databricks Jobs' [Run Now](https://docs.databricks.com/api/workspace/jobs/runnow) ([`create_databricks_run_now_op`](/\_apidocs/libraries/dagster-databricks)) or [Submit Run](https://docs.databricks.com/api/workspace/jobs/submit) ([`create_databricks_submit_run_op`](/\_apidocs/libraries/dagster-databricks)) APIs, or
 - Manually create a Dagster op or asset that connects to Databricks using the configured Databricks resource.
 
 Afterward, we create a Dagster [job](/concepts/ops-jobs-graphs/jobs) that invokes the op or selects the asset to run the Databricks API call.
