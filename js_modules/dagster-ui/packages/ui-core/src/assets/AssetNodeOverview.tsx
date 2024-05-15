@@ -52,7 +52,9 @@ import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
+import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
@@ -117,10 +119,14 @@ export const AssetNodeOverview = ({
     definitionLoadTimestamp: assetNodeLoadTimestamp,
   });
 
+  const rowCountMeta: IntMetadataEntry | undefined = materialization?.metadataEntries.find(
+    (entry) => isCanonicalRowCountMetadataEntry(entry),
+  ) as IntMetadataEntry | undefined;
+
   const renderStatusSection = () => (
     <Box flex={{direction: 'column', gap: 16}}>
       <Box flex={{direction: 'row'}}>
-        <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+        <Box flex={{direction: 'column', gap: 6}} style={{width: '33.3%'}}>
           <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
@@ -134,13 +140,21 @@ export const AssetNodeOverview = ({
           </Box>
         </Box>
         {liveData?.assetChecks.length ? (
-          <Box flex={{direction: 'column', gap: 6}} style={{width: '50%'}}>
+          <Box flex={{direction: 'column', gap: 6}} style={{width: '33.3%'}}>
             <Subtitle2>Check results</Subtitle2>
             <AssetChecksStatusSummary
               liveData={liveData}
               rendering="tags"
               assetKey={assetNode.assetKey}
             />
+          </Box>
+        ) : undefined}
+        {rowCountMeta ? (
+          <Box flex={{direction: 'column', gap: 6}} style={{width: '33.3%'}}>
+            <Subtitle2>Row count</Subtitle2>
+            <Box>
+              <Tag icon="table_rows">{rowCountMeta.intValue}</Tag>
+            </Box>
           </Box>
         ) : undefined}
       </Box>

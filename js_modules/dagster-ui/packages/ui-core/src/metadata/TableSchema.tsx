@@ -12,6 +12,7 @@ import {
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {createContext, useContext, useState} from 'react';
 
+import {MetadataEntryLabelOnly} from './MetadataEntry';
 import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
@@ -19,7 +20,6 @@ import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {
   AssetKeyInput,
   CodeReferencesMetadataEntry,
-  MaterializationEvent,
   TableColumnLineageMetadataEntry,
   TableSchemaMetadataEntry,
 } from '../graphql/types';
@@ -34,11 +34,6 @@ interface ITableSchemaProps {
   schemaLoadTimestamp?: number | undefined;
   itemHorizontalPadding?: Spacing;
 }
-
-type MetadataEntryLabelOnly = Pick<
-  MaterializationEvent['metadataEntries'][0],
-  '__typename' | 'label'
->;
 
 export const isCanonicalColumnSchemaEntry = (
   m: MetadataEntryLabelOnly,
