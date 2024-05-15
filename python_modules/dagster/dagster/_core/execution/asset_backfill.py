@@ -739,6 +739,7 @@ def _submit_runs_and_update_backfill_in_chunks(
         tick_context.set_run_requests(run_requests)
         for run in submitted_dagster_runs:
             tick_context.add_run_info(run_id=run.run_id)
+        tick_context.write()
         if retryable_error_raised:
             # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
             # from the previous iteration, to allow next iteration to reevaluate the same

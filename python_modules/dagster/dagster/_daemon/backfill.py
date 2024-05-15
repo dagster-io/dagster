@@ -58,7 +58,7 @@ class BackfillLaunchContext:
     def logger(self) -> logging.Logger:
         return self._logger
 
-    def add_run_info(self, run_id=None):
+    def add_run_info(self, run_id=None) -> None:
         self._tick = self._tick.with_run_info(run_id)
 
     def set_run_requests(
