@@ -348,16 +348,19 @@ def build_run_requests_with_backfill_policies(
             # non partitioned assets will be backfilled in a single run
             run_requests.append(RunRequest(asset_selection=list(asset_keys), tags=tags))
         else:
-            backfill_policies = {
-                check.not_none(asset_graph.get(asset_key).backfill_policy)
-                for asset_key in asset_keys
-            }
-            if len(backfill_policies) == 1:
-                # if all backfill policies are the same, we can backfill them together
-                backfill_policy = backfill_policies.pop()
+            asset_keys_by_backfill_policy = defaultdict(set)
+            for asset_key in asset_keys:
+                asset_keys_by_backfill_policy[asset_graph.get(asset_key).backfill_policy].add(
+                    asset_key
+                )
+
+            for backfill_policy, aks in asset_keys_by_backfill_policy.items():
+                # we want to backfill assets with the same backfill policy together
+                # this ensures parent and child assets get materialized in the same run since we
+                # already asserted they have the same backfill policy in can_run_with_parent
                 run_requests.extend(
                     _build_run_requests_with_backfill_policy(
-                        list(asset_keys),
+                        list(aks),
                         check.not_none(backfill_policy),
                         check.not_none(partition_keys),
                         check.not_none(partitions_def),
@@ -365,20 +368,6 @@ def build_run_requests_with_backfill_policies(
                         dynamic_partitions_store=dynamic_partitions_store,
                     )
                 )
-            else:
-                # if backfill policies are different, we need to backfill them separately
-                for asset_key in asset_keys:
-                    backfill_policy = asset_graph.get(asset_key).backfill_policy
-                    run_requests.extend(
-                        _build_run_requests_with_backfill_policy(
-                            [asset_key],
-                            check.not_none(backfill_policy),
-                            check.not_none(partition_keys),
-                            check.not_none(partitions_def),
-                            tags,
-                            dynamic_partitions_store=dynamic_partitions_store,
-                        )
-                    )
     return run_requests
 
 
