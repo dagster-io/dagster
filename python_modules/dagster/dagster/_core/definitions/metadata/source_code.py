@@ -31,6 +31,18 @@ DEFAULT_SOURCE_FILE_KEY = "asset_definition"
 
 @experimental
 @whitelist_for_serdes
+class RelativeFileCodeReference(DagsterModel):
+    """Represents a source location within a file, relative to the
+    Dagster entry point.
+    """
+
+    file_path: str
+    line_number: int
+    label: Optional[str] = None
+
+
+@experimental
+@whitelist_for_serdes
 class LocalFileCodeReference(DagsterModel):
     """Represents a local file source location."""
 

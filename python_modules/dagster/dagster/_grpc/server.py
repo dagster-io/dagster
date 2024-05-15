@@ -55,7 +55,10 @@ from dagster._core.remote_representation.external_data import (
     external_repository_data_from_def,
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.types.loadable_target_origin import (
+    LoadableTargetOrigin,
+    enter_loadable_target_origin_load_context,
+)
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
 from dagster._serdes import deserialize_value, serialize_value
@@ -239,13 +242,14 @@ class LoadedRepositories:
                 [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
             ),
         ):
-            loadable_targets = get_loadable_targets(
-                loadable_target_origin.python_file,
-                loadable_target_origin.module_name,
-                loadable_target_origin.package_name,
-                loadable_target_origin.working_directory,
-                loadable_target_origin.attribute,
-            )
+            with enter_loadable_target_origin_load_context(loadable_target_origin):
+                loadable_targets = get_loadable_targets(
+                    loadable_target_origin.python_file,
+                    loadable_target_origin.module_name,
+                    loadable_target_origin.package_name,
+                    loadable_target_origin.working_directory,
+                    loadable_target_origin.attribute,
+                )
         for loadable_target in loadable_targets:
             pointer = _get_code_pointer(loadable_target_origin, loadable_target)
             recon_repo = ReconstructableRepository(
