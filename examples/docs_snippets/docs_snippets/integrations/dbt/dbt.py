@@ -191,6 +191,24 @@ def scope_custom_asset_key_dagster_dbt_translator():
     # end_custom_asset_key_dagster_dbt_translator
 
 
+def scope_fetch_row_count() -> None:
+    # start_fetch_row_count
+    from pathlib import Path
+    from dagster import AssetKey, AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    @dbt_assets(
+        manifest=manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+
+    # end_fetch_row_count
+
+
 def scope_custom_group_name_dagster_dbt_translator():
     # start_custom_group_name_dagster_dbt_translator
     from pathlib import Path
