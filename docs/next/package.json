@@ -72,6 +72,7 @@
     "@types/jest": "^29.5.3",
     "@types/node": "^14.14.22",
     "@types/react": "^18.2.47",
+    "broken-link-checker": "^0.7.8",
     "eslint": "^8.57.0",
     "eslint-plugin-dagster-rules": "link:../../js_modules/dagster-ui/packages/eslint-config/rules",
     "html-react-parser": "^2.0.0",
