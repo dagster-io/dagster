@@ -87,9 +87,8 @@ Celery best practices
 
 Celery is a rich and full-featured system. We've found the following resources helpful:
 
-- Deni Bertović's [Celery best practices](https://denibertovic.com/posts/celery-best-practices/)
-- Pawel Zadrozny's [series of articles](https://pawelzny.com/python/celery/2017/08/14/celery-4-tasks-best-practices/) on Celery best practices
-- Balthazar Rouberol's [Celery best practices](https://blog.balthazar-rouberol.com/celery-best-practices)
+- `Deni Bertović's Celery best practices <https://denibertovic.com/posts/celery-best-practices/>`_
+- `Balthazar Rouberol's Celery best practices <https://blog.balthazar-rouberol.com/celery-best-practices>`_
 
 API
 ~~~
