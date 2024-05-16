@@ -14,9 +14,9 @@ This reference contains a variety of examples using Declarative Scheduling.
 
 ---
 
-## Defining basic cron schedules
+## Defining basic cron schedule on a single asset
 
-The following examples demonstrate how to define some cron schedules.
+The following examples demonstrate how to define a cron on a single asset.
 
 ```python file=/concepts/declarative_scheduling/single_asset_cron.py
 from dagster._core.definitions.declarative_scheduling.ds_asset import ds_asset as asset
@@ -27,4 +27,25 @@ from dagster._core.definitions.declarative_scheduling.scheduling_condition impor
 
 @asset(scheduling=Scheduling.on_cron("0 0 * * *"))
 def my_asset() -> None: ...
+```
+
+---
+
+## Defining some basic cron schedule on multiple assets
+
+The following examples demonstrate how to define a cron on many assets.
+
+```python file=/concepts/declarative_scheduling/many_asset_cron.py
+from dagster import SchedulingCondition
+from dagster._core.definitions.declarative_scheduling.ds_asset import ds_asset as asset
+
+daily_cron = SchedulingCondition.on_cron("0 0 * * *")
+
+
+@asset(scheduling_condition=daily_cron)
+def asset_one() -> None: ...
+
+
+@asset(scheduling_condition=daily_cron)
+def asset_two() -> None: ...
 ```
