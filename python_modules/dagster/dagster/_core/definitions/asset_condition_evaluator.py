@@ -2,6 +2,7 @@ import dataclasses
 import datetime
 import logging
 import time
+from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -46,6 +47,34 @@ from dataclasses import dataclass
 
 @dataclass
 class AssetConditionEvaluator:
+    def __init__(
+        self,
+        *,
+        asset_graph: BaseAssetGraph,
+        auto_materialize_asset_keys: AbstractSet[AssetKey],
+        asset_graph_view: AssetGraphView,
+        logger: logging.Logger,
+        cursor: AssetDaemonCursor,
+        data_time_resolver: CachingDataTimeResolver,
+        respect_materialization_data_versions: bool,
+        auto_materialize_run_tags: Mapping[str, str],
+    ):
+        self.asset_graph = asset_graph
+        self.auto_materialize_asset_keys = auto_materialize_asset_keys
+        self.asset_graph_view = asset_graph_view
+        self.logger = logger
+        self.cursor = cursor
+        self.data_time_resolver = data_time_resolver
+        self.respect_materialization_data_versions = respect_materialization_data_versions
+        self.auto_materialize_run_tags = auto_materialize_run_tags
+
+        self.evaluation_state_by_key = {}
+        self.current_evaluation_info_by_key = {}
+        self.expected_data_time_mapping = defaultdict()
+        self.to_request = set()
+        self.num_checked_assets = 0
+        self.num_auto_materialize_asset_keys = len(auto_materialize_asset_keys)
+
     asset_graph: BaseAssetGraph
     auto_materialize_asset_keys: AbstractSet[AssetKey]
     asset_graph_view: AssetGraphView
