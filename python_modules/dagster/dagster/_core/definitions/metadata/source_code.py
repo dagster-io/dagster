@@ -303,6 +303,26 @@ def link_to_source_control_if_cloud(
     source_control_branch: Optional[str] = None,
     repository_root_absolute_path: Optional[Union[Path, str]] = None,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
+    """Wrapper function which converts local file path code references to source control URLs
+    if running in a Dagster Plus cloud environment. This is determined by the presence of
+    the `DAGSTER_CLOUD_DEPLOYMENT_NAME` environment variable. When running in any other context,
+    the local file references are left as is.
+
+    Args:
+        assets_defs (Sequence[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]):
+            The asset definitions to which source control metadata should be attached.
+            Only assets with local file code references (such as those created by
+            `with_source_code_references`) will be converted.
+        source_control_url (Optional[str]): Override base URL for the source control system. By default,
+            inferred from the `DAGSTER_CLOUD_GIT_URL` environment variable provided by cloud.
+            For example, "https://github.com/dagster-io/dagster".
+        source_control_branch (str): Override branch in the source control system, such as "master".
+            Defaults to the `DAGSTER_CLOUD_GIT_SHA` or `DAGSTER_CLOUD_GIT_BRANCH` environment variable.
+        repository_root_absolute_path (Union[Path, str]): Override path to the root of the
+            repository on disk. This is used to calculate the relative path to the source file
+            from the repository root and append it to the source control URL. By default, inferred
+            from walking up the directory tree from the code location entrypoint.
+    """
     is_dagster_cloud = os.getenv("DAGSTER_CLOUD_DEPLOYMENT_NAME") is not None
 
     if not is_dagster_cloud:
