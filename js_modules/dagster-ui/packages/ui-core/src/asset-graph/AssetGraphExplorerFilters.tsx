@@ -58,7 +58,7 @@ export function useAssetGraphExplorerFilters({
 }: Props) {
   const allAssetTags = useAssetTagsForAssets(nodes);
 
-  const {allRepos, visibleRepos} = useContext(WorkspaceContext);
+  const {allRepos} = useContext(WorkspaceContext);
 
   const {
     filters: {changedInBranch, computeKindTags, repos, owners, groups, tags, selectAllFilters},
@@ -127,7 +127,7 @@ export function useAssetGraphExplorerFilters({
       ['computeKindTags', computeKindTags, allComputeKindTags] as const,
       ['groups', groups, allAssetGroups] as const,
       ['changedInBranch', changedInBranch, Object.values(ChangeReason)] as const,
-      ['repos', visibleRepos, allRepos] as const,
+      ['repos', repos, allRepos] as const,
     ].forEach(([key, activeItems, allItems]) => {
       if (!allItems.length) {
         return;
@@ -159,7 +159,7 @@ export function useAssetGraphExplorerFilters({
     groups,
     allAssetGroups,
     changedInBranch,
-    visibleRepos,
+    repos,
     allRepos,
     didWaitAfterLoading,
   ]);
