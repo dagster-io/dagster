@@ -11,7 +11,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 def test_eager_with_rate_limit_unpartitioned() -> None:
     state = AssetConditionScenarioState(
         two_assets_in_sequence,
-        asset_condition=SchedulingCondition.eager_with_rate_limit(),
+        asset_condition=SchedulingCondition.eager(),
         ensure_empty_result=False,
     )
 
@@ -52,7 +52,7 @@ def test_eager_with_rate_limit_hourly_partitioned() -> None:
     state = (
         AssetConditionScenarioState(
             two_assets_in_sequence,
-            asset_condition=SchedulingCondition.eager_with_rate_limit(
+            asset_condition=SchedulingCondition.eager(
                 failure_retry_delta=datetime.timedelta(minutes=10)
             ),
             ensure_empty_result=False,

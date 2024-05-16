@@ -195,7 +195,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return ParentNewerCondition()
 
     @staticmethod
-    def eager_with_rate_limit(
+    def eager(
         *,
         failure_retry_delta: datetime.timedelta = datetime.timedelta(hours=1),
     ) -> "SchedulingCondition":
