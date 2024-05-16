@@ -208,9 +208,8 @@ class AssetDaemonContext:
             num_auto_materialize_asset_keys=len(self.auto_materialize_asset_keys),
             cursor=self.cursor,
             data_time_resolver=self.data_time_resolver,
-            # TODO: remove 2024-05-16 -- schrockn
-            # hoisting daemon context out of this code path
-            daemon_context=self,
+            respect_materialization_data_versions=self.respect_materialization_data_versions,
+            auto_materialize_run_tags=self.auto_materialize_run_tags,
         )
         return evaluator.evaluate()
 
