@@ -76,7 +76,7 @@ from sqlglot.optimizer import optimize
 from typing_extensions import Final, Literal, TypeVar
 
 if dbt_version >= "1.8":
-    from dbt_common.events.event_manager_client import cleanup_event_logger  # noqa
+    from dbt_common.events.event_manager_client import cleanup_event_logger  # type: ignore
 else:
     from dbt.events.functions import cleanup_event_logger
 
