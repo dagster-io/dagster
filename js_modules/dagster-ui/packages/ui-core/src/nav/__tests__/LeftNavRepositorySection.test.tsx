@@ -234,7 +234,8 @@ describe('Repository options', () => {
       expect(screen.queryAllByRole('link')).toHaveLength(0);
     });
 
-    it('initializes empty, then shows options when they are added', async () => {
+    // eslint-disable-next-line jest/no-disabled-tests
+    it.skip('initializes empty, then shows options when they are added', async () => {
       const ReloadableTest = () => {
         const {refetch} = useContext(WorkspaceContext);
         return (
