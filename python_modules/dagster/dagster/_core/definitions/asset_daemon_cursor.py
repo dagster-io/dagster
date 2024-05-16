@@ -67,6 +67,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
     }
 )
 @dataclass(frozen=True)
+# TODO: rename to scheduling cursor or something
+# 2024-05-16 -- schrockn
 class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
