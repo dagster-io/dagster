@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import pytest
 from dagster_dbt.cli.app import app
 from dagster_dbt.errors import DagsterDbtManifestNotFoundError
+from dagster_dbt.version import DBT_CORE_VERSION_UPPER_BOUND
 from typer.testing import CliRunner
 
 from ..dbt_projects import test_jaffle_shop_path
@@ -47,7 +48,10 @@ def _assert_scaffold_invocation(
     assert dagster_project_dir.exists()
     assert dagster_project_dir.joinpath(project_name).exists()
     assert not any(path.suffix == ".jinja" for path in dagster_project_dir.glob("**/*"))
-    assert "dbt-duckdb" in dagster_project_dir.joinpath("setup.py").read_text()
+    assert (
+        f"dbt-duckdb<{DBT_CORE_VERSION_UPPER_BOUND}"
+        in dagster_project_dir.joinpath("setup.py").read_text()
+    )
 
     if use_dbt_project_package_data_dir or use_experimental_dbt_project:
         assert dagster_project_dir.joinpath(project_name, "project.py").exists()
