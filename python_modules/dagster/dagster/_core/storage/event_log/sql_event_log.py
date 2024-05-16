@@ -90,6 +90,7 @@ from dagster._utils.warnings import deprecation_warning
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
+    AssetCheckSummaryRecord,
     AssetEntry,
     AssetRecord,
     AssetRecordsFilter,
@@ -1319,6 +1320,19 @@ class SqlEventLogStorage(EventLogStorage):
                 )
 
         return asset_records
+
+    def get_asset_check_summary_records(
+        self, asset_check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
+        states = {}
+        for asset_check_key in asset_check_keys:
+            execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
+            states[asset_check_key] = AssetCheckSummaryRecord(
+                asset_check_key=asset_check_key,
+                last_check_execution_record=execution_record[0] if execution_record else None,
+                last_run_id=execution_record[0].run_id if execution_record else None,
+            )
+        return states
 
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
