@@ -1,0 +1,28 @@
+---
+title: "Declarative scheduling examples | Dagster Docs"
+description: "Examples focused on Declarative Scehduling."
+---
+
+# Schedule examples
+
+This reference contains a variety of examples using Declarative Scheduling.
+
+- A summary
+- Additional notes
+- Links to relevant documentation
+- A list of the APIs used in the example
+
+---
+
+## Defining basic cron schedules
+
+The following examples demonstrate how to define some cron schedules.
+
+```python file=/concepts/declarative_scheduling/single_asset_cron.py
+from dagster import SchedulingCondition
+from dagster._core.definitions.declarative_scheduling.ds_asset import ds_asset as asset
+
+
+@asset(scheduling_condition=SchedulingCondition.on_cron("0 0 * * *"))
+def my_asset() -> None: ...
+```
