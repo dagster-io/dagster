@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional
 import yaml
 from dagster import AssetsDefinition
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.factory.executable import (
-    AssetGraphExecutable,
+from dagster._core.definitions.factory.step import (
     AssetGraphExecutionContext,
+    AssetGraphStep,
 )
 from dagster._utils import file_relative_path
 
@@ -26,7 +26,7 @@ def load_yaml(relative_path) -> Dict[str, Any]:
         return yaml.load(ff, Loader=Loader)
 
 
-class PureDSLAsset(AssetGraphExecutable):
+class PureDSLAsset(AssetGraphStep):
     def __init__(self, asset_entry: dict, sql: str, group_name: Optional[str]):
         self.sql = sql
         super().__init__(

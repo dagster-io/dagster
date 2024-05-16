@@ -54,13 +54,7 @@ class AssetGraphExecutionContext:
         return self._context.op_execution_context
 
 
-# Here are some example alternatives:
-#   - ExecutableSubgraph
-#   - ExecutableAssetGraphFragment
-#   - ExecutableDefinitionSet
-#   - AssetGraphExecutable
-#   - ExecutableDefinitionGroup
-class AssetGraphExecutable(ABC):
+class AssetGraphStep(ABC):
     def __init__(
         self,
         specs: Sequence[Union[AssetSpec, AssetCheckSpec]],
