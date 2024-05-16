@@ -12,7 +12,8 @@
     "ts": "tsc -p .",
     "lint": "eslint . --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "mdx-format": "yarn mdx-transform && prettier --config ../.prettierrc.markdown.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent",
-    "mdx-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/mdx-transform.ts"
+    "mdx-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/mdx-transform.ts",
+    "broken-link-checker": "ts-node -O '{\"module\": \"commonjs\"}' scripts/broken-link-checker.ts"
   },
   "dependencies": {
     "@docsearch/react": "^3.5.1",
