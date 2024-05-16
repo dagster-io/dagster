@@ -9,7 +9,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Union,
 )
 
 from dagster import (
@@ -34,6 +33,8 @@ from dagster._core.definitions.metadata.source_code import (
 from dagster._utils.warnings import (
     experimental_warning,
 )
+
+from dagster_dbt.dbt_project import DbtProject
 
 from .asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -74,7 +75,7 @@ def dbt_assets(
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
-    project_dir: Optional[Union[str, Path]] = None,
+    project: Optional[DbtProject] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -360,7 +361,7 @@ def dbt_assets(
         io_manager_key=io_manager_key,
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
-        project_dir=Path(project_dir) if project_dir else None,
+        project=project,
     )
 
     if op_tags and DAGSTER_DBT_SELECT_METADATA_KEY in op_tags:
@@ -403,13 +404,54 @@ def dbt_assets(
     )
 
 
+def _attach_sql_model_code_reference(
+    existing_metadata: Dict[str, Any],
+    dbt_resource_props: Dict[str, Any],
+    project: DbtProject,
+) -> Dict[str, Any]:
+    """Pulls the SQL model location for a dbt resource and attaches it as a code reference to the
+    existing metadata.
+    """
+    existing_references_meta = CodeReferencesMetadataSet.extract(existing_metadata)
+    references = (
+        existing_references_meta.code_references.code_references
+        if existing_references_meta.code_references
+        else []
+    )
+
+    if "original_file_path" not in dbt_resource_props:
+        raise DagsterInvalidDefinitionError(
+            "Cannot attach SQL model code reference because 'original_file_path' is not present"
+            " in the dbt resource properties."
+        )
+
+    # attempt to get root_path, which is removed from manifests in newer dbt versions
+    relative_path = Path(dbt_resource_props["original_file_path"])
+    abs_path = project.project_dir.joinpath(relative_path)
+
+    return {
+        **existing_metadata,
+        **CodeReferencesMetadataSet(
+            code_references=CodeReferencesMetadataValue(
+                code_references=[
+                    *references,
+                    LocalFileCodeReference(
+                        file_path=str(abs_path),
+                        line_number=1,
+                    ),
+                ],
+            )
+        ),
+    }
+
+
 def get_dbt_multi_asset_args(
     dbt_nodes: Mapping[str, Any],
     dbt_unique_id_deps: Mapping[str, FrozenSet[str]],
     io_manager_key: Optional[str],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
-    project_dir: Optional[Path],
+    project: Optional[DbtProject],
 ) -> Tuple[
     Sequence[AssetDep],
     Dict[str, AssetOut],
@@ -448,38 +490,17 @@ def get_dbt_multi_asset_args(
             DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
         }
         if dagster_dbt_translator.settings.attach_sql_model_code_reference:
-            if not project_dir:
+            if not project:
                 raise DagsterInvalidDefinitionError(
-                    "attach_sql_model_code_reference requires project_dir to be supplied"
+                    "attach_sql_model_code_reference requires a DbtProject to be supplied"
                     " to the @dbt_assets decorator."
                 )
 
-            # Pull SQL model locations for each asset and attach them as code references
-            existing_references_meta = CodeReferencesMetadataSet.extract(metadata)
-            references = (
-                existing_references_meta.code_references.code_references
-                if existing_references_meta.code_references
-                else []
+            metadata = _attach_sql_model_code_reference(
+                existing_metadata=metadata,
+                dbt_resource_props=dbt_resource_props,
+                project=project,
             )
-
-            # attempt to get root_path, which is removed from manifests in newer dbt versions
-            relative_path = Path(dbt_resource_props.get("original_file_path"))
-            abs_path = project_dir.joinpath(relative_path)
-
-            metadata = {
-                **metadata,
-                **CodeReferencesMetadataSet(
-                    code_references=CodeReferencesMetadataValue(
-                        code_references=[
-                            *references,
-                            LocalFileCodeReference(
-                                file_path=str(abs_path),
-                                line_number=1,
-                            ),
-                        ],
-                    )
-                ),
-            }
 
         outs[output_name] = AssetOut(
             key=asset_key,

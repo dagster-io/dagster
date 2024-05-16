@@ -11,6 +11,7 @@ from dagster._core.definitions.metadata.source_code import (
     with_source_code_references,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster_dbt import DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
@@ -27,7 +28,7 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any])
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
         ),
-        project_dir=os.fspath(test_jaffle_shop_path),
+        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
     def my_dbt_assets(): ...
 
@@ -66,7 +67,7 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
         ),
-        project_dir=os.fspath(test_jaffle_shop_path),
+        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
     def my_dbt_assets(): ...
 
@@ -92,7 +93,7 @@ def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
         ),
-        project_dir=os.fspath(test_jaffle_shop_path),
+        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
     def my_dbt_assets(): ...
 
