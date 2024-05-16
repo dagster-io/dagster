@@ -10,7 +10,6 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -81,26 +80,6 @@ if TYPE_CHECKING:
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
-class UserAssetOwner(NamedTuple):
-    email: str
-
-
-class TeamAssetOwner(NamedTuple):
-    team: str
-
-
-AssetOwner = Union[UserAssetOwner, TeamAssetOwner]
-
-
-def asset_owner_to_str(owner: AssetOwner) -> str:
-    if isinstance(owner, UserAssetOwner):
-        return owner.email
-    elif isinstance(owner, TeamAssetOwner):
-        return f"team:{owner.team}"
-    else:
-        check.failed(f"Unexpected owner type {type(owner)}")
-
-
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 
@@ -127,7 +106,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
-    _owners_by_key: Mapping[AssetKey, Sequence[AssetOwner]]
+    _owners_by_key: Mapping[AssetKey, Sequence[str]]
 
     def __init__(
         self,
@@ -151,7 +130,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
         is_subset: bool = False,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
@@ -354,12 +333,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
-        check.opt_mapping_param(owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list)
-        for key, owners in (owners_by_key or {}).items():
+        self._owners_by_key = check.opt_mapping_param(
+            owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
+        )
+        for key, owners in self._owners_by_key.items():
             for owner in owners:
-                if isinstance(owner, (TeamAssetOwner, UserAssetOwner)):
-                    continue
-                elif is_valid_email(owner):
+                if is_valid_email(owner):
                     continue
                 elif owner.startswith("team:") and len(owner) > 5:
                     continue
@@ -368,19 +347,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                         f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team"
                         " name prefixed with 'team:'."
                     )
-        self._owners_by_key = {
-            key: [
-                owner
-                if isinstance(owner, (TeamAssetOwner, UserAssetOwner))
-                else (
-                    UserAssetOwner(email=owner)
-                    if is_valid_email(owner)
-                    else TeamAssetOwner(team=owner[5:])
-                )
-                for owner in owners
-            ]
-            for key, owners in (owners_by_key or {}).items()
-        }
 
     def dagster_internal_init(
         *,
@@ -403,7 +369,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]],
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -464,7 +430,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -521,7 +487,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
-            owners_by_key (Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]]): Defines
+            owners_by_key (Optional[Mapping[AssetKey, Sequence[str]]]): Defines
                 owners to be associated with each of the asset keys for this node.
 
         """
@@ -664,7 +630,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
             _assign_output_names_to_check_specs,
@@ -1014,7 +980,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._partition_mappings
 
     @property
-    def owners_by_key(self) -> Mapping[AssetKey, Sequence[AssetOwner]]:
+    def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
         return self._owners_by_key
 
     @public

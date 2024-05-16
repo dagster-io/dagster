@@ -8,7 +8,7 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import AssetsDefinition, asset_owner_to_str
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
@@ -78,9 +78,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def owners(self) -> Sequence[str]:
-        return [
-            asset_owner_to_str(owner) for owner in self.assets_def.owners_by_key.get(self.key, [])
-        ]
+        return self.assets_def.owners_by_key.get(self.key, [])
 
     @property
     def is_partitioned(self) -> bool:
