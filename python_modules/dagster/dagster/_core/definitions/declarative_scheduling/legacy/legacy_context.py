@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import functools
+import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass
@@ -78,6 +79,7 @@ class LegacyRuleEvaluationContext:
     start_timestamp: float
     respect_materialization_data_versions: bool
     auto_materialize_run_tags: Mapping[str, str]
+    logger: logging.Logger
     root_ref: Optional["LegacyRuleEvaluationContext"] = None
 
     @staticmethod
@@ -113,6 +115,7 @@ class LegacyRuleEvaluationContext:
             start_timestamp=pendulum.now("UTC").timestamp(),
             respect_materialization_data_versions=daemon_context.respect_materialization_data_versions,
             auto_materialize_run_tags=daemon_context.auto_materialize_run_tags,
+            logger=daemon_context.logger,
         )
 
     def for_child(
