@@ -51,3 +51,24 @@ def asset_one() -> None: ...
 @asset(scheduling=daily_cron)
 def asset_two() -> None: ...
 ```
+
+---
+
+## Defining an asset that eagerly updates whenever its upstream updates
+
+The following examples demonstrate how to define an asset that eagerly updates whenever its upstream updates.
+
+```python file=/concepts/declarative_scheduling/eager_asset.py
+from dagster import SchedulingCondition
+from dagster._core.definitions.declarative_scheduling.ds_asset import ds_asset as asset
+
+
+@asset()
+def upstream() -> None: ...
+
+
+@asset(
+    deps=[upstream], scheduling_condition=SchedulingCondition.eager_with_rate_limit()
+)
+def downstream() -> None: ...
+```
