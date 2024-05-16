@@ -49,8 +49,7 @@ from dagster._core.errors import (
     DagsterDefinitionChangedDeserializationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.event_api import EventRecordsFilter
-from dagster._core.events import DagsterEventType
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.dagster_run import (
     CANCELABLE_RUN_STATUSES,
@@ -79,7 +78,7 @@ if TYPE_CHECKING:
     from .backfill import PartitionBackfill
 
 RUN_CHUNK_SIZE = 25
-
+MATERIALIZATION_CHUNK_SIZE = 1000
 
 MAX_RUNS_CANCELED_PER_ITERATION = 50
 
@@ -1112,29 +1111,34 @@ def get_asset_backfill_iteration_materialized_partitions(
     """
     recently_materialized_asset_partitions = AssetGraphSubset()
     for asset_key in asset_backfill_data.target_subset.asset_keys:
-        records = instance_queryer.instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                asset_key=asset_key,
-                after_cursor=asset_backfill_data.latest_storage_id,
+        cursor = None
+        has_more = True
+        while has_more:
+            result = instance_queryer.instance.fetch_materializations(
+                AssetRecordsFilter(
+                    asset_key=asset_key,
+                    after_storage_id=asset_backfill_data.latest_storage_id,
+                ),
+                cursor=cursor,
+                limit=MATERIALIZATION_CHUNK_SIZE,
             )
-        )
-        records_in_backfill = [
-            record
-            for record in records
-            if instance_queryer.run_has_tag(
-                run_id=record.run_id, tag_key=BACKFILL_ID_TAG, tag_value=backfill_id
+            records_in_backfill = [
+                record
+                for record in result.records
+                if instance_queryer.run_has_tag(
+                    run_id=record.run_id, tag_key=BACKFILL_ID_TAG, tag_value=backfill_id
+                )
+            ]
+            recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
+                {
+                    AssetKeyPartitionKey(asset_key, record.partition_key)
+                    for record in records_in_backfill
+                },
+                asset_graph,
             )
-        ]
-        recently_materialized_asset_partitions |= AssetGraphSubset.from_asset_partition_set(
-            {
-                AssetKeyPartitionKey(asset_key, record.partition_key)
-                for record in records_in_backfill
-            },
-            asset_graph,
-        )
-
-        yield None
+            cursor = result.cursor
+            has_more = result.has_more
+            yield None
 
     updated_materialized_subset = (
         asset_backfill_data.materialized_subset | recently_materialized_asset_partitions
