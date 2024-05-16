@@ -886,10 +886,6 @@
             ]
           },
           {
-            "title": "dbt & Dagster+ guide",
-            "path": "/integrations/dbt/using-dbt-with-dagster-plus"
-          },
-          {
             "title": "Reference",
             "path": "/integrations/dbt/reference"
           }
