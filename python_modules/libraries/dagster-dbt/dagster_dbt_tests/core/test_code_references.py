@@ -1,13 +1,24 @@
+import inspect
 import os
 from typing import Any, Dict
 
-from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
+import pytest
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.metadata.source_code import (
+    LocalFileCodeReference,
+    UrlCodeReference,
+    link_to_source_control,
+    with_source_code_references,
+)
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from ..dbt_projects import (
     test_jaffle_shop_path,
 )
+
+JAFFLE_SHOP_ROOT_PATH = os.path.normpath(test_jaffle_shop_path)
 
 
 def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
@@ -32,3 +43,87 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any])
             asset_key.path[-1] + ".sql"
         ) or reference.file_path.endswith(asset_key.path[-1] + ".csv")
         assert os.path.exists(reference.file_path), reference.file_path
+
+
+def test_basic_attach_code_references_no_project_dir(
+    test_jaffle_shop_manifest: Dict[str, Any],
+) -> None:
+    # expect exception because attach_sql_model_code_reference=True but no project_dir
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @dbt_assets(
+            manifest=test_jaffle_shop_manifest,
+            dagster_dbt_translator=DagsterDbtTranslator(
+                settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+            ),
+        )
+        def my_dbt_assets(): ...
+
+
+def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+        ),
+        project_dir=os.fspath(test_jaffle_shop_path),
+    )
+    def my_dbt_assets(): ...
+
+    defs = Definitions(assets=with_source_code_references([my_dbt_assets]))
+
+    assets = defs.get_asset_graph().all_asset_keys
+
+    for asset_key in assets:
+        asset_metadata = defs.get_assets_def(asset_key).metadata_by_key[asset_key]
+        assert "dagster/code_references" in asset_metadata
+
+        references = asset_metadata["dagster/code_references"].code_references
+        assert len(references) == 2
+
+        code_reference = references[1]
+        assert isinstance(code_reference, LocalFileCodeReference)
+        assert code_reference.file_path.endswith("test_code_references.py")
+
+
+def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        dagster_dbt_translator=DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+        ),
+        project_dir=os.fspath(test_jaffle_shop_path),
+    )
+    def my_dbt_assets(): ...
+
+    defs = Definitions(
+        assets=link_to_source_control(
+            with_source_code_references([my_dbt_assets]),
+            source_control_url="https://github.com/dagster-io/jaffle_shop",
+            source_control_branch="master",
+            repository_root_absolute_path=JAFFLE_SHOP_ROOT_PATH,
+        )
+    )
+
+    assets = defs.get_asset_graph().all_asset_keys
+
+    for asset_key in assets:
+        asset_metadata = defs.get_assets_def(asset_key).metadata_by_key[asset_key]
+        assert "dagster/code_references" in asset_metadata
+
+        references = asset_metadata["dagster/code_references"].code_references
+        assert len(references) == 2
+
+        model_reference = references[0]
+        assert isinstance(model_reference, UrlCodeReference)
+        assert model_reference.url.startswith(
+            "https://github.com/dagster-io/jaffle_shop/tree/master/"
+        )
+        assert model_reference.url.endswith(
+            asset_key.path[-1] + ".sql#L1"
+        ) or model_reference.url.endswith(asset_key.path[-1] + ".csv#L1")
+
+        source_reference = references[1]
+        assert isinstance(source_reference, UrlCodeReference)
+        line_no = inspect.getsourcelines(my_dbt_assets.op.compute_fn.decorated_fn)[1]
+        assert source_reference.url.endswith(f"test_code_references.py#L{line_no}")
