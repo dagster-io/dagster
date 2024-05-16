@@ -1080,7 +1080,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
         metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
         freshness_policy: Optional[
@@ -1107,9 +1106,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-        descriptions_by_key = check.opt_mapping_param(
-            descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
         )
         metadata_by_key = check.opt_mapping_param(
             metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
@@ -1189,7 +1185,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
-            for key, description in descriptions_by_key.items()
+            for key, description in self.descriptions_by_key.items()
         }
 
         if not metadata_by_key:
