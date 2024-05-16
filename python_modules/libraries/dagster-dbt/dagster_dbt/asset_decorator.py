@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -8,6 +9,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
 )
 
 from dagster import (
@@ -23,6 +25,11 @@ from dagster import (
     PartitionsDefinition,
     TimeWindowPartitionsDefinition,
     multi_asset,
+)
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
+    LocalFileCodeReference,
 )
 from dagster._utils.warnings import (
     experimental_warning,
@@ -67,6 +74,7 @@ def dbt_assets(
     backfill_policy: Optional[BackfillPolicy] = None,
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    project_dir: Optional[Union[str, Path]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -98,6 +106,9 @@ def dbt_assets(
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of required resource handles.
+        project_dir (Optional[Union[str, Path]]): The path to the dbt project directory. This directory should contain a
+            `dbt_project.yml`. Not required, but needed to attach code references from model code to Dagster
+            assets. See https://docs.getdbt.com/reference/dbt_project.yml for more information.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -349,6 +360,7 @@ def dbt_assets(
         io_manager_key=io_manager_key,
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
+        project_dir=Path(project_dir) if project_dir else None,
     )
 
     if op_tags and DAGSTER_DBT_SELECT_METADATA_KEY in op_tags:
@@ -397,6 +409,7 @@ def get_dbt_multi_asset_args(
     io_manager_key: Optional[str],
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
+    project_dir: Optional[Path],
 ) -> Tuple[
     Sequence[AssetDep],
     Dict[str, AssetOut],
@@ -429,17 +442,52 @@ def get_dbt_multi_asset_args(
         unique_ids_for_asset_key.add(unique_id)
         resource_types_for_asset_key.add(dbt_resource_props["resource_type"])
 
+        metadata = {
+            **dagster_dbt_translator.get_metadata(dbt_resource_props),
+            DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
+            DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
+        }
+        if dagster_dbt_translator.settings.attach_sql_model_code_reference:
+            if not project_dir:
+                raise DagsterInvalidDefinitionError(
+                    "attach_sql_model_code_reference requires project_dir to be supplied"
+                    " to the @dbt_assets decorator."
+                )
+
+            # Pull SQL model locations for each asset and attach them as code references
+            existing_references_meta = CodeReferencesMetadataSet.extract(metadata)
+            references = (
+                existing_references_meta.code_references.code_references
+                if existing_references_meta.code_references
+                else []
+            )
+
+            # attempt to get root_path, which is removed from manifests in newer dbt versions
+            relative_path = Path(dbt_resource_props.get("original_file_path"))
+            abs_path = project_dir.joinpath(relative_path)
+
+            metadata = {
+                **metadata,
+                **CodeReferencesMetadataSet(
+                    code_references=CodeReferencesMetadataValue(
+                        code_references=[
+                            *references,
+                            LocalFileCodeReference(
+                                file_path=str(abs_path),
+                                line_number=1,
+                            ),
+                        ],
+                    )
+                ),
+            }
+
         outs[output_name] = AssetOut(
             key=asset_key,
             dagster_type=Nothing,
             io_manager_key=io_manager_key,
             description=dagster_dbt_translator.get_description(dbt_resource_props),
             is_required=False,
-            metadata={
-                **dagster_dbt_translator.get_metadata(dbt_resource_props),
-                DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
-                DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
-            },
+            metadata=metadata,
             owners=dagster_dbt_translator.get_owners(
                 {
                     **dbt_resource_props,
