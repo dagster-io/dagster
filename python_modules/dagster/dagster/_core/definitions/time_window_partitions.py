@@ -177,6 +177,14 @@ class TimestampWithTimezone(NamedTuple):
     timestamp: float  # Seconds since the Unix epoch
     timezone: str
 
+    @staticmethod
+    def create_from_datetime(dt: datetime) -> "TimestampWithTimezone":
+        pendulum_datetime = pendulum.instance(dt, tz=dt.tzinfo)
+        timezone_name = pendulum_datetime.timezone.name
+        return TimestampWithTimezone(
+            timestamp=pendulum_datetime.timestamp(), timezone=timezone_name
+        )
+
 
 class DatetimeFieldSerializer(FieldSerializer):
     """Serializes datetime objects to and from floats."""
@@ -223,10 +231,10 @@ class DatetimeFieldSerializer(FieldSerializer):
         return None
 
 
-@whitelist_for_serdes(
-    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
-)
-class TimeWindow(NamedTuple):
+@whitelist_for_serdes
+class TimeWindow(
+    NamedTuple("_TimeWindow", [("start", TimestampWithTimezone), ("end", TimestampWithTimezone)])
+):
     """An interval that is closed at the start and open at the end.
 
     Attributes:
@@ -234,16 +242,51 @@ class TimeWindow(NamedTuple):
         end (datetime): A pendulum datetime that marks the end of the window.
     """
 
-    start: PublicAttr[datetime]
-    end: PublicAttr[datetime]
+    def __new__(
+        cls,
+        start: Union[datetime, TimestampWithTimezone],
+        end: Union[datetime, TimestampWithTimezone],
+    ):
+        if isinstance(start, datetime):
+            start = TimestampWithTimezone.create_from_datetime(start)
+
+        if isinstance(end, datetime):
+            end = TimestampWithTimezone.create_from_datetime(end)
+
+        return super(TimeWindow, cls).__new__(
+            cls,
+            start=start,
+            end=end,
+        )
+
+    @public
+    @cached_property
+    def start(self) -> datetime:
+        start = self._asdict()["start"]
+        return pendulum.from_timestamp(start.timestamp, start.timezone)
+
+    @public
+    @property
+    def end(self) -> datetime:
+        end = self._asdict()["end"]
+        return pendulum.from_timestamp(end.timestamp, end.timezone)
 
     @property
     def is_empty(self) -> bool:
-        return self.start == self.end
+        as_dict = self._asdict()
+        return as_dict["start"] == as_dict["end"]
 
-    @staticmethod
-    def empty() -> "TimeWindow":
-        return TimeWindow(start=datetime.max, end=datetime.max)
+    @property
+    def start_timestamp(self) -> float:
+        return self._asdict()["start"].timestamp
+
+    @property
+    def end_timestamp(self) -> float:
+        return self._asdict()["end"].timestamp
+
+    @property
+    def timezone(self) -> str:
+        return self._asdict()["start"].timezone
 
 
 @whitelist_for_serdes(
