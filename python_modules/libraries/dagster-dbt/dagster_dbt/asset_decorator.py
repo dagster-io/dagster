@@ -107,9 +107,9 @@ def dbt_assets(
             are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.
         required_resource_keys (Optional[Set[str]]): Set of required resource handles.
-        project_dir (Optional[Union[str, Path]]): The path to the dbt project directory. This directory should contain a
-            `dbt_project.yml`. Not required, but needed to attach code references from model code to Dagster
-            assets. See https://docs.getdbt.com/reference/dbt_project.yml for more information.
+        project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
+            project location and manifest. Not required, but needed to attach code references from
+            model code to Dagster assets.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -489,10 +489,10 @@ def get_dbt_multi_asset_args(
             DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
             DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
         }
-        if dagster_dbt_translator.settings.attach_sql_model_code_reference:
+        if dagster_dbt_translator.settings.enable_sql_model_code_reference:
             if not project:
                 raise DagsterInvalidDefinitionError(
-                    "attach_sql_model_code_reference requires a DbtProject to be supplied"
+                    "enable_sql_model_code_reference requires a DbtProject to be supplied"
                     " to the @dbt_assets decorator."
                 )
 

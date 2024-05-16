@@ -39,7 +39,7 @@ class DagsterDbtTranslatorSettings:
 
     enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
-    attach_sql_model_code_reference: bool = False
+    enable_sql_model_code_reference: bool = False
 
 
 class DagsterDbtTranslator:

@@ -26,7 +26,7 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any])
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(
-            settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+            settings=DagsterDbtTranslatorSettings(enable_sql_model_code_reference=True)
         ),
         project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
@@ -49,13 +49,13 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any])
 def test_basic_attach_code_references_no_project_dir(
     test_jaffle_shop_manifest: Dict[str, Any],
 ) -> None:
-    # expect exception because attach_sql_model_code_reference=True but no project_dir
+    # expect exception because enable_sql_model_code_reference=True but no project_dir
     with pytest.raises(DagsterInvalidDefinitionError):
 
         @dbt_assets(
             manifest=test_jaffle_shop_manifest,
             dagster_dbt_translator=DagsterDbtTranslator(
-                settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+                settings=DagsterDbtTranslatorSettings(enable_sql_model_code_reference=True)
             ),
         )
         def my_dbt_assets(): ...
@@ -65,7 +65,7 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(
-            settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+            settings=DagsterDbtTranslatorSettings(enable_sql_model_code_reference=True)
         ),
         project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
@@ -91,7 +91,7 @@ def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(
-            settings=DagsterDbtTranslatorSettings(attach_sql_model_code_reference=True)
+            settings=DagsterDbtTranslatorSettings(enable_sql_model_code_reference=True)
         ),
         project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
