@@ -71,16 +71,17 @@ class LegacyRuleEvaluationContext:
 
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
-    daemon_context: "AssetDaemonContext"
 
     evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
+    respect_materialization_data_versions: bool
+    auto_materialize_run_tags: Mapping[str, str]
     root_ref: Optional["LegacyRuleEvaluationContext"] = None
 
     @staticmethod
-    def create(
+    def create_within_asset_daemon(
         asset_key: AssetKey,
         condition: "SchedulingCondition",
         previous_evaluation_state: Optional[AssetConditionEvaluationState],
@@ -107,10 +108,11 @@ class LegacyRuleEvaluationContext:
             ),
             data_time_resolver=data_time_resolver,
             instance_queryer=instance_queryer,
-            daemon_context=daemon_context,
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
             start_timestamp=pendulum.now("UTC").timestamp(),
+            respect_materialization_data_versions=daemon_context.respect_materialization_data_versions,
+            auto_materialize_run_tags=daemon_context.auto_materialize_run_tags,
         )
 
     def for_child(
