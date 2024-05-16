@@ -224,7 +224,7 @@ class AssetDaemonContext:
 
         previous_evaluation_state = self.cursor.get_previous_evaluation_state(asset_key)
 
-        legacy_context = LegacyRuleEvaluationContext.create(
+        legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
             asset_key=asset_key,
             previous_evaluation_state=previous_evaluation_state,
             condition=asset_condition,

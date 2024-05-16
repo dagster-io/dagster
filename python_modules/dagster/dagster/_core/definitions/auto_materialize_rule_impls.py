@@ -311,7 +311,7 @@ class AutoMaterializeAssetPartitionsFilter(
             self.latest_run_required_tags.items()
             <= {
                 AUTO_MATERIALIZE_TAG: "true",
-                **context.legacy_context.daemon_context.auto_materialize_run_tags,
+                **context.legacy_context.auto_materialize_run_tags,
             }.items()
         ):
             return will_update_asset_partitions | updated_partitions_with_required_tags
@@ -372,7 +372,7 @@ class MaterializeOnParentUpdatedRule(
                 parent_asset_partitions=parent_asset_partitions,
                 # do a precise check for updated parents, factoring in data versions, as long as
                 # we're within reasonable limits on the number of partitions to check
-                respect_materialization_data_versions=context.legacy_context.daemon_context.respect_materialization_data_versions
+                respect_materialization_data_versions=context.legacy_context.respect_materialization_data_versions
                 and len(parent_asset_partitions) + subset_to_evaluate.size < 100,
                 # ignore self-dependencies when checking for updated parents, to avoid historical
                 # rematerializations from causing a chain of materializations to be kicked off
@@ -708,7 +708,7 @@ class SkipOnNotAllParentsUpdatedRule(
                 context.legacy_context.instance_queryer.get_parent_asset_partitions_updated_after_child(
                     asset_partition=candidate,
                     parent_asset_partitions=parent_partitions,
-                    respect_materialization_data_versions=context.legacy_context.daemon_context.respect_materialization_data_versions,
+                    respect_materialization_data_versions=context.legacy_context.respect_materialization_data_versions,
                     ignored_parent_keys=set(),
                 )
                 | context.legacy_context.parent_will_update_subset.asset_partitions

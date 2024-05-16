@@ -28,11 +28,11 @@ class RuleCondition(AssetCondition):
         return self.rule.description
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
-        context.legacy_context.root_context.daemon_context.logger.debug(
+        context.legacy_context.root_context.logger.debug(
             f"Evaluating rule: {self.rule.to_snapshot()}"
         )
         evaluation_result = self.rule.evaluate_for_asset(context)
-        context.legacy_context.root_context.daemon_context.logger.debug(
+        context.legacy_context.root_context.logger.debug(
             f"Rule returned {evaluation_result.true_subset.size} partitions "
             f"({evaluation_result.end_timestamp - evaluation_result.start_timestamp:.2f} seconds)"
         )
