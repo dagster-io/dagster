@@ -52,7 +52,7 @@ With your text editor of choice, create a Python file in the same directory as y
 
 The following code assumes that your Python file and dbt project directory are adjacent in the same directory. If that's not the case, make sure to update the `RELATIVE_PATH_TO_MY_DBT_PROJECT` constant so that it points to your dbt project.
 
-```python file=/integrations/dbt/quickstart.py startafter=start_example endbefore=end_example
+```python file=/integrations/dbt/quickstart/with_single_file.py startafter=start_example endbefore=end_example
 from pathlib import Path
 
 from dagster import AssetExecutionContext, Definitions
@@ -134,7 +134,7 @@ my_dagster_project
 
 2. Create a Python file named `project.py` and add the following code. The DbtProject object is a representation of your dbt project that assist with managing `manifest.json` preparation.
 
-   ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_project_example endbefore=end_dbt_project_example
+   ```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_project_example endbefore=end_dbt_project_example
    from pathlib import Path
 
    from dagster_dbt import DbtProject
@@ -150,7 +150,7 @@ my_dagster_project
 
 3. In your `assets.py` file, add the following code. Using the `dbt_assets` decorator allows Dagster to create a definition for how to compute a set of dbt resources, described by a `manifest.json`.
 
-   ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_assets_example endbefore=end_dbt_assets_example
+   ```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_assets_example endbefore=end_dbt_assets_example
    from dagster import AssetExecutionContext
    from dagster_dbt import DbtCliResource, dbt_assets
 
@@ -163,7 +163,7 @@ my_dagster_project
 
 4. In your `definitions.py` file, update your Definitions object to include the newly created objects.
 
-   ```python file=/integrations/dbt/quickstart.py startafter=start_dbt_definitions_example endbefore=end_dbt_definitions_example
+   ```python file=/integrations/dbt/quickstart/with_project.py startafter=start_dbt_definitions_example endbefore=end_dbt_definitions_example
    from dagster import Definitions
    from dagster_dbt import DbtCliResource
 
