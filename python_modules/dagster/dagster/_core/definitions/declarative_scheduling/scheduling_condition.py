@@ -40,6 +40,20 @@ if TYPE_CHECKING:
     from .scheduling_context import SchedulingContext
 
 
+# static factory
+class Scheduling:
+    @staticmethod
+    def eager(
+        *,
+        failure_retry_delta: datetime.timedelta = datetime.timedelta(hours=1),
+    ) -> "SchedulingCondition":
+        return SchedulingCondition.eager(failure_retry_delta=failure_retry_delta)
+
+    @staticmethod
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "SchedulingCondition":
+        return SchedulingCondition.on_cron(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
+
+
 @experimental
 class SchedulingCondition(ABC, DagsterModel):
     @property

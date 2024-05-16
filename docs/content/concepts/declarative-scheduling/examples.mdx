@@ -19,10 +19,12 @@ This reference contains a variety of examples using Declarative Scheduling.
 The following examples demonstrate how to define some cron schedules.
 
 ```python file=/concepts/declarative_scheduling/single_asset_cron.py
-from dagster import SchedulingCondition
 from dagster._core.definitions.declarative_scheduling.ds_asset import ds_asset as asset
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+    Scheduling,
+)
 
 
-@asset(scheduling_condition=SchedulingCondition.on_cron("0 0 * * *"))
+@asset(scheduling=Scheduling.on_cron("0 0 * * *"))
 def my_asset() -> None: ...
 ```

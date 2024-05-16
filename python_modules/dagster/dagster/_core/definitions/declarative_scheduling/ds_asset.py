@@ -21,7 +21,7 @@ def ds_asset(
     group_name: Optional[str] = None,
     code_version: Optional[str] = None,
     key: Optional[CoercibleToAssetKey] = None,
-    scheduling_condition: Optional[SchedulingCondition] = None,
+    scheduling: Optional[SchedulingCondition] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
     tags: Optional[Mapping[str, str]] = None,
@@ -33,9 +33,7 @@ def ds_asset(
         metadata=metadata,
         group_name=group_name,
         code_version=code_version,
-        auto_materialize_policy=scheduling_condition.as_auto_materialize_policy()
-        if scheduling_condition
-        else None,
+        auto_materialize_policy=scheduling.as_auto_materialize_policy() if scheduling else None,
         check_specs=check_specs,
         owners=owners,
         tags=tags,
