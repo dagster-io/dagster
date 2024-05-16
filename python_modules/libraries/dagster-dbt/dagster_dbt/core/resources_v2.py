@@ -59,7 +59,6 @@ from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.events.functions import cleanup_event_logger
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -75,6 +74,11 @@ from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
 from typing_extensions import Final, Literal, TypeVar
+
+if dbt_version >= "1.8":
+    from dbt_common.events.event_manager_client import cleanup_event_loger  # noqa
+else:
+    from dbt.events.functions import cleanup_event_logger
 
 from ..asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
