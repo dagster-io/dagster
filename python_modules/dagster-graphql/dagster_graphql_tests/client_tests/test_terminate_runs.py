@@ -184,7 +184,6 @@ def test_partial_failure_python_error(mock_client: MockClient):
 def test_terminate_runs_mixed_results(mock_client: MockClient):
     success_id = RUN_IDS[0]
     not_found_id = RUN_IDS[1]
-    python_error_id = RUN_IDS[2]
 
     error_messages = [
         ("RunNotFoundError", f"Run Id {not_found_id} not found"),
