@@ -17,7 +17,6 @@ import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import (
     AssetGraphView,
 )
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
@@ -57,9 +56,10 @@ class AssetConditionEvaluator:
     num_checked_assets: int
     num_auto_materialize_asset_keys: int
     logger: logging.Logger
-    daemon_context: AssetDaemonContext
     cursor: AssetDaemonCursor
     data_time_resolver: CachingDataTimeResolver
+    respect_materialization_data_versions: bool
+    auto_materialize_run_tags: Mapping[str, str]
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
@@ -170,15 +170,17 @@ class AssetConditionEvaluator:
 
         previous_evaluation_state = self.cursor.get_previous_evaluation_state(asset_key)
 
-        legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
+        legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
             previous_evaluation_state=previous_evaluation_state,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
-            daemon_context=self.daemon_context,
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
+            respect_materialization_data_versions=self.respect_materialization_data_versions,
+            auto_materialize_run_tags=self.auto_materialize_run_tags,
+            logger=self.logger,
         )
 
         context = SchedulingContext.create(
