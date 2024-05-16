@@ -7,6 +7,6 @@ def upstream() -> None: ...
 
 
 @asset(
-    deps=[upstream], scheduling_condition=SchedulingCondition.eager_with_rate_limit()
+    deps=[upstream], scheduling_condition=SchedulingCondition.eager()
 )
 def downstream() -> None: ...
