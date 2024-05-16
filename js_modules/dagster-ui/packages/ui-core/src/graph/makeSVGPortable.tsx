@@ -84,6 +84,13 @@ export async function makeSVGPortable(svg: SVGElement) {
       if (!USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
         continue;
       }
+
+      // For any style values that are implemented with CSS vars, use the computed value.
+      const uncomputedStyleValue = (node.style as any)[attrName];
+      if (typeof uncomputedStyleValue === 'string' && uncomputedStyleValue.startsWith('var(--')) {
+        (node.style as any)[attrName] = (nodeStyles as any)[attrName];
+      }
+
       if (
         !(node.style as any)[attrName] &&
         (nodeStyles as any)[attrName] !== (baseStyles as any)[attrName]

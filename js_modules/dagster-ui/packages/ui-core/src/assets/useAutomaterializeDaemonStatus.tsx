@@ -7,12 +7,15 @@ import {
   SetAutoMaterializePausedMutation,
   SetAutoMaterializePausedMutationVariables,
 } from './types/useAutomaterializeDaemonStatus.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export function useAutomaterializeDaemonStatus() {
-  const {data, loading, refetch} = useQuery<
+  const queryResult = useQuery<
     GetAutoMaterializePausedQuery,
     GetAutoMaterializePausedQueryVariables
   >(AUTOMATERIALIZE_PAUSED_QUERY);
+  useBlockTraceOnQueryResult(queryResult, 'GetAutoMaterializePausedQuery');
+  const {data, loading, refetch} = queryResult;
 
   const [setAutoMaterializePaused] = useMutation<
     SetAutoMaterializePausedMutation,

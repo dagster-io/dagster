@@ -452,6 +452,13 @@ def integers():
     return_integer()
 
 
+@asset(partitions_def=integers_partitions, backfill_policy=BackfillPolicy.single_run())
+def integers_asset(context: AssetExecutionContext):
+    return {k: 1 for k in context.partition_keys}
+
+
+integers_asset_job = define_asset_job("integers_asset_job", selection=[integers_asset])
+
 alpha_partitions = StaticPartitionsDefinition(list(string.ascii_lowercase))
 
 
@@ -1197,6 +1204,10 @@ def define_sensors():
     def every_asset_sensor(_):
         return SkipReason("just kidding")
 
+    @sensor(asset_selection=AssetSelection.keys("does_not_exist"))
+    def invalid_asset_selection_error(_):
+        return SkipReason("just kidding")
+
     @run_status_sensor(run_status=DagsterRunStatus.SUCCESS, request_job=no_config_job)
     def run_status(_):
         return SkipReason("always skip")
@@ -1240,6 +1251,7 @@ def define_sensors():
         the_failure_sensor,
         auto_materialize_sensor,
         every_asset_sensor,
+        invalid_asset_selection_error,
     ]
 
 
@@ -1575,6 +1587,7 @@ hanging_partition_asset_job = define_asset_job(
 @asset
 def asset_yields_observation():
     yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "BAR"})
     yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
     yield Output(5)
 
@@ -1873,7 +1886,7 @@ def asset_job_schedule():
     return {}
 
 
-@asset_check(asset=asset_1, description="asset_1 check", blocking=True, additional_deps=[asset_2])
+@asset_check(asset=asset_1, description="asset_1 check", blocking=True, additional_deps=[asset_two])
 def my_check(asset_1):
     return AssetCheckResult(
         passed=True,
@@ -1935,6 +1948,7 @@ def define_asset_jobs() -> Sequence[UnresolvedAssetJobDefinition]:
         hanging_graph_asset_job,
         hanging_job,
         hanging_partition_asset_job,
+        integers_asset_job,
         output_then_hang_job,
         multi_partitions_fail_job,
         multi_partitions_job,
@@ -2021,6 +2035,7 @@ def define_assets():
         fresh_diamond_left,
         fresh_diamond_right,
         fresh_diamond_bottom,
+        integers_asset,
         upstream_daily_partitioned_asset,
         downstream_weekly_partitioned_asset,
         unpartitioned_upstream_of_partitioned,

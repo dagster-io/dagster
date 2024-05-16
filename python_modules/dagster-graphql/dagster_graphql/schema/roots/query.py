@@ -46,6 +46,7 @@ from dagster_graphql.schema.auto_materialize_asset_evaluations import (
 from dagster_graphql.schema.env_vars import GrapheneEnvVarWithConsumersListOrError
 
 from ...implementation.external import (
+    fetch_location_entry,
     fetch_location_statuses,
     fetch_repositories,
     fetch_repository,
@@ -92,7 +93,6 @@ from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.fetch_ticks import get_instigation_ticks
 from ...implementation.loader import (
-    BatchMaterializationLoader,
     CrossRepoAssetDependedByLoader,
     StaleStatusLoader,
 )
@@ -120,6 +120,7 @@ from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
+    GrapheneWorkspaceLocationEntryOrError,
     GrapheneWorkspaceLocationStatusEntriesOrError,
     GrapheneWorkspaceOrError,
 )
@@ -208,7 +209,13 @@ class GrapheneQuery(graphene.ObjectType):
 
     locationStatusesOrError = graphene.Field(
         graphene.NonNull(GrapheneWorkspaceLocationStatusEntriesOrError),
-        description="Retrieve location status for workspace locations",
+        description="Retrieve location status for workspace locations.",
+    )
+
+    workspaceLocationEntryOrError = graphene.Field(
+        GrapheneWorkspaceLocationEntryOrError,
+        name=graphene.Argument(graphene.NonNull(graphene.String)),
+        description="Retrieve a workspace entry by name.",
     )
 
     pipelineOrError = graphene.Field(
@@ -593,6 +600,10 @@ class GrapheneQuery(graphene.ObjectType):
         return fetch_workspace(graphene_info.context)
 
     @capture_error
+    def resolve_workspaceLocationEntryOrError(self, graphene_info: ResolveInfo, name: str):
+        return fetch_location_entry(graphene_info.context, name)
+
+    @capture_error
     def resolve_locationStatusesOrError(self, graphene_info: ResolveInfo):
         return fetch_location_statuses(graphene_info.context)
 
@@ -927,7 +938,9 @@ class GrapheneQuery(graphene.ObjectType):
                 else []
             )
         else:
-            results = get_asset_nodes(graphene_info)
+            results = get_asset_nodes(
+                graphene_info, resolved_asset_keys if not use_all_asset_keys else None
+            )
 
         # Filter down to requested asset keys
         results = [
@@ -939,10 +952,8 @@ class GrapheneQuery(graphene.ObjectType):
         if not results:
             return []
 
-        materialization_loader = BatchMaterializationLoader(
-            instance=graphene_info.context.instance,
-            asset_keys=[node.assetKey for node in results],
-        )
+        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader.add_asset_keys([node.assetKey for node in results])
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
             asset_keys=[node.assetKey for node in results],
@@ -969,7 +980,7 @@ class GrapheneQuery(graphene.ObjectType):
                 node.external_repository,
                 node.external_asset_node,
                 asset_checks_loader=asset_checks_loader,
-                materialization_loader=materialization_loader,
+                asset_record_loader=asset_record_loader,
                 depended_by_loader=depended_by_loader,
                 stale_status_loader=stale_status_loader,
                 dynamic_partitions_loader=dynamic_partitions_loader,
@@ -1065,7 +1076,7 @@ class GrapheneQuery(graphene.ObjectType):
     ):
         asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
 
-        results = get_asset_nodes(graphene_info)
+        results = get_asset_nodes(graphene_info, asset_keys)
 
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
@@ -1075,7 +1086,10 @@ class GrapheneQuery(graphene.ObjectType):
             if node.assetKey in asset_keys
         }
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset)
+        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader.add_asset_keys(asset_keys)
+
+        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
 
     @capture_error
     def resolve_logsForRun(

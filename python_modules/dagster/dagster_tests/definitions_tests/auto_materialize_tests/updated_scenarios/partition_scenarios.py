@@ -9,7 +9,9 @@ from dagster import (
     MultiPartitionMapping,
     TimeWindowPartitionMapping,
 )
-from dagster._core.definitions.auto_materialize_rule import DiscardOnMaxMaterializationsExceededRule
+from dagster._core.definitions.auto_materialize_rule_impls import (
+    DiscardOnMaxMaterializationsExceededRule,
+)
 
 from ..base_scenario import run_request
 from ..scenario_specs import (

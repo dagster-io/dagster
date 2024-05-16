@@ -14,11 +14,9 @@ from dagster import (
     TableSchema,
     materialize,
 )
-from dagster._core.definitions.metadata import TableMetadataEntries
+from dagster._core.definitions.metadata import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
-from dbt.version import __version__ as dbt_version
-from packaging import version
 from pytest_mock import MockFixture
 from sqlglot import Dialect
 
@@ -37,7 +35,7 @@ def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_schema
+        not TableMetadataSet.extract(event.materialization.metadata).column_schema
         for event in result.get_asset_materialization_events()
     )
 
@@ -55,7 +53,7 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     assert result.success
 
     table_schema_by_asset_key = {
-        event.materialization.asset_key: TableMetadataEntries.extract(
+        event.materialization.asset_key: TableMetadataSet.extract(
             event.materialization.metadata
         ).column_schema
         for event in result.get_asset_materialization_events()
@@ -78,10 +76,30 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     assert table_schema_by_asset_key == expected_table_schema_by_asset_key
 
 
-@pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.6.0"),
-    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
-)
+def test_exception_column_schema(
+    mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+) -> None:
+    mocker.patch(
+        "dagster_dbt.core.resources_v2.default_metadata_from_dbt_resource_props",
+        side_effect=Exception("An error occurred"),
+    )
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+
+    assert result.success
+    assert all(
+        not TableMetadataSet.extract(event.materialization.metadata).column_schema
+        for event in result.get_asset_materialization_events()
+    )
+
+
 def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
@@ -101,15 +119,11 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
+        not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
 
 
-@pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.6.0"),
-    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
-)
 def test_exception_column_lineage(
     mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
 ) -> None:
@@ -129,15 +143,11 @@ def test_exception_column_lineage(
 
     assert result.success
     assert all(
-        not TableMetadataEntries.extract(event.materialization.metadata).column_lineage
+        not TableMetadataSet.extract(event.materialization.metadata).column_lineage
         for event in result.get_asset_materialization_events()
     )
 
 
-@pytest.mark.skipif(
-    version.parse(dbt_version) < version.parse("1.6.0"),
-    reason="Retrieving the dbt project name from the manifest is only available in `dbt-core>=1.6`",
-)
 @pytest.mark.parametrize(
     "asset_key_selection",
     [
@@ -193,7 +203,7 @@ def test_column_lineage(
     assert result.success
 
     column_lineage_by_asset_key = {
-        event.materialization.asset_key: TableMetadataEntries.extract(
+        event.materialization.asset_key: TableMetadataSet.extract(
             event.materialization.metadata
         ).column_lineage
         for event in result.get_asset_materialization_events()

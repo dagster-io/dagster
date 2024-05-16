@@ -1,4 +1,4 @@
-import {Box, Colors, FontFamily, Mono, Popover} from '@dagster-io/ui-components';
+import {Box, CaptionMono, Colors, FontFamily, Popover} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -77,10 +77,10 @@ export const RunStatusOverlay = ({name, run}: OverlayProps) => {
         <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
           <RunStatusIndicator status={run.status} />
           <Link to={`/runs/${run.id}`}>
-            <Mono style={{fontSize: '14px'}}>{titleForRun(run)}</Mono>
+            <CaptionMono>{titleForRun(run)}</CaptionMono>
           </Link>
         </Box>
-        <Box flex={{direction: 'column', gap: 4}} padding={{top: 2}}>
+        <Box flex={{direction: 'column', gap: 4}}>
           <RunTime run={run} />
           <RunStateSummary run={run} />
         </Box>
@@ -115,7 +115,6 @@ const OverlayTitle = styled.div`
 
 const RunRow = styled.div`
   padding: 8px;
-  font-size: 12px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;

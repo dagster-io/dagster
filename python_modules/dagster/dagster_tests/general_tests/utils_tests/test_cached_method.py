@@ -4,7 +4,7 @@ import gc
 from typing import Dict, NamedTuple, Tuple
 
 import objgraph
-from dagster._utils.cached_method import CACHED_METHOD_FIELD_SUFFIX, cached_method
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 
 
 def test_cached_method() -> None:
@@ -130,4 +130,4 @@ def test_scenario_documented_in_cached_method_doc_block() -> None:
 
     # only one entry
     assert len(obj.__dict__) == 1
-    assert len(obj.__dict__["a_method" + CACHED_METHOD_FIELD_SUFFIX]) == 1
+    assert len(obj.__dict__[CACHED_METHOD_CACHE_FIELD][MyClass.a_method.__name__]) == 1

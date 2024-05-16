@@ -22,8 +22,8 @@ export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) =
   );
 
   const onToggle = useCallback(
-    (repoAddress: RepoAddress) => {
-      const key = repoAddressAsHumanString(repoAddress);
+    (_key: string | RepoAddress) => {
+      const key = typeof _key === 'object' ? repoAddressAsHumanString(_key) : _key;
       setCollapsedKeys((current) => {
         const nextCollapsedKeys = new Set(current || []);
         if (nextCollapsedKeys.has(key)) {

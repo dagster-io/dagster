@@ -1,6 +1,16 @@
 import pytest
 from dagster._model import DagsterModel
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 from pydantic import ValidationError
+
+
+def test_runtime_typecheck():
+    class MyClass(DagsterModel):
+        foo: str
+        bar: int
+
+    with pytest.raises(ValidationError):
+        MyClass(foo="fdsjk", bar="fdslk")
 
 
 def test_override_constructor_in_subclass():
@@ -63,3 +73,22 @@ def test_non_model_param():
 
     with pytest.raises(ValidationError):
         MyModel(some_class=SomeClass)  # forgot ()
+
+
+def test_cached_method() -> None:
+    class CoolModel(DagsterModel):
+        name: str
+
+        @cached_method
+        def calculate(self, n: int):
+            return {self.name: n}
+
+        @cached_method
+        def reticulate(self, n: int):
+            return {self.name: n}
+
+    m = CoolModel(name="bob")
+    assert m.calculate(4) is m.calculate(4)
+    assert m.calculate(4) is not m.reticulate(4)
+
+    assert CACHED_METHOD_CACHE_FIELD not in m.dict()

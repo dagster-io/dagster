@@ -11,6 +11,7 @@ export type AssetStaleStatusQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
+    isSource: boolean;
     staleStatus: Types.StaleStatus | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionStats: {

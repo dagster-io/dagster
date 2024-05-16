@@ -1,4 +1,5 @@
 import os
+from typing import cast
 
 import duckdb
 import pandas as pd
@@ -21,6 +22,7 @@ from dagster import (
     op,
 )
 from dagster._check import CheckError
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_duckdb_pandas import DuckDBPandasIOManager, duckdb_pandas_io_manager
 
 
@@ -211,12 +213,19 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
     for io_manager in io_managers:
         resource_defs = {"io_manager": io_manager}
 
-        materialize(
+        result = materialize(
             [daily_partitioned],
             partition_key="2022-01-01",
             resources=resource_defs,
             run_config={"ops": {"my_schema__daily_partitioned": {"config": {"value": "1"}}}},
         )
+        materialization = next(
+            event
+            for event in result.all_events
+            if event.event_type_value == "ASSET_MATERIALIZATION"
+        )
+        meta = materialization.materialization.metadata["dagster/partition_row_count"]
+        assert cast(IntMetadataValue, meta).value_inner == 3
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()

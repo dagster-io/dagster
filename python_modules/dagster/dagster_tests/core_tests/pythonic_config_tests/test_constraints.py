@@ -2,7 +2,7 @@ from typing import List
 
 import pytest
 from dagster._config.pythonic_config import Config
-from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_2
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 from pydantic import Field, ValidationError, conlist, constr
 
 

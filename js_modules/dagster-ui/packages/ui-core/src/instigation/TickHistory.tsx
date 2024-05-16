@@ -41,6 +41,7 @@ import {
   InstigationType,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -139,6 +140,7 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
+  useBlockTraceOnQueryResult(queryResult, 'TickHistoryQuery');
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -312,6 +314,8 @@ export const TickHistoryTimeline = ({
     },
   );
 
+  useBlockTraceOnQueryResult(queryResult, 'TickHistoryQuery');
+
   useQueryRefreshAtInterval(
     queryResult,
     1000,
@@ -433,7 +437,7 @@ function TickRow({
         <td style={{width: 120}}>
           {tick.cursor ? (
             <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
-              <div style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+              <div style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
                 {truncate(tick.cursor || '')}
               </div>
               <CopyButton

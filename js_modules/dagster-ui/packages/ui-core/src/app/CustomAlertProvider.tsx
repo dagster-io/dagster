@@ -95,7 +95,7 @@ export const CustomAlertProvider = () => {
 const Body = styled.div`
   white-space: pre-line;
   font-family: ${FontFamily.monospace};
-  font-size: 16px;
+  font-size: 14px;
 `;
 
 export const GlobalCustomAlertPortalStyle = createGlobalStyle`

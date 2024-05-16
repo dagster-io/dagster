@@ -5,22 +5,38 @@ import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
-import {RunTimelineQuery, RunTimelineQueryVariables} from './types/useRunsForTimeline.types';
+import {
+  FutureTicksQuery,
+  FutureTicksQueryVariables,
+  TerimatedRunTimelineQuery,
+  TerimatedRunTimelineQueryVariables,
+  UnterminatedRunTimelineQuery,
+  UnterminatedRunTimelineQueryVariables,
+} from './types/useRunsForTimeline.types';
+import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilter = {}) => {
+export const useRunsForTimeline = (
+  range: [number, number],
+  runsFilter: RunsFilter = {},
+  refreshInterval = FIFTEEN_SECONDS,
+) => {
   const [start, end] = range;
 
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
+  const unteriminatedRunsQueryData = useQuery<
+    UnterminatedRunTimelineQuery,
+    UnterminatedRunTimelineQueryVariables
+  >(UNTERMINATED_RUN_TIMELINE_QUERY, {
     notifyOnNetworkStatusChange: true,
     // With a very large number of runs, operating on the Apollo cache is too expensive and
     // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
@@ -32,21 +48,76 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
         statuses: [RunStatus.CANCELING, RunStatus.STARTED],
         createdBefore: endSec,
       },
+    },
+  });
+
+  const terminatedRunsQueryData = useQuery<
+    TerimatedRunTimelineQuery,
+    TerimatedRunTimelineQueryVariables
+  >(TERMINATED_RUN_TIMELINE_QUERY, {
+    notifyOnNetworkStatusChange: true,
+    // With a very large number of runs, operating on the Apollo cache is too expensive and
+    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
+    // skip the cache entirely.
+    fetchPolicy: 'no-cache',
+    variables: {
       terminatedFilter: {
         ...runsFilter,
         statuses: Array.from(doneStatuses),
         createdBefore: endSec,
         updatedAfter: startSec,
       },
-      tickCursor: startSec,
-      ticksUntil: endSec,
     },
   });
 
-  const {data, previousData, loading} = queryData;
+  const futureTicksQueryData = useQuery<FutureTicksQuery, FutureTicksQueryVariables>(
+    FUTURE_TICKS_QUERY,
+    {
+      notifyOnNetworkStatusChange: true,
+      // With a very large number of runs, operating on the Apollo cache is too expensive and
+      // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
+      // skip the cache entirely.
+      fetchPolicy: 'no-cache',
+      variables: {
+        tickCursor: startSec,
+        ticksUntil: endSec,
+      },
+    },
+  );
 
-  const initialLoading = loading && !data;
-  const {unterminated, terminated, workspaceOrError} = data || previousData || {};
+  useBlockTraceOnQueryResult(unteriminatedRunsQueryData, 'UnterminatedRunTimelineQuery');
+  useBlockTraceOnQueryResult(terminatedRunsQueryData, 'TerimatedRunTimelineQuery');
+  useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
+
+  const {
+    data: unterminatedRunsData,
+    previousData: previousUnterminatedRunsData,
+    loading: loadingUnterminatedRunsData,
+    refetch: refetchUnterminatedRuns,
+  } = unteriminatedRunsQueryData;
+  const {
+    data: terminatedRunsData,
+    previousData: previousTerminatedRunsData,
+    loading: loadingTerminatedRunsData,
+    refetch: refetchTerminatedRuns,
+  } = terminatedRunsQueryData;
+  const {
+    data: futureTicksData,
+    previousData: previousFutureTicksData,
+    loading: loadingFutureTicksData,
+    refetch: refetchFutureTicks,
+  } = futureTicksQueryData;
+
+  const initialLoading =
+    (loadingUnterminatedRunsData && !unterminatedRunsData) ||
+    (loadingTerminatedRunsData && !terminatedRunsQueryData) ||
+    (loadingFutureTicksData && !futureTicksData);
+
+  const {unterminated} = unterminatedRunsData ||
+    previousUnterminatedRunsData || {unterminated: undefined};
+  const {terminated} = terminatedRunsData || previousTerminatedRunsData || {terminated: undefined};
+  const {workspaceOrError} = futureTicksData ||
+    previousFutureTicksData || {workspaceOrError: undefined};
 
   const runsByJobKey = useMemo(() => {
     const map: {[jobKey: string]: TimelineRun[]} = {};
@@ -189,27 +260,29 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);
 
+  const refreshState = useRefreshAtInterval({
+    refresh: async () => {
+      await Promise.all([refetchFutureTicks(), refetchTerminatedRuns(), refetchUnterminatedRuns()]);
+    },
+    intervalMs: refreshInterval,
+  });
+
   return useMemo(
     () => ({
       jobs: jobsWithRuns,
       initialLoading,
-      queryData,
+      refreshState,
     }),
-    [initialLoading, jobsWithRuns, queryData],
+    [initialLoading, jobsWithRuns, refreshState],
   );
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
-const RUN_TIMELINE_QUERY = gql`
-  query RunTimelineQuery(
-    $inProgressFilter: RunsFilter!
-    $terminatedFilter: RunsFilter!
-    $tickCursor: Float
-    $ticksUntil: Float
-  ) {
-    unterminated: runsOrError(filter: $inProgressFilter) {
+const UNTERMINATED_RUN_TIMELINE_QUERY = gql`
+  query UnterminatedRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int) {
+    unterminated: runsOrError(filter: $inProgressFilter, limit: $limit) {
       ... on Runs {
         results {
           id
@@ -223,7 +296,13 @@ const RUN_TIMELINE_QUERY = gql`
         }
       }
     }
-    terminated: runsOrError(filter: $terminatedFilter) {
+  }
+  ${RUN_TIME_FRAGMENT}
+`;
+
+const TERMINATED_RUN_TIMELINE_QUERY = gql`
+  query TerimatedRunTimelineQuery($terminatedFilter: RunsFilter!, $limit: Int) {
+    terminated: runsOrError(filter: $terminatedFilter, limit: $limit) {
       ... on Runs {
         results {
           id
@@ -237,6 +316,13 @@ const RUN_TIMELINE_QUERY = gql`
         }
       }
     }
+  }
+
+  ${RUN_TIME_FRAGMENT}
+`;
+
+const FUTURE_TICKS_QUERY = gql`
+  query FutureTicksQuery($tickCursor: Float, $ticksUntil: Float) {
     workspaceOrError {
       ... on Workspace {
         id
@@ -277,7 +363,5 @@ const RUN_TIMELINE_QUERY = gql`
       }
     }
   }
-
-  ${RUN_TIME_FRAGMENT}
   ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
 `;

@@ -13,7 +13,7 @@ import {
 import {OverduePopoverQuery, OverduePopoverQueryVariables} from './types/OverdueTag.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {timestampToString} from '../app/time/timestampToString';
-import {useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
+import {useAssetBaseData} from '../asset-data/AssetBaseDataProvider';
 import {LiveDataForNode} from '../asset-graph/Utils';
 import {AssetKeyInput, FreshnessPolicy} from '../graphql/types';
 import {humanCronString} from '../schedules/humanCronString';
@@ -45,7 +45,7 @@ export const OverdueTag = ({
   policy: Pick<FreshnessPolicy, 'cronSchedule' | 'cronScheduleTimezone' | 'maximumLagMinutes'>;
   assetKey: AssetKeyInput;
 }) => {
-  const {liveData} = useAssetLiveData(assetKey);
+  const {liveData} = useAssetBaseData(assetKey);
 
   if (!liveData?.freshnessInfo) {
     return null;

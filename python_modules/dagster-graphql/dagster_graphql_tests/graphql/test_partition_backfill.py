@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import List, Optional, Tuple, cast
+from typing import List, Optional, Tuple, Union, cast
 
 from dagster import (
     AssetKey,
@@ -11,6 +11,7 @@ from dagster import (
     define_asset_job,
 )
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.execution.asset_backfill import (
     AssetBackfillIterationResult,
@@ -23,7 +24,12 @@ from dagster._core.execution.backfill import (
 )
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG
+from dagster._core.storage.tags import (
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+)
 from dagster._core.test_utils import create_run_for_test, environ
 from dagster._core.utils import make_new_backfill_id
 from dagster._seven import get_system_temp_directory
@@ -170,14 +176,26 @@ GET_PARTITION_BACKFILLS_QUERY = """
 """
 
 
-def _seed_runs(graphql_context, partition_runs: List[Tuple[str, DagsterRunStatus]], backfill_id):
-    for status, partition in partition_runs:
+def _seed_runs(
+    graphql_context,
+    partition_runs: List[Tuple[DagsterRunStatus, Union[str, PartitionKeyRange]]],
+    backfill_id: str,
+) -> None:
+    for status, partition_or_range in partition_runs:
+        partition_tags = (
+            {PARTITION_NAME_TAG: partition_or_range}
+            if isinstance(partition_or_range, str)
+            else {
+                ASSET_PARTITION_RANGE_START_TAG: partition_or_range.start,
+                ASSET_PARTITION_RANGE_END_TAG: partition_or_range.end,
+            }
+        )
         create_run_for_test(
             instance=graphql_context.instance,
             status=status,
             tags={
                 **DagsterRun.tags_for_backfill_id(backfill_id),
-                PARTITION_NAME_TAG: partition,
+                **partition_tags,
             },
         )
 
@@ -220,6 +238,7 @@ def _execute_asset_backfill_iteration_no_side_effects(
             asset_graph=asset_graph,
             run_tags=backfill.tags,
             backfill_start_time=asset_backfill_data.backfill_start_time,
+            logger=logging.getLogger("fake_logger"),
         ):
             pass
 
@@ -732,6 +751,52 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             variables={"backfillId": backfill_id},
         )
         assert result.data["partitionBackfillOrError"]["status"] == "COMPLETED"
+
+    def test_asset_job_backfill_run_stats(self, graphql_context):
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_asset_job_partition_set",
+                    },
+                    "partitionNames": ["2", "3", "4", "5"],
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        _seed_runs(
+            graphql_context,
+            [
+                (DagsterRunStatus.SUCCESS, PartitionKeyRange("2", "5")),
+            ],
+            backfill_id,
+        )
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": backfill_id},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["status"] == "REQUESTED"
+        assert result.data["partitionBackfillOrError"]["numPartitions"] == 4
+        run_stats = _get_run_stats(
+            result.data["partitionBackfillOrError"]["partitionStatuses"]["results"]
+        )
+        assert run_stats.get("total") == 4
+        assert run_stats.get("success") == 4
 
     def test_asset_backfill_stats_in_topological_order(self, graphql_context):
         asset_key_paths_in_topo_order = [

@@ -14,6 +14,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    TypeVar,
     Union,
     cast,
 )
@@ -71,7 +72,7 @@ from .partition_mapping import (
 )
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_definition_tags, validate_group_name
+from .utils import DEFAULT_GROUP_NAME, validate_group_name, validate_tags_strict
 
 if TYPE_CHECKING:
     from .base_asset_graph import AssetKeyOrCheckKey
@@ -271,7 +272,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         for tags in (tags_by_key or {}).values():
-            validate_definition_tags(tags)
+            validate_tags_strict(tags)
         self._tags_by_key = tags_by_key or {}
 
         self._descriptions_by_key = dict(
@@ -463,6 +464,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -507,7 +509,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 outputs, and values are dictionaries of metadata to be associated with the related
                 asset.
             tags_by_output_name (Optional[Mapping[str, Optional[Mapping[str, str]]]]): Defines
-                tags to be associated with each othe output assets for this node. Keys are the names
+                tags to be associated with each of the output assets for this node. Keys are the names
                 of outputs, and values are dictionaries of tags to be associated with the related
                 asset.
             freshness_policies_by_output_name (Optional[Mapping[str, Optional[FreshnessPolicy]]]): Defines a
@@ -519,6 +521,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
+            owners_by_key (Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]]): Defines
+                owners to be associated with each of the asset keys for this node.
 
         """
         return AssetsDefinition._from_node(
@@ -540,6 +544,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             backfill_policy=backfill_policy,
             can_subset=can_subset,
             check_specs=check_specs,
+            owners_by_key=owners_by_key,
         )
 
     @public
@@ -638,7 +643,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @staticmethod
     def _from_node(
-        node_def: Union[OpDefinition, "GraphDefinition"],
+        node_def: NodeDefinition,
         *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
@@ -714,6 +719,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
             keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
 
+        T = TypeVar("T")
+
+        def _output_dict_to_asset_dict(
+            attr_by_output_name: Optional[Mapping[str, Optional[T]]],
+        ) -> Optional[Mapping[AssetKey, T]]:
+            if not attr_by_output_name:
+                return None
+            return {
+                keys_by_output_name_with_prefix[output_name]: attr
+                for output_name, attr in attr_by_output_name.items()
+                if attr is not None
+            }
+
         check.param_invariant(
             group_name is None or group_names_by_output_name is None,
             "group_name",
@@ -725,11 +743,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
             }
         elif group_names_by_output_name:
-            group_names_by_key = {
-                keys_by_output_name_with_prefix[output_name]: group_name
-                for output_name, group_name in group_names_by_output_name.items()
-                if group_name is not None
-            }
+            group_names_by_key = _output_dict_to_asset_dict(group_names_by_output_name)
         else:
             group_names_by_key = None
 
@@ -753,54 +767,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if partition_mappings
                 else None
             ),
-            metadata_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: metadata
-                    for output_name, metadata in metadata_by_output_name.items()
-                    if metadata is not None
-                }
-                if metadata_by_output_name
-                else None
-            ),
-            tags_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: tags
-                    for output_name, tags in tags_by_output_name.items()
-                    if tags is not None
-                }
-                if tags_by_output_name
-                else None
-            ),
-            freshness_policies_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: freshness_policy
-                    for output_name, freshness_policy in freshness_policies_by_output_name.items()
-                    if freshness_policy is not None
-                }
-                if freshness_policies_by_output_name
-                else None
-            ),
-            auto_materialize_policies_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
-                    for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
-                    if auto_materialize_policy is not None
-                }
-                if auto_materialize_policies_by_output_name
-                else None
+            metadata_by_key=_output_dict_to_asset_dict(metadata_by_output_name),
+            tags_by_key=_output_dict_to_asset_dict(tags_by_output_name),
+            freshness_policies_by_key=_output_dict_to_asset_dict(freshness_policies_by_output_name),
+            auto_materialize_policies_by_key=_output_dict_to_asset_dict(
+                auto_materialize_policies_by_output_name
             ),
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
-            descriptions_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: description
-                    for output_name, description in descriptions_by_output_name.items()
-                    if description is not None
-                }
-                if descriptions_by_output_name
-                else None
-            ),
+            descriptions_by_key=_output_dict_to_asset_dict(descriptions_by_output_name),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
@@ -1583,7 +1559,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
 
 def _infer_keys_by_input_names(
-    node_def: Union["GraphDefinition", OpDefinition], keys_by_input_name: Mapping[str, AssetKey]
+    node_def: NodeDefinition, keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     all_input_names = [input_def.name for input_def in node_def.input_defs]
     if keys_by_input_name:
@@ -1606,7 +1582,7 @@ def _infer_keys_by_input_names(
 
 
 def _infer_keys_by_output_names(
-    node_def: Union["GraphDefinition", OpDefinition],
+    node_def: NodeDefinition,
     keys_by_output_name: Mapping[str, AssetKey],
     check_specs_by_output_name: Mapping[str, AssetCheckSpec],
 ) -> Mapping[str, AssetKey]:

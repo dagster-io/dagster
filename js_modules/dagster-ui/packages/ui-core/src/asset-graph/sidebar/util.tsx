@@ -2,6 +2,7 @@ import {Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 import styled, {keyframes} from 'styled-components';
 
+import {AssetKeyInput} from '../../graphql/types';
 import {StatusCase} from '../AssetNodeStatusContent';
 import {GraphNode} from '../Utils';
 
@@ -28,7 +29,7 @@ export function nodePathKey(node: {path: string; id: string} | {id: string}) {
   return 'path' in node ? node.path : node.id;
 }
 
-export function getDisplayName(node: GraphNode) {
+export function getDisplayName(node: {assetKey: AssetKeyInput}) {
   return node.assetKey.path[node.assetKey.path.length - 1]!;
 }
 

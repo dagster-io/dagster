@@ -34,12 +34,10 @@ export const UserPreferences = ({
   });
 
   const initialShortcutsEnabled = React.useRef(shortcutsEnabled);
-  const initialTheme = React.useRef(theme);
 
   const lastChangeValue = React.useRef(false);
   React.useEffect(() => {
-    const didChange =
-      initialTheme.current !== theme || initialShortcutsEnabled.current !== shortcutsEnabled;
+    const didChange = initialShortcutsEnabled.current !== shortcutsEnabled;
     if (lastChangeValue.current !== didChange) {
       onChangeRequiresReload(didChange);
       lastChangeValue.current = didChange;

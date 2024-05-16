@@ -232,6 +232,10 @@
                 "includeConfigInLaunchedRuns": {
                     "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
+                "deploymentNamespace": {
+                    "title": "Deploymentnamespace",
+                    "type": "string"
+                },
                 "port": {
                     "title": "Port",
                     "type": "integer"

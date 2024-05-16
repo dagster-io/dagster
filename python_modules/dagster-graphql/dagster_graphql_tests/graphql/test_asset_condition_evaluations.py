@@ -5,16 +5,16 @@ from unittest.mock import PropertyMock, patch
 import dagster._check as check
 import pendulum
 from dagster import AssetKey, RunRequest
-from dagster._core.definitions.asset_condition.asset_condition import (
-    AssetConditionEvaluation,
-    AssetConditionEvaluationWithRunIds,
-    AssetConditionSnapshot,
-    HistoricalAllPartitionsSubsetSentinel,
-)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
+)
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationWithRunIds,
+    AssetConditionSnapshot,
+    HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType

@@ -197,7 +197,7 @@ class DeltaLakeDbClient(DbClient):
     def get_select_statement(table_slice: TableSlice) -> str:
         # The select statement here is just for illustrative purposes,
         # and is never actually executed. It does however logically correspond
-        # the the operation being executed.
+        # the operation being executed.
         col_str = ", ".join(table_slice.columns) if table_slice.columns else "*"
 
         if table_slice.partition_dimensions and len(table_slice.partition_dimensions) > 0:

@@ -185,13 +185,13 @@ class ReconstructableJobSerializer(NamedTupleSerializer):
             unpacked_dict["op_selection"] = solids_to_execute
         return unpacked_dict
 
-    def after_pack(self, **packed_dict: Any) -> Dict[str, Any]:
-        if packed_dict["op_selection"]:
-            packed_dict["solid_selection_str"] = json.dumps(packed_dict["op_selection"]["__set__"])
-        else:
-            packed_dict["solid_selection_str"] = None
-        del packed_dict["op_selection"]
-        return packed_dict
+    def pack_items(self, *args, **kwargs):
+        for k, v in super().pack_items(*args, **kwargs):
+            if k == "op_selection":
+                new_v = json.dumps(v["__set__"]) if v else None
+                yield "solid_selection_str", new_v
+            else:
+                yield k, v
 
 
 @whitelist_for_serdes(
@@ -555,7 +555,7 @@ def build_reconstructable_job(
 
 
 def bootstrap_standalone_recon_job(pointer: CodePointer) -> ReconstructableJob:
-    # So this actually straps the the job for the sole
+    # So this actually straps the job for the sole
     # purpose of getting the job name. If we changed ReconstructableJob
     # to get the job on demand in order to get name, we could avoid this.
     job_def = job_def_from_pointer(pointer)

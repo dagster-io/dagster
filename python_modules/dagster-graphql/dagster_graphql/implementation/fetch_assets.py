@@ -9,6 +9,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
     cast,
@@ -42,10 +43,12 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
+    get_last_planned_storage_id,
     get_materialized_multipartitions,
     get_validated_partition_keys,
     is_cacheable_partition_type,
@@ -198,7 +201,7 @@ def get_asset_node_definition_collisions(
 
 
 def get_asset_nodes_by_asset_key(
-    graphene_info: "ResolveInfo", asset_keys: Optional[Sequence[AssetKey]] = None
+    graphene_info: "ResolveInfo", asset_keys: Optional[Set[AssetKey]] = None
 ) -> Mapping[AssetKey, "GrapheneAssetNode"]:
     """If multiple repositories have asset nodes for the same asset key, chooses the asset node that
     has an op.
@@ -263,8 +266,8 @@ def get_asset_nodes_by_asset_key(
     }
 
 
-def get_asset_nodes(graphene_info: "ResolveInfo"):
-    return get_asset_nodes_by_asset_key(graphene_info).values()
+def get_asset_nodes(graphene_info: "ResolveInfo", asset_keys: Optional[Set[AssetKey]] = None):
+    return get_asset_nodes_by_asset_key(graphene_info, asset_keys=asset_keys).values()
 
 
 def get_asset_node(
@@ -273,7 +276,7 @@ def get_asset_node(
     from ..schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
-    node = get_asset_nodes_by_asset_key(graphene_info, asset_keys=[asset_key]).get(asset_key, None)
+    node = get_asset_nodes_by_asset_key(graphene_info, asset_keys={asset_key}).get(asset_key, None)
     if not node:
         return GrapheneAssetNotFoundError(asset_key=asset_key)
     return node
@@ -288,7 +291,7 @@ def get_asset(
     check.inst_param(asset_key, "asset_key", AssetKey)
     instance = graphene_info.context.instance
 
-    asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info, asset_keys=[asset_key])
+    asset_nodes_by_asset_key = get_asset_nodes_by_asset_key(graphene_info, asset_keys={asset_key})
     asset_node = asset_nodes_by_asset_key.get(asset_key)
 
     if not asset_node and not instance.has_asset_key(asset_key):
@@ -304,13 +307,11 @@ def get_asset_materializations(
     limit: Optional[int] = None,
     before_timestamp: Optional[float] = None,
     after_timestamp: Optional[float] = None,
-    tags: Optional[Mapping[str, str]] = None,
     storage_ids: Optional[Sequence[int]] = None,
 ) -> Sequence[EventLogEntry]:
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
-    check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
 
     instance = graphene_info.context.instance
     records_filter = AssetRecordsFilter(
@@ -318,7 +319,6 @@ def get_asset_materializations(
         asset_partitions=partitions,
         before_timestamp=before_timestamp,
         after_timestamp=after_timestamp,
-        tags=tags,
         storage_ids=storage_ids,
     )
     if limit is None:
@@ -416,6 +416,7 @@ def get_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
+    batch_asset_record_loader: Optional[BatchAssetRecordLoader],
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
@@ -428,7 +429,11 @@ def get_partition_subsets(
         # When the "cached_status_data" column exists in storage, update the column to contain
         # the latest partition status values
         updated_cache_value = get_and_update_asset_status_cache_value(
-            instance, asset_key, partitions_def, dynamic_partitions_loader
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            batch_asset_record_loader,
         )
         materialized_subset = (
             updated_cache_value.deserialize_materialized_partition_subsets(partitions_def)
@@ -467,8 +472,19 @@ def get_partition_subsets(
             else partitions_def.empty_subset()
         )
 
+        if batch_asset_record_loader:
+            asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+        else:
+            asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
+
         failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-            instance, asset_key, partitions_def, dynamic_partitions_loader
+            instance,
+            asset_key,
+            partitions_def,
+            dynamic_partitions_loader,
+            last_planned_materialization_storage_id=get_last_planned_storage_id(
+                instance, asset_key, asset_record
+            ),
         )
 
         return materialized_subset, failed_subset, in_progress_subset

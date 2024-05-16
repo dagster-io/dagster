@@ -361,11 +361,11 @@ def project_prepare_for_deployment_command(
     file: Annotated[
         str,
         typer.Option(
-            help="The file containing `DbtProject`'s definitions to prepare.",
+            help="The file containing DbtProject definitions to prepare.",
         ),
     ],
 ) -> None:
-    """This command will invoke `prepare_for_deployment` on `DbtProject`s found in the target module/file."""
+    """This command will invoke ``prepare_for_deployment`` on :py:class:`DbtProject` found in the target module or file."""
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )

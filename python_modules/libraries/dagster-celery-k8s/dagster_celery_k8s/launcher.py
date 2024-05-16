@@ -339,6 +339,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             return CheckRunHealthResult(
                 WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
             )
+
+        if not status:
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, f"K8s job {job_name} could not be found"
+            )
         if status.failed:
             return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
         return CheckRunHealthResult(WorkerStatus.RUNNING)

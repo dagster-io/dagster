@@ -3,7 +3,13 @@ import {ReactNode} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {TopNavLink} from './AppTopNav';
-import {assetsPathMatcher, locationPathMatcher, settingsPathMatcher} from './activePathMatchers';
+import {
+  assetsPathMatcher,
+  automationPathMatcher,
+  jobsPathMatcher,
+  locationPathMatcher,
+  settingsPathMatcher,
+} from './activePathMatchers';
 import {DeploymentStatusIcon} from '../../nav/DeploymentStatusIcon';
 import {FeatureFlag, featureEnabled} from '../Flags';
 import {ShortcutHandler} from '../ShortcutHandler';
@@ -60,7 +66,7 @@ export const navLinks = () => {
     key: 'jobs',
     path: '/jobs',
     element: (
-      <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink">
+      <TopNavLink to="/jobs" data-cy="AppTopNav_JobsLink" isActive={jobsPathMatcher}>
         Jobs
       </TopNavLink>
     ),
@@ -70,12 +76,7 @@ export const navLinks = () => {
     key: 'assets',
     path: '/assets',
     element: (
-      <TopNavLink
-        to="/assets"
-        data-cy="AppTopNav_AssetsLink"
-        isActive={assetsPathMatcher}
-        exact={false}
-      >
+      <TopNavLink to="/assets" data-cy="AppTopNav_AssetsLink" isActive={assetsPathMatcher}>
         Assets
       </TopNavLink>
     ),
@@ -85,7 +86,11 @@ export const navLinks = () => {
     key: 'automation',
     path: '/automation',
     element: (
-      <TopNavLink to="/automation" data-cy="AppTopNav_AutomationLink">
+      <TopNavLink
+        to="/automation"
+        data-cy="AppTopNav_AutomationLink"
+        isActive={automationPathMatcher}
+      >
         Automation
       </TopNavLink>
     ),

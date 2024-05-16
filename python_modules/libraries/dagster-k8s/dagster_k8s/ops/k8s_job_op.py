@@ -227,7 +227,7 @@ def execute_k8s_job(
         job_spec_config (Optional[Dict[str, Any]]): Raw k8s config for the k8s job's job spec
             (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
             Keys can either snake_case or camelCase.Default: None.
-        k8s_job_name (Optional[str]): Overrides the name of the the k8s job. If not set, will be set
+        k8s_job_name (Optional[str]): Overrides the name of the k8s job. If not set, will be set
             to a unique name based on the current run ID and the name of the calling op. If set,
             make sure that the passed in name is a valid Kubernetes job name that does not
             already exist in the cluster.

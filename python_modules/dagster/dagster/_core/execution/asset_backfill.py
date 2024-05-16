@@ -16,6 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
 )
@@ -163,6 +164,9 @@ class AssetBackfillData(NamedTuple):
         return self._replace(
             latest_storage_id=latest_storage_id,
         )
+
+    def with_requested_runs_for_target_roots(self, requested_runs_for_target_roots: bool):
+        return self._replace(requested_runs_for_target_roots=requested_runs_for_target_roots)
 
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
@@ -727,10 +731,13 @@ def _submit_runs_and_update_backfill_in_chunks(
         if retryable_error_raised:
             # Code server became unavailable mid-backfill. Rewind the cursor back to the cursor
             # from the previous iteration, to allow next iteration to reevaluate the same
-            # events.
+            # events. If the previous iteration had not requested the target roots, this will also
+            # ensure the next iteration requests the target roots
             backfill_data_with_submitted_runs = (
                 backfill_data_with_submitted_runs.with_latest_storage_id(
                     previous_asset_backfill_data.latest_storage_id
+                ).with_requested_runs_for_target_roots(
+                    previous_asset_backfill_data.requested_runs_for_target_roots
                 )
             )
 
@@ -916,6 +923,7 @@ def execute_asset_backfill_iteration(
             asset_graph=asset_graph,
             run_tags=backfill.tags,
             backfill_start_time=backfill_start_time,
+            logger=logger,
         ):
             yield None
 
@@ -1145,13 +1153,16 @@ def _get_failed_and_downstream_asset_partitions(
     failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
         asset_graph.bfs_filter_asset_partitions(
             instance_queryer,
-            lambda asset_partitions, _: any(
-                asset_partition in asset_backfill_data.target_subset
-                for asset_partition in asset_partitions
+            lambda asset_partitions, _: (
+                any(
+                    asset_partition in asset_backfill_data.target_subset
+                    for asset_partition in asset_partitions
+                ),
+                "",
             ),
             _get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph),
             evaluation_time=backfill_start_time,
-        ),
+        )[0],
         asset_graph,
     )
     return failed_and_downstream_subset
@@ -1178,6 +1189,7 @@ def execute_asset_backfill_iteration_inner(
     instance_queryer: CachingInstanceQueryer,
     run_tags: Mapping[str, str],
     backfill_start_time: datetime,
+    logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
 
@@ -1190,9 +1202,15 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
-        initial_candidates.update(
-            asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
-        )
+        logger.info("Not all root assets have been requested, finding root assets.")
+        target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
+        # Because the code server may have failed while requesting roots, some roots may have
+        # already been requested. Checking here will reduce the amount of BFS work later in the iteration.
+        not_yet_requested = [
+            root for root in target_roots if root not in asset_backfill_data.requested_subset
+        ]
+        initial_candidates.update(not_yet_requested)
+        logger.info(f"Root assets that have not yet been requested: {initial_candidates}")
 
         yield None
 
@@ -1220,6 +1238,10 @@ def execute_asset_backfill_iteration_inner(
                 " AssetGraphSubset"
             )
 
+        logger.info(
+            f"Assets materialized since last tick {updated_materialized_subset - asset_backfill_data.materialized_subset}"
+        )
+
         parent_materialized_asset_partitions = set().union(
             *(
                 instance_queryer.asset_partitions_with_newly_updated_parents_and_new_cursor(
@@ -1239,21 +1261,36 @@ def execute_asset_backfill_iteration_inner(
 
         yield None
 
-    asset_partitions_to_request = asset_graph.bfs_filter_asset_partitions(
-        instance_queryer,
-        lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
-            candidates_unit=unit,
-            asset_partitions_to_request=visited,
-            asset_graph=asset_graph,
-            materialized_subset=updated_materialized_subset,
-            requested_subset=asset_backfill_data.requested_subset,
-            target_subset=asset_backfill_data.target_subset,
-            failed_and_downstream_subset=failed_and_downstream_subset,
-            dynamic_partitions_store=instance_queryer,
-            current_time=backfill_start_time,
-        ),
-        initial_asset_partitions=initial_candidates,
-        evaluation_time=backfill_start_time,
+    asset_partitions_to_request, not_requested_and_reasons = (
+        asset_graph.bfs_filter_asset_partitions(
+            instance_queryer,
+            lambda unit, visited: should_backfill_atomic_asset_partitions_unit(
+                candidates_unit=unit,
+                asset_partitions_to_request=visited,
+                asset_graph=asset_graph,
+                materialized_subset=updated_materialized_subset,
+                requested_subset=asset_backfill_data.requested_subset,
+                target_subset=asset_backfill_data.target_subset,
+                failed_and_downstream_subset=failed_and_downstream_subset,
+                dynamic_partitions_store=instance_queryer,
+                current_time=backfill_start_time,
+            ),
+            initial_asset_partitions=initial_candidates,
+            evaluation_time=backfill_start_time,
+        )
+    )
+
+    logger.info(
+        f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
+    )
+    not_requested_str = (
+        "\n"
+        + "\n".join([f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons])
+        if len(not_requested_and_reasons) > 0
+        else "None"
+    )
+    logger.info(
+        f"The following assets were considered for materialization but not requested:  {not_requested_str}"
     )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
@@ -1316,9 +1353,9 @@ def can_run_with_parent(
     asset_graph: RemoteAssetGraph,
     target_subset: AssetGraphSubset,
     asset_partitions_to_request_map: Mapping[AssetKey, AbstractSet[Optional[str]]],
-) -> bool:
+) -> Tuple[bool, str]:
     """Returns if a given candidate can be materialized in the same run as a given parent on
-    this tick.
+    this tick, and the reason it cannot be materialized, if applicable.
     """
     parent_target_subset = target_subset.get_asset_subset(parent.asset_key, asset_graph)
     candidate_target_subset = target_subset.get_asset_subset(candidate.asset_key, asset_graph)
@@ -1343,40 +1380,61 @@ def can_run_with_parent(
             and partition_mapping.end_offset == 0
         )
     )
-    return (
-        parent_node.backfill_policy == candidate_node.backfill_policy
-        and parent_node.priority_repository_handle is candidate_node.priority_repository_handle
-        and parent_node.partitions_def == candidate_node.partitions_def
-        and (
-            parent.partition_key in asset_partitions_to_request_map[parent.asset_key]
-            or parent in candidates_unit
+    if parent_node.backfill_policy != candidate_node.backfill_policy:
+        return (
+            False,
+            f"parent {parent_node.key} and {candidate_node.key} have different backfill policies",
         )
-        and (
-            # if there is a simple mapping between the parent and the child, then
-            # with the parent
-            has_identity_partition_mapping
-            # if there is not a simple mapping, we can only materialize this asset with its
-            # parent if...
-            or (
-                # there is a backfill policy for the parent
-                parent_node.backfill_policy is not None
-                # the same subset of parents is targeted as the child
-                and parent_target_subset.value == candidate_target_subset.value
-                and (
-                    # there is no limit on the size of a single run or...
-                    parent_node.backfill_policy.max_partitions_per_run is None
-                    # a single run can materialize all requested parent partitions
-                    or parent_node.backfill_policy.max_partitions_per_run
-                    > len(asset_partitions_to_request_map[parent.asset_key])
-                )
-                # all targeted parents are being requested this tick
-                and len(asset_partitions_to_request_map[parent.asset_key])
-                == parent_target_subset.size
+    if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
+        return (
+            False,
+            f"parent {parent_node.key} and {candidate_node.key} are in different code locations",
+        )
+    if parent_node.partitions_def != candidate_node.partitions_def:
+        return (
+            False,
+            f"parent {parent_node.key} and {candidate_node.key} have different partitions definitions",
+        )
+    if (
+        parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
+        and parent not in candidates_unit
+    ):
+        return (
+            False,
+            f"parent {parent.asset_key} with partition key {parent.partition_key} is not requested in this iteration",
+        )
+    if (
+        # if there is a simple mapping between the parent and the child, then
+        # with the parent
+        has_identity_partition_mapping
+        # if there is not a simple mapping, we can only materialize this asset with its
+        # parent if...
+        or (
+            # there is a backfill policy for the parent
+            parent_node.backfill_policy is not None
+            # the same subset of parents is targeted as the child
+            and parent_target_subset.value == candidate_target_subset.value
+            and (
+                # there is no limit on the size of a single run or...
+                parent_node.backfill_policy.max_partitions_per_run is None
+                # a single run can materialize all requested parent partitions
+                or parent_node.backfill_policy.max_partitions_per_run
+                > len(asset_partitions_to_request_map[parent.asset_key])
             )
-            # if all the above are true, then a single run can be launched this tick which
-            # will materialize all requested partitions
+            # all targeted parents are being requested this tick
+            and len(asset_partitions_to_request_map[parent.asset_key]) == parent_target_subset.size
         )
-    )
+    ):
+        return True, ""
+    else:
+        failed_reason = (
+            f"partition mapping between {parent_node.key} and {candidate_node.key} is not simple and "
+            f"{parent_node.key} does not meet requirements of: targeting the same partitions as "
+            f"{candidate_node.key}, have all of its partitions requested in this iteration, having "
+            "a backfill policy, and that backfill policy size limit is not exceeded by adding "
+            f"{candidate_node.key} to the run."
+        )
+        return False, failed_reason
 
 
 def should_backfill_atomic_asset_partitions_unit(
@@ -1389,19 +1447,23 @@ def should_backfill_atomic_asset_partitions_unit(
     failed_and_downstream_subset: AssetGraphSubset,
     dynamic_partitions_store: DynamicPartitionsStore,
     current_time: datetime,
-) -> bool:
+) -> Tuple[bool, str]:
     """Args:
     candidates_unit: A set of asset partitions that must all be materialized if any is
         materialized.
+
+    returns if the candidates_unit can be materialized in this tick of the backfill, and the reason
+    it cannot, if applicable
     """
     for candidate in candidates_unit:
-        if (
-            candidate not in target_subset
-            or candidate in failed_and_downstream_subset
-            or candidate in materialized_subset
-            or candidate in requested_subset
-        ):
-            return False
+        if candidate not in target_subset:
+            return False, f"{candidate} not targeted by backfill"
+        elif candidate in failed_and_downstream_subset:
+            return False, f"{candidate} in failed and downstream subset"
+        elif candidate in materialized_subset:
+            return False, f"{candidate} already materialized by backfill"
+        elif candidate in requested_subset:
+            return False, f"{candidate} already requested by backfill"
 
         parent_partitions_result = asset_graph.get_parents_partitions(
             dynamic_partitions_store, current_time, *candidate
@@ -1420,10 +1482,8 @@ def should_backfill_atomic_asset_partitions_unit(
             )
 
         for parent in parent_partitions_result.parent_partitions:
-            if (
-                parent in target_subset
-                and parent not in materialized_subset
-                and not can_run_with_parent(
+            if parent in target_subset and parent not in materialized_subset:
+                can_run, failed_reason = can_run_with_parent(
                     parent,
                     candidate,
                     candidates_unit,
@@ -1431,10 +1491,10 @@ def should_backfill_atomic_asset_partitions_unit(
                     target_subset,
                     asset_partitions_to_request_map,
                 )
-            ):
-                return False
+                if not can_run:
+                    return False, failed_reason
 
-    return True
+    return True, ""
 
 
 def _get_failed_asset_partitions(

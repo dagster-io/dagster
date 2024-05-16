@@ -54,5 +54,6 @@ export const OP_TYPE_SIGNATURE_FRAGMENT = gql`
 const TypeSignature = styled(Code)`
   padding: 4px;
   box-shadow: none;
+  font-size: 12px;
   line-height: 20px;
 `;

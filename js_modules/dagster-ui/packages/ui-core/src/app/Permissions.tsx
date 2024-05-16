@@ -6,6 +6,7 @@ import {
   PermissionsQuery,
   PermissionsQueryVariables,
 } from './types/Permissions.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 // used in tests, to ensure against permission renames.  Should make sure that the mapping in
 // extractPermissions is handled correctly
@@ -130,9 +131,12 @@ export const PermissionsContext = React.createContext<PermissionsContextType>({
 });
 
 export const PermissionsProvider = (props: {children: React.ReactNode}) => {
-  const {data, loading} = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
+  const queryResult = useQuery<PermissionsQuery, PermissionsQueryVariables>(PERMISSIONS_QUERY, {
     fetchPolicy: 'cache-first', // Not expected to change after initial load.
   });
+
+  const {data, loading} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'PermissionsQuery');
 
   const value = React.useMemo(() => {
     const unscopedPermissionsRaw = data?.unscopedPermissions || [];

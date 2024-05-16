@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from dagster._core.telemetry import log_action
@@ -18,7 +18,9 @@ def log_ui_telemetry_event(
     instance = graphene_info.context.instance
     metadata = json.loads(metadata)
     assert isinstance(metadata, dict)
-    client_datetime = datetime.utcfromtimestamp(int(client_time) / 1000)
+    client_datetime = datetime.fromtimestamp(int(client_time) / 1000, timezone.utc).replace(
+        tzinfo=None
+    )
     log_action(
         instance=instance,
         action=action,

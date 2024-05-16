@@ -71,7 +71,7 @@ A Dagster [job](/concepts/ops-jobs-graphs/jobs) is made up of a [graph](/concept
 
 ## Step 1: Defining the ops
 
-In Dagster, the minimum unit of computation is an op. This directly corresponds to an operator in Airflow. Here, we map the the operators of our example Airflow DAG `t1`, `t2`, and `t3` to their respective Dagster ops.
+In Dagster, the minimum unit of computation is an op. This directly corresponds to an operator in Airflow. Here, we map the operators of our example Airflow DAG `t1`, `t2`, and `t3` to their respective Dagster ops.
 
 ```python file=/integrations/airflow/tutorial_rewrite_dagster.py startafter=start_ops endbefore=end_ops
 @op

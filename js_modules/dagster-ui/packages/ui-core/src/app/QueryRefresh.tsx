@@ -8,19 +8,21 @@ import {isSearchVisible, useSearchVisibility} from '../search/useSearchVisibilit
 export const FIFTEEN_SECONDS = 15 * 1000;
 export const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
 
-export interface QueryRefreshState {
+export type QueryRefreshState = {
   nextFireMs: number | null | undefined;
   nextFireDelay: number; // seconds
   networkStatus: NetworkStatus;
   refetch: ObservableQuery['refetch'];
-}
+};
 
-export interface RefreshState<T = void> {
-  nextFireMs: number | null | undefined;
-  nextFireDelay: number; // seconds
-  refetch: () => Promise<T>;
-  loading: boolean;
-}
+export type RefreshState<T = void> =
+  | {
+      nextFireMs: number | null | undefined;
+      nextFireDelay: number; // seconds
+      refetch: () => Promise<T>;
+      loading: boolean;
+    }
+  | QueryRefreshState;
 
 /**
  * The default pollInterval feature of Apollo's useQuery is fine, but we want to add two features:
@@ -74,7 +76,7 @@ export function useQueryRefreshAtInterval(
   );
 }
 
-export function useRefreshAtInterval<T = void>({
+export function useRefreshAtInterval<T = any>({
   refresh,
   intervalMs,
   enabled = true,

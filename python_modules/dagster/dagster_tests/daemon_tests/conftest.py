@@ -9,6 +9,9 @@ from dagster._core.remote_representation import (
     ExternalRepository,
     InProcessCodeLocationOrigin,
 )
+from dagster._core.remote_representation.origin import (
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
@@ -154,7 +157,7 @@ def partitions_defs_changes_location_2_fixture(
 
 def base_job_name_changes_workspace_1_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
-        InProcessCodeLocationOrigin(
+        ManagedGrpcPythonEnvCodeLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 module_name="dagster_tests.daemon_tests.test_locations.base_job_name_changes_locations.location_1",
@@ -179,7 +182,7 @@ def base_job_name_changes_location_1_fixture(
 
 def base_job_name_changes_workspace_2_load_target(attribute=None):
     return InProcessTestWorkspaceLoadTarget(
-        InProcessCodeLocationOrigin(
+        ManagedGrpcPythonEnvCodeLocationOrigin(
             loadable_target_origin=LoadableTargetOrigin(
                 executable_path=sys.executable,
                 module_name="dagster_tests.daemon_tests.test_locations.base_job_name_changes_locations.location_2",

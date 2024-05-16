@@ -213,7 +213,7 @@ export const SensorDetails = ({
               </td>
               <td>
                 <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                  <span style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
+                  <span style={{fontFamily: FontFamily.monospace, fontSize: '14px'}}>
                     {cursor ? cursor : 'None'}
                   </span>
                   <Button icon={<Icon name="edit" />} onClick={() => setCursorEditing(true)}>

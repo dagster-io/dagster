@@ -5,7 +5,6 @@ import {createGlobalStyle} from 'styled-components';
 import {Colors} from './Color';
 import {Icon, IconName, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
-import {CoreColors} from '../palettes/CoreColors';
 
 export const GlobalToasterStyle = createGlobalStyle`
   .dagster-toaster {
@@ -14,7 +13,7 @@ export const GlobalToasterStyle = createGlobalStyle`
       border-radius: 8px;
       font-size: 14px;
       line-height: 22px;
-      color: ${CoreColors.White};
+      color: ${Colors.alwaysWhite()};
       background-color: ${Colors.accentGray()};
     }
 
@@ -30,11 +29,11 @@ export const GlobalToasterStyle = createGlobalStyle`
     }
 
     .bp4-icon-cross {
-      color: ${CoreColors.White} !important;
+      color: ${Colors.alwaysWhite()} !important;
     }
 
     ${IconWrapper} {
-      background-color: ${CoreColors.White} !important;
+      background-color: ${Colors.alwaysWhite()} !important;
     }
 
     .bp4-toast.bp4-intent-primary,

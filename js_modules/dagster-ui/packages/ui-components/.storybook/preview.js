@@ -1,14 +1,17 @@
 import {
   FontFamily,
-  GlobalInter,
-  GlobalInconsolata,
+  GlobalGeistMono,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
+  GlobalThemeStyle,
   Colors,
+  GlobalGeist,
 } from '../src';
+
+import {withThemeByClassName} from '@storybook/addon-themes';
 
 import {MemoryRouter} from 'react-router-dom';
 
@@ -64,8 +67,9 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
-      <GlobalInter />
-      <GlobalInconsolata />
+      <GlobalThemeStyle />
+      <GlobalGeist />
+      <GlobalGeistMono />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />
@@ -74,6 +78,15 @@ export const decorators = [
       <Story />
     </MemoryRouter>
   ),
+  withThemeByClassName({
+    themes: {
+      light: 'themeLight',
+      dark: 'themeDark',
+      system: 'themeSystem',
+    },
+    defaultTheme: 'system',
+    parentSelector: 'body',
+  }),
 ];
 
 export const parameters = {

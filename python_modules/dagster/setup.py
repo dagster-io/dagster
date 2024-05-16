@@ -115,6 +115,7 @@ setup(
         # https://github.com/pydantic/pydantic/issues/5821
         "pydantic>1.10.0,!= 1.10.7,<3",
         "rich",
+        "filelock",
         f"dagster-pipes{pin}",
     ],
     extras_require={
@@ -135,6 +136,7 @@ setup(
             "syrupy>=4.0.0",
             "tox==3.25.0",
             "morefs[asynclocal]",
+            "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
         ],
         "mypy": ["mypy==1.8.0"],

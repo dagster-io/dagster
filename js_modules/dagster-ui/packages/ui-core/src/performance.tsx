@@ -7,6 +7,11 @@ type TraceData = {
   startTime: number;
   endTime: number | null;
 };
+type TraceDataWithEnd = {
+  name: string;
+  startTime: number;
+  endTime: number;
+};
 
 export type Trace = {
   startTrace: (ts?: number) => void;
@@ -53,13 +58,13 @@ class PointToPointInstrumentation {
       console.log(`Finished trace ${traceId}`, trace);
     }
     if (_listeners.length) {
-      _listeners.forEach((listener) => listener(trace));
+      _listeners.forEach((listener) => listener(trace as TraceDataWithEnd));
     }
   }
 }
 
-const _listeners: Array<(trace: TraceData) => void> = [];
-export function registerTraceListener(listener: (trace: TraceData) => void) {
+const _listeners: Array<(trace: TraceDataWithEnd) => void> = [];
+export function registerTraceListener(listener: (trace: TraceDataWithEnd) => void) {
   _listeners.push(listener);
   return () => {
     const idx = _listeners.indexOf(listener);

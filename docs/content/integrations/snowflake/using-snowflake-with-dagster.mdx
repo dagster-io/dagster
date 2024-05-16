@@ -5,7 +5,7 @@ description: "Learn to integrate Snowflake with Dagster using a Snowflake resour
 
 # Integrating Snowflake with Dagster using resources
 
-This tutorial focuses on how to store and load Dagster's [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets) in Snowflake by using Dagster's <PyObject object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/concepts/resources) allows you to directly run SQL queries against tables within an asset's compute function.
+This tutorial focuses on how to store and load Dagster's [asset definitions](/concepts/assets/software-defined-assets) in Snowflake by using Dagster's <PyObject object="SnowflakeResource" module="dagster_snowflake" />. A [**resource**](/concepts/resources) allows you to directly run SQL queries against tables within an asset's compute function.
 
 By the end of the tutorial, you will:
 
@@ -139,7 +139,7 @@ In this example, we've defined an asset that fetches the Iris dataset as a Panda
 
 If you have existing tables in Snowflake and other assets defined in Dagster depend on those tables, you may want Dagster to be aware of those upstream dependencies.
 
-Making Dagster aware of these tables allows you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/assets/software-defined-assets#defining-external-asset-dependencies) for these tables. For example:
+Making Dagster aware of these tables allows you to track the full data lineage in Dagster. You can accomplish this by creating [source assets](/concepts/io-management/io-managers#using-io-managers-to-load-source-data) for these tables. For example:
 
 ```python file=/integrations/snowflake/source_asset.py
 from dagster import SourceAsset
@@ -284,7 +284,7 @@ defs = Definitions(
     href="/integrations/snowflake/reference"
   ></ArticleListItem>
   <ArticleListItem
-    title="Software-defined Assets"
+    title="Asset definitions"
     href="/concepts/assets/software-defined-assets"
   ></ArticleListItem>
   <ArticleListItem

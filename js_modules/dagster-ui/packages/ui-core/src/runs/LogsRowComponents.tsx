@@ -24,7 +24,7 @@ const bgcolorForLevel = (level: LogLevel) =>
   })[level];
 
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
-  font-size: 0.9em;
+  font-size: 12px;
   width: 100%;
   height: 100%;
   max-height: 17em;
@@ -104,7 +104,7 @@ export const OpColumnContainer = styled.div`
 `;
 
 const OpColumnTooltipStyle = JSON.stringify({
-  fontSize: '0.9em',
+  fontSize: '12px',
   fontFamily: FontFamily.monospace,
   color: Colors.textDefault(),
   background: Colors.backgroundDefault(),

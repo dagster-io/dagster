@@ -34,6 +34,7 @@ import {ShortcutHandler} from '../app/ShortcutHandler';
 import {PartitionDefinitionType, RepositorySelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {CreatePartitionDialog} from '../partitions/CreatePartitionDialog';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -156,7 +157,7 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
   const {basePath} = React.useContext(AppContext);
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const {data, refetch, loading} = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
+  const queryResult = useQuery<ConfigPartitionsQuery, ConfigPartitionsQueryVariables>(
     CONFIG_PARTITIONS_QUERY,
     {
       variables: {
@@ -169,6 +170,8 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
       fetchPolicy: 'network-only',
     },
   );
+  const {data, refetch, loading} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'ConfigPartitionsQuery');
 
   const sortOrderKey = `${SORT_ORDER_KEY_BASE}-${basePath}-${repoAddressAsHumanString(
     repoAddress,
@@ -176,6 +179,11 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
 
   const [sortOrder, setSortOrder] = useStateWithStorage<SortOrder>(sortOrderKey, (value: any) =>
     value === undefined ? 'asc' : value,
+  );
+
+  const doesAnyAssetHavePartitions = React.useMemo(
+    () => data?.assetNodes?.some((node) => !!node.partitionDefinition),
+    [data],
   );
 
   const partitions: Partition[] = React.useMemo(() => {
@@ -269,6 +277,10 @@ const ConfigEditorPartitionPicker = React.memo((props: ConfigEditorPartitionPick
     showCustomAlert({
       body: <PythonErrorInfo error={error} />,
     });
+  }
+
+  if (assetSelection?.length && !doesAnyAssetHavePartitions) {
+    return null;
   }
 
   // Note: We don't want this Suggest to be a fully "controlled" React component.

@@ -34,8 +34,10 @@ import {
 import {AssetObservationFragment} from './types/useRecentAssetEvents.types';
 import {ASSET_MATERIALIZATION_FRAGMENT, ASSET_OBSERVATION_FRAGMENT} from './useRecentAssetEvents';
 import {Timestamp} from '../app/time/Timestamp';
-import {LiveDataForNode, isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
+import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
+import {isHiddenAssetGroupJob, stepKeyForAsset} from '../asset-graph/Utils';
 import {ChangeReason, RunStatus, StaleStatus} from '../graphql/types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {linkToRunEvent, titleForRun} from '../runs/RunUtils';
@@ -47,11 +49,14 @@ export const AssetPartitionDetailLoader = (props: {assetKey: AssetKey; partition
     ASSET_PARTITION_DETAIL_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
+  useBlockTraceOnQueryResult(result, 'AssetPartitionDetailQuery');
 
   const stale = useQuery<AssetPartitionStaleQuery, AssetPartitionStaleQueryVariables>(
     ASSET_PARTITION_STALE_QUERY,
     {variables: {assetKey: props.assetKey, partitionKey: props.partitionKey}},
   );
+  useBlockTraceOnQueryResult(stale, 'AssetPartitionStaleQuery');
+
   const {materializations, observations, hasLineage, latestRunForPartition} = useMemo(() => {
     if (result.data?.assetNodeOrError?.__typename !== 'AssetNode') {
       return {
@@ -191,8 +196,8 @@ export const AssetPartitionDetail = ({
   hasLoadingState?: boolean;
   hasStaleLoadingState?: boolean;
   stepKey?: string;
-  staleCauses?: LiveDataForNode['staleCauses'];
-  staleStatus?: LiveDataForNode['staleStatus'];
+  staleCauses?: AssetStaleDataFragment['staleCauses'];
+  staleStatus?: AssetStaleDataFragment['staleStatus'];
   changedReasons?: ChangeReason[];
 }) => {
   const {latest, partition, all} = group;
@@ -367,6 +372,7 @@ export const AssetPartitionDetail = ({
         <AssetEventMetadataEntriesTable
           event={latest}
           observations={observationsAboutLatest}
+          repoAddress={repoAddress}
           showDescriptions
         />
       </Box>
@@ -375,7 +381,7 @@ export const AssetPartitionDetail = ({
         <AssetMaterializationUpstreamData timestamp={latest?.timestamp} assetKey={assetKey} />
       </Box>
       <Box padding={{top: 24}} flex={{direction: 'column', gap: 8}}>
-        <Subheading>System tags</Subheading>
+        <Subheading>Tags</Subheading>
         <AssetEventSystemTags event={latest} collapsible />
       </Box>
     </Box>

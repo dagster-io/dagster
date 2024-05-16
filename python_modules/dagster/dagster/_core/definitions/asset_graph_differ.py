@@ -114,7 +114,7 @@ class AssetGraphDiffer:
         corresponding base deployment asset.
         """
         if self.base_asset_graph is None:
-            # if the base asset graph is None, it is because the the asset graph in the branch deployment
+            # if the base asset graph is None, it is because the asset graph in the branch deployment
             # is new and doesn't exist in the base deployment. Thus all assets are new.
             return [ChangeReason.NEW]
 

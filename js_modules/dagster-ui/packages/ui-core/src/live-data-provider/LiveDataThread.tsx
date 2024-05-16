@@ -1,13 +1,12 @@
 import {LiveDataThreadManager} from './LiveDataThreadManager';
-import {BATCHING_INTERVAL} from './util';
+import {BATCHING_INTERVAL, BATCH_PARALLEL_FETCHES} from './util';
 
-export type LiveDataThreadID = 'default' | 'sidebar' | 'group-node' | 'context-menu';
+export type LiveDataThreadID = string;
 
 export class LiveDataThread<T> {
-  private isFetching: boolean = false;
   private listenersCount: {[key: string]: number};
-  private isLooping: boolean = false;
-  private interval?: ReturnType<typeof setTimeout>;
+  private activeFetches: number = 0;
+  private intervals: ReturnType<typeof setTimeout>[];
   private manager: LiveDataThreadManager<any>;
   public pollRate: number = 30000;
 
@@ -24,6 +23,7 @@ export class LiveDataThread<T> {
     this.queryKeys = queryKeys;
     this.listenersCount = {};
     this.manager = manager;
+    this.intervals = [];
   }
 
   public setPollRate(pollRate: number) {
@@ -37,6 +37,9 @@ export class LiveDataThread<T> {
   }
 
   public unsubscribe(key: string) {
+    if (!this.listenersCount[key]) {
+      return;
+    }
     this.listenersCount[key] -= 1;
     if (this.listenersCount[key] === 0) {
       delete this.listenersCount[key];
@@ -51,36 +54,36 @@ export class LiveDataThread<T> {
   }
 
   public startFetchLoop() {
-    if (this.isLooping) {
+    if (this.intervals.length === BATCH_PARALLEL_FETCHES) {
       return;
     }
-    this.isLooping = true;
     const fetch = () => {
       this._batchedQueryKeys();
     };
     setTimeout(fetch, BATCHING_INTERVAL);
-    this.interval = setInterval(fetch, 5000);
+    this.intervals.push(setInterval(fetch, 5000));
   }
 
   public stopFetchLoop() {
-    if (!this.isLooping) {
-      return;
-    }
-    this.isLooping = false;
-    clearInterval(this.interval);
-    this.interval = undefined;
+    this.intervals.forEach((id) => {
+      clearInterval(id);
+    });
+    this.intervals = [];
   }
 
   private async _batchedQueryKeys() {
-    const keys = this.manager.determineKeysToFetch(this.getObservedKeys());
-    if (!keys.length || this.isFetching) {
+    if (this.activeFetches >= BATCH_PARALLEL_FETCHES) {
       return;
     }
-    this.isFetching = true;
+    const keys = this.manager.determineKeysToFetch(this.getObservedKeys());
+    if (!keys.length) {
+      return;
+    }
+    this.activeFetches += 1;
     this.manager._markKeysRequested(keys);
 
     const doNextFetch = () => {
-      this.isFetching = false;
+      this.activeFetches -= 1;
       this._batchedQueryKeys();
     };
     try {

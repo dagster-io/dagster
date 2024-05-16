@@ -17,7 +17,6 @@ class AdhocRequestConfig(Config):
     end_date: str
 
 
-## Lesson 9
 @asset(
     deps=["taxi_trips", "taxi_zones"],
     compute_kind="Python",

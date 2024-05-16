@@ -45,19 +45,30 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+        # create a logger that will always include the backfill_id as an `extra`
+
+        backfill_logger = cast(
+            logging.Logger,
+            logging.LoggerAdapter(logger, extra={"backfill_id": backfill.backfill_id}),
+        )
+
         try:
             if backfill.is_asset_backfill:
                 yield from execute_asset_backfill_iteration(
-                    backfill, logger, workspace_process_context, instance
+                    backfill, backfill_logger, workspace_process_context, instance
                 )
             else:
                 yield from execute_job_backfill_iteration(
-                    backfill, logger, workspace_process_context, debug_crash_flags, instance
+                    backfill,
+                    backfill_logger,
+                    workspace_process_context,
+                    debug_crash_flags,
+                    instance,
                 )
         except Exception:
             error_info = DaemonErrorCapture.on_exception(
                 sys.exc_info(),
-                logger=logger,
+                logger=backfill_logger,
                 log_message=f"Backfill failed for {backfill.backfill_id}",
             )
             instance.update_backfill(

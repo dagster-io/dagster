@@ -20,7 +20,9 @@ export const AssetPlotsPage = (props: React.ComponentProps<typeof AssetPlots>) =
       >
         <Subheading>Asset plots</Subheading>
       </Box>
-      <AssetPlots {...props} />
+      <Box padding={{horizontal: 24}}>
+        <AssetPlots {...props} />
+      </Box>
     </div>
   );
 };

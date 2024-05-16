@@ -116,11 +116,13 @@ def my_job():
 
 Other run launchers will ignore the `dagster-k8s/config` tag.
 
-If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set on a job using the `dagster-k8s/config` tag will _not_ be propagated to any of those step pods.
+The default [executor](/deployment/executors) - <PyObject module="dagster" object="multi_or_in_process_executor" /> - will run each job in its own pod, executing each step in an individual process. If your Dagster job produces assets which have a short compute time (compared to the step overhead time), consider avoiding the step process creation cost by using the <PyObject module="dagster" object="in_process_executor" /> executor, which runs each step serially in a single process. This can be especially useful where parallelism is obtained through a <PyObject object="PartitionsDefinition" /> and is unnecessary within the job.
+
+For this use-case, the <PyObject module="dagster" object="in_process_executor" /> is more efficient than running each step in its own process. The <PyObject module="dagster_k8s" object="k8s_job_executor" /> is contraindicated, as the delay of scheduling and starting up a new Dagster pod to execute every step would significantly slow down overall execution time.
 
 ### Kubernetes configuration on every step in a run
 
-If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, you can use the `step_k8s_config` field on the executor to control the Kubernetes configuration for every step pod.
+If your Dagster job is configured with the <PyObject module="dagster_k8s" object="k8s_job_executor" /> that runs each step in its own pod, configuration that you set on a job using the `dagster-k8s/config` tag will _not_ be propagated to any of those step pods. Use the `step_k8s_config` field on the executor to control the Kubernetes configuration for every step pod.
 
 `step_k8s_config` is a dictionary with the following keys:
 

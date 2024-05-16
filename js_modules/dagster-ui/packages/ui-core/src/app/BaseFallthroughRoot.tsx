@@ -1,7 +1,8 @@
 import {Box, Colors, Spinner} from '@dagster-io/ui-components';
 import {useContext} from 'react';
-import {Redirect, Route, Switch} from 'react-router-dom';
+import {Redirect, Switch} from 'react-router-dom';
 
+import {Route} from './Route';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';

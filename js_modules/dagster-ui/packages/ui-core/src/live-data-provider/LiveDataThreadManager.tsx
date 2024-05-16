@@ -6,7 +6,7 @@ type Listener<T> = (stringKey: string, data?: T | undefined) => void;
 
 export class LiveDataThreadManager<T> {
   protected static _instance: LiveDataThreadManager<any>;
-  private threads: Partial<Record<LiveDataThreadID, LiveDataThread<T>>>;
+  private threads: Record<LiveDataThreadID, LiveDataThread<T>>;
   private lastFetchedOrRequested: Record<
     string,
     {fetched: number; requested?: undefined} | {requested: number; fetched?: undefined} | null
@@ -15,6 +15,7 @@ export class LiveDataThreadManager<T> {
   private pollRate: number = 30000;
   private listeners: Record<string, undefined | Listener<T>[]>;
   private isPaused: boolean;
+  private batchSize: number;
 
   private onSubscriptionsChanged(_allKeys: string[]) {}
   private onUpdatedOrUpdating() {}
@@ -23,13 +24,14 @@ export class LiveDataThreadManager<T> {
     return {};
   }
 
-  constructor(queryKeys: (keys: string[]) => Promise<Record<string, T>>) {
+  constructor(queryKeys: (keys: string[]) => Promise<Record<string, T>>, batchSize?: number) {
     this.queryKeys = queryKeys;
     this.lastFetchedOrRequested = {};
     this.cache = {};
     this.threads = {};
     this.listeners = {};
     this.isPaused = false;
+    this.batchSize = batchSize || BATCH_SIZE;
   }
 
   public setPollRate(pollRate: number) {
@@ -104,7 +106,7 @@ export class LiveDataThreadManager<T> {
   public determineKeysToFetch(keys: string[]) {
     const keysToFetch: string[] = [];
     const keysWithoutData: string[] = [];
-    while (keys.length && keysWithoutData.length < BATCH_SIZE) {
+    while (keys.length && keysWithoutData.length < this.batchSize) {
       const key = keys.shift()!;
       const isRequested = !!this.lastFetchedOrRequested[key]?.requested;
       if (isRequested) {

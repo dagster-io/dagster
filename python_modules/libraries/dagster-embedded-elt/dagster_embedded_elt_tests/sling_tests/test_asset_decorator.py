@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from pathlib import Path
 
@@ -6,6 +7,7 @@ import yaml
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    Config,
     FreshnessPolicy,
     JsonMetadataValue,
     file_relative_path,
@@ -217,6 +219,89 @@ def test_base_with_meta_config_translator():
     )
 
 
+def test_base_with_default_meta_translator():
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_default_meta/replication.yaml"
+    )
+    replication_config = yaml.safe_load(Path(replication_config_path).read_bytes())
+
+    @sling_assets(replication_config=replication_config_path)
+    def my_sling_assets(): ...
+
+    assert my_sling_assets.metadata_by_key == {
+        AssetKey(["target", "public", "accounts"]): {
+            "stream_config": JsonMetadataValue(data={"meta": {"dagster": {"group": "group_1"}}}),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+        AssetKey(["target", "departments"]): {
+            "stream_config": JsonMetadataValue(
+                data={
+                    "object": "departments",
+                    "source_options": {"empty_as_null": False},
+                    "meta": {
+                        "dagster": {
+                            "deps": ["foo_one", "foo_two"],
+                            "group": "group_2",
+                            "freshness_policy": {
+                                "maximum_lag_minutes": 0,
+                                "cron_schedule": "5 4 * * *",
+                                "cron_schedule_timezone": "UTC",
+                            },
+                        }
+                    },
+                }
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+        AssetKey(["target", "public", "transactions"]): {
+            "stream_config": JsonMetadataValue(
+                data={
+                    "mode": "incremental",
+                    "primary_key": "id",
+                    "update_key": "last_updated_at",
+                    "meta": {
+                        "dagster": {
+                            "group": "group_1",
+                            "description": "Example Description!",
+                            "auto_materialize_policy": True,
+                        }
+                    },
+                }
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+        AssetKey(["target", "public", "all_users"]): {
+            "stream_config": JsonMetadataValue(
+                data={
+                    "sql": 'select all_user_id, name\nfrom public."all_Users"\n',
+                    "object": "public.all_users",
+                    "meta": {"dagster": {"group": "group_1"}},
+                }
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+    }
+
+    assert my_sling_assets.group_names_by_key == {
+        AssetKey(["target", "public", "all_users"]): "group_1",
+        AssetKey(["target", "public", "accounts"]): "group_1",
+        AssetKey(["target", "public", "transactions"]): "group_1",
+        AssetKey(["target", "departments"]): "group_2",
+    }
+
+
 def test_base_with_custom_asset_key_prefix():
     @sling_assets(
         replication_config=file_relative_path(
@@ -232,4 +317,132 @@ def test_base_with_custom_asset_key_prefix():
         AssetKey(["custom", "public", "all_users"]),
         AssetKey(["custom", "departments"]),
         AssetKey(["custom", "public", "transactions"]),
+    }
+
+
+def test_subset_with_asset_selection(
+    csv_to_sqlite_dataworks_replication: SlingReplicationParam,
+    path_to_temp_sqlite_db: str,
+):
+    @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
+    def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
+        yield from sling.replicate(context=context)
+
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(type="file", name="SLING_FILE"),
+            SlingConnectionResource(
+                type="sqlite",
+                name="SLING_SQLITE",
+                connection_string=f"sqlite://{path_to_temp_sqlite_db}",
+            ),
+        ]
+    )
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        selection=[AssetKey(["target", "main", "orders"])],
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 1
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {AssetKey(["target", "main", "orders"])}
+
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        selection=[
+            AssetKey(["target", "main", "employees"]),
+            AssetKey(["target", "main", "products"]),
+        ],
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 2
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {
+        AssetKey(["target", "main", "employees"]),
+        AssetKey(["target", "main", "products"]),
+    }
+
+
+def test_subset_with_run_config(
+    csv_to_sqlite_dataworks_replication: SlingReplicationParam,
+    path_to_temp_sqlite_db: str,
+    path_to_dataworks_folder: str,
+):
+    class MyAssetConfig(Config):
+        context_streams: dict = {}
+
+    @sling_assets(replication_config=csv_to_sqlite_dataworks_replication)
+    def my_sling_assets(
+        context: AssetExecutionContext, sling: SlingResource, config: MyAssetConfig
+    ):
+        yield from sling.replicate(context=context)
+
+    sling_resource = SlingResource(
+        connections=[
+            SlingConnectionResource(type="file", name="SLING_FILE"),
+            SlingConnectionResource(
+                type="sqlite",
+                name="SLING_SQLITE",
+                connection_string=f"sqlite://{path_to_temp_sqlite_db}",
+            ),
+        ]
+    )
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        run_config={},
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 3  # no 'context_streams', no subset performed
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {
+        AssetKey(["target", "main", "employees"]),
+        AssetKey(["target", "main", "orders"]),
+        AssetKey(["target", "main", "products"]),
+    }
+
+    res = materialize(
+        [my_sling_assets],
+        resources={"sling": sling_resource},
+        run_config={
+            "ops": {
+                "my_sling_assets": {
+                    "config": {
+                        "context_streams": {
+                            f'file://{os.path.join(path_to_dataworks_folder, "Orders.csv")}': {
+                                "object": "main.orders"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+    )
+
+    assert res.success
+    asset_materializations = res.get_asset_materialization_events()
+    assert len(asset_materializations) == 1
+    found_asset_keys = {
+        mat.event_specific_data.materialization.asset_key  # pyright: ignore
+        for mat in asset_materializations
+    }
+    assert found_asset_keys == {
+        AssetKey(["target", "main", "orders"]),
     }

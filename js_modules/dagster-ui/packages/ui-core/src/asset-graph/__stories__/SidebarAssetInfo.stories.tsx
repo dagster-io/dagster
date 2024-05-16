@@ -9,7 +9,6 @@ import {ASSET_EVENTS_QUERY} from '../../assets/useRecentAssetEvents';
 import {
   AssetNode,
   AutoMaterializeDecisionType,
-  AutoMaterializePolicyType,
   RunStatus,
   buildAssetNode,
   buildAutoMaterializePolicy,
@@ -280,7 +279,6 @@ export const AssetWithPolicies = () => {
         buildPartitionHealthMock(MockAssetKey.path[0]!),
         buildSidebarQueryMock({
           autoMaterializePolicy: buildAutoMaterializePolicy({
-            policyType: AutoMaterializePolicyType.EAGER,
             rules: [
               buildAutoMaterializeRule({
                 decisionType: AutoMaterializeDecisionType.MATERIALIZE,

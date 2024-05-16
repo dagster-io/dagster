@@ -145,7 +145,9 @@ class AssetCheckResult(
 
         check_key = self.resolve_target_check_key(check_names_by_asset_key)
 
-        input_asset_info = step_context.get_input_asset_version_info(check_key.asset_key)
+        input_asset_info = step_context.maybe_fetch_and_get_input_asset_version_info(
+            check_key.asset_key
+        )
         from dagster._core.events import DagsterEventType
 
         if (

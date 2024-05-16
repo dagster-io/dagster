@@ -1480,3 +1480,4 @@ class TestRunStorage:
         )
         assert len(two_runs) == 1
         assert two_runs[0].run_id == one
+        assert two_runs[0].tags[REPOSITORY_LABEL_TAG] == "fake_repo_two@fake:fake"

@@ -1,6 +1,7 @@
 import logging
+import sys
 import time
-from typing import Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
+from typing import AbstractSet, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_job import is_base_asset_job_name
@@ -12,6 +13,7 @@ from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import (
     DagsterCodeLocationLoadError,
     DagsterInvalidSubsetError,
+    DagsterUserCodeProcessError,
     DagsterUserCodeUnreachableError,
 )
 from dagster._core.instance import DagsterInstance
@@ -40,9 +42,9 @@ def _get_implicit_job_name_for_assets(
     return next(job_name for job_name in job_names if is_base_asset_job_name(job_name))
 
 
-def _execution_plan_targets_asset_selection(
-    execution_plan_snapshot: ExecutionPlanSnapshot, asset_selection: Sequence[AssetKey]
-) -> bool:
+def _get_execution_plan_asset_keys(
+    execution_plan_snapshot: ExecutionPlanSnapshot,
+) -> AbstractSet[AssetKey]:
     output_asset_keys = set()
     for step in execution_plan_snapshot.steps:
         if step.key in execution_plan_snapshot.step_keys_to_execute:
@@ -50,7 +52,7 @@ def _execution_plan_targets_asset_selection(
                 asset_key = check.not_none(output.properties).asset_key
                 if asset_key:
                     output_asset_keys.add(asset_key)
-    return all(key in output_asset_keys for key in asset_selection)
+    return output_asset_keys
 
 
 def _get_job_execution_data_from_run_request(
@@ -130,7 +132,11 @@ def _create_asset_run(
     if not run_request.asset_selection:
         check.failed("Expected RunRequest to have an asset selection")
 
-    for _ in range(EXECUTION_PLAN_CREATION_RETRIES + 1):
+    for i in range(EXECUTION_PLAN_CREATION_RETRIES + 1):
+        should_retry = False
+        execution_data = None
+
+        # retry until the execution plan targets the asset selection
         try:
             # create a new request context for each run in case the code location server
             # is swapped out in the middle of the submission process
@@ -142,58 +148,80 @@ def _create_asset_run(
                 workspace=workspace,
                 run_request_execution_data_cache=run_request_execution_data_cache,
             )
-            check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
-            check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
 
-            # retry until the execution plan targets the asset selection
-            if _execution_plan_targets_asset_selection(
-                execution_data.external_execution_plan.execution_plan_snapshot,
-                check.not_none(run_request.asset_selection),
+        except (DagsterInvalidSubsetError, DagsterUserCodeProcessError):
+            logger.warning(
+                "Error while generating the execution plan, possibly because the code server is "
+                "out of sync with the daemon. The daemon periodically refreshes its representation "
+                f"of the workspace every {RELOAD_WORKSPACE_INTERVAL} seconds - pausing long enough "
+                "to ensure that that refresh will happen to bring them back in sync.",
+                exc_info=sys.exc_info(),
+            )
+            should_retry = True
+
+        check_for_debug_crash(debug_crash_flags, "EXECUTION_PLAN_CREATED")
+        check_for_debug_crash(debug_crash_flags, f"EXECUTION_PLAN_CREATED_{run_request_index}")
+
+        if not should_retry:
+            execution_plan_asset_keys = _get_execution_plan_asset_keys(
+                check.not_none(execution_data).external_execution_plan.execution_plan_snapshot
+            )
+
+            if not all(
+                key in execution_plan_asset_keys
+                for key in check.not_none(run_request.asset_selection)
             ):
-                external_job = execution_data.external_job
-                external_execution_plan = execution_data.external_execution_plan
-                partitions_def = execution_data.partitions_def
-
-                run = instance.create_run(
-                    job_snapshot=external_job.job_snapshot,
-                    execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
-                    parent_job_snapshot=external_job.parent_job_snapshot,
-                    job_name=external_job.name,
-                    run_id=run_id,
-                    resolved_op_selection=None,
-                    op_selection=None,
-                    run_config={},
-                    step_keys_to_execute=None,
-                    tags=run_request.tags,
-                    root_run_id=None,
-                    parent_run_id=None,
-                    status=DagsterRunStatus.NOT_STARTED,
-                    external_job_origin=external_job.get_external_origin(),
-                    job_code_origin=external_job.get_python_origin(),
-                    asset_selection=frozenset(run_request.asset_selection),
-                    asset_check_selection=None,
-                    asset_job_partitions_def=partitions_def,
+                logger.warning(
+                    f"Execution plan targeted the following keys: {execution_plan_asset_keys}, "
+                    "which did not include all assets on the run request, "
+                    "possibly because the code server is out of sync with the daemon. The daemon "
+                    "periodically refreshes its representation of the workspace every "
+                    f"{RELOAD_WORKSPACE_INTERVAL} seconds - pausing long enough "
+                    "to ensure that that refresh will happen to bring them back in sync.",
                 )
 
-                return run
-        except DagsterInvalidSubsetError:
-            pass
+                should_retry = True
 
-        logger.warning(
-            "Execution plan is out of sync with the workspace. Pausing run submission for "
-            f"{RELOAD_WORKSPACE_INTERVAL} to allow the execution plan to rebuild with the updated workspace."
-        )
-        # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
-        # at most once every interval
-        time.sleep(RELOAD_WORKSPACE_INTERVAL)
-        # Clear the execution plan cache as this data is no longer valid
-        run_request_execution_data_cache = {}
+        if not should_retry:
+            external_job = check.not_none(execution_data).external_job
+            external_execution_plan = check.not_none(execution_data).external_execution_plan
+            partitions_def = check.not_none(execution_data).partitions_def
 
-        # If the execution plan does not targets the asset selection, the asset graph
-        # likely is outdated and targeting the wrong job, refetch the asset
-        # graph from the workspace
-        workspace = workspace_process_context.create_request_context()
-        asset_graph = workspace.asset_graph
+            run = instance.create_run(
+                job_snapshot=external_job.job_snapshot,
+                execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+                parent_job_snapshot=external_job.parent_job_snapshot,
+                job_name=external_job.name,
+                run_id=run_id,
+                resolved_op_selection=None,
+                op_selection=None,
+                run_config={},
+                step_keys_to_execute=None,
+                tags=run_request.tags,
+                root_run_id=None,
+                parent_run_id=None,
+                status=DagsterRunStatus.NOT_STARTED,
+                external_job_origin=external_job.get_external_origin(),
+                job_code_origin=external_job.get_python_origin(),
+                asset_selection=frozenset(run_request.asset_selection),
+                asset_check_selection=None,
+                asset_job_partitions_def=partitions_def,
+            )
+
+            return run
+
+        if i < EXECUTION_PLAN_CREATION_RETRIES:
+            # Sleep for RELOAD_WORKSPACE_INTERVAL seconds since the workspace can be refreshed
+            # at most once every interval
+            time.sleep(RELOAD_WORKSPACE_INTERVAL)
+            # Clear the execution plan cache as this data is no longer valid
+            run_request_execution_data_cache = {}
+
+            # If the execution plan does not targets the asset selection, the asset graph
+            # likely is outdated and targeting the wrong job, refetch the asset
+            # graph from the workspace
+            workspace = workspace_process_context.create_request_context()
+            asset_graph = workspace.asset_graph
 
     check.failed(
         f"Failed to target asset selection {run_request.asset_selection} in run after retrying."

@@ -16,6 +16,21 @@ export type MetadataEntryFragment_BoolMetadataEntry = {
   description: string | null;
 };
 
+export type MetadataEntryFragment_CodeReferencesMetadataEntry = {
+  __typename: 'CodeReferencesMetadataEntry';
+  label: string;
+  description: string | null;
+  codeReferences: Array<
+    | {
+        __typename: 'LocalFileCodeReference';
+        filePath: string;
+        lineNumber: number;
+        label: string | null;
+      }
+    | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+  >;
+};
+
 export type MetadataEntryFragment_FloatMetadataEntry = {
   __typename: 'FloatMetadataEntry';
   floatValue: number | null;
@@ -176,6 +191,7 @@ export type MetadataEntryFragment_UrlMetadataEntry = {
 export type MetadataEntryFragment =
   | MetadataEntryFragment_AssetMetadataEntry
   | MetadataEntryFragment_BoolMetadataEntry
+  | MetadataEntryFragment_CodeReferencesMetadataEntry
   | MetadataEntryFragment_FloatMetadataEntry
   | MetadataEntryFragment_IntMetadataEntry
   | MetadataEntryFragment_JobMetadataEntry

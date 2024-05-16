@@ -32,7 +32,6 @@ from dagster import (
     op,
     resource,
 )
-from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.errors import (
@@ -50,6 +49,7 @@ from dagster._core.execution.context.invocation import (
     DirectOpExecutionContext,
     build_asset_context,
 )
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

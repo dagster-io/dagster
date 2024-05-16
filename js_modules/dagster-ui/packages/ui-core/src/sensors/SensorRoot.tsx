@@ -23,6 +23,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TickHistoryTimeline, TicksTable} from '../instigation/TickHistory';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -67,6 +68,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
+  useBlockTraceOnQueryResult(queryResult, 'SensorRootQuery');
   const selectionQueryResult = useQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
@@ -74,6 +76,7 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
     variables: {sensorSelector},
     notifyOnNetworkStatusChange: true,
   });
+  useBlockTraceOnQueryResult(selectionQueryResult, 'SensorAssetSelectionQuery');
 
   const refreshState1 = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const refreshState2 = useQueryRefreshAtInterval(selectionQueryResult, FIFTEEN_SECONDS);
@@ -230,16 +233,23 @@ export const SENSOR_ASSET_SELECTIONS_QUERY = gql`
 
   fragment SensorAssetSelectionFragment on AssetSelection {
     assetSelectionString
-    assets {
-      id
-      key {
-        path
-      }
-      definition {
-        id
-        autoMaterializePolicy {
-          policyType
+    assetsOrError {
+      ... on AssetConnection {
+        nodes {
+          id
+          key {
+            path
+          }
+          definition {
+            id
+            autoMaterializePolicy {
+              __typename
+            }
+          }
         }
+      }
+      ... on PythonError {
+        ...PythonErrorFragment
       }
     }
   }

@@ -4,6 +4,6 @@
 
 {{- if $_.Values.dagsterWebserver.enableReadOnly -}}
 ---
-{{$data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template "webserverReadOnly" true}}
+{{- $data := dict "Values" .Values "Release" .Release "Chart" .Chart "Template" .Template "webserverReadOnly" true -}}
 {{- include "deployment-webserver" $data -}}
 {{- end -}}

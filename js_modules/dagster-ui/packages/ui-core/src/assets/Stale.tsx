@@ -19,13 +19,14 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
+import {AssetStaleDataFragment} from '../asset-data/types/AssetStaleStatusDataProvider.types';
 import {LiveDataForNode, displayNameForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput, StaleCauseCategory, StaleStatus} from '../graphql/types';
 import {numberFormatter} from '../ui/formatters';
 
 type StaleDataForNode = {
-  staleCauses: LiveDataForNode['staleCauses'];
-  staleStatus: LiveDataForNode['staleStatus'];
+  staleCauses: AssetStaleDataFragment['staleCauses'];
+  staleStatus: AssetStaleDataFragment['staleStatus'];
 
   // May be omitted when showing staleness for a single partition
   partitionStats?: LiveDataForNode['partitionStats'];

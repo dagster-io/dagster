@@ -156,7 +156,10 @@ if TYPE_CHECKING:
         ExecutionStepSnap,
         JobSnapshot,
     )
-    from dagster._core.storage.asset_check_execution_record import AssetCheckInstanceSupport
+    from dagster._core.storage.asset_check_execution_record import (
+        AssetCheckExecutionRecord,
+        AssetCheckInstanceSupport,
+    )
     from dagster._core.storage.compute_log_manager import ComputeLogManager
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
@@ -962,6 +965,10 @@ class DagsterInstance(DynamicPartitionsStore):
     @property
     def global_op_concurrency_default_limit(self) -> Optional[int]:
         return self.get_settings("concurrency").get("default_op_concurrency_limit")
+
+    @property
+    def use_transitive_stale_causes(self) -> bool:
+        return True
 
     # python logs
 
@@ -1990,6 +1997,14 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
 
+    @traced
+    def get_latest_asset_check_evaluation_record(
+        self, asset_check_key: "AssetCheckKey"
+    ) -> Optional["AssetCheckExecutionRecord"]:
+        return self._event_storage.get_latest_asset_check_execution_by_key([asset_check_key]).get(
+            asset_check_key
+        )
+
     @public
     @traced
     def get_event_records(
@@ -2876,13 +2891,14 @@ class DagsterInstance(DynamicPartitionsStore):
         stored_state = self.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
-        new_instigator_data = SensorInstigatorData(
-            min_interval=external_sensor.min_interval_seconds,
-            sensor_type=external_sensor.sensor_type,
-        )
         new_status = InstigatorStatus.DECLARED_IN_CODE
 
         if not stored_state:
+            new_instigator_data = SensorInstigatorData(
+                min_interval=external_sensor.min_interval_seconds,
+                sensor_type=external_sensor.sensor_type,
+            )
+
             reset_state = self.add_instigator_state(
                 state=InstigatorState(
                     external_sensor.get_external_origin(),
@@ -2892,9 +2908,7 @@ class DagsterInstance(DynamicPartitionsStore):
                 )
             )
         else:
-            reset_state = self.update_instigator_state(
-                state=stored_state.with_status(new_status).with_data(new_instigator_data)
-            )
+            reset_state = self.update_instigator_state(state=stored_state.with_status(new_status))
 
         return reset_state
 
@@ -3125,42 +3139,36 @@ class DagsterInstance(DynamicPartitionsStore):
         before_cursor: Optional[int] = None,
         after_cursor: Optional[int] = None,
     ) -> Optional["EventLogRecord"]:
-        from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import EventRecordsFilter
+        from dagster._core.storage.event_log.base import AssetRecordsFilter
 
-        # When we cant don't know whether the requested key corresponds to a source or regular
-        # asset, we need to retrieve both the latest observation and materialization for all assets.
-        # If there is a materialization, it's a regular asset and we can ignore the observation.
+        records_filter = AssetRecordsFilter(
+            asset_key=key,
+            asset_partitions=[partition_key] if partition_key else None,
+            before_storage_id=before_cursor,
+            after_storage_id=after_cursor,
+        )
 
-        observation: Optional[EventLogRecord] = None
-        if is_source or is_source is None:
-            observations = self.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_OBSERVATION,
-                    asset_key=key,
-                    asset_partitions=[partition_key] if partition_key else None,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                ),
-                limit=1,
+        if is_source is True:
+            # this is a source asset, fetch latest observation record
+            return next(iter(self.fetch_observations(records_filter, limit=1).records), None)
+
+        elif is_source is False:
+            # this is not a source asset, fetch latest materialization record
+            return next(iter(self.fetch_materializations(records_filter, limit=1).records), None)
+
+        else:
+            assert is_source is None
+            # if is_source is None, the requested key could correspond to either a source asset or
+            # materializable asset. If there is a non-null materialization, we are dealing with a
+            # materializable asset and should just return that.  If not, we should check for any
+            # observation records that may match.
+
+            materialization = next(
+                iter(self.fetch_materializations(records_filter, limit=1).records), None
             )
-            observation = next(iter(observations), None)
-
-        materialization: Optional[EventLogRecord] = None
-        if not is_source:
-            materializations = self.get_event_records(
-                EventRecordsFilter(
-                    event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                    asset_key=key,
-                    asset_partitions=[partition_key] if partition_key else None,
-                    before_cursor=before_cursor,
-                    after_cursor=after_cursor,
-                ),
-                limit=1,
-            )
-            materialization = next(iter(materializations), None)
-
-        return materialization or observation
+            if materialization:
+                return materialization
+            return next(iter(self.fetch_observations(records_filter, limit=1).records), None)
 
     @public
     def get_latest_materialization_code_versions(

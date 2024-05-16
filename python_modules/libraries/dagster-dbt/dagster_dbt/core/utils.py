@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from concurrent.futures import Future
 from typing import Any, Iterator, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
@@ -282,3 +283,20 @@ def parse_manifest(path: str, target_path: str = DEFAULT_DBT_TARGET_PATH) -> Map
             return json.load(file)
     except FileNotFoundError:
         raise DagsterDbtCliOutputsNotFoundError(path=manifest_path)
+
+
+def get_future_completion_state_or_err(futures: List[Union[Future, Any]]) -> bool:
+    """Given a list of futures (and potentially other objects), return True if all futures are completed.
+    If any future has an exception, raise the exception.
+    """
+    for future in futures:
+        if not isinstance(future, Future):
+            continue
+
+        if not future.done():
+            return False
+
+        exception = future.exception()
+        if exception:
+            raise exception
+    return True

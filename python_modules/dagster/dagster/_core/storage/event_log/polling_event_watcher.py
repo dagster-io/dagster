@@ -48,11 +48,16 @@ class SqlPollingEventWatcher:
         return _has_run_id
 
     def watch_run(
-        self, run_id: str, cursor: Optional[str], callback: Callable[[EventLogEntry, str], None]
-    ):
+        self,
+        run_id: str,
+        cursor: Optional[str],
+        callback: Callable[[EventLogEntry, str], None],
+    ) -> None:
         run_id = check.str_param(run_id, "run_id")
         cursor = check.opt_str_param(cursor, "cursor")
         callback = check.callable_param(callback, "callback")
+        check.invariant(not self._disposed, "Attempted to watch_run after close")
+
         with self._dict_lock:
             if run_id not in self._run_id_to_watcher_dict:
                 self._run_id_to_watcher_dict[run_id] = SqlPollingRunIdEventWatcherThread(
@@ -62,7 +67,11 @@ class SqlPollingEventWatcher:
                 self._run_id_to_watcher_dict[run_id].start()
             self._run_id_to_watcher_dict[run_id].add_callback(cursor, callback)
 
-    def unwatch_run(self, run_id: str, handler: Callable[[EventLogEntry, str], None]):
+    def unwatch_run(
+        self,
+        run_id: str,
+        handler: Callable[[EventLogEntry, str], None],
+    ) -> None:
         run_id = check.str_param(run_id, "run_id")
         handler = check.callable_param(handler, "handler")
         with self._dict_lock:
@@ -71,10 +80,7 @@ class SqlPollingEventWatcher:
                 if self._run_id_to_watcher_dict[run_id].should_thread_exit.is_set():
                     del self._run_id_to_watcher_dict[run_id]
 
-    def __del__(self):
-        self.close()
-
-    def close(self):
+    def close(self) -> None:
         if not self._disposed:
             self._disposed = True
             with self._dict_lock:
@@ -146,7 +152,7 @@ class SqlPollingRunIdEventWatcherThread(threading.Thread):
             if not self._callback_fn_list:
                 self._should_thread_exit.set()
 
-    def run(self):
+    def run(self) -> None:
         """Polling function to update Observers with EventLogEntrys from Event Log DB.
         Wakes every POLLING_CADENCE &
             1. executes a SELECT query to get new EventLogEntrys

@@ -8,6 +8,7 @@ import {
   PreviousRunsForSensorQueryVariables,
 } from './types/SensorPreviousRuns.types';
 import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
@@ -54,6 +55,7 @@ export const SensorPreviousRuns = ({
     },
     pageSize: RUNS_LIMIT,
   });
+  useBlockTraceOnQueryResult(queryResult, 'PreviousRunsForSensorQuery');
   // Only refresh if we're on the first page
   useQueryRefreshAtInterval(queryResult, !paginationProps.hasPrevCursor ? 10000 : 60 * 60 * 1000);
 

@@ -4,8 +4,12 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, cast
 
+import pydantic
 import pytest
 from dagster import (
+    In,
+    Nothing,
+    Out,
     job,
     materialize,
     op,
@@ -314,14 +318,17 @@ def test_dbt_cli_debug_execution(
     reason="`dbt retry` with `--target-path` support is only available in `dbt-core>=1.7.9`",
 )
 def test_dbt_retry_execution(
-    test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
+    monkeypatch: pytest.MonkeyPatch,
+    test_jaffle_shop_manifest: Dict[str, Any],
+    dbt: DbtCliResource,
+    testrun_uid: str,
 ) -> None:
+    monkeypatch.setenv(
+        "DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH", f"target/{testrun_uid}.duckdb"
+    )
+
     @dbt_assets(manifest=test_jaffle_shop_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        test_jaffle_shop_path.joinpath(
-            os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH"]
-        ).unlink()
-
         dbt_invocation = dbt.cli(["run"], context=context, raise_on_error=False)
 
         assert not dbt_invocation.is_successful()
@@ -363,8 +370,8 @@ def test_dbt_cli_asset_selection(
 ) -> None:
     dbt_select = " ".join(
         [
-            "fqn:jaffle_shop.raw_customers",
-            "fqn:jaffle_shop.staging.stg_customers",
+            "jaffle_shop.raw_customers",
+            "jaffle_shop.staging.stg_customers",
         ]
     )
 
@@ -384,8 +391,8 @@ def test_dbt_cli_subsetted_execution(
     test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
 ) -> None:
     dbt_select = [
-        "fqn:jaffle_shop.raw_customers",
-        "fqn:jaffle_shop.staging.stg_customers",
+        "jaffle_shop.raw_customers",
+        "jaffle_shop.staging.stg_customers",
     ]
 
     @dbt_assets(manifest=test_jaffle_shop_manifest)
@@ -451,6 +458,7 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
     result = materialize(
         [my_dbt_assets], resources={"dbt": dbt}, selection="orders", raise_on_error=False
     )
+    assert len(dbt.get_state_args()) == 0
     assert not result.success
 
     # Defer works after copying the manifest into the state directory.
@@ -461,6 +469,8 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
     result = materialize([my_dbt_assets], resources={"dbt": dbt}, selection="orders")
     assert result.success
 
+    assert len(dbt.get_state_args()) == 2
+
 
 def test_dbt_cli_op_execution(
     test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource
@@ -469,9 +479,17 @@ def test_dbt_cli_op_execution(
     def my_dbt_op_yield_events(context: OpExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], manifest=test_jaffle_shop_manifest, context=context).stream()
 
+    @op(out=Out(Nothing))
+    def my_dbt_op_yield_events_with_downstream(context: OpExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], manifest=test_jaffle_shop_manifest, context=context).stream()
+
+    @op(ins={"depends_on": In(dagster_type=Nothing)})
+    def my_downstream_op(): ...
+
     @job
     def my_dbt_job_yield_events():
         my_dbt_op_yield_events()
+        my_downstream_op(depends_on=my_dbt_op_yield_events_with_downstream())
 
     result = my_dbt_job_yield_events.execute_in_process(resources={"dbt": dbt})
     assert result.success
@@ -482,3 +500,15 @@ def test_dbt_adapter(dbt: DbtCliResource) -> None:
     assert dbt.cli(["build"]).adapter
     assert dbt.cli(["parse"]).adapter
     assert dbt.cli(["source", "freshness"]).adapter
+
+
+def test_custom_subclass():
+    CustomDbtCliResource = pydantic.create_model(
+        "CustomDbtCliResource",
+        __base__=DbtCliResource,
+        custom_field=(str, ...),
+    )
+    custom = CustomDbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path), custom_field="custom_value"
+    )
+    assert isinstance(custom, DbtCliResource)

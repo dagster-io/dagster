@@ -1,0 +1,23 @@
+version: 2
+
+semantic_models:
+  - name: customers
+    description: Customer grain mart.
+    model: ref('customers')
+    entities:
+      - name: customer
+        expr: customer_id
+        type: primary
+    measures:
+      - name: total_order_amount
+        description: Total count of orders per customer.
+        agg: sum
+      - name: total_order_amount
+        agg: sum
+        description: Gross customer lifetime spend inclusive of taxes.
+
+saved_queries:
+  - name: customers_query
+    description: Customer query
+    label: Customer query
+    query_params: {}

@@ -8,16 +8,18 @@ import pytest
 from dagster import (
     asset,
 )
+from dagster._check import CheckError
+from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
+    build_last_update_freshness_checks,
+)
+from dagster._core.definitions.asset_check_factories.utils import (
+    unique_id_from_asset_keys,
+)
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.freshness_checks.last_update import (
-    build_last_update_freshness_checks,
-)
-from dagster._core.definitions.freshness_checks.utils import unique_id_from_asset_keys
 from dagster._core.definitions.metadata import (
-    FloatMetadataValue,
     JsonMetadataValue,
     TimestampMetadataValue,
 )
@@ -36,7 +38,7 @@ def test_params() -> None:
 
     check = build_last_update_freshness_checks(
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert (
         check.node_def.name
         == f"freshness_check_{hashlib.md5(str(my_asset.key).encode()).hexdigest()[:8]}"
@@ -47,10 +49,12 @@ def test_params() -> None:
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
     assert next(iter(check_specs)).metadata == {
-        "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/freshness_timezone": "UTC",
-        }
+        "dagster/freshness_params": JsonMetadataValue(
+            {
+                "lower_bound_delta_seconds": 600,
+                "timezone": "UTC",
+            }
+        )
     }
 
     @asset
@@ -59,7 +63,7 @@ def test_params() -> None:
 
     other_check = build_last_update_freshness_checks(
         assets=[other_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(other_check, AssetChecksDefinition)
     assert check.node_def.name != other_check.node_def.name
 
@@ -67,32 +71,34 @@ def test_params() -> None:
         assets=[my_asset],
         deadline_cron="0 0 * * *",
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_specs)).metadata == {
-        "dagster/freshness_params": {
-            "dagster/lower_bound_delta": 600,
-            "dagster/deadline_cron": "0 0 * * *",
-            "dagster/freshness_timezone": "UTC",
-        }
+        "dagster/freshness_params": JsonMetadataValue(
+            {
+                "lower_bound_delta_seconds": 600,
+                "deadline_cron": "0 0 * * *",
+                "timezone": "UTC",
+            }
+        )
     }
 
     check = build_last_update_freshness_checks(
         assets=[my_asset.key], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
 
     src_asset = SourceAsset("source_asset")
     check = build_last_update_freshness_checks(
         assets=[src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == src_asset.key
 
     check = build_last_update_freshness_checks(
         assets=[my_asset, src_asset], lower_bound_delta=datetime.timedelta(minutes=10)
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert {check_key.asset_key for check_key in check.check_keys} == {my_asset.key, src_asset.key}
 
@@ -101,23 +107,30 @@ def test_params() -> None:
             assets=[my_asset, my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
         )
 
+    with pytest.raises(CheckError, match="Invalid cron string."):
+        build_last_update_freshness_checks(
+            assets=[my_asset],
+            deadline_cron="very invalid",
+            lower_bound_delta=datetime.timedelta(minutes=10),
+        )
+
     check = build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
         deadline_cron="0 0 * * *",
         timezone="UTC",
-    )
+    )[0]
     assert isinstance(check, AssetChecksDefinition)
     assert next(iter(check.check_keys)).asset_key == my_asset.key
 
     check_multiple_assets = build_last_update_freshness_checks(
         assets=[my_asset, other_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     check_multiple_assets_switched_order = build_last_update_freshness_checks(
         assets=[other_asset, my_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
     unique_id = unique_id_from_asset_keys([my_asset.key, other_asset.key])
     unique_id_switched_order = unique_id_from_asset_keys([other_asset.key, my_asset.key])
@@ -148,7 +161,7 @@ def test_different_event_types(
         check = build_last_update_freshness_checks(
             assets=[my_asset],
             lower_bound_delta=lower_bound_delta,
-        )
+        )[0]
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
@@ -165,7 +178,7 @@ def test_observation_descriptions(
     check = build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=lower_bound_delta,
-    )
+    )[0]
     # First, create an event that is outside of the allowed time window.
     with pendulum_freeze_time(
         start_time.subtract(seconds=int(lower_bound_delta.total_seconds() + 1))
@@ -179,7 +192,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is in an unknown state. Expected an update within the last 10 minutes, but we have not received an observation in that time, so we can't determine the state of the asset.",
+            description_match="Asset is overdue for an update.",
         )
 
         # Create an observation event within the allotted time window, but with an out of date last update time. Description should change.
@@ -197,7 +210,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 10 minutes.",
+            description_match="Asset is overdue for an update.",
         )
 
         # Create an observation event within the allotted time window, with an up to date last update time. Description should change.
@@ -213,7 +226,7 @@ def test_observation_descriptions(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 10 minutes, and found an update 9 minutes ago.",
+            description_match="Asset is currently fresh.",
         )
 
 
@@ -237,7 +250,7 @@ def test_check_result_cron(
         deadline_cron=deadline_cron,
         lower_bound_delta=lower_bound_delta,
         timezone=timezone,
-    )
+    )[0]
 
     freeze_datetime = start_time
     with pendulum_freeze_time(freeze_datetime):
@@ -248,19 +261,23 @@ def test_check_result_cron(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 1 hour, 10 minutes.",
+            description_match="Asset has never been observed/materialized.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/deadline_cron": deadline_cron,
-                        "dagster/freshness_timezone": timezone,
-                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "deadline_cron": deadline_cron,
+                        "timezone": timezone,
+                        "lower_bound_delta_seconds": lower_bound_delta.total_seconds(),
                     }
                 ),
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC")
+                    .subtract(minutes=10)
+                    .timestamp()
+                ),
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
                     value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
                 ),
-                "dagster/overdue_seconds": FloatMetadataValue(3600.0),
             },
         )
 
@@ -282,20 +299,26 @@ def test_check_result_cron(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 1 hour, 10 minutes, and found an update 1 hour, 9 minutes ago.",
+            description_match="Asset is currently fresh.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/deadline_cron": deadline_cron,
-                        "dagster/freshness_timezone": timezone,
-                        "dagster/lower_bound_delta": lower_bound_delta.total_seconds(),
+                        "deadline_cron": deadline_cron,
+                        "timezone": timezone,
+                        "lower_bound_delta_seconds": lower_bound_delta.total_seconds(),
                     }
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
                     value=lower_bound.add(minutes=1).timestamp()
                 ),
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
+                "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
                     value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                ),
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    value=lower_bound.timestamp()
+                ),
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    value=pendulum.datetime(2021, 1, 2, 0, 0, 0, tz="UTC").timestamp()
                 ),
             },
         )
@@ -334,7 +357,7 @@ def test_check_result_bound_only(
     check = build_last_update_freshness_checks(
         assets=[my_asset],
         lower_bound_delta=lower_bound_delta,
-    )
+    )[0]
 
     freeze_datetime = start_time
     with pendulum_freeze_time(freeze_datetime):
@@ -345,18 +368,16 @@ def test_check_result_bound_only(
             [check],
             AssetCheckSeverity.WARN,
             False,
-            description_match="Asset is overdue. Expected an update within the last 10 minutes.",
+            description_match="Asset has never been observed/materialized.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/lower_bound_delta": 600,
-                        "dagster/freshness_timezone": "UTC",
+                        "lower_bound_delta_seconds": 600,
+                        "timezone": "UTC",
                     }
                 ),
-                # Indicates that no records exist.
-                "dagster/overdue_seconds": FloatMetadataValue(0.0),
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC").timestamp()
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    start_time.subtract(minutes=10).timestamp()
                 ),
             },
         )
@@ -369,7 +390,8 @@ def test_check_result_bound_only(
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, False)
 
     # Go back in time and add an event within the allowed time window.
-    with pendulum_freeze_time(lower_bound.add(minutes=1)):
+    update_time = lower_bound.add(minutes=1)
+    with pendulum_freeze_time(update_time):
         add_new_event(instance, my_asset.key)
     # Now we expect the check to pass.
     with pendulum_freeze_time(freeze_datetime):
@@ -379,20 +401,22 @@ def test_check_result_bound_only(
             [check],
             AssetCheckSeverity.WARN,
             True,
-            description_match="Asset is fresh. Expected an update within the last 10 minutes, and found an update 9 minutes ago.",
+            description_match="Asset is currently fresh.",
             metadata_match={
                 "dagster/freshness_params": JsonMetadataValue(
                     {
-                        "dagster/lower_bound_delta": 600,
-                        "dagster/freshness_timezone": "UTC",
+                        "lower_bound_delta_seconds": 600,
+                        "timezone": "UTC",
                     }
                 ),
-                # Since no freshness cron, deadline is the current time.
-                "dagster/overdue_deadline_timestamp": TimestampMetadataValue(
-                    value=freeze_datetime.timestamp()
+                "dagster/fresh_until_timestamp": TimestampMetadataValue(
+                    value=update_time.timestamp() + 600
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
-                    value=lower_bound.add(minutes=1).timestamp()
+                    value=update_time.timestamp()
+                ),
+                "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
+                    value=lower_bound.timestamp()
                 ),
             },
         )
@@ -414,7 +438,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     check = build_last_update_freshness_checks(
         assets=[my_asset, my_other_asset],
         lower_bound_delta=datetime.timedelta(minutes=10),
-    )
+    )[0]
     single_check_job = define_asset_job(
         "the_job", selection=AssetChecksForAssetKeysSelection(selected_asset_keys=[my_asset.key])
     )

@@ -2,6 +2,7 @@ import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import {MemoryRouter, Route, Switch} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
 import {AnalyticsContext, GenericAnalytics, useTrackEvent, useTrackPageView} from '../analytics';
 
@@ -32,15 +33,17 @@ describe('Analytics', () => {
       const mockAnalytics = createMockAnalytics();
 
       render(
-        <MemoryRouter initialEntries={['/foo/hello']}>
-          <Test mockAnalytics={mockAnalytics}>
-            <Switch>
-              <Route path="/foo/:bar?">
-                <Page />
-              </Route>
-            </Switch>
-          </Test>
-        </MemoryRouter>,
+        <RecoilRoot>
+          <MemoryRouter initialEntries={['/foo/hello']}>
+            <Test mockAnalytics={mockAnalytics}>
+              <Switch>
+                <Route path="/foo/:bar?">
+                  <Page />
+                </Route>
+              </Switch>
+            </Test>
+          </MemoryRouter>
+        </RecoilRoot>,
       );
 
       jest.advanceTimersByTime(400);
@@ -68,15 +71,17 @@ describe('Analytics', () => {
       const mockAnalytics = createMockAnalytics();
 
       render(
-        <MemoryRouter initialEntries={['/foo/hello']}>
-          <Test mockAnalytics={mockAnalytics}>
-            <Switch>
-              <Route path="/foo/:bar?">
-                <Page />
-              </Route>
-            </Switch>
-          </Test>
-        </MemoryRouter>,
+        <RecoilRoot>
+          <MemoryRouter initialEntries={['/foo/hello']}>
+            <Test mockAnalytics={mockAnalytics}>
+              <Switch>
+                <Route path="/foo/:bar?">
+                  <Page />
+                </Route>
+              </Switch>
+            </Test>
+          </MemoryRouter>
+        </RecoilRoot>,
       );
 
       const button = screen.getByRole('button');
@@ -103,17 +108,19 @@ describe('Analytics', () => {
       const overrideAnalytics = createMockAnalytics();
 
       render(
-        <MemoryRouter initialEntries={['/foo/hello']}>
-          <Test mockAnalytics={mockAnalytics}>
-            <Test mockAnalytics={overrideAnalytics}>
-              <Switch>
-                <Route path="/foo/:bar?">
-                  <Page />
-                </Route>
-              </Switch>
+        <RecoilRoot>
+          <MemoryRouter initialEntries={['/foo/hello']}>
+            <Test mockAnalytics={mockAnalytics}>
+              <Test mockAnalytics={overrideAnalytics}>
+                <Switch>
+                  <Route path="/foo/:bar?">
+                    <Page />
+                  </Route>
+                </Switch>
+              </Test>
             </Test>
-          </Test>
-        </MemoryRouter>,
+          </MemoryRouter>
+        </RecoilRoot>,
       );
 
       jest.advanceTimersByTime(400);

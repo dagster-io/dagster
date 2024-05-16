@@ -228,6 +228,7 @@ def get_structlog_shared_processors():
         structlog.stdlib.add_log_level,
         timestamper,
         structlog.processors.StackInfoRenderer(),
+        structlog.stdlib.ExtraAdder(),
     ]
 
     return shared_processors

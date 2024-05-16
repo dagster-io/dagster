@@ -591,7 +591,7 @@ const ErrorListContainer = styled.div`
 
 const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   text-align: left;
-  font-size: 13px;
+  font-size: 11px;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: ${FontFamily.monospace};

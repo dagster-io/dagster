@@ -86,6 +86,7 @@ from dagster._utils.concurrency import (
     PendingStepInfo,
     get_max_concurrency_limit_value,
 )
+from dagster._utils.warnings import deprecation_warning
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
@@ -393,7 +394,9 @@ class SqlEventLogStorage(EventLogStorage):
                             value=new_tags[tag],
                             # Postgres requires a datetime that is in UTC but has no timezone info
                             # set in order to be stored correctly
-                            event_timestamp=datetime.utcfromtimestamp(event_timestamp),
+                            event_timestamp=datetime.fromtimestamp(
+                                event_timestamp, timezone.utc
+                            ).replace(tzinfo=None),
                         )
                         for tag in added_tags
                     ],
@@ -425,14 +428,16 @@ class SqlEventLogStorage(EventLogStorage):
                 conn.execute(AssetEventTagsTable.insert(), all_values)
 
     def _tags_for_asset_event(self, event: EventLogEntry) -> Mapping[str, str]:
+        tags = {}
         if event.dagster_event and event.dagster_event.asset_key:
             if event.dagster_event.is_step_materialization:
-                return (
+                tags = (
                     event.get_dagster_event().step_materialization_data.materialization.tags or {}
                 )
             elif event.dagster_event.is_asset_observation:
-                return event.get_dagster_event().asset_observation_data.asset_observation.tags
-        return {}
+                tags = event.get_dagster_event().asset_observation_data.asset_observation.tags
+        keys_to_index = self.get_asset_tags_to_index(set(tags.keys()))
+        return {k: v for k, v in tags.items() if k in keys_to_index}
 
     def store_event(self, event: EventLogEntry) -> None:
         """Store an event corresponding to a pipeline run.
@@ -878,7 +883,9 @@ class SqlEventLogStorage(EventLogStorage):
         if asset_details and asset_details.last_wipe_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                > datetime.fromtimestamp(asset_details.last_wipe_timestamp, timezone.utc).replace(
+                    tzinfo=None
+                )
             )
 
         if apply_cursor_filters:
@@ -904,24 +911,21 @@ class SqlEventLogStorage(EventLogStorage):
         if event_records_filter.before_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                < datetime.utcfromtimestamp(event_records_filter.before_timestamp)
+                < datetime.fromtimestamp(
+                    event_records_filter.before_timestamp, timezone.utc
+                ).replace(tzinfo=None)
             )
 
         if event_records_filter.after_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                > datetime.utcfromtimestamp(event_records_filter.after_timestamp)
+                > datetime.fromtimestamp(
+                    event_records_filter.after_timestamp, timezone.utc
+                ).replace(tzinfo=None)
             )
 
         if event_records_filter.storage_ids:
             query = query.where(SqlEventLogStorageTable.c.id.in_(event_records_filter.storage_ids))
-
-        if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
-            # If we don't have the tags table, we'll filter the results after the query
-            check.invariant(
-                isinstance(event_records_filter.asset_key, AssetKey),
-                "Asset key must be set in event records filter to filter by tags.",
-            )
 
         return query
 
@@ -979,16 +983,9 @@ class SqlEventLogStorage(EventLogStorage):
         else:
             asset_details = None
 
-        if event_records_filter.tags and self.has_table(AssetEventTagsTable.name):
-            table = self._apply_tags_table_joins(
-                SqlEventLogStorageTable, event_records_filter.tags, event_records_filter.asset_key
-            )
-        else:
-            table = SqlEventLogStorageTable
-
         query = db_select(
             [SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event]
-        ).select_from(table)
+        ).select_from(SqlEventLogStorageTable)
 
         query = self._apply_filter_to_query(
             query=query,
@@ -1015,20 +1012,6 @@ class SqlEventLogStorage(EventLogStorage):
                         "Could not resolve event record as EventLogEntry for id `%s`.", row_id
                     )
                     continue
-
-                if event_records_filter.tags and not self.has_table(AssetEventTagsTable.name):
-                    # If we can't filter tags via the tags table, filter the returned records
-                    if limit is not None:
-                        raise DagsterInvalidInvocationError(
-                            "Cannot filter events on tags with a limit, without the asset event "
-                            "tags table. To fix, run `dagster instance migrate`."
-                        )
-
-                    event_record_tags = event_record.tags
-                    if not event_record_tags or any(
-                        event_record_tags.get(k) != v for k, v in event_records_filter.tags.items()
-                    ):
-                        continue
 
                 event_records.append(
                     EventLogRecord(storage_id=row_id, event_log_entry=event_record)
@@ -1152,6 +1135,14 @@ class SqlEventLogStorage(EventLogStorage):
             after_cursor >= -1,
             f"Don't know what to do with negative cursor {after_cursor}",
         )
+
+        if isinstance(dagster_event_type, set) and len(dagster_event_type) > 1:
+            deprecation_warning(
+                "Support for multiple event types to get_logs_for_all_runs_by_log_id",
+                "1.8.0",
+                "You should break up your query into multiple calls, one for each event type.",
+            )
+
         dagster_event_types = (
             {dagster_event_type}
             if isinstance(dagster_event_type, DagsterEventType)
@@ -1219,6 +1210,7 @@ class SqlEventLogStorage(EventLogStorage):
                         if can_cache_asset_status_data
                         else None
                     ),
+                    last_planned_materialization_storage_id=None,
                 ),
             )
         else:
@@ -1634,7 +1626,9 @@ class SqlEventLogStorage(EventLogStorage):
                         db.and_(
                             asset_key_in_row,
                             SqlEventLogStorageTable.c.timestamp
-                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),
+                            > datetime.fromtimestamp(
+                                asset_details.last_wipe_timestamp, timezone.utc
+                            ).replace(tzinfo=None),
                         ),
                         db.not_(asset_key_in_row),
                     )
@@ -1684,7 +1678,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
-                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
                 )
         else:
             table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
@@ -1699,7 +1695,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
-                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
                 )
 
         if filter_event_id is not None:
@@ -1900,6 +1898,11 @@ class SqlEventLogStorage(EventLogStorage):
         check.opt_int_param(before_cursor, "before_cursor")
         check.opt_int_param(after_cursor, "after_cursor")
 
+        if not tag_keys or len(tag_keys) != len(self.get_asset_tags_to_index(set(tag_keys))):
+            check.failed(
+                "Only a limited set of tag keys are whitelisted for querying the latest tag values by partition."
+            )
+
         latest_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
             asset_key=asset_key,
             event_types=[event_type],
@@ -1990,6 +1993,7 @@ class SqlEventLogStorage(EventLogStorage):
                 latest_events_subquery.c.dagster_event_type,
                 latest_events_subquery.c.partition,
                 latest_events_subquery.c.run_id,
+                latest_events_subquery.c.id,
             ]
         ).where(
             latest_events_subquery.c.dagster_event_type
@@ -2001,16 +2005,17 @@ class SqlEventLogStorage(EventLogStorage):
             materialization_rows = db_fetch_mappings(conn, materialization_events)
 
         materialization_planned_rows_by_partition = {
-            cast(str, row["partition"]): (cast(str, row["run_id"]), cast(int, row["id"]))
-            for row in materialization_planned_rows
+            row["partition"]: (row["run_id"], row["id"]) for row in materialization_planned_rows
         }
-        for row in materialization_rows:
-            if (
-                row["partition"] in materialization_planned_rows_by_partition
-                and materialization_planned_rows_by_partition[cast(str, row["partition"])][0]
-                == row["run_id"]
-            ):
-                materialization_planned_rows_by_partition.pop(cast(str, row["partition"]))
+        for mat_row in materialization_rows:
+            mat_partition = mat_row["partition"]
+            mat_event_id = mat_row["id"]
+            if mat_partition not in materialization_planned_rows_by_partition:
+                continue
+            _, planned_event_id = materialization_planned_rows_by_partition[mat_partition]
+            if planned_event_id < mat_event_id:
+                # this planned materialization event was followed by a materialization event
+                materialization_planned_rows_by_partition.pop(mat_partition)
 
         return materialization_planned_rows_by_partition
 

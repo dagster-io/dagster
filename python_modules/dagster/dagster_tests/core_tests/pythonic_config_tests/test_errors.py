@@ -11,7 +11,6 @@ from dagster import (
     sensor,
 )
 from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
-from dagster._config.pythonic_config.pydantic_compat_layer import USING_PYDANTIC_2
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
     DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
@@ -19,6 +18,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 
 
 def test_invalid_config_type_basic() -> None:

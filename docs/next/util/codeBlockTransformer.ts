@@ -1,10 +1,10 @@
-import { promises as fs } from 'fs';
+import {promises as fs} from 'fs';
 import path from 'path';
 
-import { Node } from 'hast';
+import {Node} from 'hast';
 import visit from 'unist-util-visit';
 
-import { limitSnippetLines } from './limit';
+import {limitSnippetLines} from './limit';
 
 const DAGSTER_REPO = process.env.DAGSTER_REPO || path.join(__dirname, '../../../');
 
