@@ -29,6 +29,7 @@ class RuleCondition(AssetCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         context.logger.debug(f"Evaluating rule: {self.rule.to_snapshot()}")
+        # Allow for access to legacy context in legacy rule evaluation
         evaluation_result = self.rule.evaluate_for_asset(context._replace(allow_legacy_access=True))
         context.logger.debug(
             f"Rule returned {evaluation_result.true_subset.size} partitions "
