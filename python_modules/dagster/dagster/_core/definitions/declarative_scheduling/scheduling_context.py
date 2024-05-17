@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional
 
 import pendulum
 
@@ -18,7 +18,6 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
     SchedulingEvaluationResultNode,
 )
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._model import DagsterModel
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
@@ -26,7 +25,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
 
-class SchedulingContext(DagsterModel):
+class SchedulingContext(NamedTuple):
     # the slice over which the condition is being evaluated
     candidate_slice: AssetSlice
 
@@ -68,7 +67,7 @@ class SchedulingContext(DagsterModel):
         scheduling_condition = auto_materialize_policy.to_scheduling_condition()
 
         # construct is used here for performance
-        return SchedulingContext.model_construct(
+        return SchedulingContext(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key),
             condition=scheduling_condition,
             condition_unique_id=scheduling_condition.get_unique_id(
@@ -87,7 +86,7 @@ class SchedulingContext(DagsterModel):
         self, child_condition: SchedulingCondition, child_index: int, candidate_slice: AssetSlice
     ) -> "SchedulingContext":
         # construct is used here for performance
-        return SchedulingContext.model_construct(
+        return SchedulingContext(
             candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(
