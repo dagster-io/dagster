@@ -31,14 +31,18 @@ if [[ -z ${DAGSTER_UI_DONT_BUILD_JS_BUNDLE+x} ]]; then
 fi
 
 echo -e "--- \033[32m:truck: Copying files...\033[0m"
-alias copy_py="rsync -av \
+
+function copy_py() {
+  rsync -av \
       --progress \
       --exclude *.egginfo \
       --exclude *.tox \
       --exclude dist \
       --exclude __pycache__ \
       --exclude *.pyc \
-      --exclude .coverage"
+      --exclude .coverage \
+      "$@"
+}
 
 copy_py $ROOT/python_modules/dagster \
         $ROOT/python_modules/dagster-pipes \
