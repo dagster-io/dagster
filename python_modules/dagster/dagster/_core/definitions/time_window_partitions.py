@@ -48,6 +48,7 @@ from dagster._seven.compat.pendulum import (
     create_pendulum_time,
     to_timezone,
 )
+from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -370,6 +371,29 @@ class TimeWindowPartitionsDefinition(
             else pendulum.now(self.timezone)
         ).timestamp()
 
+    def _get_fast_num_partitions(self, current_time: Optional[datetime] = None) -> Optional[int]:
+        """Computes the total number of partitions quickly for common partition windows. Returns
+        None if the count cannot be computed quickly and must enumerate all partitions before
+        counting them.
+        """
+        last_partition_window = self.get_last_partition_window(current_time)
+        first_partition_window = self.get_first_partition_window(current_time)
+
+        if not last_partition_window or not first_partition_window:
+            return None
+
+        if self.is_basic_daily:
+            return (last_partition_window.start - first_partition_window.start).days + 1
+
+        fixed_minute_interval = get_fixed_minute_interval(self.cron_schedule)
+        if fixed_minute_interval:
+            minutes_in_window = (
+                last_partition_window.start.timestamp() - first_partition_window.start.timestamp()
+            ) / 60
+            return int(minutes_in_window // fixed_minute_interval) + 1
+
+        return None
+
     def get_num_partitions(
         self,
         current_time: Optional[datetime] = None,
@@ -378,6 +402,11 @@ class TimeWindowPartitionsDefinition(
         # Method added for performance reasons.
         # Fetching partition keys requires significantly more compute time to
         # string format datetimes.
+
+        fast_num_partitions = self._get_fast_num_partitions(current_time)
+        if fast_num_partitions is not None:
+            return fast_num_partitions
+
         current_timestamp = self.get_current_timestamp(current_time=current_time)
 
         partitions_past_current_time = 0
@@ -1027,11 +1056,11 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def is_basic_daily(self) -> bool:
-        return self.cron_schedule == "0 0 * * *"
+        return is_basic_daily(self.cron_schedule)
 
     @property
     def is_basic_hourly(self) -> bool:
-        return self.cron_schedule == "0 * * * *"
+        return is_basic_hourly(self.cron_schedule)
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
