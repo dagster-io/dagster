@@ -53,7 +53,7 @@ export class HourlyDataCache<T> {
         {
           start: hour * ONE_HOUR,
           end: (hour + 1) * ONE_HOUR - 1,
-          data: this.cache.get(hour)![0].data,
+          data: this.cache.get(hour)![0]!.data,
         },
       ]);
     }
@@ -82,7 +82,7 @@ export class HourlyDataCache<T> {
     if (
       this.cache.has(hour) &&
       this.cache.get(hour)!.length === 1 &&
-      this.cache.get(hour)![0].end - this.cache.get(hour)![0].start === ONE_HOUR - 1
+      this.cache.get(hour)![0]!.end - this.cache.get(hour)![0]!.start === ONE_HOUR - 1
     ) {
       return [];
     }
