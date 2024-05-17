@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional
 
 import pendulum
 
@@ -11,6 +11,7 @@ from dagster._core.asset_graph_view.asset_graph_view import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
 )
@@ -18,7 +19,10 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
     SchedulingEvaluationInfo,
     SchedulingEvaluationResultNode,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partition import (
+    PartitionsDefinition,
+)
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
@@ -41,6 +45,21 @@ class NonAGVInstanceInterface:
     ) -> ValidAssetSubset:
         return self._queryer.get_asset_subset_updated_after_time(
             asset_key=asset_key, after_time=after_time
+        )
+
+    def get_parent_asset_partitions_updated_after_child(
+        self,
+        *,
+        asset_partition: AssetKeyPartitionKey,
+        parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        respect_materialization_data_versions: bool,
+        ignored_parent_keys: AbstractSet[AssetKey],
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        return self._queryer.get_parent_asset_partitions_updated_after_child(
+            asset_partition=asset_partition,
+            parent_asset_partitions=parent_asset_partitions,
+            respect_materialization_data_versions=respect_materialization_data_versions,
+            ignored_parent_keys=ignored_parent_keys,
         )
 
 
