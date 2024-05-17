@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluator import (
     SchedulingConditionEvaluator,
+    SchedulingConditionEvaluatorArguments,
 )
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluationState,
@@ -29,13 +30,15 @@ def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
 
     evaluator = SchedulingConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys=asset_graph.all_asset_keys,
         asset_graph_view=asset_graph_view,
         logger=logging.getLogger(__name__),
         data_time_resolver=data_time_resolver,
-        cursor=AssetDaemonCursor.empty(),
-        respect_materialization_data_versions=True,
-        auto_materialize_run_tags={},
+        evaluator_arguments=SchedulingConditionEvaluatorArguments(
+            asset_keys=asset_graph.all_asset_keys,
+            cursor=AssetDaemonCursor.empty(),
+            respect_materialization_data_versions=True,
+            auto_materialize_run_tags={},
+        ),
     )
     result = evaluator.evaluate()
 
