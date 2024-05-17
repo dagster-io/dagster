@@ -24,7 +24,6 @@ from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
 class SchedulingContext(DagsterModel):
@@ -145,10 +144,6 @@ class SchedulingContext(DagsterModel):
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:
         return self.inner_legacy_context
-
-    @property
-    def _queryer(self) -> "CachingInstanceQueryer":
-        return self.asset_graph_view._queryer  # noqa
 
     @property
     def previous_requested_slice(self) -> Optional[AssetSlice]:
