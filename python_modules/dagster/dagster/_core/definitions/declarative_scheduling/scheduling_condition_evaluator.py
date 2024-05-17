@@ -27,15 +27,15 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
-from .asset_daemon_cursor import AssetDaemonCursor
-from .base_asset_graph import BaseAssetGraph
-from .declarative_scheduling.legacy.legacy_context import (
+from ..asset_daemon_cursor import AssetDaemonCursor
+from ..base_asset_graph import BaseAssetGraph
+from ..freshness_based_auto_materialize import get_expected_data_time_for_asset_key
+from .legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )
-from .declarative_scheduling.serialized_objects import (
+from .serialized_objects import (
     AssetConditionEvaluationState,
 )
-from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import (
@@ -46,7 +46,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class AssetConditionEvaluator:
+class SchedulingConditionEvaluator:
     def __init__(
         self,
         *,

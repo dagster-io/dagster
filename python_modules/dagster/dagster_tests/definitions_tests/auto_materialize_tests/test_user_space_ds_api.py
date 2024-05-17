@@ -3,9 +3,11 @@ from typing import AbstractSet, NamedTuple, Sequence
 
 from dagster import SchedulingCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_condition_evaluator import AssetConditionEvaluator
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluator import (
+    SchedulingConditionEvaluator,
+)
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluationState,
 )
@@ -25,7 +27,7 @@ def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
         asset_graph_view.get_inner_queryer_for_back_compat()
     )
 
-    evaluator = AssetConditionEvaluator(
+    evaluator = SchedulingConditionEvaluator(
         asset_graph=asset_graph,
         asset_keys=asset_graph.all_asset_keys,
         asset_graph_view=asset_graph_view,
