@@ -21,6 +21,7 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_condition_evaluator import AssetConditionEvaluatorArguments
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
@@ -197,13 +198,15 @@ class AssetDaemonContext:
 
         evaluator = AssetConditionEvaluator(
             asset_graph=self.asset_graph,
-            asset_keys=self.auto_materialize_asset_keys,
             asset_graph_view=self.asset_graph_view,
             logger=self._logger,
-            cursor=self.cursor,
             data_time_resolver=self.data_time_resolver,
-            respect_materialization_data_versions=self.respect_materialization_data_versions,
-            auto_materialize_run_tags=self.auto_materialize_run_tags,
+            evaluator_arguments=AssetConditionEvaluatorArguments(
+                cursor=self.cursor,
+                asset_keys=self.auto_materialize_asset_keys,
+                respect_materialization_data_versions=self.respect_materialization_data_versions,
+                auto_materialize_run_tags=self.auto_materialize_run_tags,
+            ),
         )
         return evaluator.evaluate()
 

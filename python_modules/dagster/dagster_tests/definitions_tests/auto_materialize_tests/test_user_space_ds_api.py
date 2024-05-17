@@ -3,7 +3,10 @@ from typing import AbstractSet, NamedTuple, Sequence
 
 from dagster import SchedulingCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_condition_evaluator import AssetConditionEvaluator
+from dagster._core.definitions.asset_condition_evaluator import (
+    AssetConditionEvaluator,
+    AssetConditionEvaluatorArguments,
+)
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
@@ -27,13 +30,15 @@ def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
 
     evaluator = AssetConditionEvaluator(
         asset_graph=asset_graph,
-        asset_keys=asset_graph.all_asset_keys,
         asset_graph_view=asset_graph_view,
         logger=logging.getLogger(__name__),
         data_time_resolver=data_time_resolver,
-        cursor=AssetDaemonCursor.empty(),
-        respect_materialization_data_versions=True,
-        auto_materialize_run_tags={},
+        evaluator_arguments=AssetConditionEvaluatorArguments(
+            asset_keys=asset_graph.all_asset_keys,
+            cursor=AssetDaemonCursor.empty(),
+            respect_materialization_data_versions=True,
+            auto_materialize_run_tags={},
+        ),
     )
     result = evaluator.evaluate()
 

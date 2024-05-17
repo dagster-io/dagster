@@ -26,6 +26,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
     SchedulingEvaluationInfo,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from .asset_daemon_cursor import AssetDaemonCursor
 from .base_asset_graph import BaseAssetGraph
@@ -45,39 +46,51 @@ if TYPE_CHECKING:
 from dataclasses import dataclass
 
 
+@whitelist_for_serdes
+@dataclass(frozen=True)
+# These are the arguments the evaluator that would be arguments if
+# the evaluator was across a serialization boundary (e.g. RPC)
+class AssetConditionEvaluatorArguments:
+    asset_keys: AbstractSet[AssetKey]
+    cursor: AssetDaemonCursor
+    # https://linear.app/dagster-labs/issue/FOU-210/figure-out-future-of-respect-materialization-data-versions
+    respect_materialization_data_versions: bool
+    # Mapping from run tags to values that should be automatically added run emitted by
+    # the declarative scheduling system. This ends up getting sources from places such
+    # as https://docs.dagster.io/deployment/dagster-instance#auto-materialize
+    # Should this be a supported feature in DS?
+    auto_materialize_run_tags: Mapping[str, str]
+
+
 @dataclass
 class AssetConditionEvaluator:
     def __init__(
         self,
         *,
         asset_graph: BaseAssetGraph,
-        asset_keys: AbstractSet[AssetKey],
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
-        cursor: AssetDaemonCursor,
         data_time_resolver: CachingDataTimeResolver,
-        respect_materialization_data_versions: bool,
-        # Mapping from run tags to values that should be automatically added run emitted by
-        # the declarative scheduling system. This ends up getting sources from places such
-        # as https://docs.dagster.io/deployment/dagster-instance#auto-materialize
-        # Should this be a supported feature in DS?
-        auto_materialize_run_tags: Mapping[str, str],
+        evaluator_arguments: AssetConditionEvaluatorArguments,
     ):
         self.asset_graph = asset_graph
-        self.asset_keys = asset_keys
         self.asset_graph_view = asset_graph_view
         self.logger = logger
-        self.cursor = cursor
         self.data_time_resolver = data_time_resolver
-        self.respect_materialization_data_versions = respect_materialization_data_versions
-        self.auto_materialize_run_tags = auto_materialize_run_tags
+
+        self.asset_keys = evaluator_arguments.asset_keys
+        self.cursor = evaluator_arguments.cursor
+        self.respect_materialization_data_versions = (
+            evaluator_arguments.respect_materialization_data_versions
+        )
+        self.auto_materialize_run_tags = evaluator_arguments.auto_materialize_run_tags
 
         self.evaluation_state_by_key = {}
         self.current_evaluation_info_by_key = {}
         self.expected_data_time_mapping = defaultdict()
         self.to_request = set()
         self.num_checked_assets = 0
-        self.num_asset_keys = len(asset_keys)
+        self.num_asset_keys = len(self.asset_keys)
 
     asset_graph: BaseAssetGraph
     asset_keys: AbstractSet[AssetKey]
