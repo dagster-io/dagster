@@ -7,7 +7,7 @@ from .operands import (
     MissingSchedulingCondition as MissingSchedulingCondition,
     ParentNewerCondition as ParentNewerCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
-    ScheduledSinceCondition as ScheduledSinceCondition,
+    ScheduledSinceConditionCondition as ScheduledSinceConditionCondition,
     UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
 from .operators import (

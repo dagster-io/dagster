@@ -1,5 +1,3 @@
-import datetime
-
 from dagster import SchedulingCondition
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
@@ -8,10 +6,10 @@ from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
 from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
-def test_eager_with_rate_limit_unpartitioned() -> None:
+def test_eager_unpartitioned() -> None:
     state = SchedulingConditionScenarioState(
         two_assets_in_sequence,
-        scheduling_condition=SchedulingCondition.eager_with_rate_limit(),
+        scheduling_condition=SchedulingCondition.eager(),
         ensure_empty_result=False,
     )
 
@@ -38,30 +36,21 @@ def test_eager_with_rate_limit_unpartitioned() -> None:
     # however, B fails
     state = state.with_failed_run_for_asset("B")
 
-    # do not try to materialize B again immediately
+    # do not try to materialize B again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
-    # now it's been over an hour since B was requested, try again
-    state = state.with_current_time_advanced(hours=1, seconds=1)
-    state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
 
-
-def test_eager_with_rate_limit_hourly_partitioned() -> None:
+def test_eager_partitioned() -> None:
     state = (
         SchedulingConditionScenarioState(
             two_assets_in_sequence,
-            scheduling_condition=SchedulingCondition.eager_with_rate_limit(
-                failure_retry_delta=datetime.timedelta(minutes=10)
-            ),
+            scheduling_condition=SchedulingCondition.eager(),
             ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)
         .with_current_time("2020-02-02T01:05:00")
     )
-
-    # parent hasn't updated yet
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
@@ -94,11 +83,6 @@ def test_eager_with_rate_limit_hourly_partitioned() -> None:
     # but it fails
     state = state.with_failed_run_for_asset("B", "2020-02-02-01:00")
 
-    # B does not get immediately requested again
+    # B does not get requested again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
-
-    # now it's been over 10 minutes since B was requested, try again
-    state = state.with_current_time_advanced(minutes=10, seconds=1)
-    state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
