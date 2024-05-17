@@ -165,6 +165,7 @@ class SensorEvaluationContext:
         definitions: Optional["Definitions"] = None,
         last_sensor_start_time: Optional[float] = None,
         code_location_origin: Optional["CodeLocationOrigin"] = None,
+        sensor_specific_context_str: Optional[str] = None,
         # deprecated param
         last_completion_time: Optional[float] = None,
     ):
@@ -215,6 +216,11 @@ class SensorEvaluationContext:
 
         self._logger: Optional[InstigationLogger] = None
         self._cursor_updated = False
+        self._sensor_specific_context_str = sensor_specific_context_str
+
+    @property
+    def sensor_type_specific_context_str(self) -> Optional[str]:
+        return self._sensor_specific_context_str
 
     def __enter__(self) -> "SensorEvaluationContext":
         self._cm_scope_entered = True

@@ -357,6 +357,7 @@ def get_external_sensor_execution(
     cursor: Optional[str],
     log_key: Optional[Sequence[str]],
     last_sensor_start_timestamp: Optional[float],
+    sensor_specific_context_str: Optional[str],
 ) -> Union["SensorExecutionData", ExternalSensorExecutionErrorData]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
@@ -384,6 +385,7 @@ def get_external_sensor_execution(
             resources=resources_to_build,
             last_sensor_start_time=last_sensor_start_timestamp,
             code_location_origin=code_location_origin,
+            sensor_specific_context_str=sensor_specific_context_str,
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,

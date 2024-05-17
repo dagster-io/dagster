@@ -1,7 +1,19 @@
+import datetime
+import logging
 from typing import Any, Mapping, Optional, cast
 
+from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_condition_evaluator import (
+    AssetConditionEvaluator,
+    AssetConditionEvaluatorArguments,
+)
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._serdes.serdes import deserialize_value
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_selection import AssetSelection
 from .sensor_definition import (
@@ -74,10 +86,40 @@ class AutoMaterializeSensorDefinition(SensorDefinition):
         return SensorType.AUTO_MATERIALIZE
 
 
-def _ds_zone_implementation(context: SensorEvaluationContext) -> None:
-    raise NotImplementedError(
-        "DS Zones not yet implemented sensors cannot be evaluated like regular user-space sensors."
+def _agv_from_context(context: SensorEvaluationContext) -> AssetGraphView:
+    asset_graph = check.not_none(context.repository_def).asset_graph
+    effective_dt = datetime.datetime.now()
+    instance = context.instance
+
+    return AssetGraphView(
+        temporal_context=TemporalContext(effective_dt=effective_dt, last_event_id=None),
+        stale_resolver=CachingStaleStatusResolver(
+            instance=instance,
+            instance_queryer=CachingInstanceQueryer(
+                instance=instance, asset_graph=asset_graph, evaluation_time=effective_dt
+            ),
+            asset_graph=asset_graph,
+        ),
     )
+
+
+def _ds_zone_implementation(context: SensorEvaluationContext) -> None:
+    asset_graph_view = _agv_from_context(context)
+
+    context_str = check.not_none(context.sensor_type_specific_context_str)
+    args = deserialize_value(context_str, AssetConditionEvaluatorArguments)
+
+    evaluator = AssetConditionEvaluator(
+        asset_graph=asset_graph_view.asset_graph,
+        asset_graph_view=asset_graph_view,
+        logger=logging.getLogger(__name__),
+        data_time_resolver=CachingDataTimeResolver(
+            instance_queryer=asset_graph_view.get_inner_queryer_for_back_compat(),
+        ),
+        evaluator_arguments=args,
+    )
+
+    result = evaluator.evaluate()
 
 
 @experimental

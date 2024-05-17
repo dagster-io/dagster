@@ -24,8 +24,11 @@ defs = Definitions(
     assets=[different_asset, upstream_lijksdkfjsd, downstream_lskjdflksjd],
     sensors=[
         DeclarativeSchedulingZone(
-            name="sensor_zone_one", asset_selection=[upstream_lijksdkfjsd, downstream_lskjdflksjd]
+            name="sensor_zone_one_ksjdkfd",
+            asset_selection=[upstream_lijksdkfjsd, downstream_lskjdflksjd],
         ),
-        DeclarativeSchedulingZone(name="sensor_zone_two", asset_selection=[different_asset]),
+        DeclarativeSchedulingZone(
+            name="sensor_zone_two_kjsdkfjd", asset_selection=[different_asset]
+        ),
     ],
 )

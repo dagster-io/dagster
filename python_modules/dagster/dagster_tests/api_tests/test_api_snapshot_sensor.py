@@ -52,6 +52,7 @@ def test_external_sensor_grpc_fallback_to_streaming(instance):
                         None,
                         None,
                         None,
+                        None,
                     )
                     assert isinstance(result, SensorExecutionData)
                     assert len(result.run_requests) == 2

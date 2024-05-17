@@ -23,6 +23,8 @@ from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.definitions.asset_condition_evaluator import AssetConditionEvaluatorArguments
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -56,7 +58,12 @@ from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
+from dagster._serdes.serdes import serialize_value
+from dagster._utils import (
+    DebugCrashFlags,
+    SingleInstigatorDebugCrashFlags,
+    check_for_debug_crash,
+)
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -294,6 +301,24 @@ def execute_sensor_iteration_loop(
         yield None
 
 
+def add_ds_zone_info_to_state(sensor_state: InstigatorState) -> InstigatorState:
+    condition_evaluator_arguments = AssetConditionEvaluatorArguments(
+        asset_keys=set(),
+        cursor=AssetDaemonCursor.empty(),
+        respect_materialization_data_versions=False,
+        auto_materialize_run_tags={},
+    )
+
+    serialized_arguments = serialize_value(condition_evaluator_arguments)
+    sensor_state = check.not_none(sensor_state, "Ever none?")
+    sensor_instigator_data = check.inst(sensor_state.instigator_data, SensorInstigatorData)
+    return sensor_state._replace(
+        instigator_data=sensor_instigator_data._replace(
+            sensor_specific_context_str=serialized_arguments
+        )
+    )
+
+
 def execute_sensor_iteration(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
@@ -334,6 +359,7 @@ def execute_sensor_iteration(
                         sensors[selector_id] = sensor
 
     print(f"sensors: {sensors}")
+    print(f"all_sensor_states: {all_sensor_states}")
     if not sensors:
         yield
         return
@@ -342,6 +368,10 @@ def execute_sensor_iteration(
         sensor_name = external_sensor.name
         sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
         sensor_state = all_sensor_states.get(external_sensor.selector_id)
+
+        if external_sensor.sensor_type == SensorType.DECLARATIVE_SCHEDULING_ZONE:
+            sensor_state = add_ds_zone_info_to_state(sensor_state)
+
         if not sensor_state:
             assert external_sensor.default_status == DefaultSensorStatus.RUNNING
             sensor_state = InstigatorState(
@@ -385,6 +415,7 @@ def execute_sensor_iteration(
         else:
             # evaluate the sensors in a loop, synchronously, yielding to allow the sensor daemon to
             # heartbeat
+
             yield from _process_tick_generator(
                 workspace_process_context,
                 logger,
@@ -429,14 +460,17 @@ def _process_tick_generator(
     tick_retention_settings,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
 ):
+    check_has_context_specific(sensor_state)
     instance = workspace_process_context.instance
     error_info = None
     now = pendulum.now("UTC")
+    # TOOD: Why is this overwritten here?
     sensor_state = check.not_none(
         instance.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
     )
+    sensor_state = add_ds_zone_info_to_state(sensor_state)
     if is_under_min_interval(sensor_state, external_sensor):
         # check the since we might have been queued before processing
         return
@@ -513,6 +547,9 @@ def mark_sensor_state_for_tick(
                 last_tick_start_timestamp=now.timestamp(),
                 sensor_type=external_sensor.sensor_type,
                 last_sensor_start_timestamp=instigator_data.last_sensor_start_timestamp
+                if instigator_data
+                else None,
+                sensor_specific_context_str=instigator_data.sensor_specific_context_str
                 if instigator_data
                 else None,
             )
@@ -596,6 +633,15 @@ def _get_code_location_for_sensor(
     )
 
 
+def check_has_context_specific(state: InstigatorState) -> None:
+    check.not_none(
+        check.inst(
+            state.instigator_data, SensorInstigatorData, "must be SensorInstigatorData"
+        ).sensor_specific_context_str,
+        "Must have context str",
+    )
+
+
 def _evaluate_sensor(
     workspace_process_context: IWorkspaceProcessContext,
     context: SensorLaunchContext,
@@ -604,6 +650,7 @@ def _evaluate_sensor(
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
 ):
+    check_has_context_specific(state)
     instance = workspace_process_context.instance
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
     code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
@@ -622,6 +669,9 @@ def _evaluate_sensor(
         instigator_data.cursor if instigator_data else None,
         context.log_key,
         instigator_data.last_sensor_start_timestamp if instigator_data else None,
+        sensor_specific_context_str=instigator_data.sensor_specific_context_str
+        if instigator_data
+        else None,
     )
 
     yield

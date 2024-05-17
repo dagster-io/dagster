@@ -599,6 +599,7 @@ class SensorExecutionArgs(
             ("log_key", Optional[Sequence[str]]),
             ("timeout", Optional[int]),
             ("last_sensor_start_time", Optional[float]),
+            ("sensor_specific_context_str", Optional[str]),
             # deprecated
             ("last_completion_time", Optional[float]),
         ],
@@ -615,6 +616,7 @@ class SensorExecutionArgs(
         log_key: Optional[Sequence[str]] = None,
         timeout: Optional[int] = None,
         last_sensor_start_time: Optional[float] = None,
+        sensor_specific_context_str: Optional[str] = None,
         # deprecated param
         last_completion_time: Optional[float] = None,
     ):
@@ -641,6 +643,9 @@ class SensorExecutionArgs(
                 last_sensor_start_time, "last_sensor_start_time"
             ),
             last_completion_time=normalized_last_tick_completion_time,
+            sensor_specific_context_str=check.opt_str_param(
+                sensor_specific_context_str, "sensor_specific_context_str"
+            ),
         )
 
 

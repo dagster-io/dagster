@@ -112,6 +112,7 @@ class SensorInstigatorData(
             # the last time the sensor was started
             ("last_sensor_start_timestamp", Optional[float]),
             ("sensor_type", Optional[SensorType]),
+            ("sensor_specific_context_str", Optional[str]),
         ],
     )
 ):
@@ -124,6 +125,7 @@ class SensorInstigatorData(
         last_tick_start_timestamp: Optional[float] = None,
         last_sensor_start_timestamp: Optional[float] = None,
         sensor_type: Optional[SensorType] = None,
+        sensor_specific_context_str: Optional[str] = None,
     ):
         return super(SensorInstigatorData, cls).__new__(
             cls,
@@ -134,6 +136,7 @@ class SensorInstigatorData(
             check.opt_float_param(last_tick_start_timestamp, "last_tick_start_timestamp"),
             check.opt_float_param(last_sensor_start_timestamp, "last_sensor_start_timestamp"),
             check.opt_inst_param(sensor_type, "sensor_type", SensorType),
+            check.opt_str_param(sensor_specific_context_str, "sensor_specific_context_str"),
         )
 
     def with_sensor_start_timestamp(self, start_timestamp: float) -> "SensorInstigatorData":
@@ -146,6 +149,7 @@ class SensorInstigatorData(
             self.last_tick_start_timestamp,
             start_timestamp,
             self.sensor_type,
+            self.sensor_specific_context_str,
         )
 
 
