@@ -161,3 +161,41 @@ def test_row_count_snowflake(
         for event in result.get_asset_materialization_events()
         if "stg" not in check.not_none(event.asset_key).path[-1]
     )
+
+
+@pytest.fixture(name="test_bigquery_invocation")
+def test_bigquery_invocation_fixture():
+    return _create_dbt_invocation(test_jaffle_shop_path, target="bigquery").get_artifact(
+        "manifest.json"
+    )
+
+
+@pytest.mark.prodbigquery
+def test_row_count_bigquery(
+    test_bigquery_invocation: Dict[str, Any],
+) -> None:
+    @dbt_assets(manifest=test_bigquery_invocation)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target="bigquery")
+        },
+    )
+
+    assert result.success
+
+    # Validate that we have row counts for all models which are not views
+    assert all(
+        "dagster/row_count" not in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" in check.not_none(event.asset_key).path[-1]
+    )
+    assert all(
+        "dagster/row_count" in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+        if "stg" not in check.not_none(event.asset_key).path[-1]
+    )
