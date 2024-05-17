@@ -123,3 +123,47 @@ def test_row_count_err(
 
         # assert we have warning message in logs
         assert "An error occurred while fetching row count for " in caplog.text
+
+
+@pytest.fixture(name="test_snowflake_invocation")
+def test_snowflake_invocation_fixture():
+    return _create_dbt_invocation(test_jaffle_shop_path, target="snowflake").get_artifact(
+        "manifest.json"
+    )
+
+
+def test_row_count_snowflake(
+    test_snowflake_invocation: Dict[str, Any],
+) -> None:
+    @dbt_assets(manifest=test_snowflake_invocation)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target="snowflake")
+        },
+    )
+
+    assert result.success
+
+    # Validate that we have row counts for all models which are not views
+    assert all(
+        "dagster/row_count" not in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" in check.not_none(event.asset_key).path[-1]
+    )
+    assert all(
+        "dagster/row_count" in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+        if "stg" not in check.not_none(event.asset_key).path[-1]
+    )
+
+    row_counts = [
+        cast(IntMetadataValue, event.materialization.metadata["dagster/row_count"]).value
+        for event in result.get_asset_materialization_events()
+        if "stg" not in check.not_none(event.asset_key).path[-1]
+    ]
+    assert all(row_count and row_count > 0 for row_count in row_counts), row_counts

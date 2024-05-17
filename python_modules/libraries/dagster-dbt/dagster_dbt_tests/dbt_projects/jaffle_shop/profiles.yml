@@ -6,3 +6,11 @@ jaffle_shop:
       path: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH', 'target/local.duckdb') }}"
       schema: "{{ env_var('DAGSTER_DBT_JAFFLE_SCHEMA', 'dev') }}"
       threads: 24
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      client_session_keep_alive: False
+      database: "{{ env_var('SNOWFLAKE_DATABASE') }}"
+      schema: "{{ env_var('SNOWFLAKE_SCHEMA') }}"

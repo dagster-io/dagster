@@ -925,7 +925,10 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                     """,
                     fetch=True,
                 )
-            row_count = query_result[1][0]["row_count"]
+            query_result_table = query_result[1]
+            # some adapters do not output the column names, so we need
+            # to index by position
+            row_count = query_result_table[0][0]
             additional_metadata = {**TableMetadataSet(row_count=row_count)}
 
             return event.with_metadata(metadata={**event.metadata, **additional_metadata})
