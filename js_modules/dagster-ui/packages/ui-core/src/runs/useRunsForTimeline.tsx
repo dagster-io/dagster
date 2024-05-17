@@ -338,10 +338,10 @@ export const useRunsForTimeline = (
               isJob: pipeline.isJob,
             }),
             runs: [
-              ...jobRuns.filter((job, idx, arr) => {
+              ...jobRuns.filter((run, idx, arr) => {
                 // Jobs can show up in multiple buckets due to the way were are filtering. Lets dedupe them for now
                 // while we think of a better way to query while also caching.
-                return arr.findIndex((bJob) => bJob.id === job.id) === idx;
+                return arr.findIndex((bRun) => bRun.id === run.id) === idx;
               }),
               ...jobTicks,
             ],
