@@ -30,12 +30,11 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
   }));
   try {
     const results = await Promise.all(
-      buckets.map(async (bucket) => {
-        const data = await fetchPaginatedData<DataType, CursorType, ErrorType>({
+      buckets.map((bucket) =>
+        fetchPaginatedData<DataType, CursorType, ErrorType>({
           fetchData: (cursor) => fetchData(bucket, cursor),
-        });
-        return data;
-      }),
+        }),
+      ),
     );
     setQueryData({
       data: results.flat(),
