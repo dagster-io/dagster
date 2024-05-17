@@ -4652,6 +4652,7 @@ export type Runs = PipelineRuns & {
 };
 
 export type RunsFilter = {
+  createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
@@ -4660,6 +4661,7 @@ export type RunsFilter = {
   statuses?: InputMaybe<Array<RunStatus>>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   updatedAfter?: InputMaybe<Scalars['Float']['input']>;
+  updatedBefore?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type RunsOrError = InvalidPipelineRunsFilterError | PythonError | Runs;
@@ -13264,6 +13266,8 @@ export const buildRunsFilter = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('RunsFilter');
   return {
+    createdAfter:
+      overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
@@ -13276,6 +13280,8 @@ export const buildRunsFilter = (
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     updatedAfter:
       overrides && overrides.hasOwnProperty('updatedAfter') ? overrides.updatedAfter! : 6.85,
+    updatedBefore:
+      overrides && overrides.hasOwnProperty('updatedBefore') ? overrides.updatedBefore! : 7.58,
   };
 };
 

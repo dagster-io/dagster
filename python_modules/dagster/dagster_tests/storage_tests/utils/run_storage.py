@@ -785,6 +785,10 @@ class TestRunStorage:
         )[0]
         run_two_update_timestamp = record_two.update_timestamp
         record_three = storage.get_run_records(filters=RunsFilter(run_ids=[three]))[0]
+        record_one = storage.get_run_records(
+            filters=RunsFilter(run_ids=[one], updated_after=datetime(2020, 1, 1))
+        )[0]
+        run_one_update_timestamp = record_one.update_timestamp
 
         assert [
             record.dagster_run.run_id
@@ -794,6 +798,18 @@ class TestRunStorage:
                 ascending=True,
             )
         ] == [three, one]
+
+        assert [
+            record.dagster_run.run_id
+            for record in storage.get_run_records(
+                filters=RunsFilter(
+                    updated_after=run_two_update_timestamp,
+                    updated_before=run_one_update_timestamp,
+                ),
+                order_by="update_timestamp",
+                ascending=True,
+            )
+        ] == [three]
 
         assert [
             record.dagster_run.run_id

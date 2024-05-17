@@ -2290,7 +2290,9 @@ input RunsFilter {
   statuses: [RunStatus!]
   snapshotId: String
   updatedAfter: Float
+  updatedBefore: Float
   createdBefore: Float
+  createdAfter: Float
   mode: String
 }
 
