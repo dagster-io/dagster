@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     TypeVar,
     Union,
     cast,
@@ -55,9 +56,7 @@ from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.warnings import (
-    disable_dagster_warnings,
-)
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -162,33 +161,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetCheckSpec,
         )
 
-        # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
-        input_asset_keys = set(keys_by_input_name.values())
 
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
-        builtin_partition_mappings = get_builtin_partition_mapping_types()
-        for asset_key, partition_mapping in self._partition_mappings.items():
-            if not isinstance(partition_mapping, builtin_partition_mappings):
-                warnings.warn(
-                    f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
-                    "are deprecated and will not work with asset reconciliation. The built-in "
-                    "partition mappings are "
-                    + ", ".join(
-                        builtin_partition_mapping.__name__
-                        for builtin_partition_mapping in builtin_partition_mappings
-                    )
-                    + ".",
-                    category=DeprecationWarning,
-                )
-
-            if asset_key not in input_asset_keys:
-                check.failed(
-                    f"While constructing AssetsDefinition outputting {all_asset_keys}, received a"
-                    f" partition mapping for {asset_key} that is not defined in the set of upstream"
-                    f" assets: {input_asset_keys}"
-                )
+        _validate_partition_mappings(
+            partition_mappings=self._partition_mappings,
+            input_asset_keys=set(keys_by_input_name.values()),
+            all_asset_keys=all_asset_keys,
+        )
 
         self._asset_deps = asset_deps or {
             out_asset_key: set(keys_by_input_name.values()) for out_asset_key in all_asset_keys
@@ -209,31 +190,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if group_names_by_key
             else {}
         )
+        self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
+            all_asset_keys=all_asset_keys,
+            all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
+            selected_asset_keys=selected_asset_keys,
+            selected_asset_check_keys=selected_asset_check_keys,
+        )
         self._group_names_by_key = {}
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
             group_name = group_names_by_key.get(key)
             self._group_names_by_key[key] = normalize_group_name(group_name)
-
-        all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
-
-        # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
-        if selected_asset_keys is None and selected_asset_check_keys is None:
-            # if no selections, include everything
-            self._selected_asset_keys = all_asset_keys
-            self._selected_asset_check_keys = all_check_keys
-        else:
-            self._selected_asset_keys = selected_asset_keys or set()
-
-            if selected_asset_check_keys is None:
-                # if assets were selected but checks are None, then include all checks for selected
-                # assets
-                self._selected_asset_check_keys = {
-                    key for key in all_check_keys if key.asset_key in self._selected_asset_keys
-                }
-            else:
-                # otherwise, use the selected checks
-                self._selected_asset_check_keys = selected_asset_check_keys
 
         self._check_specs_by_key = {
             spec.key: spec
@@ -1620,6 +1587,60 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
         " supported because these ops are not required for the creation of the associated"
         " asset(s).",
     )
+
+
+def _resolve_selections(
+    all_asset_keys: AbstractSet[AssetKey],
+    all_check_keys: AbstractSet[AssetCheckKey],
+    selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+) -> Tuple[AbstractSet[AssetKey], AbstractSet[AssetCheckKey]]:
+    # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
+    if selected_asset_keys is None and selected_asset_check_keys is None:
+        # if no selections, include everything
+        return all_asset_keys, all_check_keys
+    else:
+        resolved_selected_asset_keys = selected_asset_keys or set()
+
+        if selected_asset_check_keys is None:
+            # if assets were selected but checks are None, then include all checks for selected
+            # assets
+            resolved_selected_asset_check_keys = {
+                key for key in all_check_keys if key.asset_key in resolved_selected_asset_keys
+            }
+        else:
+            # otherwise, use the selected checks
+            resolved_selected_asset_check_keys = selected_asset_check_keys
+
+        return resolved_selected_asset_keys, resolved_selected_asset_check_keys
+
+
+def _validate_partition_mappings(
+    partition_mappings: Mapping[AssetKey, PartitionMapping],
+    input_asset_keys: AbstractSet[AssetKey],
+    all_asset_keys: AbstractSet[AssetKey],
+) -> None:
+    builtin_partition_mappings = get_builtin_partition_mapping_types()
+    for asset_key, partition_mapping in partition_mappings.items():
+        if not isinstance(partition_mapping, builtin_partition_mappings):
+            warnings.warn(
+                f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
+                "are deprecated and will not work with asset reconciliation. The built-in "
+                "partition mappings are "
+                + ", ".join(
+                    builtin_partition_mapping.__name__
+                    for builtin_partition_mapping in builtin_partition_mappings
+                )
+                + ".",
+                category=DeprecationWarning,
+            )
+
+        if asset_key not in input_asset_keys:
+            check.failed(
+                f"While constructing AssetsDefinition outputting {all_asset_keys}, received a"
+                f" partition mapping for {asset_key} that is not defined in the set of upstream"
+                f" assets: {input_asset_keys}"
+            )
 
 
 def _validate_self_deps(
