@@ -91,6 +91,7 @@ class SchedulingContext(NamedTuple):
 
     # hack to avoid circular references during pydantic validation
     inner_legacy_context: Any
+    allow_legacy_access: bool
 
     @staticmethod
     def create(
@@ -122,6 +123,7 @@ class SchedulingContext(NamedTuple):
             non_agv_instance_interface=NonAGVInstanceInterface(
                 asset_graph_view.get_inner_queryer_for_back_compat()
             ),
+            allow_legacy_access=False,
         )
 
     def for_child_condition(
@@ -140,7 +142,7 @@ class SchedulingContext(NamedTuple):
             logger=self.logger,
             previous_evaluation_info=self.previous_evaluation_info,
             current_tick_evaluation_info_by_key=self.current_tick_evaluation_info_by_key,
-            inner_legacy_context=self.legacy_context.for_child(
+            inner_legacy_context=self.inner_legacy_context.for_child(
                 child_condition,
                 child_condition.get_unique_id(
                     parent_unique_id=self.condition_unique_id, index=child_index
@@ -148,6 +150,7 @@ class SchedulingContext(NamedTuple):
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
             non_agv_instance_interface=self.non_agv_instance_interface,
+            allow_legacy_access=self.allow_legacy_access,
         )
 
     @property
@@ -185,7 +188,11 @@ class SchedulingContext(NamedTuple):
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:
-        return self.inner_legacy_context
+        return (
+            self.inner_legacy_context
+            if self.allow_legacy_access
+            else check.failed("Legacy access only allow in auto_materialize_rules_impls.py")
+        )
 
     @property
     def previous_requested_slice(self) -> Optional[AssetSlice]:
@@ -219,4 +226,4 @@ class SchedulingContext(NamedTuple):
     @property
     def new_max_storage_id(self) -> Optional[int]:
         # TODO: pull this from the AssetGraphView instead
-        return self.legacy_context.new_max_storage_id
+        return self.inner_legacy_context.new_max_storage_id
