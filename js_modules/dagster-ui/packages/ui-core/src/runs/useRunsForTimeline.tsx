@@ -339,7 +339,7 @@ export const useRunsForTimeline = (
             }),
             runs: [
               ...jobRuns.filter((run, idx, arr) => {
-                // Jobs can show up in multiple buckets due to the way were are filtering. Lets dedupe them for now
+                // Runs can show up in multiple buckets due to the way were are filtering. Lets dedupe them for now
                 // while we think of a better way to query while also caching.
                 return arr.findIndex((bRun) => bRun.id === run.id) === idx;
               }),
