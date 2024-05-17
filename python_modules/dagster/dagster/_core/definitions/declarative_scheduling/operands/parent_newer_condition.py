@@ -31,7 +31,7 @@ class ParentNewerCondition(SchedulingCondition):
             for ap in parent_slice.expensively_compute_asset_partitions()
         }
         return (
-            context.legacy_context.instance_queryer.get_parent_asset_partitions_updated_after_child(
+            context.non_agv_instance_interface.get_parent_asset_partitions_updated_after_child(
                 asset_partition=candidate,
                 parent_asset_partitions=all_parent_asset_partitions,
                 respect_materialization_data_versions=False,
