@@ -125,8 +125,8 @@ def test_row_count_err(
         assert "An error occurred while fetching row count for " in caplog.text
 
 
-@pytest.fixture(name="test_snowflake_invocation")
-def test_snowflake_invocation_fixture():
+@pytest.fixture(name="test_jaffle_shop_manifest_snowflake")
+def test_jaffle_shop_manifest_snowflake_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_jaffle_shop_path, target="snowflake").get_artifact(
         "manifest.json"
     )
@@ -134,9 +134,9 @@ def test_snowflake_invocation_fixture():
 
 @pytest.mark.prodsnowflake
 def test_row_count_snowflake(
-    test_snowflake_invocation: Dict[str, Any],
+    test_jaffle_shop_manifest_snowflake: Dict[str, Any],
 ) -> None:
-    @dbt_assets(manifest=test_snowflake_invocation)
+    @dbt_assets(manifest=test_jaffle_shop_manifest_snowflake)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
 
@@ -163,8 +163,8 @@ def test_row_count_snowflake(
     )
 
 
-@pytest.fixture(name="test_bigquery_invocation")
-def test_bigquery_invocation_fixture():
+@pytest.fixture(name="test_jaffle_shop_manifest_bigquery")
+def test_jaffle_shop_manifest_bigquery_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_jaffle_shop_path, target="bigquery").get_artifact(
         "manifest.json"
     )
@@ -172,9 +172,9 @@ def test_bigquery_invocation_fixture():
 
 @pytest.mark.prodbigquery
 def test_row_count_bigquery(
-    test_bigquery_invocation: Dict[str, Any],
+    test_jaffle_shop_manifest_bigquery: Dict[str, Any],
 ) -> None:
-    @dbt_assets(manifest=test_bigquery_invocation)
+    @dbt_assets(manifest=test_jaffle_shop_manifest_bigquery)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
 
