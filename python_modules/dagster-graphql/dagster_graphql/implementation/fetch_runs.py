@@ -114,7 +114,7 @@ def get_runs(
     graphene_info: "ResolveInfo",
     filters: Optional[RunsFilter],
     cursor: Optional[str] = None,
-    limit: Optional[int] = None,
+    limit: int = 100,
 ) -> Sequence["GrapheneRun"]:
     from ..schema.pipelines.pipeline import GrapheneRun
 
