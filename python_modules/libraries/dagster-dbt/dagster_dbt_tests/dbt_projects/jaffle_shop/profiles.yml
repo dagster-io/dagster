@@ -20,4 +20,4 @@ jaffle_shop:
       project: "{{ env_var('GCP_PROJECT_ID') }}"
       dataset: BIGQUERY_IO_MANAGER_SCHEMA
       threads: 4
-      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}""
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
