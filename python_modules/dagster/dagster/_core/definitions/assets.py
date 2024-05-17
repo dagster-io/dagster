@@ -1080,7 +1080,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
@@ -1106,9 +1105,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-        metadata_by_key = check.opt_mapping_param(
-            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
         )
 
         backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
@@ -1188,12 +1184,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for key, description in self.descriptions_by_key.items()
         }
 
-        if not metadata_by_key:
-            metadata_by_key = self.metadata_by_key
-
         replaced_metadata_by_key = {
             output_asset_key_replacements.get(key, key): metadata
-            for key, metadata in metadata_by_key.items()
+            for key, metadata in self.metadata_by_key.items()
         }
 
         replaced_tags_by_key = {
@@ -1517,6 +1510,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=self._selected_asset_check_keys,
             owners_by_key=self._owners_by_key,
             tags_by_key=self._tags_by_key,
+            is_subset=self._is_subset,
         )
 
 

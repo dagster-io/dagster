@@ -138,7 +138,9 @@ def _with_code_source_single_definition(
                 ),
             }
 
-    return assets_def.with_attributes(metadata_by_key=metadata_by_key)
+    return AssetsDefinition.dagster_internal_init(
+        **{**assets_def.get_attributes_dict(), "metadata_by_key": metadata_by_key}
+    )
 
 
 def convert_local_path_to_source_control_path(
@@ -195,7 +197,9 @@ def _convert_local_path_to_source_control_path_single_definition(
             ),
         }
 
-    return assets_def.with_attributes(metadata_by_key=metadata_by_key)
+    return AssetsDefinition.dagster_internal_init(
+        **{**assets_def.get_attributes_dict(), "metadata_by_key": metadata_by_key}
+    )
 
 
 def _build_github_url(url: str, branch: str) -> str:
