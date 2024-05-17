@@ -1,7 +1,7 @@
 import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
 import {useCallback, useMemo, useState} from 'react';
 
-import {HourlyDataCache, breakIntoHourlyBuckets} from './HourlyDataCache';
+import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache';
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
@@ -41,7 +41,7 @@ export const useRunsForTimeline = (
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const buckets = useMemo(() => breakIntoHourlyBuckets(start, end), [start, end]);
+  const buckets = useMemo(() => getHourlyBuckets(start, end), [start, end]);
 
   const client = useApolloClient();
 
@@ -81,18 +81,18 @@ export const useRunsForTimeline = (
         let updatedAfter = bucket[0] / 1000;
         let cacheData: RunTimelineFragment[] = [];
 
-        if (completedRunsCache.isRangeComplete(bucket[0], bucket[1])) {
+        if (completedRunsCache.isCompleteRange(bucket[0], bucket[1])) {
           return {
-            data: completedRunsCache.getDataForHour(bucket[0]),
+            data: completedRunsCache.getHourData(bucket[0]),
             cursor: undefined,
             hasMore: false,
             error: undefined,
           };
         } else {
-          const missingRange = completedRunsCache.getMissingRangeForHour(bucket[0]);
+          const missingRange = completedRunsCache.getMissingIntervals(bucket[0]);
           createdBefore = missingRange[0]![1] / 1000;
           updatedAfter = missingRange[0]![0] / 1000;
-          cacheData = completedRunsCache.getDataForHour(bucket[0]);
+          cacheData = completedRunsCache.getHourData(bucket[0]);
         }
 
         const {data} = await client.query<
@@ -134,8 +134,8 @@ export const useRunsForTimeline = (
         };
       },
       onBucketCompleted(bucket, runs) {
-        if (!completedRunsCache.isRangeComplete(bucket[0], bucket[1])) {
-          completedRunsCache.addToCache(bucket[0], bucket[1], runs);
+        if (!completedRunsCache.isCompleteRange(bucket[0], bucket[1])) {
+          completedRunsCache.addData(bucket[0], bucket[1], runs);
         }
       },
     });
