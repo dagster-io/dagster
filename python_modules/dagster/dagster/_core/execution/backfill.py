@@ -7,6 +7,7 @@ from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
 from dagster._core.instance import DynamicPartitionsStore
@@ -102,7 +103,7 @@ class PartitionBackfill(
             asset_selection=check.opt_nullable_sequence_param(
                 asset_selection, "asset_selection", of_type=AssetKey
             ),
-            title=check.opt_str_param(title, "title"),
+            title=check_valid_title(title),
             description=check.opt_str_param(description, "description"),
             partition_set_origin=check.opt_inst_param(
                 partition_set_origin, "partition_set_origin", RemotePartitionSetOrigin
