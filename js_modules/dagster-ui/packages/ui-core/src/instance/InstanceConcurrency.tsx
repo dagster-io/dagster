@@ -120,7 +120,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
 export const InstanceConcurrencyPage = () => {
   const {pageTitle} = React.useContext(InstancePageContext);
   return (
-    <Page>
+    <Page style={{padding: 0}}>
       <PageHeader
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="concurrency" />}
