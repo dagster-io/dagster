@@ -43,7 +43,7 @@ from dagster._core.definitions.result import ObserveResult
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
-    validate_group_name,
+    normalize_group_name,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -257,7 +257,7 @@ class SourceAsset(ResourceAddable):
         self.partitions_def = check.opt_inst_param(
             partitions_def, "partitions_def", PartitionsDefinition
         )
-        self.group_name = validate_group_name(group_name)
+        self.group_name = normalize_group_name(group_name)
         self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self.op_tags = check.opt_mapping_param(op_tags, "op_tags")

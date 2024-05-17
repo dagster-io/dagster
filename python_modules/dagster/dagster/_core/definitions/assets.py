@@ -71,7 +71,7 @@ from .partition_mapping import (
 )
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_group_name, validate_tags_strict
+from .utils import DEFAULT_GROUP_NAME, normalize_group_name, validate_tags_strict
 
 if TYPE_CHECKING:
     from .base_asset_graph import AssetKeyOrCheckKey
@@ -213,7 +213,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
             group_name = group_names_by_key.get(key)
-            self._group_names_by_key[key] = validate_group_name(group_name)
+            self._group_names_by_key[key] = normalize_group_name(group_name)
 
         all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
 
