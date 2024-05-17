@@ -46,7 +46,7 @@ from dagster._core.remote_representation.external_data import (
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
-from dagster._serdes import deserialize_value, serialize_value
+from dagster._serdes import deserialize_value, serialize_value, unpack_value
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
@@ -1320,3 +1320,44 @@ def test_historical_external_asset_node_that_models_underlying_external_assets_d
         dependencies=[],
         depended_by=[],
     ).is_executable
+
+
+def test_back_compat_team_owners():
+    """Up through Dagster 1.7.7, asset owners provided as "team:foo" would be serialized as "foo"
+    going forward, they're serialized as "team:foo".
+
+    This test verifies we can still load the old format.
+    """
+    packed_1_7_7_external_asset = {
+        "__class__": "ExternalAssetNode",
+        "asset_key": {"__class__": "AssetKey", "path": ["asset_one"]},
+        "dependencies": [],
+        "depended_by": [],
+        "execution_type": {"__enum__": "AssetExecutionType.MATERIALIZATION"},
+        "compute_kind": None,
+        "op_name": None,
+        "op_names": [],
+        "code_version": None,
+        "node_definition_name": None,
+        "graph_name": None,
+        "op_description": None,
+        "job_names": [],
+        "partitions_def_data": None,
+        "output_name": None,
+        "output_description": None,
+        "metadata_entries": [],
+        "tags": {},
+        "group_name": "default",
+        "freshness_policy": None,
+        "is_source": True,
+        "is_observable": False,
+        "atomic_execution_unit_id": None,
+        "required_top_level_resources": [],
+        "auto_materialize_policy": None,
+        "backfill_policy": None,
+        "auto_observe_interval_minutes": None,
+        "owners": ["foo", "hi@me.com"],
+    }
+
+    external_asset_node = unpack_value(packed_1_7_7_external_asset)
+    assert external_asset_node.owners == ["team:foo", "hi@me.com"]
