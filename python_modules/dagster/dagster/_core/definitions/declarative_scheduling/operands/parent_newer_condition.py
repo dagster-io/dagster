@@ -33,7 +33,6 @@ class ParentNewerCondition(SchedulingCondition):
         return context.non_agv_instance_interface.get_parent_asset_partitions_updated_after_child(
             asset_partition=candidate,
             parent_asset_partitions=all_parent_asset_partitions,
-            respect_materialization_data_versions=False,
             ignored_parent_keys=set(),
         )
 

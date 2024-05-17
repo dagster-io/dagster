@@ -51,13 +51,12 @@ class NonAGVInstanceInterface:
         *,
         asset_partition: AssetKeyPartitionKey,
         parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
-        respect_materialization_data_versions: bool,
         ignored_parent_keys: AbstractSet[AssetKey],
     ) -> AbstractSet[AssetKeyPartitionKey]:
         return self._queryer.get_parent_asset_partitions_updated_after_child(
             asset_partition=asset_partition,
             parent_asset_partitions=parent_asset_partitions,
-            respect_materialization_data_versions=respect_materialization_data_versions,
+            respect_materialization_data_versions=False,
             ignored_parent_keys=ignored_parent_keys,
         )
 
