@@ -20,14 +20,13 @@ from typing import (
 
 import pendulum
 
+from dagster._core.definitions.asset_graph import materializable_in_same_run
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 from ...asset_subset import AssetSubset, ValidAssetSubset
 from ..serialized_objects import (
@@ -341,31 +340,7 @@ class LegacyRuleEvaluationContext:
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
-        from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-
-        child_node = self.asset_graph.get(child_key)
-        parent_node = self.asset_graph.get(parent_key)
-        return (
-            # both assets must be materializable
-            child_node.is_materializable
-            and parent_node.is_materializable
-            # the parent must have the same partitioning
-            and child_node.partitions_def == parent_node.partitions_def
-            # the parent must have a simple partition mapping to the child
-            and (
-                not parent_node.is_partitioned
-                or isinstance(
-                    self.asset_graph.get_partition_mapping(child_node.key, parent_node.key),
-                    (TimeWindowPartitionMapping, IdentityPartitionMapping),
-                )
-            )
-            # the parent must be in the same repository to be materialized alongside the candidate
-            and (
-                not isinstance(self.asset_graph, RemoteAssetGraph)
-                or self.asset_graph.get_repository_handle(child_key)
-                == self.asset_graph.get_repository_handle(parent_key)
-            )
-        )
+        return materializable_in_same_run(self.asset_graph, child_key, parent_key)
 
     def get_parents_that_will_not_be_materialized_on_current_tick(
         self, *, asset_partition: AssetKeyPartitionKey
