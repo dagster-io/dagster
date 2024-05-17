@@ -21,22 +21,20 @@ if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import AssetSelection
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-    from .operands import (
+    from .impls import (
+        AllDepsCondition,
+        AndAssetCondition,
+        AnyDepsCondition,
         FailedSchedulingCondition,
         InLatestTimeWindowCondition,
         InProgressSchedulingCondition,
         MissingSchedulingCondition,
+        NotAssetCondition,
+        OrAssetCondition,
         ParentNewerCondition,
         RequestedThisTickCondition,
         ScheduledSinceConditionCondition,
         UpdatedSinceCronCondition,
-    )
-    from .operators import (
-        AllDepsCondition,
-        AndAssetCondition,
-        AnyDepsCondition,
-        NotAssetCondition,
-        OrAssetCondition,
     )
     from .scheduling_context import SchedulingContext
 
@@ -76,7 +74,7 @@ class SchedulingCondition(ABC, DagsterModel):
         raise NotImplementedError()
 
     def __and__(self, other: "SchedulingCondition") -> "AndAssetCondition":
-        from .operators import AndAssetCondition
+        from .impls import AndAssetCondition
 
         # group AndAssetConditions together
         if isinstance(self, AndAssetCondition):
@@ -84,7 +82,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return AndAssetCondition(operands=[self, other])
 
     def __or__(self, other: "SchedulingCondition") -> "OrAssetCondition":
-        from .operators import OrAssetCondition
+        from .impls import OrAssetCondition
 
         # group OrAssetConditions together
         if isinstance(self, OrAssetCondition):
@@ -92,7 +90,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return OrAssetCondition(operands=[self, other])
 
     def __invert__(self) -> "NotAssetCondition":
-        from .operators import NotAssetCondition
+        from .impls import NotAssetCondition
 
         return NotAssetCondition(operand=self)
 
@@ -107,7 +105,7 @@ class SchedulingCondition(ABC, DagsterModel):
             dep_selection (Optional["AssetSelection"]): A filter over the set of dependency keys. If
                 provided, any dependency not matching the provided selection will be ignored.
         """
-        from .operators import AnyDepsCondition
+        from .impls import AnyDepsCondition
 
         return AnyDepsCondition(operand=condition, dep_selection=dep_selection)
 
@@ -122,7 +120,7 @@ class SchedulingCondition(ABC, DagsterModel):
             dep_selection (Optional["AssetSelection"]): A filter over the set of dependency keys. If
                 provided, any dependency not matching the provided selection will be ignored.
         """
-        from .operators import AllDepsCondition
+        from .impls import AllDepsCondition
 
         return AllDepsCondition(operand=condition, dep_selection=dep_selection)
 
@@ -131,21 +129,21 @@ class SchedulingCondition(ABC, DagsterModel):
         """Returns a SchedulingCondition that is true for an asset partition if it has never been
         materialized or observed.
         """
-        from .operands import MissingSchedulingCondition
+        from .impls import MissingSchedulingCondition
 
         return MissingSchedulingCondition()
 
     @staticmethod
     def in_progress() -> "InProgressSchedulingCondition":
         """Returns a SchedulingCondition that is true for an asset partition if it is part of an in-progress run."""
-        from .operands import InProgressSchedulingCondition
+        from .impls import InProgressSchedulingCondition
 
         return InProgressSchedulingCondition()
 
     @staticmethod
     def failed() -> "FailedSchedulingCondition":
         """Returns a SchedulingCondition that is true for an asset partition if its latest run failed."""
-        from .operands import FailedSchedulingCondition
+        from .impls import FailedSchedulingCondition
 
         return FailedSchedulingCondition()
 
@@ -156,7 +154,7 @@ class SchedulingCondition(ABC, DagsterModel):
         """Returns a SchedulingCondition that is true for an asset partition if it has been updated
         since the latest tick of the provided cron schedule.
         """
-        from .operands import UpdatedSinceCronCondition
+        from .impls import UpdatedSinceCronCondition
 
         return UpdatedSinceCronCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
@@ -173,7 +171,7 @@ class SchedulingCondition(ABC, DagsterModel):
                 For example, if this is used on a daily-partitioned asset with a lookback_delta of
                 48 hours, this will return the latest two partitions.
         """
-        from .operands import InLatestTimeWindowCondition
+        from .impls import InLatestTimeWindowCondition
 
         return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
 
@@ -188,14 +186,14 @@ class SchedulingCondition(ABC, DagsterModel):
         Args:
             condition (SchedulingCondition): The condition to monitor for requests after.
         """
-        from .operands import ScheduledSinceConditionCondition
+        from .impls import ScheduledSinceConditionCondition
 
         return ScheduledSinceConditionCondition(operand=condition)
 
     @staticmethod
     def requested_this_tick() -> "RequestedThisTickCondition":
         """Returns a SchedulingCondition that is true for an asset partition if it will be requested this tick."""
-        from .operands import RequestedThisTickCondition
+        from .impls import RequestedThisTickCondition
 
         return RequestedThisTickCondition()
 
@@ -207,7 +205,7 @@ class SchedulingCondition(ABC, DagsterModel):
             dep_selection (Optional["AssetSelection"]): A filter over the set of dependency keys. If
                 provided, any dependency not matching the provided selection will be ignored.
         """
-        from .operands import ParentNewerCondition
+        from .impls import ParentNewerCondition
 
         return ParentNewerCondition(dep_selection=dep_selection)
 

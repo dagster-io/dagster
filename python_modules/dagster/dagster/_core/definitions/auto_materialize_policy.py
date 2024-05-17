@@ -296,11 +296,7 @@ class AutoMaterializePolicy(
     def to_scheduling_condition(self) -> "SchedulingCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
         from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from .declarative_scheduling.operators.boolean_operators import (
-            AndAssetCondition,
-            NotAssetCondition,
-            OrAssetCondition,
-        )
+        from .declarative_scheduling import AndAssetCondition, NotAssetCondition, OrAssetCondition
 
         if self.asset_condition is not None:
             return self.asset_condition

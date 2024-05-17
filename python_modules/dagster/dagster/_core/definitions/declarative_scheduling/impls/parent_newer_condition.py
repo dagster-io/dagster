@@ -9,7 +9,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_context import 
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..has_dep_selection import IHasDepSelection
+from .has_dep_selection import IHasDepSelection
 
 
 @whitelist_for_serdes

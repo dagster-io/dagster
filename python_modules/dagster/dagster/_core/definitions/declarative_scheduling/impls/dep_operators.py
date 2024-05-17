@@ -1,9 +1,9 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..has_dep_selection import IHasDepSelection
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
+from .has_dep_selection import IHasDepSelection
 
 
 class DepConditionWrapperCondition(SchedulingCondition):

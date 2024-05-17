@@ -276,10 +276,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .declarative_scheduling.operators.boolean_operators import (
-            NotAssetCondition,
-            OrAssetCondition,
-        )
+        from .declarative_scheduling import NotAssetCondition, OrAssetCondition
         from .declarative_scheduling.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
@@ -369,7 +366,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .declarative_scheduling.operators.boolean_operators import AndAssetCondition
+        from .declarative_scheduling.impls.boolean_operators import AndAssetCondition
         from .declarative_scheduling.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )

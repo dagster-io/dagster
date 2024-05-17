@@ -11,11 +11,11 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.declarative_scheduling.impls.boolean_operators import (
+    AndAssetCondition,
+)
 from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
-)
-from dagster._core.definitions.declarative_scheduling.operators.boolean_operators import (
-    AndAssetCondition,
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
