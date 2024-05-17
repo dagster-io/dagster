@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 import functools
+import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass
@@ -71,16 +72,18 @@ class LegacyRuleEvaluationContext:
 
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
-    daemon_context: "AssetDaemonContext"
 
     evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
+    respect_materialization_data_versions: bool
+    auto_materialize_run_tags: Mapping[str, str]
+    logger: logging.Logger
     root_ref: Optional["LegacyRuleEvaluationContext"] = None
 
     @staticmethod
-    def create(
+    def create_within_asset_daemon(
         asset_key: AssetKey,
         condition: "SchedulingCondition",
         previous_evaluation_state: Optional[AssetConditionEvaluationState],
@@ -90,6 +93,33 @@ class LegacyRuleEvaluationContext:
         evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> "LegacyRuleEvaluationContext":
+        return LegacyRuleEvaluationContext.create(
+            asset_key=asset_key,
+            condition=condition,
+            previous_evaluation_state=previous_evaluation_state,
+            instance_queryer=instance_queryer,
+            data_time_resolver=data_time_resolver,
+            evaluation_state_by_key=evaluation_state_by_key,
+            expected_data_time_mapping=expected_data_time_mapping,
+            respect_materialization_data_versions=daemon_context.respect_materialization_data_versions,
+            auto_materialize_run_tags=daemon_context.auto_materialize_run_tags,
+            logger=daemon_context.logger,
+        )
+
+    @staticmethod
+    def create(
+        *,
+        asset_key: AssetKey,
+        condition: "SchedulingCondition",
+        previous_evaluation_state: Optional[AssetConditionEvaluationState],
+        instance_queryer: "CachingInstanceQueryer",
+        data_time_resolver: "CachingDataTimeResolver",
+        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
+        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
+        respect_materialization_data_versions: bool,
+        auto_materialize_run_tags: Mapping[str, str],
+        logger: logging.Logger,
+    ):
         partitions_def = instance_queryer.asset_graph.get(asset_key).partitions_def
 
         return LegacyRuleEvaluationContext(
@@ -107,10 +137,12 @@ class LegacyRuleEvaluationContext:
             ),
             data_time_resolver=data_time_resolver,
             instance_queryer=instance_queryer,
-            daemon_context=daemon_context,
             evaluation_state_by_key=evaluation_state_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
             start_timestamp=pendulum.now("UTC").timestamp(),
+            respect_materialization_data_versions=respect_materialization_data_versions,
+            auto_materialize_run_tags=auto_materialize_run_tags,
+            logger=logger,
         )
 
     def for_child(

@@ -114,7 +114,7 @@ class AssetConditionScenarioState(ScenarioState):
                 logger=self.logger,
                 evaluation_time=self.current_time,
             )
-            legacy_context = LegacyRuleEvaluationContext.create(
+            legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
                 asset_key=asset_key,
                 condition=asset_condition,
                 previous_evaluation_state=self.previous_evaluation_state,

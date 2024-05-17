@@ -394,7 +394,9 @@ class SqlEventLogStorage(EventLogStorage):
                             value=new_tags[tag],
                             # Postgres requires a datetime that is in UTC but has no timezone info
                             # set in order to be stored correctly
-                            event_timestamp=datetime.utcfromtimestamp(event_timestamp),
+                            event_timestamp=datetime.fromtimestamp(
+                                event_timestamp, timezone.utc
+                            ).replace(tzinfo=None),
                         )
                         for tag in added_tags
                     ],
@@ -881,7 +883,9 @@ class SqlEventLogStorage(EventLogStorage):
         if asset_details and asset_details.last_wipe_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                > datetime.fromtimestamp(asset_details.last_wipe_timestamp, timezone.utc).replace(
+                    tzinfo=None
+                )
             )
 
         if apply_cursor_filters:
@@ -907,13 +911,17 @@ class SqlEventLogStorage(EventLogStorage):
         if event_records_filter.before_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                < datetime.utcfromtimestamp(event_records_filter.before_timestamp)
+                < datetime.fromtimestamp(
+                    event_records_filter.before_timestamp, timezone.utc
+                ).replace(tzinfo=None)
             )
 
         if event_records_filter.after_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                > datetime.utcfromtimestamp(event_records_filter.after_timestamp)
+                > datetime.fromtimestamp(
+                    event_records_filter.after_timestamp, timezone.utc
+                ).replace(tzinfo=None)
             )
 
         if event_records_filter.storage_ids:
@@ -1618,7 +1626,9 @@ class SqlEventLogStorage(EventLogStorage):
                         db.and_(
                             asset_key_in_row,
                             SqlEventLogStorageTable.c.timestamp
-                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),
+                            > datetime.fromtimestamp(
+                                asset_details.last_wipe_timestamp, timezone.utc
+                            ).replace(tzinfo=None),
                         ),
                         db.not_(asset_key_in_row),
                     )
@@ -1668,7 +1678,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
-                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
                 )
         else:
             table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
@@ -1683,7 +1695,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
-                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
                 )
 
         if filter_event_id is not None:

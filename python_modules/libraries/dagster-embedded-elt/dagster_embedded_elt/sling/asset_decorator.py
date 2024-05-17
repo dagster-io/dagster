@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any, Callable, Iterable, Mapping, Optional
 
 from dagster import (
@@ -40,8 +41,13 @@ def streams_with_default_dagster_meta(
     else:
         for stream in streams:
             name = stream["name"]
-            config = vars(stream["config"])
-            config["meta"] = deep_merge_dicts(default_dagster_meta, config["meta"])
+            config = deepcopy(stream["config"])
+            if not config:
+                config = {"meta": {"dagster": default_dagster_meta}}
+            else:
+                config["meta"] = deep_merge_dicts(
+                    {"dagster": default_dagster_meta}, config.get("meta", {})
+                )
             yield {"name": name, "config": config}
 
 

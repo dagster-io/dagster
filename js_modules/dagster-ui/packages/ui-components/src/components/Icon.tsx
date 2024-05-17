@@ -155,6 +155,7 @@ import status from '../icon-svgs/status.svg';
 import sticky_note from '../icon-svgs/sticky_note.svg';
 import sync_alt from '../icon-svgs/sync_alt.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
+import table_rows from '../icon-svgs/table_rows.svg';
 import table_view from '../icon-svgs/table_view.svg';
 import tag from '../icon-svgs/tag.svg';
 import timer from '../icon-svgs/timer.svg';
@@ -220,6 +221,7 @@ export const Icons = {
   sensors,
   schedule,
   source_asset,
+  table_rows,
   workspace: source,
   gantt_flat,
   gantt_waterfall,

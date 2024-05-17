@@ -165,10 +165,13 @@ class DagsterDltResource(ConfigurableResource):
 
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 
+        load_info.raise_on_failed_jobs()
+
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         for asset_key, dlt_source_resource in asset_key_dlt_source_resource_mapping.items():
             metadata = self.extract_resource_metadata(dlt_source_resource, load_info)
+
             if has_asset_def:
                 yield MaterializeResult(asset_key=asset_key, metadata=metadata)
 

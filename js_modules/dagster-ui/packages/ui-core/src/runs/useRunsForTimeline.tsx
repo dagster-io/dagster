@@ -5,7 +5,7 @@ import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
-import {fetchPaginatedBucketData} from './fetchPaginatedBucketData';
+import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
 import {
   CompletedRunTimelineQuery,
   CompletedRunTimelineQueryVariables,
@@ -25,7 +25,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-const BUCKET_SIZE = 3600 * 1000;
+const BUCKET_SIZE_MS = 3600 * 1000;
 const BATCH_LIMIT = 500;
 
 export const useRunsForTimeline = (
@@ -43,13 +43,11 @@ export const useRunsForTimeline = (
 
   const buckets = useMemo(() => {
     const buckets = [];
-    for (let time = start; time < end; time += BUCKET_SIZE) {
-      buckets.push([time, Math.min(end, time + BUCKET_SIZE)] as const);
+    for (let time = start; time < end; time += BUCKET_SIZE_MS) {
+      buckets.push([time, Math.min(end, time + BUCKET_SIZE_MS)] as const);
     }
     return buckets;
   }, [start, end]);
-
-  const singleBucket = useMemo(() => [range], [range]);
 
   const client = useApolloClient();
 
@@ -124,47 +122,66 @@ export const useRunsForTimeline = (
   }, [buckets, client, runsFilter]);
 
   const fetchOngoingRunsQueryData = useCallback(async () => {
-    return await fetchPaginatedBucketData({
-      buckets: singleBucket, // We don't actually bucket the ongoing runs since it doesn't matter when they start
-      setQueryData: setOngoingRunsData,
-      async fetchData(_bucket, cursor: string | undefined) {
-        const {data} = await client.query<
-          OngoingRunTimelineQuery,
-          OngoingRunTimelineQueryVariables
-        >({
-          query: ONGOING_RUN_TIMELINE_QUERY,
-          notifyOnNetworkStatusChange: true,
-          fetchPolicy: 'no-cache',
-          variables: {
-            inProgressFilter: {
-              ...runsFilter,
-              statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+    setOngoingRunsData(({data}) => ({
+      data, // preserve existing data
+      loading: true,
+      called: true,
+      error: undefined,
+    }));
+    try {
+      const data = await fetchPaginatedData({
+        async fetchData(cursor: string | undefined) {
+          const {data} = await client.query<
+            OngoingRunTimelineQuery,
+            OngoingRunTimelineQueryVariables
+          >({
+            query: ONGOING_RUN_TIMELINE_QUERY,
+            notifyOnNetworkStatusChange: true,
+            fetchPolicy: 'no-cache',
+            variables: {
+              inProgressFilter: {
+                ...runsFilter,
+                statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+              },
+              cursor,
+              limit: BATCH_LIMIT,
             },
-            cursor,
-            limit: BATCH_LIMIT,
-          },
-        });
+          });
 
-        if (data.ongoing.__typename !== 'Runs') {
+          if (data.ongoing.__typename !== 'Runs') {
+            return {
+              data: [],
+              cursor: undefined,
+              hasMore: false,
+              error: data.ongoing,
+            };
+          }
+          const runs = data.ongoing.results;
+          const hasMoreData = runs.length === BATCH_LIMIT;
+          const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
           return {
-            data: [],
-            cursor: undefined,
-            hasMore: false,
-            error: data.ongoing,
+            data: runs,
+            cursor: nextCursor,
+            hasMore: hasMoreData,
+            error: undefined,
           };
-        }
-        const runs = data.ongoing.results;
-        const hasMoreData = runs.length === BATCH_LIMIT;
-        const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
-        return {
-          data: runs,
-          cursor: nextCursor,
-          hasMore: hasMoreData,
-          error: undefined,
-        };
-      },
-    });
-  }, [singleBucket, client, runsFilter]);
+        },
+      });
+      setOngoingRunsData({
+        data,
+        loading: false,
+        called: true,
+        error: undefined,
+      });
+    } catch (e) {
+      setOngoingRunsData(({data}) => ({
+        data, // preserve existing data
+        loading: false,
+        called: true,
+        error: e,
+      }));
+    }
+  }, [client, runsFilter]);
 
   const [fetchFutureTicks, futureTicksQueryData] = useLazyQuery<
     FutureTicksQuery,

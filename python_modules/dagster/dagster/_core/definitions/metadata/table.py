@@ -15,13 +15,15 @@ from dagster._serdes.serdes import (
 @experimental
 @whitelist_for_serdes
 class TableRecord(
-    NamedTuple("TableRecord", [("data", PublicAttr[Mapping[str, Union[str, int, float, bool]]])])
+    NamedTuple(
+        "TableRecord", [("data", PublicAttr[Mapping[str, Optional[Union[str, int, float, bool]]]])]
+    )
 ):
     """Represents one record in a table. Field keys are arbitrary strings-- field values must be
     strings, integers, floats, or bools.
     """
 
-    def __new__(cls, data: Mapping[str, Union[str, int, float, bool]]):
+    def __new__(cls, data: Mapping[str, Optional[Union[str, int, float, bool]]]):
         check.dict_param(
             data,
             "data",

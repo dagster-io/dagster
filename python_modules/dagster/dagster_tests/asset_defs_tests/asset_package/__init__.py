@@ -13,7 +13,7 @@ def make_list_of_assets():
     def james_brown():
         pass
 
-    @asset
+    @asset(metadata={"foo": "bar"})
     def fats_domino():
         pass
 
