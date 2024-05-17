@@ -100,7 +100,9 @@ class SchedulingContext(NamedTuple):
             previous_evaluation_info=previous_evaluation_info,
             current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
             inner_legacy_context=legacy_context,
-            non_agv_instance_interface=NonAGVInstanceInterface(asset_graph_view._queryer),  # noqa
+            non_agv_instance_interface=NonAGVInstanceInterface(
+                asset_graph_view.get_inner_queryer_for_back_compat()
+            ),
         )
 
     def for_child_condition(

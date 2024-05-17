@@ -21,7 +21,9 @@ class SchedulingTickResult(NamedTuple):
 def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
     asset_graph = defs.get_asset_graph()
     asset_graph_view = AssetGraphView.for_test(defs)
-    data_time_resolver = CachingDataTimeResolver(asset_graph_view._queryer)  # noqa
+    data_time_resolver = CachingDataTimeResolver(
+        asset_graph_view.get_inner_queryer_for_back_compat()
+    )
 
     evaluator = AssetConditionEvaluator(
         asset_graph=asset_graph,

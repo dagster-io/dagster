@@ -92,7 +92,7 @@ class AssetConditionEvaluator:
 
     @property
     def instance_queryer(self) -> "CachingInstanceQueryer":
-        return self.asset_graph_view._queryer  # noqa: SLF001
+        return self.asset_graph_view.get_inner_queryer_for_back_compat()
 
     def evaluate(
         self,
