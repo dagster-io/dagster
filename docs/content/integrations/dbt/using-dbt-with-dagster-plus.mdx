@@ -213,6 +213,24 @@ For an end-to-end example, from the project creation to the deployment to Dagste
 
 [//]: <> "TODO: Add examples of files"
 
+When deploying a dbt & Dagster project through "Import a Dagster project", the cloud action added to the project repo will require some attention - using dbt requires some additional steps.deployment
+
+[//]: <> "TODO: Add the steps as described in Dag Uni"
+
+```
+- name: Parse dbt project and package with Dagster project
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  run: |
+    pip install pip --upgrade
+    pip install dbt-duckdb
+    cd project-repo/analytics
+    dbt deps
+    dbt parse
+  shell: bash
+```
+
+[//]: <> "TODO: Add the steps for GitLab as well"
+
 ## Understanding the cloud action files
 
 ### With GitHub
