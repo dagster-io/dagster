@@ -123,6 +123,8 @@ export const useRunsForTimeline = (
           };
         }
         const runs: RunTimelineFragment[] = data.completed.results;
+        completedRunsCache.addData(bucket[0], bucket[1], runs);
+
         const hasMoreData = runs.length === BATCH_LIMIT;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
 
@@ -132,11 +134,6 @@ export const useRunsForTimeline = (
           hasMore: hasMoreData,
           error: undefined,
         };
-      },
-      onBucketCompleted(bucket, runs) {
-        if (!completedRunsCache.isCompleteRange(bucket[0], bucket[1])) {
-          completedRunsCache.addData(bucket[0], bucket[1], runs);
-        }
       },
     });
   }, [buckets, client, completedRunsCache, runsFilter]);
