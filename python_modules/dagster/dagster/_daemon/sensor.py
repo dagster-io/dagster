@@ -314,10 +314,7 @@ def execute_sensor_iteration(
     all_sensor_states = {
         sensor_state.selector_id: sensor_state
         for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
-        if (
-            not sensor_state.instigator_data
-            or sensor_state.instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE  # type: ignore
-        )
+        # if not sensor_state.instigator_data
     }
 
     tick_retention_settings = instance.get_tick_retention_settings(InstigatorType.SENSOR)
@@ -328,15 +325,15 @@ def execute_sensor_iteration(
         if code_location:
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
-                    if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
-                        continue
-
                     selector_id = sensor.selector_id
-                    if sensor.get_current_instigator_state(
+                    current_state =  sensor.get_current_instigator_state(
                         all_sensor_states.get(selector_id)
-                    ).is_running:
+                    )
+
+                    if current_state.is_running:
                         sensors[selector_id] = sensor
 
+    print(f"sensors: {sensors}")
     if not sensors:
         yield
         return
@@ -612,6 +609,9 @@ def _evaluate_sensor(
     code_location = _get_code_location_for_sensor(workspace_process_context, external_sensor)
     repository_handle = external_sensor.handle.repository_handle
     instigator_data = _sensor_instigator_data(state)
+
+    if external_sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
+        ...
 
     sensor_runtime_data = code_location.get_external_sensor_execution_data(
         instance,
