@@ -477,13 +477,9 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
             for deps_factor in ["dbt16", "dbt17", "dbt18", "pydantic1"]
-            for command_factor in [
-                # "cloud", "core", "legacy", "snowflake",
-                "bigquery"
-            ]
-            # d/n run pydantic1 with snowflake
-            if not (deps_factor == "pydantic1" and command_factor in ["snowflake", "bigquery"])
-        ],
+            for command_factor in ["cloud", "core", "legacy"]
+        ]
+        + ["dbt18-snowflake", "dbt18-bigquery"],
         env_vars=[
             "SNOWFLAKE_ACCOUNT",
             "SNOWFLAKE_USER",
