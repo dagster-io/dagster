@@ -132,6 +132,7 @@ def test_snowflake_invocation_fixture():
     )
 
 
+@pytest.mark.prodsnowflake
 def test_row_count_snowflake(
     test_snowflake_invocation: Dict[str, Any],
 ) -> None:
