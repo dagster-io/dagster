@@ -1,6 +1,7 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, Optional
 
 import pendulum
 
@@ -62,7 +63,8 @@ class NonAGVInstanceInterface:
         )
 
 
-class SchedulingContext(NamedTuple):
+@dataclass
+class SchedulingContext:
     # the slice over which the condition is being evaluated
     candidate_slice: AssetSlice
 
@@ -125,6 +127,11 @@ class SchedulingContext(NamedTuple):
             ),
             allow_legacy_access=False,
         )
+
+    def with_legacy_access(self) -> "SchedulingContext":
+        from dataclasses import replace
+
+        return replace(self, allow_legacy_access=True)
 
     def for_child_condition(
         self, child_condition: SchedulingCondition, child_index: int, candidate_slice: AssetSlice
