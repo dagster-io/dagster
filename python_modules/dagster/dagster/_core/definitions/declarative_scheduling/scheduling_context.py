@@ -188,7 +188,9 @@ class SchedulingContext(NamedTuple):
         return (
             self.inner_legacy_context
             if self.allow_legacy_access
-            else check.failed("Legacy access only allow in auto_materialize_rules_impls.py")
+            else check.failed(
+                "Legacy access only allowed in AutoMaterializeRule subclasses in auto_materialize_rules_impls.py"
+            )
         )
 
     @property
