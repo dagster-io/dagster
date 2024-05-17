@@ -8,13 +8,14 @@ import sys
 import uuid
 from argparse import Namespace
 from collections import abc
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Generic,
     Iterator,
@@ -99,7 +100,7 @@ from ..utils import (
     ASSET_RESOURCE_TYPES,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
 )
-from .utils import get_future_completion_state_or_err
+from .utils import imap
 
 logger = get_dagster_logger()
 
@@ -688,7 +689,9 @@ class DbtCliInvocation:
                 def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
-        return DbtEventIterator(self._stream_asset_events(), self)
+        return DbtEventIterator(
+            self._stream_asset_events(), self, ThreadPoolExecutor(STREAM_EVENTS_THREADPOOL_SIZE)
+        )
 
     @public
     def stream_raw_events(self) -> Iterator[DbtCliEventMessage]:
@@ -850,106 +853,81 @@ class DbtCliInvocation:
 T = TypeVar("T", bound=DbtDagsterEventType)
 
 
+def _get_dbt_resource_props_from_event(
+    invocation: DbtCliInvocation, event: DbtDagsterEventType
+) -> Dict[str, Any]:
+    unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
+    return check.not_none(invocation.manifest["nodes"].get(unique_id))
+
+
+def _fetch_row_count_metadata(
+    invocation: DbtCliInvocation,
+    event: DbtDagsterEventType,
+) -> Optional[Dict[str, Any]]:
+    """Threaded task which fetches row counts for materialized dbt models in a dbt run
+    once they are built, and attaches the row count as metadata to the event.
+    """
+    if not isinstance(event, (AssetMaterialization, Output)):
+        return None
+
+    adapter = check.not_none(invocation.adapter)
+
+    dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+    is_view = dbt_resource_props["config"]["materialized"] == "view"
+
+    # Avoid counting rows for views, since they may include complex SQL queries
+    # that are costly to execute. We can revisit this in the future if there is
+    # a demand for it.
+    if is_view:
+        return None
+
+    unique_id = dbt_resource_props["unique_id"]
+    logger.debug("Fetching row count for %s", unique_id)
+    table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+    try:
+        with adapter.connection_named(f"row_count_{unique_id}"):
+            query_result = adapter.execute(
+                f"""
+                    SELECT
+                    count(*) as row_count
+                    FROM
+                    {table_str}
+                """,
+                fetch=True,
+            )
+        row_count = query_result[1][0]["row_count"]
+        return {**TableMetadataSet(row_count=row_count)}
+
+    except Exception as e:
+        logger.exception(
+            f"An error occurred while fetching row count for {unique_id}. Row count metadata"
+            " will not be included in the event.\n\n"
+            f"Exception: {e}"
+        )
+        return None
+
+
 class DbtEventIterator(Generic[T], abc.Iterator):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.
     """
 
-    def __init__(self, events: Iterator[T], dbt_cli_invocation: DbtCliInvocation) -> None:
+    def __init__(
+        self,
+        events: Iterator[T],
+        dbt_cli_invocation: DbtCliInvocation,
+        threadpool: ThreadPoolExecutor,
+    ) -> None:
         self._inner_iterator = events
         self._dbt_cli_invocation = dbt_cli_invocation
+        self._threadpool = threadpool
 
     def __next__(self) -> T:
         return next(self._inner_iterator)
 
     def __iter__(self) -> "DbtEventIterator[T]":
         return self
-
-    def _get_dbt_resource_props_from_event(self, event: DbtDagsterEventType) -> Dict[str, Any]:
-        unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
-        return check.not_none(self._dbt_cli_invocation.manifest["nodes"].get(unique_id))
-
-    def _fetch_and_attach_row_count_metadata(
-        self,
-        event: DbtDagsterEventType,
-    ) -> DbtDagsterEventType:
-        """Threaded task which fetches row counts for materialized dbt models in a dbt run
-        once they are built, and attaches the row count as metadata to the event.
-        """
-        adapter = check.not_none(self._dbt_cli_invocation.adapter)
-
-        dbt_resource_props = self._get_dbt_resource_props_from_event(event)
-        is_view = dbt_resource_props["config"]["materialized"] == "view"
-
-        # Avoid counting rows for views, since they may include complex SQL queries
-        # that are costly to execute. We can revisit this in the future if there is
-        # a demand for it.
-        if is_view:
-            return event
-
-        # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
-        # so that the DuckDB lock is released. This is because DuckDB does not allow for
-        # opening multiple connections to the same database when a write connection, such
-        # as the one dbt uses, is open.
-        try:
-            from dbt.adapters.duckdb import DuckDBAdapter
-
-            if isinstance(adapter, DuckDBAdapter):
-                self._dbt_run_thread.result()
-        except ImportError:
-            pass
-
-        unique_id = dbt_resource_props["unique_id"]
-        logger.debug("Fetching row count for %s", unique_id)
-        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
-
-        try:
-            with adapter.connection_named(f"row_count_{unique_id}"):
-                query_result = adapter.execute(
-                    f"""
-                        SELECT
-                        count(*) as row_count
-                        FROM
-                        {table_str}
-                    """,
-                    fetch=True,
-                )
-            row_count = query_result[1][0]["row_count"]
-            additional_metadata = {**TableMetadataSet(row_count=row_count)}
-
-            if isinstance(event, Output):
-                return event.with_metadata(metadata={**event.metadata, **additional_metadata})
-            else:
-                return event._replace(metadata={**event.metadata, **additional_metadata})
-        except Exception as e:
-            logger.exception(
-                f"An error occurred while fetching row count for {unique_id}. Row count metadata"
-                " will not be included in the event.\n\n"
-                f"Exception: {e}"
-            )
-            return event
-
-    def _stream_dbt_events_and_enqueue_postprocessing(
-        self,
-        output_events_and_futures: List[Union[Future, DbtDagsterEventType]],
-        executor: ThreadPoolExecutor,
-    ) -> None:
-        """Task which streams dbt events and either directly places them in
-        the output_events list to be emitted to user code, or enqueues post-processing tasks
-        where needed.
-        """
-        for event in self:
-            # For any materialization or output event, we run postprocessing steps
-            # to attach additional metadata to the event.
-            if isinstance(event, (AssetMaterialization, Output)):
-                output_events_and_futures.append(
-                    executor.submit(
-                        self._fetch_and_attach_row_count_metadata,
-                        event,
-                    )
-                )
-            else:
-                output_events_and_futures.append(event)
 
     @public
     @experimental
@@ -967,66 +945,47 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
-        return DbtEventIterator(
-            self._fetch_row_counts_inner(),
-            dbt_cli_invocation=self._dbt_cli_invocation,
-        )
+        return self.attach_metadata(_fetch_row_count_metadata)
 
-    def _fetch_row_counts_inner(
+    def attach_metadata(
         self,
-    ) -> Iterator[
-        Union[
-            Output,
-            AssetMaterialization,
-            AssetObservation,
-            AssetCheckResult,
-        ]
-    ]:
-        logger.info("Row counts will be fetched for non-view models once they are materialized.")
+        fn: Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]],
+    ) -> "DbtEventIterator[DbtDagsterEventType]":
+        def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
+            with pushd(str(self._dbt_cli_invocation.project_dir)):
+                result = fn(self._dbt_cli_invocation, event)
+                if result is None:
+                    return event
 
-        # We keep a list of emitted Dagster events and pending futures which augment
-        # emitted events with additional metadata. This ensures we can yield events in the order
-        # they are emitted by dbt.
-        output_events_and_futures: List[Union[Future, DbtDagsterEventType]] = []
+                if isinstance(event, Output):
+                    return event.with_metadata({**event.metadata, **result})
+                else:
+                    return event._replace(metadata={**event.metadata, **result})
 
-        # Point at project directory to ensure dbt adapters run correctly
-        with pushd(str(self._dbt_cli_invocation.project_dir)), ThreadPoolExecutor(
-            max_workers=STREAM_EVENTS_THREADPOOL_SIZE
-        ) as executor:
-            self._dbt_run_thread = executor.submit(
-                self._stream_dbt_events_and_enqueue_postprocessing,
-                output_events_and_futures,
-                executor,
+        # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
+        # so that the DuckDB lock is released. This is because DuckDB does not allow for
+        # opening multiple connections to the same database when a write connection, such
+        # as the one dbt uses, is open.
+        block_on_dbt_run = False
+        try:
+            from dbt.adapters.duckdb import DuckDBAdapter
+
+            if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
+                block_on_dbt_run = True
+        except ImportError:
+            pass
+
+        with pushd(str(self._dbt_cli_invocation.project_dir)):
+            return DbtEventIterator(
+                imap(
+                    executor=self._threadpool,
+                    iterable=self,
+                    func=_map_fn,
+                    block_on_enqueuing_task_completion=block_on_dbt_run,
+                ),
+                dbt_cli_invocation=self._dbt_cli_invocation,
+                threadpool=self._threadpool,
             )
-
-            # Step through the list of output events and futures, yielding them in order
-            # once they are ready to be emitted
-            event_to_emit_idx = 0
-            while True:
-                all_work_complete = get_future_completion_state_or_err(
-                    [self._dbt_run_thread, *output_events_and_futures]
-                )
-                if all_work_complete and event_to_emit_idx >= len(output_events_and_futures):
-                    break
-
-                if event_to_emit_idx < len(output_events_and_futures):
-                    event_to_emit = output_events_and_futures[event_to_emit_idx]
-
-                    try:
-                        # If the next event to emit is a Future (waiting on postprocessing),
-                        # we need to wait for it to complete before yielding the event.
-                        event = (
-                            event_to_emit.result(timeout=0.1)
-                            if isinstance(event_to_emit, Future)
-                            else event_to_emit
-                        )
-                        yield event
-                        event_to_emit_idx += 1
-                    except:
-                        # If the Future has not completed, it will raise a TimeoutError.
-                        # Any other exception will be reraised in the main thread as part
-                        # of get_future_completion_state_or_err.
-                        pass
 
 
 class DbtCliResource(ConfigurableResource):

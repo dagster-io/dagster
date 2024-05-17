@@ -8,9 +8,15 @@ from dagster import (
     _check as check,
     materialize,
 )
+from dagster._core.definitions.events import AssetMaterialization, Output
 from dagster._core.definitions.metadata import IntMetadataValue
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtCliInvocation, DbtCliResource
+from dagster_dbt.core.resources_v2 import (
+    DbtCliInvocation,
+    DbtCliResource,
+    DbtDagsterEventType,
+    _get_dbt_resource_props_from_event,
+)
 
 from ..conftest import _create_dbt_invocation
 from ..dbt_projects import test_jaffle_shop_path
@@ -123,3 +129,57 @@ def test_row_count_err(
 
         # assert we have warning message in logs
         assert "An error occurred while fetching row count for " in caplog.text
+
+
+def test_summary(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
+    def _summarize(
+        invocation: DbtCliInvocation,
+        event: DbtDagsterEventType,
+    ):
+        if not isinstance(event, (AssetMaterialization, Output)):
+            return None
+
+        dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+        assert invocation.adapter
+        with invocation.adapter.connection_named(f"row_count_{dbt_resource_props['unique_id']}"):
+            query_result = invocation.adapter.execute(
+                f"SUMMARIZE {table_str}",
+                fetch=True,
+            )
+
+        query_result[1].print_json()
+
+        return {"summary": "ok"}
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().attach_metadata(_summarize)
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+    )
+
+    assert result.success
+
+    # Validate that we have row counts for all models which are not views
+    assert all(
+        "summary" not in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" in check.not_none(event.asset_key).path[-1]
+    )
+    assert all(
+        "summary" in event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+        if "stg" not in check.not_none(event.asset_key).path[-1]
+    )
+
+    # print summaries
+
+    for event in result.get_asset_materialization_events():
+        if "stg" not in check.not_none(event.asset_key).path[-1]:
+            print(event.materialization.metadata["summary"])
+    assert False
