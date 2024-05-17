@@ -10,6 +10,7 @@ from dagster._core.asset_graph_view.asset_graph_view import (
     AssetSlice,
 )
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
 )
@@ -23,6 +24,24 @@ from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+    from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+
+# This class exists purely for organizational purposes so that we understand
+# the interface between scheduling conditions and the instance much more
+# explicitly. This captures all interactions that do not go through AssetGraphView
+# so that we do not access the legacy context or the instance queryer directly
+# in scheduling conditions.
+class NonAGVInstanceInterface:
+    def __init__(self, queryer: "CachingInstanceQueryer"):
+        self._queryer = queryer
+
+    def get_asset_subset_updated_after_time(
+        self, *, asset_key: AssetKey, after_time: datetime.datetime
+    ) -> ValidAssetSubset:
+        return self._queryer.get_asset_subset_updated_after_time(
+            asset_key=asset_key, after_time=after_time
+        )
 
 
 class SchedulingContext(NamedTuple):
@@ -49,6 +68,8 @@ class SchedulingContext(NamedTuple):
     # a mapping of information computed on the current tick for assets which are upstream of this
     # asset
     current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo]
+
+    non_agv_instance_interface: NonAGVInstanceInterface
 
     # hack to avoid circular references during pydantic validation
     inner_legacy_context: Any
@@ -79,6 +100,7 @@ class SchedulingContext(NamedTuple):
             previous_evaluation_info=previous_evaluation_info,
             current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
             inner_legacy_context=legacy_context,
+            non_agv_instance_interface=NonAGVInstanceInterface(),
         )
 
     def for_child_condition(
@@ -103,6 +125,7 @@ class SchedulingContext(NamedTuple):
                 ),
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
+            non_agv_instance_interface=self.non_agv_instance_interface,
         )
 
     @property
