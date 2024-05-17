@@ -40,7 +40,6 @@ from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -2122,7 +2121,7 @@ def test_asset_owners():
     def my_asset():
         pass
 
-    owners = [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    owners = ["team:team1", "claire@dagsterlabs.com"]
     assert my_asset.owners_by_key == {my_asset.key: owners}
     assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
 
@@ -2176,8 +2175,8 @@ def test_multi_asset_owners():
         pass
 
     assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
-        AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
+        AssetKey("out1"): ["team:team1", "user@dagsterlabs.com"],
+        AssetKey("out2"): ["user2@dagsterlabs.com"],
     }
 
 
@@ -2192,16 +2191,16 @@ def test_replace_asset_keys_for_asset_with_owners():
         pass
 
     assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): [UserAssetOwner("user@dagsterlabs.com")],
-        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out1"): ["user@dagsterlabs.com"],
+        AssetKey("out2"): ["user@dagsterlabs.com"],
     }
 
     prefixed_asset = my_multi_asset.with_attributes(
         output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
     )
     assert prefixed_asset.owners_by_key == {
-        AssetKey(["prefix", "out1"]): [UserAssetOwner("user@dagsterlabs.com")],
-        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey(["prefix", "out1"]): ["user@dagsterlabs.com"],
+        AssetKey("out2"): ["user@dagsterlabs.com"],
     }
 
 

@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
 from dagster import AssetKey
-from dagster._core.definitions.assets import UserAssetOwner
 from dagster_looker.asset_decorator import looker_assets
 from dagster_looker.dagster_looker_translator import DagsterLookerTranslator, LookMLStructureType
 
@@ -372,11 +371,11 @@ def test_with_group_replacements() -> None:
 
 
 def test_with_owner_replacements() -> None:
-    expected_owners = [UserAssetOwner("custom@custom.com")]
+    expected_owners = ["custom@custom.com"]
 
     class CustomDagsterLookerTranslator(DagsterLookerTranslator):
         def get_owners(self, _) -> Optional[Sequence[str]]:
-            return [owner.email for owner in expected_owners]
+            return expected_owners
 
     @looker_assets(
         project_dir=test_retail_demo_path,
