@@ -888,7 +888,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
         return check.not_none(self._dbt_cli_invocation.manifest["nodes"].get(unique_id))
 
-    def _fetch_row_count_metadata(
+    def _fetch_and_attach_row_count_metadata(
         self,
         event: DbtDagsterEventType,
     ) -> DbtDagsterEventType:
@@ -977,7 +977,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 imap(
                     executor=self._threadpool,
                     iterable=self,
-                    func=self._fetch_row_count_metadata,
+                    func=self._fetch_and_attach_row_count_metadata,
                     block_on_enqueuing_task_completion=block_on_dbt_run,
                 ),
                 dbt_cli_invocation=self._dbt_cli_invocation,

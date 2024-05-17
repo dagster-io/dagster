@@ -336,19 +336,20 @@ def imap(
             `concurrent.futures.ThreadpoolExecutor.map`.
     """
     work_queue: List[Future] = []
-
-    def _apply_func_to_iterator_results(iterable) -> None:
-        for arg in iterable:
-            work_queue.append(executor.submit(func, arg))
-
     enqueuing_task: Optional[Future] = None
-    if block_on_enqueuing_task_completion:
-        _apply_func_to_iterator_results(iterable)
-        import time
 
-        time.sleep(0.5)
-        print("DBT IS DONE")
+    if block_on_enqueuing_task_completion:
+        # collect all the work items before enqueuing them
+        items_to_enqueue = [*iterable]
+        for arg in items_to_enqueue:
+            work_queue.append(executor.submit(func, arg))
     else:
+        # create a small task which waits on the iterator
+        # and enqueues work items as they become available
+        def _apply_func_to_iterator_results(iterable: Iterator[T]) -> None:
+            for arg in iterable:
+                work_queue.append(executor.submit(func, arg))
+
         enqueuing_task = executor.submit(
             _apply_func_to_iterator_results,
             iterable,
