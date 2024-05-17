@@ -59,7 +59,6 @@ from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.events.functions import cleanup_event_logger
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -100,6 +99,16 @@ from ..utils import (
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
 )
 from .utils import get_future_completion_state_or_err
+
+IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
+
+if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+    from dbt.events.functions import cleanup_event_logger  # type: ignore
+
+    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
+else:
+    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
+    from dbt_common.events.event_manager_client import cleanup_event_logger
 
 logger = get_dagster_logger()
 
@@ -256,7 +265,7 @@ class DbtCliEventMessage:
         is_node_successful = node_status == NodeStatus.Success
         is_node_finished = bool(event_node_info.get("node_finished_at"))
         if (
-            node_resource_type in NodeType.refable()
+            node_resource_type in REFABLE_NODE_TYPES
             and is_node_successful
             and not is_node_ephemeral
         ):
@@ -1304,7 +1313,12 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self, args: Sequence[str]) -> BaseAdapter:
+    def _initialize_adapter(self) -> BaseAdapter:
+        if not IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+            from dbt_common.context import set_invocation_context
+
+            set_invocation_context(os.environ.copy())
+
         # constructs a dummy set of flags, using the `run` command (ensures profile/project reqs get loaded)
         profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
         set_from_args(Namespace(profiles_dir=profiles_dir), None)
@@ -1327,7 +1341,13 @@ class DbtCliResource(ConfigurableResource):
             pass
 
         cleanup_event_logger()
-        register_adapter(config)
+        if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+            register_adapter(config)  # type: ignore
+        else:
+            from dbt.mp_context import get_mp_context
+
+            register_adapter(config, get_mp_context())
+
         adapter = cast(BaseAdapter, get_adapter(config))
         # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
         reset_adapters()
@@ -1582,7 +1602,7 @@ class DbtCliResource(ConfigurableResource):
         adapter: Optional[BaseAdapter] = None
         with pushd(self.project_dir):
             try:
-                adapter = self._initialize_adapter(args)
+                adapter = self._initialize_adapter()
 
             except:
                 # defer exceptions until they can be raised in the runtime context of the invocation

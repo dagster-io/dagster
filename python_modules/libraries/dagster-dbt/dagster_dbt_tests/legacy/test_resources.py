@@ -167,7 +167,7 @@ def test_models_removed_for_run_operation(dbt_seed, test_project_dir, dbt_config
 
 
 def test_extra_args_run(dbt_seed, test_project_dir, dbt_config_dir):
-    my_vars = {"foo": 1, "bar": "baz"}
+    my_vars = {"foo": "1", "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
@@ -183,7 +183,7 @@ def test_extra_args_run(dbt_seed, test_project_dir, dbt_config_dir):
 
 
 def test_models_and_extra_run(dbt_seed, test_project_dir, dbt_config_dir):
-    my_vars = {"foo": 1, "bar": "baz"}
+    my_vars = {"foo": "1", "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
@@ -199,7 +199,7 @@ def test_models_and_extra_run(dbt_seed, test_project_dir, dbt_config_dir):
 
 
 def test_exclude_run(dbt_seed, test_project_dir, dbt_config_dir):
-    my_vars = {"foo": 1, "bar": "baz"}
+    my_vars = {"foo": "1", "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
@@ -216,7 +216,7 @@ def test_exclude_run(dbt_seed, test_project_dir, dbt_config_dir):
 
 def test_merged_extra_flags_run(dbt_seed, test_project_dir, dbt_config_dir):
     configured_vars = {"hello": "world"}
-    my_vars = {"foo": 1, "bar": "baz"}
+    my_vars = {"foo": "1", "bar": "baz"}
 
     @op(required_resource_keys={"dbt"})
     def my_dbt_solid(context):
