@@ -9,6 +9,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
   buckets,
   fetchData,
   setQueryData,
+  onBucketCompleted,
 }: {
   buckets: BucketType[];
   fetchData: (
@@ -20,6 +21,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
     cursor: CursorType | undefined;
     error: ErrorType;
   }>;
+  onBucketCompleted?: (bucket: BucketType, data: DataType[]) => void;
   setQueryData: React.Dispatch<React.SetStateAction<QueryResultData<DataType>>>;
 }) {
   setQueryData(({data}) => ({
@@ -30,11 +32,13 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
   }));
   try {
     const results = await Promise.all(
-      buckets.map((bucket) =>
-        fetchPaginatedData<DataType, CursorType, ErrorType>({
+      buckets.map(async (bucket) => {
+        const data = await fetchPaginatedData<DataType, CursorType, ErrorType>({
           fetchData: (cursor) => fetchData(bucket, cursor),
-        }),
-      ),
+        });
+        onBucketCompleted?.(bucket, data);
+        return data;
+      }),
     );
     setQueryData({
       data: results.flat(),
@@ -43,6 +47,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
       error: undefined,
     });
   } catch (error) {
+    console.error(error);
     setQueryData(({data}) => ({
       data, // preserve existing data
       loading: false,

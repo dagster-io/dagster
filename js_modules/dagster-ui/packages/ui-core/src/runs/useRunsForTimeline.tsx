@@ -1,6 +1,7 @@
 import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
 import {useCallback, useMemo, useState} from 'react';
 
+import {HourlyDataCache, breakIntoHourlyBuckets} from './HourlyDataCache';
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
@@ -25,7 +26,6 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-const BUCKET_SIZE_MS = 3600 * 1000;
 const BATCH_LIMIT = 500;
 
 export const useRunsForTimeline = (
@@ -41,15 +41,11 @@ export const useRunsForTimeline = (
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const buckets = useMemo(() => {
-    const buckets = [];
-    for (let time = start; time < end; time += BUCKET_SIZE_MS) {
-      buckets.push([time, Math.min(end, time + BUCKET_SIZE_MS)] as const);
-    }
-    return buckets;
-  }, [start, end]);
+  const buckets = useMemo(() => breakIntoHourlyBuckets(start, end), [start, end]);
 
   const client = useApolloClient();
+
+  const completedRunsCache = useMemo(() => new HourlyDataCache<RunTimelineFragment>(), []);
 
   const [completedRunsQueryData, setCompletedRunsData] = useState<{
     data: RunTimelineFragment[] | undefined;
@@ -81,6 +77,24 @@ export const useRunsForTimeline = (
       buckets,
       setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
+        let createdBefore = bucket[1] / 1000;
+        let updatedAfter = bucket[0] / 1000;
+        let cacheData: RunTimelineFragment[] = [];
+
+        if (completedRunsCache.isRangeComplete(bucket[0], bucket[1])) {
+          return {
+            data: completedRunsCache.getDataForHour(bucket[0]),
+            cursor: undefined,
+            hasMore: false,
+            error: undefined,
+          };
+        } else {
+          const missingRange = completedRunsCache.getMissingRangeForHour(bucket[0]);
+          createdBefore = missingRange[0]![1] / 1000;
+          updatedAfter = missingRange[0]![0] / 1000;
+          cacheData = completedRunsCache.getDataForHour(bucket[0]);
+        }
+
         const {data} = await client.query<
           CompletedRunTimelineQuery,
           CompletedRunTimelineQueryVariables
@@ -92,8 +106,8 @@ export const useRunsForTimeline = (
             completedFilter: {
               ...runsFilter,
               statuses: Array.from(doneStatuses),
-              createdBefore: bucket[1] / 1000,
-              updatedAfter: bucket[0] / 1000,
+              createdBefore,
+              updatedAfter,
             },
             cursor,
             limit: BATCH_LIMIT,
@@ -102,24 +116,30 @@ export const useRunsForTimeline = (
 
         if (data.completed.__typename !== 'Runs') {
           return {
-            data: [],
+            data: [...cacheData],
             cursor: undefined,
             hasMore: false,
             error: data.completed,
           };
         }
-        const runs = data.completed.results;
+        const runs: RunTimelineFragment[] = data.completed.results;
         const hasMoreData = runs.length === BATCH_LIMIT;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+
         return {
-          data: runs,
+          data: [...cacheData, ...runs],
           cursor: nextCursor,
           hasMore: hasMoreData,
           error: undefined,
         };
       },
+      onBucketCompleted(bucket, runs) {
+        if (!completedRunsCache.isRangeComplete(bucket[0], bucket[1])) {
+          completedRunsCache.addToCache(bucket[0], bucket[1], runs);
+        }
+      },
     });
-  }, [buckets, client, runsFilter]);
+  }, [buckets, client, completedRunsCache, runsFilter]);
 
   const fetchOngoingRunsQueryData = useCallback(async () => {
     setOngoingRunsData(({data}) => ({
