@@ -479,6 +479,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             for deps_factor in ["dbt16", "dbt17", "dbt18", "pydantic1"]
             for command_factor in ["cloud", "core", "legacy", "snowflake"]
         ],
+        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
         unsupported_python_versions=[
             # duckdb
             AvailablePythonVersion.V3_12,
