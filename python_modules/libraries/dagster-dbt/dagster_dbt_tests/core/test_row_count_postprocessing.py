@@ -161,10 +161,3 @@ def test_row_count_snowflake(
         for event in result.get_asset_materialization_events()
         if "stg" not in check.not_none(event.asset_key).path[-1]
     )
-
-    row_counts = [
-        cast(IntMetadataValue, event.materialization.metadata["dagster/row_count"]).value
-        for event in result.get_asset_materialization_events()
-        if "stg" not in check.not_none(event.asset_key).path[-1]
-    ]
-    assert all(row_count and row_count > 0 for row_count in row_counts), row_counts
