@@ -1,7 +1,5 @@
 from dagster import SchedulingCondition, asset
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-
-    AutoMaterializeSensorDefinition,
     DeclarativeSchedulingZone,
 )
 from dagster._core.definitions.definitions_class import Definitions
@@ -9,6 +7,7 @@ from dagster._core.definitions.definitions_class import Definitions
 
 @asset
 def different_asset() -> None: ...
+
 
 @asset
 def upstream_lijksdkfjsd() -> None: ...

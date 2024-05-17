@@ -4,7 +4,12 @@ from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 
 from .asset_selection import AssetSelection
-from .sensor_definition import DefaultSensorStatus, SensorDefinition, SensorType
+from .sensor_definition import (
+    DefaultSensorStatus,
+    SensorDefinition,
+    SensorEvaluationContext,
+    SensorType,
+)
 from .utils import check_valid_name, normalize_tags
 
 
@@ -69,6 +74,12 @@ class AutoMaterializeSensorDefinition(SensorDefinition):
         return SensorType.AUTO_MATERIALIZE
 
 
+def _ds_zone_implementation(context: SensorEvaluationContext) -> None:
+    raise NotImplementedError(
+        "DS Zones not yet implemented sensors cannot be evaluated like regular user-space sensors."
+    )
+
+
 @experimental
 class DeclarativeSchedulingZone(SensorDefinition):
     """Targets a set of assets and repeatedly evaluates all the AutoMaterializePolicys on all of
@@ -99,15 +110,10 @@ class DeclarativeSchedulingZone(SensorDefinition):
     ):
         self._run_tags = normalize_tags(run_tags).tags
 
-        def evaluation_fn(context) -> None:
-            raise NotImplementedError(
-                "DS Zones not yet implemented sensors cannot be evaluated like regular user-space sensors."
-            )
-
         super(DeclarativeSchedulingZone, self).__init__(
             name=check_valid_name(name),
             job_name=None,
-            evaluation_fn=evaluation_fn,
+            evaluation_fn=_ds_zone_implementation,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job=None,

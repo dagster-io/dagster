@@ -326,7 +326,7 @@ def execute_sensor_iteration(
             for repo in code_location.get_repositories().values():
                 for sensor in repo.get_external_sensors():
                     selector_id = sensor.selector_id
-                    current_state =  sensor.get_current_instigator_state(
+                    current_state = sensor.get_current_instigator_state(
                         all_sensor_states.get(selector_id)
                     )
 
