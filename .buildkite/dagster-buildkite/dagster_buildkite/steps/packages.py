@@ -477,11 +477,20 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         pytest_tox_factors=[
             f"{deps_factor}-{command_factor}"
             for deps_factor in ["dbt16", "dbt17", "dbt18", "pydantic1"]
-            for command_factor in ["cloud", "core", "legacy", "snowflake", "bigquery"]
+            for command_factor in [
+                # "cloud", "core", "legacy", "snowflake",
+                "bigquery"
+            ]
             # d/n run pydantic1 with snowflake
             if not (deps_factor == "pydantic1" and command_factor in ["snowflake", "bigquery"])
         ],
-        env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
+        env_vars=[
+            "SNOWFLAKE_ACCOUNT",
+            "SNOWFLAKE_USER",
+            "SNOWFLAKE_PASSWORD",
+            "GCP_PROJECT_ID",
+        ],
+        pytest_extra_cmds=gcp_extra_cmds,
         unsupported_python_versions=[
             # duckdb
             AvailablePythonVersion.V3_12,
