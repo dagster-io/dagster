@@ -51,16 +51,20 @@ class AssetConditionEvaluator:
         self,
         *,
         asset_graph: BaseAssetGraph,
-        auto_materialize_asset_keys: AbstractSet[AssetKey],
+        asset_keys: AbstractSet[AssetKey],
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
         cursor: AssetDaemonCursor,
         data_time_resolver: CachingDataTimeResolver,
         respect_materialization_data_versions: bool,
+        # Mapping from run tags to values that should be automatically added run emitted by
+        # the declarative scheduling system. This ends up getting sources from places such
+        # as https://docs.dagster.io/deployment/dagster-instance#auto-materialize
+        # Should this be a supported feature in DS?
         auto_materialize_run_tags: Mapping[str, str],
     ):
         self.asset_graph = asset_graph
-        self.auto_materialize_asset_keys = auto_materialize_asset_keys
+        self.asset_keys = asset_keys
         self.asset_graph_view = asset_graph_view
         self.logger = logger
         self.cursor = cursor
@@ -73,17 +77,17 @@ class AssetConditionEvaluator:
         self.expected_data_time_mapping = defaultdict()
         self.to_request = set()
         self.num_checked_assets = 0
-        self.num_auto_materialize_asset_keys = len(auto_materialize_asset_keys)
+        self.num_asset_keys = len(asset_keys)
 
     asset_graph: BaseAssetGraph
-    auto_materialize_asset_keys: AbstractSet[AssetKey]
+    asset_keys: AbstractSet[AssetKey]
     asset_graph_view: AssetGraphView
     evaluation_state_by_key: Dict[AssetKey, AssetConditionEvaluationState]
     current_evaluation_info_by_key: Dict[AssetKey, SchedulingEvaluationInfo]
     expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]]
     to_request: Set[AssetKeyPartitionKey]
     num_checked_assets: int
-    num_auto_materialize_asset_keys: int
+    num_asset_keys: int
     logger: logging.Logger
     cursor: AssetDaemonCursor
     data_time_resolver: CachingDataTimeResolver
@@ -99,14 +103,14 @@ class AssetConditionEvaluator:
     ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
         for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
-            if asset_key not in self.auto_materialize_asset_keys:
+            if asset_key not in self.asset_keys:
                 continue
 
             self.num_checked_assets = self.num_checked_assets + 1
             start_time = time.time()
             self.logger.debug(
                 "Evaluating asset"
-                f" {asset_key.to_user_string()} ({self.num_checked_assets}/{self.num_auto_materialize_asset_keys})"
+                f" {asset_key.to_user_string()} ({self.num_checked_assets}/{self.num_asset_keys})"
             )
 
             try:

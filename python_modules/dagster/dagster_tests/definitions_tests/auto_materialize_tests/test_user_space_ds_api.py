@@ -27,7 +27,7 @@ def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
 
     evaluator = AssetConditionEvaluator(
         asset_graph=asset_graph,
-        auto_materialize_asset_keys=asset_graph.all_asset_keys,
+        asset_keys=asset_graph.all_asset_keys,
         asset_graph_view=asset_graph_view,
         logger=logging.getLogger(__name__),
         data_time_resolver=data_time_resolver,
