@@ -181,6 +181,7 @@ class GrapheneExecutionStepSkippedEvent(graphene.ObjectType):
         name = "ExecutionStepSkippedEvent"
 
 
+# TODO: delete -- schrockn 2024-05-18
 class GrapheneObjectStoreOperationType(graphene.Enum):
     SET_OBJECT = "SET_OBJECT"
     GET_OBJECT = "GET_OBJECT"
@@ -191,6 +192,7 @@ class GrapheneObjectStoreOperationType(graphene.Enum):
         name = "ObjectStoreOperationType"
 
 
+# TODO: delete -- schrockn 2024-05-18
 class GrapheneObjectStoreOperationResult(graphene.ObjectType):
     op = graphene.NonNull(GrapheneObjectStoreOperationType)
 

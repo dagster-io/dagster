@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -594,94 +593,6 @@ class RetryRequested(Exception):
         super(RetryRequested, self).__init__()
         self.max_retries = check.int_param(max_retries, "max_retries")
         self.seconds_to_wait = check.opt_numeric_param(seconds_to_wait, "seconds_to_wait")
-
-
-class ObjectStoreOperationType(Enum):
-    SET_OBJECT = "SET_OBJECT"
-    GET_OBJECT = "GET_OBJECT"
-    RM_OBJECT = "RM_OBJECT"
-    CP_OBJECT = "CP_OBJECT"
-
-
-class ObjectStoreOperation(
-    NamedTuple(
-        "_ObjectStoreOperation",
-        [
-            ("op", ObjectStoreOperationType),
-            ("key", str),
-            ("dest_key", Optional[str]),
-            ("obj", Any),
-            ("serialization_strategy_name", Optional[str]),
-            ("object_store_name", Optional[str]),
-            ("value_name", Optional[str]),
-            ("version", Optional[str]),
-            ("mapping_key", Optional[str]),
-        ],
-    )
-):
-    """This event is used internally by Dagster machinery when values are written to and read from
-    an ObjectStore.
-
-    Users should not import this class or yield events of this type from user code.
-
-    Args:
-        op (ObjectStoreOperationType): The type of the operation on the object store.
-        key (str): The key of the object on which the operation was performed.
-        dest_key (Optional[str]): The destination key, if any, to which the object was copied.
-        obj (Any): The object, if any, retrieved by the operation.
-        serialization_strategy_name (Optional[str]): The name of the serialization strategy, if any,
-            employed by the operation
-        object_store_name (Optional[str]): The name of the object store that performed the
-            operation.
-        value_name (Optional[str]): The name of the input/output
-        version (Optional[str]): (Experimental) The version of the stored data.
-        mapping_key (Optional[str]): The mapping key when a dynamic output is used.
-    """
-
-    def __new__(
-        cls,
-        op: ObjectStoreOperationType,
-        key: str,
-        dest_key: Optional[str] = None,
-        obj: Any = None,
-        serialization_strategy_name: Optional[str] = None,
-        object_store_name: Optional[str] = None,
-        value_name: Optional[str] = None,
-        version: Optional[str] = None,
-        mapping_key: Optional[str] = None,
-    ):
-        return super(ObjectStoreOperation, cls).__new__(
-            cls,
-            op=op,
-            key=check.str_param(key, "key"),
-            dest_key=check.opt_str_param(dest_key, "dest_key"),
-            obj=obj,
-            serialization_strategy_name=check.opt_str_param(
-                serialization_strategy_name, "serialization_strategy_name"
-            ),
-            object_store_name=check.opt_str_param(object_store_name, "object_store_name"),
-            value_name=check.opt_str_param(value_name, "value_name"),
-            version=check.opt_str_param(version, "version"),
-            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
-        )
-
-    @classmethod
-    def serializable(cls, inst, **kwargs):
-        return cls(
-            **dict(
-                {
-                    "op": inst.op.value,
-                    "key": inst.key,
-                    "dest_key": inst.dest_key,
-                    "obj": None,
-                    "serialization_strategy_name": inst.serialization_strategy_name,
-                    "object_store_name": inst.object_store_name,
-                    "value_name": inst.value_name,
-                    "version": inst.version,
-                },
-                **kwargs,
-            )
-        )
 
 
 class HookExecutionResult(

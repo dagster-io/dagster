@@ -33,7 +33,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
-from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
@@ -63,7 +63,6 @@ from dagster._utils.error import SerializableErrorInfo, serializable_error_info_
 from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.events import ObjectStoreOperation
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.step import StepKind
 
@@ -80,7 +79,6 @@ EventSpecificData = Union[
     StepRetryData,
     "JobFailureData",
     "JobCanceledData",
-    "ObjectStoreOperationResultData",
     "HandledOutputData",
     "LoadedInputData",
     "ComputeLogsCaptureData",
@@ -146,8 +144,6 @@ class DagsterEventType(str, Enum):
     PIPELINE_CANCELING = RUN_CANCELING
     PIPELINE_CANCELED = RUN_CANCELED
 
-    OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
-    ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
     LOADED_INPUT = "LOADED_INPUT"
     HANDLED_OUTPUT = "HANDLED_OUTPUT"
 
@@ -162,6 +158,10 @@ class DagsterEventType(str, Enum):
     ALERT_FAILURE = "ALERT_FAILURE"
 
     LOGS_CAPTURED = "LOGS_CAPTURED"
+
+    # Graveyard
+    OBJECT_STORE_OPERATION = "OBJECT_STORE_OPERATION"
+    ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION"
 
 
 EVENT_TYPE_TO_DISPLAY_STRING = {
@@ -1281,62 +1281,6 @@ class DagsterEvent(
             )
 
     @staticmethod
-    def object_store_operation(
-        step_context: IStepContext, object_store_operation_result: "ObjectStoreOperation"
-    ) -> "DagsterEvent":
-        object_store_name = (
-            f"{object_store_operation_result.object_store_name} "
-            if object_store_operation_result.object_store_name
-            else ""
-        )
-
-        serialization_strategy_modifier = (
-            f" using {object_store_operation_result.serialization_strategy_name}"
-            if object_store_operation_result.serialization_strategy_name
-            else ""
-        )
-
-        value_name = object_store_operation_result.value_name
-
-        if (
-            ObjectStoreOperationType(object_store_operation_result.op)
-            == ObjectStoreOperationType.SET_OBJECT
-        ):
-            message = (
-                f"Stored intermediate object for output {value_name} in "
-                f"{object_store_name}object store{serialization_strategy_modifier}."
-            )
-        elif (
-            ObjectStoreOperationType(object_store_operation_result.op)
-            == ObjectStoreOperationType.GET_OBJECT
-        ):
-            message = (
-                f"Retrieved intermediate object for input {value_name} in "
-                f"{object_store_name}object store{serialization_strategy_modifier}."
-            )
-        elif (
-            ObjectStoreOperationType(object_store_operation_result.op)
-            == ObjectStoreOperationType.CP_OBJECT
-        ):
-            message = f"Copied intermediate object for input {value_name} from {object_store_operation_result.key} to {object_store_operation_result.dest_key}"
-        else:
-            message = ""
-
-        return DagsterEvent.from_step(
-            DagsterEventType.OBJECT_STORE_OPERATION,
-            step_context,
-            event_specific_data=ObjectStoreOperationResultData(
-                op=object_store_operation_result.op,
-                value_name=value_name,
-                address=object_store_operation_result.key,
-                metadata={"key": MetadataValue.path(object_store_operation_result.key)},
-                version=object_store_operation_result.version,
-                mapping_key=object_store_operation_result.mapping_key,
-            ),
-            message=message,
-        )
-
-    @staticmethod
     def handled_output(
         step_context: IStepContext,
         output_name: str,
@@ -1625,45 +1569,6 @@ class StepExpectationResultData(
     storage_field_names={"metadata": "metadata_entries"},
     field_serializers={"metadata": MetadataFieldSerializer},
 )
-class ObjectStoreOperationResultData(
-    NamedTuple(
-        "_ObjectStoreOperationResultData",
-        [
-            ("op", ObjectStoreOperationType),
-            ("value_name", Optional[str]),
-            ("metadata", Mapping[str, MetadataValue]),
-            ("address", Optional[str]),
-            ("version", Optional[str]),
-            ("mapping_key", Optional[str]),
-        ],
-    )
-):
-    def __new__(
-        cls,
-        op: ObjectStoreOperationType,
-        value_name: Optional[str] = None,
-        metadata: Optional[Mapping[str, MetadataValue]] = None,
-        address: Optional[str] = None,
-        version: Optional[str] = None,
-        mapping_key: Optional[str] = None,
-    ):
-        return super(ObjectStoreOperationResultData, cls).__new__(
-            cls,
-            op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
-            value_name=check.opt_str_param(value_name, "value_name"),
-            metadata=normalize_metadata(
-                check.opt_mapping_param(metadata, "metadata", key_type=str)
-            ),
-            address=check.opt_str_param(address, "address"),
-            version=check.opt_str_param(version, "version"),
-            mapping_key=check.opt_str_param(mapping_key, "mapping_key"),
-        )
-
-
-@whitelist_for_serdes(
-    storage_field_names={"metadata": "metadata_entries"},
-    field_serializers={"metadata": MetadataFieldSerializer},
-)
 class EngineEventData(
     NamedTuple(
         "_EngineEventData",
@@ -1888,6 +1793,7 @@ class ComputeLogsCaptureData(
 
 ###################################################################################################
 # THE GRAVEYARD
+###################################################################################################
 #
 #            -|-                  -|-                  -|-
 #             |                    |                    |
@@ -1899,6 +1805,18 @@ class ComputeLogsCaptureData(
 #      |   Process   |      |    Store    |      |    Init     |
 #      |   Events    |      |  Operations |      |   Failures  |
 #      |             |      |             |      |             |
+###################################################################################################
+#
+#            -|-
+#             |
+#        _-'~~~~~`-_
+#      .'           '.
+#      |    R I P    |
+#      |             |
+#      |    Object   |
+#      |    Store    |
+#      |  Operations |
+#      |             |
 ###################################################################################################
 
 
@@ -1917,6 +1835,20 @@ class ComputeLogsCaptureData(
 #
 # class PipelineInitFailureData(NamedTuple):
 #     error: SerializableErrorInfo
+
+# class ObjectStoreOperationType(Enum):
+#     SET_OBJECT = "SET_OBJECT"
+#     GET_OBJECT = "GET_OBJECT"
+#     RM_OBJECT = "RM_OBJECT"
+#     CP_OBJECT = "CP_OBJECT"
+#
+# class ObjectStoreOperationResultData(NamedTuple):
+#     op: ObjectStoreOperationType
+#     value_name: Optional[str]
+#     metadata: Mapping[str, MetadataValue]
+#     address: Optional[str]
+#     version: Optional[str]
+#     mapping_key: Optional[str]
 
 
 def _handle_back_compat(
