@@ -74,7 +74,7 @@ class StepDelegatingExecutor(Executor):
         self._pop_events_offset = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_OFFSET", "0"))
 
     @property
-    def retries(self):
+    def retries(self) -> RetryMode:
         return self._retries
 
     def _pop_events(
