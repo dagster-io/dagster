@@ -2039,13 +2039,13 @@ def test_asset_owners():
     def asset_3():
         pass
 
-    assert asset_3.owners_by_key == {}
+    assert asset_3.owners_by_key == {asset_3.key: []}
 
     @asset(owners=None)
     def asset_4():
         pass
 
-    assert asset_4.owners_by_key == {}
+    assert asset_4.owners_by_key == {asset_4.key: []}
 
 
 def test_invalid_asset_owners():

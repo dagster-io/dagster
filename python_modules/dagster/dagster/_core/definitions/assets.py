@@ -931,7 +931,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
-        return {key: spec.owners for key, spec in self._specs_by_key.items() if spec.owners}
+        return {key: spec.owners or [] for key, spec in self._specs_by_key.items()}
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
