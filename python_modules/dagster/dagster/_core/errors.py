@@ -648,10 +648,6 @@ class DagsterUnknownStepStateError(DagsterError):
     """When job execution completes with steps in an unknown state."""
 
 
-class DagsterObjectStoreError(DagsterError):
-    """Errors during an object store operation."""
-
-
 class DagsterInvalidPropertyError(DagsterError):
     """Indicates that an invalid property was accessed. May often happen by accessing a property
     that no longer exists after breaking changes.
