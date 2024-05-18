@@ -99,6 +99,15 @@ def count_resume_run_attempts(instance: DagsterInstance, run_id: str) -> int:
     return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
 
 
+def run_will_resume(instance: DagsterInstance, run_id: str) -> bool:
+    if not instance.run_monitoring_enabled:
+        return False
+    return (
+        count_resume_run_attempts(instance, run_id)
+        < instance.run_monitoring_max_resume_run_attempts
+    )
+
+
 def monitor_started_run(
     instance: DagsterInstance,
     workspace: IWorkspace,

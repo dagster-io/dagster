@@ -12,6 +12,7 @@ from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLaunch
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._daemon.monitoring.run_monitoring import count_resume_run_attempts
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -327,7 +328,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         container_context = self.get_container_context_for_run(run)
 
         job_name = get_job_name_from_run_id(
-            run_id, resume_attempt_number=self._instance.count_resume_run_attempts(run.run_id)
+            run_id, resume_attempt_number=count_resume_run_attempts(self._instance, run.run_id)
         )
 
         try:
@@ -370,7 +371,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     ) -> Optional[str]:
         container_context = self.get_container_context_for_run(run)
         if self.supports_run_worker_crash_recovery:
-            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
+            resume_attempt_number = count_resume_run_attempts(self._instance, run.run_id)
         else:
             resume_attempt_number = None
 
@@ -414,7 +415,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         container_context = self.get_container_context_for_run(run)
 
         if self.supports_run_worker_crash_recovery:
-            resume_attempt_number = self._instance.count_resume_run_attempts(run.run_id)
+            resume_attempt_number = count_resume_run_attempts(self._instance, run.run_id)
         else:
             resume_attempt_number = None
 

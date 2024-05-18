@@ -2741,16 +2741,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
         return run
 
-    def count_resume_run_attempts(self, run_id: str) -> int:
-        from dagster._daemon.monitoring import count_resume_run_attempts
-
-        return count_resume_run_attempts(self, run_id)
-
-    def run_will_resume(self, run_id: str) -> bool:
-        if not self.run_monitoring_enabled:
-            return False
-        return self.count_resume_run_attempts(run_id) < self.run_monitoring_max_resume_run_attempts
-
     # Scheduler
 
     def start_schedule(self, external_schedule: "ExternalSchedule") -> "InstigatorState":
