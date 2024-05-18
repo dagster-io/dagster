@@ -253,10 +253,7 @@ def select_unique_ids_from_manifest(
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
     manifest = Manifest(
-        nodes={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["nodes"].items()  # type: ignore
-        },
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
             unique_id: _DictShim(info)
             for unique_id, info in manifest_json["sources"].items()  # type: ignore

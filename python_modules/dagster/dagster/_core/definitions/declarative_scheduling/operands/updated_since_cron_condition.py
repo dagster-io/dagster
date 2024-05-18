@@ -38,11 +38,9 @@ class UpdatedSinceCronCondition(SchedulingCondition):
             or context.previous_evaluation_node.candidate_slice != context.candidate_slice
         ):
             # do a full recomputation
-            updated_subset = (
-                context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
-                    asset_key=context.asset_key,
-                    after_time=previous_cron_tick,
-                )
+            updated_subset = context.non_agv_instance_interface.get_asset_subset_updated_after_time(
+                asset_key=context.asset_key,
+                after_time=previous_cron_tick,
             )
             # TODO: implement this on the AssetGraphView
             true_slice = context.asset_graph_view.get_asset_slice_from_valid_subset(updated_subset)

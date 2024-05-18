@@ -193,11 +193,13 @@ class AssetDaemonContext:
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        from .asset_condition_evaluator import AssetConditionEvaluator
+        from .declarative_scheduling.scheduling_condition_evaluator import (
+            SchedulingConditionEvaluator,
+        )
 
-        evaluator = AssetConditionEvaluator(
+        evaluator = SchedulingConditionEvaluator(
             asset_graph=self.asset_graph,
-            auto_materialize_asset_keys=self.auto_materialize_asset_keys,
+            asset_keys=self.auto_materialize_asset_keys,
             asset_graph_view=self.asset_graph_view,
             logger=self._logger,
             cursor=self.cursor,

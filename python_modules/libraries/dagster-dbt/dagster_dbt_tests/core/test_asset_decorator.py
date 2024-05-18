@@ -21,7 +21,6 @@ from dagster import (
     asset,
     materialize,
 )
-from dagster._core.definitions.assets import UserAssetOwner
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType
@@ -512,11 +511,11 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
 
 
 def test_with_owner_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
-    expected_owners = [UserAssetOwner("custom@custom.com")]
+    expected_owners = ["custom@custom.com"]
 
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_owners(self, _: Mapping[str, Any]) -> Optional[Sequence[str]]:
-            return [owner.email for owner in expected_owners]
+            return expected_owners
 
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
@@ -649,9 +648,9 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
 
 
 def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
-    expected_dbt_model_owners = [UserAssetOwner("kafka@amerika.com")]
-    expected_dbt_seed_owners = [UserAssetOwner("kafka@judgment.com")]
-    expected_dagster_owners = [UserAssetOwner("kafka@castle.com")]
+    expected_dbt_model_owners = ["kafka@amerika.com"]
+    expected_dbt_seed_owners = ["kafka@judgment.com"]
+    expected_dagster_owners = ["kafka@castle.com"]
 
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...

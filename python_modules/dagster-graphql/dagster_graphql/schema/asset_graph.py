@@ -405,12 +405,19 @@ class GrapheneAssetNode(graphene.ObjectType):
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
             owners=[
-                GrapheneUserAssetOwner(email=owner)
-                if is_valid_email(owner)
-                else GrapheneTeamAssetOwner(team=owner)
+                self._graphene_asset_owner_from_owner_str(owner)
                 for owner in (external_asset_node.owners or [])
             ],
         )
+
+    def _graphene_asset_owner_from_owner_str(
+        self, owner_str: str
+    ) -> Union[GrapheneUserAssetOwner, GrapheneTeamAssetOwner]:
+        if is_valid_email(owner_str):
+            return GrapheneUserAssetOwner(email=owner_str)
+        else:
+            check.invariant(owner_str.startswith("team:"))
+            return GrapheneTeamAssetOwner(team=owner_str[5:])
 
     @property
     def repository_location(self) -> CodeLocation:

@@ -41,7 +41,6 @@ from dagster._core.definitions import (
     asset,
     multi_asset,
 )
-from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
@@ -915,10 +914,7 @@ def test_graph_asset_with_args():
         maximum_lag_minutes=5
     )
     assert my_asset.tags_by_key[AssetKey("my_asset")] == {"foo": "bar"}
-    assert my_asset.owners_by_key[AssetKey("my_asset")] == [
-        TeamAssetOwner("team1"),
-        UserAssetOwner("claire@dagsterlabs.com"),
-    ]
+    assert my_asset.owners_by_key[AssetKey("my_asset")] == ["team:team1", "claire@dagsterlabs.com"]
     assert (
         my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
         == AutoMaterializePolicy.lazy()
