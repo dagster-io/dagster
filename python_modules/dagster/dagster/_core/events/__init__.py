@@ -163,7 +163,6 @@ class DagsterEventType(str, Enum):
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
 
-
 EVENT_TYPE_TO_DISPLAY_STRING = {
     DagsterEventType.PIPELINE_ENQUEUED: "RUN_ENQUEUED",
     DagsterEventType.PIPELINE_DEQUEUED: "RUN_DEQUEUED",
