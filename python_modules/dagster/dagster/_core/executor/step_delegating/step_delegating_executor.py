@@ -17,6 +17,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
+from dagster._daemon.monitoring.run_monitoring import run_will_resume
 from dagster._grpc.types import ExecuteStepArgs
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -226,7 +227,7 @@ class StepDelegatingExecutor(Executor):
                 while not active_execution.is_complete:
                     if active_execution.check_for_interrupts():
                         active_execution.mark_interrupted()
-                        if not plan_context.instance.run_will_resume(plan_context.run_id):
+                        if not run_will_resume(plan_context.instance, plan_context.run_id):
                             DagsterEvent.engine_event(
                                 plan_context,
                                 "Executor received termination signal, forwarding to steps",
