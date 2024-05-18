@@ -333,7 +333,7 @@ def _validate_event_specific_data(
     return event_specific_data
 
 
-def generate_event_batch_id():
+def generate_event_batch_id() -> str:
     return str(uuid.uuid4())
 
 
@@ -1041,7 +1041,7 @@ class DagsterEvent(
     def step_expectation_result(
         step_context: IStepContext, expectation_result: ExpectationResult
     ) -> "DagsterEvent":
-        def _msg():
+        def _msg() -> str:
             if expectation_result.description:
                 return expectation_result.description
 
