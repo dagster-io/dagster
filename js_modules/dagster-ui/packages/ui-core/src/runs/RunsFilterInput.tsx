@@ -609,14 +609,13 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     matchType: 'all-of',
   });
 
-  const ID_EMPTY = 'Type or paste 36-character ID';
-  const ID_TOO_SHORT = 'Invalid Run ID';
+  const ID_EMPTY = 'Type or paste a Run ID';
 
   const idFilter = useSuggestionFilter({
     name: 'Run ID',
     icon: 'id',
     initialSuggestions: [],
-    getNoSuggestionsPlaceholder: (query) => (!query ? ID_EMPTY : ID_TOO_SHORT),
+    getNoSuggestionsPlaceholder: () => ID_EMPTY,
     state: useMemo(() => {
       return tokens.filter(({token}) => token === 'id').map((token) => token.value);
     }, [tokens]),
