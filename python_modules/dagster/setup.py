@@ -117,6 +117,7 @@ setup(
         "rich",
         "filelock",
         f"dagster-pipes{pin}",
+        "fastapi",
     ],
     extras_require={
         "docker": ["docker"],

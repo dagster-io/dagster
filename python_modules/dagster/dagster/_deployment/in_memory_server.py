@@ -17,4 +17,8 @@ class InMemoryDeploymentServer(IDeploymentServer):
         event_log_conn = self._instance.get_records_for_run(
             run_id=run_id, cursor=cursor, limit=limit, ascending=ascending, of_type=None
         )
-        return FetchRunEventRecordsResponse(records=event_log_conn.records)
+        return FetchRunEventRecordsResponse(
+            records=event_log_conn.records,
+            cursor=event_log_conn.cursor,
+            has_more=event_log_conn.has_more,
+        )

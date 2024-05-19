@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Optional, Sequence
+
+from pydantic import BaseModel
 
 from dagster._core.event_api import EventLogRecord
 
 
-@dataclass(frozen=True)
-class FetchRunEventRecordsResponse:
+class FetchRunEventRecordsResponse(BaseModel, arbitrary_types_allowed=True):
     records: Sequence[EventLogRecord]
-    ...
+    cursor: str
+    has_more: bool
 
 
 class IDeploymentServer(ABC):

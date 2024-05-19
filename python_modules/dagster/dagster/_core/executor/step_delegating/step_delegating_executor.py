@@ -8,7 +8,7 @@ import pendulum
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.event_api import EventLogCursor
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.active import ActiveExecution
 from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
@@ -92,10 +92,10 @@ class StepDelegatingExecutor(Executor):
                 cursor_obj.storage_id() - self._pop_events_offset
             ).to_string()
 
-        conn = server.get_records_for_run(
-            run_id,
-            adjusted_cursor,
-            of_type=set(DagsterEventType),
+        conn = server.fetch_event_records_for_run(
+            run_id=run_id,
+            cursor=adjusted_cursor,
+            # of_type=set(DagsterEventType),
         )
         self._event_cursor = conn.cursor
 
@@ -258,7 +258,7 @@ class StepDelegatingExecutor(Executor):
 
                     if active_execution.has_in_flight_steps:
                         for dagster_event in self._pop_events(
-                            plan_context.instance,
+                            plan_context.server,
                             plan_context.run_id,
                             seen_storage_ids,
                         ):
