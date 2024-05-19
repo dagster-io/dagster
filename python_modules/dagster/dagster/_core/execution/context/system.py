@@ -78,6 +78,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
     from dagster._core.instance import DagsterInstance
+    from dagster._deployment.interface import IDeploymentServer
 
     from .hook import HookContext
 
@@ -124,6 +125,10 @@ class IPlanContext(ABC):
     @property
     def instance(self) -> "DagsterInstance":
         return self.plan_data.instance
+
+    @property
+    def server(self) -> "IDeploymentServer":
+        return self.plan_data.server
 
     @property
     def raise_on_error(self) -> bool:
@@ -177,9 +182,31 @@ class PlanData(NamedTuple):
     job: IJob
     dagster_run: DagsterRun
     instance: "DagsterInstance"
+    server: "IDeploymentServer"
     execution_plan: "ExecutionPlan"
-    raise_on_error: bool = False
-    retry_mode: RetryMode = RetryMode.DISABLED
+    raise_on_error: bool
+    retry_mode: RetryMode
+
+    @staticmethod
+    def create(
+        job: IJob,
+        dagster_run: DagsterRun,
+        instance: "DagsterInstance",
+        execution_plan: "ExecutionPlan",
+        raise_on_error: bool = False,
+        retry_mode: RetryMode = RetryMode.DISABLED,
+    ) -> "PlanData":
+        from dagster._deployment.in_memory_server import InMemoryDeploymentServer
+
+        return PlanData(
+            job=job,
+            dagster_run=dagster_run,
+            instance=instance,
+            server=InMemoryDeploymentServer(instance),
+            execution_plan=execution_plan,
+            raise_on_error=raise_on_error,
+            retry_mode=retry_mode,
+        )
 
 
 class ExecutionData(NamedTuple):
