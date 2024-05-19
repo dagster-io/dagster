@@ -260,7 +260,13 @@ class SqlRunStorage(RunStorage):
         check.inst_param(filters, "filters", RunsFilter)
 
         if filters.run_ids:
-            query = query.where(RunsTable.c.run_id.in_(filters.run_ids))
+            conditions = []
+            for run_id in filters.run_ids:
+                if len(run_id) < 36:
+                    conditions.append(RunsTable.c.run_id.like(f"{run_id}%"))
+                else:
+                    conditions.append(RunsTable.c.run_id == run_id)
+            query = query.where(db.or_(*conditions))
 
         if filters.job_name:
             query = query.where(RunsTable.c.pipeline_name == filters.job_name)

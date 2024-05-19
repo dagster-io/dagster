@@ -621,7 +621,7 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
       return tokens.filter(({token}) => token === 'id').map((token) => token.value);
     }, [tokens]),
     freeformSearchResult: (query) => {
-      return /^([a-f0-9-]{36})$/.test(query.trim()) ? {value: query.trim(), final: true} : null;
+      return {value: query.trim(), final: true};
     },
     setState: (nextState) => {
       onChange([
