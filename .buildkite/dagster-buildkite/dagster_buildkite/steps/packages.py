@@ -232,7 +232,7 @@ def k8s_extra_cmds(version: str, _) -> List[str]:
     ]
 
 
-gcp_extra_cmds = (
+gcp_creds_extra_cmds = (
     [
         rf"aws s3 cp s3://\${{BUILDKITE_SECRETS_BUCKET}}/{GCP_CREDS_FILENAME} "
         + GCP_CREDS_LOCAL_FILE,
@@ -478,15 +478,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             f"{deps_factor}-{command_factor}"
             for deps_factor in ["dbt16", "dbt17", "dbt18", "pydantic1"]
             for command_factor in ["cloud", "core", "legacy"]
-        ]
-        + ["dbt18-snowflake", "dbt18-bigquery"],
-        env_vars=[
-            "SNOWFLAKE_ACCOUNT",
-            "SNOWFLAKE_USER",
-            "SNOWFLAKE_PASSWORD",
-            "GCP_PROJECT_ID",
         ],
-        pytest_extra_cmds=gcp_extra_cmds,
         unsupported_python_versions=[
             # duckdb
             AvailablePythonVersion.V3_12,
@@ -608,7 +600,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "BUILDKITE_SECRETS_BUCKET",
             "GCP_PROJECT_ID",
         ],
-        pytest_extra_cmds=gcp_extra_cmds,
+        pytest_extra_cmds=gcp_creds_extra_cmds,
         # Remove once https://github.com/dagster-io/dagster/issues/2511 is resolved
         retries=2,
     ),
@@ -620,7 +612,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "BUILDKITE_SECRETS_BUCKET",
             "GCP_PROJECT_ID",
         ],
-        pytest_extra_cmds=gcp_extra_cmds,
+        pytest_extra_cmds=gcp_creds_extra_cmds,
         retries=2,
     ),
     PackageSpec(
@@ -631,7 +623,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "BUILDKITE_SECRETS_BUCKET",
             "GCP_PROJECT_ID",
         ],
-        pytest_extra_cmds=gcp_extra_cmds,
+        pytest_extra_cmds=gcp_creds_extra_cmds,
     ),
     PackageSpec(
         "python_modules/libraries/dagster-ge",
