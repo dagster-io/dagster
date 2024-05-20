@@ -1,8 +1,13 @@
 import datetime
-from typing import Iterator, Optional, Sequence, Union, cast
+from typing import Callable, Iterator, Optional, Sequence, Tuple, Union, cast
 
 from dagster import _check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity, AssetCheckSpec
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_check_spec import (
+    AssetCheckKey,
+    AssetCheckSeverity,
+    AssetCheckSpec,
+)
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.decorators.asset_check_decorator import (
     MultiAssetCheckFunction,
@@ -245,6 +250,11 @@ def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
     )[:8]
 
 
+def unique_id_from_check_keys(keys: Sequence[AssetCheckKey]) -> str:
+    sorted_keys = sorted(keys, key=lambda key: key.to_user_string())
+    return non_secure_md5_hash_str(",".join([str(key) for key in sorted_keys]).encode())[:8]
+
+
 def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: Sequence[AssetKey]):
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         return multi_asset_check(
@@ -262,3 +272,27 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
         )(fn)
 
     return inner
+
+
+def build_multi_asset_check_factory(
+    check_specs: Sequence[AssetCheckSpec],
+    check_fn: Callable[[DagsterInstance, AssetCheckKey], Tuple[bool, str]],
+    severity: AssetCheckSeverity,
+) -> Sequence[AssetChecksDefinition]:
+    @multi_asset_check(
+        specs=check_specs,
+        can_subset=True,
+        name=f"asset_check_{unique_id_from_check_keys([spec.key for spec in check_specs])}",
+    )
+    def _checks(context):
+        for asset_check_key in context.selected_asset_check_keys:
+            passed, description = check_fn(context.instance, asset_check_key)
+            yield AssetCheckResult(
+                passed=passed,
+                description=description,
+                severity=severity,
+                check_name=asset_check_key.name,
+                asset_key=asset_check_key.asset_key,
+            )
+
+    return [_checks]
