@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import (
     Any,
@@ -436,7 +437,7 @@ def _attach_sql_model_code_reference(
                 code_references=[
                     *references,
                     LocalFileCodeReference(
-                        file_path=str(abs_path),
+                        file_path=os.fspath(abs_path),
                         line_number=1,
                     ),
                 ],
@@ -489,10 +490,10 @@ def get_dbt_multi_asset_args(
             DAGSTER_DBT_MANIFEST_METADATA_KEY: DbtManifestWrapper(manifest=manifest),
             DAGSTER_DBT_TRANSLATOR_METADATA_KEY: dagster_dbt_translator,
         }
-        if dagster_dbt_translator.settings.enable_sql_model_code_reference:
+        if dagster_dbt_translator.settings.enable_code_references:
             if not project:
                 raise DagsterInvalidDefinitionError(
-                    "enable_sql_model_code_reference requires a DbtProject to be supplied"
+                    "enable_code_references requires a DbtProject to be supplied"
                     " to the @dbt_assets decorator."
                 )
 
