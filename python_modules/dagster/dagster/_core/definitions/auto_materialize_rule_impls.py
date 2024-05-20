@@ -461,9 +461,16 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
             )
             if context.legacy_context.previous_evaluation_state
             else None
-        ) or context.legacy_context.instance_queryer.get_materialized_asset_subset(
-            asset_key=context.legacy_context.asset_key
         )
+        if (
+            previous_handled_subset is None
+            or not previous_handled_subset.is_compatible_with_partitions_def(context.partitions_def)
+        ):
+            previous_handled_subset = (
+                context.legacy_context.instance_queryer.get_materialized_asset_subset(
+                    asset_key=context.legacy_context.asset_key
+                )
+            )
 
         return (
             context.legacy_context.materialized_since_previous_tick_subset

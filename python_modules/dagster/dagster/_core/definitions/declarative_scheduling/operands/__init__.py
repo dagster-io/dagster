@@ -4,6 +4,7 @@ from .slice_conditions import (
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
+    NewlyUpdatedCondition as NewlyUpdatedCondition,
     RequestedPreviousTickCondition as RequestedPreviousTickCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
 )

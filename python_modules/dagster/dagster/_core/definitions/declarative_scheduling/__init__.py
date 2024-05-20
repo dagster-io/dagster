@@ -5,6 +5,7 @@ from .operands import (
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
+    NewlyUpdatedCondition as NewlyUpdatedCondition,
     ParentNewerCondition as ParentNewerCondition,
     RequestedPreviousTickCondition as RequestedPreviousTickCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
