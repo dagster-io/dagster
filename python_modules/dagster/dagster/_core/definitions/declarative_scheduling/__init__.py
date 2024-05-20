@@ -1,6 +1,7 @@
 from .legacy import RuleCondition as RuleCondition
 from .legacy.asset_condition import AssetCondition as AssetCondition
 from .operands import (
+    CronTickPassed as CronTickPassed,
     FailedSchedulingCondition as FailedSchedulingCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
@@ -9,7 +10,6 @@ from .operands import (
     ParentNewerCondition as ParentNewerCondition,
     RequestedPreviousTickCondition as RequestedPreviousTickCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
-    UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,

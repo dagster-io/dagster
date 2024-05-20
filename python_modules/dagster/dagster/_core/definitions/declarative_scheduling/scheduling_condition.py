@@ -31,7 +31,6 @@ if TYPE_CHECKING:
         NewlyUpdatedCondition,
         ParentNewerCondition,
         RequestedThisTickCondition,
-        UpdatedSinceCronCondition,
     )
     from .operators import (
         AllDepsCondition,
@@ -39,6 +38,7 @@ if TYPE_CHECKING:
         AnyDepsCondition,
         NotAssetCondition,
         OrAssetCondition,
+        TriggerSinceTargetCondition,
     )
     from .scheduling_context import SchedulingContext
 
@@ -142,13 +142,21 @@ class SchedulingCondition(ABC, DagsterModel):
     @staticmethod
     def updated_since_cron(
         cron_schedule: str, cron_timezone: str = "UTC"
-    ) -> "UpdatedSinceCronCondition":
+    ) -> "TriggerSinceTargetCondition":
         """Returns a SchedulingCondition that is true for an asset partition if it has been updated
         since the latest tick of the provided cron schedule.
         """
-        from .operands import UpdatedSinceCronCondition
+        from .operands import CronTickPassed, NewlyUpdatedCondition
+        from .operators import TriggerSinceTargetCondition
 
-        return UpdatedSinceCronCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
+        return TriggerSinceTargetCondition(
+            trigger_condition=NewlyUpdatedCondition(),
+            target_condition=CronTickPassed(
+                cron_schedule=cron_schedule, cron_timezone=cron_timezone
+            ),
+        ).with_label(
+            f"Updated since latest cron schedule tick of {cron_schedule} ({cron_timezone})"
+        )
 
     @staticmethod
     def in_latest_time_window(
