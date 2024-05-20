@@ -4,7 +4,7 @@ from dagster._core.definitions.utils import (
     check_valid_title,
     is_valid_definition_tag_key,
     is_valid_definition_tag_value,
-    is_valid_title_chars,
+    is_valid_title,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 
@@ -42,12 +42,12 @@ def test_is_valid_definition_tag_value():
 
 
 def test_is_valid_title():
-    assert is_valid_title_chars("this is a valid title")
-    assert is_valid_title_chars("This is ALSO a valid title 12345")
-    assert not is_valid_title_chars("no astricks *")
-    assert not is_valid_title_chars("no precentage symbols %")
-    assert not is_valid_title_chars('no " quotes')
-    assert is_valid_title_chars("other symbols are ok @$#!?&|")
+    assert is_valid_title("this is a valid title")
+    assert is_valid_title("This is ALSO a valid title 12345")
+    assert not is_valid_title("no astricks *")
+    assert not is_valid_title("no precentage symbols %")
+    assert not is_valid_title('no " quotes')
+    assert is_valid_title("other symbols are ok @$#!?&|")
 
     with pytest.raises(DagsterInvariantViolationError, match="Titles must not contain regex"):
         check_valid_title("no astricks *")
