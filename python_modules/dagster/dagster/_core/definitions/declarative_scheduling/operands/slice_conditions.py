@@ -59,7 +59,7 @@ class FailedSchedulingCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
-class RequestedThisTickCondition(SliceSchedulingCondition):
+class WillBeRequestedCondition(SliceSchedulingCondition):
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -85,6 +85,18 @@ class RequestedThisTickCondition(SliceSchedulingCondition):
             return current_info.requested_slice
         else:
             return context.asset_graph_view.create_empty_slice(context.asset_key)
+
+
+@whitelist_for_serdes
+class NewlyRequestedCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Was requested on the previous tick"
+
+    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        return context.previous_requested_slice or context.asset_graph_view.create_empty_slice(
+            context.asset_key
+        )
 
 
 @whitelist_for_serdes
