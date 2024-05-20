@@ -283,14 +283,18 @@ class DbtCliEventMessage:
             try:
                 column_data = {
                     col_name: col_data["data_type"]
-                    for col_name, col_data in self._event_history_metadata.items()
+                    for col_name, col_data in self._event_history_metadata.get(
+                        "columns", {}
+                    ).items()
                 }
                 parent_column_data = {
                     parent_key: {
                         col_name: col_data["data_type"]
                         for col_name, col_data in parent_data["columns"].items()
                     }
-                    for parent_key, parent_data in self._event_history_metadata.items()
+                    for parent_key, parent_data in self._event_history_metadata.get(
+                        "parents", {}
+                    ).items()
                 }
 
                 lineage_metadata = _build_column_lineage_metadata(
