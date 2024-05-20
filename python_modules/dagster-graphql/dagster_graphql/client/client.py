@@ -398,19 +398,18 @@ class DagsterGraphQLClient:
         else:
             raise DagsterGraphQLClientError(query_result_type, query_result["message"])
 
-    def terminate_runs(self, run_ids: List[str], termination_policy: str = "SAFE_TERMINATE"):
+    def terminate_runs(self, run_ids: List[str]):
         """Terminates a list of pipeline runs. This method it is useful when you would like to stop a list of pipeline runs
         based on a external event.
 
         Args:
             run_ids (List[str]): The list run ids of the pipeline runs to terminate
-            termination_policy (str): The termination policy to use. Defaults to "SAFE_TERMINATE"
         """
         check.list_param(run_ids, "run_ids", of_type=str)
 
         res_data: Dict[str, Dict[str, Any]] = self._execute(
             TERMINATE_RUNS_JOB_MUTATION,
-            {"runIds": run_ids, "terminationPolicy": termination_policy},
+            {"runIds": run_ids},
         )
 
         query_result: Dict[str, Any] = res_data["terminateRuns"]
