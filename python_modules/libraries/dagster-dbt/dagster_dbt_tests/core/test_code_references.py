@@ -121,8 +121,8 @@ def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any
             "https://github.com/dagster-io/jaffle_shop/tree/master/"
         )
         assert model_reference.url.endswith(
-            asset_key.path[-1] + ".sql#L1"
-        ) or model_reference.url.endswith(asset_key.path[-1] + ".csv#L1")
+            asset_key.path[-1] + ".sql"
+        ) or model_reference.url.endswith(asset_key.path[-1] + ".csv")
 
         source_reference = references[1]
         assert isinstance(source_reference, UrlCodeReference)

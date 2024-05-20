@@ -124,7 +124,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -306,7 +306,7 @@ export type RunDagsterRunEventFragment_EngineEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -483,7 +483,7 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -649,7 +649,7 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -812,7 +812,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -962,7 +962,7 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1181,7 +1181,7 @@ export type RunDagsterRunEventFragment_HandledOutputEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1378,7 +1378,7 @@ export type RunDagsterRunEventFragment_LoadedInputEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1558,7 +1558,7 @@ export type RunDagsterRunEventFragment_MaterializationEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1716,7 +1716,7 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1878,7 +1878,7 @@ export type RunDagsterRunEventFragment_ObservationEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2037,7 +2037,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2205,7 +2205,7 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2363,7 +2363,7 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2604,7 +2604,7 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2768,7 +2768,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2926,7 +2926,7 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}

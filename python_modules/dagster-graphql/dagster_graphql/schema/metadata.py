@@ -164,7 +164,7 @@ class GrapheneJobMetadataEntry(graphene.ObjectType):
 
 class GrapheneLocalFileCodeReference(graphene.ObjectType):
     filePath = graphene.NonNull(graphene.String)
-    lineNumber = graphene.NonNull(graphene.Int)
+    lineNumber = graphene.Int()
     label = graphene.String()
 
     class Meta:

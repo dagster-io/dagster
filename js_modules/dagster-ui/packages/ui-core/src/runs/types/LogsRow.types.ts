@@ -67,7 +67,7 @@ export type LogsRowStructuredFragment_AssetCheckEvaluationEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -249,7 +249,7 @@ export type LogsRowStructuredFragment_EngineEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -426,7 +426,7 @@ export type LogsRowStructuredFragment_ExecutionStepFailureEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -592,7 +592,7 @@ export type LogsRowStructuredFragment_ExecutionStepInputEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -755,7 +755,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -905,7 +905,7 @@ export type LogsRowStructuredFragment_ExecutionStepOutputEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1124,7 +1124,7 @@ export type LogsRowStructuredFragment_HandledOutputEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1321,7 +1321,7 @@ export type LogsRowStructuredFragment_LoadedInputEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1500,7 +1500,7 @@ export type LogsRowStructuredFragment_MaterializationEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1658,7 +1658,7 @@ export type LogsRowStructuredFragment_ObjectStoreOperationEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1820,7 +1820,7 @@ export type LogsRowStructuredFragment_ObservationEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1979,7 +1979,7 @@ export type LogsRowStructuredFragment_ResourceInitFailureEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2147,7 +2147,7 @@ export type LogsRowStructuredFragment_ResourceInitStartedEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2305,7 +2305,7 @@ export type LogsRowStructuredFragment_ResourceInitSuccessEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2546,7 +2546,7 @@ export type LogsRowStructuredFragment_StepExpectationResultEvent = {
             | {
                 __typename: 'LocalFileCodeReference';
                 filePath: string;
-                lineNumber: number;
+                lineNumber: number | null;
                 label: string | null;
               }
             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2710,7 +2710,7 @@ export type LogsRowStructuredFragment_StepWorkerStartedEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2868,7 +2868,7 @@ export type LogsRowStructuredFragment_StepWorkerStartingEvent = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}

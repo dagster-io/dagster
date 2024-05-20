@@ -45,7 +45,7 @@ export type AssetCheckTableFragment = {
               | {
                   __typename: 'LocalFileCodeReference';
                   filePath: string;
-                  lineNumber: number;
+                  lineNumber: number | null;
                   label: string | null;
                 }
               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
