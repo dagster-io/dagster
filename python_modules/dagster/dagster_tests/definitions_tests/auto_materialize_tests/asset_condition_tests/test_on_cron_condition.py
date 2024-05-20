@@ -10,9 +10,15 @@ def test_on_cron_unpartitioned() -> None:
     state = SchedulingConditionScenarioState(
         two_assets_in_sequence,
         scheduling_condition=SchedulingCondition.on_cron(cron_schedule="0 * * * *"),
-    ).with_current_time("2020-02-02T01:05:00")
+        ensure_empty_result=False,
+    ).with_current_time("2020-02-02T00:55:00")
 
-    # parent hasn't updated yet
+    # no cron boundary crossed
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # now crossed a cron boundary parent hasn't updated yet
+    state = state.with_current_time_advanced(minutes=10)
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
@@ -49,12 +55,18 @@ def test_on_cron_hourly_partitioned() -> None:
         SchedulingConditionScenarioState(
             two_assets_in_sequence,
             scheduling_condition=SchedulingCondition.on_cron(cron_schedule="0 * * * *"),
+            ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)
-        .with_current_time("2020-02-02T01:05:00")
+        .with_current_time("2020-02-02T00:55:00")
     )
 
-    # parent hasn't updated yet
+    # no cron boundary crossed
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # now crossed a cron boundary parent hasn't updated yet
+    state = state.with_current_time_advanced(minutes=10)
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
