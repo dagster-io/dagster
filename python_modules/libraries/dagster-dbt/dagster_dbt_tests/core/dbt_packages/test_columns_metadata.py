@@ -177,10 +177,15 @@ def test_exception_column_lineage(
         "trino",
     ],
 )
+@pytest.mark.parametrize(
+    "defer_metadata_collection_and_lineage_processing",
+    [True, False],
+)
 def test_column_lineage(
     test_metadata_manifest: Dict[str, Any],
     sql_dialect: str,
     asset_key_selection: Optional[AssetKey],
+    defer_metadata_collection_and_lineage_processing: bool,
 ) -> None:
     # Simulate the parsing of the SQL into a different dialect.
     assert Dialect.get_or_raise(sql_dialect)
@@ -189,11 +194,33 @@ def test_column_lineage(
     manifest["metadata"]["adapter_type"] = sql_dialect
 
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
-    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
+    dbt.cli(
+        [
+            "--quiet",
+            "build",
+            "--exclude",
+            "resource_type:test",
+            "--vars",
+            json.dumps({"dagster_enable_parent_relation_metadata_collection": not defer_metadata_collection_and_lineage_processing}),
+        ]
+    ).wait()
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        execution = (
+            dbt.cli(
+                [
+                    "build",
+                    "--vars",
+                    json.dumps({"dagster_enable_parent_relation_metadata_collection": not defer_metadata_collection_and_lineage_processing}),
+                ],
+                context=context,
+            )
+            .stream()
+        )
+        if defer_metadata_collection_and_lineage_processing
+            execution = execution.fetch_column_metadata()
+        yield from execution
 
     result = materialize(
         [my_dbt_assets],
