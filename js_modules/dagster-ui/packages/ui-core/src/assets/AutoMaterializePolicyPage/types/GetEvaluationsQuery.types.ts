@@ -39,7 +39,7 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -194,7 +194,7 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -436,7 +436,7 @@ export type AssetConditionEvaluationRecordFragment = {
                   | {
                       __typename: 'LocalFileCodeReference';
                       filePath: string;
-                      lineNumber: number;
+                      lineNumber: number | null;
                       label: string | null;
                     }
                   | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -610,7 +610,7 @@ export type AssetConditionEvaluationRecordFragment = {
                   | {
                       __typename: 'LocalFileCodeReference';
                       filePath: string;
-                      lineNumber: number;
+                      lineNumber: number | null;
                       label: string | null;
                     }
                   | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -864,7 +864,7 @@ export type GetEvaluationsQuery = {
                           | {
                               __typename: 'LocalFileCodeReference';
                               filePath: string;
-                              lineNumber: number;
+                              lineNumber: number | null;
                               label: string | null;
                             }
                           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1044,7 +1044,7 @@ export type GetEvaluationsQuery = {
                           | {
                               __typename: 'LocalFileCodeReference';
                               filePath: string;
-                              lineNumber: number;
+                              lineNumber: number | null;
                               label: string | null;
                             }
                           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1279,7 +1279,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                   | {
                       __typename: 'LocalFileCodeReference';
                       filePath: string;
-                      lineNumber: number;
+                      lineNumber: number | null;
                       label: string | null;
                     }
                   | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1453,7 +1453,7 @@ export type GetEvaluationsSpecificPartitionQuery = {
                   | {
                       __typename: 'LocalFileCodeReference';
                       filePath: string;
-                      lineNumber: number;
+                      lineNumber: number | null;
                       label: string | null;
                     }
                   | {__typename: 'UrlCodeReference'; url: string; label: string | null}

@@ -44,7 +44,7 @@ export type DagsterTypeFragment_ListDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -1319,7 +1319,7 @@ export type DagsterTypeFragment_ListDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2594,7 +2594,7 @@ export type DagsterTypeFragment_ListDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -3860,7 +3860,7 @@ export type DagsterTypeFragment_ListDagsterType = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -5124,7 +5124,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -6399,7 +6399,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -7674,7 +7674,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -8940,7 +8940,7 @@ export type DagsterTypeFragment_NullableDagsterType = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -10204,7 +10204,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -11479,7 +11479,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -12754,7 +12754,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -14020,7 +14020,7 @@ export type DagsterTypeFragment_RegularDagsterType = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -15278,7 +15278,7 @@ export type InnerDagsterTypeFragment_ListDagsterType = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -16531,7 +16531,7 @@ export type InnerDagsterTypeFragment_NullableDagsterType = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -17784,7 +17784,7 @@ export type InnerDagsterTypeFragment_RegularDagsterType = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}

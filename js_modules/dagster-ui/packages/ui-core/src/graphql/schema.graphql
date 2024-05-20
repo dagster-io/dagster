@@ -2690,7 +2690,7 @@ union SourceLocation = LocalFileCodeReference | UrlCodeReference
 
 type LocalFileCodeReference {
   filePath: String!
-  lineNumber: Int!
+  lineNumber: Int
   label: String
 }
 

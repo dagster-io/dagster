@@ -674,7 +674,7 @@ export type AssetViewDefinitionQuery = {
                   | {
                       __typename: 'LocalFileCodeReference';
                       filePath: string;
-                      lineNumber: number;
+                      lineNumber: number | null;
                       label: string | null;
                     }
                   | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -861,7 +861,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2151,7 +2151,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -3441,7 +3441,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -4722,7 +4722,7 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'LocalFileCodeReference';
                             filePath: string;
-                            lineNumber: number;
+                            lineNumber: number | null;
                             label: string | null;
                           }
                         | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -6016,7 +6016,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -7306,7 +7306,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -8596,7 +8596,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -9877,7 +9877,7 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'LocalFileCodeReference';
                             filePath: string;
-                            lineNumber: number;
+                            lineNumber: number | null;
                             label: string | null;
                           }
                         | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -11171,7 +11171,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -12461,7 +12461,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -13751,7 +13751,7 @@ export type AssetViewDefinitionQuery = {
                               | {
                                   __typename: 'LocalFileCodeReference';
                                   filePath: string;
-                                  lineNumber: number;
+                                  lineNumber: number | null;
                                   label: string | null;
                                 }
                               | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -15032,7 +15032,7 @@ export type AssetViewDefinitionQuery = {
                         | {
                             __typename: 'LocalFileCodeReference';
                             filePath: string;
-                            lineNumber: number;
+                            lineNumber: number | null;
                             label: string | null;
                           }
                         | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -16941,7 +16941,7 @@ export type AssetViewDefinitionNodeFragment = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -17108,7 +17108,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -18388,7 +18388,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -19668,7 +19668,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -20939,7 +20939,7 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -22225,7 +22225,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -23505,7 +23505,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -24785,7 +24785,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -26056,7 +26056,7 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -27342,7 +27342,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -28622,7 +28622,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -29902,7 +29902,7 @@ export type AssetViewDefinitionNodeFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -31173,7 +31173,7 @@ export type AssetViewDefinitionNodeFragment = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}

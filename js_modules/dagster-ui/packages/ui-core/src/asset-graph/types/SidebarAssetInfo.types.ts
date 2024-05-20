@@ -30,7 +30,7 @@ export type SidebarAssetFragment = {
           | {
               __typename: 'LocalFileCodeReference';
               filePath: string;
-              lineNumber: number;
+              lineNumber: number | null;
               label: string | null;
             }
           | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -792,7 +792,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -2072,7 +2072,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -3352,7 +3352,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -4623,7 +4623,7 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -5909,7 +5909,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -7189,7 +7189,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -8469,7 +8469,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -9740,7 +9740,7 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -11026,7 +11026,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -12306,7 +12306,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -13586,7 +13586,7 @@ export type SidebarAssetFragment = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -14857,7 +14857,7 @@ export type SidebarAssetFragment = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -16139,7 +16139,7 @@ export type SidebarAssetQuery = {
                 | {
                     __typename: 'LocalFileCodeReference';
                     filePath: string;
-                    lineNumber: number;
+                    lineNumber: number | null;
                     label: string | null;
                   }
                 | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -16920,7 +16920,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -18206,7 +18206,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -19492,7 +19492,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -20769,7 +20769,7 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -22060,7 +22060,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -23346,7 +23346,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -24632,7 +24632,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -25909,7 +25909,7 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -27200,7 +27200,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -28486,7 +28486,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -29772,7 +29772,7 @@ export type SidebarAssetQuery = {
                             | {
                                 __typename: 'LocalFileCodeReference';
                                 filePath: string;
-                                lineNumber: number;
+                                lineNumber: number | null;
                                 label: string | null;
                               }
                             | {__typename: 'UrlCodeReference'; url: string; label: string | null}
@@ -31049,7 +31049,7 @@ export type SidebarAssetQuery = {
                       | {
                           __typename: 'LocalFileCodeReference';
                           filePath: string;
-                          lineNumber: number;
+                          lineNumber: number | null;
                           label: string | null;
                         }
                       | {__typename: 'UrlCodeReference'; url: string; label: string | null}

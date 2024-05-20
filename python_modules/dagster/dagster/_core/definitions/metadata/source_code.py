@@ -35,7 +35,7 @@ class LocalFileCodeReference(DagsterModel):
     """Represents a local file source location."""
 
     file_path: str
-    line_number: int
+    line_number: Optional[int] = None
     label: Optional[str] = None
 
 
@@ -151,9 +151,10 @@ def convert_local_path_to_source_control_path(
     source_file_from_repo_root = os.path.relpath(
         local_path.file_path, repository_root_absolute_path
     )
+    line_number_suffix = f"#L{local_path.line_number}" if local_path.line_number else ""
 
     return UrlCodeReference(
-        url=f"{base_source_control_url}/{source_file_from_repo_root}#L{local_path.line_number}",
+        url=f"{base_source_control_url}/{source_file_from_repo_root}{line_number_suffix}",
         label=local_path.label,
     )
 

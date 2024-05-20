@@ -436,10 +436,7 @@ def _attach_sql_model_code_reference(
             code_references=CodeReferencesMetadataValue(
                 code_references=[
                     *references,
-                    LocalFileCodeReference(
-                        file_path=os.fspath(abs_path),
-                        line_number=1,
-                    ),
+                    LocalFileCodeReference(file_path=os.fspath(abs_path)),
                 ],
             )
         ),

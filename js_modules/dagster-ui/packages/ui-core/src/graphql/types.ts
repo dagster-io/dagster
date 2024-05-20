@@ -2324,7 +2324,7 @@ export type LocalFileCodeReference = {
   __typename: 'LocalFileCodeReference';
   filePath: Scalars['String']['output'];
   label: Maybe<Scalars['String']['output']>;
-  lineNumber: Scalars['Int']['output'];
+  lineNumber: Maybe<Scalars['Int']['output']>;
 };
 
 export type LocationStateChangeEvent = {

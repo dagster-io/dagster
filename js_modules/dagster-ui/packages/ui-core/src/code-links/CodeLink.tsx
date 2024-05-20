@@ -50,7 +50,7 @@ const getCodeReferenceLink = (
     case 'LocalFileCodeReference':
       return codeLinkProtocol.protocol
         .replace('{FILE}', codeReference.filePath)
-        .replace('{LINE}', codeReference.lineNumber.toString());
+        .replace('{LINE}', (codeReference.lineNumber || 1).toString());
     case 'UrlCodeReference':
       return codeReference.url;
     default:
