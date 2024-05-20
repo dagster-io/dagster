@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, List, Sequence, Union, cast
 import dagster._check as check
 import pendulum
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
+from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import (
     DagsterError,
     DagsterInvariantViolationError,
@@ -163,7 +164,7 @@ def create_and_launch_partition_backfill(
             tags=tags,
             backfill_timestamp=backfill_timestamp,
             asset_selection=asset_selection,
-            title=backfill_params.get("title"),
+            title=check_valid_title(backfill_params.get("title")),
             description=backfill_params.get("description"),
         )
 
