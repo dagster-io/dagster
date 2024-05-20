@@ -227,7 +227,7 @@ class SchedulingContext(NamedTuple):
         node has never been evaluated, returns None.
         """
         return (
-            self.previous_evaluation_info.temporal_context.last_event_id
+            (self.previous_evaluation_info.temporal_context.last_event_id or 0)
             if self.previous_evaluation_info and self.previous_evaluation_node
             else None
         )
