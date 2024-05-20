@@ -1185,7 +1185,6 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        assert result.errors
         assert result.data
         assert result.data["launchPartitionBackfill"]["__typename"] == "PythonError"
         assert (
