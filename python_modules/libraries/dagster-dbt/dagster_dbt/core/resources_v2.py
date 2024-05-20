@@ -1065,7 +1065,6 @@ def _fetch_column_metadata(
         )
         cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=relation)
         column_schema_data = {col.name: col.data_type for col in cols}
-        relation_name = str(relation)
 
         parents = {}
         dependent_unique_ids = invocation.manifest["parent_map"].get(
