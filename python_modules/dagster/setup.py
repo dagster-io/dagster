@@ -96,7 +96,7 @@ setup(
         "python-dateutil",
         "python-dotenv",
         "pytz",
-        "requests<2.32.0",  # 2.32.0 breaks our docker tests https://buildkite.com/dagster/dagster-dagster/builds/83562
+        "requests",
         "setuptools",
         "tabulate",
         "tomli<3",
