@@ -9,7 +9,6 @@ from .operands import (
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
     ParentNewerCondition as ParentNewerCondition,
-    UpdatedSinceCronCondition as UpdatedSinceCronCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
 )
 from .operators import (
