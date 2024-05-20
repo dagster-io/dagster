@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
     from .operands import (
+        CronTickPassedCondition,
         FailedSchedulingCondition,
         InLatestTimeWindowCondition,
         InProgressSchedulingCondition,
@@ -192,6 +193,15 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import NewlyUpdatedCondition
 
         return NewlyUpdatedCondition()
+
+    @staticmethod
+    def cron_tick_passed(
+        cron_schedule: str, cron_timezone: str = "UTC"
+    ) -> "CronTickPassedCondition":
+        """Returns a SchedulingCondition that is true for all asset partitions whenever a cron tick of the provided schedule is passed."""
+        from .operands import CronTickPassedCondition
+
+        return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
     @staticmethod
     def eager() -> "SchedulingCondition":
