@@ -1,33 +1,33 @@
-#!/bin/bash
+# !/bin/bash
 
 VM_NAME="dagster-vm"
-ZONE="" # add your zone
-PROJECT_ID="" # add your project id
-LOCAL_FILE_PATH="./vm_config/*"
+ZONE="northamerica-northeast1-a" # add your zone
+PROJECT_ID="dagster-420313" # add your project id
+LOCAL_FILE_PATH="./cloud_run_pipeline/*"
 DAGSTER_GCP_PATH="../../python_modules/libraries/dagster-gcp/*"
 REMOTE_DAGSTER_GCP_PATH="/opt/dagster/app/python_modules/libraries/dagster_gcp"
 REMOTE_DIR="/opt/dagster/app"
-SERVICE_ACCOUNT_EMAIL="" # service account used must have the right to launch a cloud run job and access secrets from secret manager
+SERVICE_ACCOUNT_EMAIL="dagster@dagster-420313.iam.gserviceaccount.com" # service account used must have the right to launch a cloud run job and access secrets from secret manager
 SCOPES="cloud-platform"
 
-gcloud compute instances create $VM_NAME \
-    --zone=$ZONE \
-    --machine-type=e2-micro \
-    --image-family=ubuntu-2204-lts \
-    --image-project=ubuntu-os-cloud \
-    --project=$PROJECT_ID \
-    --service-account=$SERVICE_ACCOUNT_EMAIL \
-    --scopes=$SCOPES
+# gcloud compute instances create $VM_NAME \
+#     --zone=$ZONE \
+#     --machine-type=e2-micro \
+#     --image-family=ubuntu-2204-lts \
+#     --image-project=ubuntu-os-cloud \
+#     --project=$PROJECT_ID \
+#     --service-account=$SERVICE_ACCOUNT_EMAIL \
+#     --scopes=$SCOPES
 
-echo "waiting for VM to be created..."
-sleep 40
+# echo "waiting for VM to be created..."
+# sleep 40
 
 gcloud compute ssh $VM_NAME --zone=$ZONE --command="
     sudo mkdir -p $REMOTE_DIR $REMOTE_DAGSTER_GCP_PATH
     sudo chown -R $USER $REMOTE_DIR $REMOTE_DAGSTER_GCP_PATH
 " --project=$PROJECT_ID
 
-gcloud compute scp $LOCAL_FILE_PATH ${VM_NAME}:$REMOTE_DIR \
+gcloud compute scp --recurse $LOCAL_FILE_PATH ${VM_NAME}:$REMOTE_DIR \
     --zone=$ZONE \
     --project=$PROJECT_ID
 
@@ -66,7 +66,7 @@ gcloud compute ssh $VM_NAME --zone=$ZONE --command="
     # Start the Dagster daemon
     nohup dagster-daemon run &
 
-    echo 'starting dagster daemon webserver'
+    echo 'starting dagster webserver'
     # Start the dagster webserver
     nohup dagster-webserver -h 0.0.0.0 -p 3000
 

@@ -8,10 +8,13 @@ run_coordinator:
 
 run_launcher:
   module: dagster_gcp.cloud_run
-  class: CloudRunJobLauncher
+  class: CloudRunRunLauncher
   config:
-    project_id: YOUR_PROJECT_ID
-    cloud_run_job_name: projects/YOUR_PROJECT_ID/locations/northamerica-northeast1/jobs/dagster-job
+    project: dagster-420313
+    region: northamerica-northeast1
+    job_name_by_code_location:
+      pipeline1: pipeline1-job
+      pipeline2: pipeline2-job
 
 run_storage:
   module: dagster_postgres.run_storage
