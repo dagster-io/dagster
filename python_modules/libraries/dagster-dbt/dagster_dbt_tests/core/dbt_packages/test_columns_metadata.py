@@ -201,24 +201,29 @@ def test_column_lineage(
             "--exclude",
             "resource_type:test",
             "--vars",
-            json.dumps({"dagster_enable_parent_relation_metadata_collection": not defer_metadata_collection_and_lineage_processing}),
+            json.dumps(
+                {
+                    "dagster_enable_parent_relation_metadata_collection": not defer_metadata_collection_and_lineage_processing
+                }
+            ),
         ]
     ).wait()
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        execution = (
-            dbt.cli(
-                [
-                    "build",
-                    "--vars",
-                    json.dumps({"dagster_enable_parent_relation_metadata_collection": not defer_metadata_collection_and_lineage_processing}),
-                ],
-                context=context,
-            )
-            .stream()
-        )
-        if defer_metadata_collection_and_lineage_processing
+        execution = dbt.cli(
+            [
+                "build",
+                "--vars",
+                json.dumps(
+                    {
+                        "dagster_enable_parent_relation_metadata_collection": not defer_metadata_collection_and_lineage_processing
+                    }
+                ),
+            ],
+            context=context,
+        ).stream()
+        if defer_metadata_collection_and_lineage_processing:
             execution = execution.fetch_column_metadata()
         yield from execution
 
