@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -14,6 +15,8 @@ from typing import (
     Union,
     cast,
 )
+
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, experimental_param, public
@@ -68,11 +71,19 @@ class AssetLineageInfo(
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
 
 
+class EventWithMetadata(ABC):
+    @abstractmethod
+    def with_metadata(self, metadata: Optional[Mapping[str, RawMetadataValue]]) -> Self:
+        """Returns a new instance of the event with the same properties as the original,
+        but with metadata replaced by the provided value.
+        """
+
+
 T = TypeVar("T")
 
 
 @experimental_param(param="data_version")
-class Output(Generic[T]):
+class Output(Generic[T], EventWithMetadata):
     """Event corresponding to one of an op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
@@ -246,7 +257,8 @@ class AssetObservation(
             ("partition", PublicAttr[Optional[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
-    )
+    ),
+    EventWithMetadata,
 ):
     """Event that captures metadata about an asset at a point in time.
 
@@ -300,6 +312,17 @@ class AssetObservation(
     def data_version(self) -> Optional[str]:
         return self.tags.get(DATA_VERSION_TAG)
 
+    def with_metadata(
+        self, metadata: Optional[Mapping[str, RawMetadataValue]]
+    ) -> "AssetObservation":
+        return AssetObservation(
+            asset_key=self.asset_key,
+            description=self.description,
+            metadata=metadata,
+            partition=self.partition,
+            tags=self.tags,
+        )
+
 
 UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
 
@@ -331,7 +354,8 @@ class AssetMaterialization(
             ("partition", PublicAttr[Optional[str]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
-    )
+    ),
+    EventWithMetadata,
 ):
     """Event indicating that an op has materialized an asset.
 
@@ -427,6 +451,17 @@ class AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
             metadata={"path": MetadataValue.path(path)},
+        )
+
+    def with_metadata(
+        self, metadata: Optional[Mapping[str, RawMetadataValue]]
+    ) -> "AssetMaterialization":
+        return AssetMaterialization(
+            asset_key=self.asset_key,
+            description=self.description,
+            metadata=metadata,
+            partition=self.partition,
+            tags=self.tags,
         )
 
 

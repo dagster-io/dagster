@@ -926,10 +926,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             row_count = query_result[1][0]["row_count"]
             additional_metadata = {**TableMetadataSet(row_count=row_count)}
 
-            if isinstance(event, Output):
-                return event.with_metadata(metadata={**event.metadata, **additional_metadata})
-            else:
-                return event._replace(metadata={**event.metadata, **additional_metadata})
+            return event.with_metadata(metadata={**event.metadata, **additional_metadata})
         except Exception as e:
             logger.exception(
                 f"An error occurred while fetching row count for {unique_id}. Row count metadata"
