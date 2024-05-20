@@ -7,7 +7,6 @@ from .operands import (
     MissingSchedulingCondition as MissingSchedulingCondition,
     ParentNewerCondition as ParentNewerCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
-    ScheduledSinceCondition as ScheduledSinceCondition,
     UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
 from .operators import (
@@ -16,6 +15,7 @@ from .operators import (
     AnyDepsCondition as AnyDepsCondition,
     NotAssetCondition as NotAssetCondition,
     OrAssetCondition as OrAssetCondition,
+    TriggerSinceTargetCondition as TriggerSinceTargetCondition,
 )
 from .scheduling_condition import SchedulingCondition as SchedulingCondition
 from .serialized_objects import (
