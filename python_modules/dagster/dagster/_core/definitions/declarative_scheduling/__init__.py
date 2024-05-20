@@ -5,9 +5,10 @@ from .operands import (
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
+    NewlyRequestedCondition as NewlyRequestedCondition,
     ParentNewerCondition as ParentNewerCondition,
-    RequestedThisTickCondition as RequestedThisTickCondition,
     UpdatedSinceCronCondition as UpdatedSinceCronCondition,
+    WillBeRequestedCondition as WillBeRequestedCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,
