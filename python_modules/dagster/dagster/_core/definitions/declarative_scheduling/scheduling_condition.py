@@ -27,7 +27,6 @@ if TYPE_CHECKING:
         MissingSchedulingCondition,
         ParentNewerCondition,
         RequestedThisTickCondition,
-        ScheduledSinceCondition,
         UpdatedSinceCronCondition,
     )
     from .operators import (
@@ -165,22 +164,6 @@ class SchedulingCondition(ABC, DagsterModel):
         return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
 
     @staticmethod
-    def scheduled_since(lookback_delta: datetime.timedelta) -> "ScheduledSinceCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it has been requested
-        for materialization via the declarative scheduling system within the given time window.
-
-        Will only detect requests which have been made since this condition was added to the asset.
-
-        Args:
-            lookback_delta (datetime.timedelta): How far back in time to look for requests, e.g.
-                if this is set to 1 hour, this rule will be true for a given asset partition for
-                1 hour starting from the latest tick on which it gets requested.
-        """
-        from .operands import ScheduledSinceCondition
-
-        return ScheduledSinceCondition.from_lookback_delta(lookback_delta)
-
-    @staticmethod
     def requested_this_tick() -> "RequestedThisTickCondition":
         """Returns a SchedulingCondition that is true for an asset partition if it will be requested this tick."""
         from .operands import RequestedThisTickCondition
@@ -195,10 +178,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return ParentNewerCondition()
 
     @staticmethod
-    def eager_with_rate_limit(
-        *,
-        failure_retry_delta: datetime.timedelta = datetime.timedelta(hours=1),
-    ) -> "SchedulingCondition":
+    def eager() -> "SchedulingCondition":
         """Returns a condition which will "eagerly" fill in missing partitions as they are created,
         and ensures unpartitioned assets are updated whenever their dependencies are updated (either
         via scheduled execution or ad-hoc runs).
@@ -212,10 +192,6 @@ class SchedulingCondition(ABC, DagsterModel):
         - None of its parent partitions are missing
         - None of its parent partitions are currently part of an in-progress run
         - It is not currently part of an in-progress run
-
-        It will also refuse to materialize an asset partition if the latest materialization attempt
-        failed and has not already been scheduled within the failure_retry_delta, to prevent
-        repeated failures.
         """
         missing_or_parent_updated = (
             SchedulingCondition.parent_newer()
@@ -228,16 +204,12 @@ class SchedulingCondition(ABC, DagsterModel):
         any_parent_in_progress = SchedulingCondition.any_deps_match(
             SchedulingCondition.in_progress()
         )
-        failed_recently = SchedulingCondition.failed() & SchedulingCondition.scheduled_since(
-            failure_retry_delta
-        )
         return (
             SchedulingCondition.in_latest_time_window()
             & missing_or_parent_updated
             & ~any_parent_missing
             & ~any_parent_in_progress
             & ~SchedulingCondition.in_progress()
-            & ~failed_recently
         )
 
     @staticmethod
