@@ -171,13 +171,23 @@ class SchedulingContext(NamedTuple):
 
     @property
     def previous_evaluation_node(self) -> Optional[SchedulingEvaluationResultNode]:
-        """Returns the evaluation node for this asset from the previous evaluation, if this node
+        """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
         if self.previous_evaluation_info is None:
             return None
         else:
             return self.previous_evaluation_info.get_evaluation_node(self.condition_unique_id)
+
+    @property
+    def previous_true_slice(self) -> Optional[AssetSlice]:
+        """Returns the true slice for this node from the previous evaluation, if this node was
+        evaluated on the previous tick.
+        """
+        if self.previous_evaluation_node is None:
+            return None
+        else:
+            return self.previous_evaluation_node.true_slice
 
     @property
     def effective_dt(self) -> datetime.datetime:
