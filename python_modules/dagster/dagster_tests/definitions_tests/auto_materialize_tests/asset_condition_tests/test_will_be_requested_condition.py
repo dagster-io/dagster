@@ -6,7 +6,7 @@ from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def test_will_be_requested_unpartitioned() -> None:
-    condition = SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
+    condition = SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
     state = SchedulingConditionScenarioState(two_assets_in_sequence, scheduling_condition=condition)
 
     # no requested parents
@@ -20,7 +20,7 @@ def test_will_be_requested_unpartitioned() -> None:
 
 
 def test_will_be_requested_static_partitioned() -> None:
-    condition = SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
+    condition = SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
     state = SchedulingConditionScenarioState(
         two_assets_in_sequence, scheduling_condition=condition
     ).with_asset_properties(partitions_def=two_partitions_def)
@@ -44,7 +44,7 @@ def test_will_be_requested_static_partitioned() -> None:
 
 
 def test_will_be_requested_different_partitions() -> None:
-    condition = SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
+    condition = SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
     state = SchedulingConditionScenarioState(
         two_assets_in_sequence, scheduling_condition=condition
     ).with_asset_properties("A", partitions_def=two_partitions_def)

@@ -25,9 +25,10 @@ if TYPE_CHECKING:
         InLatestTimeWindowCondition,
         InProgressSchedulingCondition,
         MissingSchedulingCondition,
+        NewlyRequestedCondition,
         ParentNewerCondition,
-        RequestedThisTickCondition,
         UpdatedSinceCronCondition,
+        WillBeRequestedCondition,
     )
     from .operators import (
         AllDepsCondition,
@@ -164,11 +165,18 @@ class SchedulingCondition(ABC, DagsterModel):
         return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
 
     @staticmethod
-    def requested_this_tick() -> "RequestedThisTickCondition":
+    def will_be_requested() -> "WillBeRequestedCondition":
         """Returns a SchedulingCondition that is true for an asset partition if it will be requested this tick."""
-        from .operands import RequestedThisTickCondition
+        from .operands import WillBeRequestedCondition
 
-        return RequestedThisTickCondition()
+        return WillBeRequestedCondition()
+
+    @staticmethod
+    def newly_requested() -> "NewlyRequestedCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it was requested on the previous tick."""
+        from .operands import NewlyRequestedCondition
+
+        return NewlyRequestedCondition()
 
     @staticmethod
     def parent_newer() -> "ParentNewerCondition":
@@ -195,11 +203,11 @@ class SchedulingCondition(ABC, DagsterModel):
         """
         missing_or_parent_updated = (
             SchedulingCondition.parent_newer()
-            | SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
+            | SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
             | SchedulingCondition.missing()
         )
         any_parent_missing = SchedulingCondition.any_deps_match(
-            SchedulingCondition.missing() & ~SchedulingCondition.requested_this_tick()
+            SchedulingCondition.missing() & ~SchedulingCondition.will_be_requested()
         )
         any_parent_in_progress = SchedulingCondition.any_deps_match(
             SchedulingCondition.in_progress()
@@ -231,7 +239,7 @@ class SchedulingCondition(ABC, DagsterModel):
         all_parents_updated_or_will_update = ~SchedulingCondition.any_deps_match(
             ~(
                 SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
-                | SchedulingCondition.requested_this_tick()
+                | SchedulingCondition.will_be_requested()
             )
         )
         return (
