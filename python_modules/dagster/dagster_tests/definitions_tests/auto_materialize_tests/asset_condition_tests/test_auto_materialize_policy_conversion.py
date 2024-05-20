@@ -10,23 +10,18 @@ from dagster import (
 
 
 def test_round_trip_conversion() -> None:
-    policy = SchedulingCondition.eager_with_rate_limit().as_auto_materialize_policy()
+    policy = SchedulingCondition.eager().as_auto_materialize_policy()
     serialized_policy = serialize_value(policy)
     deserialized_policy = deserialize_value(serialized_policy, AutoMaterializePolicy)
     assert policy == deserialized_policy
-    assert deserialized_policy.asset_condition == SchedulingCondition.eager_with_rate_limit()
+    assert deserialized_policy.asset_condition == SchedulingCondition.eager()
 
 
 def test_defs() -> None:
-    @asset(
-        auto_materialize_policy=SchedulingCondition.eager_with_rate_limit().as_auto_materialize_policy()
-    )
+    @asset(auto_materialize_policy=SchedulingCondition.eager().as_auto_materialize_policy())
     def my_asset() -> None: ...
 
     defs = Definitions(assets=[my_asset])
 
     asset_graph_amp = defs.get_asset_graph().get(my_asset.key).auto_materialize_policy
-    assert (
-        check.not_none(asset_graph_amp).to_scheduling_condition()
-        == SchedulingCondition.eager_with_rate_limit()
-    )
+    assert check.not_none(asset_graph_amp).to_scheduling_condition() == SchedulingCondition.eager()

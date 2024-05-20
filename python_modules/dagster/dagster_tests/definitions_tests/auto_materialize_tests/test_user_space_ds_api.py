@@ -46,7 +46,7 @@ def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
 
 
 def test_basic_asset_scheduling_test() -> None:
-    eager_policy = SchedulingCondition.eager_with_rate_limit().as_auto_materialize_policy()
+    eager_policy = SchedulingCondition.eager().as_auto_materialize_policy()
 
     @asset(auto_materialize_policy=eager_policy)
     def upstream() -> None: ...
