@@ -10,6 +10,7 @@ on:
   pull_request:
     paths:
       - docs/**
+      - CHANGES.md
 concurrency:
   # Cancel in-progress runs on same branch
   group: ${{ github.ref }}
