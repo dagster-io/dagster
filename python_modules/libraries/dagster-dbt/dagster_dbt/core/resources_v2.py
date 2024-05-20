@@ -928,6 +928,13 @@ def _fetch_column_metadata(
     invocation: DbtCliInvocation,
     event: DbtDagsterEventType,
 ) -> Optional[Dict[str, Any]]:
+    """Threaded task which fetches column metadata for dbt models in a dbt run once they are built,
+    and attaches the column metadata as metadata to the event.
+
+    First we use the dbt adapter to obtain the column metadata for the built model. Then we
+    retrieve the column metadata for the model's parent models, if they exist. Finally, we
+    build the column lineage metadata for the model and attach it to the event.
+    """
     adapter = check.not_none(invocation.adapter)
 
     dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
@@ -1069,13 +1076,13 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
-        """Experimental functionality which will fetch row counts for materialized dbt
-        models in a dbt run once they are built. Note that row counts will not be fetched
-        for views, since this requires running the view's SQL query which may be costly.
+        """Experimental functionality which will fetch column metadata and build column lineage
+        for dbt models in a dbt run in a separate thread. This deferred metadata fetch may be
+        more efficient.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
-                A set of corresponding Dagster events for dbt models, with row counts attached,
+                A set of corresponding Dagster events for dbt models, with column metadata attached,
                 yielded in the order they are emitted by dbt.
         """
         return self._attach_metadata(_fetch_column_metadata)
@@ -1426,6 +1433,8 @@ class DbtCliResource(ConfigurableResource):
         project = load_project(self.project_dir, False, profile, {})
         config = RuntimeConfig.from_parts(project, profile, flags)
 
+        # these flags are required for the adapter to be able to look up
+        # relations correctly
         new_flags = Namespace()
         for key, val in config.args.__dict__.items():
             setattr(new_flags, key, val)
@@ -1460,8 +1469,7 @@ class DbtCliResource(ConfigurableResource):
             register_adapter(config, get_mp_context())
 
         adapter = cast(BaseAdapter, get_adapter(config))
-        # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
-        # reset_adapters()
+
         return adapter
 
     def get_defer_args(self) -> Sequence[str]:
