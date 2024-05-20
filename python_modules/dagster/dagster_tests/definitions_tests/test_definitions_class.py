@@ -2,9 +2,11 @@ import re
 
 import pytest
 from dagster import (
+    AssetDep,
     AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
+    AssetSpec,
     DagsterInvalidDefinitionError,
     Definitions,
     ResourceDefinition,
@@ -18,7 +20,9 @@ from dagster import (
     in_process_executor,
     materialize,
     mem_io_manager,
+    multi_asset,
     multiprocess_executor,
+    observable_source_asset,
     op,
     repository,
     sensor,
@@ -854,3 +858,46 @@ def test_executor_conflict_on_merge():
         DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
     ):
         Definitions.merge(defs1, defs2)
+
+
+def test_get_all_asset_specs():
+    @asset(tags={"foo": "fooval"})
+    def asset1(): ...
+
+    @asset
+    def asset2(asset1): ...
+
+    @multi_asset(specs=[AssetSpec("asset3"), AssetSpec("asset4", group_name="baz")])
+    def assets3_and_4(): ...
+
+    asset5 = SourceAsset("asset5", tags={"biz": "boz"})
+
+    @observable_source_asset(group_name="blag")
+    def asset6(): ...
+
+    defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6])
+    all_asset_specs = defs.get_all_asset_specs()
+    assert len(all_asset_specs) == 6
+    asset_specs_by_key = {spec.key: spec for spec in all_asset_specs}
+    assert asset_specs_by_key.keys() == {
+        AssetKey(s) for s in ["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]
+    }
+    assert asset_specs_by_key[AssetKey("asset1")] == AssetSpec(
+        "asset1", tags={"foo": "fooval"}, group_name="default"
+    )
+    assert asset_specs_by_key[AssetKey("asset2")] == AssetSpec(
+        "asset2", group_name="default", deps=[AssetDep("asset1")]
+    )
+    assert asset_specs_by_key[AssetKey("asset3")] == AssetSpec("asset3", group_name="default")
+    assert asset_specs_by_key[AssetKey("asset4")] == AssetSpec("asset4", group_name="baz")
+    assert asset_specs_by_key[AssetKey("asset5")] == AssetSpec(
+        "asset5",
+        group_name="default",
+        tags={"biz": "boz"},
+        metadata={"dagster/asset_execution_type": "UNEXECUTABLE"},
+    )
+    assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec(
+        "asset6",
+        group_name="blag",
+        metadata={"dagster/asset_execution_type": "OBSERVATION"},
+    )

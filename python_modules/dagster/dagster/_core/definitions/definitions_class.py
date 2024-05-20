@@ -19,6 +19,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -702,3 +703,10 @@ class Definitions:
             loggers=loggers,
             asset_checks=asset_checks,
         )
+
+    @public
+    @experimental
+    def get_all_asset_specs(self) -> Sequence[AssetSpec]:
+        """Returns an AssetSpec object for every asset contained inside the Definitions object."""
+        asset_graph = self.get_asset_graph()
+        return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]

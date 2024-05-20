@@ -141,6 +141,9 @@ class AssetNode(BaseAssetNode):
     def io_manager_key(self) -> str:
         return self.assets_def.get_io_manager_key_for_asset_key(self.key)
 
+    def to_asset_spec(self) -> AssetSpec:
+        return self.assets_def.specs_by_key[self.key]
+
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
     _assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition]
