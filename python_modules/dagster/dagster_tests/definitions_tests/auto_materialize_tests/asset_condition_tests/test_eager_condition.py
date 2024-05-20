@@ -1,4 +1,3 @@
-import pytest
 from dagster import SchedulingCondition
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
@@ -7,7 +6,6 @@ from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
 from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
-@pytest.mark.skip("temporary")
 def test_eager_unpartitioned() -> None:
     state = SchedulingConditionScenarioState(
         two_assets_in_sequence,
@@ -43,7 +41,6 @@ def test_eager_unpartitioned() -> None:
     assert result.true_subset.size == 0
 
 
-@pytest.mark.skip("temporary")
 def test_eager_hourly_partitioned() -> None:
     state = (
         SchedulingConditionScenarioState(
