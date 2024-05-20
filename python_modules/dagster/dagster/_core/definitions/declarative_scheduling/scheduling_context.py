@@ -233,6 +233,17 @@ class SchedulingContext(NamedTuple):
         )
 
     @property
+    def previous_evaluation_effective_dt(self) -> Optional[datetime.datetime]:
+        """Returns the datetime for the previous time this node was evaluated. If this node has
+        never been evaluated, returns None.
+        """
+        return (
+            self.previous_evaluation_info.temporal_context.effective_dt
+            if self.previous_evaluation_info and self.previous_evaluation_node
+            else None
+        )
+
+    @property
     def new_max_storage_id(self) -> Optional[int]:
         # TODO: pull this from the AssetGraphView instead
         return self.inner_legacy_context.new_max_storage_id

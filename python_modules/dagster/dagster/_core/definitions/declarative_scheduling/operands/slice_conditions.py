@@ -5,6 +5,7 @@ from typing import Optional
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.declarative_scheduling.utils import SerializableTimeDelta
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.schedules import reverse_cron_string_iterator
 
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
 from ..scheduling_context import SchedulingContext
@@ -113,6 +114,36 @@ class NewlyUpdatedCondition(SliceSchedulingCondition):
             return context.asset_graph_view.compute_updated_since_cursor_slice(
                 asset_key=context.asset_key, cursor=context.previous_evaluation_max_storage_id
             )
+
+
+@whitelist_for_serdes
+class CronTickPassedCondition(SliceSchedulingCondition):
+    cron_schedule: str
+    cron_timezone: str
+
+    @property
+    def description(self) -> str:
+        return f"New tick of {self.cron_schedule} ({self.cron_timezone})"
+
+    def _get_previous_cron_tick(self, effective_dt: datetime.datetime) -> datetime.datetime:
+        previous_ticks = reverse_cron_string_iterator(
+            end_timestamp=effective_dt.timestamp(),
+            cron_string=self.cron_schedule,
+            execution_timezone=self.cron_timezone,
+        )
+        return next(previous_ticks)
+
+    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        previous_cron_tick = self._get_previous_cron_tick(context.effective_dt)
+        if (
+            # no previous evaluation
+            context.previous_evaluation_effective_dt is None
+            # cron tick was not newly passed
+            or previous_cron_tick < context.previous_evaluation_effective_dt
+        ):
+            return context.asset_graph_view.create_empty_slice(context.asset_key)
+        else:
+            return context.candidate_slice
 
 
 @whitelist_for_serdes
