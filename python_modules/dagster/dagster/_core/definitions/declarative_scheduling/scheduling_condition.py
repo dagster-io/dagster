@@ -35,6 +35,7 @@ if TYPE_CHECKING:
         AllDepsCondition,
         AndAssetCondition,
         AnyDepsCondition,
+        NewlyTrueCondition,
         NotAssetCondition,
         OrAssetCondition,
         SinceCondition,
@@ -97,6 +98,56 @@ class SchedulingCondition(ABC, DagsterModel):
 
         return NotAssetCondition(operand=self)
 
+    def since(self, reset_condition: "SchedulingCondition") -> "SinceCondition":
+        """Returns a SchedulingCondition that is true if this condition has become true since the
+        last time the reference condition became true.
+        """
+        from .operators import SinceCondition
+
+        return SinceCondition(trigger_condition=self, reset_condition=reset_condition)
+
+    def since_last_updated(self) -> "SinceCondition":
+        """Returns a SchedulingCondition that is true if this condition has become true since the
+        last time this asset was updated.
+        """
+        from .operands import NewlyUpdatedCondition
+        from .operators import SinceCondition
+
+        return SinceCondition(trigger_condition=self, reset_condition=NewlyUpdatedCondition())
+
+    def since_last_requested(self) -> "SinceCondition":
+        """Returns a SchedulingCondition that is true if this condition has become true since the
+        last time this asset was updated.
+        """
+        from .operands import NewlyRequestedCondition
+        from .operators import SinceCondition
+
+        return SinceCondition(trigger_condition=self, reset_condition=NewlyRequestedCondition())
+
+    def since_last_cron_tick(
+        self, cron_schedule: str, cron_timezone: str = "UTC"
+    ) -> "SinceCondition":
+        """Returns a SchedulingCondition that is true if this condition has become true since the
+        latest tick of the given cron schedule.
+        """
+        from .operands import CronTickPassedCondition
+        from .operators import SinceCondition
+
+        return SinceCondition(
+            trigger_condition=self,
+            reset_condition=CronTickPassedCondition(
+                cron_schedule=cron_schedule, cron_timezone=cron_timezone
+            ),
+        )
+
+    def newly_true(self) -> "NewlyTrueCondition":
+        """Returns a SchedulingCondition that is true only on the tick that this condition goes
+        from false to true for a given asset partition.
+        """
+        from .operators import NewlyTrueCondition
+
+        return NewlyTrueCondition(operand=self)
+
     @staticmethod
     def any_deps_match(condition: "SchedulingCondition") -> "AnyDepsCondition":
         """Returns a SchedulingCondition that is true for an asset partition if at least one partition
@@ -139,21 +190,6 @@ class SchedulingCondition(ABC, DagsterModel):
         return FailedSchedulingCondition()
 
     @staticmethod
-    def updated_since_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "SinceCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it has been updated
-        since the latest tick of the provided cron schedule.
-        """
-        from .operands import CronTickPassed, NewlyUpdatedCondition
-        from .operators import SinceCondition
-
-        return SinceCondition(
-            primary_condition=NewlyUpdatedCondition(),
-            reference_condition=CronTickPassed(
-                cron_schedule=cron_schedule, cron_timezone=cron_timezone
-            ),
-        )
-
-    @staticmethod
     def in_latest_time_window(
         lookback_delta: Optional[datetime.timedelta] = None,
     ) -> "InLatestTimeWindowCondition":
@@ -178,13 +214,6 @@ class SchedulingCondition(ABC, DagsterModel):
         return WillBeRequestedCondition()
 
     @staticmethod
-    def newly_requested() -> "NewlyRequestedCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it was requested on the previous tick."""
-        from .operands import NewlyRequestedCondition
-
-        return NewlyRequestedCondition()
-
-    @staticmethod
     def parent_newer() -> "ParentNewerCondition":
         """Returns a SchedulingCondition that is true for an asset partition if at least one of its parents is newer."""
         from .operands import ParentNewerCondition
@@ -197,6 +226,13 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import NewlyUpdatedCondition
 
         return NewlyUpdatedCondition()
+
+    @staticmethod
+    def newly_requested() -> "NewlyRequestedCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it was requested on the previous tick."""
+        from .operands import NewlyRequestedCondition
+
+        return NewlyRequestedCondition()
 
     @staticmethod
     def cron_tick_passed(
@@ -217,17 +253,18 @@ class SchedulingCondition(ABC, DagsterModel):
         if all of the following are true:
 
         - The asset partition is within the latest time window
-        - At least one of its parents has been updated more recently than it, or the asset partition
-            has never been materialized
+        - At least one of its parents has been updated more recently than it has been requested, or
+            the asset partition has never been materialized
         - None of its parent partitions are missing
         - None of its parent partitions are currently part of an in-progress run
-        - It is not currently part of an in-progress run
         """
-        missing_or_parent_updated = (
-            SchedulingCondition.parent_newer()
-            | SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
-            | SchedulingCondition.missing()
+        became_missing_or_any_deps_updated = (
+            SchedulingCondition.missing().newly_true()
+            | SchedulingCondition.any_deps_match(
+                SchedulingCondition.newly_updated() | SchedulingCondition.will_be_requested()
+            )
         )
+
         any_parent_missing = SchedulingCondition.any_deps_match(
             SchedulingCondition.missing() & ~SchedulingCondition.will_be_requested()
         )
@@ -236,10 +273,9 @@ class SchedulingCondition(ABC, DagsterModel):
         )
         return (
             SchedulingCondition.in_latest_time_window()
-            & missing_or_parent_updated
+            & became_missing_or_any_deps_updated.since_last_requested()
             & ~any_parent_missing
             & ~any_parent_in_progress
-            & ~SchedulingCondition.in_progress()
         )
 
     @staticmethod
@@ -255,20 +291,18 @@ class SchedulingCondition(ABC, DagsterModel):
         - The asset partition is within the latest time window
         - All parent asset partitions have been updated since the latest tick of the provided cron
             schedule, or will be requested this tick
-        - The asset partition has not been updated since the latest tick of the provided cron schedule
-        - The asset partition is not currently part of an in-progress run
+        - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
-        all_parents_updated_or_will_update = ~SchedulingCondition.any_deps_match(
-            ~(
-                SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
-                | SchedulingCondition.will_be_requested()
-            )
+        all_deps_updated_since_cron = SchedulingCondition.all_deps_match(
+            SchedulingCondition.newly_updated().since_last_cron_tick(cron_schedule, cron_timezone)
+            | SchedulingCondition.will_be_requested()
         )
         return (
             SchedulingCondition.in_latest_time_window()
-            & all_parents_updated_or_will_update
-            & ~SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
-            & ~SchedulingCondition.in_progress()
+            & SchedulingCondition.cron_tick_passed(
+                cron_schedule, cron_timezone
+            ).since_last_requested()
+            & all_deps_updated_since_cron
         )
 
 
