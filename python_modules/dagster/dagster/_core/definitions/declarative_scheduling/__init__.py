@@ -7,15 +7,16 @@ from .operands import (
     MissingSchedulingCondition as MissingSchedulingCondition,
     ParentNewerCondition as ParentNewerCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
-    ScheduledSinceCondition as ScheduledSinceCondition,
     UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,
     AndAssetCondition as AndAssetCondition,
     AnyDepsCondition as AnyDepsCondition,
+    NewlyTrueCondition as NewlyTrueCondition,
     NotAssetCondition as NotAssetCondition,
     OrAssetCondition as OrAssetCondition,
+    SinceCondition as SinceCondition,
 )
 from .scheduling_condition import SchedulingCondition as SchedulingCondition
 from .serialized_objects import (
