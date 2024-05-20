@@ -88,6 +88,18 @@ class RequestedThisTickCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
+class RequestedPreviousTickCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Was requested on the previous tick"
+
+    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        return context.previous_requested_slice or context.asset_graph_view.create_empty_slice(
+            context.asset_key
+        )
+
+
+@whitelist_for_serdes
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 

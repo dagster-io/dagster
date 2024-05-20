@@ -6,6 +6,7 @@ from .operands import (
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
     ParentNewerCondition as ParentNewerCondition,
+    RequestedPreviousTickCondition as RequestedPreviousTickCondition,
     RequestedThisTickCondition as RequestedThisTickCondition,
     UpdatedSinceCronCondition as UpdatedSinceCronCondition,
 )
