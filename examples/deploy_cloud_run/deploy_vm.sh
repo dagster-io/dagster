@@ -10,17 +10,17 @@ REMOTE_DIR="/opt/dagster/app"
 SERVICE_ACCOUNT_EMAIL="dagster@dagster-420313.iam.gserviceaccount.com" # service account used must have the right to launch a cloud run job and access secrets from secret manager
 SCOPES="cloud-platform"
 
-# gcloud compute instances create $VM_NAME \
-#     --zone=$ZONE \
-#     --machine-type=e2-micro \
-#     --image-family=ubuntu-2204-lts \
-#     --image-project=ubuntu-os-cloud \
-#     --project=$PROJECT_ID \
-#     --service-account=$SERVICE_ACCOUNT_EMAIL \
-#     --scopes=$SCOPES
+gcloud compute instances create $VM_NAME \
+    --zone=$ZONE \
+    --machine-type=e2-micro \
+    --image-family=ubuntu-2204-lts \
+    --image-project=ubuntu-os-cloud \
+    --project=$PROJECT_ID \
+    --service-account=$SERVICE_ACCOUNT_EMAIL \
+    --scopes=$SCOPES
 
-# echo "waiting for VM to be created..."
-# sleep 40
+echo "waiting for VM to be created..."
+sleep 40
 
 gcloud compute ssh $VM_NAME --zone=$ZONE --command="
     sudo mkdir -p $REMOTE_DIR $REMOTE_DAGSTER_GCP_PATH
