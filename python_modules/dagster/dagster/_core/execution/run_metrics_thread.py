@@ -7,7 +7,7 @@ from sys import platform
 from typing import Dict, Optional, Tuple, Union
 
 import dagster._check as check
-from dagster._core.execution.types import RunTelemetryData
+from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.container import (

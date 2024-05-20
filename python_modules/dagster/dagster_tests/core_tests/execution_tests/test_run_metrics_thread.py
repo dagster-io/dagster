@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import dagster._core.execution.run_metrics_thread as run_metrics_thread
 from dagster import DagsterInstance, DagsterRun
-from dagster._core.execution.types import RunTelemetryData
+from dagster._core.execution.telemetry import RunTelemetryData
 from pytest import fixture, mark
 
 
