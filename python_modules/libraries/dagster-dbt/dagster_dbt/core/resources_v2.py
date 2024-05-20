@@ -281,7 +281,23 @@ class DbtCliEventMessage:
         ):
             lineage_metadata = {}
             try:
-                lineage_metadata = self._build_column_lineage_metadata(
+                column_data = {
+                    col_name: col_data["data_type"]
+                    for col_name, col_data in self._event_history_metadata.items()
+                }
+                parent_column_data = {
+                    parent_key: {
+                        col_name: col_data["data_type"]
+                        for col_name, col_data in parent_data["columns"].items()
+                    }
+                    for parent_key, parent_data in self._event_history_metadata.items()
+                }
+
+                lineage_metadata = _build_column_lineage_metadata(
+                    event_history_metadata=EventHistoryMetadata(
+                        columns=column_data, parents=parent_column_data
+                    ),
+                    dbt_resource_props=dbt_resource_props,
                     manifest=manifest,
                     dagster_dbt_translator=dagster_dbt_translator,
                     target_path=target_path,
@@ -383,150 +399,6 @@ class DbtCliEventMessage:
                     if node_status == TestStatus.Warn
                     else AssetCheckSeverity.ERROR
                 ),
-            )
-
-    def _build_column_lineage_metadata(
-        self,
-        manifest: Mapping[str, Any],
-        dagster_dbt_translator: DagsterDbtTranslator,
-        target_path: Optional[Path],
-    ) -> Dict[str, Any]:
-        """Process the lineage metadata for a dbt CLI event.
-
-        Args:
-            manifest (Mapping[str, Any]): The dbt manifest blob.
-            dagster_dbt_translator (DagsterDbtTranslator): The translator for dbt nodes to Dagster assets.
-            target_path (Path): The path to the dbt target folder.
-
-        Returns:
-            Dict[str, Any]: The lineage metadata.
-        """
-        if (
-            # Column lineage can only be built if initial metadata is provided.
-            not self.has_column_lineage_metadata or not target_path
-        ):
-            return {}
-
-        event_node_info: Dict[str, Any] = self.raw_event["data"].get("node_info")
-        unique_id: str = event_node_info["unique_id"]
-        dbt_resource_props: Dict[str, Any] = manifest["nodes"][unique_id]
-
-        # If the unique_id is a seed, then we don't need to process lineage.
-        if unique_id.startswith("seed"):
-            return {}
-
-        # 1. Retrieve the current node's SQL file and its parents' column schemas.
-        sql_dialect = manifest["metadata"]["adapter_type"]
-        sqlglot_mapping_schema = MappingSchema(dialect=sql_dialect)
-        for parent_relation_name, parent_relation_metadata in self._event_history_metadata[
-            "parents"
-        ].items():
-            sqlglot_mapping_schema.add_table(
-                table=to_table(parent_relation_name, dialect=sql_dialect),
-                column_mapping={
-                    column_name: column_metadata["data_type"]
-                    for column_name, column_metadata in parent_relation_metadata["columns"].items()
-                },
-                dialect=sql_dialect,
-            )
-
-        node_sql_path = target_path.joinpath(
-            "compiled",
-            manifest["metadata"]["project_name"],
-            dbt_resource_props["original_file_path"],
-        )
-        optimized_node_ast = cast(
-            exp.Query,
-            optimize(
-                parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
-                schema=sqlglot_mapping_schema,
-                dialect=sql_dialect,
-            ),
-        )
-
-        # 2. Retrieve the column names from the current node.
-        schema_column_names = {
-            column.lower() for column in self._event_history_metadata["columns"].keys()
-        }
-        sqlglot_column_names = set(optimized_node_ast.named_selects)
-
-        # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
-        dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
-        for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
-            is_resource_type_source = parent_unique_id.startswith("source")
-            parent_dbt_resource_props = (
-                manifest["sources"] if is_resource_type_source else manifest["nodes"]
-            )[parent_unique_id]
-            parent_relation_name = normalize_table_name(
-                to_table(parent_dbt_resource_props["relation_name"], dialect=sql_dialect),
-                dialect=sql_dialect,
-            )
-
-            dbt_parent_resource_props_by_relation_name[parent_relation_name] = (
-                parent_dbt_resource_props
-            )
-
-        normalized_sqlglot_column_names = {
-            sqlglot_column.lower() for sqlglot_column in sqlglot_column_names
-        }
-        implicit_alias_column_names = {
-            column
-            for column in schema_column_names
-            if column not in normalized_sqlglot_column_names
-        }
-
-        deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
-        if implicit_alias_column_names:
-            logger.warning(
-                "The following columns are implicitly aliased and will be marked with an "
-                f" empty list column dependencies: `{implicit_alias_column_names}`."
-            )
-
-            deps_by_column = {column: [] for column in implicit_alias_column_names}
-
-        for column_name in sqlglot_column_names:
-            if column_name.lower() not in schema_column_names:
-                continue
-
-            column_deps: Set[TableColumnDep] = set()
-            for sqlglot_lineage_node in lineage(
-                column=column_name,
-                sql=optimized_node_ast,
-                schema=sqlglot_mapping_schema,
-                dialect=sql_dialect,
-            ).walk():
-                # Only the leaves of the lineage graph contain relevant information.
-                if sqlglot_lineage_node.downstream:
-                    continue
-
-                # Attempt to find a table in the lineage node.
-                table = sqlglot_lineage_node.expression.find(exp.Table)
-                if not table:
-                    continue
-
-                # Attempt to retrieve the table's associated asset key and column.
-                parent_column_name = exp.to_column(sqlglot_lineage_node.name).name.lower()
-                parent_relation_name = normalize_table_name(table, dialect=sql_dialect)
-                parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
-                    parent_relation_name
-                )
-                if not parent_resource_props:
-                    continue
-
-                # Add the column dependency.
-                column_deps.add(
-                    TableColumnDep(
-                        asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
-                        column_name=parent_column_name,
-                    )
-                )
-
-            deps_by_column[column_name.lower()] = list(column_deps)
-
-        # 4. Render the lineage as metadata.
-        with disable_dagster_warnings():
-            return dict(
-                TableMetadataSet(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
             )
 
 
@@ -903,7 +775,7 @@ def _get_dbt_resource_props_from_event(
 
 
 class EventHistoryMetadata(NamedTuple):
-    columns: Dict[str, Dict[str, Any]]
+    columns: Dict[str, str]
     parents: Dict[str, Dict[str, Any]]
 
 
@@ -917,6 +789,9 @@ def _build_column_lineage_metadata(
     """Process the lineage metadata for a dbt CLI event.
 
     Args:
+        event_history_metadata (EventHistoryMetadata): Unprocessed column type data and map of
+            parent relation names to their column type data.
+        dbt_resource_props (Dict[str, Any]): The dbt resource properties for the given event.
         manifest (Mapping[str, Any]): The dbt manifest blob.
         dagster_dbt_translator (DagsterDbtTranslator): The translator for dbt nodes to Dagster assets.
         target_path (Path): The path to the dbt target folder.
