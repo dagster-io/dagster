@@ -8,7 +8,7 @@
 - Made performance improvements in both calculating and storing data version for assets, especially for assets with a large fan-in.
 - Standardized table row count metadata output by various integrations to `dagster/row_count` .
 - [dagster-aws][community-contribution] Additional parameters can now be passed to the following resources: `CloudwatchLogsHandler`, `ECRPublicClient`, `SecretsManagerResource`, `SSMResource` thanks `@jacob-white-simplisafe` !
--
+- Added additional frontend telemetry. See https://docs.dagster.io/about/telemetry for more information.
 
 ### Bugfixes
 
