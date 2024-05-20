@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 from typing import Any, Dict, cast
 
 import mock
@@ -185,7 +186,10 @@ def test_summary(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, A
             )
 
         table_metadata = MetadataValue.table(
-            records=[TableRecord({k: v for k, v in row.items()}) for row in query_result[1].rows]
+            records=[
+                TableRecord({k: float(v) if isinstance(v, Decimal) else v for k, v in row.items()})
+                for row in query_result[1].rows
+            ]
         )
 
         return {"summary": table_metadata}
