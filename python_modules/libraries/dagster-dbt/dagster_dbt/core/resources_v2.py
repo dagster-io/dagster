@@ -22,6 +22,7 @@ from typing import (
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -57,8 +58,8 @@ from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvali
 from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
 from dagster._utils.warnings import disable_dagster_warnings
-from dbt.adapters.base.impl import BaseAdapter
-from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
+from dbt.adapters.base.impl import BaseAdapter, BaseColumn
+from dbt.adapters.factory import get_adapter, register_adapter
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
@@ -901,6 +902,204 @@ def _get_dbt_resource_props_from_event(
     return check.not_none(invocation.manifest["nodes"].get(unique_id))
 
 
+class EventHistoryMetadata(NamedTuple):
+    columns: Dict[str, Dict[str, Any]]
+    parents: Dict[str, Dict[str, Any]]
+
+
+def _build_column_lineage_metadata(
+    event_history_metadata: EventHistoryMetadata,
+    dbt_resource_props: Dict[str, Any],
+    manifest: Mapping[str, Any],
+    dagster_dbt_translator: DagsterDbtTranslator,
+    target_path: Optional[Path],
+) -> Dict[str, Any]:
+    """Process the lineage metadata for a dbt CLI event.
+
+    Args:
+        manifest (Mapping[str, Any]): The dbt manifest blob.
+        dagster_dbt_translator (DagsterDbtTranslator): The translator for dbt nodes to Dagster assets.
+        target_path (Path): The path to the dbt target folder.
+
+    Returns:
+        Dict[str, Any]: The lineage metadata.
+    """
+    if (
+        # Column lineage can only be built if initial metadata is provided.
+        not target_path
+    ):
+        return {}
+
+    event_node_info: Dict[str, Any] = dbt_resource_props
+    unique_id: str = event_node_info["unique_id"]
+
+    node_resource_type: str = event_node_info["resource_type"]
+
+    if node_resource_type not in REFABLE_NODE_TYPES:
+        return {}
+
+    # If the unique_id is a seed, then we don't need to process lineage.
+    if unique_id.startswith("seed"):
+        return {}
+
+    # 1. Retrieve the current node's SQL file and its parents' column schemas.
+    sql_dialect = manifest["metadata"]["adapter_type"]
+    sqlglot_mapping_schema = MappingSchema(dialect=sql_dialect)
+    for parent_relation_name, parent_relation_metadata in event_history_metadata.parents.items():
+        sqlglot_mapping_schema.add_table(
+            table=to_table(parent_relation_name, dialect=sql_dialect),
+            column_mapping={
+                column_name: column_data_type
+                for column_name, column_data_type in parent_relation_metadata.items()
+            },
+            dialect=sql_dialect,
+        )
+
+    node_sql_path = target_path.joinpath(
+        "compiled",
+        manifest["metadata"]["project_name"],
+        dbt_resource_props["original_file_path"],
+    )
+    optimized_node_ast = cast(
+        exp.Query,
+        optimize(
+            parse_one(sql=node_sql_path.read_text(), dialect=sql_dialect),
+            schema=sqlglot_mapping_schema,
+            dialect=sql_dialect,
+        ),
+    )
+
+    # 2. Retrieve the column names from the current node.
+    schema_column_names = {column.lower() for column in event_history_metadata.columns.keys()}
+    sqlglot_column_names = set(optimized_node_ast.named_selects)
+
+    # 3. For each column, retrieve its dependencies on upstream columns from direct parents.
+    dbt_parent_resource_props_by_relation_name: Dict[str, Dict[str, Any]] = {}
+    for parent_unique_id in dbt_resource_props["depends_on"]["nodes"]:
+        is_resource_type_source = parent_unique_id.startswith("source")
+        parent_dbt_resource_props = (
+            manifest["sources"] if is_resource_type_source else manifest["nodes"]
+        )[parent_unique_id]
+        parent_relation_name = normalize_table_name(
+            to_table(parent_dbt_resource_props["relation_name"], dialect=sql_dialect),
+            dialect=sql_dialect,
+        )
+
+        dbt_parent_resource_props_by_relation_name[parent_relation_name] = parent_dbt_resource_props
+
+    normalized_sqlglot_column_names = {
+        sqlglot_column.lower() for sqlglot_column in sqlglot_column_names
+    }
+    implicit_alias_column_names = {
+        column for column in schema_column_names if column not in normalized_sqlglot_column_names
+    }
+
+    deps_by_column: Dict[str, Sequence[TableColumnDep]] = {}
+    if implicit_alias_column_names:
+        logger.warning(
+            "The following columns are implicitly aliased and will be marked with an "
+            f" empty list column dependencies: `{implicit_alias_column_names}`."
+        )
+
+        deps_by_column = {column: [] for column in implicit_alias_column_names}
+
+    for column_name in sqlglot_column_names:
+        if column_name.lower() not in schema_column_names:
+            continue
+
+        column_deps: Set[TableColumnDep] = set()
+        for sqlglot_lineage_node in lineage(
+            column=column_name,
+            sql=optimized_node_ast,
+            schema=sqlglot_mapping_schema,
+            dialect=sql_dialect,
+        ).walk():
+            # Only the leaves of the lineage graph contain relevant information.
+            if sqlglot_lineage_node.downstream:
+                continue
+
+            # Attempt to find a table in the lineage node.
+            table = sqlglot_lineage_node.expression.find(exp.Table)
+            if not table:
+                continue
+
+            # Attempt to retrieve the table's associated asset key and column.
+            parent_column_name = exp.to_column(sqlglot_lineage_node.name).name.lower()
+            parent_relation_name = normalize_table_name(table, dialect=sql_dialect)
+            parent_resource_props = dbt_parent_resource_props_by_relation_name.get(
+                parent_relation_name
+            )
+            if not parent_resource_props:
+                continue
+
+            # Add the column dependency.
+            column_deps.add(
+                TableColumnDep(
+                    asset_key=dagster_dbt_translator.get_asset_key(parent_resource_props),
+                    column_name=parent_column_name,
+                )
+            )
+
+        deps_by_column[column_name.lower()] = list(column_deps)
+
+    # 4. Render the lineage as metadata.
+    with disable_dagster_warnings():
+        return dict(
+            TableMetadataSet(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
+        )
+
+
+def _fetch_column_metadata(
+    invocation: DbtCliInvocation,
+    event: DbtDagsterEventType,
+) -> Optional[Dict[str, Any]]:
+    adapter = check.not_none(invocation.adapter)
+
+    dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+
+    with adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"):
+        relation = adapter.get_relation(
+            database=dbt_resource_props["database"],
+            schema=dbt_resource_props["schema"],
+            identifier=dbt_resource_props["name"],
+        )
+        cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=relation)
+        column_schema_data = {col.name: col.data_type for col in cols}
+        relation_name = str(relation)
+
+        parents = {}
+        dependent_unique_ids = invocation.manifest["parent_map"].get(
+            dbt_resource_props["unique_id"], []
+        )
+        for dep_unique_id in dependent_unique_ids:
+            dep_node = invocation.manifest["nodes"].get(dep_unique_id) or invocation.manifest[
+                "sources"
+            ].get(dep_unique_id)
+
+            dep_relation_name = dep_node["relation_name"]
+            dep_relation_components = [
+                component.strip('"') for component in dep_relation_name.split(".")
+            ]
+            dep_relation = adapter.get_relation(*dep_relation_components)
+
+            dep_cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=dep_relation)
+            dep_name = str(dep_relation)
+            parents[dep_name] = {col.name: col.data_type for col in dep_cols}
+
+        metadata = _build_column_lineage_metadata(
+            event_history_metadata=EventHistoryMetadata(
+                columns=column_schema_data,
+                parents=parents,
+            ),
+            dbt_resource_props=dbt_resource_props,
+            manifest=invocation.manifest,
+            dagster_dbt_translator=invocation.dagster_dbt_translator,
+            target_path=invocation.target_path,
+        )
+
+        return metadata
+
+
 def _fetch_row_count_metadata(
     invocation: DbtCliInvocation,
     event: DbtDagsterEventType,
@@ -988,6 +1187,24 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 yielded in the order they are emitted by dbt.
         """
         return self._attach_metadata(_fetch_row_count_metadata)
+
+    @public
+    @experimental
+    def fetch_column_metadata(
+        self,
+    ) -> (
+        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
+    ):
+        """Experimental functionality which will fetch row counts for materialized dbt
+        models in a dbt run once they are built. Note that row counts will not be fetched
+        for views, since this requires running the view's SQL query which may be costly.
+
+        Returns:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events for dbt models, with row counts attached,
+                yielded in the order they are emitted by dbt.
+        """
+        return self._attach_metadata(_fetch_column_metadata)
 
     def _attach_metadata(
         self,
@@ -1335,6 +1552,14 @@ class DbtCliResource(ConfigurableResource):
         project = load_project(self.project_dir, False, profile, {})
         config = RuntimeConfig.from_parts(project, profile, flags)
 
+        new_flags = Namespace()
+        for key, val in config.args.__dict__.items():
+            setattr(new_flags, key, val)
+
+        setattr(new_flags, "profile", profile.profile_name)
+        setattr(new_flags, "target", profile.target_name)
+        config.args = new_flags
+
         # If the dbt adapter is DuckDB, set the access mode to READ_ONLY, since DuckDB only allows
         # simultaneous connections for read-only access.
         try:
@@ -1362,7 +1587,7 @@ class DbtCliResource(ConfigurableResource):
 
         adapter = cast(BaseAdapter, get_adapter(config))
         # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
-        reset_adapters()
+        # reset_adapters()
         return adapter
 
     def get_defer_args(self) -> Sequence[str]:
