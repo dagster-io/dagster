@@ -26,6 +26,7 @@ if TYPE_CHECKING:
         InProgressSchedulingCondition,
         MissingSchedulingCondition,
         NewlyRequestedCondition,
+        NewlyUpdatedCondition,
         ParentNewerCondition,
         UpdatedSinceCronCondition,
         WillBeRequestedCondition,
@@ -184,6 +185,13 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import ParentNewerCondition
 
         return ParentNewerCondition()
+
+    @staticmethod
+    def newly_updated() -> "NewlyUpdatedCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it has been updated since the previous tick."""
+        from .operands import NewlyUpdatedCondition
+
+        return NewlyUpdatedCondition()
 
     @staticmethod
     def eager() -> "SchedulingCondition":
