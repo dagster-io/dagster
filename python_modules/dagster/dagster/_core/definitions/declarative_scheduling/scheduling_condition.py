@@ -140,22 +140,31 @@ class SchedulingCondition(ABC, DagsterModel):
         return FailedSchedulingCondition()
 
     @staticmethod
-    def updated_since_cron(
-        cron_schedule: str, cron_timezone: str = "UTC"
+    def updated_since(
+        target_condition: "SchedulingCondition",
     ) -> "TriggerSinceTargetCondition":
         """Returns a SchedulingCondition that is true for an asset partition if it has been updated
-        since the latest tick of the provided cron schedule.
+        since the last time the target condition became true.
         """
-        from .operands import CronTickPassed, NewlyUpdatedCondition
+        from .operands import NewlyUpdatedCondition
         from .operators import TriggerSinceTargetCondition
 
         return TriggerSinceTargetCondition(
-            trigger_condition=NewlyUpdatedCondition(),
-            target_condition=CronTickPassed(
-                cron_schedule=cron_schedule, cron_timezone=cron_timezone
-            ),
-        ).with_label(
-            f"Updated since latest cron schedule tick of {cron_schedule} ({cron_timezone})"
+            trigger_condition=NewlyUpdatedCondition(), target_condition=target_condition
+        )
+
+    @staticmethod
+    def requested_since(
+        target_condition: "SchedulingCondition",
+    ) -> "TriggerSinceTargetCondition":
+        """Returns a SchedulingCondition that is true for an asset partition if it has been
+        requested since the last time the target condition became true.
+        """
+        from .operands import RequestedPreviousTickCondition
+        from .operators import TriggerSinceTargetCondition
+
+        return TriggerSinceTargetCondition(
+            trigger_condition=RequestedPreviousTickCondition(), target_condition=target_condition
         )
 
     @staticmethod
@@ -206,17 +215,17 @@ class SchedulingCondition(ABC, DagsterModel):
         if all of the following are true:
 
         - The asset partition is within the latest time window
-        - At least one of its parents has been updated more recently than it, or the asset partition
-            has never been materialized
+        - At least one of its parents has been updated more recently than it has been requested, or
+            the asset partition has never been materialized
         - None of its parent partitions are missing
         - None of its parent partitions are currently part of an in-progress run
-        - It is not currently part of an in-progress run
         """
         missing_or_parent_updated = (
             SchedulingCondition.parent_newer()
             | SchedulingCondition.any_deps_match(SchedulingCondition.requested_this_tick())
             | SchedulingCondition.missing()
         )
+
         any_parent_missing = SchedulingCondition.any_deps_match(
             SchedulingCondition.missing() & ~SchedulingCondition.requested_this_tick()
         )
@@ -225,10 +234,9 @@ class SchedulingCondition(ABC, DagsterModel):
         )
         return (
             SchedulingCondition.in_latest_time_window()
-            & missing_or_parent_updated
-            & ~any_parent_missing
-            & ~any_parent_in_progress
-            & ~SchedulingCondition.in_progress()
+            & ~SchedulingCondition.requested_since(missing_or_parent_updated)
+            & (~any_parent_missing)
+            & (~any_parent_in_progress)
         )
 
     @staticmethod
@@ -244,20 +252,26 @@ class SchedulingCondition(ABC, DagsterModel):
         - The asset partition is within the latest time window
         - All parent asset partitions have been updated since the latest tick of the provided cron
             schedule, or will be requested this tick
-        - The asset partition has not been updated since the latest tick of the provided cron schedule
-        - The asset partition is not currently part of an in-progress run
+        - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
+        from .operands import CronTickPassed
+
         all_parents_updated_or_will_update = ~SchedulingCondition.any_deps_match(
             ~(
-                SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
+                SchedulingCondition.updated_since(
+                    CronTickPassed(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
+                )
                 | SchedulingCondition.requested_this_tick()
             )
         )
         return (
             SchedulingCondition.in_latest_time_window()
+            & (
+                ~SchedulingCondition.requested_since(
+                    CronTickPassed(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
+                )
+            )
             & all_parents_updated_or_will_update
-            & ~SchedulingCondition.updated_since_cron(cron_schedule, cron_timezone)
-            & ~SchedulingCondition.in_progress()
         )
 
 

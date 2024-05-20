@@ -1,4 +1,5 @@
 from dagster import SchedulingCondition
+from dagster._core.definitions.declarative_scheduling import CronTickPassed
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
@@ -9,7 +10,9 @@ from .asset_condition_scenario import SchedulingConditionScenarioState
 def test_updated_since_cron_unpartitioned() -> None:
     state = SchedulingConditionScenarioState(
         one_asset,
-        scheduling_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *"),
+        scheduling_condition=SchedulingCondition.updated_since(
+            CronTickPassed(cron_schedule="0 * * * *", cron_timezone="UTC")
+        ),
     ).with_current_time("2020-02-02T00:55:00")
 
     state, result = state.evaluate("A")
@@ -38,7 +41,9 @@ def test_updated_since_cron_partitioned() -> None:
     state = (
         SchedulingConditionScenarioState(
             one_asset,
-            scheduling_condition=SchedulingCondition.updated_since_cron(cron_schedule="0 * * * *"),
+            scheduling_condition=SchedulingCondition.updated_since(
+                CronTickPassed(cron_schedule="0 * * * *", cron_timezone="UTC")
+            ),
         )
         .with_asset_properties(partitions_def=two_partitions_def)
         .with_current_time("2020-02-02T00:55:00")

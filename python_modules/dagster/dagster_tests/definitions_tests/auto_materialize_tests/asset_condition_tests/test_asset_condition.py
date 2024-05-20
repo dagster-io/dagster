@@ -1,4 +1,5 @@
 from dagster import AutoMaterializePolicy, Definitions, SchedulingCondition, asset
+from dagster._core.definitions.declarative_scheduling import CronTickPassed
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
 )
@@ -76,7 +77,10 @@ def test_missing_time_partitioned() -> None:
 
 def test_serialize_definitions_with_asset_condition() -> None:
     amp = AutoMaterializePolicy.from_asset_condition(
-        SchedulingCondition.parent_newer() & ~SchedulingCondition.updated_since_cron("0 * * * *")
+        SchedulingCondition.parent_newer()
+        & ~SchedulingCondition.updated_since(
+            CronTickPassed(cron_schedule="0 * * * *", cron_timezone="UTC")
+        )
     )
 
     @asset(auto_materialize_policy=amp)
