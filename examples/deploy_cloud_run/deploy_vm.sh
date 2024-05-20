@@ -1,13 +1,13 @@
 # !/bin/bash
 
 VM_NAME="dagster-vm"
-ZONE="northamerica-northeast1-a" # add your zone
-PROJECT_ID="dagster-420313" # add your project id
+ZONE="" # add your zone
+PROJECT_ID="" # add your project id
 LOCAL_FILE_PATH="./cloud_run_pipeline/*"
 DAGSTER_GCP_PATH="../../python_modules/libraries/dagster-gcp/*"
 REMOTE_DAGSTER_GCP_PATH="/opt/dagster/app/python_modules/libraries/dagster_gcp"
 REMOTE_DIR="/opt/dagster/app"
-SERVICE_ACCOUNT_EMAIL="dagster@dagster-420313.iam.gserviceaccount.com" # service account used must have the right to launch a cloud run job and access secrets from secret manager
+SERVICE_ACCOUNT_EMAIL="" # service account used must have the right to launch a cloud run job and access secrets from secret manager
 SCOPES="cloud-platform"
 
 gcloud compute instances create $VM_NAME \

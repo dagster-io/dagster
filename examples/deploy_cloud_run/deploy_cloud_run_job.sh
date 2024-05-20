@@ -1,9 +1,9 @@
 #!/bin/bash
 
-PROJECT_ID="dagster-420313" # add your project id
+PROJECT_ID="" # add your project id
 FOLDER_NAME="dagster"
-REGION="northamerica-northeast1" # add your region
-SERVICE_ACCOUNT_EMAIL="dagster@dagster-420313.iam.gserviceaccount.com" # add your service account
+REGION="" # add your region
+SERVICE_ACCOUNT_EMAIL="" # add your service account
 PIPELINE_BASE_DIR="./cloud_run_pipeline"
 
 for PIPELINE_DIR in $PIPELINE_BASE_DIR/*; do
