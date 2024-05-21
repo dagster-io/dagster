@@ -31,14 +31,14 @@ def create_databricks_run_now_op(
     """Creates an op that launches an existing databricks job.
 
     As config, the op accepts a blob of the form described in Databricks' Job API:
-    https://docs.databricks.com/api-explorer/workspace/jobs/runnow. The only required field is
+    https://docs.databricks.com/api/workspace/jobs/runnow. The only required field is
     ``job_id``, which is the ID of the job to be executed. Additional fields can be used to specify
     override parameters for the Databricks Job.
 
     Arguments:
         databricks_job_id (int): The ID of the Databricks Job to be executed.
         databricks_job_configuration (dict): Configuration for triggering a new job run of a
-            Databricks Job. See https://docs.databricks.com/api-explorer/workspace/jobs/runnow
+            Databricks Job. See https://docs.databricks.com/api/workspace/jobs/runnow
             for the full configuration.
         poll_interval_seconds (float): How often to poll the Databricks API to check whether the
             Databricks job has finished running.
@@ -143,11 +143,11 @@ def create_databricks_submit_run_op(
     """Creates an op that submits a one-time run of a set of tasks on Databricks.
 
     As config, the op accepts a blob of the form described in Databricks' Job API:
-    https://docs.databricks.com/api-explorer/workspace/jobs/submit.
+    https://docs.databricks.com/api/workspace/jobs/submit.
 
     Arguments:
         databricks_job_configuration (dict): Configuration for submitting a one-time run of a set
-            of tasks on Databricks. See https://docs.databricks.com/api-explorer/workspace/jobs/submit
+            of tasks on Databricks. See https://docs.databricks.com/api/workspace/jobs/submit
             for the full configuration.
         poll_interval_seconds (float): How often to poll the Databricks API to check whether the
             Databricks job has finished running.
