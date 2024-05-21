@@ -429,6 +429,23 @@ class OutputContext:
 
     @public
     @property
+    def asset_group_name(self) -> str:
+        """The group name for output asset."""
+        if self._warn_on_step_context_use:
+            warnings.warn(
+                "You are using InputContext.upstream_output.asset_group_name"
+                "This use on upstream_output is deprecated and will fail in the future"
+                "Try to obtain what you need directly from InputContext"
+                "For more details: https://github.com/dagster-io/dagster/issues/7900"
+            )
+
+        if self.asset_key is not None:
+            return self.step_context.job_def.asset_layer.get(self.asset_key).group_name
+        else:
+            check.failed("Can't get asset group name for an output with no asset key")
+
+    @public
+    @property
     def has_asset_partitions(self) -> bool:
         """Returns True if the asset being stored is partitioned."""
         if self._warn_on_step_context_use:

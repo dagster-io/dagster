@@ -756,6 +756,27 @@ def test_asset_key():
     assert result.success
 
 
+def test_asset_group_name():
+    @asset(group_name="example_group")
+    def before():
+        pass
+
+    @asset(group_name="example_group")
+    def after(before):
+        assert before
+
+    class MyIOManager(IOManager):
+        def load_input(self, context: InputContext):
+            assert context.asset_group_name == "example_group"
+            return 1
+
+        def handle_output(self, context: OutputContext, obj):
+            assert context.asset_group_name == "example_group"
+
+    result = materialize([before, after], resources={"io_manager": MyIOManager()})
+    assert result.success
+
+
 def test_partition_key():
     @op
     def my_op():

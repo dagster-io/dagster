@@ -344,6 +344,15 @@ class InputContext:
 
     @public
     @property
+    def asset_group_name(self) -> str:
+        """The group name for input asset."""
+        if self.asset_key is not None:
+            return self.step_context.job_def.asset_layer.get(self.asset_key).group_name
+        else:
+            check.failed("Can't get asset group name for an input with no asset key")
+
+    @public
+    @property
     def has_asset_partitions(self) -> bool:
         """Returns True if the asset being loaded as input is partitioned."""
         return self._asset_partitions_subset is not None
