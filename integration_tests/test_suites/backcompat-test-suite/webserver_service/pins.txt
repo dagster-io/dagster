@@ -18,4 +18,4 @@ sqlalchemy<2.0.0
 pendulum<3
 
 # https://github.com/dagster-io/dagster/pull/21977
-requests!=2.32.0
+requests!=2.32.0,!=2.32.1

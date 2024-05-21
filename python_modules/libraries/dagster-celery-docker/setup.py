@@ -36,7 +36,7 @@ setup(
         f"dagster-celery{pin}",
         f"dagster-graphql{pin}",
         "docker",
-        "requests!=2.32.0",  # https://github.com/dagster-io/dagster/pull/21977
+        "requests!=2.32.0,!2.32.1",  # https://github.com/dagster-io/dagster/pull/21977
     ],
     zip_safe=False,
 )

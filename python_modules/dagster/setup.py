@@ -138,7 +138,7 @@ setup(
             "morefs[asynclocal]",
             "fsspec<2024.5.0",  # morefs incompatibly
             "rapidfuzz",
-            "requests!=2.32.0",  # https://github.com/dagster-io/dagster/pull/21977
+            "requests!=2.32.0,2.32.1",  # https://github.com/dagster-io/dagster/pull/21977
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
