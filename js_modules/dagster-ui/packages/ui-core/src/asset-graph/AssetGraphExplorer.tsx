@@ -75,7 +75,7 @@ type Props = {
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
+  onNavigateToSourceAssetNode: (e: React.MouseEvent, node: AssetLocation) => void;
   isGlobalGraph?: boolean;
   trace?: PageLoadTrace;
 };
@@ -237,7 +237,7 @@ const AssetGraphExplorerWithData = ({
       if (!nodeIsInDisplayedGraph) {
         // The asset's definition was not provided in our query for job.assetNodes. It's either
         // in another job or asset group, or is a source asset not defined in any repository.
-        return onNavigateToSourceAssetNode(await findAssetLocation(assetKey));
+        return onNavigateToSourceAssetNode(e, await findAssetLocation(assetKey));
       }
 
       // This asset is in a job and we can stay in the job graph explorer!

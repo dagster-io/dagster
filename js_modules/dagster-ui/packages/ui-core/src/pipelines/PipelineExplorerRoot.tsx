@@ -44,8 +44,13 @@ export const PipelineExplorerSnapshotRoot = () => {
       onChangeExplorerPath={(path, mode) => {
         history[mode](`/snapshots/${explorerPathToString(path)}`);
       }}
-      onNavigateToSourceAssetNode={({assetKey}) => {
-        history.push(assetDetailsPathForKey(assetKey));
+      onNavigateToSourceAssetNode={(e, {assetKey}) => {
+        const path = assetDetailsPathForKey(assetKey);
+        if (e.metaKey) {
+          window.open(path, '_blank');
+        } else {
+          history.push(assetDetailsPathForKey(assetKey));
+        }
       }}
     />
   );
@@ -60,7 +65,7 @@ export const PipelineExplorerContainer = ({
 }: {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToSourceAssetNode: (node: AssetLocation) => void;
+  onNavigateToSourceAssetNode: (e: React.MouseEvent<any>, node: AssetLocation) => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }) => {
