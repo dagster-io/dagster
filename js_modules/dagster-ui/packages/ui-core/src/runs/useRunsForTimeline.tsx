@@ -1,5 +1,5 @@
-import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
-import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
+import {QueryResult, gql, useApolloClient} from '@apollo/client';
+import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
 import {doneStatuses} from './RunStatuses';
@@ -221,33 +221,25 @@ export const useRunsForTimeline = (
     }
   }, [client, runsFilter]);
 
-  const [fetchFutureTicks, futureTicksQueryData] = useLazyQuery<
-    FutureTicksQuery,
-    FutureTicksQueryVariables
-  >(FUTURE_TICKS_QUERY, {
-    notifyOnNetworkStatusChange: true,
-    // With a very large number of runs, operating on the Apollo cache is too expensive and
-    // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
-    // skip the cache entirely.
-    fetchPolicy: 'no-cache',
-    variables: {
-      tickCursor: startSec,
-      ticksUntil: _end / 1000.0,
-    },
-  });
+  const [futureTicksQueryData, setFutureTicksQueryData] = useState<
+    Pick<QueryResult<FutureTicksQuery>, 'data' | 'error' | 'called' | 'loading'>
+  >({data: undefined, called: true, loading: true, error: undefined});
+
+  const fetchFutureTicks = useCallback(async () => {
+    const queryData = await client.query<FutureTicksQuery, FutureTicksQueryVariables>({
+      query: FUTURE_TICKS_QUERY,
+      variables: {tickCursor: startSec, ticksUntil: _end / 1000.0},
+    });
+    setFutureTicksQueryData({...queryData, called: true});
+  }, [startSec, _end, client]);
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
   useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
   useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
 
-  const {
-    data: futureTicksData,
-    previousData: previousFutureTicksData,
-    loading: loadingFutureTicksData,
-  } = futureTicksQueryData;
+  const {data: futureTicksData, loading: loadingFutureTicksData} = futureTicksQueryData;
 
-  const {workspaceOrError} = futureTicksData ||
-    previousFutureTicksData || {workspaceOrError: undefined};
+  const {workspaceOrError} = futureTicksData || {workspaceOrError: undefined};
 
   const runsByJobKey = useMemo(() => {
     const map: {[jobKey: string]: TimelineRun[]} = {};
@@ -401,12 +393,26 @@ export const useRunsForTimeline = (
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, _end]);
 
+  const lastFetchRef = useRef({ongoing: 0, future: 0});
+
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
       await Promise.all([
-        fetchFutureTicks(),
+        // Only fetch ongoing runs once every 30 seconds
+        (async () => {
+          if (lastFetchRef.current.ongoing < Date.now() - 30 * 1000) {
+            await fetchOngoingRunsQueryData();
+            lastFetchRef.current.ongoing = Date.now();
+          }
+        })(),
+        // Only fetch future ticks on a minute
+        (async () => {
+          if (lastFetchRef.current.ongoing < Date.now() - 60 * 1000) {
+            await fetchFutureTicks();
+            lastFetchRef.current.ongoing = Date.now();
+          }
+        })(),
         fetchCompletedRunsQueryData(),
-        fetchOngoingRunsQueryData(),
       ]);
     }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
     intervalMs: refreshInterval,
