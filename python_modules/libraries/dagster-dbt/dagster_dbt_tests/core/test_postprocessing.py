@@ -167,7 +167,9 @@ def test_row_count_err(
         assert "An error occurred while fetching row count for " in caplog.text
 
 
-def test_summary(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any]) -> None:
+def test_attach_metadata(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+) -> None:
     def _summarize(
         invocation: DbtCliInvocation,
         event: DbtDagsterEventType,
@@ -196,7 +198,7 @@ def test_summary(test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, A
 
     @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream().attach_metadata(_summarize)
+        yield from dbt.cli(["build"], context=context).stream()._attach_metadata(_summarize)  # noqa: SLF001
 
     result = materialize(
         [my_dbt_assets],

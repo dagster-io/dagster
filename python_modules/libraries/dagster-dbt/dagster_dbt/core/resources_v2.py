@@ -987,14 +987,28 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
-        return self.attach_metadata(_fetch_row_count_metadata)
+        return self._attach_metadata(_fetch_row_count_metadata)
 
-    def attach_metadata(
+    def _attach_metadata(
         self,
         fn: Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]],
         *,
         num_threads=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE,
     ) -> "DbtEventIterator[DbtDagsterEventType]":
+        """Runs a threaded task to attach metadata to each event in the iterator.
+
+        Args:
+            fn (Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]]):
+                A function which takes a DbtCliInvocation and a DbtDagsterEventType and returns
+                a dictionary of metadata to attach to the event.
+            num_threads (int): The number of threads to use for processing the events.
+
+        Returns:
+             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events for dbt models, with any metadata output
+                by the function attached, yielded in the order they are emitted by dbt.
+        """
+
         def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
             result = fn(self._dbt_cli_invocation, event)
             if result is None:
