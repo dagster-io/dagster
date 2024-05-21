@@ -270,15 +270,12 @@ def _build_status_cache(
     if not partitions_def or not is_cacheable_partition_type(partitions_def):
         return AssetStatusCacheValue(latest_storage_id=latest_storage_id)
 
-    failed_partitions: Set[str] = (
-        set(
-            partitions_def.deserialize_subset(
-                stored_cache_value.serialized_failed_partition_subset
-            ).get_partition_keys()
-        )
+    failed_subset = (
+        partitions_def.deserialize_subset(stored_cache_value.serialized_failed_partition_subset)
         if stored_cache_value and stored_cache_value.serialized_failed_partition_subset
-        else set()
+        else None
     )
+
     cached_in_progress_cursor = (
         (
             stored_cache_value.earliest_in_progress_materialization_event_id - 1
@@ -297,8 +294,12 @@ def _build_status_cache(
             last_materialization_storage_id
             and last_materialization_storage_id > stored_cache_value.latest_storage_id
         ):
-            new_partitions = instance.get_materialized_partitions(
-                asset_key, after_cursor=stored_cache_value.latest_storage_id
+            new_partitions = get_validated_partition_keys(
+                dynamic_partitions_store,
+                partitions_def,
+                instance.get_materialized_partitions(
+                    asset_key, after_cursor=stored_cache_value.latest_storage_id
+                ),
             )
 
         materialized_subset: PartitionsSubset = (
@@ -307,11 +308,15 @@ def _build_status_cache(
             )
             if stored_cache_value.serialized_materialized_partition_subset
             else partitions_def.empty_subset()
-        ).with_partition_keys(
-            get_validated_partition_keys(dynamic_partitions_store, partitions_def, new_partitions)
         )
 
-        failed_partitions.difference_update(new_partitions)
+        if new_partitions:
+            materialized_subset = materialized_subset.with_partition_keys(new_partitions)
+
+        if failed_subset and new_partitions:
+            failed_subset = failed_subset - partitions_def.empty_subset().with_partition_keys(
+                new_partitions
+            )
 
     else:
         materialized_subset = partitions_def.empty_subset().with_partition_keys(
@@ -332,7 +337,7 @@ def _build_status_cache(
         partitions_def,
         dynamic_partitions_store,
         last_planned_materialization_storage_id=last_planned_materialization_storage_id,
-        failed_partitions=failed_partitions,
+        failed_subset=failed_subset,
         after_storage_id=cached_in_progress_cursor,
     )
 
@@ -354,13 +359,14 @@ def build_failed_and_in_progress_partition_subset(
     partitions_def: PartitionsDefinition,
     dynamic_partitions_store: DynamicPartitionsStore,
     last_planned_materialization_storage_id: int,
-    failed_partitions: Optional[Set[str]] = None,
+    failed_subset: Optional[PartitionsSubset[str]] = None,
     after_storage_id: Optional[int] = None,
 ) -> Tuple[PartitionsSubset, PartitionsSubset, Optional[int]]:
-    failed_partitions = failed_partitions or set()
     in_progress_partitions: Set[str] = set()
 
     incomplete_materializations = {}
+
+    failed_subset = failed_subset or partitions_def.empty_subset()
 
     # Fetch incomplete materializations if there have been any planned materializations since the
     # cursor
@@ -370,6 +376,8 @@ def build_failed_and_in_progress_partition_subset(
         incomplete_materializations = instance.event_log_storage.get_latest_asset_partition_materialization_attempts_without_materializations(
             asset_key, after_storage_id=after_storage_id
         )
+
+    failed_partitions: Set[str] = set()
 
     cursor = None
     if incomplete_materializations:
@@ -401,16 +409,15 @@ def build_failed_and_in_progress_partition_subset(
                 # considered neither in-progress nor failed
                 pass
 
-    return (
-        (
-            partitions_def.empty_subset().with_partition_keys(
-                get_validated_partition_keys(
-                    dynamic_partitions_store, partitions_def, failed_partitions
-                )
+    if failed_partitions:
+        failed_subset = failed_subset.with_partition_keys(
+            get_validated_partition_keys(
+                dynamic_partitions_store, partitions_def, failed_partitions
             )
-            if failed_partitions
-            else partitions_def.empty_subset()
-        ),
+        )
+
+    return (
+        failed_subset,
         (
             partitions_def.empty_subset().with_partition_keys(
                 get_validated_partition_keys(instance, partitions_def, in_progress_partitions)
