@@ -803,7 +803,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             # a parent as unmaterialized in the past.
             or context.legacy_context.previous_max_storage_id is None
             # new cron tick has happened since the previous tick
-            or passed_time_window.end.timestamp()
+            or passed_time_window.end_timestamp()
             > context.legacy_context.previous_evaluation_timestamp
         ):
             return context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
@@ -916,7 +916,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         from .declarative_scheduling.scheduling_condition import SchedulingResult
 
         passed_time_window = self.passed_time_window(context)
-        has_new_passed_time_window = passed_time_window.end.timestamp() > (
+        has_new_passed_time_window = passed_time_window.end_timestamp() > (
             context.legacy_context.previous_evaluation_timestamp or 0
         )
         updated_subsets_by_key = self.get_parent_subsets_updated_since_cron_by_key(

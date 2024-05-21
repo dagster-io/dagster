@@ -549,8 +549,8 @@ def build_partition_statuses(
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
                 GrapheneTimePartitionRangeStatus(
-                    startTime=r.time_window.start.timestamp(),
-                    endTime=r.time_window.end.timestamp(),
+                    startTime=r.time_window.start_timestamp(),
+                    endTime=r.time_window.end_timestamp(),
                     startKey=partition_key_range.start,
                     endKey=partition_key_range.end,
                     status=r.status,

@@ -176,7 +176,7 @@ class TimeWindowPartitionMapping(
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]
             # window starts before the end of the previous one
-            if window.start.timestamp() <= last_window.end.timestamp():
+            if window.start_timestamp() <= last_window.end_timestamp():
                 merged_time_windows[-1] = TimeWindow(
                     last_window.start, max(last_window.end, window.end, key=lambda d: d.timestamp())
                 )
@@ -300,8 +300,8 @@ class TimeWindowPartitionMapping(
             if (
                 first_window
                 and last_window
-                and time_window.start.timestamp() <= last_window.start.timestamp()
-                and time_window.end.timestamp() >= first_window.end.timestamp()
+                and time_window.start_timestamp() <= last_window.start_timestamp()
+                and time_window.end_timestamp() >= first_window.end_timestamp()
             ):
                 window_start = max(
                     time_window.start, first_window.start, key=lambda d: d.timestamp()
@@ -316,16 +316,16 @@ class TimeWindowPartitionMapping(
             else:
                 invalid_time_window = None
                 if not (first_window and last_window) or (
-                    time_window.start.timestamp() < first_window.start.timestamp()
-                    and time_window.end.timestamp() > last_window.end.timestamp()
+                    time_window.start_timestamp() < first_window.start_timestamp()
+                    and time_window.end_timestamp() > last_window.end_timestamp()
                 ):
                     invalid_time_window = time_window
-                elif time_window.start.timestamp() < first_window.start.timestamp():
+                elif time_window.start_timestamp() < first_window.start_timestamp():
                     invalid_time_window = TimeWindow(
                         time_window.start,
                         min(time_window.end, first_window.start, key=lambda d: d.timestamp()),
                     )
-                elif time_window.end.timestamp() > last_window.end.timestamp():
+                elif time_window.end_timestamp() > last_window.end_timestamp():
                     invalid_time_window = TimeWindow(
                         max(time_window.start, last_window.end, key=lambda d: d.timestamp()),
                         time_window.end,
@@ -407,8 +407,8 @@ class TimeWindowPartitionMapping(
             and (
                 from_last_partition_window is not None
                 and to_last_partition_window is not None
-                and from_last_partition_window.end.timestamp()
-                <= to_last_partition_window.end.timestamp()
+                and from_last_partition_window.end_timestamp()
+                <= to_last_partition_window.end_timestamp()
             )
         ):
             return UpstreamPartitionsResult(
