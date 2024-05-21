@@ -17,6 +17,7 @@ from typing import (
     Any,
     Dict,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -31,6 +32,7 @@ from typing import (
 import dateutil.parser
 import orjson
 from dagster import (
+    AssetCheckKey,
     AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
@@ -1691,16 +1693,6 @@ def _get_subset_selection_for_context(
 
         selected_dbt_non_test_resources.append(fqn_selector)
 
-    selected_dbt_tests = []
-    for _, check_name in context.selected_asset_check_keys:
-        test_resource_props = dbt_resource_props_by_test_name[check_name]
-
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = ".".join(test_resource_props["fqn"])
-
-        selected_dbt_tests.append(fqn_selector)
-
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
     # 1. all the selected checks are for selected assets
@@ -1723,12 +1715,17 @@ def _get_subset_selection_for_context(
 
     # note that this will always be false if checks are disabled (which means the assets_def has no
     # check specs)
-    if checks_on_non_selected_assets or excluded_checks_on_selected_assets:
+    if excluded_checks_on_selected_assets:
         # select all assets and tests explicitly, and turn off indirect selection. This risks
         # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
         # (all checks disabled, only one check and no assets) it's not a concern.
         # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
-        selected_dbt_resources = [*selected_dbt_non_test_resources, *selected_dbt_tests]
+        selected_dbt_resources = [
+            *selected_dbt_non_test_resources,
+            *_get_dbt_test_names_for_asset_checks(
+                context.selected_asset_check_keys, dbt_resource_props_by_test_name
+            ),
+        ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
         logger.info(
             "Overriding default `DBT_INDIRECT_SELECTION` "
@@ -1737,6 +1734,15 @@ def _get_subset_selection_for_context(
             f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
             f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
         )
+    elif checks_on_non_selected_assets:
+        # explicitly select the tests that won't be run via indirect selection
+        selected_dbt_resources = [
+            *selected_dbt_non_test_resources,
+            *_get_dbt_test_names_for_asset_checks(
+                checks_on_non_selected_assets, dbt_resource_props_by_test_name
+            ),
+        ]
+        indirect_selection_override = None
     else:
         selected_dbt_resources = selected_dbt_non_test_resources
         indirect_selection_override = None
@@ -1773,3 +1779,17 @@ def get_dbt_resource_props_by_test_name(
         for unique_id, dbt_resource_props in manifest["nodes"].items()
         if unique_id.startswith("test")
     }
+
+
+def _get_dbt_test_names_for_asset_checks(
+    check_keys: Iterable[AssetCheckKey], dbt_resource_props_by_test_name
+) -> List[str]:
+    selected_dbt_tests = []
+    for key in check_keys:
+        test_resource_props = dbt_resource_props_by_test_name[key.name]
+
+        # Explicitly select a dbt resource by its fully qualified name (FQN).
+        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+        fqn_selector = ".".join(test_resource_props["fqn"])
+        selected_dbt_tests.append(fqn_selector)
+    return selected_dbt_tests

@@ -446,6 +446,31 @@ def test_materialize_checks_no_asset(
     assert len(result.get_asset_observation_events()) == 0
 
 
+def test_extra_checks(
+    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+) -> None:
+    result = _materialize_dbt_assets(
+        test_asset_checks_manifest,
+        dbt_commands,
+        selection=(
+            AssetSelection.assets(AssetKey(["customers"]))
+            | AssetSelection.checks(
+                AssetCheckKey(AssetKey(["stg_orders"]), "unique_stg_orders_order_id")
+            )
+        ),
+        expected_dbt_selection={
+            "test_dagster_asset_checks.customers",
+            "test_dagster_asset_checks.staging.unique_stg_orders_order_id",
+        },
+    )
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    # 4 tests on customers, and unique_stg_orders_order_id
+    assert len(result.get_asset_check_evaluations()) == 5
+    # no tests were excluded, so we include singular and relationship tests
+    assert len(result.get_asset_observation_events()) == 6
+
+
 def test_asset_checks_results(
     test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
 ):
