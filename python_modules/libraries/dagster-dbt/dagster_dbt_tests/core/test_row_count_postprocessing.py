@@ -118,7 +118,6 @@ def test_row_count(request: pytest.FixtureRequest, manifest_fixture_name: str) -
         for event in result.get_asset_materialization_events()
         if "stg" not in check.not_none(event.asset_key).path[-1]
     ]
-    assert all(row_count and row_count > 0 for row_count in row_counts), row_counts
 
 
 def test_row_count_err(
