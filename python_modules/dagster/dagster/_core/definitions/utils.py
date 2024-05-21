@@ -207,7 +207,7 @@ def validate_tag_strict(key: str, value: str) -> None:
         )
 
 
-def validate_group_name(group_name: Optional[str]) -> str:
+def normalize_group_name(group_name: Optional[str]) -> str:
     """Ensures a string name is valid and returns a default if no name provided."""
     if group_name:
         check_valid_chars(group_name)

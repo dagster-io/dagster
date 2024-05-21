@@ -66,8 +66,11 @@ const Layout = ({asPath, children, pageProps}: Props) => {
     setOpenFeedback(!isFeedbackOpen);
   };
 
+  // construct link to GitHub for doc page unless at root path of `asPath` being `/`
   const githubLink = new URL(
-    path.join('dagster-io/dagster/tree/master/docs/content', '/', asPath + '.mdx'),
+    asPath === '/'
+      ? 'dagster-io/dagster/tree/master/docs/content'
+      : path.join('dagster-io/dagster/tree/master/docs/content/', asPath + '.mdx'),
     'https://github.com',
   ).href;
 

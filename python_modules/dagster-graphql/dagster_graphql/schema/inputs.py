@@ -39,7 +39,9 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     statuses = graphene.List(graphene.NonNull(GrapheneRunStatus))
     snapshotId = graphene.InputField(graphene.String)
     updatedAfter = graphene.InputField(graphene.Float)
+    updatedBefore = graphene.InputField(graphene.Float)
     createdBefore = graphene.InputField(graphene.Float)
+    createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
 
     class Meta:
@@ -58,8 +60,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
+        updated_before = pendulum.from_timestamp(self.updatedBefore) if self.updatedBefore else None
         updated_after = pendulum.from_timestamp(self.updatedAfter) if self.updatedAfter else None
         created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = pendulum.from_timestamp(self.createdAfter) if self.createdAfter else None
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
@@ -67,8 +71,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
+            updated_before=updated_before,
             updated_after=updated_after,
             created_before=created_before,
+            created_after=created_after,
         )
 
 

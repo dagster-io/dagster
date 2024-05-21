@@ -496,6 +496,12 @@ class TestEventLogStorage:
     def watch_timeout(self):
         return 5
 
+    @contextmanager
+    def mock_tags_to_index(self, storage):
+        passthrough_all_tags = lambda tags: tags
+        with mock.patch.object(storage, "get_asset_tags_to_index", passthrough_all_tags):
+            yield
+
     def test_event_log_storage_store_events_and_wipe(self, test_run_id, storage: EventLogStorage):
         assert len(storage.get_logs_for_run(test_run_id)) == 0
         storage.store_event(
@@ -2761,10 +2767,7 @@ class TestEventLogStorage:
                 ascending=False,
             )[0].storage_id
 
-        passthrough_all_tags = lambda tags: tags
-        with mock.patch.object(
-            storage, "get_asset_tags_to_index", passthrough_all_tags
-        ), create_and_delete_test_runs(instance, [run_id]):
+        with self.mock_tags_to_index(storage), create_and_delete_test_runs(instance, [run_id]):
             # no events
             assert (
                 storage.get_latest_tags_by_partition(

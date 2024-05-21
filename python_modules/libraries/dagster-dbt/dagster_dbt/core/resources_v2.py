@@ -17,6 +17,7 @@ from typing import (
     Any,
     Dict,
     Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -31,6 +32,7 @@ from typing import (
 import dateutil.parser
 import orjson
 from dagster import (
+    AssetCheckKey,
     AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
@@ -59,7 +61,6 @@ from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.events.functions import cleanup_event_logger
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -100,6 +101,16 @@ from ..utils import (
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
 )
 from .utils import get_future_completion_state_or_err
+
+IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
+
+if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+    from dbt.events.functions import cleanup_event_logger  # type: ignore
+
+    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
+else:
+    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
+    from dbt_common.events.event_manager_client import cleanup_event_logger
 
 logger = get_dagster_logger()
 
@@ -256,7 +267,7 @@ class DbtCliEventMessage:
         is_node_successful = node_status == NodeStatus.Success
         is_node_finished = bool(event_node_info.get("node_finished_at"))
         if (
-            node_resource_type in NodeType.refable()
+            node_resource_type in REFABLE_NODE_TYPES
             and is_node_successful
             and not is_node_ephemeral
         ):
@@ -917,10 +928,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             row_count = query_result[1][0]["row_count"]
             additional_metadata = {**TableMetadataSet(row_count=row_count)}
 
-            if isinstance(event, Output):
-                return event.with_metadata(metadata={**event.metadata, **additional_metadata})
-            else:
-                return event._replace(metadata={**event.metadata, **additional_metadata})
+            return event.with_metadata(metadata={**event.metadata, **additional_metadata})
         except Exception as e:
             logger.exception(
                 f"An error occurred while fetching row count for {unique_id}. Row count metadata"
@@ -1304,7 +1312,12 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self, args: Sequence[str]) -> BaseAdapter:
+    def _initialize_adapter(self) -> BaseAdapter:
+        if not IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+            from dbt_common.context import set_invocation_context
+
+            set_invocation_context(os.environ.copy())
+
         # constructs a dummy set of flags, using the `run` command (ensures profile/project reqs get loaded)
         profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
         set_from_args(Namespace(profiles_dir=profiles_dir), None)
@@ -1327,7 +1340,13 @@ class DbtCliResource(ConfigurableResource):
             pass
 
         cleanup_event_logger()
-        register_adapter(config)
+        if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+            register_adapter(config)  # type: ignore
+        else:
+            from dbt.mp_context import get_mp_context
+
+            register_adapter(config, get_mp_context())
+
         adapter = cast(BaseAdapter, get_adapter(config))
         # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
         reset_adapters()
@@ -1582,7 +1601,7 @@ class DbtCliResource(ConfigurableResource):
         adapter: Optional[BaseAdapter] = None
         with pushd(self.project_dir):
             try:
-                adapter = self._initialize_adapter(args)
+                adapter = self._initialize_adapter()
 
             except:
                 # defer exceptions until they can be raised in the runtime context of the invocation
@@ -1674,16 +1693,6 @@ def _get_subset_selection_for_context(
 
         selected_dbt_non_test_resources.append(fqn_selector)
 
-    selected_dbt_tests = []
-    for _, check_name in context.selected_asset_check_keys:
-        test_resource_props = dbt_resource_props_by_test_name[check_name]
-
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = ".".join(test_resource_props["fqn"])
-
-        selected_dbt_tests.append(fqn_selector)
-
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
     # 1. all the selected checks are for selected assets
@@ -1706,12 +1715,17 @@ def _get_subset_selection_for_context(
 
     # note that this will always be false if checks are disabled (which means the assets_def has no
     # check specs)
-    if checks_on_non_selected_assets or excluded_checks_on_selected_assets:
+    if excluded_checks_on_selected_assets:
         # select all assets and tests explicitly, and turn off indirect selection. This risks
         # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
         # (all checks disabled, only one check and no assets) it's not a concern.
         # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
-        selected_dbt_resources = [*selected_dbt_non_test_resources, *selected_dbt_tests]
+        selected_dbt_resources = [
+            *selected_dbt_non_test_resources,
+            *_get_dbt_test_names_for_asset_checks(
+                context.selected_asset_check_keys, dbt_resource_props_by_test_name
+            ),
+        ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
         logger.info(
             "Overriding default `DBT_INDIRECT_SELECTION` "
@@ -1720,6 +1734,15 @@ def _get_subset_selection_for_context(
             f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
             f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
         )
+    elif checks_on_non_selected_assets:
+        # explicitly select the tests that won't be run via indirect selection
+        selected_dbt_resources = [
+            *selected_dbt_non_test_resources,
+            *_get_dbt_test_names_for_asset_checks(
+                checks_on_non_selected_assets, dbt_resource_props_by_test_name
+            ),
+        ]
+        indirect_selection_override = None
     else:
         selected_dbt_resources = selected_dbt_non_test_resources
         indirect_selection_override = None
@@ -1756,3 +1779,17 @@ def get_dbt_resource_props_by_test_name(
         for unique_id, dbt_resource_props in manifest["nodes"].items()
         if unique_id.startswith("test")
     }
+
+
+def _get_dbt_test_names_for_asset_checks(
+    check_keys: Iterable[AssetCheckKey], dbt_resource_props_by_test_name
+) -> List[str]:
+    selected_dbt_tests = []
+    for key in check_keys:
+        test_resource_props = dbt_resource_props_by_test_name[key.name]
+
+        # Explicitly select a dbt resource by its fully qualified name (FQN).
+        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+        fqn_selector = ".".join(test_resource_props["fqn"])
+        selected_dbt_tests.append(fqn_selector)
+    return selected_dbt_tests

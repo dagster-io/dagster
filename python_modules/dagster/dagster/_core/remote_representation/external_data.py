@@ -99,8 +99,10 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
+    FieldSerializer,
     is_whitelisted_for_serdes_object,
 )
 from dagster._utils.error import SerializableErrorInfo
@@ -1273,12 +1275,34 @@ class ExternalAssetCheck(
         return AssetCheckKey(asset_key=self.asset_key, name=self.name)
 
 
+class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
+    """Up through Dagster 1.7.7, asset owners provided as "team:foo" would be serialized as "foo"
+    going forward, they're serialized as "team:foo".
+    """
+
+    def unpack(self, __unpacked_value, whitelist_map, context):
+        return (
+            [
+                owner if (is_valid_email(owner) or owner.startswith("team:")) else f"team:{owner}"
+                for owner in cast(Sequence[str], __unpacked_value)
+            ]
+            if __unpacked_value is not None
+            else None
+        )
+
+    def pack(self, __unpacked_value, whitelist_map, descent_path):
+        return __unpacked_value
+
+
 @whitelist_for_serdes(
     storage_field_names={
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
     },
-    field_serializers={"metadata": MetadataFieldSerializer},
+    field_serializers={
+        "metadata": MetadataFieldSerializer,
+        "owners": BackcompatTeamOwnerFieldDeserializer,
+    },
 )
 class ExternalAssetNode(
     NamedTuple(

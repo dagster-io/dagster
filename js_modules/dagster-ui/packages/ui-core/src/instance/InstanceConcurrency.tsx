@@ -120,7 +120,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
 export const InstanceConcurrencyPage = () => {
   const {pageTitle} = React.useContext(InstancePageContext);
   return (
-    <Page>
+    <Page style={{padding: 0}}>
       <PageHeader
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="concurrency" />}
@@ -282,9 +282,13 @@ export const ConcurrencyLimits = ({
     onSelectKey(undefined);
   }, [onSelectKey]);
 
+  const [search, setSearch] = React.useState('');
+
   const sortedKeys = React.useMemo(() => {
-    return [...concurrencyKeys].sort((a, b) => COMMON_COLLATOR.compare(a, b));
-  }, [concurrencyKeys]);
+    return [...concurrencyKeys]
+      .filter((key) => key.includes(search))
+      .sort((a, b) => COMMON_COLLATOR.compare(a, b));
+  }, [concurrencyKeys, search]);
 
   const onAdd = () => {
     setAction({actionType: 'add'});
@@ -333,8 +337,8 @@ export const ConcurrencyLimits = ({
   }
 
   return (
-    <>
-      <ConcurrencyLimitHeader onAdd={onAdd} />
+    <Box flex={{direction: 'column'}} style={{overflow: 'auto', height: '100%'}}>
+      <ConcurrencyLimitHeader onAdd={onAdd} search={search} setSearch={setSearch} />
       {concurrencyKeys.length === 0 ? (
         <Box margin={24}>
           <NonIdealState
@@ -387,27 +391,53 @@ export const ConcurrencyLimits = ({
         concurrencyKey={selectedKey}
         onUpdate={refetch}
       />
-    </>
+    </Box>
   );
 };
 
-const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
-  <Box
-    flex={{justifyContent: 'space-between', alignItems: 'center'}}
-    padding={{vertical: 16, horizontal: 24}}
-    border="top-and-bottom"
-  >
-    <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-      <Subheading>Global op/asset concurrency</Subheading>
-      <Tag>Experimental</Tag>
+const ConcurrencyLimitHeader = ({
+  onAdd,
+  setSearch,
+  search,
+}: {
+  onAdd?: () => void;
+} & (
+  | {
+      setSearch: (searchString: string) => void;
+      search: string;
+    }
+  | {setSearch?: never; search?: never}
+)) => {
+  return (
+    <Box flex={{direction: 'column'}}>
+      <Box
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 16, horizontal: 24}}
+        border="top-and-bottom"
+      >
+        <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+          <Subheading>Global op/asset concurrency</Subheading>
+          <Tag>Experimental</Tag>
+        </Box>
+        {onAdd ? (
+          <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
+            Add concurrency limit
+          </Button>
+        ) : null}
+      </Box>
+      {setSearch ? (
+        <Box flex={{direction: 'row'}} padding={{vertical: 16, horizontal: 24}} border="bottom">
+          <TextInput
+            value={search || ''}
+            style={{width: '30vw', minWidth: 150, maxWidth: 400}}
+            placeholder="Filter concurrency keys"
+            onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
+          />
+        </Box>
+      ) : null}
     </Box>
-    {onAdd ? (
-      <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
-        Add concurrency limit
-      </Button>
-    ) : null}
-  </Box>
-);
+  );
+};
 
 const isValidLimit = (
   concurrencyLimit?: string,

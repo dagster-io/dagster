@@ -2324,7 +2324,7 @@ export type LocalFileCodeReference = {
   __typename: 'LocalFileCodeReference';
   filePath: Scalars['String']['output'];
   label: Maybe<Scalars['String']['output']>;
-  lineNumber: Scalars['Int']['output'];
+  lineNumber: Maybe<Scalars['Int']['output']>;
 };
 
 export type LocationStateChangeEvent = {
@@ -4652,6 +4652,7 @@ export type Runs = PipelineRuns & {
 };
 
 export type RunsFilter = {
+  createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
@@ -4660,6 +4661,7 @@ export type RunsFilter = {
   statuses?: InputMaybe<Array<RunStatus>>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   updatedAfter?: InputMaybe<Scalars['Float']['input']>;
+  updatedBefore?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type RunsOrError = InvalidPipelineRunsFilterError | PythonError | Runs;
@@ -4972,7 +4974,7 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String']['output'];
 };
 
-export type SourceLocation = LocalFileCodeReference;
+export type SourceLocation = LocalFileCodeReference | UrlCodeReference;
 
 export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -5440,6 +5442,12 @@ export type UnpartitionedAssetStatus = {
   failed: Scalars['Boolean']['output'];
   inProgress: Scalars['Boolean']['output'];
   materialized: Scalars['Boolean']['output'];
+};
+
+export type UrlCodeReference = {
+  __typename: 'UrlCodeReference';
+  label: Maybe<Scalars['String']['output']>;
+  url: Scalars['String']['output'];
 };
 
 export type UrlMetadataEntry = MetadataEntry & {
@@ -13264,6 +13272,8 @@ export const buildRunsFilter = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('RunsFilter');
   return {
+    createdAfter:
+      overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
@@ -13276,6 +13286,8 @@ export const buildRunsFilter = (
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     updatedAfter:
       overrides && overrides.hasOwnProperty('updatedAfter') ? overrides.updatedAfter! : 6.85,
+    updatedBefore:
+      overrides && overrides.hasOwnProperty('updatedBefore') ? overrides.updatedBefore! : 7.58,
   };
 };
 
@@ -14748,6 +14760,19 @@ export const buildUnpartitionedAssetStatus = (
     inProgress: overrides && overrides.hasOwnProperty('inProgress') ? overrides.inProgress! : false,
     materialized:
       overrides && overrides.hasOwnProperty('materialized') ? overrides.materialized! : false,
+  };
+};
+
+export const buildUrlCodeReference = (
+  overrides?: Partial<UrlCodeReference>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UrlCodeReference'} & UrlCodeReference => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UrlCodeReference');
+  return {
+    __typename: 'UrlCodeReference',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'alias',
+    url: overrides && overrides.hasOwnProperty('url') ? overrides.url! : 'quia',
   };
 };
 

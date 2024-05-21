@@ -20,12 +20,15 @@ export type MetadataEntryFragment_CodeReferencesMetadataEntry = {
   __typename: 'CodeReferencesMetadataEntry';
   label: string;
   description: string | null;
-  codeReferences: Array<{
-    __typename: 'LocalFileCodeReference';
-    filePath: string;
-    lineNumber: number;
-    label: string | null;
-  }>;
+  codeReferences: Array<
+    | {
+        __typename: 'LocalFileCodeReference';
+        filePath: string;
+        lineNumber: number | null;
+        label: string | null;
+      }
+    | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+  >;
 };
 
 export type MetadataEntryFragment_FloatMetadataEntry = {

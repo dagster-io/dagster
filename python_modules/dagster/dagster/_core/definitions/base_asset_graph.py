@@ -28,7 +28,6 @@ import toposort
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -57,6 +56,7 @@ from .time_window_partitions import (
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+    from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
 
@@ -137,7 +137,7 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]: ...
+    def auto_materialize_policy(self) -> Optional["AutoMaterializePolicy"]: ...
 
     @property
     @abstractmethod

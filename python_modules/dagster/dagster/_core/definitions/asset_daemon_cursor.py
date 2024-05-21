@@ -67,6 +67,8 @@ class ObserveRequestTimestampSerializer(FieldSerializer):
     }
 )
 @dataclass(frozen=True)
+# TODO: rename to scheduling cursor or something
+# 2024-05-16 -- schrockn
 class AssetDaemonCursor:
     """State that's stored between daemon evaluations.
 
@@ -119,10 +121,15 @@ class AssetDaemonCursor:
         newly_observe_requested_asset_keys: Sequence[AssetKey],
         evaluation_state: Sequence["AssetConditionEvaluationState"],
     ) -> "AssetDaemonCursor":
+        # do not "forget" about values for non-evaluated assets
+        new_evaluation_state_by_key = dict(self.previous_evaluation_state_by_key)
+        for new_state in evaluation_state:
+            new_evaluation_state_by_key[new_state.asset_key] = new_state
+
         return dataclasses.replace(
             self,
             evaluation_id=evaluation_id,
-            previous_evaluation_state=evaluation_state,
+            previous_evaluation_state=list(new_evaluation_state_by_key.values()),
             last_observe_request_timestamp_by_asset_key={
                 **self.last_observe_request_timestamp_by_asset_key,
                 **{

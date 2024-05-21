@@ -16,7 +16,7 @@ setup(
         "dagster-cloud",
         "dagster-dbt",
         {%- for dbt_adapter in dbt_adapter_packages %}
-        "{{ dbt_adapter }}",
+        "{{ dbt_adapter }}<{{ dbt_core_version_upper_bound }}",
         {%- endfor %}
     ],
     extras_require={

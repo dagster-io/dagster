@@ -34,6 +34,11 @@ setup(
     ],
     packages=find_packages(exclude=["dagster_docker_tests*"]),
     python_requires=">=3.8,<3.13",
-    install_requires=[f"dagster{pin}", "docker", "docker-image-py"],
+    install_requires=[
+        f"dagster{pin}",
+        "docker",
+        "docker-image-py",
+        "requests<2.32.0",  # 2.32.0 breaks our docker tests https://buildkite.com/dagster/dagster-dagster/builds/83562
+    ],
     zip_safe=False,
 )

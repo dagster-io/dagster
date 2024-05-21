@@ -1482,6 +1482,7 @@ def test_iterable():
 
 
 def test_opt_iterable():
+    assert check.opt_iterable_param(None, "thisisfine") == []
     assert check.opt_iterable_param([], "thisisfine") == []
     assert check.opt_iterable_param([1], "thisisfine") == [1]
     assert check.opt_iterable_param((i for i in [1, 2]), "thisisfine")
