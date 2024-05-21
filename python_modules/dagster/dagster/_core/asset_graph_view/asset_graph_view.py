@@ -164,6 +164,22 @@ class AssetSlice:
     def compute_child_slices(self) -> Mapping[AssetKey, "AssetSlice"]:
         return {ak: self.compute_child_slice(ak) for ak in self.child_keys}
 
+    @cached_method
+    def compute_missing(self) -> "AssetSlice":
+        return self._asset_graph_view.compute_missing_subslice(self.asset_key, self)
+
+    @cached_method
+    def compute_in_progress(self) -> "AssetSlice":
+        return self.compute_intersection(
+            self._asset_graph_view.compute_in_progress_asset_slice(asset_key=self.asset_key)
+        )
+
+    @cached_method
+    def compute_failed(self) -> "AssetSlice":
+        return self.compute_intersection(
+            self._asset_graph_view.compute_failed_asset_slice(asset_key=self.asset_key)
+        )
+
     def compute_difference(self, other: "AssetSlice") -> "AssetSlice":
         return _slice_from_subset(
             self._asset_graph_view, self._compatible_subset - other.convert_to_valid_asset_subset()
