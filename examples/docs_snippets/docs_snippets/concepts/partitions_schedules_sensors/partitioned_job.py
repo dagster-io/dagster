@@ -27,7 +27,7 @@ def partitioned_config(start: datetime, _end: datetime):
 
 # start_partitioned_job
 @job(config=partitioned_config)
-def do_stuff_partitioned():
+def partitioned_op_job():
     process_data_for_date()
 
 

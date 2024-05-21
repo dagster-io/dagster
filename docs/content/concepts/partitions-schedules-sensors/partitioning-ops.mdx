@@ -108,7 +108,7 @@ Then you can build a job that uses the `PartitionedConfig` by supplying it to th
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_job endbefore=end_partitioned_job
 @job(config=partitioned_config)
-def do_stuff_partitioned():
+def partitioned_op_job():
     process_data_for_date()
 ```
 
