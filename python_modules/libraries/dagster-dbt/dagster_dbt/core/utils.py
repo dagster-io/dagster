@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from collections import deque
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from typing import (
     Any,
@@ -338,7 +339,7 @@ def imap(
         should_shutdown_executor: If True, the executor will be shutdown after all elements of the iterator have
             been processed.
     """
-    work_queue: List[Future] = []
+    work_queue: deque[Future] = deque([])
     enqueuing_task: Optional[Future] = None
 
     if block_on_enqueuing_task_completion:
@@ -358,20 +359,16 @@ def imap(
             iterable,
         )
 
-    next_item_to_yield_idx = 0
     while True:
-        if (not enqueuing_task or enqueuing_task.done()) and next_item_to_yield_idx >= len(
-            work_queue
-        ):
+        if (not enqueuing_task or enqueuing_task.done()) and len(work_queue) == 0:
             break
 
-        if next_item_to_yield_idx < len(work_queue):
-            current_work_item = work_queue[next_item_to_yield_idx]
+        current_work_item = work_queue[0]
 
-            try:
-                yield current_work_item.result(timeout=0.1)
-                next_item_to_yield_idx += 1
-            except TimeoutError:
-                pass
+        try:
+            yield current_work_item.result(timeout=0.1)
+            work_queue.popleft()
+        except TimeoutError:
+            pass
     if should_shutdown_executor:
         executor.shutdown()
