@@ -2195,6 +2195,8 @@ type DagsterLibraryVersion {
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
 
+union WorkspaceLocationEntryOrError = WorkspaceLocationEntry | PythonError
+
 input AssetKeyInput {
   path: [String!]!
 }
@@ -2288,7 +2290,9 @@ input RunsFilter {
   statuses: [RunStatus!]
   snapshotId: String
   updatedAfter: Float
+  updatedBefore: Float
   createdBefore: Float
+  createdAfter: Float
   mode: String
 }
 
@@ -2674,6 +2678,25 @@ type JobMetadataEntry implements MetadataEntry {
   jobName: String!
   repositoryName: String
   locationName: String!
+}
+
+type CodeReferencesMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  codeReferences: [SourceLocation!]!
+}
+
+union SourceLocation = LocalFileCodeReference | UrlCodeReference
+
+type LocalFileCodeReference {
+  filePath: String!
+  lineNumber: Int
+  label: String
+}
+
+type UrlCodeReference {
+  url: String!
+  label: String
 }
 
 type NullMetadataEntry implements MetadataEntry {
@@ -3155,6 +3178,7 @@ type Query {
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   workspaceOrError: WorkspaceOrError!
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError!
+  workspaceLocationEntryOrError(name: String!): WorkspaceLocationEntryOrError
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
   pipelineSnapshotOrError(
     snapshotId: String

@@ -11,7 +11,7 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import ResourceParam
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.pipes.client import (
     PipesClient,
@@ -93,7 +93,7 @@ class PipesK8sPodLogsMessageReader(PipesMessageReader):
 
 
 @experimental
-class _PipesK8sClient(PipesClient):
+class PipesK8sClient(PipesClient, TreatAsResourceParam):
     """A pipes client for launching kubernetes pods.
 
     By default context is injected via environment variables and messages are parsed out of
@@ -423,6 +423,3 @@ def build_pod_body(
             "spec": spec,
         },
     )
-
-
-PipesK8sClient = ResourceParam[_PipesK8sClient]

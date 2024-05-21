@@ -52,11 +52,12 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
             <strong>Asset materializations</strong> - Failure or success
           </li>
           <li>
-            <strong>Asset checks</strong> - Error, warn, passed, or failure to
-            execute
-          </li>
-          <li>
-            <strong>Asset freshness</strong> - Overdue
+            <a href="/concepts/assets/asset-checks">
+              <strong>Asset checks</strong>
+            </a>{" "}
+            - Error, warn, passed, or failure to execute. <strong>Note:</strong>{" "}
+            By default, asset checks that fail will have a severity of{" "}
+            <code>WARN</code>.
           </li>
         </ul>
         Alerts can be scoped to asset groups or specific asset keys. Asset check
@@ -66,7 +67,11 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         <a href="/concepts/metadata-tags/asset-metadata#asset-owners">
           asset owners
         </a>
-        .
+        .<br />
+        <br />
+        <strong>Note:</strong> <a href="/concepts/assets/external-assets">
+          External assets
+        </a> do not trigger asset alerts.
       </td>
     </tr>
     <tr>
@@ -113,8 +118,7 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         <strong>Insights metric alert</strong> <Experimental />
       </td>
       <td>
-        <strong>A Dagster+ Pro plan is required to use this feature.</strong>
-        <br />
+        <strong>A Dagster+ Pro plan is required to use this feature.</strong>{" "}
         Sends a notification when a{" "}
         <a href="/dagster-plus/insights">Dagster+ Insights</a> metric exceeds or
         falls below a specified threshold over a specified time window. This can
@@ -129,10 +133,10 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         Alerts can be scoped to the sum of any metric across an entire
         deployment, or for a specific job, asset group, or asset key.
         <br />
-        <strong>Note</strong>: Alerts are sent only when the threshold is first
-        crossed, and will not be sent again until the value returns to expected
-        levels. Insights data may become available up to 24 hours after run
-        completion.
+        <br />
+        <strong>Note</strong>: Alerts are sent only when the threshold is first crossed,
+        and will not be sent again until the value returns to expected levels. Insights
+        data may become available up to 24 hours after run completion.
       </td>
     </tr>
   </tbody>

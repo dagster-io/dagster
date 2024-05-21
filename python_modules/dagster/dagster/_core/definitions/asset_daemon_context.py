@@ -1,7 +1,5 @@
-import dataclasses
 import datetime
 import logging
-import time
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -22,8 +20,10 @@ from typing import (
 import pendulum
 
 import dagster._check as check
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -33,15 +33,14 @@ from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
-from .asset_condition.asset_condition import AssetConditionEvaluation, AssetConditionEvaluationState
-from .asset_condition.asset_condition_evaluation_context import (
-    AssetConditionEvaluationContext,
-)
 from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
-from .freshness_based_auto_materialize import get_expected_data_time_for_asset_key
+from .declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+    AssetConditionEvaluationState,
+)
 from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:
@@ -101,6 +100,19 @@ class AssetDaemonContext:
             instance, asset_graph, evaluation_time=evaluation_time, logger=logger
         )
         self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
+
+        stale_resolver = CachingStaleStatusResolver(
+            instance=instance, asset_graph=asset_graph, instance_queryer=self.instance_queryer
+        )
+        self._asset_graph_view = AssetGraphView(
+            temporal_context=TemporalContext(
+                effective_dt=self.instance_queryer.evaluation_time,
+                # TODO: we should eventually pass in an explicit last_event_id
+                last_event_id=None,
+            ),
+            stale_resolver=stale_resolver,
+        )
+        self._data_time_resolver = CachingDataTimeResolver(self.instance_queryer)
         self._cursor = cursor
         self._auto_materialize_asset_keys = auto_materialize_asset_keys or set()
         self._materialize_run_tags = materialize_run_tags
@@ -123,6 +135,10 @@ class AssetDaemonContext:
     @property
     def data_time_resolver(self) -> CachingDataTimeResolver:
         return self._data_time_resolver
+
+    @property
+    def asset_graph_view(self) -> AssetGraphView:
+        return self._asset_graph_view
 
     @property
     def cursor(self) -> AssetDaemonCursor:
@@ -170,49 +186,6 @@ class AssetDaemonContext:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self._logger.info("Done prefetching asset records.")
 
-    def evaluate_asset(
-        self,
-        asset_key: AssetKey,
-        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
-        expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-    ) -> Tuple[AssetConditionEvaluationState, Optional[datetime.datetime]]:
-        """Evaluates the auto materialize policy of a given asset key.
-
-        Params:
-            - asset_key: The asset key to evaluate.
-            - will_materialize_mapping: A mapping of AssetKey to the set of AssetKeyPartitionKeys
-                that will be materialized this tick. As this function is called in topological order,
-                this mapping will contain the expected materializations of all upstream assets.
-            - expected_data_time_mapping: A mapping of AssetKey to the expected data time of the
-                asset after this tick. As this function is called in topological order, this mapping
-                will contain the expected data times of all upstream assets.
-
-        """
-        # convert the legacy AutoMaterializePolicy to an Evaluator
-        asset_condition = check.not_none(
-            self.asset_graph.get(asset_key).auto_materialize_policy
-        ).to_asset_condition()
-
-        asset_cursor = self.cursor.get_previous_evaluation_state(asset_key)
-
-        context = AssetConditionEvaluationContext.create(
-            asset_key=asset_key,
-            previous_evaluation_state=asset_cursor,
-            condition=asset_condition,
-            instance_queryer=self.instance_queryer,
-            data_time_resolver=self.data_time_resolver,
-            daemon_context=self,
-            evaluation_state_by_key=evaluation_state_by_key,
-            expected_data_time_mapping=expected_data_time_mapping,
-        )
-
-        result = asset_condition.evaluate(context)
-
-        expected_data_time = get_expected_data_time_for_asset_key(
-            context, will_materialize=result.true_subset.size > 0
-        )
-        return AssetConditionEvaluationState.create(context, result), expected_data_time
-
     def get_asset_condition_evaluations(
         self,
     ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
@@ -220,80 +193,21 @@ class AssetDaemonContext:
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        evaluation_state_by_key: Dict[AssetKey, AssetConditionEvaluationState] = {}
-        expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]] = defaultdict()
-        to_request: Set[AssetKeyPartitionKey] = set()
+        from .declarative_scheduling.scheduling_condition_evaluator import (
+            SchedulingConditionEvaluator,
+        )
 
-        num_checked_assets = 0
-        num_auto_materialize_asset_keys = len(self.auto_materialize_asset_keys)
-
-        for asset_key in self.asset_graph.toposorted_asset_keys:
-            # an asset may have already been visited if it was part of a non-subsettable multi-asset
-            if asset_key not in self.auto_materialize_asset_keys:
-                continue
-
-            num_checked_assets = num_checked_assets + 1
-            start_time = time.time()
-            self._logger.debug(
-                "Evaluating asset"
-                f" {asset_key.to_user_string()} ({num_checked_assets}/{num_auto_materialize_asset_keys})"
-            )
-
-            try:
-                (evaluation_state, expected_data_time) = self.evaluate_asset(
-                    asset_key, evaluation_state_by_key, expected_data_time_mapping
-                )
-            except Exception as e:
-                raise Exception(
-                    f"Error while evaluating conditions for asset {asset_key.to_user_string()}"
-                ) from e
-
-            num_requested = evaluation_state.true_subset.size
-            log_fn = self._logger.info if num_requested > 0 else self._logger.debug
-
-            to_request_asset_partitions = evaluation_state.true_subset.asset_partitions
-            to_request_str = ",".join(
-                [(ap.partition_key or "No partition") for ap in to_request_asset_partitions]
-            )
-            to_request |= to_request_asset_partitions
-
-            log_fn(
-                f"Asset {asset_key.to_user_string()} evaluation result: {num_requested}"
-                f" requested ({to_request_str}) ({format(time.time()-start_time, '.3f')} seconds)"
-            )
-
-            evaluation_state_by_key[asset_key] = evaluation_state
-            expected_data_time_mapping[asset_key] = expected_data_time
-
-            # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
-            # materialize all of them
-            execution_set_keys = self.asset_graph.get(asset_key).execution_set_asset_keys
-            if len(execution_set_keys) > 1 and num_requested > 0:
-                for neighbor_key in execution_set_keys:
-                    expected_data_time_mapping[neighbor_key] = expected_data_time
-
-                    # make sure that the true_subset of the neighbor is accurate -- when it was
-                    # evaluated it may have had a different requested AssetSubset. however, because
-                    # all these neighbors must be executed as a unit, we need to union together
-                    # the subset of all required neighbors
-                    if neighbor_key in evaluation_state_by_key:
-                        neighbor_evaluation_state = evaluation_state_by_key[neighbor_key]
-                        evaluation_state_by_key[neighbor_key] = dataclasses.replace(
-                            neighbor_evaluation_state,
-                            previous_evaluation=neighbor_evaluation_state.previous_evaluation.copy(
-                                update={
-                                    "true_subset": neighbor_evaluation_state.true_subset.copy(
-                                        update={"asset_key": neighbor_key}
-                                    )
-                                }
-                            ),
-                        )
-                    to_request |= {
-                        ap._replace(asset_key=neighbor_key)
-                        for ap in evaluation_state.true_subset.asset_partitions
-                    }
-
-        return (list(evaluation_state_by_key.values()), to_request)
+        evaluator = SchedulingConditionEvaluator(
+            asset_graph=self.asset_graph,
+            asset_keys=self.auto_materialize_asset_keys,
+            asset_graph_view=self.asset_graph_view,
+            logger=self._logger,
+            cursor=self.cursor,
+            data_time_resolver=self.data_time_resolver,
+            respect_materialization_data_versions=self.respect_materialization_data_versions,
+            auto_materialize_run_tags=self.auto_materialize_run_tags,
+        )
+        return evaluator.evaluate()
 
     def evaluate(
         self,

@@ -12,10 +12,11 @@ import {
 
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/InstigationTick.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TABLE_RUN_FRAGMENT, RunTable} from '../runs/RunTable';
 
 export const RunList = ({runIds}: {runIds: string[]}) => {
-  const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
+  const queryResult = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
     LAUNCHED_RUN_LIST_QUERY,
     {
       variables: {
@@ -25,6 +26,8 @@ export const RunList = ({runIds}: {runIds: string[]}) => {
       },
     },
   );
+  const {data, loading} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'LaunchedRunListQuery');
 
   if (loading || !data) {
     return (
@@ -53,7 +56,7 @@ export const RunList = ({runIds}: {runIds: string[]}) => {
   );
 };
 
-export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
+export const TargetedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
   if (!originRunIds || !originRunIds.length) {
     return null;
   }
@@ -61,12 +64,11 @@ export const FailedRunList = ({originRunIds}: {originRunIds?: string[]}) => {
     <Group direction="column" spacing={16}>
       <Box padding={12} border={{side: 'bottom', color: Colors.textLighter()}}>
         <Body>
-          Failed Runs
-          <Tooltip content="Failed runs this tick reacted on and reported back to.">
+          Targeted Runs
+          <Tooltip content="Runs this tick reacted on and reported back to.">
             <Icon name="info" color={Colors.textLight()} />
           </Tooltip>
         </Body>
-
         <RunList runIds={originRunIds} />
       </Box>
       <Box padding={12} margin={{bottom: 8}}>

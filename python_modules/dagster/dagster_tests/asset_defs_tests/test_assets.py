@@ -13,7 +13,6 @@ from dagster import (
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
-    EventRecordsFilter,
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
@@ -27,7 +26,6 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
-    graph_multi_asset,
     io_manager,
     job,
     materialize,
@@ -41,7 +39,6 @@ from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import TeamAssetOwner, UserAssetOwner
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
@@ -169,101 +166,6 @@ def test_retain_group():
         output_asset_key_replacements={AssetKey(["bar"]): AssetKey(["baz"])}
     )
     assert replaced.group_names_by_key[AssetKey("baz")] == "foo"
-
-
-def test_with_replaced_description() -> None:
-    @multi_asset(
-        outs={
-            "foo": AssetOut(description="foo"),
-            "bar": AssetOut(description="bar"),
-            "baz": AssetOut(description="baz"),
-        }
-    )
-    def abc(): ...
-
-    assert abc.descriptions_by_key == {
-        AssetKey("foo"): "foo",
-        AssetKey("bar"): "bar",
-        AssetKey("baz"): "baz",
-    }
-
-    # If there's no replacement description for the asset key, the original description is retained.
-    replaced = abc.with_attributes(descriptions_by_key={})
-    assert replaced.descriptions_by_key == {
-        AssetKey("foo"): "foo",
-        AssetKey("bar"): "bar",
-        AssetKey("baz"): "baz",
-    }
-
-    # Otherwise, use the replaced description.
-    replaced = abc.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
-    assert replaced.descriptions_by_key == {
-        AssetKey("foo"): "foo",
-        AssetKey("bar"): "bar_prime",
-        AssetKey("baz"): "baz",
-    }
-
-    @op
-    def op1(): ...
-
-    @op
-    def op2(): ...
-
-    @graph_multi_asset(
-        outs={"foo": AssetOut(description="foo"), "bar": AssetOut(description="bar")}
-    )
-    def abc_graph():
-        return {"foo": op1(), "bar": op2()}
-
-    assert abc_graph.descriptions_by_key == {
-        AssetKey("foo"): "foo",
-        AssetKey("bar"): "bar",
-    }
-
-    replaced = abc_graph.with_attributes(descriptions_by_key={})
-    assert replaced.descriptions_by_key == {
-        AssetKey("foo"): "foo",
-        AssetKey("bar"): "bar",
-    }
-
-    replaced = abc_graph.with_attributes(descriptions_by_key={AssetKey(["bar"]): "bar_prime"})
-    assert replaced.descriptions_by_key == {
-        AssetKey("foo"): "foo",
-        AssetKey("bar"): "bar_prime",
-    }
-
-
-def test_with_replaced_metadata() -> None:
-    @multi_asset(
-        outs={
-            "foo": AssetOut(metadata={"foo": "foo"}),
-            "bar": AssetOut(metadata={"bar": "bar"}),
-            "baz": AssetOut(metadata={"baz": "baz"}),
-        }
-    )
-    def abc(): ...
-
-    assert abc.metadata_by_key == {
-        AssetKey("foo"): {"foo": "foo"},
-        AssetKey("bar"): {"bar": "bar"},
-        AssetKey("baz"): {"baz": "baz"},
-    }
-
-    # If there's no replacement metadata for the asset key, the original metadata is retained.
-    replaced = abc.with_attributes(metadata_by_key={})
-    assert replaced.metadata_by_key == {
-        AssetKey("foo"): {"foo": "foo"},
-        AssetKey("bar"): {"bar": "bar"},
-        AssetKey("baz"): {"baz": "baz"},
-    }
-
-    # Otherwise, use the replaced description.
-    replaced = abc.with_attributes(metadata_by_key={AssetKey(["bar"]): {"bar": "bar_prime"}})
-    assert replaced.metadata_by_key == {
-        AssetKey("foo"): {"foo": "foo"},
-        AssetKey("bar"): {"bar": "bar_prime"},
-        AssetKey("baz"): {"baz": "baz"},
-    }
 
 
 def test_retain_freshness_policy():
@@ -1081,9 +983,11 @@ def test_from_op_w_configured():
     assert the_asset.keys_by_output_name["result"].path == ["foo2"]
 
 
-def get_step_keys_from_run(instance: DagsterInstance) -> Sequence[str]:
+def get_step_keys_from_run(instance: DagsterInstance, run_id: str) -> Sequence[str]:
     engine_events = list(
-        instance.get_event_records(EventRecordsFilter(DagsterEventType.ENGINE_EVENT))
+        instance.get_records_for_run(
+            run_id=run_id, of_type=DagsterEventType.ENGINE_EVENT, ascending=False
+        ).records
     )
     metadata = engine_events[0].event_log_entry.get_dagster_event().engine_event_data.metadata
     step_metadata = metadata["step_keys"]
@@ -1124,7 +1028,7 @@ def test_graph_backed_asset_subset():
             == 1
         )
         assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 1
-        step_keys = get_step_keys_from_run(instance)
+        step_keys = get_step_keys_from_run(instance, result.run_id)
         assert set(step_keys) == set(["my_graph.foo", "my_graph.bar_1"])
 
 
@@ -1155,7 +1059,7 @@ def test_graph_backed_asset_partial_output_selection():
         # This test will yield two materialization events, for assets "one" and "two". This is
         # because the "foo" op will still be executed, even though we only selected "one".
         assert get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
-        step_keys = get_step_keys_from_run(instance)
+        step_keys = get_step_keys_from_run(instance, result.run_id)
         assert set(step_keys) == set(["graph_asset.foo"])
 
 
@@ -1215,7 +1119,7 @@ def test_input_subsetting_graph_backed_asset():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["my_graph.bar_1", "upstream_1"])
 
         # test second "bar" alias
@@ -1234,7 +1138,7 @@ def test_input_subsetting_graph_backed_asset():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["my_graph.bar_2", "upstream_2"])
 
         # test "baz" which uses both inputs
@@ -1253,7 +1157,7 @@ def test_input_subsetting_graph_backed_asset():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 3
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["my_graph.baz", "upstream_1", "upstream_2"])
 
 
@@ -1524,7 +1428,7 @@ def test_graph_backed_asset_reused():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["graph_asset.foo", "one_downstream"])
 
             # Other graph-backed asset
@@ -1542,7 +1446,7 @@ def test_graph_backed_asset_reused():
             assert (
                 get_num_events(instance, result.run_id, DagsterEventType.ASSET_MATERIALIZATION) == 2
             )
-            step_keys = get_step_keys_from_run(instance)
+            step_keys = get_step_keys_from_run(instance, result.run_id)
             assert set(step_keys) == set(["graph_asset.foo", "duplicate_one_downstream"])
 
 
@@ -2121,7 +2025,7 @@ def test_asset_owners():
     def my_asset():
         pass
 
-    owners = [TeamAssetOwner("team1"), UserAssetOwner("claire@dagsterlabs.com")]
+    owners = ["team:team1", "claire@dagsterlabs.com"]
     assert my_asset.owners_by_key == {my_asset.key: owners}
     assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
 
@@ -2175,8 +2079,8 @@ def test_multi_asset_owners():
         pass
 
     assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): [TeamAssetOwner("team1"), UserAssetOwner("user@dagsterlabs.com")],
-        AssetKey("out2"): [UserAssetOwner("user2@dagsterlabs.com")],
+        AssetKey("out1"): ["team:team1", "user@dagsterlabs.com"],
+        AssetKey("out2"): ["user2@dagsterlabs.com"],
     }
 
 
@@ -2191,16 +2095,16 @@ def test_replace_asset_keys_for_asset_with_owners():
         pass
 
     assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): [UserAssetOwner("user@dagsterlabs.com")],
-        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey("out1"): ["user@dagsterlabs.com"],
+        AssetKey("out2"): ["user@dagsterlabs.com"],
     }
 
     prefixed_asset = my_multi_asset.with_attributes(
         output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
     )
     assert prefixed_asset.owners_by_key == {
-        AssetKey(["prefix", "out1"]): [UserAssetOwner("user@dagsterlabs.com")],
-        AssetKey("out2"): [UserAssetOwner("user@dagsterlabs.com")],
+        AssetKey(["prefix", "out1"]): ["user@dagsterlabs.com"],
+        AssetKey("out2"): ["user@dagsterlabs.com"],
     }
 
 

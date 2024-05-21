@@ -1,62 +1,227 @@
-import {gql, useQuery} from '@apollo/client';
-import {useMemo} from 'react';
+import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
+import {useCallback, useMemo, useState} from 'react';
 
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {overlap} from './batchRunsForTimeline';
-import {RunTimelineQuery, RunTimelineQueryVariables} from './types/useRunsForTimeline.types';
+import {fetchPaginatedBucketData, fetchPaginatedData} from './fetchPaginatedBucketData';
+import {
+  CompletedRunTimelineQuery,
+  CompletedRunTimelineQueryVariables,
+  FutureTicksQuery,
+  FutureTicksQueryVariables,
+  OngoingRunTimelineQuery,
+  OngoingRunTimelineQueryVariables,
+  RunTimelineFragment,
+} from './types/useRunsForTimeline.types';
+import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilter = {}) => {
+const BUCKET_SIZE_MS = 3600 * 1000;
+const BATCH_LIMIT = 500;
+
+export const useRunsForTimeline = (
+  range: readonly [number, number],
+  filter: RunsFilter | undefined = undefined,
+  refreshInterval = 2 * FIFTEEN_SECONDS,
+) => {
+  const runsFilter = useMemo(() => {
+    return filter ?? {};
+  }, [filter]);
   const [start, end] = range;
 
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const queryData = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
+  const buckets = useMemo(() => {
+    const buckets = [];
+    for (let time = start; time < end; time += BUCKET_SIZE_MS) {
+      buckets.push([time, Math.min(end, time + BUCKET_SIZE_MS)] as const);
+    }
+    return buckets;
+  }, [start, end]);
+
+  const client = useApolloClient();
+
+  const [completedRunsQueryData, setCompletedRunsData] = useState<{
+    data: RunTimelineFragment[] | undefined;
+    loading: boolean;
+    error: any;
+    called: boolean;
+  }>({
+    data: undefined,
+    loading: true,
+    error: undefined,
+    called: false,
+  });
+  const [ongoingRunsQueryData, setOngoingRunsData] = useState<{
+    data: RunTimelineFragment[] | undefined;
+    loading: boolean;
+    error: any;
+    called: boolean;
+  }>({
+    data: undefined,
+    loading: true,
+    error: undefined,
+    called: false,
+  });
+  const {data: ongoingRunsData, loading: loadingOngoingRunsData} = ongoingRunsQueryData;
+  const {data: completedRunsData, loading: loadingCompletedRunsData} = completedRunsQueryData;
+
+  const fetchCompletedRunsQueryData = useCallback(async () => {
+    return await fetchPaginatedBucketData({
+      buckets,
+      setQueryData: setCompletedRunsData,
+      async fetchData(bucket, cursor: string | undefined) {
+        const {data} = await client.query<
+          CompletedRunTimelineQuery,
+          CompletedRunTimelineQueryVariables
+        >({
+          query: COMPLETED_RUN_TIMELINE_QUERY,
+          notifyOnNetworkStatusChange: true,
+          fetchPolicy: 'no-cache',
+          variables: {
+            completedFilter: {
+              ...runsFilter,
+              statuses: Array.from(doneStatuses),
+              createdBefore: bucket[1] / 1000,
+              updatedAfter: bucket[0] / 1000,
+            },
+            cursor,
+            limit: BATCH_LIMIT,
+          },
+        });
+
+        if (data.completed.__typename !== 'Runs') {
+          return {
+            data: [],
+            cursor: undefined,
+            hasMore: false,
+            error: data.completed,
+          };
+        }
+        const runs = data.completed.results;
+        const hasMoreData = runs.length === BATCH_LIMIT;
+        const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+        return {
+          data: runs,
+          cursor: nextCursor,
+          hasMore: hasMoreData,
+          error: undefined,
+        };
+      },
+    });
+  }, [buckets, client, runsFilter]);
+
+  const fetchOngoingRunsQueryData = useCallback(async () => {
+    setOngoingRunsData(({data}) => ({
+      data, // preserve existing data
+      loading: true,
+      called: true,
+      error: undefined,
+    }));
+    try {
+      const data = await fetchPaginatedData({
+        async fetchData(cursor: string | undefined) {
+          const {data} = await client.query<
+            OngoingRunTimelineQuery,
+            OngoingRunTimelineQueryVariables
+          >({
+            query: ONGOING_RUN_TIMELINE_QUERY,
+            notifyOnNetworkStatusChange: true,
+            fetchPolicy: 'no-cache',
+            variables: {
+              inProgressFilter: {
+                ...runsFilter,
+                statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+              },
+              cursor,
+              limit: BATCH_LIMIT,
+            },
+          });
+
+          if (data.ongoing.__typename !== 'Runs') {
+            return {
+              data: [],
+              cursor: undefined,
+              hasMore: false,
+              error: data.ongoing,
+            };
+          }
+          const runs = data.ongoing.results;
+          const hasMoreData = runs.length === BATCH_LIMIT;
+          const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
+          return {
+            data: runs,
+            cursor: nextCursor,
+            hasMore: hasMoreData,
+            error: undefined,
+          };
+        },
+      });
+      setOngoingRunsData({
+        data,
+        loading: false,
+        called: true,
+        error: undefined,
+      });
+    } catch (e) {
+      setOngoingRunsData(({data}) => ({
+        data, // preserve existing data
+        loading: false,
+        called: true,
+        error: e,
+      }));
+    }
+  }, [client, runsFilter]);
+
+  const [fetchFutureTicks, futureTicksQueryData] = useLazyQuery<
+    FutureTicksQuery,
+    FutureTicksQueryVariables
+  >(FUTURE_TICKS_QUERY, {
     notifyOnNetworkStatusChange: true,
     // With a very large number of runs, operating on the Apollo cache is too expensive and
     // can block the main thread. This data has to be up-to-the-second fresh anyway, so just
     // skip the cache entirely.
     fetchPolicy: 'no-cache',
     variables: {
-      inProgressFilter: {
-        ...runsFilter,
-        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-        createdBefore: endSec,
-      },
-      terminatedFilter: {
-        ...runsFilter,
-        statuses: Array.from(doneStatuses),
-        createdBefore: endSec,
-        updatedAfter: startSec,
-      },
       tickCursor: startSec,
       ticksUntil: endSec,
     },
   });
 
-  const {data, previousData, loading} = queryData;
+  useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
+  useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
+  useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
 
-  const initialLoading = loading && !data;
-  const {unterminated, terminated, workspaceOrError} = data || previousData || {};
+  const {
+    data: futureTicksData,
+    previousData: previousFutureTicksData,
+    loading: loadingFutureTicksData,
+  } = futureTicksQueryData;
+
+  const initialLoading =
+    (loadingOngoingRunsData && !ongoingRunsData) ||
+    (loadingCompletedRunsData && !completedRunsQueryData) ||
+    (loadingFutureTicksData && !futureTicksData);
+
+  const {workspaceOrError} = futureTicksData ||
+    previousFutureTicksData || {workspaceOrError: undefined};
 
   const runsByJobKey = useMemo(() => {
     const map: {[jobKey: string]: TimelineRun[]} = {};
     const now = Date.now();
 
     // fetch all the runs in the given range
-    [
-      ...(unterminated?.__typename === 'Runs' ? unterminated.results : []),
-      ...(terminated?.__typename === 'Runs' ? terminated.results : []),
-    ].forEach((run) => {
+    [...(ongoingRunsData ?? []), ...(completedRunsData ?? [])].forEach((run) => {
       if (!run.startTime) {
         return;
       }
@@ -96,7 +261,7 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     });
 
     return map;
-  }, [end, unterminated, terminated, start]);
+  }, [ongoingRunsData, completedRunsData, start, end]);
 
   const jobsWithRuns: TimelineJob[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
@@ -172,7 +337,14 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
               pipelineName: pipeline.name,
               isJob: pipeline.isJob,
             }),
-            runs: [...jobRuns, ...jobTicks],
+            runs: [
+              ...jobRuns.filter((run, idx, arr) => {
+                // Runs can show up in multiple buckets due to the way were are filtering. Lets dedupe them for now
+                // while we think of a better way to query while also caching.
+                return arr.findIndex((bRun) => bRun.id === run.id) === idx;
+              }),
+              ...jobTicks,
+            ],
           } as TimelineJob);
         }
       }
@@ -189,54 +361,77 @@ export const useRunsForTimeline = (range: [number, number], runsFilter: RunsFilt
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
   }, [workspaceOrError, runsByJobKey, start, end]);
 
+  const refreshState = useRefreshAtInterval({
+    refresh: useCallback(async () => {
+      await Promise.all([
+        fetchFutureTicks(),
+        fetchCompletedRunsQueryData(),
+        fetchOngoingRunsQueryData(),
+      ]);
+    }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
+    intervalMs: refreshInterval,
+    leading: true,
+  });
+
   return useMemo(
     () => ({
       jobs: jobsWithRuns,
       initialLoading,
-      queryData,
+      refreshState,
     }),
-    [initialLoading, jobsWithRuns, queryData],
+    [initialLoading, jobsWithRuns, refreshState],
   );
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
   `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
 
-const RUN_TIMELINE_QUERY = gql`
-  query RunTimelineQuery(
-    $inProgressFilter: RunsFilter!
-    $terminatedFilter: RunsFilter!
-    $tickCursor: Float
-    $ticksUntil: Float
-  ) {
-    unterminated: runsOrError(filter: $inProgressFilter) {
+const RUN_TIMELINE_FRAGMENT = gql`
+  fragment RunTimelineFragment on Run {
+    id
+    pipelineName
+    repositoryOrigin {
+      id
+      repositoryName
+      repositoryLocationName
+    }
+    ...RunTimeFragment
+  }
+  ${RUN_TIME_FRAGMENT}
+`;
+
+const ONGOING_RUN_TIMELINE_QUERY = gql`
+  query OngoingRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!, $cursor: String) {
+    ongoing: runsOrError(filter: $inProgressFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
         results {
           id
-          pipelineName
-          repositoryOrigin {
-            id
-            repositoryName
-            repositoryLocationName
-          }
-          ...RunTimeFragment
+          ...RunTimelineFragment
         }
       }
     }
-    terminated: runsOrError(filter: $terminatedFilter) {
+  }
+
+  ${RUN_TIMELINE_FRAGMENT}
+`;
+
+const COMPLETED_RUN_TIMELINE_QUERY = gql`
+  query CompletedRunTimelineQuery($completedFilter: RunsFilter!, $limit: Int!, $cursor: String) {
+    completed: runsOrError(filter: $completedFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
         results {
           id
-          pipelineName
-          repositoryOrigin {
-            id
-            repositoryName
-            repositoryLocationName
-          }
-          ...RunTimeFragment
+          ...RunTimelineFragment
         }
       }
     }
+  }
+
+  ${RUN_TIMELINE_FRAGMENT}
+`;
+
+const FUTURE_TICKS_QUERY = gql`
+  query FutureTicksQuery($tickCursor: Float, $ticksUntil: Float) {
     workspaceOrError {
       ... on Workspace {
         id
@@ -277,7 +472,5 @@ const RUN_TIMELINE_QUERY = gql`
       }
     }
   }
-
-  ${RUN_TIME_FRAGMENT}
   ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
 `;

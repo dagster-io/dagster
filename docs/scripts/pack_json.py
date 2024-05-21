@@ -52,6 +52,11 @@ def rewrite_relative_links(root: str, file_data: Dict[str, object]) -> None:
     if not file_body:
         return
 
+    # `root` can be an absolute path (eg. `/src/dagster/docs/scripts/../sphinx/_build/json/...`
+    # causing the `root.startswith` logic to fail. If `root` contains `/../` split to only take the
+    # relative sphinx path.
+    root = root.split("/../")[-1]
+
     if root.startswith("sphinx/_build/json/_modules"):
         transformed = re.sub(
             r"href=\"[^\"]*\"",

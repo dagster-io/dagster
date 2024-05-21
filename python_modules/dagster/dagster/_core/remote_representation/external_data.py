@@ -99,8 +99,10 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
+    FieldSerializer,
     is_whitelisted_for_serdes_object,
 )
 from dagster._utils.error import SerializableErrorInfo
@@ -903,6 +905,7 @@ class PartitionSetSnap(
             ("op_selection", Optional[Sequence[str]]),
             ("mode", Optional[str]),
             ("external_partitions_data", Optional[ExternalPartitionsDefinitionData]),
+            ("backfill_policy", Optional[BackfillPolicy]),
         ],
     )
 ):
@@ -913,6 +916,7 @@ class PartitionSetSnap(
         op_selection: Optional[Sequence[str]],
         mode: Optional[str],
         external_partitions_data: Optional[ExternalPartitionsDefinitionData] = None,
+        backfill_policy: Optional[BackfillPolicy] = None,
     ):
         return super(PartitionSetSnap, cls).__new__(
             cls,
@@ -924,6 +928,9 @@ class PartitionSetSnap(
                 external_partitions_data,
                 "external_partitions_data",
                 ExternalPartitionsDefinitionData,
+            ),
+            backfill_policy=check.opt_inst_param(
+                backfill_policy, "backfill_policy", BackfillPolicy
             ),
         )
 
@@ -955,6 +962,7 @@ class PartitionSetSnap(
             op_selection=None,
             mode=DEFAULT_MODE_NAME,
             external_partitions_data=partitions_def_data,
+            backfill_policy=job_def.backfill_policy,
         )
 
 
@@ -999,7 +1007,7 @@ class ExternalPartitionTagsData(
 class ExternalPartitionExecutionParamData(
     NamedTuple(
         "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Mapping[str, object]), ("run_config", Mapping[str, object])],
+        [("name", str), ("tags", Mapping[str, str]), ("run_config", Mapping[str, object])],
     )
 ):
     def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
@@ -1267,12 +1275,34 @@ class ExternalAssetCheck(
         return AssetCheckKey(asset_key=self.asset_key, name=self.name)
 
 
+class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
+    """Up through Dagster 1.7.7, asset owners provided as "team:foo" would be serialized as "foo"
+    going forward, they're serialized as "team:foo".
+    """
+
+    def unpack(self, __unpacked_value, whitelist_map, context):
+        return (
+            [
+                owner if (is_valid_email(owner) or owner.startswith("team:")) else f"team:{owner}"
+                for owner in cast(Sequence[str], __unpacked_value)
+            ]
+            if __unpacked_value is not None
+            else None
+        )
+
+    def pack(self, __unpacked_value, whitelist_map, descent_path):
+        return __unpacked_value
+
+
 @whitelist_for_serdes(
     storage_field_names={
         "metadata": "metadata_entries",
         "execution_set_identifier": "atomic_execution_unit_id",
     },
-    field_serializers={"metadata": MetadataFieldSerializer},
+    field_serializers={
+        "metadata": MetadataFieldSerializer,
+        "owners": BackcompatTeamOwnerFieldDeserializer,
+    },
 )
 class ExternalAssetNode(
     NamedTuple(

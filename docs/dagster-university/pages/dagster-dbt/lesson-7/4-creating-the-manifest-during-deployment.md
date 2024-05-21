@@ -8,7 +8,7 @@ lesson: '7'
 
 To recap, our deployment failed in the last section because Dagster couldn’t find a dbt manifest file, which it needs to turn dbt models into Dagster assets. This is because we built this file by running `dbt parse` during local development. You ran this manually in Lesson 3 and improved the experience in Lesson 4. However, you'll also need to build your dbt manifest file during deployment, which will require a couple additional steps. We recommend adopting CI/CD to automate this process.
 
-Building your manifest for your production deployment will will be needed for both open source and Dagster Cloud deployments. In this case, Dagster Cloud’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
+Building your manifest for your production deployment will will be needed for both open source and Dagster+ deployments. In this case, Dagster+’s out-of-the-box `deploy.yml` GitHub Action isn’t aware that you’re also trying to deploy a dbt project with Dagster.
 
 Since your CI/CD will be running in a fresh environment, you'll need to install dbt and run `dbt deps` before building your manifest with `dbt parse`.
 
@@ -35,7 +35,7 @@ To get our deployment working, we need to add a step to our GitHub Actions workf
 
 Once the new step is pushed to the remote, GitHub will automatically try to run a new job using the updated workflow.
 
-At this point, your dbt project will be successfully deployed onto Dagster Cloud and you should be able to see your models in the asset graph!
+At this point, your dbt project will be successfully deployed onto Dagster+ and you should be able to see your models in the asset graph!
 
 {% table %}
 
@@ -44,8 +44,8 @@ At this point, your dbt project will be successfully deployed onto Dagster Cloud
 
 ---
 
-- ![Successful deployment screen in Dagster Cloud](/images/dagster-dbt/lesson-7/successful-cloud-setup.png)
-- ![dbt models in the Asset graph in Dagster Cloud](/images/dagster-dbt/lesson-7/asset-graph.png)
+- ![Successful deployment screen in Dagster+](/images/dagster-dbt/lesson-7/successful-cloud-setup.png)
+- ![dbt models in the Asset graph in Dagster+](/images/dagster-dbt/lesson-7/asset-graph.png)
 
 {% /table %}
 
@@ -53,7 +53,7 @@ At this point, your dbt project will be successfully deployed onto Dagster Cloud
 
 ## Experiencing issues?
 
-There are two ways to deploy Dagster Cloud Serverless. In our case, we only made changes to deploy dbt with the default option, called Fast Deploys with PEX (Python Executable). 
+There are two ways to deploy Dagster+ Serverless. In our case, we only made changes to deploy dbt with the default option, called Fast Deploys with PEX (Python Executable). 
 
 **If you receive an error message to turn off Fast Deploys**, GitHub Actions will skip the steps that build the dbt project. We recommend staying with Fast Deploys, if possible. 
 

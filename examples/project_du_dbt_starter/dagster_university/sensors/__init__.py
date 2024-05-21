@@ -1,14 +1,13 @@
 import json
 import os
 
-from dagster import RunRequest, SensorResult, sensor
+from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
 
 from ..jobs import adhoc_request_job
 
 
-## Lesson 9
 @sensor(job=adhoc_request_job)
-def adhoc_request_sensor(context):
+def adhoc_request_sensor(context: SensorEvaluationContext):
     PATH_TO_REQUESTS = os.path.join(os.path.dirname(__file__), "../../", "data/requests")
 
     previous_state = json.loads(context.cursor) if context.cursor else {}

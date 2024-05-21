@@ -1,6 +1,5 @@
-from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.asset_condition.asset_condition import (
-    AssetCondition,
+from dagster import AutoMaterializePolicy, Definitions, SchedulingCondition, asset
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
 )
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
@@ -18,7 +17,7 @@ from .asset_condition_scenario import AssetConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.missing())
+    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
 
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
@@ -46,7 +45,7 @@ def test_missing_unpartitioned() -> None:
 
 def test_missing_time_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(one_asset, asset_condition=AssetCondition.missing())
+        AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
         .with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_datetime)
         .with_current_time_advanced(days=6, minutes=1)
@@ -71,16 +70,26 @@ def test_missing_time_partitioned() -> None:
     assert result.true_subset.size == 4
 
 
-def test_serialize_definitions_with_asset_condition():
+def test_serialize_definitions_with_asset_condition() -> None:
     amp = AutoMaterializePolicy.from_asset_condition(
-        AssetCondition.parent_newer() & ~AssetCondition.updated_since_cron("0 * * * *")
+        SchedulingCondition.parent_newer() & ~SchedulingCondition.updated_since_cron("0 * * * *")
     )
 
     @asset(auto_materialize_policy=amp)
-    def my_asset():
+    def my_asset() -> int:
         return 0
 
-    result = serialize_value(
+    serialized = serialize_value(amp)
+    assert isinstance(serialized, str)
+
+    serialized = serialize_value(
         external_repository_data_from_def(Definitions(assets=[my_asset]).get_repository_def())
     )
-    assert isinstance(result, str)
+    assert isinstance(serialized, str)
+
+
+def test_deserialize_definitions_with_asset_condition() -> None:
+    serialized = """{"__class__": "AutoMaterializePolicy", "asset_condition": {"__class__": "AndAssetCondition", "operands": [{"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnParentUpdatedRule", "updated_parent_filter": null}}, {"__class__": "NotAssetCondition", "operand": {"__class__": "NotAssetCondition", "operand": {"__class__": "RuleCondition", "rule": {"__class__": "MaterializeOnCronRule", "all_partitions": false, "cron_schedule": "0 * * * *", "timezone": "UTC"}}}}]}, "max_materializations_per_minute": null, "rules": {"__frozenset__": []}, "time_window_partition_scope_minutes": 1e-06}"""
+
+    deserialized = deserialize_value(serialized, AutoMaterializePolicy)
+    assert isinstance(deserialized, AutoMaterializePolicy)

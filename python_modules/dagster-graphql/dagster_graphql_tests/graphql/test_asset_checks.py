@@ -289,7 +289,7 @@ class TestAssetChecks(ExecutingGraphQLContextTestMatrix):
                                 "canExecuteIndividually": "CAN_EXECUTE",
                                 "blocking": True,
                                 "additionalAssetKeys": [
-                                    {"path": ["asset_2"]},
+                                    {"path": ["asset_two"]},
                                 ],
                             }
                         ]

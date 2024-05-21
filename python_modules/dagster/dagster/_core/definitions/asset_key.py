@@ -57,14 +57,10 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
         return hash(tuple(self.path))
 
     def __eq__(self, other):
-        if not isinstance(other, AssetKey):
+        if other.__class__ is not self.__class__:
             return False
-        if len(self.path) != len(other.path):
-            return False
-        for i in range(0, len(self.path)):
-            if self.path[i] != other.path[i]:
-                return False
-        return True
+
+        return self.path == other.path
 
     def to_string(self) -> str:
         """E.g. '["first_component", "second_component"]'."""

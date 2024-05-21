@@ -6,7 +6,6 @@ from dagster import (
 
 from ..assets import constants
 
-## Lesson 8
 start_date = constants.START_DATE
 end_date = constants.END_DATE
 

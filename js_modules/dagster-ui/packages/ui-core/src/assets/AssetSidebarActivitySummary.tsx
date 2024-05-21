@@ -117,7 +117,7 @@ export const AssetSidebarActivitySummary = ({
             )}
           </SidebarSection>
           <SidebarSection
-            title={!isSourceAsset ? 'Materialization system tags' : 'Observation system tags'}
+            title={!isSourceAsset ? 'Materialization tags' : 'Observation tags'}
             collapsedByDefault
           >
             {displayedEvent ? (

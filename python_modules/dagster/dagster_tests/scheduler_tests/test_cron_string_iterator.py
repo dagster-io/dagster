@@ -76,6 +76,17 @@ DST_PARAMS = [
         ],
     ),
     (
+        "Australia/Lord_Howe",
+        "0 2 * * *",
+        [
+            create_pendulum_time(2023, 9, 29, 2, 0, 0, tz="Australia/Lord_Howe"),
+            create_pendulum_time(2023, 9, 30, 2, 0, 0, tz="Australia/Lord_Howe"),
+            create_pendulum_time(2023, 10, 1, 2, 30, 0, tz="Australia/Lord_Howe"),
+            create_pendulum_time(2023, 10, 2, 2, 0, 0, tz="Australia/Lord_Howe"),
+            create_pendulum_time(2023, 10, 3, 2, 0, 0, tz="Australia/Lord_Howe"),
+        ],
+    ),
+    (
         "Europe/Berlin",
         "0 2 * * *",
         [

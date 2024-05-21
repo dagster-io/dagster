@@ -39,6 +39,7 @@ class DagsterDbtTranslatorSettings:
 
     enable_asset_checks: bool = True
     enable_duplicate_source_asset_keys: bool = False
+    enable_code_references: bool = False
 
 
 class DagsterDbtTranslator:
@@ -223,8 +224,8 @@ class DagsterDbtTranslator:
         https://docs.getdbt.com/reference/artifacts/manifest-json#resource-details
 
         dbt tags are strings, but Dagster tags are key-value pairs. To bridge this divide, the dbt
-        tag string is used as the Dagster tag key, and the Dagster tag value is set to special
-        sentinel value `"__dagster_no_value"`.
+        tag string is used as the Dagster tag key, and the Dagster tag value is set to the empty
+        string, "".
 
         Any dbt tags that don't match Dagster's supported tag key format (e.g. they contain
         unsupported characters) will be ignored.

@@ -61,7 +61,6 @@ from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
-from dagster._core.storage.event_log.base import EventRecordsFilter
 from dagster._core.test_utils import (
     create_test_asset_job,
     ignore_warning,
@@ -1408,9 +1407,10 @@ def test_asset_selection_reconstructable():
             assert len([event for event in events if event.is_job_success]) == 1
 
             materialization_planned = list(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-                )
+                instance.get_records_for_run(
+                    run_id=run.run_id,
+                    of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+                ).records
             )
             assert len(materialization_planned) == 1
 
@@ -2471,9 +2471,9 @@ def test_subset_does_not_respect_context():
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                run_id=result.run_id, of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+            ).records
         }
 
     # should only plan on creating keys start, c, final
@@ -2599,9 +2599,10 @@ def test_asset_group_build_subset_job(job_selection, expected_assets, use_multi,
         result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
-            for record in instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED)
-            )
+            for record in instance.get_records_for_run(
+                run_id=result.run_id,
+                of_type=DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            ).records
         }
 
     expected_asset_keys = set(
@@ -2871,6 +2872,78 @@ def test_subset_cycle_resolution_basic():
 
     # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
     assert len(list(job.graph.iterate_op_defs())) == 4
+
+    result = job.execute_in_process()
+    assert result.output_for_node("foo", "a") == 1
+    assert result.output_for_node("foo_prime", "a_prime") == 2
+    assert result.output_for_node("foo_2", "b") == 3
+    assert result.output_for_node("foo_prime_2", "b_prime") == 4
+
+    assert _all_asset_keys(result) == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("a_prime"),
+        AssetKey("b_prime"),
+    }
+
+
+def test_subset_cycle_resolution_with_asset_check():
+    """Ops:
+        foo produces: a, b
+        foo_prime produces: a', b'
+    Assets:
+        s -> a -> a' -> b -> b'.
+    """
+    io_manager_obj, io_manager_def = asset_aware_io_manager()
+    for item in "a,b,a_prime,b_prime".split(","):
+        io_manager_obj.db[AssetKey(item)] = None
+    # some value for the source
+    io_manager_obj.db[AssetKey("s")] = 0
+
+    s = SourceAsset("s")
+
+    @multi_asset(
+        outs={"a": AssetOut(is_required=False), "b": AssetOut(is_required=False)},
+        internal_asset_deps={
+            "a": {AssetKey("s")},
+            "b": {AssetKey("a_prime")},
+        },
+        can_subset=True,
+    )
+    def foo(context, s, a_prime):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a") in context.selected_asset_keys:
+            yield Output(s + 1, "a")
+        if AssetKey("b") in context.selected_asset_keys:
+            yield Output(a_prime + 1, "b")
+
+    @multi_asset(
+        outs={"a_prime": AssetOut(is_required=False), "b_prime": AssetOut(is_required=False)},
+        internal_asset_deps={
+            "a_prime": {AssetKey("a")},
+            "b_prime": {AssetKey("b")},
+        },
+        can_subset=True,
+    )
+    def foo_prime(context, a, b):
+        context.log.info(context.selected_asset_keys)
+        if AssetKey("a_prime") in context.selected_asset_keys:
+            yield Output(a + 1, "a_prime")
+        if AssetKey("b_prime") in context.selected_asset_keys:
+            yield Output(b + 1, "b_prime")
+
+    @asset_check(asset="a_prime")
+    def check_a_prime(a_prime):
+        return AssetCheckResult(passed=True)
+
+    job = Definitions(
+        assets=[foo, foo_prime, s],
+        asset_checks=[check_a_prime],
+        resources={"io_manager": io_manager_def},
+    ).get_implicit_global_asset_job_def()
+
+    # should produce a job with foo -> foo_prime -> foo_2 -> foo_prime_2
+    assert len(list(job.graph.iterate_op_defs())) == 5
 
     result = job.execute_in_process()
     assert result.output_for_node("foo", "a") == 1

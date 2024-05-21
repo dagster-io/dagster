@@ -60,6 +60,7 @@ import {useTrackPageView} from '../app/analytics';
 import {RunStatus} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses} from '../runs/RunStatuses';
 import {titleForRun} from '../runs/RunUtils';
@@ -80,6 +81,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
   >(INSTANCE_CONCURRENCY_LIMITS_QUERY, {
     notifyOnNetworkStatusChange: true,
   });
+  useBlockTraceOnQueryResult(queryResult, 'InstanceConcurrencyLimitsQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
@@ -118,7 +120,7 @@ export const InstanceConcurrencyPageContent = React.memo(() => {
 export const InstanceConcurrencyPage = () => {
   const {pageTitle} = React.useContext(InstancePageContext);
   return (
-    <Page>
+    <Page style={{padding: 0}}>
       <PageHeader
         title={<Heading>{pageTitle}</Heading>}
         tabs={<InstanceTabs tab="concurrency" />}
@@ -168,7 +170,7 @@ export const RunConcurrencyContent = ({
           <Subheading>Run concurrency</Subheading>
           {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
         </Box>
-        <div>
+        <Box padding={{vertical: 16, horizontal: 24}}>
           Run concurrency is not supported with this run coordinator. To enable run concurrency
           limits, configure your instance to use the <Mono>QueuedRunCoordinator</Mono> in your{' '}
           <Mono>dagster.yaml</Mono>. See the{' '}
@@ -180,7 +182,7 @@ export const RunConcurrencyContent = ({
             QueuedRunCoordinator documentation
           </a>{' '}
           for more information.
-        </div>
+        </Box>
       </>
     );
   }
@@ -280,9 +282,13 @@ export const ConcurrencyLimits = ({
     onSelectKey(undefined);
   }, [onSelectKey]);
 
+  const [search, setSearch] = React.useState('');
+
   const sortedKeys = React.useMemo(() => {
-    return [...concurrencyKeys].sort((a, b) => COMMON_COLLATOR.compare(a, b));
-  }, [concurrencyKeys]);
+    return [...concurrencyKeys]
+      .filter((key) => key.includes(search))
+      .sort((a, b) => COMMON_COLLATOR.compare(a, b));
+  }, [concurrencyKeys, search]);
 
   const onAdd = () => {
     setAction({actionType: 'add'});
@@ -331,8 +337,8 @@ export const ConcurrencyLimits = ({
   }
 
   return (
-    <>
-      <ConcurrencyLimitHeader onAdd={onAdd} />
+    <Box flex={{direction: 'column'}} style={{overflow: 'auto', height: '100%'}}>
+      <ConcurrencyLimitHeader onAdd={onAdd} search={search} setSearch={setSearch} />
       {concurrencyKeys.length === 0 ? (
         <Box margin={24}>
           <NonIdealState
@@ -385,27 +391,53 @@ export const ConcurrencyLimits = ({
         concurrencyKey={selectedKey}
         onUpdate={refetch}
       />
-    </>
+    </Box>
   );
 };
 
-const ConcurrencyLimitHeader = ({onAdd}: {onAdd?: () => void}) => (
-  <Box
-    flex={{justifyContent: 'space-between', alignItems: 'center'}}
-    padding={{vertical: 16, horizontal: 24}}
-    border="top-and-bottom"
-  >
-    <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
-      <Subheading>Global op/asset concurrency</Subheading>
-      <Tag>Experimental</Tag>
+const ConcurrencyLimitHeader = ({
+  onAdd,
+  setSearch,
+  search,
+}: {
+  onAdd?: () => void;
+} & (
+  | {
+      setSearch: (searchString: string) => void;
+      search: string;
+    }
+  | {setSearch?: never; search?: never}
+)) => {
+  return (
+    <Box flex={{direction: 'column'}}>
+      <Box
+        flex={{justifyContent: 'space-between', alignItems: 'center'}}
+        padding={{vertical: 16, horizontal: 24}}
+        border="top-and-bottom"
+      >
+        <Box flex={{alignItems: 'center', direction: 'row', gap: 8}}>
+          <Subheading>Global op/asset concurrency</Subheading>
+          <Tag>Experimental</Tag>
+        </Box>
+        {onAdd ? (
+          <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
+            Add concurrency limit
+          </Button>
+        ) : null}
+      </Box>
+      {setSearch ? (
+        <Box flex={{direction: 'row'}} padding={{vertical: 16, horizontal: 24}} border="bottom">
+          <TextInput
+            value={search || ''}
+            style={{width: '30vw', minWidth: 150, maxWidth: 400}}
+            placeholder="Filter concurrency keys"
+            onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
+          />
+        </Box>
+      ) : null}
     </Box>
-    {onAdd ? (
-      <Button icon={<Icon name="add_circle" />} onClick={() => onAdd()}>
-        Add concurrency limit
-      </Button>
-    ) : null}
-  </Box>
-);
+  );
+};
 
 const isValidLimit = (
   concurrencyLimit?: string,
@@ -719,6 +751,7 @@ const ConcurrencyStepsDialog = ({
       skip: !concurrencyKey,
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'ConcurrencyKeyDetailsQuery', {skip: !concurrencyKey});
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data} = queryResult;
   const refetch = React.useCallback(() => {
@@ -773,6 +806,9 @@ const PendingStepsTable = ({
       skip: !keyInfo.pendingSteps.length,
     },
   );
+  useBlockTraceOnQueryResult(queryResult, 'RunsForConcurrencyKeyQuery', {
+    skip: !keyInfo.pendingSteps.length,
+  });
   const statusByRunId: {[id: string]: RunStatus} = {};
   const runs =
     queryResult.data?.pipelineRunsOrError.__typename === 'Runs'

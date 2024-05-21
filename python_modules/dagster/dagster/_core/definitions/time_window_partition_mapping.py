@@ -52,13 +52,15 @@ class TimeWindowPartitionMapping(
         start_offset (int): If not 0, then the starts of the upstream windows are shifted by this
             offset relative to the starts of the downstream windows. For example, if start_offset=-1
             and end_offset=0, then the downstream partition "2022-07-04" would map to the upstream
-            partitions "2022-07-03" and "2022-07-04". Only permitted to be non-zero when the
-            upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+            partitions "2022-07-03" and "2022-07-04". If the upstream and downstream
+            PartitionsDefinitions are different, then the offset is in the units of the downstream.
+            Defaults to 0.
         end_offset (int): If not 0, then the ends of the upstream windows are shifted by this
             offset relative to the ends of the downstream windows. For example, if start_offset=0
             and end_offset=1, then the downstream partition "2022-07-04" would map to the upstream
-            partitions "2022-07-04" and "2022-07-05". Only permitted to be non-zero when the
-            upstream and downstream PartitionsDefinitions are the same. Defaults to 0.
+            partitions "2022-07-04" and "2022-07-05". If the upstream and downstream
+            PartitionsDefinitions are different, then the offset is in the units of the downstream.
+            Defaults to 0.
         allow_nonexistent_upstream_partitions (bool): Defaults to false. If true, does not
             raise an error when mapped upstream partitions fall outside the start-end time window of the
             partitions def. For example, if the upstream partitions def starts on "2023-01-01" but
@@ -137,6 +139,7 @@ class TimeWindowPartitionMapping(
             start_offset=self.start_offset,
             end_offset=self.end_offset,
             current_time=current_time,
+            mapping_downstream_to_upstream=True,
         )
 
     def get_downstream_partitions_for_partitions(
@@ -159,6 +162,7 @@ class TimeWindowPartitionMapping(
             end_offset=-self.start_offset,
             start_offset=-self.end_offset,
             current_time=current_time,
+            mapping_downstream_to_upstream=False,
         ).partitions_subset
 
     def _merge_time_windows(self, time_windows: Sequence[TimeWindow]) -> Sequence[TimeWindow]:
@@ -189,6 +193,7 @@ class TimeWindowPartitionMapping(
         start_offset: int,
         end_offset: int,
         current_time: Optional[datetime],
+        mapping_downstream_to_upstream: bool,
     ) -> UpstreamPartitionsResult:
         """Maps the partitions in from_partitions_subset to partitions in to_partitions_def.
 
@@ -197,6 +202,10 @@ class TimeWindowPartitionMapping(
         Otherwise, filters out the partitions that do not exist in to_partitions_def and returns
         the filtered subset, also returning a bool indicating whether there were mapped time windows
         that did not exist in to_partitions_def.
+
+        Args:
+            mapping_downstream_to_upstream (bool): True if from_partitions_def is the downstream
+                partitions def and to_partitions_def is the upstream partitions def.
         """
         if not isinstance(from_partitions_subset, BaseTimeWindowPartitionsSubset):
             check.failed("from_partitions_subset must be a BaseTimeWindowPartitionsSubset")
@@ -206,17 +215,6 @@ class TimeWindowPartitionMapping(
 
         if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
             check.failed("to_partitions_def must be a TimeWindowPartitionsDefinition")
-
-        if (start_offset != 0 or end_offset != 0) and (
-            from_partitions_def.cron_schedule != to_partitions_def.cron_schedule
-        ):
-            raise DagsterInvalidDefinitionError(
-                "Can't use the start_offset or end_offset parameters of"
-                " TimeWindowPartitionMapping when the cron schedule of the upstream"
-                " PartitionsDefinition is different than the cron schedule of the downstream"
-                f" one. Attempted to map from cron schedule '{from_partitions_def.cron_schedule}' "
-                f"to cron schedule '{to_partitions_def.cron_schedule}'."
-            )
 
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError(
@@ -236,38 +234,27 @@ class TimeWindowPartitionMapping(
 
         first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
+        full_window = (
+            TimeWindow(first_window.start, last_window.end)
+            if first_window is not None and last_window is not None
+            else None
+        )
 
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
             from_start_dt, from_end_dt = from_partition_time_window
 
-            offsetted_start_dt = _offsetted_datetime(
-                from_partitions_def, from_start_dt, start_offset
-            )
-            offsetted_end_dt = _offsetted_datetime(from_partitions_def, from_end_dt, end_offset)
-
-            # Don't allow offsetting to push the windows out of the bounds of the target
-            # PartitionsDefinition
-            if first_window is not None and last_window is not None:
-                if start_offset < 0:
-                    offsetted_start_dt = max(
-                        first_window.start, offsetted_start_dt, key=lambda d: d.timestamp()
-                    )
-
-                if end_offset < 0:
-                    offsetted_end_dt = max(
-                        first_window.start, offsetted_end_dt, key=lambda d: d.timestamp()
-                    )
-
-                if start_offset > 0:
-                    offsetted_start_dt = min(
-                        last_window.end, offsetted_start_dt, key=lambda d: d.timestamp()
-                    )
-
-                if end_offset > 0:
-                    offsetted_end_dt = min(
-                        last_window.end, offsetted_end_dt, key=lambda d: d.timestamp()
-                    )
+            if mapping_downstream_to_upstream:
+                offsetted_from_start_dt = _offsetted_datetime_with_bounds(
+                    from_partitions_def, from_start_dt, start_offset, full_window
+                )
+                offsetted_from_end_dt = _offsetted_datetime_with_bounds(
+                    from_partitions_def, from_end_dt, end_offset, full_window
+                )
+            else:
+                # we'll apply the offsets later, after we've found the corresponding windows
+                offsetted_from_start_dt = from_start_dt
+                offsetted_from_end_dt = from_end_dt
 
             # Align the windows to partition boundaries in the target PartitionsDefinition
             if (from_partitions_def.cron_schedule == to_partitions_def.cron_schedule) or (
@@ -277,25 +264,34 @@ class TimeWindowPartitionMapping(
                 # boundaries in the PartitionsDefinition that we're mapping from match up with
                 # boundaries in the PartitionsDefinition that we're mapping to. That means
                 # we can just use these boundaries directly instead of finding nearby boundaries.
-                window_start = offsetted_start_dt
-                window_end = offsetted_end_dt
+                to_start_dt = offsetted_from_start_dt
+                to_end_dt = offsetted_from_end_dt
             else:
                 # The partition boundaries that we're mapping from might land in the middle of
                 # partitions that we're mapping to, so find those partitions.
                 to_start_partition_key = to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_start_dt.timestamp(), end_closed=False
+                    offsetted_from_start_dt.timestamp(), end_closed=False
                 )
                 to_end_partition_key = to_partitions_def.get_partition_key_for_timestamp(
-                    offsetted_end_dt.timestamp(), end_closed=True
+                    offsetted_from_end_dt.timestamp(), end_closed=True
                 )
 
-                window_start = to_partitions_def.start_time_for_partition_key(
-                    to_start_partition_key
-                )
-                window_end = to_partitions_def.end_time_for_partition_key(to_end_partition_key)
+                to_start_dt = to_partitions_def.start_time_for_partition_key(to_start_partition_key)
+                to_end_dt = to_partitions_def.end_time_for_partition_key(to_end_partition_key)
 
-            if window_start.timestamp() < window_end.timestamp():
-                time_windows.append(TimeWindow(window_start, window_end))
+            if mapping_downstream_to_upstream:
+                offsetted_to_start_dt = to_start_dt
+                offsetted_to_end_dt = to_end_dt
+            else:
+                offsetted_to_start_dt = _offsetted_datetime_with_bounds(
+                    to_partitions_def, to_start_dt, start_offset, full_window
+                )
+                offsetted_to_end_dt = _offsetted_datetime_with_bounds(
+                    to_partitions_def, to_end_dt, end_offset, full_window
+                )
+
+            if offsetted_to_start_dt.timestamp() < offsetted_to_end_dt.timestamp():
+                time_windows.append(TimeWindow(offsetted_to_start_dt, offsetted_to_end_dt))
 
         filtered_time_windows = []
         required_but_nonexistent_partition_keys = set()
@@ -444,6 +440,26 @@ class TimeWindowPartitionMapping(
             )
 
         return None
+
+
+def _offsetted_datetime_with_bounds(
+    partitions_def: TimeWindowPartitionsDefinition,
+    dt: datetime,
+    offset: int,
+    bounds_window: Optional[TimeWindow],
+) -> datetime:
+    offsetted_dt = _offsetted_datetime(partitions_def, dt, offset)
+
+    # Don't allow offsetting to push the windows out of the bounds of the target
+    # PartitionsDefinition
+    if bounds_window is not None:
+        if offset < 0:
+            offsetted_dt = max(bounds_window.start, offsetted_dt, key=lambda d: d.timestamp())
+
+        if offset > 0:
+            offsetted_dt = min(bounds_window.end, offsetted_dt, key=lambda d: d.timestamp())
+
+    return offsetted_dt
 
 
 def _offsetted_datetime(

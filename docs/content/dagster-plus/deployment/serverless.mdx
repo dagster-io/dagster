@@ -284,7 +284,21 @@ The default base image is `debian:bullseye-slim`, but it can be changed.
 
 If your organization begins to hit the limitations of Serverless, you should transition to a Hybrid deployment. Hybrid deployments allow you to run an [agent in your own infrastructure](/dagster-plus/deployment/agents) and give you substantially more flexibility and control over the Dagster environment.
 
-To switch to Hybrid, navigate to **Status > Agents** in your Dagster+ account. On this page, you can disable the Serverless agent on and view instructions for enabling Hybrid.
+To switch to Hybrid, navigate to **Status > Agents** in your Dagster+ account. On this page, an organization administrator can disable the Serverless agent on and view instructions for enabling Hybrid.
+
+After changing the deployment type, you will need to update your code locations' images and configuration to be compatible with the type of Hybrid agent that you chose. Complete the following steps to finalize the transition:
+
+- **Update your code locations' configuration in [`dagster_cloud.yaml`](/dagster-plus/managing-deployments/dagster-cloud-yaml) to work with your agent.** Refer to the reference for your agent type for more information:
+
+  - [Amazon ECS](/dagster-plus/deployment/agents/amazon-ecs/configuration-reference#per-location-configuration)
+  - [Kubernetes](/dagster-plus/deployment/agents/kubernetes/configuration-reference#per-location-configuration)
+  - [Docker](/dagster-plus/deployment/agents/docker/configuration-reference)
+
+- **Update your build process** to publish a new container image and configuration for each code location. To use Dagster's CI/CD process, refer to [Step 4 of the Dagster+ getting started guide](/dagster-plus/getting-started#step-4-configure-cicd-for-your-project).
+
+- **Replace Serverless-only features with their Hybrid equivalents**:
+  - [**Lifecycle hooks**](#disabling-pex-based-deploys) - To customize a code location's runtime environment, customize the code location's [`Dockerfile`](https://github.com/dagster-io/dagster-cloud-hybrid-quickstart/blob/main/Dockerfile) to build its image
+  - [**Non-isolated runs**](#non-isolated-runs) - While this feature doesn't have a direct Hybrid equivalent, experiment with the [`in_process_executor` or `multiprocess_executor`](/\_apidocs/execution#executors) for specific jobs or entire code locations to reduce overhead.
 
 ---
 

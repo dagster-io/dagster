@@ -253,10 +253,7 @@ def select_unique_ids_from_manifest(
             return _DictShim(ret) if isinstance(ret, dict) else ret
 
     manifest = Manifest(
-        nodes={
-            unique_id: _DictShim(info)
-            for unique_id, info in manifest_json["nodes"].items()  # type: ignore
-        },
+        nodes={unique_id: _DictShim(info) for unique_id, info in manifest_json["nodes"].items()},
         sources={
             unique_id: _DictShim(info)
             for unique_id, info in manifest_json["sources"].items()  # type: ignore
@@ -273,10 +270,20 @@ def select_unique_ids_from_manifest(
             {
                 "semantic_models": {
                     unique_id: _DictShim(info)
-                    for unique_id, info in manifest_json.get("semantic_models", {}).items()
+                    for unique_id, info in manifest_json["semantic_models"].items()
                 }
             }
             if manifest_json.get("semantic_models")
+            else {}
+        ),
+        **(
+            {
+                "saved_queries": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json["saved_queries"].items()
+                },
+            }
+            if manifest_json.get("saved_queries")
             else {}
         ),
     )
@@ -313,6 +320,7 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["exposures"],
         **manifest["metrics"],
         **manifest.get("semantic_models", {}),
+        **manifest.get("saved_queries", {}),
     }
 
 

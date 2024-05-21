@@ -23,13 +23,12 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {TableMetadataEntry} from '../graphql/types';
+import {IntMetadataEntry, MaterializationEvent, TableMetadataEntry} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
 import {NotebookButton} from '../ui/NotebookButton';
 import {DUNDER_REPO_NAME, buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
-
 const TIME_FORMAT = {showSeconds: true, showTimezone: true};
 export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
   'dagster_dbt/select',
@@ -41,6 +40,16 @@ export const HIDDEN_METADATA_ENTRY_LABELS = new Set([
   'dagster_embedded_elt/dagster_sling_translator',
   'dagster_embedded_elt/sling_replication_config',
 ]);
+
+export type MetadataEntryLabelOnly = Pick<
+  MaterializationEvent['metadataEntries'][0],
+  '__typename' | 'label'
+>;
+
+export const isCanonicalRowCountMetadataEntry = (
+  m: MetadataEntryLabelOnly,
+): m is IntMetadataEntry =>
+  m && m.__typename === 'IntMetadataEntry' && m.label === 'dagster/row_count';
 
 export const LogRowStructuredContentTable = ({
   rows,
@@ -257,6 +266,8 @@ export const MetadataEntry = ({
           </IconButton>
         </Group>
       );
+    case 'CodeReferencesMetadataEntry':
+      return <></>;
     default:
       return assertUnreachable(entry);
   }

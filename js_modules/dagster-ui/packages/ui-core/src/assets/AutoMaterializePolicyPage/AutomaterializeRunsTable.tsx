@@ -8,21 +8,24 @@ import {
 } from './types/AutomaterializeRunsTable.types';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {RunStatusTagWithStats} from '../../runs/RunStatusTag';
 import {RUN_TIME_FRAGMENT, RunStateSummary, RunTime, titleForRun} from '../../runs/RunUtils';
 
 export const AutomaterializeRunsTable = ({runIds}: {runIds: string[]}) => {
-  const {data, loading, error} = useQuery<
-    AutomaterializeRunsQuery,
-    AutomaterializeRunsQueryVariables
-  >(AUTOMATERIALIZE_RUNS_QUERY, {
-    variables: {
-      filter: {
-        runIds,
+  const queryResult = useQuery<AutomaterializeRunsQuery, AutomaterializeRunsQueryVariables>(
+    AUTOMATERIALIZE_RUNS_QUERY,
+    {
+      variables: {
+        filter: {
+          runIds,
+        },
       },
+      skip: !runIds.length,
     },
-    skip: !runIds.length,
-  });
+  );
+  const {data, loading, error} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'AutomaterializeRunsQuery', {skip: !runIds.length});
 
   if (!runIds.length) {
     return (

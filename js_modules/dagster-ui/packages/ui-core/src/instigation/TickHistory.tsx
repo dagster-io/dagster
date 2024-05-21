@@ -41,6 +41,7 @@ import {
   InstigationType,
 } from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {TimeElapsed} from '../runs/TimeElapsed';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -139,6 +140,7 @@ export const TicksTable = ({
     query: JOB_TICK_HISTORY_QUERY,
     pageSize: PAGE_SIZE,
   });
+  useBlockTraceOnQueryResult(queryResult, 'TickHistoryQuery');
 
   useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
@@ -311,6 +313,8 @@ export const TickHistoryTimeline = ({
       notifyOnNetworkStatusChange: true,
     },
   );
+
+  useBlockTraceOnQueryResult(queryResult, 'TickHistoryQuery');
 
   useQueryRefreshAtInterval(
     queryResult,

@@ -60,7 +60,7 @@ def _create_dbt_invocation(project_dir: Path, build_project: bool = False) -> Db
     if not project_dir.joinpath("dbt_packages").exists():
         dbt.cli(["deps"], raise_on_error=False).wait()
 
-    dbt_invocation = dbt.cli(["compile"]).wait()
+    dbt_invocation = dbt.cli(["parse"]).wait()
 
     if build_project:
         dbt.cli(["build", "--exclude", "resource_type:test"], raise_on_error=False).wait()

@@ -23,10 +23,12 @@ from dagster import (
 )
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 from dagster._core.definitions.metadata import (
+    CodeReferencesMetadataValue,
     DagsterRunMetadataValue,
     MetadataValue,
     TableColumnLineageMetadataValue,
 )
+from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
     DagsterEventType,
     HandledOutputData,
@@ -45,10 +47,12 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
     from ..schema.metadata import (
         GrapheneAssetMetadataEntry,
         GrapheneBoolMetadataEntry,
+        GrapheneCodeReferencesMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJobMetadataEntry,
         GrapheneJsonMetadataEntry,
+        GrapheneLocalFileCodeReference,
         GrapheneMarkdownMetadataEntry,
         GrapheneNotebookMetadataEntry,
         GrapheneNullMetadataEntry,
@@ -61,6 +65,7 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
         GrapheneTableSchemaMetadataEntry,
         GrapheneTextMetadataEntry,
         GrapheneTimestampMetadataEntry,
+        GrapheneUrlCodeReference,
         GrapheneUrlMetadataEntry,
     )
     from ..schema.table import GrapheneTable, GrapheneTableSchema
@@ -151,6 +156,23 @@ def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[
                 jobName=value.job_name,
                 repositoryName=value.repository_name,
                 locationName=value.location_name,
+            )
+        elif isinstance(value, CodeReferencesMetadataValue):
+            yield GrapheneCodeReferencesMetadataEntry(
+                label=key,
+                codeReferences=[
+                    GrapheneLocalFileCodeReference(
+                        filePath=reference.file_path,
+                        lineNumber=reference.line_number,
+                        label=reference.label,
+                    )
+                    if isinstance(reference, LocalFileCodeReference)
+                    else GrapheneUrlCodeReference(
+                        url=reference.url,
+                        label=reference.label,
+                    )
+                    for reference in value.code_references
+                ],
             )
         elif isinstance(value, TableMetadataValue):
             yield GrapheneTableMetadataEntry(

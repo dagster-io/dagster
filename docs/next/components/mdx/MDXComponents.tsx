@@ -27,6 +27,7 @@ import AddGitlabVariable from './includes/dagster-cloud/AddGitlabVariable.mdx';
 import AddGitubRepositorySecret from './includes/dagster-cloud/AddGitubRepositorySecret.mdx';
 import ApplicableCloudPlan from './includes/dagster-cloud/ApplicableCloudPlan.mdx';
 import ApplicableDagsterProduct from './includes/dagster-cloud/ApplicableDagsterProduct.mdx';
+import AssetCheckAlerts from './includes/dagster-cloud/AssetCheckAlerts.mdx';
 import BDCreateConfigureAgent from './includes/dagster-cloud/BDCreateConfigureAgent.mdx';
 import GenerateAgentToken from './includes/dagster-cloud/GenerateAgentToken.mdx';
 import ScimSupportedFeatures from './includes/dagster-cloud/ScimSupportedFeatures.mdx';
@@ -812,6 +813,7 @@ export default {
   AddGitubRepositorySecret,
   ApplicableCloudPlan,
   ApplicableDagsterProduct,
+  AssetCheckAlerts,
   GenerateAgentToken,
   ScimSupportedFeatures,
   BDCreateConfigureAgent,

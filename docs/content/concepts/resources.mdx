@@ -23,7 +23,7 @@ In data engineering, resources are the external services, tools, and storage you
 - The Snowflake/Databricks/BigQuery account the data is ingested into
 - The BI tool the dashboard was made in
 
-Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [Software-defined Assets](/concepts/assets/software-defined-assets), [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), [ops](/concepts/ops-jobs-graphs/ops), and [jobs](/concepts/ops-jobs-graphs/jobs).
+Using Dagster resources, you can standardize connections and integrations to these tools across Dagster definitions like [asset definitions](/concepts/assets/software-defined-assets), [schedules](/concepts/partitions-schedules-sensors/schedules), [sensors](/concepts/partitions-schedules-sensors/sensors), [ops](/concepts/ops-jobs-graphs/ops), and [jobs](/concepts/ops-jobs-graphs/jobs).
 
 So, why use resources?
 
@@ -44,7 +44,7 @@ So, why use resources?
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resources, config, and other run information.                                                                                            |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                                    |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                               |
-| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of Software-defined Assets and source assets, overriding those provided to <PyObject object="Definitions"/>.                                                                     |
+| <PyObject object="with_resources"/>              | Advanced API for providing resources to a specific set of asset definitions, overriding those provided to <PyObject object="Definitions"/>.                                                                                             |
 
 ---
 
@@ -58,7 +58,7 @@ The configuration system has a few advantages over plain Python parameter passin
 2. Displayed in the Dagster UI
 3. Set dynamically using environment variables, resolved at runtime
 
-### With Software-defined Assets
+### With asset definitions
 
 The following example demonstrates defining a subclass of <PyObject object="ConfigurableResource"/> that represents a connection to an external service. The resource can be configured by constructing it in the <PyObject object="Definitions" /> call.
 

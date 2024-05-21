@@ -8,7 +8,7 @@ description: Dagster can orchestrate dbt alongside other technologies.
 <Note>
   This is part three of the{" "}
   <a href="/integrations/dbt/using-dbt-with-dagster">
-    Using dbt with Dagster software-defined assets
+    Using dbt with Dagster assets
   </a>{" "}
   tutorial.
 </Note>
@@ -17,7 +17,7 @@ By this point, you've [set up a dbt project](/integrations/dbt/using-dbt-with-da
 
 However, the tables at the root of the pipeline are static: they're [dbt seeds](https://docs.getdbt.com/docs/build/seeds), CSVs that are hardcoded into the dbt project. In a more realistic data pipeline, these tables would typically be ingested from some external data source, for example by using a tool like Airbyte or Fivetran, or by Python code.
 
-These ingestion steps in the pipeline often don't make sense to define inside dbt, but they often still do make sense to define as Dagster software-defined assets. You can think of a Dagster software-defined asset as a more general version of a dbt model. A dbt model is one kind of asset, but another kind is one that's defined in Python, using Dagster's Python API. The dbt integration reference page includes a [section](/integrations/dbt/reference#dbt-models-and-dagster-software-defined-assets) that outlines the parallels between dbt models and Dagster Software-defined Assets.
+These ingestion steps in the pipeline often don't make sense to define inside dbt, but they often still do make sense to define as Dagster assets. You can think of a Dagster asset definition as a more general version of a dbt model. A dbt model is one kind of asset, but another kind is one that's defined in Python, using Dagster's Python API. The dbt integration reference page includes a [section](/integrations/dbt/reference#dbt-models-and-dagster-asset-definitions) that outlines the parallels between dbt models and Dagster asset definitions.
 
 In this section, you'll replace the `raw_customers` dbt seed with a Dagster asset that represents it. You'll write Python code that populates this table by fetching data from the web. This will allow you to launch runs that first execute Python code to populate the `raw_customers` table and then invoke dbt to populate the downstream tables.
 

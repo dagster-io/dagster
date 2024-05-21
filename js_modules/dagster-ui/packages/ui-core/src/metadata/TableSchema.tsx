@@ -12,13 +12,14 @@ import {
 import {Spacing} from '@dagster-io/ui-components/src/components/types';
 import {createContext, useContext, useState} from 'react';
 
+import {MetadataEntryLabelOnly} from './MetadataEntry';
 import {TableSchemaFragment} from './types/TableSchemaFragment.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {StyledTableWithHeader} from '../assets/AssetEventMetadataEntriesTable';
 import {AssetFeatureContext} from '../assets/AssetFeatureContext';
 import {
   AssetKeyInput,
-  MaterializationEvent,
+  CodeReferencesMetadataEntry,
   TableColumnLineageMetadataEntry,
   TableSchemaMetadataEntry,
 } from '../graphql/types';
@@ -34,11 +35,6 @@ interface ITableSchemaProps {
   itemHorizontalPadding?: Spacing;
 }
 
-type MetadataEntryLabelOnly = Pick<
-  MaterializationEvent['metadataEntries'][0],
-  '__typename' | 'label'
->;
-
 export const isCanonicalColumnSchemaEntry = (
   m: MetadataEntryLabelOnly,
 ): m is TableSchemaMetadataEntry =>
@@ -48,6 +44,11 @@ export const isCanonicalColumnLineageEntry = (
   m: MetadataEntryLabelOnly,
 ): m is TableColumnLineageMetadataEntry =>
   m.__typename === 'TableColumnLineageMetadataEntry' && m.label === 'dagster/column_lineage';
+
+export const isCanonicalCodeSourceEntry = (
+  m: MetadataEntryLabelOnly,
+): m is CodeReferencesMetadataEntry =>
+  m && m.__typename === 'CodeReferencesMetadataEntry' && m.label === 'dagster/code_references';
 
 export const TableSchemaAssetContext = createContext<{
   assetKey: AssetKeyInput | undefined;

@@ -27,9 +27,9 @@ This guide focuses on how to work with Airbyte Cloud connections using Dagster's
 
 ---
 
-## Airbyte Cloud connections and Dagster software-defined assets
+## Airbyte Cloud connections and Dagster assets
 
-An [Airbyte Cloud connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as a software-defined asset. This enables you to easily:
+An [Airbyte Cloud connection](https://docs.airbyte.com/understanding-airbyte/connections/) defines a series of data streams which are synced between a source and a destination. During a sync, a replica of the data from each data stream is written to the destination, typically as one or more tables. Dagster represents each of the replicas generated in the destination as an asset. This enables you to easily:
 
 - Visualize the streams involved in an Airbyte Cloud connection and execute a sync from Dagster
 - Define downstream computations which depend on replicas produced by Airbyte
@@ -68,7 +68,7 @@ Here, the API key is provided using an <PyObject object="EnvVar" />. For more in
 
 ## Step 2: Building Airbyte Cloud assets using Dagster
 
-In order to create software-defined assets for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI, located between `/connections/` and `/status`.
+In order to create asset definitions for your Airbyte Cloud connections, you will first need to determine the connection IDs for each of the connections you would like to build assets for. The connection ID can be seen in the URL of the connection page when viewing the Airbyte Cloud UI, located between `/connections/` and `/status`.
 
 For example, the connection ID for the URL `https://cloud.airbyte.com/workspaces/11f3741b-0b54-45f8-9886-937f96f2ba88/connections/43908042-8399-4a58-82f1-71a45099fff7/status` is `43908042-8399-4a58-82f1-71a45099fff7`.
 
@@ -81,7 +81,7 @@ For example, the connection ID for the URL `https://cloud.airbyte.com/workspaces
   />
 </center>
 
-Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of software-defined assets corresponding to the tables which Airbyte creates in the destination.
+Then, supply the connection ID and the list of tables which the connection creates in the destination to `build_airbyte_assets`. This utility will generate a set of f corresponding to the tables which Airbyte creates in the destination.
 
 ```python startafter=start_manually_define_airbyte_assets_cloud endbefore=end_manually_define_airbyte_assets_cloud file=/integrations/airbyte/airbyte.py dedent=4
 from dagster_airbyte import build_airbyte_assets
@@ -319,7 +319,7 @@ If you have questions on using Airbyte with Dagster, we'd love to hear from you:
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/assets/software-defined-assets"
-    title="Software-defined assets"
+    title="Asset definitions"
   ></ArticleListItem>
   <ArticleListItem
     href="/concepts/resources"

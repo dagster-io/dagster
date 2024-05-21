@@ -1,5 +1,4 @@
 # ruff: noqa: SLF001
-
 import datetime
 import os
 import re
@@ -17,6 +16,7 @@ from dagster import (
     op,
     reconstructable,
 )
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
@@ -658,7 +658,7 @@ def test_add_asset_event_tags_table(hostname, conn_string):
     @op
     def yields_materialization_w_tags():
         yield AssetMaterialization(asset_key=AssetKey(["a"]))
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
         yield Output(1)
 
     @job
@@ -696,7 +696,7 @@ def test_add_asset_event_tags_table(hostname, conn_string):
             assert "asset_event_tags" in get_tables(instance)
             asset_job.execute_in_process(instance=instance)
             assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
-                {"dagster/foo": "bar"}
+                {DATA_VERSION_TAG: "bar"}
             ]
 
             indexes = get_indexes(instance, "asset_event_tags")

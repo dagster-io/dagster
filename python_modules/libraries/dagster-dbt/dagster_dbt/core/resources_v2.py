@@ -7,6 +7,8 @@ import subprocess
 import sys
 import uuid
 from argparse import Namespace
+from collections import abc
+from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
@@ -14,6 +16,8 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Generic,
+    Iterable,
     Iterator,
     List,
     Mapping,
@@ -25,10 +29,10 @@ from typing import (
     cast,
 )
 
-import dagster._check as check
 import dateutil.parser
 import orjson
 from dagster import (
+    AssetCheckKey,
     AssetCheckResult,
     AssetCheckSeverity,
     AssetExecutionContext,
@@ -40,21 +44,23 @@ from dagster import (
     Output,
     TableColumnDep,
     TableColumnLineage,
+    _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.metadata import (
     TableMetadataSet,
+    TextMetadataValue,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._model.pydantic_compat_layer import compat_model_validator
+from dagster._utils import pushd
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.adapters.base.impl import BaseAdapter
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.events.functions import cleanup_event_logger
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
@@ -69,7 +75,7 @@ from sqlglot import (
 from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
-from typing_extensions import Final, Literal
+from typing_extensions import Final, Literal, TypeVar
 
 from ..asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
@@ -94,6 +100,17 @@ from ..utils import (
     ASSET_RESOURCE_TYPES,
     get_dbt_resource_props_by_dbt_unique_id_from_manifest,
 )
+from .utils import get_future_completion_state_or_err
+
+IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
+
+if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+    from dbt.events.functions import cleanup_event_logger  # type: ignore
+
+    REFABLE_NODE_TYPES = NodeType.refable()  # type: ignore
+else:
+    from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
+    from dbt_common.events.event_manager_client import cleanup_event_logger
 
 logger = get_dagster_logger()
 
@@ -104,7 +121,10 @@ DBT_PROFILES_YML_NAME = "profiles.yml"
 PARTIAL_PARSE_FILE_NAME = "partial_parse.msgpack"
 DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = 2
 
+DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
+
+STREAM_EVENTS_THREADPOOL_SIZE: Final[int] = 4
 
 
 def _get_dbt_target_path() -> Path:
@@ -247,7 +267,7 @@ class DbtCliEventMessage:
         is_node_successful = node_status == NodeStatus.Success
         is_node_finished = bool(event_node_info.get("node_finished_at"))
         if (
-            node_resource_type in NodeType.refable()
+            node_resource_type in REFABLE_NODE_TYPES
             and is_node_successful
             and not is_node_ephemeral
         ):
@@ -377,11 +397,8 @@ class DbtCliEventMessage:
             Dict[str, Any]: The lineage metadata.
         """
         if (
-            # The dbt project name is only available from the manifest in `dbt-core>=1.6`.
-            version.parse(dbt_version) < version.parse("1.6.0")
             # Column lineage can only be built if initial metadata is provided.
-            or not self.has_column_lineage_metadata
-            or not target_path
+            not self.has_column_lineage_metadata or not target_path
         ):
             return {}
 
@@ -506,6 +523,9 @@ class DbtCliEventMessage:
             return dict(
                 TableMetadataSet(column_lineage=TableColumnLineage(deps_by_column=deps_by_column))
             )
+
+
+DbtDagsterEventType = Union[Output, AssetMaterialization, AssetCheckResult, AssetObservation]
 
 
 @dataclass
@@ -636,17 +656,24 @@ class DbtCliInvocation:
 
         return self.process.wait() == 0
 
+    def _stream_asset_events(
+        self,
+    ) -> Iterator[DbtDagsterEventType]:
+        """Stream the dbt CLI events and convert them to Dagster events."""
+        for event in self.stream_raw_events():
+            yield from event.to_default_asset_events(
+                manifest=self.manifest,
+                dagster_dbt_translator=self.dagster_dbt_translator,
+                context=self.context,
+                target_path=self.target_path,
+            )
+
     @public
     def stream(
         self,
-    ) -> Iterator[
-        Union[
-            Output,
-            AssetMaterialization,
-            AssetObservation,
-            AssetCheckResult,
-        ]
-    ]:
+    ) -> (
+        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
+    ):
         """Stream the events from the dbt CLI process and convert them to Dagster events.
 
         Returns:
@@ -672,13 +699,7 @@ class DbtCliInvocation:
                 def my_dbt_assets(context, dbt: DbtCliResource):
                     yield from dbt.cli(["run"], context=context).stream()
         """
-        for event in self.stream_raw_events():
-            yield from event.to_default_asset_events(
-                manifest=self.manifest,
-                dagster_dbt_translator=self.dagster_dbt_translator,
-                context=self.context,
-                target_path=self.target_path,
-            )
+        return DbtEventIterator(self._stream_asset_events(), self)
 
     @public
     def stream_raw_events(self) -> Iterator[DbtCliEventMessage]:
@@ -832,6 +853,188 @@ class DbtCliInvocation:
                     f" the error{extra_description}.{self._format_error_messages()}"
                 ),
             )
+
+
+# We define DbtEventIterator as a generic type for the sake of type hinting.
+# This is so that users who inspect the type of the return value of `DbtCliInvocation.stream()`
+# will be able to see the inner type of the iterator, rather than just `DbtEventIterator`.
+T = TypeVar("T", bound=DbtDagsterEventType)
+
+
+class DbtEventIterator(Generic[T], abc.Iterator):
+    """A wrapper around an iterator of dbt events which contains additional methods for
+    post-processing the events, such as fetching row counts for materialized tables.
+    """
+
+    def __init__(self, events: Iterator[T], dbt_cli_invocation: DbtCliInvocation) -> None:
+        self._inner_iterator = events
+        self._dbt_cli_invocation = dbt_cli_invocation
+
+    def __next__(self) -> T:
+        return next(self._inner_iterator)
+
+    def __iter__(self) -> "DbtEventIterator[T]":
+        return self
+
+    def _get_dbt_resource_props_from_event(self, event: DbtDagsterEventType) -> Dict[str, Any]:
+        unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
+        return check.not_none(self._dbt_cli_invocation.manifest["nodes"].get(unique_id))
+
+    def _fetch_and_attach_row_count_metadata(
+        self,
+        event: DbtDagsterEventType,
+    ) -> DbtDagsterEventType:
+        """Threaded task which fetches row counts for materialized dbt models in a dbt run
+        once they are built, and attaches the row count as metadata to the event.
+        """
+        adapter = check.not_none(self._dbt_cli_invocation.adapter)
+
+        dbt_resource_props = self._get_dbt_resource_props_from_event(event)
+        is_view = dbt_resource_props["config"]["materialized"] == "view"
+
+        # Avoid counting rows for views, since they may include complex SQL queries
+        # that are costly to execute. We can revisit this in the future if there is
+        # a demand for it.
+        if is_view:
+            return event
+
+        # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
+        # so that the DuckDB lock is released. This is because DuckDB does not allow for
+        # opening multiple connections to the same database when a write connection, such
+        # as the one dbt uses, is open.
+        try:
+            from dbt.adapters.duckdb import DuckDBAdapter
+
+            if isinstance(adapter, DuckDBAdapter):
+                self._dbt_run_thread.result()
+        except ImportError:
+            pass
+
+        unique_id = dbt_resource_props["unique_id"]
+        logger.debug("Fetching row count for %s", unique_id)
+        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+        try:
+            with adapter.connection_named(f"row_count_{unique_id}"):
+                query_result = adapter.execute(
+                    f"""
+                        SELECT
+                        count(*) as row_count
+                        FROM
+                        {table_str}
+                    """,
+                    fetch=True,
+                )
+            row_count = query_result[1][0]["row_count"]
+            additional_metadata = {**TableMetadataSet(row_count=row_count)}
+
+            return event.with_metadata(metadata={**event.metadata, **additional_metadata})
+        except Exception as e:
+            logger.exception(
+                f"An error occurred while fetching row count for {unique_id}. Row count metadata"
+                " will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+            return event
+
+    def _stream_dbt_events_and_enqueue_postprocessing(
+        self,
+        output_events_and_futures: List[Union[Future, DbtDagsterEventType]],
+        executor: ThreadPoolExecutor,
+    ) -> None:
+        """Task which streams dbt events and either directly places them in
+        the output_events list to be emitted to user code, or enqueues post-processing tasks
+        where needed.
+        """
+        for event in self:
+            # For any materialization or output event, we run postprocessing steps
+            # to attach additional metadata to the event.
+            if isinstance(event, (AssetMaterialization, Output)):
+                output_events_and_futures.append(
+                    executor.submit(
+                        self._fetch_and_attach_row_count_metadata,
+                        event,
+                    )
+                )
+            else:
+                output_events_and_futures.append(event)
+
+    @public
+    @experimental
+    def fetch_row_counts(
+        self,
+    ) -> (
+        "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
+    ):
+        """Experimental functionality which will fetch row counts for materialized dbt
+        models in a dbt run once they are built. Note that row counts will not be fetched
+        for views, since this requires running the view's SQL query which may be costly.
+
+        Returns:
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events for dbt models, with row counts attached,
+                yielded in the order they are emitted by dbt.
+        """
+        return DbtEventIterator(
+            self._fetch_row_counts_inner(),
+            dbt_cli_invocation=self._dbt_cli_invocation,
+        )
+
+    def _fetch_row_counts_inner(
+        self,
+    ) -> Iterator[
+        Union[
+            Output,
+            AssetMaterialization,
+            AssetObservation,
+            AssetCheckResult,
+        ]
+    ]:
+        logger.info("Row counts will be fetched for non-view models once they are materialized.")
+
+        # We keep a list of emitted Dagster events and pending futures which augment
+        # emitted events with additional metadata. This ensures we can yield events in the order
+        # they are emitted by dbt.
+        output_events_and_futures: List[Union[Future, DbtDagsterEventType]] = []
+
+        # Point at project directory to ensure dbt adapters run correctly
+        with pushd(str(self._dbt_cli_invocation.project_dir)), ThreadPoolExecutor(
+            max_workers=STREAM_EVENTS_THREADPOOL_SIZE
+        ) as executor:
+            self._dbt_run_thread = executor.submit(
+                self._stream_dbt_events_and_enqueue_postprocessing,
+                output_events_and_futures,
+                executor,
+            )
+
+            # Step through the list of output events and futures, yielding them in order
+            # once they are ready to be emitted
+            event_to_emit_idx = 0
+            while True:
+                all_work_complete = get_future_completion_state_or_err(
+                    [self._dbt_run_thread, *output_events_and_futures]
+                )
+                if all_work_complete and event_to_emit_idx >= len(output_events_and_futures):
+                    break
+
+                if event_to_emit_idx < len(output_events_and_futures):
+                    event_to_emit = output_events_and_futures[event_to_emit_idx]
+
+                    try:
+                        # If the next event to emit is a Future (waiting on postprocessing),
+                        # we need to wait for it to complete before yielding the event.
+                        event = (
+                            event_to_emit.result(timeout=0.1)
+                            if isinstance(event_to_emit, Future)
+                            else event_to_emit
+                        )
+                        yield event
+                        event_to_emit_idx += 1
+                    except:
+                        # If the Future has not completed, it will raise a TimeoutError.
+                        # Any other exception will be reraised in the main thread as part
+                        # of get_future_completion_state_or_err.
+                        pass
 
 
 class DbtCliResource(ConfigurableResource):
@@ -1075,9 +1278,9 @@ class DbtCliResource(ConfigurableResource):
     @compat_model_validator(mode="before")
     def validate_dbt_version(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that the dbt version is supported."""
-        if version.parse(dbt_version) < version.parse("1.5.0"):
+        if version.parse(dbt_version) < version.parse("1.6.0"):
             raise ValueError(
-                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.5.0`. Currently,"
+                "To use `dagster_dbt.DbtCliResource`, you must use `dbt-core>=1.6.0`. Currently,"
                 f" you are using `dbt-core=={dbt_version}`. Please install a compatible dbt-core"
                 " version."
             )
@@ -1109,7 +1312,12 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self, args: Sequence[str]) -> BaseAdapter:
+    def _initialize_adapter(self) -> BaseAdapter:
+        if not IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+            from dbt_common.context import set_invocation_context
+
+            set_invocation_context(os.environ.copy())
+
         # constructs a dummy set of flags, using the `run` command (ensures profile/project reqs get loaded)
         profiles_dir = self.profiles_dir if self.profiles_dir else self.project_dir
         set_from_args(Namespace(profiles_dir=profiles_dir), None)
@@ -1119,8 +1327,26 @@ class DbtCliResource(ConfigurableResource):
         project = load_project(self.project_dir, False, profile, {})
         config = RuntimeConfig.from_parts(project, profile, flags)
 
+        # If the dbt adapter is DuckDB, set the access mode to READ_ONLY, since DuckDB only allows
+        # simultaneous connections for read-only access.
+        try:
+            from dbt.adapters.duckdb.credentials import DuckDBCredentials
+
+            if isinstance(config.credentials, DuckDBCredentials):
+                if not config.credentials.config_options:
+                    config.credentials.config_options = {}
+                config.credentials.config_options["access_mode"] = "READ_ONLY"
+        except ImportError:
+            pass
+
         cleanup_event_logger()
-        register_adapter(config)
+        if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
+            register_adapter(config)  # type: ignore
+        else:
+            from dbt.mp_context import get_mp_context
+
+            register_adapter(config, get_mp_context())
+
         adapter = cast(BaseAdapter, get_adapter(config))
         # reset the adapter since the dummy flags may be different from the flags for the actual subcommand
         reset_adapters()
@@ -1137,11 +1363,7 @@ class DbtCliResource(ConfigurableResource):
         if not (self.state_path and Path(self.state_path).joinpath("manifest.json").exists()):
             return []
 
-        state_flag = "--defer-state"
-        if version.parse(dbt_version) < version.parse("1.6.0"):
-            state_flag = "--state"
-
-        return ["--defer", state_flag, self.state_path]
+        return ["--defer", "--defer-state", self.state_path]
 
     def get_state_args(self) -> Sequence[str]:
         """Build the state arguments for the dbt CLI command, using the supplied state directory.
@@ -1276,7 +1498,7 @@ class DbtCliResource(ConfigurableResource):
 
                 import json
 
-                from dagster import asset, op
+                from dagster import Nothing, Out, asset, op
                 from dagster_dbt import DbtCliResource
 
 
@@ -1286,10 +1508,10 @@ class DbtCliResource(ConfigurableResource):
                     dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
 
 
-                @op
+                @op(out=Out(Nothing))
                 def my_dbt_op(dbt: DbtCliResource):
                     dbt_macro_args = {"key": "value"}
-                    dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).wait()
+                    yield from dbt.cli(["run-operation", "my-macro", json.dumps(dbt_macro_args)]).stream()
         """
         dagster_dbt_translator = validate_opt_translator(dagster_dbt_translator)
 
@@ -1339,23 +1561,19 @@ class DbtCliResource(ConfigurableResource):
                 [assets_def]
             )
 
-            selection_args, indirect_selection = get_subset_selection_for_context(
+            selection_args, indirect_selection = _get_subset_selection_for_context(
                 context=context,
                 manifest=manifest,
                 select=context.op.tags.get(DAGSTER_DBT_SELECT_METADATA_KEY),
                 exclude=context.op.tags.get(DAGSTER_DBT_EXCLUDE_METADATA_KEY),
                 dagster_dbt_translator=dagster_dbt_translator,
+                current_dbt_indirect_selection_env=env.get(DBT_INDIRECT_SELECTION_ENV, None),
             )
 
             # set dbt indirect selection if needed to execute specific dbt tests due to asset check
             # selection
             if indirect_selection:
-                logger.info(
-                    "A subsetted execution for asset checks is being performed. Overriding default "
-                    f"`DBT_INDIRECT_SELECTION` {env.get('DBT_INDIRECT_SELECTION', 'eager')} with "
-                    f"`{indirect_selection}`."
-                )
-                env["DBT_INDIRECT_SELECTION"] = indirect_selection
+                env[DBT_INDIRECT_SELECTION_ENV] = indirect_selection
         else:
             manifest = validate_manifest(manifest) if manifest else {}
 
@@ -1380,31 +1598,35 @@ class DbtCliResource(ConfigurableResource):
         if not target_path.is_absolute():
             target_path = project_dir.joinpath(target_path)
 
-        try:
-            adapter = self._initialize_adapter(args)
-        except:
-            # defer exceptions until they can be raised in the runtime context of the invocation
-            adapter = None
+        adapter: Optional[BaseAdapter] = None
+        with pushd(self.project_dir):
+            try:
+                adapter = self._initialize_adapter()
 
-        return DbtCliInvocation.run(
-            args=args,
-            env=env,
-            manifest=manifest,
-            dagster_dbt_translator=dagster_dbt_translator,
-            project_dir=project_dir,
-            target_path=target_path,
-            raise_on_error=raise_on_error,
-            context=context,
-            adapter=adapter,
-        )
+            except:
+                # defer exceptions until they can be raised in the runtime context of the invocation
+                pass
+
+            return DbtCliInvocation.run(
+                args=args,
+                env=env,
+                manifest=manifest,
+                dagster_dbt_translator=dagster_dbt_translator,
+                project_dir=project_dir,
+                target_path=target_path,
+                raise_on_error=raise_on_error,
+                context=context,
+                adapter=adapter,
+            )
 
 
-def get_subset_selection_for_context(
+def _get_subset_selection_for_context(
     context: OpExecutionContext,
     manifest: Mapping[str, Any],
     select: Optional[str],
     exclude: Optional[str],
     dagster_dbt_translator: DagsterDbtTranslator,
+    current_dbt_indirect_selection_env: Optional[str],
 ) -> Tuple[List[str], Optional[str]]:
     """Generate a dbt selection string and DBT_INDIRECT_SELECTION setting to execute the selected
     resources in a subsetted execution context.
@@ -1413,8 +1635,14 @@ def get_subset_selection_for_context(
 
     Args:
         context (OpExecutionContext): The execution context for the current execution step.
+        manifest (Mapping[str, Any]): The dbt manifest blob.
         select (Optional[str]): A dbt selection string to select resources to materialize.
         exclude (Optional[str]): A dbt selection string to exclude resources from materializing.
+        dagster_dbt_translator (DagsterDbtTranslator): The translator to link dbt nodes to Dagster
+            assets.
+        current_dbt_indirect_selection_env (Optional[str]): The user's value for the DBT_INDIRECT_SELECTION
+            environment variable.
+
 
     Returns:
         List[str]: dbt CLI arguments to materialize the selected resources in a
@@ -1461,63 +1689,74 @@ def get_subset_selection_for_context(
 
         # Explicitly select a dbt resource by its fully qualified name (FQN).
         # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = f"fqn:{'.'.join(dbt_resource_props['fqn'])}"
+        fqn_selector = ".".join(dbt_resource_props["fqn"])
 
         selected_dbt_non_test_resources.append(fqn_selector)
-
-    selected_dbt_tests = []
-    for _, check_name in context.selected_asset_check_keys:
-        test_resource_props = dbt_resource_props_by_test_name[check_name]
-
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = f"fqn:{'.'.join(test_resource_props['fqn'])}"
-
-        selected_dbt_tests.append(fqn_selector)
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
     # 1. all the selected checks are for selected assets
     # 2. no checks for selected assets are excluded
     # This also means we'll run any singular tests.
-    selected_checks_target_selected_assets = all(
-        check_key.asset_key in context.selected_asset_keys
+    checks_on_non_selected_assets = [
+        check_key
         for check_key in context.selected_asset_check_keys
-    )
+        if check_key.asset_key not in context.selected_asset_keys
+    ]
     all_check_keys = {
         check_spec.key for check_spec in assets_def.node_check_specs_by_output_name.values()
     }
-    all_checks_included_for_selected_assets = all(
-        check_key.asset_key not in context.selected_asset_keys
-        for check_key in (all_check_keys - context.selected_asset_check_keys)
-    )
+    excluded_checks = all_check_keys.difference(context.selected_asset_check_keys)
+    excluded_checks_on_selected_assets = [
+        check_key
+        for check_key in excluded_checks
+        if check_key.asset_key in context.selected_asset_keys
+    ]
 
-    # note that this will always be true if checks are disabled
-    if selected_checks_target_selected_assets and all_checks_included_for_selected_assets:
-        selected_dbt_resources = selected_dbt_non_test_resources
-        indirect_selection = None
+    # note that this will always be false if checks are disabled (which means the assets_def has no
+    # check specs)
+    if excluded_checks_on_selected_assets:
+        # select all assets and tests explicitly, and turn off indirect selection. This risks
+        # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
+        # (all checks disabled, only one check and no assets) it's not a concern.
+        # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
+        selected_dbt_resources = [
+            *selected_dbt_non_test_resources,
+            *_get_dbt_test_names_for_asset_checks(
+                context.selected_asset_check_keys, dbt_resource_props_by_test_name
+            ),
+        ]
+        indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
         logger.info(
-            "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`. "
+            "Overriding default `DBT_INDIRECT_SELECTION` "
+            f"{current_dbt_indirect_selection_env or 'eager'} with "
+            f"`{indirect_selection_override}` due to additional checks "
+            f"{', '.join([c.to_user_string() for c in checks_on_non_selected_assets])} "
+            f"and excluded checks {', '.join([c.to_user_string() for c in excluded_checks_on_selected_assets])}."
         )
-    # otherwise we select all assets and tests explicitly, and turn off indirect selection. This risks
-    # hitting the CLI argument length limit, but in the common scenarios that can be launched from the UI
-    # (all checks disabled, only one check and no assets) it's not a concern.
-    # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
+    elif checks_on_non_selected_assets:
+        # explicitly select the tests that won't be run via indirect selection
+        selected_dbt_resources = [
+            *selected_dbt_non_test_resources,
+            *_get_dbt_test_names_for_asset_checks(
+                checks_on_non_selected_assets, dbt_resource_props_by_test_name
+            ),
+        ]
+        indirect_selection_override = None
     else:
-        check.invariant(dagster_dbt_translator.settings.enable_asset_checks)
-        selected_dbt_resources = selected_dbt_non_test_resources + selected_dbt_tests
-        indirect_selection = DBT_EMPTY_INDIRECT_SELECTION
-        logger.info(
-            "A dbt subsetted execution is being performed. Overriding default dbt selection"
-            f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
-        )
+        selected_dbt_resources = selected_dbt_non_test_resources
+        indirect_selection_override = None
+
+    logger.info(
+        "A dbt subsetted execution is being performed. Overriding default dbt selection"
+        f" arguments `{default_dbt_selection}` with arguments: `{selected_dbt_resources}`."
+    )
 
     # Take the union of all the selected resources.
     # https://docs.getdbt.com/reference/node-selection/set-operators#unions
     union_selected_dbt_resources = ["--select"] + [" ".join(selected_dbt_resources)]
 
-    return union_selected_dbt_resources, indirect_selection
+    return union_selected_dbt_resources, indirect_selection_override
 
 
 def get_dbt_resource_props_by_output_name(
@@ -1540,3 +1779,17 @@ def get_dbt_resource_props_by_test_name(
         for unique_id, dbt_resource_props in manifest["nodes"].items()
         if unique_id.startswith("test")
     }
+
+
+def _get_dbt_test_names_for_asset_checks(
+    check_keys: Iterable[AssetCheckKey], dbt_resource_props_by_test_name
+) -> List[str]:
+    selected_dbt_tests = []
+    for key in check_keys:
+        test_resource_props = dbt_resource_props_by_test_name[key.name]
+
+        # Explicitly select a dbt resource by its fully qualified name (FQN).
+        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+        fqn_selector = ".".join(test_resource_props["fqn"])
+        selected_dbt_tests.append(fqn_selector)
+    return selected_dbt_tests

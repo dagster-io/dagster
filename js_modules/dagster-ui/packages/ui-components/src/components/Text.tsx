@@ -85,7 +85,7 @@ export const CaptionSubtitle = styled(Text)`
 export const CaptionBolded = styled(Text)`
   font-family: ${FontFamily.default};
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
 `;
 
 export const Code = styled(Text)`

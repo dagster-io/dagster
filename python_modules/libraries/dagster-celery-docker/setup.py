@@ -36,6 +36,7 @@ setup(
         f"dagster-celery{pin}",
         f"dagster-graphql{pin}",
         "docker",
+        "requests<2.32.0",  # 2.32.0 breaks our docker tests https://buildkite.com/dagster/dagster-dagster/builds/83562
     ],
     zip_safe=False,
 )

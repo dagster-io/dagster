@@ -13,7 +13,7 @@ description: Dagster can orchestrate dbt Cloud alongside other technologies.
   !
 </Note>
 
-Dagster allows you to run dbt Cloud alongside other technologies like Spark, Python, etc., and has built-in support for loading dbt Cloud models, seeds, and snapshots as [Software-defined Assets](/concepts/assets/software-defined-assets).
+Dagster allows you to run dbt Cloud alongside other technologies like Spark, Python, etc., and has built-in support for loading dbt Cloud models, seeds, and snapshots as [asset definitions](/concepts/assets/software-defined-assets).
 
 ---
 
@@ -64,7 +64,7 @@ In this example, <PyObject object="EnvVar" /> is used to pass in dbt Cloud crede
 
 ## Step 2: Loading dbt Cloud models as assets
 
-In this step, you'll load the dbt Cloud models managed by a dbt Cloud job into Dagster as [Software-defined Assets](/concepts/assets/software-defined-assets).
+In this step, you'll load the dbt Cloud models managed by a dbt Cloud job into Dagster as [asset definitions](/concepts/assets/software-defined-assets).
 
 For context, a dbt Cloud job defines set of commands to run for a dbt Cloud project. The dbt Cloud models managed by a dbt Cloud job are the models that are run by the job after filtering options are respected.
 
@@ -93,7 +93,7 @@ When invoked, the function:
 
 1. Invokes your dbt Cloud job with command overrides to compile your dbt project,
 2. Parses the metadata provided by dbt Cloud, and
-3. Generates a set of Software-defined Assets reflecting the models in the project managed by the dbt Cloud job. Materializing these assets will run the dbt Cloud job that is represented by the loaded assets.
+3. Generates a set of asset definitions reflecting the models in the project managed by the dbt Cloud job. Materializing these assets will run the dbt Cloud job that is represented by the loaded assets.
 
 ---
 
@@ -203,5 +203,5 @@ By now, you should have a working dbt Cloud and Dagster integration and a handfu
 
 What's next? From here, you can:
 
-- Learn more about [Software-defined Assets](/concepts/assets/software-defined-assets)
+- Learn more about [asset definitions](/concepts/assets/software-defined-assets)
 - Check out the [`dagster-dbt` API docs](/\_apidocs/libraries/dagster-dbt)

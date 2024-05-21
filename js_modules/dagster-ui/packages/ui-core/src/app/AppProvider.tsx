@@ -28,6 +28,7 @@ import {migrateLocalStorageKeys} from './migrateLocalStorageKeys';
 import {TimeProvider} from './time/TimeContext';
 import {AssetLiveDataProvider} from '../asset-data/AssetLiveDataProvider';
 import {AssetRunLogObserver} from '../asset-graph/AssetRunLogObserver';
+import {CodeLinkProtocolProvider} from '../code-links/CodeLinkProtocol';
 import {DeploymentStatusProvider, DeploymentStatusType} from '../instance/DeploymentStatusProvider';
 import {InstancePageContext} from '../instance/InstancePageContext';
 import {PerformancePageNavigationListener} from '../performance';
@@ -139,25 +140,27 @@ export const AppProvider = (props: AppProviderProps) => {
                 <CompatRouter>
                   <PerformancePageNavigationListener />
                   <TimeProvider>
-                    <WorkspaceProvider>
-                      <DeploymentStatusProvider include={statusPolling}>
-                        <CustomConfirmationProvider>
-                          <AnalyticsContext.Provider value={analytics}>
-                            <InstancePageContext.Provider value={instancePageValue}>
-                              <JobFeatureProvider>
-                                <LayoutProvider>
-                                  <DagsterPlusLaunchPromotion />
-                                  {props.children}
-                                </LayoutProvider>
-                              </JobFeatureProvider>
-                            </InstancePageContext.Provider>
-                          </AnalyticsContext.Provider>
-                        </CustomConfirmationProvider>
-                        <CustomTooltipProvider />
-                        <CustomAlertProvider />
-                        <AssetRunLogObserver />
-                      </DeploymentStatusProvider>
-                    </WorkspaceProvider>
+                    <CodeLinkProtocolProvider>
+                      <WorkspaceProvider>
+                        <DeploymentStatusProvider include={statusPolling}>
+                          <CustomConfirmationProvider>
+                            <AnalyticsContext.Provider value={analytics}>
+                              <InstancePageContext.Provider value={instancePageValue}>
+                                <JobFeatureProvider>
+                                  <LayoutProvider>
+                                    <DagsterPlusLaunchPromotion />
+                                    {props.children}
+                                  </LayoutProvider>
+                                </JobFeatureProvider>
+                              </InstancePageContext.Provider>
+                            </AnalyticsContext.Provider>
+                          </CustomConfirmationProvider>
+                          <CustomTooltipProvider />
+                          <CustomAlertProvider />
+                          <AssetRunLogObserver />
+                        </DeploymentStatusProvider>
+                      </WorkspaceProvider>
+                    </CodeLinkProtocolProvider>
                   </TimeProvider>
                 </CompatRouter>
               </BrowserRouter>

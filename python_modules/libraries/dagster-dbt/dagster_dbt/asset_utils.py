@@ -41,8 +41,6 @@ from dagster._core.definitions.decorators.asset_decorator import (
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
-from dbt.version import __version__ as dbt_version
-from packaging import version
 
 from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
 
@@ -641,6 +639,7 @@ def is_non_asset_node(dbt_resource_props: Mapping[str, Any]):
         [
             resource_type == "metric",
             resource_type == "semantic_model",
+            resource_type == "saved_query",
             resource_type == "model"
             and dbt_resource_props.get("config", {}).get("materialized") == "ephemeral",
         ]
@@ -868,7 +867,7 @@ def get_asset_check_key_for_test(
     )
 
     # Attempt to find the attached node from the ref.
-    if attached_node_ref and version.parse(dbt_version) >= version.parse("1.6.0"):
+    if attached_node_ref:
         ref_name, ref_package, ref_version = (
             attached_node_ref["name"],
             attached_node_ref.get("package"),

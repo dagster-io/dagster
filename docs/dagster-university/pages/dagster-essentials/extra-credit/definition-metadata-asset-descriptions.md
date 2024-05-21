@@ -23,7 +23,7 @@ Docstrings are defined by including a string, surrounded by triple quotes (`â€â
 from dagster import asset
 
 @asset
-def taxi_zones_file():
+def taxi_zones_file() -> None:
     """
       The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal.
     """
@@ -49,7 +49,7 @@ from dagster import asset
 @asset(
     description="The raw CSV file for the taxi zones dataset. Sourced from the NYC Open Data portal."
 )
-def taxi_zones_file():
+def taxi_zones_file() -> None:
     """
       This will not show in the Dagster UI
     """

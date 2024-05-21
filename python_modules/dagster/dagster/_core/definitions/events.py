@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -15,6 +16,8 @@ from typing import (
     cast,
 )
 
+from typing_extensions import Self
+
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, experimental_param, public
 from dagster._core.definitions.asset_key import (
@@ -23,8 +26,13 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix as CoercibleToAssetKeyPrefix,
     parse_asset_key_string,
 )
-from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, SYSTEM_TAG_PREFIX
+from dagster._core.definitions.data_version import (
+    _OLD_DATA_VERSION_TAG,
+    _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
+    DATA_VERSION_TAG,
+    DataVersion,
+)
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 
@@ -63,11 +71,19 @@ class AssetLineageInfo(
         return super(AssetLineageInfo, cls).__new__(cls, asset_key=asset_key, partitions=partitions)
 
 
+class EventWithMetadata(ABC):
+    @abstractmethod
+    def with_metadata(self, metadata: Optional[Mapping[str, RawMetadataValue]]) -> Self:
+        """Returns a new instance of the event with the same properties as the original,
+        but with metadata replaced by the provided value.
+        """
+
+
 T = TypeVar("T")
 
 
 @experimental_param(param="data_version")
-class Output(Generic[T]):
+class Output(Generic[T], EventWithMetadata):
     """Event corresponding to one of an op's outputs.
 
     Op compute functions must explicitly yield events of this type when they have more than
@@ -88,6 +104,8 @@ class Output(Generic[T]):
             list, and one of the data classes returned by a MetadataValue static method.
         data_version (Optional[DataVersion]): (Experimental) A data version to manually set
             for the asset.
+        tags (Optional[Mapping[str, str]]): (Experimental) Tags that will be attached to the asset
+            materialization event corresponding to this output, if there is one.
     """
 
     def __init__(
@@ -96,6 +114,8 @@ class Output(Generic[T]):
         output_name: Optional[str] = DEFAULT_OUTPUT,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         data_version: Optional[DataVersion] = None,
+        *,
+        tags: Optional[Mapping[str, str]] = None,
     ):
         self._value = value
         self._output_name = check.str_param(output_name, "output_name")
@@ -103,10 +123,15 @@ class Output(Generic[T]):
         self._metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
         )
+        self._tags = validate_asset_event_tags(tags)
 
     @property
     def metadata(self) -> MetadataMapping:
         return self._metadata
+
+    @property
+    def tags(self) -> Optional[Mapping[str, str]]:
+        return self._tags
 
     @public
     @property
@@ -132,6 +157,19 @@ class Output(Generic[T]):
             and self.value == other.value
             and self.output_name == other.output_name
             and self.metadata == other.metadata
+            and self.tags == other.tags
+        )
+
+    def with_metadata(self, metadata: Optional[Mapping[str, RawMetadataValue]]) -> "Output":
+        """Returns a new Output with the same value and output_name,
+        but with the provided metadata.
+        """
+        return Output(
+            value=self.value,
+            output_name=self.output_name,
+            metadata=metadata,
+            data_version=self.data_version,
+            tags=self.tags,
         )
 
 
@@ -219,7 +257,8 @@ class AssetObservation(
             ("partition", PublicAttr[Optional[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
-    )
+    ),
+    EventWithMetadata,
 ):
     """Event that captures metadata about an asset at a point in time.
 
@@ -227,8 +266,7 @@ class AssetObservation(
         asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
-        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
-            observation. Users should not pass values into this argument.
+        tags (Optional[Mapping[str, str]]): A mapping containing tags for the observation.
         metadata (Optional[Dict[str, Union[str, float, int, MetadataValue]]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -251,12 +289,7 @@ class AssetObservation(
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        tags = check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-        if any([not tag.startswith(SYSTEM_TAG_PREFIX) for tag in tags or {}]):
-            check.failed(
-                "Users should not pass values into the tags argument for AssetMaterializations. "
-                "The tags argument is reserved for system-populated tags."
-            )
+        validate_asset_event_tags(tags)
 
         normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -267,7 +300,7 @@ class AssetObservation(
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             metadata=normed_metadata,
-            tags=tags,
+            tags=tags or {},
             partition=check.opt_str_param(partition, "partition"),
         )
 
@@ -278,6 +311,17 @@ class AssetObservation(
     @property
     def data_version(self) -> Optional[str]:
         return self.tags.get(DATA_VERSION_TAG)
+
+    def with_metadata(
+        self, metadata: Optional[Mapping[str, RawMetadataValue]]
+    ) -> "AssetObservation":
+        return AssetObservation(
+            asset_key=self.asset_key,
+            description=self.description,
+            metadata=metadata,
+            partition=self.partition,
+            tags=self.tags,
+        )
 
 
 UNDEFINED_ASSET_KEY_PATH = ["__undefined__"]
@@ -310,7 +354,8 @@ class AssetMaterialization(
             ("partition", PublicAttr[Optional[str]]),
             ("tags", Optional[Mapping[str, str]]),
         ],
-    )
+    ),
+    EventWithMetadata,
 ):
     """Event indicating that an op has materialized an asset.
 
@@ -329,8 +374,7 @@ class AssetMaterialization(
         description (Optional[str]): A longer human-readable description of the materialized value.
         partition (Optional[str]): The name of the partition
             that was materialized.
-        tags (Optional[Mapping[str, str]]): A mapping containing system-populated tags for the
-            materialization. Users should not pass values into this argument.
+        tags (Optional[Mapping[str, str]]): A mapping containing tags for the materialization.
         metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
@@ -355,13 +399,7 @@ class AssetMaterialization(
             check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
-        check.opt_mapping_param(tags, "tags", key_type=str, value_type=str)
-        invalid_tags = [tag for tag in tags or {} if not tag.startswith(SYSTEM_TAG_PREFIX)]
-        if len(invalid_tags) > 0:
-            check.failed(
-                f"Invalid tags: {tags} Users should not pass values into the tags argument for"
-                " AssetMaterializations. The tags argument is reserved for system-populated tags."
-            )
+        validate_asset_event_tags(tags)
 
         normed_metadata = normalize_metadata(
             check.opt_mapping_param(metadata, "metadata", key_type=str),
@@ -413,6 +451,17 @@ class AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
             metadata={"path": MetadataValue.path(path)},
+        )
+
+    def with_metadata(
+        self, metadata: Optional[Mapping[str, RawMetadataValue]]
+    ) -> "AssetMaterialization":
+        return AssetMaterialization(
+            asset_key=self.asset_key,
+            description=self.description,
+            metadata=metadata,
+            partition=self.partition,
+            tags=self.tags,
         )
 
 
@@ -690,3 +739,36 @@ class HookExecutionResult(
 
 
 UserEvent = Union[AssetMaterialization, AssetObservation, ExpectationResult]
+
+
+def validate_asset_event_tags(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
+    from dagster._core.definitions.utils import validate_tag_strict
+
+    if tags is None:
+        return None
+
+    for key, value in tags.items():
+        # The format of these particular tags does not fit strict validation. E.g.
+        # - Some of the keys have two slashes
+        # - The value for the data/code version tags can be an arbitrary string
+        if not is_system_asset_event_tag(key):
+            validate_tag_strict(key, value)
+
+    return tags
+
+
+def is_system_asset_event_tag(key: str) -> bool:
+    from .data_version import (
+        CODE_VERSION_TAG,
+        DATA_VERSION_TAG,
+        INPUT_DATA_VERSION_TAG_PREFIX,
+        INPUT_EVENT_POINTER_TAG_PREFIX,
+    )
+
+    return (
+        key in [CODE_VERSION_TAG, DATA_VERSION_TAG, _OLD_DATA_VERSION_TAG, REPORTING_USER_TAG]
+        or key.startswith(INPUT_DATA_VERSION_TAG_PREFIX)
+        or key.startswith(INPUT_EVENT_POINTER_TAG_PREFIX)
+        or key.startswith(_OLD_INPUT_DATA_VERSION_TAG_PREFIX)
+        or key.startswith(MULTIDIMENSIONAL_PARTITION_PREFIX)
+    )

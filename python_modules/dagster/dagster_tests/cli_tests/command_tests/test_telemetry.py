@@ -554,7 +554,7 @@ def test_get_stats_from_external_repo_pipes_client(instance):
     )
     stats = get_stats_from_external_repo(external_repo)
     assert stats["dagster_resources"] == [
-        {"module_name": "dagster", "class_name": "_PipesSubprocess"}
+        {"module_name": "dagster", "class_name": "PipesSubprocessClient"}
     ]
     assert stats["has_custom_resources"] == "False"
 

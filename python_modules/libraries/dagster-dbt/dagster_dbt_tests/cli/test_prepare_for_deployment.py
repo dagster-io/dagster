@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+import yaml
 from dagster import AssetsDefinition, materialize
 from dagster_dbt.cli.app import app
 from dagster_dbt.core.resources_v2 import DbtCliResource
@@ -55,6 +56,122 @@ def test_prepare_for_deployment(monkeypatch: pytest.MonkeyPatch, dbt_project_dir
     assert result.exit_code == 0
     assert manifest_path.exists()
     assert packaged_project_dir.exists()
+
+
+def test_prepare_for_deployment_with_dependencies(
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(dbt_project_dir)
+
+    project_name = "jaffle_dagster"
+    dagster_project_dir = dbt_project_dir.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+            "--use-experimental-dbt-project",
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    dependencies_path = dbt_project_dir.joinpath("dependencies.yml")
+    packages_path = dbt_project_dir.joinpath("packages.yml")
+    packages_install_path = dbt_project_dir.joinpath("dbt_packages")
+    manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+
+    # Scaffold doesn't include a dependencies.yml file, let's create one
+    with open(dependencies_path, "w") as file:
+        dependencies_yml = {
+            "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
+        }
+        yaml.dump(dependencies_yml, file)
+    # Delete dbt_packages
+    if packages_install_path.exists():
+        shutil.rmtree(packages_install_path)
+
+    assert dependencies_path.exists()
+    assert not packages_path.exists()
+    assert not packages_install_path.exists()
+    assert not manifest_path.exists()
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "prepare-for-deployment",
+            "--file",
+            os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert packages_install_path.exists()
+    assert manifest_path.exists()
+
+
+def test_prepare_for_deployment_with_packages(
+    monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
+) -> None:
+    monkeypatch.chdir(dbt_project_dir)
+
+    project_name = "jaffle_dagster"
+    dagster_project_dir = dbt_project_dir.joinpath(project_name)
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "scaffold",
+            "--project-name",
+            project_name,
+            "--dbt-project-dir",
+            os.fspath(dbt_project_dir),
+            "--use-experimental-dbt-project",
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    dependencies_path = dbt_project_dir.joinpath("dependencies.yml")
+    packages_path = dbt_project_dir.joinpath("packages.yml")
+    packages_install_path = dbt_project_dir.joinpath("dbt_packages")
+    manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
+
+    # Scaffold doesn't include a packages.yml file, let's create one
+    with open(packages_path, "w") as file:
+        packages_yml = {
+            "packages": [{"package": "dbt-labs/dbt_utils", "version": [">=1.1.1", "<2.0.0"]}]
+        }
+        yaml.dump(packages_yml, file)
+    # Delete dbt_packages
+    if packages_install_path.exists():
+        shutil.rmtree(packages_install_path)
+
+    assert not dependencies_path.exists()
+    assert packages_path.exists()
+    assert not packages_install_path.exists()
+    assert not manifest_path.exists()
+
+    result = runner.invoke(
+        app,
+        [
+            "project",
+            "prepare-for-deployment",
+            "--file",
+            os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert packages_install_path.exists()
+    assert manifest_path.exists()
 
 
 def test_prepare_for_deployment_with_state(

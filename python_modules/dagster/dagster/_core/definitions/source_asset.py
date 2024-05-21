@@ -43,7 +43,7 @@ from dagster._core.definitions.result import ObserveResult
 from dagster._core.definitions.utils import (
     DEFAULT_GROUP_NAME,
     DEFAULT_IO_MANAGER_KEY,
-    validate_group_name,
+    normalize_group_name,
 )
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -51,7 +51,7 @@ from dagster._core.errors import (
     DagsterInvalidObservationError,
 )
 
-from .utils import validate_definition_tags
+from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import (
@@ -233,7 +233,7 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.tags = validate_definition_tags(tags) or {}
+        self.tags = validate_tags_strict(tags) or {}
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:
@@ -257,7 +257,7 @@ class SourceAsset(ResourceAddable):
         self.partitions_def = check.opt_inst_param(
             partitions_def, "partitions_def", PartitionsDefinition
         )
-        self.group_name = validate_group_name(group_name)
+        self.group_name = normalize_group_name(group_name)
         self.description = check.opt_str_param(description, "description")
         self.observe_fn = check.opt_callable_param(observe_fn, "observe_fn")
         self.op_tags = check.opt_mapping_param(op_tags, "op_tags")

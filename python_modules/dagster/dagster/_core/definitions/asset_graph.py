@@ -8,7 +8,7 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
     AssetSpec,
 )
-from dagster._core.definitions.assets import AssetsDefinition, asset_owner_to_str
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
@@ -78,9 +78,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def owners(self) -> Sequence[str]:
-        return [
-            asset_owner_to_str(owner) for owner in self.assets_def.owners_by_key.get(self.key, [])
-        ]
+        return self.assets_def.owners_by_key.get(self.key, [])
 
     @property
     def is_partitioned(self) -> bool:
@@ -279,3 +277,36 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for ad in self.assets_defs for key in ad.check_keys}
+
+
+def materializable_in_same_run(
+    asset_graph: BaseAssetGraph, child_key: AssetKey, parent_key: AssetKey
+):
+    """Returns whether a child asset can be materialized in the same run as a parent asset."""
+    from dagster._core.definitions.partition_mapping import IdentityPartitionMapping
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
+
+    child_node = asset_graph.get(child_key)
+    parent_node = asset_graph.get(parent_key)
+    return (
+        # both assets must be materializable
+        child_node.is_materializable
+        and parent_node.is_materializable
+        # the parent must have the same partitioning
+        and child_node.partitions_def == parent_node.partitions_def
+        # the parent must have a simple partition mapping to the child
+        and (
+            not parent_node.is_partitioned
+            or isinstance(
+                asset_graph.get_partition_mapping(child_node.key, parent_node.key),
+                (TimeWindowPartitionMapping, IdentityPartitionMapping),
+            )
+        )
+        # the parent must be in the same repository to be materialized alongside the candidate
+        and (
+            not isinstance(asset_graph, RemoteAssetGraph)
+            or asset_graph.get_repository_handle(child_key)
+            == asset_graph.get_repository_handle(parent_key)
+        )
+    )

@@ -24,7 +24,11 @@ import {
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
 import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataEntry';
-import {isCanonicalColumnLineageEntry, isCanonicalColumnSchemaEntry} from '../metadata/TableSchema';
+import {
+  isCanonicalCodeSourceEntry,
+  isCanonicalColumnLineageEntry,
+  isCanonicalColumnSchemaEntry,
+} from '../metadata/TableSchema';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 import {titleForRun} from '../runs/RunUtils';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
@@ -131,7 +135,8 @@ export const AssetEventMetadataEntriesTable = ({
           (row) =>
             !HIDDEN_METADATA_ENTRY_LABELS.has(row.entry.label) &&
             !(isCanonicalColumnSchemaEntry(row.entry) && hideTableSchema) &&
-            !isCanonicalColumnLineageEntry(row.entry),
+            !isCanonicalColumnLineageEntry(row.entry) &&
+            !isCanonicalCodeSourceEntry(row.entry),
         ),
     [allRows, filter, hideTableSchema],
   );

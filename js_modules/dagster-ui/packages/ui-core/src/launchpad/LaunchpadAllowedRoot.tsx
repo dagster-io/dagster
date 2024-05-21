@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Suspense, lazy, useEffect, useMemo} from 'react';
+import {useEffect, useMemo} from 'react';
 import * as yaml from 'yaml';
 
 import {
@@ -15,8 +15,10 @@ import {IExecutionSession} from '../app/ExecutionSessionStorage';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
 import {usePageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
+import {lazy} from '../util/lazy';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -68,6 +70,7 @@ export const LaunchpadAllowedRoot = (props: Props) => {
       variables: {repositoryName, repositoryLocationName, pipelineName},
     },
   );
+  useBlockTraceOnQueryResult(result, 'LaunchpadRootQuery');
 
   const pipelineOrError = result?.data?.pipelineOrError;
   const partitionSetsOrError = result?.data?.partitionSetsOrError;
@@ -157,19 +160,17 @@ export const LaunchpadAllowedRoot = (props: Props) => {
   } else {
     // job
     return (
-      <Suspense fallback={<div />}>
-        <LaunchpadStoredSessionsContainer
-          launchpadType={launchpadType}
-          pipeline={pipelineOrError}
-          partitionSets={partitionSetsOrError}
-          repoAddress={repoAddress}
-          rootDefaultYaml={
-            result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
-              ? result.data.runConfigSchemaOrError.rootDefaultYaml
-              : undefined
-          }
-        />
-      </Suspense>
+      <LaunchpadStoredSessionsContainer
+        launchpadType={launchpadType}
+        pipeline={pipelineOrError}
+        partitionSets={partitionSetsOrError}
+        repoAddress={repoAddress}
+        rootDefaultYaml={
+          result.data?.runConfigSchemaOrError.__typename === 'RunConfigSchema'
+            ? result.data.runConfigSchemaOrError.rootDefaultYaml
+            : undefined
+        }
+      />
     );
   }
 };

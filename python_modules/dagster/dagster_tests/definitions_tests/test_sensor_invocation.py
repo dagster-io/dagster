@@ -6,16 +6,15 @@ import pytest
 from dagster import (
     AssetKey,
     AssetOut,
+    AssetRecordsFilter,
     AssetSelection,
     Config,
-    DagsterEventType,
     DagsterInstance,
     DagsterInvariantViolationError,
     DagsterRunStatus,
     DagsterUnknownPartitionError,
     DailyPartitionsDefinition,
     Definitions,
-    EventRecordsFilter,
     FreshnessPolicy,
     Output,
     RunConfig,
@@ -1269,7 +1268,7 @@ def test_multi_asset_sensor_update_cursor_no_overwrite():
 def test_multi_asset_sensor_no_unconsumed_events():
     @multi_asset_sensor(monitored_assets=[july_asset.key, july_asset_2.key])
     def my_sensor(context):
-        # This call reads unconsumed event IDs from the cursor, fetches them via get_event_records,
+        # This call reads unconsumed event IDs from the cursor, fetches them from storage
         # and caches them in memory
         context.latest_materialization_records_by_partition_and_asset()
         # Assert that when no unconsumed events exist in the cursor, no events are cached
@@ -1371,9 +1370,7 @@ def test_multi_asset_sensor_unconsumed_events():
         materialize([july_asset], partition_key="2022-07-10", instance=instance)
 
         event_records = list(
-            instance.get_event_records(
-                EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION), ascending=True
-            )
+            instance.fetch_materializations(july_asset.key, ascending=True, limit=5000).records
         )
         assert len(event_records) == 3
         first_2022_07_10_mat = event_records[1].storage_id
@@ -1599,11 +1596,12 @@ def test_unfetched_partitioned_events_are_unconsumed():
         assert first_july_cursor.latest_consumed_event_partition == "2022-07-05"
 
         mats_2022_07_04 = list(
-            instance.get_event_records(
-                EventRecordsFilter(
-                    DagsterEventType.ASSET_MATERIALIZATION, asset_partitions=["2022-07-04"]
-                )
-            )
+            instance.fetch_materializations(
+                records_filter=AssetRecordsFilter(
+                    asset_key=july_asset.key, asset_partitions=["2022-07-04"]
+                ),
+                limit=1,
+            ).records
         )
         # Assert that the unconsumed event points to the most recent 2022_07_04 materialization.
         assert (
@@ -1653,14 +1651,8 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = next(
-            iter(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-            )
-        )
-        assert records.event_log_entry.run_id == result.run_id
+        record = next(iter(instance.fetch_materializations(my_asset.key, limit=1).records))
+        assert record.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
             monitored_assets=AssetSelection.groups("default"),
@@ -1670,7 +1662,7 @@ def test_build_multi_asset_sensor_context_asset_selection_set_to_latest_material
         )
         assert (
             ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
-            == records.storage_id
+            == record.storage_id
         )
         my_sensor(ctx)
 
@@ -1700,14 +1692,8 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
 
     with instance_for_test() as instance:
         result = materialize([my_asset], instance=instance)
-        records = next(
-            iter(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-            )
-        )
-        assert records.event_log_entry.run_id == result.run_id
+        record = next(iter(instance.fetch_materializations(my_asset.key, limit=1).records))
+        assert record.event_log_entry.run_id == result.run_id
 
         ctx = build_multi_asset_sensor_context(
             monitored_assets=[my_asset.key],
@@ -1717,7 +1703,7 @@ def test_build_multi_asset_sensor_context_set_to_latest_materializations():
         )
         assert (
             ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
-            == records.storage_id
+            == record.storage_id
         )
         my_sensor(ctx)
         evaluated = True
@@ -1743,18 +1729,10 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
         materialize([my_asset], instance=instance)
         materialize([my_asset_2], instance=instance)
 
-        records = sorted(
-            list(
-                instance.get_event_records(
-                    EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION)
-                )
-            ),
-            key=lambda x: x.storage_id,
+        my_asset_record = next(iter(instance.fetch_materializations(my_asset.key, limit=1).records))
+        my_asset_2_record = next(
+            iter(instance.fetch_materializations(my_asset_2.key, limit=1).records)
         )
-        assert len(records) == 2
-
-        my_asset_cursor = records[0].storage_id
-        my_asset_2_cursor = records[1].storage_id
 
         ctx = build_multi_asset_sensor_context(
             monitored_assets=[my_asset.key, my_asset_2.key],
@@ -1764,11 +1742,11 @@ def test_build_multi_asset_context_set_after_multiple_materializations():
         )
         assert (
             ctx._get_cursor(my_asset.key).latest_consumed_event_id  # noqa: SLF001
-            == my_asset_cursor
+            == my_asset_record.storage_id
         )
         assert (
             ctx._get_cursor(my_asset_2.key).latest_consumed_event_id  # noqa: SLF001
-            == my_asset_2_cursor
+            == my_asset_2_record.storage_id
         )
 
 

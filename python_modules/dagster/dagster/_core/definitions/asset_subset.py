@@ -20,7 +20,7 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
 )
-from dagster._model import DagsterModel
+from dagster._model import DagsterModel, InstanceOf
 from dagster._serdes.serdes import (
     PydanticModelSerializer,
     whitelist_for_serdes,
@@ -39,7 +39,7 @@ class AssetSubsetSerializer(PydanticModelSerializer):
 
     def before_pack(self, value: "AssetSubset") -> "AssetSubset":
         if value.is_partitioned:
-            return value.copy(update={"value": value.subset_value.to_serializable_subset()})
+            return value.model_copy(update={"value": value.subset_value.to_serializable_subset()})
         return value
 
 
@@ -51,7 +51,9 @@ class AssetSubset(DagsterModel):
     the asset is present or not.
     """
 
-    asset_key: AssetKey
+    # use InstanceOf to tell pydantic to just do an instanceof check instead of the default
+    # costly NamedTuple validation and reconstruction
+    asset_key: InstanceOf[AssetKey]
     value: Union[bool, PartitionsSubset]
 
     @property
@@ -85,7 +87,14 @@ class AssetSubset(DagsterModel):
         else:
             return len(self.subset_value)
 
-    def _is_compatible_with_partitions_def(
+    @property
+    def is_empty(self) -> bool:
+        # avoid calculating the full size of the subset if it's an AllPartitionsSubset
+        if isinstance(self.value, AllPartitionsSubset):
+            return False
+        return self.size == 0
+
+    def is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
     ) -> bool:
         if self.is_partitioned:
@@ -100,7 +109,7 @@ class AssetSubset(DagsterModel):
 
     def _is_compatible_with_subset(self, other: "AssetSubset") -> bool:
         if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
-            return self._is_compatible_with_partitions_def(other.value.partitions_def)
+            return self.is_compatible_with_partitions_def(other.value.partitions_def)
         else:
             return self.is_partitioned == other.is_partitioned
 
@@ -108,7 +117,7 @@ class AssetSubset(DagsterModel):
         """Converts this AssetSubset to a ValidAssetSubset by returning a copy of this AssetSubset
         if it is compatible with the given PartitionsDefinition, otherwise returns an empty subset.
         """
-        if self._is_compatible_with_partitions_def(partitions_def):
+        if self.is_compatible_with_partitions_def(partitions_def):
             return ValidAssetSubset(asset_key=self.asset_key, value=self.value)
         else:
             return ValidAssetSubset.empty(self.asset_key, partitions_def)
@@ -212,7 +221,7 @@ class ValidAssetSubset(AssetSubset):
     ) -> "ValidAssetSubset":
         """Returns the AssetSubset containing all asset partitions which are not in this AssetSubset."""
         if partitions_def is None:
-            return self.copy(update={"value": not self.bool_value})
+            return self.model_copy(update={"value": not self.bool_value})
         else:
             value = partitions_def.subset_with_partition_keys(
                 self.subset_value.get_partition_keys_not_in_subset(
@@ -221,17 +230,17 @@ class ValidAssetSubset(AssetSubset):
                     dynamic_partitions_store=dynamic_partitions_store,
                 )
             )
-            return self.copy(update={"value": value})
+            return self.model_copy(update={"value": value})
 
     def _oper(self, other: "ValidAssetSubset", oper: Callable[..., Any]) -> "ValidAssetSubset":
         value = oper(self.value, other.value)
-        return self.copy(update={"value": value})
+        return self.model_copy(update={"value": value})
 
     def __sub__(self, other: AssetSubset) -> "ValidAssetSubset":
         """Returns an AssetSubset representing self.asset_partitions - other.asset_partitions."""
         valid_other = self.get_valid(other)
         if not self.is_partitioned:
-            return self.copy(update={"value": self.bool_value and not valid_other.bool_value})
+            return self.model_copy(update={"value": self.bool_value and not valid_other.bool_value})
         return self._oper(valid_other, operator.sub)
 
     def __and__(self, other: AssetSubset) -> "ValidAssetSubset":
@@ -249,7 +258,7 @@ class ValidAssetSubset(AssetSubset):
         if self._is_compatible_with_subset(other):
             return ValidAssetSubset(asset_key=other.asset_key, value=other.value)
         else:
-            return self.copy(
+            return self.model_copy(
                 # unfortunately, this is the best way to get an empty partitions subset of an unknown
                 # type if you don't have access to the partitions definition
                 update={

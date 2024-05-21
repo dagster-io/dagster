@@ -14,6 +14,7 @@ import {
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export const InstanceHealthPageContent = () => {
   useTrackPageView();
@@ -25,6 +26,7 @@ export const InstanceHealthPageContent = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
+  useBlockTraceOnQueryResult(queryData, 'InstanceHealthQuery');
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
   const {loading, data} = queryData;
 

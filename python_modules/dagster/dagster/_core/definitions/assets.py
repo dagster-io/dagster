@@ -10,10 +10,11 @@ from typing import (
     Iterator,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
+    Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -55,9 +56,7 @@ from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.warnings import (
-    disable_dagster_warnings,
-)
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -71,33 +70,13 @@ from .partition_mapping import (
 )
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_definition_tags, validate_group_name
+from .utils import DEFAULT_GROUP_NAME, normalize_group_name, validate_tags_strict
 
 if TYPE_CHECKING:
     from .base_asset_graph import AssetKeyOrCheckKey
     from .graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
-
-
-class UserAssetOwner(NamedTuple):
-    email: str
-
-
-class TeamAssetOwner(NamedTuple):
-    team: str
-
-
-AssetOwner = Union[UserAssetOwner, TeamAssetOwner]
-
-
-def asset_owner_to_str(owner: AssetOwner) -> str:
-    if isinstance(owner, UserAssetOwner):
-        return owner.email
-    elif isinstance(owner, TeamAssetOwner):
-        return owner.team
-    else:
-        check.failed(f"Unexpected owner type {type(owner)}")
 
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
@@ -126,7 +105,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
-    _owners_by_key: Mapping[AssetKey, Sequence[AssetOwner]]
+    _owners_by_key: Mapping[AssetKey, Sequence[str]]
 
     def __init__(
         self,
@@ -150,7 +129,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
         is_subset: bool = False,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
@@ -182,33 +161,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetCheckSpec,
         )
 
-        # if not specified assume all output assets depend on all input assets
         all_asset_keys = set(keys_by_output_name.values())
-        input_asset_keys = set(keys_by_input_name.values())
 
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
-        builtin_partition_mappings = get_builtin_partition_mapping_types()
-        for asset_key, partition_mapping in self._partition_mappings.items():
-            if not isinstance(partition_mapping, builtin_partition_mappings):
-                warnings.warn(
-                    f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
-                    "are deprecated and will not work with asset reconciliation. The built-in "
-                    "partition mappings are "
-                    + ", ".join(
-                        builtin_partition_mapping.__name__
-                        for builtin_partition_mapping in builtin_partition_mappings
-                    )
-                    + ".",
-                    category=DeprecationWarning,
-                )
-
-            if asset_key not in input_asset_keys:
-                check.failed(
-                    f"While constructing AssetsDefinition outputting {all_asset_keys}, received a"
-                    f" partition mapping for {asset_key} that is not defined in the set of upstream"
-                    f" assets: {input_asset_keys}"
-                )
+        _validate_partition_mappings(
+            partition_mappings=self._partition_mappings,
+            input_asset_keys=set(keys_by_input_name.values()),
+            all_asset_keys=all_asset_keys,
+        )
 
         self._asset_deps = asset_deps or {
             out_asset_key: set(keys_by_input_name.values()) for out_asset_key in all_asset_keys
@@ -229,31 +190,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if group_names_by_key
             else {}
         )
+        self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
+            all_asset_keys=all_asset_keys,
+            all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
+            selected_asset_keys=selected_asset_keys,
+            selected_asset_check_keys=selected_asset_check_keys,
+        )
         self._group_names_by_key = {}
         # assets that don't have a group name get a DEFAULT_GROUP_NAME
         for key in all_asset_keys:
             group_name = group_names_by_key.get(key)
-            self._group_names_by_key[key] = validate_group_name(group_name)
-
-        all_check_keys = {spec.key for spec in (check_specs_by_output_name or {}).values()}
-
-        # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
-        if selected_asset_keys is None and selected_asset_check_keys is None:
-            # if no selections, include everything
-            self._selected_asset_keys = all_asset_keys
-            self._selected_asset_check_keys = all_check_keys
-        else:
-            self._selected_asset_keys = selected_asset_keys or set()
-
-            if selected_asset_check_keys is None:
-                # if assets were selected but checks are None, then include all checks for selected
-                # assets
-                self._selected_asset_check_keys = {
-                    key for key in all_check_keys if key.asset_key in self._selected_asset_keys
-                }
-            else:
-                # otherwise, use the selected checks
-                self._selected_asset_check_keys = selected_asset_check_keys
+            self._group_names_by_key[key] = normalize_group_name(group_name)
 
         self._check_specs_by_key = {
             spec.key: spec
@@ -271,7 +218,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
         for tags in (tags_by_key or {}).values():
-            validate_definition_tags(tags)
+            validate_tags_strict(tags)
         self._tags_by_key = tags_by_key or {}
 
         self._descriptions_by_key = dict(
@@ -353,12 +300,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
-        check.opt_mapping_param(owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list)
-        for key, owners in (owners_by_key or {}).items():
+        self._owners_by_key = check.opt_mapping_param(
+            owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
+        )
+        for key, owners in self._owners_by_key.items():
             for owner in owners:
-                if isinstance(owner, (TeamAssetOwner, UserAssetOwner)):
-                    continue
-                elif is_valid_email(owner):
+                if is_valid_email(owner):
                     continue
                 elif owner.startswith("team:") and len(owner) > 5:
                     continue
@@ -367,19 +314,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                         f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team"
                         " name prefixed with 'team:'."
                     )
-        self._owners_by_key = {
-            key: [
-                owner
-                if isinstance(owner, (TeamAssetOwner, UserAssetOwner))
-                else (
-                    UserAssetOwner(email=owner)
-                    if is_valid_email(owner)
-                    else TeamAssetOwner(team=owner[5:])
-                )
-                for owner in owners
-            ]
-            for key, owners in (owners_by_key or {}).items()
-        }
 
     def dagster_internal_init(
         *,
@@ -402,7 +336,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]],
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]],
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
     ) -> "AssetsDefinition":
         return AssetsDefinition(
             keys_by_input_name=keys_by_input_name,
@@ -463,7 +397,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -520,7 +454,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
-            owners_by_key (Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]]): Defines
+            owners_by_key (Optional[Mapping[AssetKey, Sequence[str]]]): Defines
                 owners to be associated with each of the asset keys for this node.
 
         """
@@ -642,7 +576,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @staticmethod
     def _from_node(
-        node_def: Union[OpDefinition, "GraphDefinition"],
+        node_def: NodeDefinition,
         *,
         keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
@@ -663,7 +597,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners_by_key: Optional[Mapping[AssetKey, Sequence[Union[str, AssetOwner]]]] = None,
+        owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.asset_decorator import (
             _assign_output_names_to_check_specs,
@@ -718,6 +652,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
             keys_by_output_name_with_prefix[output_name] = key_with_key_prefix
 
+        T = TypeVar("T")
+
+        def _output_dict_to_asset_dict(
+            attr_by_output_name: Optional[Mapping[str, Optional[T]]],
+        ) -> Optional[Mapping[AssetKey, T]]:
+            if not attr_by_output_name:
+                return None
+            return {
+                keys_by_output_name_with_prefix[output_name]: attr
+                for output_name, attr in attr_by_output_name.items()
+                if attr is not None
+            }
+
         check.param_invariant(
             group_name is None or group_names_by_output_name is None,
             "group_name",
@@ -729,11 +676,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 asset_key: group_name for asset_key in keys_by_output_name_with_prefix.values()
             }
         elif group_names_by_output_name:
-            group_names_by_key = {
-                keys_by_output_name_with_prefix[output_name]: group_name
-                for output_name, group_name in group_names_by_output_name.items()
-                if group_name is not None
-            }
+            group_names_by_key = _output_dict_to_asset_dict(group_names_by_output_name)
         else:
             group_names_by_key = None
 
@@ -757,54 +700,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if partition_mappings
                 else None
             ),
-            metadata_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: metadata
-                    for output_name, metadata in metadata_by_output_name.items()
-                    if metadata is not None
-                }
-                if metadata_by_output_name
-                else None
-            ),
-            tags_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: tags
-                    for output_name, tags in tags_by_output_name.items()
-                    if tags is not None
-                }
-                if tags_by_output_name
-                else None
-            ),
-            freshness_policies_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: freshness_policy
-                    for output_name, freshness_policy in freshness_policies_by_output_name.items()
-                    if freshness_policy is not None
-                }
-                if freshness_policies_by_output_name
-                else None
-            ),
-            auto_materialize_policies_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: auto_materialize_policy
-                    for output_name, auto_materialize_policy in auto_materialize_policies_by_output_name.items()
-                    if auto_materialize_policy is not None
-                }
-                if auto_materialize_policies_by_output_name
-                else None
+            metadata_by_key=_output_dict_to_asset_dict(metadata_by_output_name),
+            tags_by_key=_output_dict_to_asset_dict(tags_by_output_name),
+            freshness_policies_by_key=_output_dict_to_asset_dict(freshness_policies_by_output_name),
+            auto_materialize_policies_by_key=_output_dict_to_asset_dict(
+                auto_materialize_policies_by_output_name
             ),
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
-            descriptions_by_key=(
-                {
-                    keys_by_output_name_with_prefix[output_name]: description
-                    for output_name, description in descriptions_by_output_name.items()
-                    if description is not None
-                }
-                if descriptions_by_output_name
-                else None
-            ),
+            descriptions_by_key=_output_dict_to_asset_dict(descriptions_by_output_name),
             can_subset=can_subset,
             selected_asset_keys=None,  # node has no subselection info
             check_specs_by_output_name=check_specs_by_output_name,
@@ -1042,7 +947,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._partition_mappings
 
     @property
-    def owners_by_key(self) -> Mapping[AssetKey, Sequence[AssetOwner]]:
+    def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
         return self._owners_by_key
 
     @public
@@ -1142,8 +1047,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
         group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
-        metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
         tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
@@ -1169,12 +1072,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         group_names_by_key = check.opt_mapping_param(
             group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-        descriptions_by_key = check.opt_mapping_param(
-            descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
-        )
-        metadata_by_key = check.opt_mapping_param(
-            metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
         )
 
         backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
@@ -1251,15 +1148,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         replaced_descriptions_by_key = {
             output_asset_key_replacements.get(key, key): description
-            for key, description in descriptions_by_key.items()
+            for key, description in self.descriptions_by_key.items()
         }
-
-        if not metadata_by_key:
-            metadata_by_key = self.metadata_by_key
 
         replaced_metadata_by_key = {
             output_asset_key_replacements.get(key, key): metadata
-            for key, metadata in metadata_by_key.items()
+            for key, metadata in self.metadata_by_key.items()
         }
 
         replaced_tags_by_key = {
@@ -1583,11 +1477,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=self._selected_asset_check_keys,
             owners_by_key=self._owners_by_key,
             tags_by_key=self._tags_by_key,
+            is_subset=self._is_subset,
         )
 
 
 def _infer_keys_by_input_names(
-    node_def: Union["GraphDefinition", OpDefinition], keys_by_input_name: Mapping[str, AssetKey]
+    node_def: NodeDefinition, keys_by_input_name: Mapping[str, AssetKey]
 ) -> Mapping[str, AssetKey]:
     all_input_names = [input_def.name for input_def in node_def.input_defs]
     if keys_by_input_name:
@@ -1610,7 +1505,7 @@ def _infer_keys_by_input_names(
 
 
 def _infer_keys_by_output_names(
-    node_def: Union["GraphDefinition", OpDefinition],
+    node_def: NodeDefinition,
     keys_by_output_name: Mapping[str, AssetKey],
     check_specs_by_output_name: Mapping[str, AssetCheckSpec],
 ) -> Mapping[str, AssetKey]:
@@ -1692,6 +1587,60 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
         " supported because these ops are not required for the creation of the associated"
         " asset(s).",
     )
+
+
+def _resolve_selections(
+    all_asset_keys: AbstractSet[AssetKey],
+    all_check_keys: AbstractSet[AssetCheckKey],
+    selected_asset_keys: Optional[AbstractSet[AssetKey]],
+    selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
+) -> Tuple[AbstractSet[AssetKey], AbstractSet[AssetCheckKey]]:
+    # NOTE: this logic mirrors subsetting at the asset layer. This is ripe for consolidation.
+    if selected_asset_keys is None and selected_asset_check_keys is None:
+        # if no selections, include everything
+        return all_asset_keys, all_check_keys
+    else:
+        resolved_selected_asset_keys = selected_asset_keys or set()
+
+        if selected_asset_check_keys is None:
+            # if assets were selected but checks are None, then include all checks for selected
+            # assets
+            resolved_selected_asset_check_keys = {
+                key for key in all_check_keys if key.asset_key in resolved_selected_asset_keys
+            }
+        else:
+            # otherwise, use the selected checks
+            resolved_selected_asset_check_keys = selected_asset_check_keys
+
+        return resolved_selected_asset_keys, resolved_selected_asset_check_keys
+
+
+def _validate_partition_mappings(
+    partition_mappings: Mapping[AssetKey, PartitionMapping],
+    input_asset_keys: AbstractSet[AssetKey],
+    all_asset_keys: AbstractSet[AssetKey],
+) -> None:
+    builtin_partition_mappings = get_builtin_partition_mapping_types()
+    for asset_key, partition_mapping in partition_mappings.items():
+        if not isinstance(partition_mapping, builtin_partition_mappings):
+            warnings.warn(
+                f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
+                "are deprecated and will not work with asset reconciliation. The built-in "
+                "partition mappings are "
+                + ", ".join(
+                    builtin_partition_mapping.__name__
+                    for builtin_partition_mapping in builtin_partition_mappings
+                )
+                + ".",
+                category=DeprecationWarning,
+            )
+
+        if asset_key not in input_asset_keys:
+            check.failed(
+                f"While constructing AssetsDefinition outputting {all_asset_keys}, received a"
+                f" partition mapping for {asset_key} that is not defined in the set of upstream"
+                f" assets: {input_asset_keys}"
+            )
 
 
 def _validate_self_deps(

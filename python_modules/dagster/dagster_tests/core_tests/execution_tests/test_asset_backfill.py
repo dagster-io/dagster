@@ -1,4 +1,5 @@
 import datetime
+import logging
 from typing import (
     AbstractSet,
     Iterable,
@@ -483,8 +484,8 @@ def make_random_subset(
             if i % 2 == 0:
                 root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
-    target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
-        instance, lambda _a, _b: True, root_asset_partitions, evaluation_time=evaluation_time
+    target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
+        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
     )
 
     return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
@@ -506,8 +507,8 @@ def make_subset_from_partition_keys(
         else:
             root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
 
-    target_asset_partitions = asset_graph.bfs_filter_asset_partitions(
-        instance, lambda _a, _b: True, root_asset_partitions, evaluation_time=evaluation_time
+    target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
+        instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
     )
 
     return AssetGraphSubset.from_asset_partition_set(target_asset_partitions, asset_graph)
@@ -554,6 +555,7 @@ def execute_asset_backfill_iteration_consume_generator(
             asset_graph=asset_graph,
             run_tags={},
             backfill_start_time=asset_backfill_data.backfill_start_time,
+            logger=logging.getLogger("fake_logger"),
         ):
             if isinstance(result, AssetBackfillIterationResult):
                 assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
@@ -576,9 +578,9 @@ def run_backfill_to_completion(
     # assert each asset partition only targeted once
     requested_asset_partitions: Set[AssetKeyPartitionKey] = set()
 
-    fail_and_downstream_asset_partitions = asset_graph.bfs_filter_asset_partitions(
+    fail_and_downstream_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
         instance,
-        lambda _a, _b: True,
+        lambda _a, _b: (True, ""),
         fail_asset_partitions,
         evaluation_time=backfill_data.backfill_start_time,
     )
@@ -770,14 +772,14 @@ def external_asset_graph_from_assets_by_repo_name(
             r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
             r' \"time_windows\": [[1571356800.0, 1571529600.0]], \"num_partitions\": 2}"},'
             r' "serializable_partitions_def_ids_by_asset_key": {"daily_asset":'
-            r' "9fd02488f5859c7b2fb25f77f2a25dce938897d3"},'
+            r' "1d3558e8825a28611c33c1cfe60984c0c5dcf147"},'
             r' "partitions_def_class_names_by_asset_key": {"daily_asset":'
             r' "TimeWindowPartitionsDefinition"}, "non_partitioned_asset_keys": []},'
             r' "latest_storage_id": 235, "serialized_requested_subset":'
             r' {"partitions_subsets_by_asset_key": {"daily_asset": "{\"version\": 1,'
             r' \"time_windows\": [[1571356800.0, 1571529600.0]], \"num_partitions\": 2}"},'
             r' "serializable_partitions_def_ids_by_asset_key": {"daily_asset":'
-            r' "9fd02488f5859c7b2fb25f77f2a25dce938897d3"},'
+            r' "1d3558e8825a28611c33c1cfe60984c0c5dcf147"},'
             r' "partitions_def_class_names_by_asset_key": {"daily_asset":'
             r' "TimeWindowPartitionsDefinition"}, "non_partitioned_asset_keys": []},'
             r' "serialized_materialized_subset": {"partitions_subsets_by_asset_key": {},'

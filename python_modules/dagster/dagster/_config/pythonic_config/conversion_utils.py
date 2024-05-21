@@ -54,8 +54,9 @@ from dagster._config.field_utils import (
     convert_potential_field,
 )
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
+from dagster._utils.typing_api import is_closed_python_optional_type
 
-from .type_check_utils import is_optional, safe_is_subclass
+from .type_check_utils import safe_is_subclass
 
 
 # This is from https://github.com/dagster-io/dagster/pull/11470
@@ -133,7 +134,7 @@ def _convert_pydantic_field(
         )
         return inferred_field
     else:
-        if not pydantic_field.is_required() and not is_optional(field_type):
+        if not pydantic_field.is_required() and not is_closed_python_optional_type(field_type):
             field_type = Optional[field_type]
 
         config_type = _config_type_for_type_on_pydantic_field(field_type)
@@ -149,7 +150,8 @@ def _convert_pydantic_field(
         return Field(
             config=config_type,
             description=pydantic_field.description,
-            is_required=pydantic_field.is_required() and not is_optional(field_type),
+            is_required=pydantic_field.is_required()
+            and not is_closed_python_optional_type(field_type),
             default_value=default_to_pass,
         )
 
@@ -194,7 +196,7 @@ def _config_type_for_type_on_pydantic_field(
     if safe_is_subclass(get_origin(potential_dagster_type), List):
         list_inner_type = get_args(potential_dagster_type)[0]
         return Array(_config_type_for_type_on_pydantic_field(list_inner_type))
-    elif is_optional(potential_dagster_type):
+    elif is_closed_python_optional_type(potential_dagster_type):
         optional_inner_type = next(
             arg for arg in get_args(potential_dagster_type) if arg is not type(None)
         )

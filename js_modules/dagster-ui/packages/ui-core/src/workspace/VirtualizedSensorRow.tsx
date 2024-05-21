@@ -22,6 +22,7 @@ import {InstigationStatus, SensorType} from '../graphql/types';
 import {LastRunSummary} from '../instance/LastRunSummary';
 import {TICK_TAG_FRAGMENT} from '../instigation/InstigationTick';
 import {BasicInstigationStateFragment} from '../overview/types/BasicInstigationStateFragment.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {humanizeSensorInterval} from '../sensors/SensorDetails';
 import {SENSOR_ASSET_SELECTIONS_QUERY} from '../sensors/SensorRoot';
@@ -32,7 +33,7 @@ import {
   SensorAssetSelectionQueryVariables,
 } from '../sensors/types/SensorRoot.types';
 import {TickStatusTag} from '../ticks/TickStatusTag';
-import {HeaderCell, Row, RowCell} from '../ui/VirtualizedTable';
+import {HeaderCell, HeaderRow, Row, RowCell} from '../ui/VirtualizedTable';
 
 const TEMPLATE_COLUMNS = '1.5fr 150px 1fr 76px 120px 148px 180px';
 const TEMPLATE_COLUMNS_WITH_CHECKBOX = `60px ${TEMPLATE_COLUMNS}`;
@@ -73,6 +74,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
     },
   });
 
+  useBlockTraceOnQueryResult(sensorQueryResult, 'SingleSensorQuery');
+
   const [querySensorAssetSelection, sensorAssetSelectionQueryResult] = useLazyQuery<
     SensorAssetSelectionQuery,
     SensorAssetSelectionQueryVariables
@@ -85,6 +88,8 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
       },
     },
   });
+
+  useBlockTraceOnQueryResult(sensorAssetSelectionQueryResult, 'SensorAssetSelectionQuery');
 
   useDelayedRowQuery(
     React.useCallback(() => {
@@ -239,18 +244,11 @@ export const VirtualizedSensorRow = (props: SensorRowProps) => {
   );
 };
 
-export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
-  const {checkbox} = props;
+export const VirtualizedSensorHeader = ({checkbox}: {checkbox: React.ReactNode}) => {
   return (
-    <Box
-      border="top-and-bottom"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS,
-        height: '32px',
-        fontSize: '12px',
-        color: Colors.textLight(),
-      }}
+    <HeaderRow
+      templateColumns={checkbox ? TEMPLATE_COLUMNS_WITH_CHECKBOX : TEMPLATE_COLUMNS}
+      sticky
     >
       {checkbox ? (
         <HeaderCell>
@@ -264,7 +262,7 @@ export const VirtualizedSensorHeader = (props: {checkbox: React.ReactNode}) => {
       <HeaderCell>Frequency</HeaderCell>
       <HeaderCell>Last tick</HeaderCell>
       <HeaderCell>Last run</HeaderCell>
-    </Box>
+    </HeaderRow>
   );
 };
 

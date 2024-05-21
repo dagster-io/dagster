@@ -13,6 +13,7 @@ from dagster._core.definitions.asset_check_spec import (
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
+    EventWithMetadata,
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
@@ -34,7 +35,8 @@ class AssetCheckResult(
             ("severity", PublicAttr[AssetCheckSeverity]),
             ("description", PublicAttr[Optional[str]]),
         ],
-    )
+    ),
+    EventWithMetadata,
 ):
     """The result of an asset check.
 
@@ -145,7 +147,9 @@ class AssetCheckResult(
 
         check_key = self.resolve_target_check_key(check_names_by_asset_key)
 
-        input_asset_info = step_context.get_input_asset_version_info(check_key.asset_key)
+        input_asset_info = step_context.maybe_fetch_and_get_input_asset_version_info(
+            check_key.asset_key
+        )
         from dagster._core.events import DagsterEventType
 
         if (
@@ -166,6 +170,16 @@ class AssetCheckResult(
             passed=self.passed,
             metadata=self.metadata,
             target_materialization_data=target_materialization_data,
+            severity=self.severity,
+            description=self.description,
+        )
+
+    def with_metadata(self, metadata: Mapping[str, RawMetadataValue]) -> "AssetCheckResult":
+        return AssetCheckResult(
+            passed=self.passed,
+            asset_key=self.asset_key,
+            check_name=self.check_name,
+            metadata=metadata,
             severity=self.severity,
             description=self.description,
         )

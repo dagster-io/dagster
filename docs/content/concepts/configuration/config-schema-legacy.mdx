@@ -18,7 +18,7 @@ description: Job run configuration allows providing parameters to jobs at the ti
 
 Run configuration allows providing parameters to jobs at the time they're executed.
 
-It's often useful to provide user-chosen values to Dagster jobs or software-defined assets at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
+It's often useful to provide user-chosen values to Dagster jobs or asset definitions at runtime. For example, you might want to choose what dataset an op runs against, or provide a connection URL for a database resource. Dagster exposes this functionality through a configuration API.
 
 Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 

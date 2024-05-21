@@ -1,6 +1,7 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {getAllByText, getByText, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter, Route} from 'react-router-dom';
+import {RecoilRoot} from 'recoil';
 
 import {AnalyticsContext} from '../../../app/analytics';
 import {
@@ -82,15 +83,17 @@ const mocks = [
 describe('BackfillPage', () => {
   it('renders the loading state', async () => {
     render(
-      <AnalyticsContext.Provider value={{page: () => {}} as any}>
-        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-          <Route path="/backfills/:backfillId">
-            <MockedProvider mocks={mocks}>
-              <BackfillPage />
-            </MockedProvider>
-          </Route>
-        </MemoryRouter>
-      </AnalyticsContext.Provider>,
+      <RecoilRoot>
+        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+            <Route path="/backfills/:backfillId">
+              <MockedProvider mocks={mocks}>
+                <BackfillPage />
+              </MockedProvider>
+            </Route>
+          </MemoryRouter>
+        </AnalyticsContext.Provider>
+      </RecoilRoot>,
     );
 
     expect(await screen.findByTestId('page-loading-indicator')).toBeInTheDocument();
@@ -116,15 +119,17 @@ describe('BackfillPage', () => {
     ];
 
     const {getByText} = render(
-      <AnalyticsContext.Provider value={{page: () => {}} as any}>
-        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-          <Route path="/backfills/:backfillId">
-            <MockedProvider mocks={errorMocks}>
-              <BackfillPage />
-            </MockedProvider>
-          </Route>
-        </MemoryRouter>
-      </AnalyticsContext.Provider>,
+      <RecoilRoot>
+        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+            <Route path="/backfills/:backfillId">
+              <MockedProvider mocks={errorMocks}>
+                <BackfillPage />
+              </MockedProvider>
+            </Route>
+          </MemoryRouter>
+        </AnalyticsContext.Provider>
+      </RecoilRoot>,
     );
 
     await waitFor(() => expect(getByText('An error occurred')).toBeVisible());
@@ -132,15 +137,17 @@ describe('BackfillPage', () => {
 
   it('renders the loaded state', async () => {
     render(
-      <AnalyticsContext.Provider value={{page: () => {}} as any}>
-        <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
-          <Route path="/backfills/:backfillId">
-            <MockedProvider mocks={mocks}>
-              <BackfillPage />
-            </MockedProvider>
-          </Route>
-        </MemoryRouter>
-      </AnalyticsContext.Provider>,
+      <RecoilRoot>
+        <AnalyticsContext.Provider value={{page: () => {}} as any}>
+          <MemoryRouter initialEntries={[`/backfills/${mockBackfillId}`]}>
+            <Route path="/backfills/:backfillId">
+              <MockedProvider mocks={mocks}>
+                <BackfillPage />
+              </MockedProvider>
+            </Route>
+          </MemoryRouter>
+        </AnalyticsContext.Provider>
+      </RecoilRoot>,
     );
 
     // Check if the loaded content is displayed

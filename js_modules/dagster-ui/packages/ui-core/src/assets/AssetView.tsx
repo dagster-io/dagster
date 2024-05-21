@@ -3,10 +3,12 @@ import {gql, useQuery} from '@apollo/client';
 import {BreadcrumbProps} from '@blueprintjs/core';
 import {Alert, Box, ErrorBoundary, NonIdealState, Spinner, Tag} from '@dagster-io/ui-components';
 import {useContext, useEffect, useMemo} from 'react';
-import {Link, Redirect, useLocation} from 'react-router-dom';
+import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
+import {useSetRecoilState} from 'recoil';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
+import {metadataForAssetNode} from './AssetMetadata';
 import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
@@ -38,6 +40,7 @@ import {
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
 import {useFeatureFlags} from '../app/Flags';
+import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
@@ -49,10 +52,14 @@ import {
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
+import {CodeLink} from '../code-links/CodeLink';
 import {AssetComputeKindTag} from '../graph/OpTags';
+import {CodeReferencesMetadataEntry} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {isCanonicalCodeSourceEntry} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PageLoadTrace} from '../performance';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -70,6 +77,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
+
   const tabList = useTabBuilder({definition, params});
 
   const defaultTab = flagUseNewOverviewPage
@@ -263,6 +271,12 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
     }
   };
 
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+  const {path} = useRouteMatch();
+  useEffect(() => {
+    setCurrentPage(({specificPath}) => ({specificPath, path: `${path}?view=${selectedTab}`}));
+  }, [path, selectedTab, setCurrentPage]);
+
   const reportEvents = useReportEventsModal(
     definition
       ? {
@@ -273,6 +287,12 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
       : null,
     refresh,
   );
+
+  const assetMetadata = definition && metadataForAssetNode(definition).assetMetadata;
+  const codeSource = assetMetadata?.find((m) => isCanonicalCodeSourceEntry(m)) as
+    | CodeReferencesMetadataEntry
+    | undefined;
+  console.log(codeSource);
 
   return (
     <Box
@@ -298,7 +318,10 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
           </Box>
         }
         right={
-          <Box style={{margin: '-4px 0'}}>
+          <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
+            {codeSource && codeSource.codeReferences && codeSource.codeReferences.length > 0 && (
+              <CodeLink codeLinkData={codeSource} />
+            )}
             {definition && definition.isObservable ? (
               <LaunchAssetObservationButton
                 primary
@@ -407,6 +430,8 @@ const useAssetViewAssetDefinition = (assetKey: AssetKey) => {
       notifyOnNetworkStatusChange: true,
     },
   );
+
+  useBlockTraceOnQueryResult(result, 'AssetViewDefinitionQuery');
   const {assetOrError} = result.data || result.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   if (!asset) {

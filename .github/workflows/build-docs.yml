@@ -7,9 +7,13 @@ on:
       - docs-prod # prod
     paths:
       - docs/**
+      - CHANGES.md
+      - .github/workflows/build-docs.yml
   pull_request:
     paths:
       - docs/**
+      - CHANGES.md
+      - .github/workflows/build-docs.yml
 concurrency:
   # Cancel in-progress runs on same branch
   group: ${{ github.ref }}

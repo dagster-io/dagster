@@ -7,6 +7,8 @@ import {
   IntMetadataEntry,
   JsonMetadataEntry,
   TableSchemaMetadataEntry,
+  buildLocalFileCodeReference,
+  buildUrlCodeReference,
 } from '../../graphql/types';
 import {MetadataEntries} from '../MetadataEntry';
 import {MetadataEntryFragment} from '../types/MetadataEntryFragment.types';
@@ -257,6 +259,23 @@ function buildMockMetadataEntry(type: MetadataEntryFragment['__typename']): Meta
         description: 'This is the description',
         label: 'my_timestamp',
         timestamp: 1710187280.5,
+      };
+    case 'CodeReferencesMetadataEntry':
+      return {
+        __typename: 'CodeReferencesMetadataEntry',
+        description: 'This is the description',
+        label: 'my_code_references',
+        codeReferences: [
+          buildLocalFileCodeReference({
+            filePath: '/path/to/file.py',
+            lineNumber: 12,
+            label: 'my_code_reference',
+          }),
+          buildUrlCodeReference({
+            url: 'http://localhost:3000/assets/',
+            label: 'my_code_reference',
+          }),
+        ],
       };
     default:
       return assertUnreachable(type);

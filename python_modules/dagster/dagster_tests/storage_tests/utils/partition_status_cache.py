@@ -8,7 +8,6 @@ from dagster import (
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     EventLogEntry,
-    EventRecordsFilter,
     MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
@@ -28,6 +27,7 @@ from dagster._core.storage.partition_status_cache import (
     AssetStatusCacheValue,
     build_failed_and_in_progress_partition_subset,
     get_and_update_asset_status_cache_value,
+    get_last_planned_storage_id,
 )
 from dagster._core.test_utils import create_run_for_test
 from dagster._core.utils import make_new_run_id
@@ -71,15 +71,7 @@ class TestPartitionStatusCache:
         assert (
             cached_status.latest_storage_id
             == next(
-                iter(
-                    instance.get_event_records(
-                        EventRecordsFilter(
-                            asset_key=AssetKey("asset1"),
-                            event_type=DagsterEventType.ASSET_MATERIALIZATION,
-                        ),
-                        limit=1,
-                    )
-                )
+                iter(instance.fetch_materializations(AssetKey("asset1"), limit=1).records)
             ).storage_id
         )
         assert cached_status.partitions_def_id is None
@@ -156,6 +148,11 @@ class TestPartitionStatusCache:
 
         asset_records = list(instance.get_asset_records([asset_key]))
         assert len(asset_records) == 0
+
+        cached_status = get_and_update_asset_status_cache_value(
+            instance, asset_key, asset_graph.get(asset_key).partitions_def
+        )
+        assert not cached_status
 
         asset_job.execute_in_process(instance=instance, partition_key="2022-02-01")
 
@@ -860,8 +857,16 @@ class TestPartitionStatusCache:
                     _create_test_planned_materialization_record(run_id, my_asset, partition)
                 )
 
+            last_planned_materialization_storage_id = get_last_planned_storage_id(
+                instance, my_asset, next(iter(instance.get_asset_records([my_asset])), None)
+            )
+
             failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-                instance, my_asset, static_partitions_def, instance
+                instance,
+                my_asset,
+                static_partitions_def,
+                instance,
+                last_planned_materialization_storage_id,
             )
             assert failed_subset.get_partition_keys() == set()
             assert in_progress_subset.get_partition_keys() == set(
@@ -875,7 +880,11 @@ class TestPartitionStatusCache:
                     instance.report_run_canceled(run)
 
             failed_subset, in_progress_subset, _ = build_failed_and_in_progress_partition_subset(
-                instance, my_asset, static_partitions_def, instance
+                instance,
+                my_asset,
+                static_partitions_def,
+                instance,
+                last_planned_materialization_storage_id,
             )
             assert failed_subset.get_partition_keys() == set()
             assert in_progress_subset.get_partition_keys() == set()

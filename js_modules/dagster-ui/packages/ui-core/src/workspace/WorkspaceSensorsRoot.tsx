@@ -19,6 +19,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
@@ -49,6 +50,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
       variables: {selector},
     },
   );
+  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSensorsQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

@@ -5,7 +5,7 @@ description: Partitions break data into smaller chunks, allowing you to compute 
 
 # Partitions
 
-A Software-defined Asset can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file, or a slice of a table in a database.
+A asset definition can represent a collection of _partitions_ that can be tracked and materialized independently. In many ways, each partition functions like its own mini-asset, but they all share a common materialization function and dependencies. Typically, each partition will correspond to a separate file, or a slice of a table in a database.
 
 Consider an online store's order data. In a database, the order data might be stored as a single `orders` table, which contains multiple days' worth of orders. However, if the data were ingested into Amazon Web Services (AWS) S3 as parquet files, you could create a new parquet file per day or partition.
 
@@ -25,7 +25,7 @@ Using partitions provides the following benefits:
 
 ## Uses
 
-Partitions are supported for both Software-defined Assets and ops, but how each concept is used is unique. Refer to the following documentation for more info:
+Partitions are supported for both asset definitions and ops, but how each concept is used is unique. Refer to the following documentation for more info:
 
 - [Partitioned assets](/concepts/partitions-schedules-sensors/partitioning-assets)
 - [Partitioned ops](/concepts/partitions-schedules-sensors/partitioning-ops) (Advanced)

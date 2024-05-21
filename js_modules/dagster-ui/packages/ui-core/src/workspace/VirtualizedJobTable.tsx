@@ -26,27 +26,25 @@ export const VirtualizedJobTable = ({repoAddress, jobs}: Props) => {
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <VirtualizedJobHeader />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: Job = jobs[index]!;
-              return (
-                <VirtualizedJobRow
-                  key={key}
-                  name={row.name}
-                  isJob={row.isJob}
-                  repoAddress={repoAddress}
-                  height={size}
-                  start={start}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <VirtualizedJobHeader />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: Job = jobs[index]!;
+            return (
+              <VirtualizedJobRow
+                key={key}
+                name={row.name}
+                isJob={row.isJob}
+                repoAddress={repoAddress}
+                height={size}
+                start={start}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };

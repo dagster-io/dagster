@@ -44,7 +44,7 @@ title: Dagster + dbt
 - Lesson 7: Deploying to Production
   - [Overview](/dagster-dbt/lesson-7/1-overview)
   - [Pushing the project to GitHub](/dagster-dbt/lesson-7/2-pushing-the-project-to-github)
-  - [Setting up Dagster Cloud](/dagster-dbt/lesson-7/3-setting-up-dagster-cloud)
+  - [Setting up Dagster+](/dagster-dbt/lesson-7/3-setting-up-dagster-cloud)
   - [Creating the manifest during deployment](/dagster-dbt/lesson-7/4-creating-the-manifest-during-deployment)
   - [Preparing for a successful run](/dagster-dbt/lesson-7/5-preparing-for-a-successful-run)
 - [Capstone](/dagster-dbt/capstone)

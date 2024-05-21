@@ -1,6 +1,6 @@
 import {Box, MainContent, NonIdealState} from '@dagster-io/ui-components';
 import {useContext} from 'react';
-import {Redirect, Route, Switch, useParams} from 'react-router-dom';
+import {Redirect, Switch, useParams} from 'react-router-dom';
 
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceAssetsRoot} from './WorkspaceAssetsRoot';
@@ -13,6 +13,7 @@ import {WorkspaceSensorsRoot} from './WorkspaceSensorsRoot';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressFromPath} from './repoAddressFromPath';
 import {workspacePathFromAddress} from './workspacePath';
+import {Route} from '../app/Route';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ResourceRoot} from '../resources/ResourceRoot';
@@ -24,6 +25,8 @@ const RepoRouteContainer = () => {
   const {repoPath} = useParams<{repoPath: string}>();
   const workspaceState = useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
+
+  const {loading} = workspaceState;
 
   // A RepoAddress could not be created for this path, which means it's invalid.
   if (!addressForPath) {
@@ -45,12 +48,6 @@ const RepoRouteContainer = () => {
     );
   }
 
-  const {loading} = workspaceState;
-
-  if (loading) {
-    return <div />;
-  }
-
   const matchingRepo = workspaceState.allRepos.find(
     (repo) =>
       repo.repository.name === addressForPath.name &&
@@ -59,7 +56,7 @@ const RepoRouteContainer = () => {
 
   // If we don't have any active code locations, or if our active repo does not match
   // the repo path in the URL, it means we aren't able to load this repo.
-  if (!matchingRepo) {
+  if (!matchingRepo && !loading) {
     return (
       <Box padding={{vertical: 64}}>
         <NonIdealState
@@ -133,7 +130,7 @@ const RepoRouteContainer = () => {
       >
         <AssetGroupRoot repoAddress={addressForPath} tab="lineage" />
       </Route>
-      <Route path="/locations/:repoPath/*">
+      <Route path={['/locations/:repoPath/*', '/locations/:repoPath/']}>
         <Redirect to={workspacePathFromAddress(addressForPath, '/assets')} />
       </Route>
     </Switch>

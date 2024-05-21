@@ -48,6 +48,7 @@ from dagster._seven.compat.pendulum import (
     create_pendulum_time,
     to_timezone,
 )
+from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -71,17 +72,20 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange
 
 
-def is_second_ambiguous_time(dt: datetime, tz: str):
+def is_second_ambiguous_time(dt: datetime, tz: Optional[str]):
     """Returns if a datetime is the second instance of an ambiguous time in the given timezone due
     to DST transitions.
     """
     # UTC is never ambiguous
-    if tz.upper() == "UTC":
+    if tz is not None and tz.upper() == "UTC":
         return False
 
     # Ensure that the datetime is in the correct timezone
     tzinfo = check.not_none(dt.tzinfo)
-    if tzinfo.tzname(None) != tz:
+
+    # pendulum has the non-standard "name" attribute on it's tzinfo, check for it
+    # otherwise there is no standard way of getting the IANA timezone name from datetime/tzinfo
+    if tz is not None and getattr(tzinfo, "name", None) != tz:
         dt = to_timezone(dt, tz)
         tzinfo = check.not_none(dt.tzinfo)
 
@@ -109,24 +113,24 @@ def dst_safe_fmt(fmt: str) -> str:
     return fmt + "%z"
 
 
-def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> str:
+def dst_safe_strftime(dt: datetime, tz: Optional[str], fmt: str, cron_schedule: str) -> str:
     """A method for converting a datetime to a string which will append a suffix in cases where
     the resulting timestamp would be ambiguous due to DST transitions.
-    """
-    time_str = dt.strftime(fmt)
 
+    tz is Optional. None means use the timezone on the datetime object
+    """
     # if the format already includes a UTC offset, then we don't need to do anything
-    if fmt == dst_safe_fmt(fmt):
-        return time_str
+    if "%z" in fmt:
+        return dt.strftime(fmt)
 
     # only need to handle ambiguous times for cron schedules which repeat every hour
     if not cron_string_repeats_every_hour(cron_schedule):
-        return time_str
+        return dt.strftime(fmt)
 
     # if the datetime is the second instance of an ambiguous time, then we append the UTC offset
     if is_second_ambiguous_time(dt, tz):
         return dt.strftime(dst_safe_fmt(fmt))
-    return time_str
+    return dt.strftime(fmt)
 
 
 def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
@@ -367,6 +371,29 @@ class TimeWindowPartitionsDefinition(
             else pendulum.now(self.timezone)
         ).timestamp()
 
+    def _get_fast_num_partitions(self, current_time: Optional[datetime] = None) -> Optional[int]:
+        """Computes the total number of partitions quickly for common partition windows. Returns
+        None if the count cannot be computed quickly and must enumerate all partitions before
+        counting them.
+        """
+        last_partition_window = self.get_last_partition_window(current_time)
+        first_partition_window = self.get_first_partition_window(current_time)
+
+        if not last_partition_window or not first_partition_window:
+            return None
+
+        if self.is_basic_daily:
+            return (last_partition_window.start - first_partition_window.start).days + 1
+
+        fixed_minute_interval = get_fixed_minute_interval(self.cron_schedule)
+        if fixed_minute_interval:
+            minutes_in_window = (
+                last_partition_window.start.timestamp() - first_partition_window.start.timestamp()
+            ) / 60
+            return int(minutes_in_window // fixed_minute_interval) + 1
+
+        return None
+
     def get_num_partitions(
         self,
         current_time: Optional[datetime] = None,
@@ -375,6 +402,11 @@ class TimeWindowPartitionsDefinition(
         # Method added for performance reasons.
         # Fetching partition keys requires significantly more compute time to
         # string format datetimes.
+
+        fast_num_partitions = self._get_fast_num_partitions(current_time)
+        if fast_num_partitions is not None:
+            return fast_num_partitions
+
         current_timestamp = self.get_current_timestamp(current_time=current_time)
 
         partitions_past_current_time = 0
@@ -422,10 +454,9 @@ class TimeWindowPartitionsDefinition(
                 or partitions_past_current_time < self.end_offset
             ):
                 if idx >= start_idx and idx < end_idx:
+                    # datetimes from _iterate_time_windows have the correct tz so use None as a optimization
                     partition_keys.append(
-                        dst_safe_strftime(
-                            time_window.start, self.timezone, self.fmt, self.cron_schedule
-                        )
+                        dst_safe_strftime(time_window.start, None, self.fmt, self.cron_schedule)
                     )
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
@@ -455,10 +486,9 @@ class TimeWindowPartitionsDefinition(
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
             ):
+                # datetimes from _iterate_time_windows have the correct tz so use None as a optimization
                 partition_keys.append(
-                    dst_safe_strftime(
-                        time_window.start, self.timezone, self.fmt, self.cron_schedule
-                    )
+                    dst_safe_strftime(time_window.start, None, self.fmt, self.cron_schedule)
                 )
 
                 if time_window.end.timestamp() > current_timestamp:
@@ -486,8 +516,10 @@ class TimeWindowPartitionsDefinition(
     def __repr__(self):
         # Between python 3.8 and 3.9 the repr of a datetime object changed.
         # Replaces start time with timestamp as a workaround to make sure the repr is consistent across versions.
+        # Make sure to update this __repr__ if any new fields are added to TimeWindowPartitionsDefinition.
         return (
             f"TimeWindowPartitionsDefinition(start={self.start.timestamp()},"
+            f" end={self.end.timestamp() if self.end else None},"
             f" timezone='{self.timezone}', fmt='{self.fmt}', end_offset={self.end_offset},"
             f" cron_schedule='{self.cron_schedule}')"
         )
@@ -527,7 +559,7 @@ class TimeWindowPartitionsDefinition(
         for partition_key in sorted_pks:
             next_window = next(cur_windows_iterator)
             if (
-                dst_safe_strftime(next_window.start, self.timezone, self.fmt, self.cron_schedule)
+                dst_safe_strftime(next_window.start, None, self.fmt, self.cron_schedule)
                 == partition_key
             ):
                 partition_key_time_windows.append(next_window)
@@ -583,7 +615,7 @@ class TimeWindowPartitionsDefinition(
         if start_time.timestamp() >= last_partition_window.end.timestamp():
             return None
         else:
-            return dst_safe_strftime(start_time, self.timezone, self.fmt, self.cron_schedule)
+            return dst_safe_strftime(start_time, None, self.fmt, self.cron_schedule)
 
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
@@ -1024,11 +1056,11 @@ class TimeWindowPartitionsDefinition(
 
     @property
     def is_basic_daily(self) -> bool:
-        return self.cron_schedule == "0 0 * * *"
+        return is_basic_daily(self.cron_schedule)
 
     @property
     def is_basic_hourly(self) -> bool:
-        return self.cron_schedule == "0 * * * *"
+        return is_basic_hourly(self.cron_schedule)
 
 
 class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
@@ -1887,9 +1919,11 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             TimeWindowPartitionsDefinition, self.partitions_def
         ).time_window_for_partition_key(partition_key)
 
+        time_window_start_timestamp = time_window.start.timestamp()
+
         return any(
-            time_window.start.timestamp() >= included_time_window.start.timestamp()
-            and time_window.start.timestamp() < included_time_window.end.timestamp()
+            time_window_start_timestamp >= included_time_window.start.timestamp()
+            and time_window_start_timestamp < included_time_window.end.timestamp()
             for included_time_window in self.included_time_windows
         )
 

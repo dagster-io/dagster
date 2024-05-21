@@ -21,7 +21,7 @@ from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import EventRecordsFilter
+from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation import CodeLocation, ExternalRepository
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
@@ -34,8 +34,8 @@ from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.utils import is_valid_email
-from dagster._core.workspace.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -405,12 +405,19 @@ class GrapheneAssetNode(graphene.ObjectType):
             opVersion=external_asset_node.code_version,
             groupName=external_asset_node.group_name,
             owners=[
-                GrapheneUserAssetOwner(email=owner)
-                if is_valid_email(owner)
-                else GrapheneTeamAssetOwner(team=owner)
+                self._graphene_asset_owner_from_owner_str(owner)
                 for owner in (external_asset_node.owners or [])
             ],
         )
+
+    def _graphene_asset_owner_from_owner_str(
+        self, owner_str: str
+    ) -> Union[GrapheneUserAssetOwner, GrapheneTeamAssetOwner]:
+        if is_valid_email(owner_str):
+            return GrapheneUserAssetOwner(email=owner_str)
+        else:
+            check.invariant(owner_str.startswith("team:"))
+            return GrapheneTeamAssetOwner(team=owner_str[5:])
 
     @property
     def repository_location(self) -> CodeLocation:
@@ -577,15 +584,14 @@ class GrapheneAssetNode(graphene.ObjectType):
             instance=graphene_info.context.instance, asset_graph=asset_graph
         )
         data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
-        event_records = instance.get_event_records(
-            EventRecordsFilter(
-                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+        event_records = instance.fetch_materializations(
+            AssetRecordsFilter(
+                asset_key=asset_key,
                 before_timestamp=int(timestampMillis) / 1000.0 + 1,
                 after_timestamp=int(timestampMillis) / 1000.0 - 1,
-                asset_key=asset_key,
             ),
             limit=1,
-        )
+        ).records
 
         if not event_records:
             return []
@@ -1140,11 +1146,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance,
             asset_key,
             self._dynamic_partitions_loader,
-            (
-                self._asset_record_loader.get_asset_record(asset_key)
-                if self._asset_record_loader
-                else None
-            ),
+            self._asset_record_loader,
             partitions_def,
         )
 
@@ -1174,11 +1176,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 graphene_info.context.instance,
                 asset_key,
                 self._dynamic_partitions_loader,
-                (
-                    self._asset_record_loader.get_asset_record(self._external_asset_node.asset_key)
-                    if self._asset_record_loader
-                    else None
-                ),
+                self._asset_record_loader,
                 (
                     self._external_asset_node.partitions_def_data.get_partitions_definition()
                     if self._external_asset_node.partitions_def_data

@@ -15,9 +15,9 @@ from typing import (
 from typing_extensions import TypedDict
 
 import dagster._check as check
-from dagster import AssetCheckSeverity
 from dagster._core.definitions import (
     AssetCheckEvaluation,
+    AssetCheckSeverity,
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -126,6 +126,7 @@ def _process_user_event(
             output_name=output_name,
             metadata=user_event.metadata,
             data_version=user_event.data_version,
+            tags=user_event.tags,
         )
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
@@ -276,6 +277,7 @@ def _step_output_error_checked_user_event_sequence(
                         **normalize_metadata(metadata or {}),
                     },
                     data_version=output.data_version,
+                    tags=output.tags,
                 )
         else:
             if not output_def.is_dynamic:
@@ -658,6 +660,8 @@ def _get_output_asset_events(
     else:
         tags = {}
 
+    all_tags = {**tags, **((output.tags if not isinstance(output, DynamicOutput) else None) or {})}
+
     backfill_id = step_context.get_tag(BACKFILL_ID_TAG)
     if backfill_id:
         tags[BACKFILL_ID_TAG] = backfill_id
@@ -673,7 +677,7 @@ def _get_output_asset_events(
     if asset_partitions:
         for partition in asset_partitions:
             with disable_dagster_warnings():
-                tags.update(
+                all_tags.update(
                     get_tags_from_multi_partition_key(partition)
                     if isinstance(partition, MultiPartitionKey)
                     else {}
@@ -683,11 +687,11 @@ def _get_output_asset_events(
                     asset_key=asset_key,
                     partition=partition,
                     metadata=all_metadata,
-                    tags=tags,
+                    tags=all_tags,
                 )
     else:
         with disable_dagster_warnings():
-            yield event_class(asset_key=asset_key, metadata=all_metadata, tags=tags)
+            yield event_class(asset_key=asset_key, metadata=all_metadata, tags=all_tags)
 
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
@@ -713,7 +717,7 @@ def _get_input_provenance_data(
         # the most recent materialization record (it will retrieve a cached record if it's already
         # been asked for). For this to be correct, the output materializations for the step must be
         # generated in topological order -- we assume this.
-        version_info = step_context.get_input_asset_version_info(key)
+        version_info = step_context.maybe_fetch_and_get_input_asset_version_info(key)
 
         # This can only happen for source assets that have never been observed.
         if version_info is None:

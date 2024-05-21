@@ -29,7 +29,7 @@ Functions decorated by <PyObject object="asset" decorator/>, <PyObject object="m
   />
 </center>
 
-The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Software-defined Assets and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
+The I/O manager APIs make it easy to separate code that's responsible for logical data transformation from code that's responsible for reading and writing the results. Asset definitions and ops can focus on business logic, while I/O managers handle I/O. This separation makes it easier to test the business logic and run it in different environments.
 
 For non-asset jobs with inputs that aren't connected to upstream outputs, see the [Unconnected Inputs](/concepts/io-management/unconnected-inputs) overview.
 
@@ -79,7 +79,7 @@ that are responsible for storing the output of an asset or op and loading it as 
 to downstream assets or ops. For example, an I/O manager might store and load objects
 from files on a filesystem.
 
-Each software-defined asset can have its own I/O manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different I/O manager:
+Each asset definition can have its own I/O manager. In the [multi-asset](/concepts/assets/multi-assets) case where multiple assets are outputted, each outputted asset can be handled with a different I/O manager:
 
 <center>
   <Image
@@ -116,7 +116,7 @@ I/O managers are provided through the [resources](/concepts/resources) system, w
 
 ---
 
-## Using I/O managers with Software-defined Assets
+## Using I/O managers with asset definitions
 
 ### Applying I/O managers to assets
 
@@ -240,7 +240,7 @@ defs = Definitions(
 
 ### Using I/O managers to load source data
 
-Software-defined assets often depend on data assets that are generated outside of Dagster, or in a different code location within Dagster, and it's often useful to use I/O managers to load the data from these assets. To represent one of these assets, you can create an asset definition that includes an I/O manager, but no materialization function. Your other assets can then depend on it and load data from it, just as they would with a materializable asset.
+Asset definitions often depend on data assets that are generated outside of Dagster, or in a different code location within Dagster, and it's often useful to use I/O managers to load the data from these assets. To represent one of these assets, you can create an asset definition that includes an I/O manager, but no materialization function. Your other assets can then depend on it and load data from it, just as they would with a materializable asset.
 
 For example:
 
@@ -885,7 +885,7 @@ class DataframeTableIOManagerWithMetadata(ConfigurableIOManager):
 
 Any entries yielded this way will be attached to the `Handled Output` event for this output.
 
-Additionally, if the handled output is part of a software-defined asset, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
+Additionally, if the handled output is part of an asset definition, these metadata entries will also be attached to the materialization event created for that asset and show up on the Asset Details page for the asset.
 
 ---
 
