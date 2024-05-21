@@ -8,7 +8,6 @@ from dagster import (
     _check as check,
     materialize,
 )
-from dagster._core.definitions.metadata import IntMetadataValue
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliInvocation, DbtCliResource
 
@@ -21,7 +20,8 @@ def standalone_duckdb_dbfile_path_fixture(request) -> None:
     """Generate a unique duckdb dbfile path for certain tests which need
     it, rather than using the default one-file-per-worker approach.
     """
-    jaffle_shop_duckdb_db_file_name = f"{request.node.name}_jaffle_shop"
+    node_name = cast(str, request.node.name).replace("[", "_").replace("]", "_")
+    jaffle_shop_duckdb_db_file_name = f"{node_name}_jaffle_shop"
     jaffle_shop_duckdb_dbfile_path = f"target/{jaffle_shop_duckdb_db_file_name}.duckdb"
 
     os.environ["DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME"] = jaffle_shop_duckdb_db_file_name
@@ -100,24 +100,24 @@ def test_row_count(request: pytest.FixtureRequest, manifest_fixture_name: str) -
 
     assert result.success
 
+    metadata_by_asset_key = {
+        check.not_none(event.asset_key): event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+    }
+
     # Validate that we have row counts for all models which are not views
     assert all(
-        "dagster/row_count" not in event.materialization.metadata
-        for event in result.get_asset_materialization_events()
+        "dagster/row_count" not in metadata
+        for asset_key, metadata in metadata_by_asset_key.items()
         # staging tables are views, so we don't attempt to get row counts for them
-        if "stg" in check.not_none(event.asset_key).path[-1]
-    )
+        if "stg" in asset_key.path[-1]
+    ), metadata_by_asset_key
     assert all(
-        "dagster/row_count" in event.materialization.metadata
-        for event in result.get_asset_materialization_events()
-        if "stg" not in check.not_none(event.asset_key).path[-1]
-    )
-
-    row_counts = [
-        cast(IntMetadataValue, event.materialization.metadata["dagster/row_count"]).value
-        for event in result.get_asset_materialization_events()
-        if "stg" not in check.not_none(event.asset_key).path[-1]
-    ]
+        "dagster/row_count" in metadata
+        for asset_key, metadata in metadata_by_asset_key.items()
+        # staging tables are views, so we don't attempt to get row counts for them
+        if "stg" not in asset_key.path[-1]
+    ), metadata_by_asset_key
 
 
 def test_row_count_err(
