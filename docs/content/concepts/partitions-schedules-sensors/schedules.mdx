@@ -107,12 +107,13 @@ Having defined a date-partitioned job, you can construct a schedule for it using
 from dagster import build_schedule_from_partitioned_job, job
 
 
-@job(config=my_partitioned_config)
-def do_stuff_partitioned(): ...
+@job(config=partitioned_config)
+def partitioned_op_job():
+    ...
 
 
-do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
-    do_stuff_partitioned,
+partitioned_op_schedule = build_schedule_from_partitioned_job(
+    partitioned_op_job,
 )
 ```
 
@@ -128,7 +129,8 @@ from dagster import (
 
 
 @asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-def hourly_asset(): ...
+def hourly_asset():
+    ...
 
 
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
