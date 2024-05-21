@@ -72,7 +72,7 @@ export const AssetGroupRoot = ({
   );
 
   const onNavigateToSourceAssetNode = useCallback(
-    (e: React.MouseEvent<any>, node: AssetLocation) => {
+    (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
       let path;
       if (node.groupName && node.repoAddress) {
         path = workspacePathFromAddress(
