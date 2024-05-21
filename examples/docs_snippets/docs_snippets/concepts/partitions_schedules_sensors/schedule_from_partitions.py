@@ -1,14 +1,13 @@
 # ruff: isort: skip_file
 
-from .partitioned_job import my_partitioned_config
+from .partitioned_job import partitioned_config
 
 # start_marker
 from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=partitioned_config)
-def partitioned_op_job():
-    ...
+def partitioned_op_job(): ...
 
 
 partitioned_op_schedule = build_schedule_from_partitioned_job(
@@ -30,8 +29,7 @@ daily_partition = DailyPartitionsDefinition(start_date="2024-05-20")
 
 
 @asset(partitions_def=daily_partition)
-def daily_asset():
-    ...
+def daily_asset(): ...
 
 
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])

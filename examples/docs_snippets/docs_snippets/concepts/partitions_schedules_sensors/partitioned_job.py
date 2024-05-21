@@ -14,7 +14,7 @@ from datetime import datetime
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
-def my_partitioned_config(start: datetime, _end: datetime):
+def partitioned_config(start: datetime, _end: datetime):
     return {
         "ops": {
             "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
@@ -26,7 +26,7 @@ def my_partitioned_config(start: datetime, _end: datetime):
 
 
 # start_partitioned_job
-@job(config=my_partitioned_config)
+@job(config=partitioned_config)
 def do_stuff_partitioned():
     process_data_for_date()
 

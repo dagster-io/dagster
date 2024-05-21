@@ -96,7 +96,7 @@ from datetime import datetime
 
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
-def my_partitioned_config(start: datetime, _end: datetime):
+def partitioned_config(start: datetime, _end: datetime):
     return {
         "ops": {
             "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
@@ -107,7 +107,7 @@ def my_partitioned_config(start: datetime, _end: datetime):
 Then you can build a job that uses the `PartitionedConfig` by supplying it to the `config` argument when you construct the job:
 
 ```python file=/concepts/partitions_schedules_sensors/partitioned_job.py startafter=start_partitioned_job endbefore=end_partitioned_job
-@job(config=my_partitioned_config)
+@job(config=partitioned_config)
 def do_stuff_partitioned():
     process_data_for_date()
 ```

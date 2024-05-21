@@ -43,16 +43,17 @@ from dagster import (
     asset,
     build_schedule_from_partitioned_job,
     define_asset_job,
-    HourlyPartitionsDefinition,
+    DailyPartitionsDefinition,
 )
 
-
-@asset(partitions_def=HourlyPartitionsDefinition(start_date="2020-01-01-00:00"))
-def hourly_asset():
-    ...
+daily_partition = DailyPartitionsDefinition(start_date="2024-05-20")
 
 
-partitioned_asset_job = define_asset_job("partitioned_job", selection=[hourly_asset])
+@asset(partitions_def=daily_partition)
+def daily_asset(): ...
+
+
+partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
 
 
 asset_partitioned_schedule = build_schedule_from_partitioned_job(
@@ -72,8 +73,7 @@ from dagster import build_schedule_from_partitioned_job, job
 
 
 @job(config=partitioned_config)
-def partitioned_op_job():
-    ...
+def partitioned_op_job(): ...
 
 
 partitioned_op_schedule = build_schedule_from_partitioned_job(
@@ -91,6 +91,8 @@ The `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameter
 Consider the following job:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_schedule_with_offset endbefore=end_partitioned_schedule_with_offset
+from dagster import build_schedule_from_partitioned_job
+
 asset_partitioned_schedule = build_schedule_from_partitioned_job(
     partitioned_asset_job, hour_of_day=1, minute_of_hour=30
 )
@@ -101,34 +103,36 @@ If the current date is `2024-05-20`, this schedule would submit a run for the `2
 ### Customizing the ending partition in a set
 
 <Note>
-<strong>Heads up!</strong> The examples in this section use daily partitions, but the same logic also applies to other time-based partitions, such as hourly, weekly, and monthly partitions.
+  <strong>Heads up!</strong> The examples in this section use daily partitions,
+  but the same logic also applies to other time-based partitions, such as
+  hourly, weekly, and monthly partitions.
 </Note>
 
 Each schedule tick of a partitioned job targets the latest partition in the partition set that exists as of the tick time. For example, consider a schedule that runs a daily-partitioned job. When the schedule runs on `2024-05-20`, it will target the most recent partition, which will correspond to the previous day: `2024-05-19`.
 
 | If a job runs on this date... | It will target this partition |
-|-------------------------------|-------------------------------|
-| 2024-05-20                    | 2024-05-19 |
-| 2024-05-21                    | 2024-05-20 |
-| 2024-05-22                    | 2024-05-21 |
+| ----------------------------- | ----------------------------- |
+| 2024-05-20                    | 2024-05-19                    |
+| 2024-05-21                    | 2024-05-20                    |
+| 2024-05-22                    | 2024-05-21                    |
 
 This occurs because each partition is a **time window**. A time window is a set period of time with a start and an end time. The partition's key is the start of the time window, but the partition isn't included in the partition set until its time window has completed. Kicking off a run after the time window completes allows the run to process data for the entire time window.
 
 Continuing with the daily partition example, the `2024-05-20` partition would have the following start and end times:
 
-- **Start time** - `2024-05-20 00:00:00` 
-- **End time** -  `2024-05-20 23:59:59`
+- **Start time** - `2024-05-20 00:00:00`
+- **End time** - `2024-05-20 23:59:59`
 
 After `2024-05-20 23:59:59` passes, the time window is complete and the `2024-05-20` partition will be included in the partition set.
 
 If you need to customize the ending, or most recent partition in a set, use the `end_offset` parameter in the partition's config:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_offset_partition endbefore=end_offset_partition
-from dagster import (
-    DailyPartitionsDefinition,
-)
+from dagster import DailyPartitionsDefinition
 
-daily_partition = DailyPartitionsDefinition(start_date="2024-05-10-00:00", end_offset=1)
+daily_partition_with_offset = DailyPartitionsDefinition(
+    start_date="2024-05-20", end_offset=-1
+)
 ```
 
 Setting this parameter changes the partition that will be filled in at each schedule tick. Positive and negative integers are accepted, which will have the following effects:
@@ -144,17 +148,17 @@ current_date - 1 type_of_partition + end_offset
 
 Let's look at an example schedule that's partitioned by day and how different `end_offset` values would affect the most recent partition in the set. In this example, we're using a start date of `2024-05-20`:
 
-| End offset   | Calculated as                 | Ending (most recent) partition |
-|--------------|-------------------------------|---------------------------------|
+| End offset   | Calculated as                 | Ending (most recent) partition          |
+| ------------ | ----------------------------- | --------------------------------------- |
 | Offset of -1 | `2024-05-20 - 1 day + -1 day` | 2024-05-18 (2 days prior to start date) |
-| No offset    | `2024-05-20 - 1 day + 0 days` | 2024-05-19 (1 day prior to start date) |
-| Offset of 1  | `2024-05-20 - 1 day + 1 day`  | 2024-05-20 (start date) |
+| No offset    | `2024-05-20 - 1 day + 0 days` | 2024-05-19 (1 day prior to start date)  |
+| Offset of 1  | `2024-05-20 - 1 day + 1 day`  | 2024-05-20 (start date)                 |
 
 ---
 
 ## Working with static partitions
 
-Next, we'll demonstrate how to create a schedule for a job with a static partition. To do this,  we'll construct the schedule from scratch using the <PyObject object="schedule" decorator /> decorator, rather than using a helper function like <PyObject object="build_schedule_from_partitioned_job"/>. This will allow more flexibility in determining which partitions should be run by the schedule.
+Next, we'll demonstrate how to create a schedule for a job with a static partition. To do this, we'll construct the schedule from scratch using the <PyObject object="schedule" decorator /> decorator, rather than using a helper function like <PyObject object="build_schedule_from_partitioned_job"/>. This will allow more flexibility in determining which partitions should be run by the schedule.
 
 In this example, the job is partitioned by continent:
 
@@ -215,13 +219,13 @@ def antarctica_schedule():
 
 ## APIs in this guide
 
-| Name                                   | Description                                               |
-| -------------------------------------- | --------------------------------------------------------- |
+| Name                                                      | Description                                                                                         |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | <PyObject object="schedule" decorator />                  | Decorator that defines a schedule that executes according to a given cron schedule.                 |
 | <PyObject object="build_schedule_from_partitioned_job" /> | A function that constructs a schedule whose interval matches the partitioning of a partitioned job. |
-| <PyObject object="RunRequest" /> | A class that represents all the information required to launch a single run. |
-| <PyObject object="define_asset_job" /> | A function for defining a job from a selection of assets. |
-| <PyObject object="job" decorator /> | The decorator used to define a job. |
+| <PyObject object="RunRequest" />                          | A class that represents all the information required to launch a single run.                        |
+| <PyObject object="define_asset_job" />                    | A function for defining a job from a selection of assets.                                           |
+| <PyObject object="job" decorator />                       | The decorator used to define a job.                                                                 |
 
 ---
 
@@ -231,11 +235,11 @@ def antarctica_schedule():
   <ArticleListItem
     title="Schedules"
     href="/concepts/partitions-schedules-sensors/schedules"
-    ></ArticleListItem>
+  ></ArticleListItem>
   <ArticleListItem
     title="Partitions"
     href="/concepts/partitions-schedules-sensors/partitions"
-    ></ArticleListItem>
+  ></ArticleListItem>
   <ArticleListItem
     title="Testing schedules"
     href="/concepts/automation/schedules/testing"
