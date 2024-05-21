@@ -10,8 +10,10 @@ run_launcher:
   module: dagster_gcp.cloud_run
   class: CloudRunRunLauncher
   config:
-    project: dagster-420313
-    region: northamerica-northeast1
+    # PROJECT
+    project: my-gcp-project
+    # REGION
+    region: my-region
     job_name_by_code_location:
       pipeline1: pipeline1-job
       pipeline2: pipeline2-job

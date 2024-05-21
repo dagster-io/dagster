@@ -2,12 +2,15 @@ FROM python:3.10-slim
 
 ARG PIPELINE_DIR
 
-RUN mkdir -p /opt/dagster/dagster_home /opt/dagster/app
+RUN mkdir -p /opt/dagster/app
+
+WORKDIR /opt/dagster/app
+
+COPY ${PIPELINE_DIR} .
 
 RUN pip install \
     dagster \
-    dagster-postgres
+    dagster-postgres \
+    -e .
 
-COPY ${PIPELINE_DIR} /opt/dagster/app/
-
-ENV DAGSTER_HOME=/opt/dagster/dagster_home/
+ENV DAGSTER_HOME=/opt/dagster/app/
