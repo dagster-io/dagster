@@ -756,7 +756,28 @@ def test_asset_key():
     assert result.success
 
 
-def test_asset_group_name():
+def test_asset_group_name_default():
+    @asset
+    def before():
+        pass
+
+    @asset
+    def after(before):
+        assert before
+
+    class MyIOManager(IOManager):
+        def load_input(self, context: InputContext):
+            assert context.asset_group_name == "default"
+            return 1
+
+        def handle_output(self, context: OutputContext, obj):
+            assert context.asset_group_name == "default"
+
+    result = materialize([before, after], resources={"io_manager": MyIOManager()})
+    assert result.success
+
+
+def test_asset_group_name_customized():
     @asset(group_name="example_group")
     def before():
         pass
