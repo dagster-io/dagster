@@ -12,17 +12,19 @@ from dagster import (
     AssetSelection,
     DailyPartitionsDefinition,
     In,
+    MaterializeResult,
     MetadataValue,
     Nothing,
     Output,
     asset,
     asset_check,
+    build_metadata_bounds_checks,
     define_asset_job,
     graph_asset,
+    graph_multi_asset,
     multi_asset,
     op,
 )
-from dagster._core.definitions.decorators.asset_decorator import graph_multi_asset
 
 
 @asset(key_prefix="test_prefix", group_name="asset_checks")
@@ -435,6 +437,21 @@ checks_only_job = define_asset_job(
 )
 
 
+@asset(group_name="asset_checks")
+def metadata_asset(
+    context: AssetExecutionContext,
+) -> MaterializeResult:
+    return MaterializeResult(metadata={"my_key": int(context.get_tag("my_key") or 0)})
+
+
+metadata_checks = build_metadata_bounds_checks(
+    assets=[metadata_asset],
+    metadata_key="my_key",
+    min_value=0,
+    max_value=10,
+)
+
+
 def get_checks_and_assets():
     return [
         checked_asset,
@@ -458,4 +475,6 @@ def get_checks_and_assets():
         checks_included_job,
         checks_excluded_job,
         checks_only_job,
+        metadata_asset,
+        metadata_checks,
     ]
