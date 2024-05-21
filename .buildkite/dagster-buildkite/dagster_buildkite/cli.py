@@ -23,5 +23,5 @@ def dagster() -> None:
 def dagster_nightly() -> None:
     PythonPackages.load_from_git(GitInfo(directory=Path(".")))
     steps = build_dagster_oss_nightly_steps()
-    buildkite_yaml = buildkite_yaml_for_steps(steps)
+    buildkite_yaml = buildkite_yaml_for_steps(steps, custom_slack_channel="eng-buildkite-nightly")
     print(buildkite_yaml)  # noqa: T201

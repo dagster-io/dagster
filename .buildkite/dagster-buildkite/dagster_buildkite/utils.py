@@ -82,7 +82,7 @@ def safe_getenv(env_var: str) -> str:
     return os.environ[env_var]
 
 
-def buildkite_yaml_for_steps(steps) -> str:
+def buildkite_yaml_for_steps(steps, custom_slack_channel: Optional[str] = None) -> str:
     return yaml.dump(
         {
             "env": {
@@ -101,7 +101,17 @@ def buildkite_yaml_for_steps(steps) -> str:
                     ),
                 }
                 for buildkite_email, slack_channel in BUILD_CREATOR_EMAIL_TO_SLACK_CHANNEL_MAP.items()
-            ],
+            ]
+            + (
+                [
+                    {
+                        "slack": f"elementl#{custom_slack_channel}",
+                        "if": "build.state != 'canceled'",
+                    }
+                ]
+                if custom_slack_channel
+                else []
+            ),
         },
         default_flow_style=False,
     )
