@@ -85,9 +85,7 @@ def test_multi_out_implicit_none():
         untyped_job.execute_in_process()
 
 
-pytest.mark.skipif(sys.version_info < (3, 10), reason="| operator Python 3.10 or higher")
-
-
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="| operator Python 3.10 or higher")
 def test_pipe_union_optional():
     # union is not yet supported, but you can express optional as union of T and None
     @op
