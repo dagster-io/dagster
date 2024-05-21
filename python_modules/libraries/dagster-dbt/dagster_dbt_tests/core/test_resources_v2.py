@@ -57,11 +57,11 @@ def test_dbt_cli(global_config_flags: List[str]) -> None:
 
 def test_dbt_cli_executable() -> None:
     dbt_executable = cast(str, shutil.which("dbt"))
-    assert (
-        DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), dbt_executable=dbt_executable)
-        .cli(["parse"])
-        .is_successful()
-    )
+    invocation = DbtCliResource(
+        project_dir=os.fspath(test_jaffle_shop_path), dbt_executable=dbt_executable
+    ).cli(["parse"])
+    assert invocation.is_successful()
+    assert not invocation.get_error()
 
     assert (
         DbtCliResource(
@@ -102,6 +102,7 @@ def test_dbt_cli_failure() -> None:
         dbt_cli_invocation.wait()
 
     assert not dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.get_error()
     assert dbt_cli_invocation.process.returncode == 2
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
@@ -114,6 +115,13 @@ def test_dbt_cli_failure() -> None:
     dbt = DbtCliResource(project_dir=project)
     with pytest.raises(Exception, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"):
         dbt.cli(["parse"]).wait()
+
+
+def test_dbt_cli_failure_no_raise() -> None:
+    dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path))
+    dbt_cli_invocation = dbt.cli(["run", "--selector", "nonexistent"], raise_on_error=False)
+    dbt_cli_invocation.wait()
+    assert "Could not find selector named nonexistent" in dbt_cli_invocation.get_error().description  # type: ignore
 
 
 def test_dbt_cli_subprocess_cleanup(
