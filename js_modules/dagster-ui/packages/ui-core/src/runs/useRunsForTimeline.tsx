@@ -407,9 +407,9 @@ export const useRunsForTimeline = (
         })(),
         // Only fetch future ticks on a minute
         (async () => {
-          if (lastFetchRef.current.ongoing < Date.now() - 60 * 1000) {
+          if (lastFetchRef.current.future < Date.now() - 60 * 1000) {
             await fetchFutureTicks();
-            lastFetchRef.current.ongoing = Date.now();
+            lastFetchRef.current.future = Date.now();
           }
         })(),
         fetchCompletedRunsQueryData(),
