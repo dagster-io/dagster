@@ -51,7 +51,7 @@ export const PipelineOverviewRoot = (props: Props) => {
   );
 
   const onNavigateToSourceAssetNode = useCallback(
-    (e: React.MouseEvent<any>, node: AssetLocation) => {
+    (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
       if (!node.jobName || !node.opNames.length || !node.repoAddress) {
         // This op has no definition in any loaded repository (source asset).
         // The best we can do is show the asset page. This will still be mostly empty,

@@ -42,7 +42,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   );
 
   const onNavigateToSourceAssetNode = useCallback(
-    (e: React.MouseEvent<any>, node: AssetLocation) => {
+    (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
       const path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
       if (e.metaKey) {
         window.open(path, '_blank');

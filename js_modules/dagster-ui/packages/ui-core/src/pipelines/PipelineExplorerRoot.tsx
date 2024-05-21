@@ -65,7 +65,10 @@ export const PipelineExplorerContainer = ({
 }: {
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToSourceAssetNode: (e: React.MouseEvent<any>, node: AssetLocation) => void;
+  onNavigateToSourceAssetNode: (
+    e: Pick<React.MouseEvent<any>, 'metaKey'>,
+    node: AssetLocation,
+  ) => void;
   repoAddress?: RepoAddress;
   isGraph?: boolean;
 }) => {

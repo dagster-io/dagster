@@ -75,7 +75,10 @@ type Props = {
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-  onNavigateToSourceAssetNode: (e: React.MouseEvent, node: AssetLocation) => void;
+  onNavigateToSourceAssetNode: (
+    e: Pick<React.MouseEvent<any>, 'metaKey'>,
+    node: AssetLocation,
+  ) => void;
   isGlobalGraph?: boolean;
   trace?: PageLoadTrace;
 };
