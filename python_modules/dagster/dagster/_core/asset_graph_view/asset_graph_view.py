@@ -30,6 +30,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
     from dagster._core.definitions.data_version import CachingStaleStatusResolver
     from dagster._core.definitions.definitions_class import Definitions
@@ -272,18 +273,45 @@ class AssetGraphView:
     ):
         import pendulum
 
-        from dagster._core.definitions.data_version import CachingStaleStatusResolver
         from dagster._core.instance import DagsterInstance
 
-        stale_resolver = CachingStaleStatusResolver(
+        # stale_resolver = CachingStaleStatusResolver(
+        #     instance=instance or DagsterInstance.ephemeral(),
+        #     asset_graph=defs.get_asset_graph(),
+        # )
+        # check.invariant(stale_resolver.instance_queryer, "Ensure instance queryer is constructed")
+        # return AssetGraphView(
+        #     stale_resolver=stale_resolver,
+        #     temporal_context=TemporalContext(
+        #         effective_dt=effective_dt or pendulum.now(),
+        #         last_event_id=last_event_id,
+        #     ),
+        # )
+        return AssetGraphView.create(
             instance=instance or DagsterInstance.ephemeral(),
             asset_graph=defs.get_asset_graph(),
+            effective_dt=effective_dt or pendulum.now(),
+            last_event_id=last_event_id,
+        )
+
+    @staticmethod
+    def create(
+        instance: "DagsterInstance",
+        asset_graph: "AssetGraph",
+        effective_dt: datetime,
+        last_event_id: Optional[int],
+    ):
+        from dagster._core.definitions.data_version import CachingStaleStatusResolver
+
+        stale_resolver = CachingStaleStatusResolver(
+            instance=instance,
+            asset_graph=asset_graph,
         )
         check.invariant(stale_resolver.instance_queryer, "Ensure instance queryer is constructed")
         return AssetGraphView(
             stale_resolver=stale_resolver,
             temporal_context=TemporalContext(
-                effective_dt=effective_dt or pendulum.now(),
+                effective_dt=effective_dt,
                 last_event_id=last_event_id,
             ),
         )
