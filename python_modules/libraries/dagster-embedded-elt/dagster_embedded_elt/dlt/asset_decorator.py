@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 from dagster import (
     AssetsDefinition,
     AssetSpec,
+    PartitionsDefinition,
     _check as check,
     multi_asset,
 )
@@ -20,6 +21,7 @@ def dlt_assets(
     name: Optional[str] = None,
     group_name: Optional[str] = None,
     dlt_dagster_translator: Optional[DagsterDltTranslator] = None,
+    partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Asset Factory for using data load tool (dlt).
 
@@ -88,6 +90,7 @@ def dlt_assets(
         group_name=group_name,
         compute_kind="dlt",
         can_subset=True,
+        partitions_def=partitions_def,
         specs=[
             AssetSpec(
                 key=dlt_dagster_translator.get_asset_key(dlt_source_resource),

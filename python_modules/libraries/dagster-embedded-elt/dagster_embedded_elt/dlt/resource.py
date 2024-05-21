@@ -118,16 +118,22 @@ class DagsterDltResource(ConfigurableResource):
 
         """
         # This resource can be used in both `asset` and `op` definitions. In the context of an asset
-        # execution, we retrieve the dlt source, pipeline, and translator from the asset metadata.
-        # This allows us to provide the parameter _only_ in the `dlt_assets` decorator.
+        # execution, we retrieve the dlt source, pipeline, and translator from the asset metadata
+        # as a fallback mechanism. We give preference to explicit parameters to make it easy to
+        # customize execution, e.g., when using partitions.
         if isinstance(context, AssetExecutionContext):
             metadata_by_key = context.assets_def.metadata_by_key
             first_asset_metadata = next(iter(metadata_by_key.values()))
 
-            dlt_source = check.inst(first_asset_metadata.get(META_KEY_SOURCE), DltSource)
-            dlt_pipeline = check.inst(first_asset_metadata.get(META_KEY_PIPELINE), Pipeline)
+            dlt_source = check.inst(
+                dlt_source or first_asset_metadata.get(META_KEY_SOURCE), DltSource
+            )
+            dlt_pipeline = check.inst(
+                dlt_pipeline or first_asset_metadata.get(META_KEY_PIPELINE), Pipeline
+            )
             dagster_dlt_translator = check.inst(
-                first_asset_metadata.get(META_KEY_TRANSLATOR), DagsterDltTranslator
+                dagster_dlt_translator or first_asset_metadata.get(META_KEY_TRANSLATOR),
+                DagsterDltTranslator,
             )
 
         dlt_source = check.not_none(
@@ -162,6 +168,10 @@ class DagsterDltResource(ConfigurableResource):
                     if dlt_source_resource
                 ]
             )
+        # https://github.com/dagster-io/dagster/issues/21022
+        if context.has_partition_key:
+            last_partition_key = context.partition_keys[-1]
+            dlt_pipeline.pipeline_name += f"_{last_partition_key}"
 
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 

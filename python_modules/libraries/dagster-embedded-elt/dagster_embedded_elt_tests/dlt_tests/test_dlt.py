@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 import duckdb
@@ -7,6 +8,7 @@ from dagster import (
     AutoMaterializePolicy,
     AutoMaterializeRule,
     Definitions,
+    MonthlyPartitionsDefinition,
 )
 from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnCronRule
 from dagster._core.definitions.materialize import materialize
@@ -205,3 +207,27 @@ def test_resource_failure_aware_materialization(dlt_pipeline: Pipeline) -> None:
     assert not res.success
     asset_materizations = res.get_asset_materialization_events()
     assert len(asset_materizations) == 0
+
+
+def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09"),
+    )
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        yield from dlt_pipeline_resource.run(context=context)
+
+    async def run_partition(year: str):
+        return materialize(
+            [example_pipeline_assets],
+            resources={"dlt_pipeline_resource": DagsterDltResource()},
+            partition_key=year,
+        )
+
+    async def main():
+        results = asyncio.gather(run_partition("2022-08"), run_partition("2022-09"))
+        assert results[0].success
+        assert results[1].success
