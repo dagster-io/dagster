@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, cast
 
 import pytest
 from dagster import (
@@ -488,6 +488,10 @@ def test_asset_checks_results(
                 "invocation_id"
             ]
 
+        for event in events:
+            if isinstance(event, AssetCheckResult):
+                assert cast(int, event.metadata["Execution Duration"].value) > 0
+
         expected_results = [
             AssetCheckResult(
                 passed=True,
@@ -541,8 +545,22 @@ def test_asset_checks_results(
             ),
         ]
 
+        non_deterministic_metadata_keys = ["Execution Duration"]
+        check_events_without_non_deterministic_metadata = []
+        for event in events:
+            if isinstance(event, AssetCheckResult):
+                check_events_without_non_deterministic_metadata.append(
+                    event._replace(
+                        metadata={
+                            k: v
+                            for k, v in event.metadata.items()
+                            if k not in non_deterministic_metadata_keys
+                        }
+                    )
+                )
+
         for expected_asset_check_result in expected_results:
-            assert expected_asset_check_result in events
+            assert expected_asset_check_result in check_events_without_non_deterministic_metadata
 
         yield from events
 
