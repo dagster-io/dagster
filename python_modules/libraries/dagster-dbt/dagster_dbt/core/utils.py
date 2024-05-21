@@ -322,6 +322,7 @@ def imap(
     iterable: Iterator[T],
     func: Callable[[T], P],
     block_on_enqueuing_task_completion: bool = False,
+    should_shutdown_executor: bool = False,
 ) -> Iterator[P]:
     """A version of `concurrent.futures.ThreadpoolExecutor.map` which tails the input iterator in
     a separate thread. This means that the map function can begin processing and yielding results from
@@ -334,6 +335,8 @@ def imap(
         block_on_enqueuing_task_completion: If True, the function will block until all elements of the
             iterator have been enqueued. This is similar to the behavior of
             `concurrent.futures.ThreadpoolExecutor.map`.
+        should_shutdown_executor: If True, the executor will be shutdown after all elements of the iterator have
+            been processed.
     """
     work_queue: List[Future] = []
     enqueuing_task: Optional[Future] = None
@@ -370,3 +373,5 @@ def imap(
                 next_item_to_yield_idx += 1
             except TimeoutError:
                 pass
+    if should_shutdown_executor:
+        executor.shutdown()

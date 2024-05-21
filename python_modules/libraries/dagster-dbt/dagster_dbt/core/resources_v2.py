@@ -124,7 +124,7 @@ DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS = 2
 DBT_INDIRECT_SELECTION_ENV: Final[str] = "DBT_INDIRECT_SELECTION"
 DBT_EMPTY_INDIRECT_SELECTION: Final[str] = "empty"
 
-STREAM_EVENTS_THREADPOOL_SIZE: Final[int] = 4
+DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE: Final[int] = 4
 
 
 def _get_dbt_target_path() -> Path:
@@ -700,7 +700,8 @@ class DbtCliInvocation:
                     yield from dbt.cli(["run"], context=context).stream()
         """
         return DbtEventIterator(
-            self._stream_asset_events(), self, ThreadPoolExecutor(STREAM_EVENTS_THREADPOOL_SIZE)
+            self._stream_asset_events(),
+            self,
         )
 
     @public
@@ -872,11 +873,9 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         self,
         events: Iterator[T],
         dbt_cli_invocation: DbtCliInvocation,
-        threadpool: ThreadPoolExecutor,
     ) -> None:
         self._inner_iterator = events
         self._dbt_cli_invocation = dbt_cli_invocation
-        self._threadpool = threadpool
 
     def __next__(self) -> T:
         return next(self._inner_iterator)
@@ -946,7 +945,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     @public
     @experimental
     def fetch_row_counts(
-        self,
+        self, *, num_threads=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
@@ -975,13 +974,13 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         with pushd(str(self._dbt_cli_invocation.project_dir)):
             return DbtEventIterator(
                 imap(
-                    executor=self._threadpool,
+                    executor=ThreadPoolExecutor(max_workers=num_threads),
                     iterable=self,
                     func=self._fetch_and_attach_row_count_metadata,
                     block_on_enqueuing_task_completion=block_on_dbt_run,
+                    should_shutdown_executor=True,
                 ),
                 dbt_cli_invocation=self._dbt_cli_invocation,
-                threadpool=self._threadpool,
             )
 
 
