@@ -14,6 +14,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_condition impor
     SchedulingCondition,
 )
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.run_request import RunRequest, SensorResult
 from dagster._core.definitions.sensor_definition import build_sensor_context
@@ -74,13 +75,14 @@ def pulse_ds_sensor(
     sensor_def: DSSensorDefinition,
     instance: DagsterInstance,
     defs: Definitions,
-    asset_daemon_cursor: AssetDaemonCursor,
+    prev_cursor: AssetDaemonCursor,
 ) -> DSSensorResult:
     repository_def = defs.get_repository_def()
     sensor_context = build_sensor_context(
         instance=instance,
         repository_def=repository_def,
-        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(asset_daemon_cursor),
+        cursor=asset_daemon_cursor_to_instigator_serialized_cursor(prev_cursor),
+        sensor_name=sensor_def.name,
     )
     result = sensor_def(sensor_context)
 
@@ -126,7 +128,7 @@ def test_evaluate_empty_basic_ds_sensor() -> None:
         sensor_def=sensor_def,
         instance=instance,
         defs=defs,
-        asset_daemon_cursor=AssetDaemonCursor.empty(),
+        prev_cursor=AssetDaemonCursor.empty(),
     )
 
     assert isinstance(ds_result_1, DSSensorResult)
@@ -137,7 +139,48 @@ def test_evaluate_empty_basic_ds_sensor() -> None:
         sensor_def=sensor_def,
         instance=instance,
         defs=defs,
-        asset_daemon_cursor=ds_result_1.asset_daemon_cursor,
+        prev_cursor=ds_result_1.asset_daemon_cursor,
+    )
+
+    assert isinstance(ds_result_2, DSSensorResult)
+    assert len(ds_result_2.run_requests) == 0
+
+
+def test_eval_upstream_of_eager() -> None:
+    @ds_asset()
+    def upstream() -> None: ...
+
+    @ds_asset(deps=[upstream], scheduling=SchedulingCondition.eager_with_rate_limit())
+    def downstream() -> None: ...
+
+    sensor_def = DSSensorDefinition(
+        name="test_sensor",
+        asset_selection="downstream",
+    )
+
+    defs = Definitions(assets=[upstream, downstream], sensors=[sensor_def])
+
+    instance = DagsterInstance.ephemeral()
+
+    assert materialize(assets=[upstream, downstream], instance=instance).success
+
+    ds_result_1 = pulse_ds_sensor(
+        sensor_def=sensor_def,
+        instance=instance,
+        defs=defs,
+        prev_cursor=AssetDaemonCursor.empty(),
+    )
+
+    assert isinstance(ds_result_1, DSSensorResult)
+    assert len(ds_result_1.run_requests) == 0
+
+    return
+
+    ds_result_2 = pulse_ds_sensor(
+        sensor_def=sensor_def,
+        instance=instance,
+        defs=defs,
+        prev_cursor=ds_result_1.asset_daemon_cursor,
     )
 
     assert isinstance(ds_result_2, DSSensorResult)

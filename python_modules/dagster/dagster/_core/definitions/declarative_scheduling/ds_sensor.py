@@ -46,14 +46,15 @@ def evaluation_fn(context: SensorEvaluationContext):
     asset_graph = repository_def.asset_graph
     auto_run_tags = {}
 
+    sensor_def = check.inst(repository_def.get_sensor_def(context.sensor_name), DSSensorDefinition)
+
     evaluator = SchedulingConditionEvaluator(
         asset_graph=asset_graph,
         asset_graph_view=asset_graph_view,
         logger=logging.getLogger(__name__),  # what is the right loggers
         data_time_resolver=data_time_resolver,
         evaluator_arguments=SchedulingConditionEvaluatorArguments(
-            # TODO, asset_keys from asset selection
-            asset_keys=repository_def.asset_graph.all_asset_keys,
+            asset_keys=check.not_none(sensor_def.asset_selection).resolve(all_assets=asset_graph),
             cursor=asset_daemon_cursor,
             respect_materialization_data_versions=True,
             auto_materialize_run_tags=auto_run_tags,
