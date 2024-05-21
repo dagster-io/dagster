@@ -281,17 +281,9 @@ class DbtCliEventMessage:
         ):
             lineage_metadata = {}
             try:
-                column_data = {
-                    col_name: col_data["data_type"]
-                    for col_name, col_data in self._event_history_metadata.get(
-                        "columns", {}
-                    ).items()
-                }
+                column_data = self._event_history_metadata.get("columns", {})
                 parent_column_data = {
-                    parent_key: {
-                        col_name: col_data["data_type"]
-                        for col_name, col_data in parent_data["columns"].items()
-                    }
+                    parent_key: parent_data["columns"]
                     for parent_key, parent_data in self._event_history_metadata.get(
                         "parents", {}
                     ).items()
@@ -779,7 +771,7 @@ def _get_dbt_resource_props_from_event(
 
 
 class EventHistoryMetadata(NamedTuple):
-    columns: Dict[str, str]
+    columns: Dict[str, Dict[str, Any]]
     parents: Dict[str, Dict[str, Any]]
 
 
@@ -828,8 +820,8 @@ def _build_column_lineage_metadata(
         sqlglot_mapping_schema.add_table(
             table=to_table(parent_relation_name, dialect=sql_dialect),
             column_mapping={
-                column_name: column_data_type
-                for column_name, column_data_type in parent_relation_metadata.items()
+                column_name: column_meta["data_type"]
+                for column_name, column_meta in parent_relation_metadata.items()
             },
             dialect=sql_dialect,
         )
@@ -929,15 +921,19 @@ def _build_column_lineage_metadata(
 
 
 def _fetch_column_metadata(
-    invocation: DbtCliInvocation,
-    event: DbtDagsterEventType,
+    invocation: DbtCliInvocation, event: DbtDagsterEventType, with_column_lineage: bool
 ) -> Optional[Dict[str, Any]]:
-    """Threaded task which fetches column metadata for dbt models in a dbt run once they are built,
-    and attaches the column metadata as metadata to the event.
+    """Threaded task which fetches column schema and lineage metadata for dbt models in a dbt
+    run once they are built, returning the metadata to be attached.
 
     First we use the dbt adapter to obtain the column metadata for the built model. Then we
     retrieve the column metadata for the model's parent models, if they exist. Finally, we
     build the column lineage metadata for the model and attach it to the event.
+
+    Args:
+        invocation (DbtCliInvocation): The dbt CLI invocation.
+        event (DbtDagsterEventType): The dbt event to append column metadata to.
+        with_column_lineage (bool): Whether to include column lineage metadata in the event.
     """
     adapter = check.not_none(invocation.adapter)
 
@@ -950,39 +946,68 @@ def _fetch_column_metadata(
             identifier=dbt_resource_props["name"],
         )
         cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=relation)
-        column_schema_data = {col.name: col.data_type for col in cols}
+        column_schema_data = {col.name: {"data_type": col.data_type} for col in cols}
 
-        parents = {}
-        dependent_unique_ids = invocation.manifest["parent_map"].get(
-            dbt_resource_props["unique_id"], []
-        )
-        for dep_unique_id in dependent_unique_ids:
-            dep_node = invocation.manifest["nodes"].get(dep_unique_id) or invocation.manifest[
-                "sources"
-            ].get(dep_unique_id)
+        if with_column_lineage:
+            parents = {}
+            dependent_unique_ids = invocation.manifest["parent_map"].get(
+                dbt_resource_props["unique_id"], []
+            )
+            for dep_unique_id in dependent_unique_ids:
+                dep_node = invocation.manifest["nodes"].get(dep_unique_id) or invocation.manifest[
+                    "sources"
+                ].get(dep_unique_id)
 
-            dep_relation_name = dep_node["relation_name"]
-            dep_relation_components = [
-                component.strip('"') for component in dep_relation_name.split(".")
-            ]
-            dep_relation = adapter.get_relation(*dep_relation_components)
+                dep_relation_name = dep_node["relation_name"]
+                dep_relation_components = [
+                    component.strip('"') for component in dep_relation_name.split(".")
+                ]
+                dep_relation = adapter.get_relation(*dep_relation_components)
 
-            dep_cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=dep_relation)
-            dep_name = str(dep_relation)
-            parents[dep_name] = {col.name: col.data_type for col in dep_cols}
+                dep_cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=dep_relation)
+                dep_name = str(dep_relation)
+                parents[dep_name] = {col.name: {"data_type": col.data_type} for col in dep_cols}
 
-        metadata = _build_column_lineage_metadata(
-            event_history_metadata=EventHistoryMetadata(
-                columns=column_schema_data,
-                parents=parents,
-            ),
-            dbt_resource_props=dbt_resource_props,
-            manifest=invocation.manifest,
-            dagster_dbt_translator=invocation.dagster_dbt_translator,
-            target_path=invocation.target_path,
-        )
+        col_data = {"columns": column_schema_data}
 
-        return metadata
+        schema_metadata = {}
+        try:
+            schema_metadata = default_metadata_from_dbt_resource_props(col_data)
+        except Exception as e:
+            logger.warning(
+                "An error occurred while building column schema metadata from data"
+                f" `{col_data}` for the dbt resource"
+                f" `{dbt_resource_props['original_file_path']}`."
+                " Column schema metadata will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+
+        lineage_metadata = {}
+        if with_column_lineage:
+            try:
+                lineage_metadata = _build_column_lineage_metadata(
+                    event_history_metadata=EventHistoryMetadata(
+                        columns=column_schema_data,
+                        parents=parents,
+                    ),
+                    dbt_resource_props=dbt_resource_props,
+                    manifest=invocation.manifest,
+                    dagster_dbt_translator=invocation.dagster_dbt_translator,
+                    target_path=invocation.target_path,
+                )
+
+            except Exception as e:
+                logger.warning(
+                    "An error occurred while building column lineage metadata for the dbt resource"
+                    f" `{dbt_resource_props['original_file_path']}`."
+                    " Lineage metadata will not be included in the event.\n\n"
+                    f"Exception: {e}"
+                )
+
+        return {
+            **schema_metadata,
+            **lineage_metadata,
+        }
 
 
 def _fetch_row_count_metadata(
@@ -1066,6 +1091,9 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         models in a dbt run once they are built. Note that row counts will not be fetched
         for views, since this requires running the view's SQL query which may be costly.
 
+        Args:
+            num_threads (int): The number of threads to use for fetching row counts.
+
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
                 A set of corresponding Dagster events for dbt models, with row counts attached,
@@ -1077,19 +1105,29 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     @experimental
     def fetch_column_metadata(
         self,
+        with_column_lineage: bool = True,
+        *,
+        num_threads=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
-        """Experimental functionality which will fetch column metadata and build column lineage
-        for dbt models in a dbt run in a separate thread. This deferred metadata fetch may be
-        more efficient.
+        """Experimental functionality which will fetch column schema metadata for dbt models in a run
+        once they're built. It will also fetch schema information for upstream models and generate
+        column lineage metadata using sqlglot, if enabled.
+
+        Args:
+            generate_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
+            num_threads (int): The number of threads to use for fetching column metadata.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
                 A set of corresponding Dagster events for dbt models, with column metadata attached,
                 yielded in the order they are emitted by dbt.
         """
-        return self._attach_metadata(_fetch_column_metadata)
+        fetch_metadata = lambda invocation, event: _fetch_column_metadata(
+            invocation, event, with_column_lineage
+        )
+        return self._attach_metadata(fetch_metadata, num_threads=num_threads)
 
     def _attach_metadata(
         self,
