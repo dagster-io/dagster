@@ -324,21 +324,24 @@ def build_run_requests_with_backfill_policies(
         if asset_partition.partition_key:
             asset_partition_keys[asset_partition.asset_key].add(asset_partition.partition_key)
 
-    assets_to_reconcile_by_partitions_def_partition_keys: Mapping[
-        Tuple[Optional[PartitionsDefinition], Optional[FrozenSet[str]]], Set[AssetKey]
+    assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy: Mapping[
+        Tuple[Optional[PartitionsDefinition], Optional[FrozenSet[str]], Optional[BackfillPolicy]],
+        Set[AssetKey],
     ] = defaultdict(set)
 
-    # here we are grouping assets by their partitions def and partition keys selected.
+    # here we are grouping assets by their partitions def, selected partition keys, and backfill policy.
     for asset_key, partition_keys in asset_partition_keys.items():
-        assets_to_reconcile_by_partitions_def_partition_keys[
+        assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy[
             asset_graph.get(asset_key).partitions_def,
             frozenset(partition_keys) if partition_keys else None,
+            asset_graph.get(asset_key).backfill_policy,
         ].add(asset_key)
 
     for (
         partitions_def,
         partition_keys,
-    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys.items():
+        backfill_policy,
+    ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy.items():
         tags = {**(run_tags or {})}
         if partitions_def is None and partition_keys is not None:
             check.failed("Partition key provided for unpartitioned asset")
@@ -348,37 +351,16 @@ def build_run_requests_with_backfill_policies(
             # non partitioned assets will be backfilled in a single run
             run_requests.append(RunRequest(asset_selection=list(asset_keys), tags=tags))
         else:
-            backfill_policies = {
-                check.not_none(asset_graph.get(asset_key).backfill_policy)
-                for asset_key in asset_keys
-            }
-            if len(backfill_policies) == 1:
-                # if all backfill policies are the same, we can backfill them together
-                backfill_policy = backfill_policies.pop()
-                run_requests.extend(
-                    _build_run_requests_with_backfill_policy(
-                        list(asset_keys),
-                        check.not_none(backfill_policy),
-                        check.not_none(partition_keys),
-                        check.not_none(partitions_def),
-                        tags,
-                        dynamic_partitions_store=dynamic_partitions_store,
-                    )
+            run_requests.extend(
+                _build_run_requests_with_backfill_policy(
+                    list(asset_keys),
+                    check.not_none(backfill_policy),
+                    check.not_none(partition_keys),
+                    check.not_none(partitions_def),
+                    tags,
+                    dynamic_partitions_store=dynamic_partitions_store,
                 )
-            else:
-                # if backfill policies are different, we need to backfill them separately
-                for asset_key in asset_keys:
-                    backfill_policy = asset_graph.get(asset_key).backfill_policy
-                    run_requests.extend(
-                        _build_run_requests_with_backfill_policy(
-                            [asset_key],
-                            check.not_none(backfill_policy),
-                            check.not_none(partition_keys),
-                            check.not_none(partitions_def),
-                            tags,
-                            dynamic_partitions_store=dynamic_partitions_store,
-                        )
-                    )
+            )
     return run_requests
 
 
