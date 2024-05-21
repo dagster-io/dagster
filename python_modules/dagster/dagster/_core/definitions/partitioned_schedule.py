@@ -147,6 +147,12 @@ def build_schedule_from_partitioned_job(
     )
 
     if isinstance(job, UnresolvedAssetJobDefinition) and job.partitions_def is None:
+        if cron_schedule or execution_timezone:
+            check.failed(
+                "Cannot provide cron_schedule or execution_timezone to"
+                " build_schedule_from_partitioned_job for a time-partitioned job."
+            )
+
         return UnresolvedPartitionedAssetScheduleDefinition(
             job=job,
             default_status=default_status,

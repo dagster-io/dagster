@@ -5,9 +5,9 @@ from dagster import (
     Definitions,
     _check as check,
 )
-from dagster._utils.pydantic_yaml import parse_yaml_file
+from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
-from .blueprint import Blueprint
+from .blueprint import Blueprint, BlueprintDefinitions
 
 
 def load_defs_from_yaml(
@@ -33,10 +33,10 @@ def load_defs_from_yaml(
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
     blueprints = [
-        parse_yaml_file(per_file_blueprint_type, file_path.read_text(), str(file_path))
+        parse_yaml_file_to_pydantic(per_file_blueprint_type, file_path.read_text(), str(file_path))
         for file_path in file_paths
     ]
 
     def_sets = [blueprints.build_defs_add_context_to_errors() for blueprints in blueprints]
 
-    return Definitions.merge(*def_sets)
+    return BlueprintDefinitions.merge(*def_sets).to_definitions()
