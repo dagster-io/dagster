@@ -10,8 +10,8 @@ export class HourlyDataCache<T> {
 
   /**
    * Adds data to the cache for the specified time range.
-   * @param start - The start time in milliseconds.
-   * @param end - The end time in milliseconds.
+   * @param start - The start time in seconds.
+   * @param end - The end time in seconds.
    * @param data - The data to cache.
    */
   addData(start: number, end: number, data: T[]): void {
@@ -30,8 +30,8 @@ export class HourlyDataCache<T> {
   /**
    * Adds data to the partial cache for a specific hour.
    * @param hour - The hour for which to add data.
-   * @param start - The start time in milliseconds.
-   * @param end - The end time in milliseconds.
+   * @param start - The start time in seconds.
+   * @param end - The end time in seconds.
    * @param data - The data to cache.
    */
   private addPartialData(hour: number, start: number, end: number, data: T[]): void {
@@ -65,11 +65,11 @@ export class HourlyDataCache<T> {
 
   /**
    * Retrieves the data for a specific hour.
-   * @param ms - The time in milliseconds.
+   * @param s - The time in seconds.
    * @returns The data for the specified hour.
    */
-  getHourData(ms: number): T[] {
-    const hour = Math.floor(ms / ONE_HOUR_S);
+  getHourData(s: number): T[] {
+    const hour = Math.floor(s / ONE_HOUR_S);
     if (this.cache.has(hour)) {
       return this.cache.get(hour)!.flatMap((interval) => interval.data);
     }
@@ -78,11 +78,11 @@ export class HourlyDataCache<T> {
 
   /**
    * Returns the missing ranges for a specific hour.
-   * @param ms - The time in milliseconds.
+   * @param s - The time in seconds.
    * @returns An array of missing ranges for the specified hour.
    */
-  getMissingIntervals(ms: number): Array<[number, number]> {
-    const hour = Math.floor(ms / ONE_HOUR_S);
+  getMissingIntervals(s: number): Array<[number, number]> {
+    const hour = Math.floor(s / ONE_HOUR_S);
     if (
       this.cache.has(hour) &&
       this.cache.get(hour)!.length === 1 &&
@@ -114,8 +114,8 @@ export class HourlyDataCache<T> {
 
   /**
    * Checks if a range is completely cached.
-   * @param start - The start time in milliseconds.
-   * @param end - The end time in milliseconds.
+   * @param start - The start time in seconds.
+   * @param end - The end time in seconds.
    * @returns True if the range is completely cached, false otherwise.
    */
   isCompleteRange(start: number, end: number): boolean {
@@ -233,8 +233,8 @@ export class HourlyDataCache<T> {
 
 /**
  * Breaks a time range into hourly buckets.
- * @param startTime - The start time in milliseconds.
- * @param endTime - The end time in milliseconds.
+ * @param startTime - The start time in seconds.
+ * @param endTime - The end time in seconds.
  * @returns An array of [start, end] pairs representing each hourly bucket.
  */
 export function getHourlyBuckets(startTime: number, endTime: number): [number, number][] {
