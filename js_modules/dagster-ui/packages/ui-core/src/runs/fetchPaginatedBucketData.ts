@@ -43,6 +43,7 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
       error: undefined,
     });
   } catch (error) {
+    debugger;
     console.error(error);
     setQueryData(({data}) => ({
       data, // preserve existing data
@@ -68,13 +69,18 @@ export async function fetchPaginatedData<DataType, CursorType, ErrorType>({
   let currentCursor: CursorType | undefined = undefined;
 
   while (hasMoreData) {
-    const {cursor, hasMore, data, error} = await fetchData(currentCursor);
-    if (error) {
-      throw error;
+    try {
+      const {cursor, hasMore, data, error} = await fetchData(currentCursor);
+      if (error) {
+        throw error;
+      }
+      dataSoFar.push(...data);
+      currentCursor = cursor;
+      hasMoreData = hasMore;
+    } catch (e) {
+      throw e;
+      hasMoreData = false;
     }
-    dataSoFar.push(...data);
-    currentCursor = cursor;
-    hasMoreData = hasMore;
   }
 
   return dataSoFar;

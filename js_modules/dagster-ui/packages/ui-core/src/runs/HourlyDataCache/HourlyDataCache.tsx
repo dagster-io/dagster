@@ -1,9 +1,12 @@
 type TimeWindow<T> = {start: number; end: number; data: T[]};
 
-export const ONE_HOUR = 3600 * 1000;
+export const ONE_HOUR_S = 60 * 60;
+
+type Subscription<T> = (data: T[]) => void;
 
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
+  private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
 
   /**
    * Adds data to the cache for the specified time range.
@@ -12,15 +15,16 @@ export class HourlyDataCache<T> {
    * @param data - The data to cache.
    */
   addData(start: number, end: number, data: T[]): void {
-    const startHour = Math.floor(start / ONE_HOUR);
-    const endHour = Math.floor(end / ONE_HOUR);
+    const startHour = Math.floor(start / ONE_HOUR_S);
+    const endHour = Math.floor(end / ONE_HOUR_S);
 
-    if (startHour !== endHour) {
+    if (endHour - startHour > 1) {
       throw new Error('Expected all data to fit within an hour');
     }
 
     this.addPartialData(startHour, start, end, data);
     this.mergeCompleteHours();
+    this.notifySubscribers(startHour);
   }
 
   /**
@@ -44,15 +48,15 @@ export class HourlyDataCache<T> {
   private mergeCompleteHours(): void {
     const completedHours: number[] = [];
     for (const [hour, intervals] of this.cache) {
-      if (intervals.length === 1 && intervals[0]!.end - intervals[0]!.start === ONE_HOUR - 1) {
+      if (intervals.length === 1 && intervals[0]!.end - intervals[0]!.start === ONE_HOUR_S) {
         completedHours.push(hour);
       }
     }
     for (const hour of completedHours) {
       this.cache.set(hour, [
         {
-          start: hour * ONE_HOUR,
-          end: (hour + 1) * ONE_HOUR - 1,
+          start: hour * ONE_HOUR_S,
+          end: (hour + 1) * ONE_HOUR_S,
           data: this.cache.get(hour)![0]!.data,
         },
       ]);
@@ -65,7 +69,7 @@ export class HourlyDataCache<T> {
    * @returns The data for the specified hour.
    */
   getHourData(ms: number): T[] {
-    const hour = Math.floor(ms / ONE_HOUR);
+    const hour = Math.floor(ms / ONE_HOUR_S);
     if (this.cache.has(hour)) {
       return this.cache.get(hour)!.flatMap((interval) => interval.data);
     }
@@ -78,18 +82,18 @@ export class HourlyDataCache<T> {
    * @returns An array of missing ranges for the specified hour.
    */
   getMissingIntervals(ms: number): Array<[number, number]> {
-    const hour = Math.floor(ms / ONE_HOUR);
+    const hour = Math.floor(ms / ONE_HOUR_S);
     if (
       this.cache.has(hour) &&
       this.cache.get(hour)!.length === 1 &&
-      this.cache.get(hour)![0]!.end - this.cache.get(hour)![0]!.start === ONE_HOUR - 1
+      this.cache.get(hour)![0]!.end - this.cache.get(hour)![0]!.start === ONE_HOUR_S
     ) {
       return [];
     }
 
     const missingIntervals: Array<[number, number]> = [];
-    const hourStart = hour * ONE_HOUR;
-    const hourEnd = (hour + 1) * ONE_HOUR;
+    const hourStart = hour * ONE_HOUR_S;
+    const hourEnd = (hour + 1) * ONE_HOUR_S;
     let currentStart = hourStart;
 
     if (this.cache.has(hour)) {
@@ -115,10 +119,10 @@ export class HourlyDataCache<T> {
    * @returns True if the range is completely cached, false otherwise.
    */
   isCompleteRange(start: number, end: number): boolean {
-    const startHour = Math.floor(start / ONE_HOUR);
-    const endHour = Math.floor(end / ONE_HOUR);
+    const startHour = Math.floor(start / ONE_HOUR_S);
+    const endHour = Math.floor(end / ONE_HOUR_S);
 
-    if (startHour !== endHour) {
+    if (endHour - startHour > 1) {
       throw new Error('Expected the input range to be within a single hour');
     }
 
@@ -168,6 +172,63 @@ export class HourlyDataCache<T> {
 
     return mergedIntervals;
   }
+
+  /**
+   * Subscribes to data added to a specific hourly bucket and subsequent hours.
+   * @param startHour - The hour bucket to subscribe to.
+   * @param callback - The callback function to notify when new data is added.
+   */
+  subscribe(ts: number, callback: Subscription<T>) {
+    const startHour = Math.ceil(ts / ONE_HOUR_S);
+    const sub = {hour: startHour, callback};
+    this.subscriptions.push(sub);
+    this.notifyExistingData(startHour, callback);
+
+    return () => {
+      this.subscriptions = this.subscriptions.filter((subB) => subB !== sub);
+    };
+  }
+
+  /**
+   * Notifies subscribers of new data added to a specific hour and subsequent hours.
+   * @param hour - The hour bucket to notify subscribers of.
+   * @param data - The new data added.
+   */
+  private notifySubscribers(hour: number): void {
+    for (const {hour: subHour, callback} of this.subscriptions) {
+      if (hour >= subHour) {
+        const combinedData = this.getCombinedData(subHour);
+        callback(combinedData);
+      }
+    }
+  }
+
+  /**
+   * Notifies a new subscriber of all existing data for the subscribed hour and subsequent hours.
+   * @param startHour - The starting hour for the subscription.
+   * @param callback - The callback function to notify with existing data.
+   */
+  private notifyExistingData(startHour: number, callback: Subscription<T>): void {
+    const combinedData = this.getCombinedData(startHour);
+    if (combinedData.length > 0) {
+      callback(combinedData);
+    }
+  }
+
+  /**
+   * Combines data from the given hour and subsequent hours.
+   * @param startHour - The starting hour.
+   * @returns Combined data.
+   */
+  private getCombinedData(startHour: number): T[] {
+    let combinedData: T[] = [];
+    for (const [hour, intervals] of this.cache) {
+      if (hour >= startHour) {
+        combinedData = combinedData.concat(intervals.flatMap((interval) => interval.data));
+      }
+    }
+    return combinedData;
+  }
 }
 
 /**
@@ -180,19 +241,19 @@ export function getHourlyBuckets(startTime: number, endTime: number): [number, n
   const buckets: [number, number][] = [];
 
   // Convert start and end times to the number of hours since epoch
-  const startHour = Math.floor(startTime / ONE_HOUR) * ONE_HOUR;
+  const startHour = Math.floor(startTime / ONE_HOUR_S) * ONE_HOUR_S;
 
   // Handle the first partial bucket
   if (startTime !== startHour) {
-    const firstBucketEnd = startHour + ONE_HOUR - 1;
+    const firstBucketEnd = startHour + ONE_HOUR_S;
     buckets.push([startTime, Math.min(firstBucketEnd, endTime)]);
   }
 
   // Add full hourly buckets
-  let currentStart = startHour + (startTime === startHour ? 0 : ONE_HOUR);
-  while (currentStart + ONE_HOUR <= endTime) {
-    const nextHour = currentStart + ONE_HOUR;
-    buckets.push([currentStart, nextHour - 1]);
+  let currentStart = startHour + (startTime === startHour ? 0 : ONE_HOUR_S);
+  while (currentStart + ONE_HOUR_S <= endTime) {
+    const nextHour = currentStart + ONE_HOUR_S;
+    buckets.push([currentStart, nextHour]);
     currentStart = nextHour;
   }
 

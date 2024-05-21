@@ -1,7 +1,7 @@
 import {gql, useApolloClient, useLazyQuery} from '@apollo/client';
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useState} from 'react';
 
-import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache';
+import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
 import {doneStatuses} from './RunStatuses';
 import {TimelineJob, TimelineRun} from './RunTimeline';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
@@ -29,23 +29,40 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 const BATCH_LIMIT = 500;
 
 export const useRunsForTimeline = (
-  range: readonly [number, number],
+  rangeMs: readonly [number, number],
   filter: RunsFilter | undefined = undefined,
   refreshInterval = 2 * FIFTEEN_SECONDS,
 ) => {
   const runsFilter = useMemo(() => {
     return filter ?? {};
   }, [filter]);
-  const [start, end] = range;
+  const [start, _end] = rangeMs;
+  const end = useMemo(() => {
+    return Math.min(Date.now(), _end);
+  }, [_end]);
 
   const startSec = start / 1000.0;
   const endSec = end / 1000.0;
 
-  const buckets = useMemo(() => getHourlyBuckets(start, end), [start, end]);
+  const buckets = useMemo(() => getHourlyBuckets(startSec, endSec), [startSec, endSec]);
 
   const client = useApolloClient();
 
   const completedRunsCache = useMemo(() => new HourlyDataCache<RunTimelineFragment>(), []);
+  const [runsNotCapturedByUpdateBuckets, setRunsNotCapturedByUpdateBuckets] = useState<
+    RunTimelineFragment[]
+  >([]);
+
+  useLayoutEffect(() => {
+    // We fetch updatedAfter -> updatedBefore buckets but we also need runs that match
+    // updatedAfter (right border) -> createdBefore (right border). Well we rely on the fact
+    // that runs are fetched in adjacent intervals going to the past so we can assume a future bucket that
+    // is being or was fetched will have that run so subscribe to future runs and filter for the ones createdBefore
+    // our right boundary (endSec)
+    return completedRunsCache.subscribe(endSec, (runs) => {
+      setRunsNotCapturedByUpdateBuckets(runs.filter((run) => run.startTime! < endSec));
+    });
+  }, [completedRunsCache, end, endSec]);
 
   const [completedRunsQueryData, setCompletedRunsData] = useState<{
     data: RunTimelineFragment[] | undefined;
@@ -77,22 +94,22 @@ export const useRunsForTimeline = (
       buckets,
       setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
-        let createdBefore = bucket[1] / 1000;
-        let updatedAfter = bucket[0] / 1000;
+        const updatedBefore = bucket[1];
+
+        let updatedAfter = bucket[0];
         let cacheData: RunTimelineFragment[] = [];
 
-        if (completedRunsCache.isCompleteRange(bucket[0], bucket[1])) {
+        if (completedRunsCache.isCompleteRange(updatedAfter, updatedBefore) && !cursor) {
           return {
-            data: completedRunsCache.getHourData(bucket[0]),
+            data: completedRunsCache.getHourData(updatedAfter),
             cursor: undefined,
             hasMore: false,
             error: undefined,
           };
         } else {
-          const missingRange = completedRunsCache.getMissingIntervals(bucket[0]);
-          createdBefore = missingRange[0]![1] / 1000;
-          updatedAfter = missingRange[0]![0] / 1000;
-          cacheData = completedRunsCache.getHourData(bucket[0]);
+          const missingRange = completedRunsCache.getMissingIntervals(updatedAfter);
+          updatedAfter = Math.max(missingRange[0]![0], updatedAfter);
+          cacheData = completedRunsCache.getHourData(updatedAfter);
         }
 
         const {data} = await client.query<
@@ -106,7 +123,7 @@ export const useRunsForTimeline = (
             completedFilter: {
               ...runsFilter,
               statuses: Array.from(doneStatuses),
-              createdBefore,
+              updatedBefore,
               updatedAfter,
             },
             cursor,
@@ -123,7 +140,7 @@ export const useRunsForTimeline = (
           };
         }
         const runs: RunTimelineFragment[] = data.completed.results;
-        completedRunsCache.addData(bucket[0], bucket[1], runs);
+        completedRunsCache.addData(updatedAfter, updatedBefore, runs);
 
         const hasMoreData = runs.length === BATCH_LIMIT;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
@@ -211,7 +228,7 @@ export const useRunsForTimeline = (
     fetchPolicy: 'no-cache',
     variables: {
       tickCursor: startSec,
-      ticksUntil: endSec,
+      ticksUntil: _end / 1000.0,
     },
   });
 
@@ -225,11 +242,6 @@ export const useRunsForTimeline = (
     loading: loadingFutureTicksData,
   } = futureTicksQueryData;
 
-  const initialLoading =
-    (loadingOngoingRunsData && !ongoingRunsData) ||
-    (loadingCompletedRunsData && !completedRunsQueryData) ||
-    (loadingFutureTicksData && !futureTicksData);
-
   const {workspaceOrError} = futureTicksData ||
     previousFutureTicksData || {workspaceOrError: undefined};
 
@@ -238,8 +250,12 @@ export const useRunsForTimeline = (
     const now = Date.now();
 
     // fetch all the runs in the given range
-    [...(ongoingRunsData ?? []), ...(completedRunsData ?? [])].forEach((run) => {
-      if (!run.startTime) {
+    [
+      ...(ongoingRunsData ?? []),
+      ...(completedRunsData ?? []),
+      ...runsNotCapturedByUpdateBuckets,
+    ].forEach((run) => {
+      if (run.startTime === null) {
         return;
       }
       if (!run.repositoryOrigin) {
@@ -278,7 +294,7 @@ export const useRunsForTimeline = (
     });
 
     return map;
-  }, [ongoingRunsData, completedRunsData, start, end]);
+  }, [ongoingRunsData, completedRunsData, runsNotCapturedByUpdateBuckets, start, end]);
 
   const jobsWithRuns: TimelineJob[] = useMemo(() => {
     if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
@@ -311,7 +327,10 @@ export const useRunsForTimeline = (
             if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
               schedule.futureTicks.results.forEach(({timestamp}) => {
                 const startTime = timestamp! * 1000;
-                if (startTime > now && overlap({start, end}, {start: startTime, end: startTime})) {
+                if (
+                  startTime > now &&
+                  overlap({start, end: _end}, {start: startTime, end: startTime})
+                ) {
                   jobTicks.push({
                     id: `${schedule.pipelineName}-future-run-${timestamp}`,
                     status: 'SCHEDULED',
@@ -376,7 +395,7 @@ export const useRunsForTimeline = (
     );
 
     return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
-  }, [workspaceOrError, runsByJobKey, start, end]);
+  }, [workspaceOrError, runsByJobKey, start, _end]);
 
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
@@ -389,6 +408,12 @@ export const useRunsForTimeline = (
     intervalMs: refreshInterval,
     leading: true,
   });
+
+  const initialLoading =
+    (loadingOngoingRunsData && !ongoingRunsData) ||
+    (loadingCompletedRunsData && !completedRunsQueryData) ||
+    (loadingFutureTicksData && !futureTicksData) ||
+    !workspaceOrError;
 
   return useMemo(
     () => ({
@@ -417,7 +442,7 @@ const RUN_TIMELINE_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
 `;
 
-const ONGOING_RUN_TIMELINE_QUERY = gql`
+export const ONGOING_RUN_TIMELINE_QUERY = gql`
   query OngoingRunTimelineQuery($inProgressFilter: RunsFilter!, $limit: Int!, $cursor: String) {
     ongoing: runsOrError(filter: $inProgressFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
@@ -432,7 +457,7 @@ const ONGOING_RUN_TIMELINE_QUERY = gql`
   ${RUN_TIMELINE_FRAGMENT}
 `;
 
-const COMPLETED_RUN_TIMELINE_QUERY = gql`
+export const COMPLETED_RUN_TIMELINE_QUERY = gql`
   query CompletedRunTimelineQuery($completedFilter: RunsFilter!, $limit: Int!, $cursor: String) {
     completed: runsOrError(filter: $completedFilter, limit: $limit, cursor: $cursor) {
       ... on Runs {
@@ -447,7 +472,7 @@ const COMPLETED_RUN_TIMELINE_QUERY = gql`
   ${RUN_TIMELINE_FRAGMENT}
 `;
 
-const FUTURE_TICKS_QUERY = gql`
+export const FUTURE_TICKS_QUERY = gql`
   query FutureTicksQuery($tickCursor: Float, $ticksUntil: Float) {
     workspaceOrError {
       ... on Workspace {
