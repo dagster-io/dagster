@@ -48,7 +48,11 @@ export const useRunsForTimeline = (
 
   const client = useApolloClient();
 
-  const completedRunsCache = useMemo(() => new HourlyDataCache<RunTimelineFragment>(), []);
+  const completedRunsCache = useMemo(
+    () => new HourlyDataCache<RunTimelineFragment>(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [runsFilter],
+  );
   const [runsNotCapturedByUpdateBuckets, setRunsNotCapturedByUpdateBuckets] = useState<
     RunTimelineFragment[]
   >([]);

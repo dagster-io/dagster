@@ -43,8 +43,6 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
       error: undefined,
     });
   } catch (error) {
-    debugger;
-    console.error(error);
     setQueryData(({data}) => ({
       data, // preserve existing data
       loading: false,
