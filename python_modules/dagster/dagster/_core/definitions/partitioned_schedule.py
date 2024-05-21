@@ -39,6 +39,8 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
     day_of_week: Optional[int]
     day_of_month: Optional[int]
     tags: Optional[Mapping[str, str]]
+    execution_timezone: Optional[str]
+    cron_schedule: Optional[str]
 
     def resolve(self, resolved_job: JobDefinition) -> ScheduleDefinition:
         partitions_def = resolved_job.partitions_def
@@ -53,12 +55,13 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
 
         return schedule(
             name=self.name,
-            cron_schedule=time_partitions_def.get_cron_schedule(
+            cron_schedule=self.cron_schedule
+            or time_partitions_def.get_cron_schedule(
                 self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
             ),
             job=resolved_job,
             default_status=self.default_status,
-            execution_timezone=time_partitions_def.timezone,
+            execution_timezone=self.execution_timezone or time_partitions_def.timezone,
             description=self.description,
         )(_get_schedule_evaluation_fn(partitions_def, resolved_job, self.tags))
 
@@ -157,6 +160,8 @@ def build_schedule_from_partitioned_job(
             day_of_week=day_of_week,
             day_of_month=day_of_month,
             tags=tags,
+            execution_timezone=execution_timezone,
+            cron_schedule=cron_schedule,
         )
     else:
         partitions_def = job.partitions_def
@@ -170,16 +175,11 @@ def build_schedule_from_partitioned_job(
                 "Creating a schedule from a static partitions definition requires a cron schedule",
             )
         else:
-            if cron_schedule or execution_timezone:
-                check.failed(
-                    "Cannot provide cron_schedule or execution_timezone to"
-                    " build_schedule_from_partitioned_job for a time-partitioned job."
-                )
             time_partitions_def = check.not_none(get_time_partitions_def(partitions_def))
-            cron_schedule = time_partitions_def.get_cron_schedule(
+            cron_schedule = cron_schedule or time_partitions_def.get_cron_schedule(
                 minute_of_hour, hour_of_day, day_of_week, day_of_month
             )
-            execution_timezone = time_partitions_def.timezone
+            execution_timezone = execution_timezone or time_partitions_def.timezone
 
         return schedule(
             cron_schedule=cron_schedule,  # type: ignore[arg-type]

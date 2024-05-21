@@ -495,6 +495,35 @@ def test_unresolved_partitioned_schedule():
     assert run_requests[0].partition_key == "2020-01-01"
 
 
+def test_unresolved_partitioned_schedule_with_custom_cron_and_timezone():
+    partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
+
+    @asset(partitions_def=partitions_def)
+    def asset1():
+        return 1
+
+    job1 = define_asset_job("job1")
+    job2 = define_asset_job("job2", partitions_def=partitions_def)
+    schedule1 = build_schedule_from_partitioned_job(
+        job1, cron_schedule="1 0 * * *", execution_timezone="America/Los_Angeles"
+    )
+    schedule2 = build_schedule_from_partitioned_job(
+        job2, cron_schedule="1 0 * * *", execution_timezone="America/Los_Angeles"
+    )
+
+    @repository
+    def my_repo():
+        return [asset1, job1, schedule1, schedule2]
+
+    resolved_schedule_1 = my_repo.get_schedule_def("job1_schedule")
+    assert resolved_schedule_1.cron_schedule == "1 0 * * *"
+    assert resolved_schedule_1.execution_timezone == "America/Los_Angeles"
+
+    resolved_schedule_2 = my_repo.get_schedule_def("job2_schedule")
+    assert resolved_schedule_2.cron_schedule == "1 0 * * *"
+    assert resolved_schedule_2.execution_timezone == "America/Los_Angeles"
+
+
 def test_unresolved_multi_partitioned_schedule():
     time_window_partitions = DailyPartitionsDefinition(start_date="2020-01-01")
     static_partitions = StaticPartitionsDefinition(["a", "b", "c", "d"])
