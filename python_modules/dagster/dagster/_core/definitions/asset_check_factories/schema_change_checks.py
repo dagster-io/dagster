@@ -11,7 +11,7 @@ from ..asset_key import AssetKey, CoercibleToAssetKey
 from ..assets import AssetsDefinition, SourceAsset
 from ..events import AssetMaterialization
 from ..metadata import TableColumn, TableMetadataSet, TableSchema
-from .utils import build_multi_asset_check_factory
+from .utils import build_multi_asset_check
 
 
 @experimental
@@ -84,7 +84,7 @@ def build_column_schema_change_checks(
 
         return True, "No changes to column schema between previous and latest materialization"
 
-    return build_multi_asset_check_factory(
+    return build_multi_asset_check(
         check_specs=[
             AssetCheckSpec(
                 "column_schema_change",

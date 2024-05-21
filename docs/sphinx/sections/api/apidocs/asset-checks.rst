@@ -35,4 +35,4 @@ Dagster allows you to define and execute checks on your software-defined assets.
 
 .. autofunction:: build_column_schema_change_checks
 
-.. autofunction:: build_metadata_range_checks
+.. autofunction:: build_metadata_bounds_checks

@@ -10,11 +10,11 @@ from ..asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
 from ..asset_checks import AssetChecksDefinition
 from ..asset_key import AssetKey, CoercibleToAssetKey
 from ..assets import AssetsDefinition, SourceAsset
-from .utils import assets_to_keys, build_multi_asset_check_factory
+from .utils import assets_to_keys, build_multi_asset_check
 
 
 @experimental
-def build_metadata_limit_checks(
+def build_metadata_bounds_checks(
     *,
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
     severity: AssetCheckSeverity = AssetCheckSeverity.WARN,
@@ -95,10 +95,10 @@ def build_metadata_limit_checks(
             )
         return True, f"Value `{value}` is within range"
 
-    return build_multi_asset_check_factory(
+    return build_multi_asset_check(
         check_specs=[
             AssetCheckSpec(
-                f"{metadata_key.replace(' ','_')}_limit_check",
+                f"{metadata_key.replace(' ','_')}_bounds_check",
                 asset=asset_key,
                 description=description,
             )

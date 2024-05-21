@@ -1,10 +1,12 @@
+from typing import cast
+
 import pytest
 from dagster import (
     AssetExecutionContext,
     AssetSelection,
     MaterializeResult,
     asset,
-    build_metadata_limit_checks,
+    build_metadata_bounds_checks,
     materialize,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -13,11 +15,13 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 @asset
 def my_asset(context: AssetExecutionContext):
     if context.has_tag("my_value"):
-        return MaterializeResult(metadata={"my_metadata": int(context.get_tag("my_value"))})
+        return MaterializeResult(
+            metadata={"my_metadata": int(cast(str, context.get_tag("my_value")))}
+        )
 
 
 def test_range():
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[my_asset], metadata_key="my_metadata", min_value=1, max_value=10
     )
     assert len(checks) == 1
@@ -52,7 +56,7 @@ def test_range():
 
 
 def test_exclusive():
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[my_asset],
         metadata_key="my_metadata",
         min_value=1,
@@ -90,7 +94,7 @@ def test_exclusive():
 
 
 def test_no_metadata():
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[my_asset], metadata_key="my_metadata", min_value=1, max_value=10
     )
 
@@ -114,7 +118,7 @@ def test_not_a_number():
     def nan_asset():
         return MaterializeResult(metadata={"my_metadata": "foo"})
 
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[nan_asset], metadata_key="my_metadata", min_value=1, max_value=10
     )
 
@@ -131,7 +135,7 @@ def test_float():
     def float_asset():
         return MaterializeResult(metadata={"my_metadata": 1.5})
 
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[float_asset], metadata_key="my_metadata", min_value=1.0, max_value=10.0
     )
 
@@ -142,7 +146,7 @@ def test_float():
     assert check_eval.passed
     assert check_eval.description == "Value `1.5` is within range"
 
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[float_asset], metadata_key="my_metadata", min_value=5.0, max_value=10
     )
 
@@ -158,7 +162,7 @@ def test_invalid():
     with pytest.raises(
         DagsterInvalidDefinitionError, match="`min_value` may not be greater than `max_value`"
     ):
-        build_metadata_limit_checks(
+        build_metadata_bounds_checks(
             assets=[my_asset], metadata_key="my_metadata", min_value=10, max_value=1
         )
 
@@ -168,7 +172,7 @@ def test_two_assets():
     def my_other_asset():
         return MaterializeResult(metadata={"my_metadata": -5})
 
-    checks = build_metadata_limit_checks(
+    checks = build_metadata_bounds_checks(
         assets=[my_asset, my_other_asset], metadata_key="my_metadata", min_value=1, max_value=10
     )
     assert len(checks) == 1
