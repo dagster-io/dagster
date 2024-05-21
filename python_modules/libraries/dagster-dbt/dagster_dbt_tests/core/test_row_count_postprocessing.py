@@ -75,18 +75,24 @@ def test_jaffle_shop_manifest_bigquery_fixture() -> Dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    "manifest_fixture_name",
+    "target, manifest_fixture_name",
     [
-        pytest.param("test_jaffle_shop_manifest_standalone_duckdb_dbfile", id="duckdb"),
+        pytest.param(None, "test_jaffle_shop_manifest_standalone_duckdb_dbfile", id="duckdb"),
         pytest.param(
-            "test_jaffle_shop_manifest_snowflake", marks=pytest.mark.snowflake, id="snowflake"
+            "snowflake",
+            "test_jaffle_shop_manifest_snowflake",
+            marks=pytest.mark.snowflake,
+            id="snowflake",
         ),
         pytest.param(
-            "test_jaffle_shop_manifest_bigquery", marks=pytest.mark.bigquery, id="bigquery"
+            "bigquery",
+            "test_jaffle_shop_manifest_bigquery",
+            marks=pytest.mark.bigquery,
+            id="bigquery",
         ),
     ],
 )
-def test_row_count(request: pytest.FixtureRequest, manifest_fixture_name: str) -> None:
+def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture_name: str) -> None:
     manifest = cast(Dict[str, Any], request.getfixturevalue(manifest_fixture_name))
 
     @dbt_assets(manifest=manifest)
@@ -95,7 +101,9 @@ def test_row_count(request: pytest.FixtureRequest, manifest_fixture_name: str) -
 
     result = materialize(
         [my_dbt_assets],
-        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+        resources={
+            "dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path), target=target)
+        },
     )
 
     assert result.success
