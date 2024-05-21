@@ -293,15 +293,15 @@ export const useRunsForTimeline = (
   }, [ongoingRunsData, completedRunsData, runsNotCapturedByUpdateBuckets, start, end]);
 
   const jobsWithRuns: TimelineJob[] = useMemo(() => {
-    if (!workspaceOrError || workspaceOrError.__typename !== 'Workspace') {
+    if (!workspaceOrError || workspaceOrError.__typename === 'PythonError') {
       return [];
     }
 
     const jobs: TimelineJob[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
       if (
-        locationEntry.__typename !== 'WorkspaceLocationEntry' ||
-        locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation'
+        !locationEntry.locationOrLoadError ||
+        locationEntry.locationOrLoadError?.__typename === 'PythonError'
       ) {
         continue;
       }
@@ -340,6 +340,7 @@ export const useRunsForTimeline = (
 
           const isAdHoc = isHiddenAssetGroupJob(pipeline.name);
           const jobKey = makeJobKey(repoAddress, pipeline.name);
+
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
           const jobRuns = runsByJobKey[jobKey] || [];
@@ -394,6 +395,11 @@ export const useRunsForTimeline = (
   }, [workspaceOrError, runsByJobKey, start, _end]);
 
   const lastFetchRef = useRef({ongoing: 0, future: 0});
+  const lastRangeMs = useRef([0, 0] as readonly [number, number]);
+  if (Math.abs(lastRangeMs.current[0] - rangeMs[0]) > 30000) {
+    lastFetchRef.current = {ongoing: 0, future: 0};
+  }
+  lastRangeMs.current = rangeMs;
 
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
