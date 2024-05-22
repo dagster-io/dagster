@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Type, Union
+from typing import NamedTuple, Type, Union
 
 from dagster import (
     Definitions,
@@ -40,3 +40,13 @@ def load_defs_from_yaml(
     def_sets = [blueprints.build_defs_add_context_to_errors() for blueprints in blueprints]
 
     return BlueprintDefinitions.merge(*def_sets).to_definitions()
+
+
+class YamlBlueprintsLoader(NamedTuple):
+    path: Union[Path, str]
+    per_file_blueprint_type: Type[Blueprint]
+
+    def load_defs(self) -> Definitions:
+        return load_defs_from_yaml(
+            path=self.path, per_file_blueprint_type=self.per_file_blueprint_type
+        )

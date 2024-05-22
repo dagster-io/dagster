@@ -3,6 +3,7 @@ import click
 from ..version import __version__
 from .api import api_cli
 from .asset import asset_cli
+from .blueprint import blueprint_cli
 from .code_server import code_server_cli
 from .debug import debug_cli
 from .dev import dev_command
@@ -27,6 +28,7 @@ def create_dagster_cli():
         "project": project_cli,
         "dev": dev_command,
         "code-server": code_server_cli,
+        "blueprint": blueprint_cli,
     }
 
     @click.group(
