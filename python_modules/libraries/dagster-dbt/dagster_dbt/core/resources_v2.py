@@ -926,50 +926,48 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         if not isinstance(event, (AssetMaterialization, Output)):
             return event
 
-        with pushd(str(self._dbt_cli_invocation.project_dir)):
-            adapter = check.not_none(self._dbt_cli_invocation.adapter)
+        adapter = check.not_none(self._dbt_cli_invocation.adapter)
+        dbt_resource_props = self._get_dbt_resource_props_from_event(event)
+        is_view = dbt_resource_props["config"]["materialized"] == "view"
 
-            dbt_resource_props = self._get_dbt_resource_props_from_event(event)
-            is_view = dbt_resource_props["config"]["materialized"] == "view"
+        # Avoid counting rows for views, since they may include complex SQL queries
+        # that are costly to execute. We can revisit this in the future if there is
+        # a demand for it.
+        if is_view:
+            return event
 
-            # Avoid counting rows for views, since they may include complex SQL queries
-            # that are costly to execute. We can revisit this in the future if there is
-            # a demand for it.
-            if is_view:
-                return event
+        unique_id = dbt_resource_props["unique_id"]
+        logger.debug("Fetching row count for %s", unique_id)
+        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
 
-            unique_id = dbt_resource_props["unique_id"]
-            logger.debug("Fetching row count for %s", unique_id)
-            table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
-
-            try:
-                with adapter.connection_named(f"row_count_{unique_id}"):
-                    query_result = adapter.execute(
-                        f"""
-                            SELECT
-                            count(*) as row_count
-                            FROM
-                            {table_str}
-                        """,
-                        fetch=True,
-                    )
-
-                query_result_table = query_result[1]
-                # some adapters do not output the column names, so we need
-                # to index by position
-                row_count = query_result_table[0][0]
-                new_metadata = {
-                    **TableMetadataSet(row_count=row_count),
-                }
-                return event.with_metadata({**event.metadata, **new_metadata})
-
-            except Exception as e:
-                logger.exception(
-                    f"An error occurred while fetching row count for {unique_id}. Row count metadata"
-                    " will not be included in the event.\n\n"
-                    f"Exception: {e}"
+        try:
+            with adapter.connection_named(f"row_count_{unique_id}"):
+                query_result = adapter.execute(
+                    f"""
+                        SELECT
+                        count(*) as row_count
+                        FROM
+                        {table_str}
+                    """,
+                    fetch=True,
                 )
-                return event
+
+            query_result_table = query_result[1]
+            # some adapters do not output the column names, so we need
+            # to index by position
+            row_count = query_result_table[0][0]
+            new_metadata = {
+                **TableMetadataSet(row_count=row_count),
+            }
+            return event.with_metadata({**event.metadata, **new_metadata})
+
+        except Exception as e:
+            logger.exception(
+                f"An error occurred while fetching row count for {unique_id}. Row count metadata"
+                " will not be included in the event.\n\n"
+                f"Exception: {e}"
+            )
+            return event
 
     @public
     @experimental
@@ -991,12 +989,12 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         # so that the DuckDB lock is released. This is because DuckDB does not allow for
         # opening multiple connections to the same database when a write connection, such
         # as the one dbt uses, is open.
-        block_on_dbt_run = False
+        event_stream = self
         try:
             from dbt.adapters.duckdb import DuckDBAdapter
 
             if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
-                block_on_dbt_run = True
+                event_stream = iter(list(self))
         except ImportError:
             pass
 
@@ -1009,16 +1007,14 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             ) as executor:
                 yield from imap(
                     executor=executor,
-                    iterable=self,
+                    iterable=event_stream,
                     func=self._fetch_and_attach_row_count_metadata,
-                    block_on_enqueuing_task_completion=block_on_dbt_run,
                 )
 
-        with pushd(str(self._dbt_cli_invocation.project_dir)):
-            return DbtEventIterator(
-                _threadpool_fetch_and_attach_row_count_metadata(),
-                dbt_cli_invocation=self._dbt_cli_invocation,
-            )
+        return DbtEventIterator(
+            _threadpool_fetch_and_attach_row_count_metadata(),
+            dbt_cli_invocation=self._dbt_cli_invocation,
+        )
 
 
 class DbtCliResource(ConfigurableResource):
@@ -1320,6 +1316,11 @@ class DbtCliResource(ConfigurableResource):
                 if not config.credentials.config_options:
                     config.credentials.config_options = {}
                 config.credentials.config_options["access_mode"] = "READ_ONLY"
+                # convert adapter duckdb filepath to absolute path, since the Python
+                # working directory may not be the same as the dbt project directory
+                with pushd(self.project_dir):
+                    config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
+
         except ImportError:
             pass
 
