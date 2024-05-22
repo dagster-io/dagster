@@ -659,6 +659,45 @@ class DbtCliInvocation:
 
         return self.process.wait() == 0
 
+    @public
+    def get_error(self) -> Optional[Exception]:
+        """Return an exception if the dbt CLI process failed.
+
+        Returns:
+            Optional[Exception]: An exception if the dbt CLI process failed, and None otherwise.
+
+        Examples:
+            .. code-block:: python
+
+                from dagster_dbt import DbtCliResource
+
+                dbt = DbtCliResource(project_dir="/path/to/dbt/project")
+
+                dbt_cli_invocation = dbt.cli(["run"], raise_on_error=False)
+
+                error = dbt_cli_invocation.get_error()
+                if error:
+                    logger.error(error)
+        """
+        if self.is_successful():
+            return None
+
+        log_path = self.target_path.joinpath("dbt.log")
+        extra_description = ""
+
+        if log_path.exists():
+            extra_description = f", or view the dbt debug log: {log_path}"
+
+        return DagsterDbtCliRuntimeError(
+            description=(
+                f"The dbt CLI process with command\n\n"
+                f"`{self.dbt_command}`\n\n"
+                f"failed with exit code `{self.process.returncode}`."
+                " Check the stdout in the Dagster compute logs for the full information about"
+                f" the error{extra_description}.{self._format_error_messages()}"
+            ),
+        )
+
     def _stream_asset_events(
         self,
     ) -> Iterator[DbtDagsterEventType]:
@@ -839,26 +878,10 @@ class DbtCliInvocation:
         """Ensure that the dbt CLI process has completed. If the process has not successfully
         completed, then optionally raise an error.
         """
-        is_successful = self.is_successful()
-
         logger.info(f"Finished dbt command: `{self.dbt_command}`.")
-
-        if not is_successful and self.raise_on_error:
-            log_path = self.target_path.joinpath("dbt.log")
-            extra_description = ""
-
-            if log_path.exists():
-                extra_description = f", or view the dbt debug log: {log_path}"
-
-            raise DagsterDbtCliRuntimeError(
-                description=(
-                    f"The dbt CLI process with command\n\n"
-                    f"`{self.dbt_command}`\n\n"
-                    f"failed with exit code `{self.process.returncode}`."
-                    " Check the stdout in the Dagster compute logs for the full information about"
-                    f" the error{extra_description}.{self._format_error_messages()}"
-                ),
-            )
+        error = self.get_error()
+        if error and self.raise_on_error:
+            raise error
 
 
 # We define DbtEventIterator as a generic type for the sake of type hinting.
