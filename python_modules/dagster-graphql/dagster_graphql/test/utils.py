@@ -61,11 +61,17 @@ def execute_dagster_graphql(
     variables: Optional[GqlVariables] = None,
     schema: graphene.Schema = SCHEMA,
 ) -> GqlResult:
-    result = schema.execute(
-        query,
-        context_value=context,
-        variable_values=variables,
+    result = asyncio.run(
+        schema.execute_async(
+            query,
+            context_value=context,
+            variable_values=variables,
+        )
     )
+    # It would be cleaner if we instead passed in a process context
+    # and made a request context for this invocation.
+    # For now just ensure we don't shared loaders between requests.
+    context.loaders.clear()
 
     if result.errors:
         first_error = result.errors[0]
