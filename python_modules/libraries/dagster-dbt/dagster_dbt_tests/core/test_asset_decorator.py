@@ -21,6 +21,7 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType
@@ -642,9 +643,13 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {"foo": "", "bar-baz": ""}
+    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
+        "foo": "",
+        "bar-baz": "",
+        **StorageKindTagSet(storage_kind="duckdb"),
+    }
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
-        assert my_dbt_assets.tags_by_key[asset_key] == {}
+        assert my_dbt_assets.tags_by_key[asset_key] == {**StorageKindTagSet(storage_kind="duckdb")}
 
 
 def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
