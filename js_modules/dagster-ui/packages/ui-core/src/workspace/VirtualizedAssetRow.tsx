@@ -21,7 +21,7 @@ import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetComputeKindTag} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';

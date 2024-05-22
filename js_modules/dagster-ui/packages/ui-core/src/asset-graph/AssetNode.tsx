@@ -18,7 +18,7 @@ import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetComputeKindTag} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
@@ -387,7 +387,7 @@ const MinimalAssetNodeBox = styled.div<{
       &::after {
         inset: 0;
         position: absolute;
-        animation: pulse 0.75s infinite alternate; 
+        animation: pulse 0.75s infinite alternate;
         border-radius: 16px;
         border: 4px solid ${p.$border};
         content: '';

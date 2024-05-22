@@ -51,7 +51,7 @@ import {
 import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {AssetComputeKindTag} from '../graph/OpTags';
+import {AssetComputeKindTag, AssetStorageKindTag} from '../graph/KindTags';
 import {IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
@@ -216,6 +216,9 @@ export const AssetNodeOverview = ({
     </>
   );
 
+  const storageKindTag = assetNode.tags?.find((tag) => tag.key === 'storage_kind');
+  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'storage_kind');
+
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Group">
@@ -255,15 +258,31 @@ export const AssetNodeOverview = ({
             ),
           )}
       </AttributeAndValue>
-      <AttributeAndValue label="Compute kind">
-        {assetNode.computeKind && (
-          <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
-        )}
-      </AttributeAndValue>
+      <Box style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'}}>
+        <AttributeAndValue label="Compute kind">
+          {assetNode.computeKind && (
+            <AssetComputeKindTag
+              style={{position: 'relative'}}
+              definition={assetNode}
+              reduceColor
+            />
+          )}
+        </AttributeAndValue>
+        <AttributeAndValue label="Storage kind">
+          {storageKindTag && (
+            <AssetStorageKindTag
+              style={{position: 'relative'}}
+              storageKind={storageKindTag.value}
+              reduceColor
+            />
+          )}
+        </AttributeAndValue>
+      </Box>
+
       <AttributeAndValue label="Tags">
-        {assetNode.tags &&
-          assetNode.tags.length > 0 &&
-          assetNode.tags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
+        {filteredTags &&
+          filteredTags.length > 0 &&
+          filteredTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
       </AttributeAndValue>
     </Box>
   );
