@@ -149,3 +149,35 @@ mutation GraphQLClientTerminateRun($runId: String!) {
   }
 }
 """
+
+TERMINATE_RUNS_JOB_MUTATION = """
+mutation GraphQLClientTerminateRuns($runIds: [String!]!) {
+  terminateRuns(runIds: $runIds) {
+    __typename
+    ... on TerminateRunsResult {
+      terminateRunResults {
+        __typename
+        ... on TerminateRunSuccess {
+          run  {
+            runId
+          }
+        }
+        ... on TerminateRunFailure {
+          message
+        }
+        ... on RunNotFoundError {
+          runId
+          message
+        }
+        ... on UnauthorizedError {
+          message
+        }
+        ... on PythonError {
+          message
+          stack
+        }
+      }
+    }
+  }
+}
+"""
