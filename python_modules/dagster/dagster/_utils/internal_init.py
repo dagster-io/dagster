@@ -4,8 +4,8 @@ class IHasInternalInit:
     __init__ method, and that dagster_internal_init has no defaults.
     """
 
-    @staticmethod
-    def dagster_internal_init(*args, **kwargs):
+    @classmethod
+    def dagster_internal_init(cls, *args, **kwargs):
         """This method is called by the __init__ method of subclasses of IHasInternalInit. It is not intended to be called
         directly.
         """

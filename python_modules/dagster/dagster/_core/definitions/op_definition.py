@@ -189,7 +189,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
             positional_inputs=positional_inputs,
         )
 
+    @classmethod
     def dagster_internal_init(
+        cls,
         *,
         compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
         name: str,

@@ -728,8 +728,9 @@ class ScheduleDefinition(IHasInternalInit):
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
 
-    @staticmethod
+    @classmethod
     def dagster_internal_init(
+        cls,
         *,
         name: Optional[str],
         cron_schedule: Optional[Union[str, Sequence[str]]],

@@ -255,7 +255,9 @@ class JobDefinition(IHasInternalInit):
                     f" key '{input_name}', but job has no top-level input with that name."
                 )
 
+    @classmethod
     def dagster_internal_init(
+        cls,
         *,
         graph_def: GraphDefinition,
         resource_defs: Optional[Mapping[str, ResourceDefinition]],

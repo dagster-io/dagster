@@ -315,7 +315,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                         " name prefixed with 'team:'."
                     )
 
+    @classmethod
     def dagster_internal_init(
+        cls,
         *,
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
@@ -338,7 +340,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         is_subset: bool,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
     ) -> "AssetsDefinition":
-        return AssetsDefinition(
+        return cls(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=node_def,
