@@ -70,11 +70,14 @@ Let's say you have a **schedule that executes every day at 2:30 AM.** On the day
 Dagster would instead run the schedule at the next time that exists, which would be 3:00 AM:
 
 ```markdown
-# DST begins
+# DST begins: time jumps forward an hour at 2:00 AM
 
-# Time jumps forward an hour at 2:00 AM
-
-12:30 AM 1:00 AM 1:30 AM 3:00 AM ## time transition; schedule executes 3:30 AM 4:00 AM
+- 12:30 AM
+- 1:00 AM
+- 1:30 AM
+- 3:00 AM ## time transition; schedule executes
+- 3:30 AM
+- 4:00 AM
 ```
 
 It's also possible to specify an execution time that exists twice on one day every year.
@@ -84,25 +87,32 @@ Let's say you have a **schedule that executes every day at 1:30 AM.** On the day
 In this case, Dagster would execute the schedule at the second iteration of 1:30 AM:
 
 ```markdown
-# DST ends
+# DST ends: time jumps backward an hour at 2:00 AM
 
-# Time jumps backward an hour at 2:00 AM
-
-12:30 AM 1:00 AM 1:30 AM 1:00 AM ## time transition 1:30 AM schedule executes 2:00 AM
+- 12:30 AM
+- 1:00 AM
+- 1:30 AM
+- 1:00 AM ## time transition
+- 1:30 AM ## schedule executes
+- 2:00 AM
 ```
 
 ### Impact on hourly schedules
 
-Hourly schedules are unaffected by daylight savings time transitions. Schedules will continue to run exactly once an hour, even as the DST ends and the hour from 1:00 AM to 2:00 AM repeats.
+Hourly schedules are unaffected by daylight savings time transitions. Schedules will continue to run exactly once an hour, even as DST ends and the hour from 1:00 AM to 2:00 AM repeats.
 
 Let's say you have a **schedule that executes hourly at 30 minutes past the hour.** On the day DST ends, the schedule would run at 12:30 AM and both instances of 1:30 AM before proceeding normally at 2:30 AM:
 
 ```markdown
-# DST ends
+# DST ends: time jumps backward an hour at 2:00 AM
 
-# Time jumps backward an hour at 2:00 AM
-
-12:30 AM schedule executes 1:00 AM 1:30 AM schedule executes 1:00 AM ## time transition 1:30 AM schedule executes 2:00 AM 2:30 AM schedule executes
+- 12:30 AM ## schedule executes
+- 1:00 AM
+- 1:30 AM ## schedule executes
+- 1:00 AM ## time transition
+- 1:30 AM ## schedule executes
+- 2:00 AM
+- 2:30 AM ## schedule executes
 ```
 
 ---
