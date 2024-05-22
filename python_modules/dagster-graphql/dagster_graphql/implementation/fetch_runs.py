@@ -26,7 +26,7 @@ from dagster._core.storage.tags import TagType, get_tag_type
 from .external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
+    from dagster._core.storage.asset_summary_record_loader import AssetSummaryRecordLoader
 
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.errors import GrapheneRunNotFoundError
@@ -162,7 +162,7 @@ IN_PROGRESS_STATUSES = [
 def get_assets_latest_info(
     graphene_info: "ResolveInfo",
     step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
-    asset_record_loader: "AssetSummaryRecordLoader",
+    asset_summary_record_loader: "AssetSummaryRecordLoader",
 ) -> Sequence["GrapheneAssetLatestInfo"]:
     from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 
@@ -179,37 +179,37 @@ def get_assets_latest_info(
 
     asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
 
-    asset_records = asset_record_loader.get_asset_summary_records(asset_keys)
+    asset_summary_records = asset_summary_record_loader.get_asset_summary_records(asset_keys)
 
     latest_materialization_by_asset = {
-        asset_record.asset_entry.asset_key: (
-            GrapheneMaterializationEvent(event=asset_record.asset_entry.last_materialization)
-            if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+        asr.asset_entry.asset_key: (
+            GrapheneMaterializationEvent(event=asr.asset_entry.last_materialization)
+            if asr.asset_entry.last_materialization
+            and asr.asset_entry.asset_key in step_keys_by_asset
             else None
         )
-        for asset_record in asset_records
+        for asr in asset_summary_records
     }
 
     # Build a lookup table of asset keys to last materialization run IDs. We will filter these
     # run IDs out of the "in progress" run lists that are generated below since they have already
     # emitted an output for the run.
     latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]] = {
-        asset_record.asset_entry.asset_key: (
-            asset_record.asset_entry.last_materialization.run_id
-            if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+        asr.asset_entry.asset_key: (
+            asr.asset_entry.last_materialization.run_id
+            if asr.asset_entry.last_materialization
+            and asr.asset_entry.asset_key in step_keys_by_asset
             else None
         )
-        for asset_record in asset_records
+        for asr in asset_summary_records
     }
 
     latest_run_ids_by_asset: Dict[
         AssetKey, str
     ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
-        for asset_record in asset_records
-        if asset_record.asset_entry.last_run_id
+        asr.asset_entry.asset_key: asr.asset_entry.last_run_id
+        for asr in asset_summary_records
+        if asr.asset_entry.last_run_id
     }
 
     run_records_by_run_id = {}

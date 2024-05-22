@@ -31,7 +31,7 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
+    from dagster._core.storage.asset_summary_record_loader import AssetSummaryRecordLoader
     from dagster._core.storage.event_log.base import AssetSummaryRecord
 
 

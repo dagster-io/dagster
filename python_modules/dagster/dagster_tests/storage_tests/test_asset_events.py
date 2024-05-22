@@ -14,7 +14,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
+from dagster._core.storage.asset_summary_record_loader import AssetSummaryRecordLoader
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.test_utils import instance_for_test
