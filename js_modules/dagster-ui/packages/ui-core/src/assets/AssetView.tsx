@@ -53,7 +53,6 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {CodeLink} from '../code-links/CodeLink';
-import {AssetComputeKindTag} from '../graph/KindTags';
 import {CodeReferencesMetadataEntry} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {isCanonicalCodeSourceEntry} from '../metadata/TableSchema';
@@ -609,7 +608,6 @@ const AssetViewPageHeaderTags = ({
             changedReasons={definition.changedReasons}
             assetKey={definition.assetKey}
           />
-          <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
         </>
       ) : null}
     </>

@@ -51,7 +51,11 @@ import {
 import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {AssetComputeKindTag, AssetStorageKindTag} from '../graph/KindTags';
+import {
+  AssetComputeKindTag,
+  AssetStorageKindTag,
+  isCanonicalStorageKindTag,
+} from '../graph/KindTags';
 import {IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
@@ -216,8 +220,8 @@ export const AssetNodeOverview = ({
     </>
   );
 
-  const storageKindTag = assetNode.tags?.find((tag) => tag.key === 'storage_kind');
-  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'storage_kind');
+  const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
+  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
 
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -258,27 +262,20 @@ export const AssetNodeOverview = ({
             ),
           )}
       </AttributeAndValue>
-      <Box style={{display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'}}>
-        <AttributeAndValue label="Compute kind">
-          {assetNode.computeKind && (
-            <AssetComputeKindTag
-              style={{position: 'relative'}}
-              definition={assetNode}
-              reduceColor
-            />
-          )}
-        </AttributeAndValue>
-        <AttributeAndValue label="Storage kind">
-          {storageKindTag && (
-            <AssetStorageKindTag
-              style={{position: 'relative'}}
-              storageKind={storageKindTag.value}
-              reduceColor
-            />
-          )}
-        </AttributeAndValue>
-      </Box>
-
+      <AttributeAndValue label="Compute kind">
+        {assetNode.computeKind && (
+          <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
+        )}
+      </AttributeAndValue>
+      <AttributeAndValue label="Storage kind">
+        {storageKindTag && (
+          <AssetStorageKindTag
+            style={{position: 'relative'}}
+            storageKind={storageKindTag.value}
+            reduceColor
+          />
+        )}
+      </AttributeAndValue>
       <AttributeAndValue label="Tags">
         {filteredTags &&
           filteredTags.length > 0 &&

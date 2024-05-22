@@ -21,7 +21,11 @@ import {StaleReasonsLabel} from '../assets/Stale';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {AssetComputeKindTag} from '../graph/KindTags';
+import {
+  AssetComputeKindTag,
+  AssetStorageKindTag,
+  isCanonicalStorageKindTag,
+} from '../graph/KindTags';
 import {AssetKeyInput} from '../graphql/types';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
@@ -76,6 +80,8 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
     }
   };
 
+  const storageKindTag = definition?.tags.find(isCanonicalStorageKindTag);
+
   return (
     <Row $height={height} $start={start} data-testid={testId(`row-${tokenForAssetKey({path})}`)}>
       <RowGrid border="bottom" $showRepoColumn={showRepoColumn}>
@@ -100,6 +106,14 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
                 reduceColor
                 reduceText
                 definition={definition}
+                style={{position: 'relative'}}
+              />
+            )}
+            {storageKindTag && (
+              <AssetStorageKindTag
+                reduceColor
+                reduceText
+                storageKind={storageKindTag.value}
                 style={{position: 'relative'}}
               />
             )}
