@@ -571,6 +571,7 @@ export const AssetNodeOverviewNonSDA = ({
         <LargeCollapsibleSection header="Definition" icon="info">
           <Box flex={{direction: 'column', gap: 12}}>
             <NonIdealState
+              shrinkable
               description="This asset doesn't have a software definition in any of your code locations."
               icon="materialization"
               title=""

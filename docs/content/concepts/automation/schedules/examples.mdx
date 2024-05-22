@@ -456,7 +456,7 @@ This example demonstrates how to customize the timezone a schedule executes in. 
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
 my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
 )
 ```
 
