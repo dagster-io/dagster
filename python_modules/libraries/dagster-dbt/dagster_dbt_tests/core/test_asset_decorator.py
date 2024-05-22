@@ -512,11 +512,9 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
 
 
 def test_with_storage_kind_tag_override(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
-    expected_tags = {**StorageKindTagSet(storage_kind="my_custom_storage_kind")}
-
     class CustomDagsterDbtTranslator(DagsterDbtTranslator):
         def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:
-            return expected_tags
+            return {**StorageKindTagSet(storage_kind="my_custom_storage_kind")}
 
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
