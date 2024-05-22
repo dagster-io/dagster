@@ -103,7 +103,7 @@ class DataVersionCache:
             extract_data_version_from_entry,
         )
 
-        asset_records_by_key = self._fetch_asset_records(asset_keys)
+        asset_records_by_key = self._fetch_asset_summary_records(asset_keys)
         for key in asset_keys:
             asset_record = asset_records_by_key.get(key)
             event = self._get_input_asset_event(key, asset_record)
@@ -146,7 +146,7 @@ class DataVersionCache:
                     event.timestamp,
                 )
 
-    def _fetch_asset_records(
+    def _fetch_asset_summary_records(
         self, asset_keys: Sequence[AssetKey]
     ) -> Dict[AssetKey, "AssetSummaryRecord"]:
         batch_size = int(os.getenv("GET_ASSET_RECORDS_FOR_DATA_VERSION_BATCH_SIZE", "100"))
@@ -160,16 +160,16 @@ class DataVersionCache:
         return asset_records_by_key
 
     def _get_input_asset_event(
-        self, key: AssetKey, asset_record: Optional["AssetSummaryRecord"]
+        self, key: AssetKey, asset_summary_record: Optional["AssetSummaryRecord"]
     ) -> Optional["EventLogRecord"]:
         event = None
-        if asset_record and asset_record.asset_entry.last_materialization_record:
-            event = asset_record.asset_entry.last_materialization_record
+        if asset_summary_record and asset_summary_record.asset_entry.last_materialization_record:
+            event = asset_summary_record.asset_entry.last_materialization_record
         elif (
-            asset_record
+            asset_summary_record
             and self._context.instance.event_log_storage.asset_records_have_last_observation
         ):
-            event = asset_record.asset_entry.last_observation_record
+            event = asset_summary_record.asset_entry.last_observation_record
 
         if (
             not event
