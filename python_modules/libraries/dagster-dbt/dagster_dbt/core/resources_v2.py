@@ -551,6 +551,9 @@ class DbtCliInvocation:
         init=False, default=DAGSTER_DBT_TERMINATION_TIMEOUT_SECONDS
     )
     adapter: Optional[BaseAdapter] = field(default=None)
+    postprocessing_threadpool_num_threads: int = field(
+        init=False, default=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
+    )
     _stdout: List[str] = field(init=False, default_factory=list)
     _error_messages: List[str] = field(init=False, default_factory=list)
 
@@ -945,7 +948,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     @public
     @experimental
     def fetch_row_counts(
-        self, *, num_threads=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE
+        self,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
@@ -971,15 +974,22 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         except ImportError:
             pass
 
-        with pushd(str(self._dbt_cli_invocation.project_dir)):
-            return DbtEventIterator(
-                imap(
-                    executor=ThreadPoolExecutor(max_workers=num_threads),
+        def _threadpool_fetch_and_attach_row_count_metadata() -> (
+            Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
+        ):
+            with ThreadPoolExecutor(
+                max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads
+            ) as executor:
+                yield from imap(
+                    executor=executor,
                     iterable=self,
                     func=self._fetch_and_attach_row_count_metadata,
                     block_on_enqueuing_task_completion=block_on_dbt_run,
-                    should_shutdown_executor=True,
-                ),
+                )
+
+        with pushd(str(self._dbt_cli_invocation.project_dir)):
+            return DbtEventIterator(
+                _threadpool_fetch_and_attach_row_count_metadata(),
                 dbt_cli_invocation=self._dbt_cli_invocation,
             )
 
