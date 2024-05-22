@@ -23,7 +23,6 @@ export class HourlyDataCache<T> {
     }
 
     this.addPartialData(startHour, start, end, data);
-    this.mergeCompleteHours();
     this.notifySubscribers(startHour);
   }
 
@@ -40,27 +39,6 @@ export class HourlyDataCache<T> {
     }
     this.cache.get(hour)!.push({start, end, data});
     this.cache.set(hour, this.mergeIntervals(this.cache.get(hour)!));
-  }
-
-  /**
-   * Merges complete hours in the cache.
-   */
-  private mergeCompleteHours(): void {
-    const completedHours: number[] = [];
-    for (const [hour, intervals] of this.cache) {
-      if (intervals.length === 1 && intervals[0]!.end - intervals[0]!.start === ONE_HOUR_S) {
-        completedHours.push(hour);
-      }
-    }
-    for (const hour of completedHours) {
-      this.cache.set(hour, [
-        {
-          start: hour * ONE_HOUR_S,
-          end: (hour + 1) * ONE_HOUR_S,
-          data: this.cache.get(hour)![0]!.data,
-        },
-      ]);
-    }
   }
 
   /**
