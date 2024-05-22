@@ -64,7 +64,7 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
 
 # start_timezone
 my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="US/Pacific"
+    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
 )
 
 # end_timezone
