@@ -2324,7 +2324,7 @@ export type LocalFileCodeReference = {
   __typename: 'LocalFileCodeReference';
   filePath: Scalars['String']['output'];
   label: Maybe<Scalars['String']['output']>;
-  lineNumber: Scalars['Int']['output'];
+  lineNumber: Maybe<Scalars['Int']['output']>;
 };
 
 export type LocationStateChangeEvent = {
@@ -4652,6 +4652,7 @@ export type Runs = PipelineRuns & {
 };
 
 export type RunsFilter = {
+  createdAfter?: InputMaybe<Scalars['Float']['input']>;
   createdBefore?: InputMaybe<Scalars['Float']['input']>;
   mode?: InputMaybe<Scalars['String']['input']>;
   pipelineName?: InputMaybe<Scalars['String']['input']>;
@@ -4660,6 +4661,7 @@ export type RunsFilter = {
   statuses?: InputMaybe<Array<RunStatus>>;
   tags?: InputMaybe<Array<ExecutionTag>>;
   updatedAfter?: InputMaybe<Scalars['Float']['input']>;
+  updatedBefore?: InputMaybe<Scalars['Float']['input']>;
 };
 
 export type RunsOrError = InvalidPipelineRunsFilterError | PythonError | Runs;
@@ -4972,7 +4974,7 @@ export type SolidStepStatusUnavailableError = Error & {
   message: Scalars['String']['output'];
 };
 
-export type SourceLocation = LocalFileCodeReference;
+export type SourceLocation = LocalFileCodeReference | UrlCodeReference;
 
 export type SpecificPartitionAssetConditionEvaluationNode = {
   __typename: 'SpecificPartitionAssetConditionEvaluationNode';
@@ -5442,6 +5444,12 @@ export type UnpartitionedAssetStatus = {
   materialized: Scalars['Boolean']['output'];
 };
 
+export type UrlCodeReference = {
+  __typename: 'UrlCodeReference';
+  label: Maybe<Scalars['String']['output']>;
+  url: Scalars['String']['output'];
+};
+
 export type UrlMetadataEntry = MetadataEntry & {
   __typename: 'UrlMetadataEntry';
   description: Maybe<Scalars['String']['output']>;
@@ -5497,6 +5505,7 @@ export type WorkspaceLocationStatusEntry = {
   id: Scalars['ID']['output'];
   loadStatus: RepositoryLocationLoadStatus;
   name: Scalars['String']['output'];
+  permissions: Array<Permission>;
   updateTimestamp: Scalars['Float']['output'];
 };
 
@@ -13264,6 +13273,8 @@ export const buildRunsFilter = (
   const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
   relationshipsToOmit.add('RunsFilter');
   return {
+    createdAfter:
+      overrides && overrides.hasOwnProperty('createdAfter') ? overrides.createdAfter! : 2.71,
     createdBefore:
       overrides && overrides.hasOwnProperty('createdBefore') ? overrides.createdBefore! : 2.25,
     mode: overrides && overrides.hasOwnProperty('mode') ? overrides.mode! : 'voluptatem',
@@ -13276,6 +13287,8 @@ export const buildRunsFilter = (
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     updatedAfter:
       overrides && overrides.hasOwnProperty('updatedAfter') ? overrides.updatedAfter! : 6.85,
+    updatedBefore:
+      overrides && overrides.hasOwnProperty('updatedBefore') ? overrides.updatedBefore! : 7.58,
   };
 };
 
@@ -14751,6 +14764,19 @@ export const buildUnpartitionedAssetStatus = (
   };
 };
 
+export const buildUrlCodeReference = (
+  overrides?: Partial<UrlCodeReference>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'UrlCodeReference'} & UrlCodeReference => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('UrlCodeReference');
+  return {
+    __typename: 'UrlCodeReference',
+    label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'alias',
+    url: overrides && overrides.hasOwnProperty('url') ? overrides.url! : 'quia',
+  };
+};
+
 export const buildUrlMetadataEntry = (
   overrides?: Partial<UrlMetadataEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -14892,6 +14918,7 @@ export const buildWorkspaceLocationStatusEntry = (
         ? overrides.loadStatus!
         : RepositoryLocationLoadStatus.LOADED,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'corporis',
+    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
   };

@@ -860,6 +860,10 @@
         "path": "/integrations/dbt",
         "children": [
           {
+            "title": "Quickstart",
+            "path": "/integrations/dbt/quickstart"
+          },
+          {
             "title": "dbt & Dagster tutorial",
             "path": "/integrations/dbt/using-dbt-with-dagster",
             "children": [
@@ -1397,6 +1401,10 @@
           {
             "title": "Kubernetes (dagster-k8s)",
             "path": "/_apidocs/libraries/dagster-k8s"
+          },
+          {
+            "title": "Looker (dagster-looker)",
+            "path": "/_apidocs/libraries/dagster-looker"
           },
           {
             "title": "MLflow (dagster-mlflow)",

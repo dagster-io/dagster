@@ -171,7 +171,7 @@ def get_polars_metadata(
 
         metadata["table"] = table_metadata
         metadata["stats"] = stats_metadata
-        metadata["row_count"] = MetadataValue.int(df.shape[0])
+        metadata["dagster/row_count"] = MetadataValue.int(df.shape[0])
         metadata["estimated_size_mb"] = MetadataValue.float(df.estimated_size(unit="mb"))
 
     return metadata

@@ -35,12 +35,15 @@ export type SpecificPartitionAssetConditionEvaluationNodeFragment = {
         __typename: 'CodeReferencesMetadataEntry';
         label: string;
         description: string | null;
-        codeReferences: Array<{
-          __typename: 'LocalFileCodeReference';
-          filePath: string;
-          lineNumber: number;
-          label: string | null;
-        }>;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -187,12 +190,15 @@ export type UnpartitionedAssetConditionEvaluationNodeFragment = {
         __typename: 'CodeReferencesMetadataEntry';
         label: string;
         description: string | null;
-        codeReferences: Array<{
-          __typename: 'LocalFileCodeReference';
-          filePath: string;
-          lineNumber: number;
-          label: string | null;
-        }>;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
       }
     | {
         __typename: 'FloatMetadataEntry';
@@ -426,12 +432,15 @@ export type AssetConditionEvaluationRecordFragment = {
                 __typename: 'CodeReferencesMetadataEntry';
                 label: string;
                 description: string | null;
-                codeReferences: Array<{
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                  label: string | null;
-                }>;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -597,12 +606,15 @@ export type AssetConditionEvaluationRecordFragment = {
                 __typename: 'CodeReferencesMetadataEntry';
                 label: string;
                 description: string | null;
-                codeReferences: Array<{
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                  label: string | null;
-                }>;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -848,12 +860,15 @@ export type GetEvaluationsQuery = {
                         __typename: 'CodeReferencesMetadataEntry';
                         label: string;
                         description: string | null;
-                        codeReferences: Array<{
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                          label: string | null;
-                        }>;
+                        codeReferences: Array<
+                          | {
+                              __typename: 'LocalFileCodeReference';
+                              filePath: string;
+                              lineNumber: number | null;
+                              label: string | null;
+                            }
+                          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                        >;
                       }
                     | {
                         __typename: 'FloatMetadataEntry';
@@ -1025,12 +1040,15 @@ export type GetEvaluationsQuery = {
                         __typename: 'CodeReferencesMetadataEntry';
                         label: string;
                         description: string | null;
-                        codeReferences: Array<{
-                          __typename: 'LocalFileCodeReference';
-                          filePath: string;
-                          lineNumber: number;
-                          label: string | null;
-                        }>;
+                        codeReferences: Array<
+                          | {
+                              __typename: 'LocalFileCodeReference';
+                              filePath: string;
+                              lineNumber: number | null;
+                              label: string | null;
+                            }
+                          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                        >;
                       }
                     | {
                         __typename: 'FloatMetadataEntry';
@@ -1257,12 +1275,15 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 __typename: 'CodeReferencesMetadataEntry';
                 label: string;
                 description: string | null;
-                codeReferences: Array<{
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                  label: string | null;
-                }>;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';
@@ -1428,12 +1449,15 @@ export type GetEvaluationsSpecificPartitionQuery = {
                 __typename: 'CodeReferencesMetadataEntry';
                 label: string;
                 description: string | null;
-                codeReferences: Array<{
-                  __typename: 'LocalFileCodeReference';
-                  filePath: string;
-                  lineNumber: number;
-                  label: string | null;
-                }>;
+                codeReferences: Array<
+                  | {
+                      __typename: 'LocalFileCodeReference';
+                      filePath: string;
+                      lineNumber: number | null;
+                      label: string | null;
+                    }
+                  | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+                >;
               }
             | {
                 __typename: 'FloatMetadataEntry';

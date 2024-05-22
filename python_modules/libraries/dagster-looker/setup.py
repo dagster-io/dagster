@@ -1,8 +1,15 @@
+from pathlib import Path
+from typing import Dict
+
 from setuptools import find_packages, setup
 
 
 def get_version() -> str:
-    return "1!0+dev"
+    version: Dict[str, str] = {}
+    with open(Path(__file__).parent / "dagster_looker/version.py", encoding="utf8") as fp:
+        exec(fp.read(), version)
+
+    return version["__version__"]
 
 
 ver = get_version()

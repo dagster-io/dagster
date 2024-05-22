@@ -1,5 +1,5 @@
 import {Box, Spinner} from '@dagster-io/ui-components';
-import {useMemo, useRef, useState} from 'react';
+import React, {useMemo, useRef, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -53,10 +53,17 @@ export const AssetNodeLineageGraph = ({
   const viewportEl = useRef<SVGViewport>();
   const history = useHistory();
 
-  const onClickAsset = (key: AssetKey) => {
-    history.push(
-      assetDetailsPathForKey(key, {...params, lineageScope: 'neighbors', lineageDepth: 1}),
-    );
+  const onClickAsset = (e: React.MouseEvent<any>, key: AssetKey) => {
+    const path = assetDetailsPathForKey(key, {
+      ...params,
+      lineageScope: 'neighbors',
+      lineageDepth: 1,
+    });
+    if (e.metaKey) {
+      window.open(document.location.host + path);
+    } else {
+      history.push(path);
+    }
   };
 
   useLastSavedZoomLevel(viewportEl, layout, assetGraphId);
@@ -149,7 +156,7 @@ export const AssetNodeLineageGraph = ({
                     style={{overflow: 'visible'}}
                     onMouseEnter={() => setHighlighted([id])}
                     onMouseLeave={() => setHighlighted(null)}
-                    onClick={() => onClickAsset({path})}
+                    onClick={(e) => onClickAsset(e, {path})}
                     onDoubleClick={(e) => {
                       viewportEl.current?.zoomToSVGBox(bounds, true, 1.2);
                       e.stopPropagation();

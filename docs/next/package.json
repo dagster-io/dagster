@@ -12,7 +12,8 @@
     "ts": "tsc -p .",
     "lint": "eslint . --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "mdx-format": "yarn mdx-transform && prettier --config ../.prettierrc.markdown.js --write \"../content/**/*.mdx\" --loglevel warn && remark --rc-path ./.remarkrc.js \"../content/**/*.mdx\" --output --silent",
-    "mdx-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/mdx-transform.ts"
+    "mdx-transform": "ts-node -O '{\"module\": \"commonjs\"}' scripts/mdx-transform.ts",
+    "broken-link-checker": "ts-node -O '{\"module\": \"commonjs\"}' scripts/broken-link-checker.ts"
   },
   "dependencies": {
     "@docsearch/react": "^3.5.1",
@@ -71,6 +72,7 @@
     "@types/jest": "^29.5.3",
     "@types/node": "^14.14.22",
     "@types/react": "^18.2.47",
+    "broken-link-checker": "^0.7.8",
     "eslint": "^8.57.0",
     "eslint-plugin-dagster-rules": "link:../../js_modules/dagster-ui/packages/eslint-config/rules",
     "html-react-parser": "^2.0.0",

@@ -326,6 +326,13 @@ class AssetGraphView:
     def _queryer(self) -> "CachingInstanceQueryer":
         return self._stale_resolver.instance_queryer
 
+    # In our transitional period there are lots of code path that take
+    # a AssetGraphView and then call methods on the queryer. This is
+    # formal accesor to we can do this legally, instead of using noqa accesses
+    # of a private proeprty
+    def get_inner_queryer_for_back_compat(self) -> "CachingInstanceQueryer":
+        return self._queryer
+
     def _get_partitions_def(self, asset_key: "AssetKey") -> Optional["PartitionsDefinition"]:
         return self.asset_graph.get(asset_key).partitions_def
 

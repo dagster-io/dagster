@@ -77,7 +77,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
             is_required=False,
             description=(
                 "Raw k8s config for the k8s pod's main container"
-                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core)."
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#container-v1-core)."
                 " Keys can either snake_case or camelCase."
             ),
         ),
@@ -113,7 +113,7 @@ K8S_JOB_OP_CONFIG = merge_dicts(
             is_required=False,
             description=(
                 "Raw k8s config for the k8s job's job spec"
-                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch)."
+                " (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#jobspec-v1-batch)."
                 " Keys can either snake_case or camelCase."
             ),
         ),
@@ -213,7 +213,7 @@ def execute_k8s_job(
         timeout (Optional[int]): Raise an exception if the op takes longer than this timeout in
             seconds to execute. Default: None.
         container_config (Optional[Dict[str, Any]]): Raw k8s config for the k8s pod's main container
-            (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#container-v1-core).
+            (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#container-v1-core).
             Keys can either snake_case or camelCase.Default: None.
         pod_template_spec_metadata (Optional[Dict[str, Any]]): Raw k8s config for the k8s pod's
             metadata (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta).
@@ -225,7 +225,7 @@ def execute_k8s_job(
             (https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/object-meta/#ObjectMeta).
             Keys can either snake_case or camelCase. Default: None.
         job_spec_config (Optional[Dict[str, Any]]): Raw k8s config for the k8s job's job spec
-            (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.20/#jobspec-v1-batch).
+            (https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.30/#jobspec-v1-batch).
             Keys can either snake_case or camelCase.Default: None.
         k8s_job_name (Optional[str]): Overrides the name of the k8s job. If not set, will be set
             to a unique name based on the current run ID and the name of the calling op. If set,

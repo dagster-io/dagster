@@ -90,6 +90,7 @@ from dagster._utils.warnings import deprecation_warning
 
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
+    AssetCheckSummaryRecord,
     AssetEntry,
     AssetRecord,
     AssetRecordsFilter,
@@ -394,7 +395,9 @@ class SqlEventLogStorage(EventLogStorage):
                             value=new_tags[tag],
                             # Postgres requires a datetime that is in UTC but has no timezone info
                             # set in order to be stored correctly
-                            event_timestamp=datetime.utcfromtimestamp(event_timestamp),
+                            event_timestamp=datetime.fromtimestamp(
+                                event_timestamp, timezone.utc
+                            ).replace(tzinfo=None),
                         )
                         for tag in added_tags
                     ],
@@ -881,7 +884,9 @@ class SqlEventLogStorage(EventLogStorage):
         if asset_details and asset_details.last_wipe_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                > datetime.fromtimestamp(asset_details.last_wipe_timestamp, timezone.utc).replace(
+                    tzinfo=None
+                )
             )
 
         if apply_cursor_filters:
@@ -907,13 +912,17 @@ class SqlEventLogStorage(EventLogStorage):
         if event_records_filter.before_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                < datetime.utcfromtimestamp(event_records_filter.before_timestamp)
+                < datetime.fromtimestamp(
+                    event_records_filter.before_timestamp, timezone.utc
+                ).replace(tzinfo=None)
             )
 
         if event_records_filter.after_timestamp:
             query = query.where(
                 SqlEventLogStorageTable.c.timestamp
-                > datetime.utcfromtimestamp(event_records_filter.after_timestamp)
+                > datetime.fromtimestamp(
+                    event_records_filter.after_timestamp, timezone.utc
+                ).replace(tzinfo=None)
             )
 
         if event_records_filter.storage_ids:
@@ -1312,6 +1321,19 @@ class SqlEventLogStorage(EventLogStorage):
 
         return asset_records
 
+    def get_asset_check_summary_records(
+        self, asset_check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
+        states = {}
+        for asset_check_key in asset_check_keys:
+            execution_record = self.get_asset_check_execution_history(asset_check_key, limit=1)
+            states[asset_check_key] = AssetCheckSummaryRecord(
+                asset_check_key=asset_check_key,
+                last_check_execution_record=execution_record[0] if execution_record else None,
+                last_run_id=execution_record[0].run_id if execution_record else None,
+            )
+        return states
+
     def has_asset_key(self, asset_key: AssetKey) -> bool:
         check.inst_param(asset_key, "asset_key", AssetKey)
         rows = self._fetch_asset_rows(asset_keys=[asset_key])
@@ -1618,7 +1640,9 @@ class SqlEventLogStorage(EventLogStorage):
                         db.and_(
                             asset_key_in_row,
                             SqlEventLogStorageTable.c.timestamp
-                            > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp),
+                            > datetime.fromtimestamp(
+                                asset_details.last_wipe_timestamp, timezone.utc
+                            ).replace(tzinfo=None),
                         ),
                         db.not_(asset_key_in_row),
                     )
@@ -1668,7 +1692,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
-                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
                 )
         else:
             table = self._apply_tags_table_joins(AssetEventTagsTable, filter_tags, asset_key)
@@ -1683,7 +1709,9 @@ class SqlEventLogStorage(EventLogStorage):
             if asset_details and asset_details.last_wipe_timestamp:
                 tags_query = tags_query.where(
                     AssetEventTagsTable.c.event_timestamp
-                    > datetime.utcfromtimestamp(asset_details.last_wipe_timestamp)
+                    > datetime.fromtimestamp(
+                        asset_details.last_wipe_timestamp, timezone.utc
+                    ).replace(tzinfo=None)
                 )
 
         if filter_event_id is not None:

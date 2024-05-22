@@ -170,24 +170,47 @@ export const calculateGraphDistances = (items: GraphQueryItem[], assetKey: Asset
     return {upstream: 0, downstream: 0};
   }
 
-  const dfsUpstream = (name: string, depth: number): number => {
-    const next = map[name]!.inputs.flatMap((i) => i.dependsOn.map((d) => d.solid.name)).filter(
-      (dname) => dname !== name,
-    );
+  let upstreamDepth = -1;
+  let candidates = new Set([start.name]);
 
-    return Math.max(depth, ...next.map((dname) => dfsUpstream(dname, depth + 1)));
-  };
-  const dfsDownstream = (name: string, depth: number): number => {
-    const next = map[name]!.outputs.flatMap((i) => i.dependedBy.map((d) => d.solid.name)).filter(
-      (dname) => dname !== name,
-    );
+  while (candidates.size > 0) {
+    const nextCandidates: Set<string> = new Set();
+    upstreamDepth += 1;
 
-    return Math.max(depth, ...next.map((dname) => dfsDownstream(dname, depth + 1)));
-  };
+    candidates.forEach((candidate) => {
+      map[candidate]!.inputs.flatMap((i) =>
+        i.dependsOn.forEach((d) => {
+          if (!candidates.has(d.solid.name)) {
+            nextCandidates.add(d.solid.name);
+          }
+        }),
+      );
+    });
+    candidates = nextCandidates;
+  }
+
+  let downstreamDepth = -1;
+  candidates = new Set([start.name]);
+
+  while (candidates.size > 0) {
+    const nextCandidates: Set<string> = new Set();
+    downstreamDepth += 1;
+
+    candidates.forEach((candidate) => {
+      map[candidate]!.outputs.flatMap((i) =>
+        i.dependedBy.forEach((d) => {
+          if (!candidates.has(d.solid.name)) {
+            nextCandidates.add(d.solid.name);
+          }
+        }),
+      );
+    });
+    candidates = nextCandidates;
+  }
 
   return {
-    upstream: dfsUpstream(start.name, 0),
-    downstream: dfsDownstream(start.name, 0),
+    upstream: upstreamDepth,
+    downstream: downstreamDepth,
   };
 };
 

@@ -17,7 +17,7 @@ import {CommunityNux} from './NUX/CommunityNux';
 import {extractInitializationData} from './extractInitializationData';
 import {telemetryLink} from './telemetryLink';
 
-const {pathPrefix, telemetryEnabled, liveDataPollRate} = extractInitializationData();
+const {pathPrefix, telemetryEnabled, liveDataPollRate, instanceId} = extractInitializationData();
 
 const apolloLinks = [logLink, errorLink, timeStartLink];
 
@@ -44,7 +44,7 @@ export default function AppPage() {
     <RecoilRoot>
       <InjectedComponents>
         <LiveDataPollRateContext.Provider value={liveDataPollRate ?? 2000}>
-          <AppProvider appCache={appCache} config={config}>
+          <AppProvider appCache={appCache} config={config} localCacheIdPrefix={instanceId}>
             <AppTopNav allowGlobalReload>
               <HelpMenu showContactSales={false} />
               <UserSettingsButton />

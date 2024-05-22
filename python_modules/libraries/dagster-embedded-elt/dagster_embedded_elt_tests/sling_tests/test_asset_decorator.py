@@ -219,6 +219,89 @@ def test_base_with_meta_config_translator():
     )
 
 
+def test_base_with_default_meta_translator():
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_default_meta/replication.yaml"
+    )
+    replication_config = yaml.safe_load(Path(replication_config_path).read_bytes())
+
+    @sling_assets(replication_config=replication_config_path)
+    def my_sling_assets(): ...
+
+    assert my_sling_assets.metadata_by_key == {
+        AssetKey(["target", "public", "accounts"]): {
+            "stream_config": JsonMetadataValue(data={"meta": {"dagster": {"group": "group_1"}}}),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+        AssetKey(["target", "departments"]): {
+            "stream_config": JsonMetadataValue(
+                data={
+                    "object": "departments",
+                    "source_options": {"empty_as_null": False},
+                    "meta": {
+                        "dagster": {
+                            "deps": ["foo_one", "foo_two"],
+                            "group": "group_2",
+                            "freshness_policy": {
+                                "maximum_lag_minutes": 0,
+                                "cron_schedule": "5 4 * * *",
+                                "cron_schedule_timezone": "UTC",
+                            },
+                        }
+                    },
+                }
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+        AssetKey(["target", "public", "transactions"]): {
+            "stream_config": JsonMetadataValue(
+                data={
+                    "mode": "incremental",
+                    "primary_key": "id",
+                    "update_key": "last_updated_at",
+                    "meta": {
+                        "dagster": {
+                            "group": "group_1",
+                            "description": "Example Description!",
+                            "auto_materialize_policy": True,
+                        }
+                    },
+                }
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+        AssetKey(["target", "public", "all_users"]): {
+            "stream_config": JsonMetadataValue(
+                data={
+                    "sql": 'select all_user_id, name\nfrom public."all_Users"\n',
+                    "object": "public.all_users",
+                    "meta": {"dagster": {"group": "group_1"}},
+                }
+            ),
+            "dagster_embedded_elt/dagster_sling_translator": DagsterSlingTranslator(
+                target_prefix="target"
+            ),
+            "dagster_embedded_elt/sling_replication_config": replication_config,
+        },
+    }
+
+    assert my_sling_assets.group_names_by_key == {
+        AssetKey(["target", "public", "all_users"]): "group_1",
+        AssetKey(["target", "public", "accounts"]): "group_1",
+        AssetKey(["target", "public", "transactions"]): "group_1",
+        AssetKey(["target", "departments"]): "group_2",
+    }
+
+
 def test_base_with_custom_asset_key_prefix():
     @sling_assets(
         replication_config=file_relative_path(

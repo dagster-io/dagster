@@ -2,57 +2,91 @@
 
 import * as Types from '../../graphql/types';
 
-export type RunTimelineQueryVariables = Types.Exact<{
+export type RunTimelineFragment = {
+  __typename: 'Run';
+  id: string;
+  pipelineName: string;
+  status: Types.RunStatus;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
+  repositoryOrigin: {
+    __typename: 'RepositoryOrigin';
+    id: string;
+    repositoryName: string;
+    repositoryLocationName: string;
+  } | null;
+};
+
+export type OngoingRunTimelineQueryVariables = Types.Exact<{
   inProgressFilter: Types.RunsFilter;
-  terminatedFilter: Types.RunsFilter;
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+}>;
+
+export type OngoingRunTimelineQuery = {
+  __typename: 'Query';
+  ongoing:
+    | {__typename: 'InvalidPipelineRunsFilterError'}
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'Runs';
+        results: Array<{
+          __typename: 'Run';
+          id: string;
+          pipelineName: string;
+          status: Types.RunStatus;
+          startTime: number | null;
+          endTime: number | null;
+          updateTime: number | null;
+          repositoryOrigin: {
+            __typename: 'RepositoryOrigin';
+            id: string;
+            repositoryName: string;
+            repositoryLocationName: string;
+          } | null;
+        }>;
+      };
+};
+
+export type CompletedRunTimelineQueryVariables = Types.Exact<{
+  completedFilter: Types.RunsFilter;
+  limit: Types.Scalars['Int']['input'];
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+}>;
+
+export type CompletedRunTimelineQuery = {
+  __typename: 'Query';
+  completed:
+    | {__typename: 'InvalidPipelineRunsFilterError'}
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'Runs';
+        results: Array<{
+          __typename: 'Run';
+          id: string;
+          pipelineName: string;
+          status: Types.RunStatus;
+          startTime: number | null;
+          endTime: number | null;
+          updateTime: number | null;
+          repositoryOrigin: {
+            __typename: 'RepositoryOrigin';
+            id: string;
+            repositoryName: string;
+            repositoryLocationName: string;
+          } | null;
+        }>;
+      };
+};
+
+export type FutureTicksQueryVariables = Types.Exact<{
   tickCursor?: Types.InputMaybe<Types.Scalars['Float']['input']>;
   ticksUntil?: Types.InputMaybe<Types.Scalars['Float']['input']>;
 }>;
 
-export type RunTimelineQuery = {
+export type FutureTicksQuery = {
   __typename: 'Query';
-  unterminated:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {
-        __typename: 'Runs';
-        results: Array<{
-          __typename: 'Run';
-          id: string;
-          pipelineName: string;
-          status: Types.RunStatus;
-          startTime: number | null;
-          endTime: number | null;
-          updateTime: number | null;
-          repositoryOrigin: {
-            __typename: 'RepositoryOrigin';
-            id: string;
-            repositoryName: string;
-            repositoryLocationName: string;
-          } | null;
-        }>;
-      };
-  terminated:
-    | {__typename: 'InvalidPipelineRunsFilterError'}
-    | {__typename: 'PythonError'}
-    | {
-        __typename: 'Runs';
-        results: Array<{
-          __typename: 'Run';
-          id: string;
-          pipelineName: string;
-          status: Types.RunStatus;
-          startTime: number | null;
-          endTime: number | null;
-          updateTime: number | null;
-          repositoryOrigin: {
-            __typename: 'RepositoryOrigin';
-            id: string;
-            repositoryName: string;
-            repositoryLocationName: string;
-          } | null;
-        }>;
-      };
   workspaceOrError:
     | {__typename: 'PythonError'}
     | {

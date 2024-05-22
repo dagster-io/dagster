@@ -1,7 +1,8 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useDeferredValue} from 'react';
 
-import {FIFTEEN_SECONDS, RefreshState, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
@@ -14,7 +15,7 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
-const POLL_INTERVAL = 60 * 1000;
+const POLL_INTERVAL = 5 * 1000;
 
 const hourWindowToOffset = (hourWindow: HourWindow) => {
   switch (hourWindow) {
@@ -50,7 +51,6 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   });
 
   React.useEffect(() => {
-    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, POLL_INTERVAL);
@@ -80,8 +80,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
-  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
+  const runsForTimelineRet = useRunsForTimeline(range);
+
+  // Use deferred value to allow paginating quickly with the UI feeling more responsive.
+  const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
 
   React.useEffect(() => {
     if (!initialLoading) {

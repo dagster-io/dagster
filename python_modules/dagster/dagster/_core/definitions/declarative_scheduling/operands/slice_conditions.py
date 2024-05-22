@@ -66,9 +66,13 @@ class RequestedThisTickCondition(SliceSchedulingCondition):
 
     def _executable_with_root_context_key(self, context: SchedulingContext) -> bool:
         # TODO: once we can launch backfills via the asset daemon, this can be removed
+        from dagster._core.definitions.asset_graph import materializable_in_same_run
+
         root_key = context.root_context.asset_key
-        return context.legacy_context.materializable_in_same_run(
-            child_key=root_key, parent_key=context.asset_key
+        return materializable_in_same_run(
+            asset_graph=context.asset_graph_view.asset_graph,
+            child_key=root_key,
+            parent_key=context.asset_key,
         )
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:

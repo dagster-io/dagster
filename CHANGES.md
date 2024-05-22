@@ -1,5 +1,34 @@
 # Changelog
 
+# 1.7.6 (core) / 0.23.6 (libraries)
+
+### New
+
+- The backfill daemon now has additional logging to document the progression through each tick and why assets are and are not materialized during each evaluation of a backfill.
+- Made performance improvements in both calculating and storing data version for assets, especially for assets with a large fan-in.
+- Standardized table row count metadata output by various integrations to `dagster/row_count` .
+- [dagster-aws][community-contribution] Additional parameters can now be passed to the following resources: `CloudwatchLogsHandler`, `ECRPublicClient`, `SecretsManagerResource`, `SSMResource` thanks `@jacob-white-simplisafe` !
+- Added additional frontend telemetry. See https://docs.dagster.io/about/telemetry for more information.
+
+### Bugfixes
+
+- Fixed issue that could cause runs to fail if they targeted any assets which had a metadata value of type `TableMetadataValue`, `TableSchemaMetadataValue`, or `TableColumnLineageMetadataValue` defined.
+- Fixed an issue which could cause evaluations produced via the Auto-materialize system to not render the “skip”-type rules.
+- Backfills of asset jobs now correctly use the `BackfillPolicy` of the underlying assets in the job.
+- [dagster-databricks][community-contribution] `databricks-sdk` version bumped to `0.17.0`, thanks `@lamalex` !
+- [helm][community-contribution] resolved incorrect comments about `dagster code-server start` , thanks `@SanjaySiddharth` !
+
+### Documentation
+
+- Added section headings to Pipes API references, along with explanatory copy and links to relevant pages
+- Added a guide for subletting asset checks
+- Add more detailed steps to transition from serverless to hybrid
+- [community-contribution] asset selection syntax corrected, thanks `@JonathanLai2004`!
+
+### Dagster Plus
+
+- Fixed an issue where Dagster Cloud agents would wait longer than necessary when multiple code locations were timing out during a deployment.
+
 # 1.7.5 (core) / 0.23.5 (libraries)
 
 ### New

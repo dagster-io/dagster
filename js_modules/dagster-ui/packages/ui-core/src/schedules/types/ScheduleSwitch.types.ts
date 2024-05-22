@@ -15,3 +15,23 @@ export type ScheduleSwitchFragment = {
     status: Types.InstigationStatus;
   };
 };
+
+export type ScheduleStateQueryVariables = Types.Exact<{
+  scheduleSelector: Types.ScheduleSelector;
+}>;
+
+export type ScheduleStateQuery = {
+  __typename: 'Query';
+  scheduleOrError:
+    | {__typename: 'PythonError'}
+    | {
+        __typename: 'Schedule';
+        id: string;
+        scheduleState: {
+          __typename: 'InstigationState';
+          id: string;
+          status: Types.InstigationStatus;
+        };
+      }
+    | {__typename: 'ScheduleNotFoundError'};
+};

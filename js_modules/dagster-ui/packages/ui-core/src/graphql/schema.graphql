@@ -2290,7 +2290,9 @@ input RunsFilter {
   statuses: [RunStatus!]
   snapshotId: String
   updatedAfter: Float
+  updatedBefore: Float
   createdBefore: Float
+  createdAfter: Float
   mode: String
 }
 
@@ -2684,11 +2686,16 @@ type CodeReferencesMetadataEntry implements MetadataEntry {
   codeReferences: [SourceLocation!]!
 }
 
-union SourceLocation = LocalFileCodeReference
+union SourceLocation = LocalFileCodeReference | UrlCodeReference
 
 type LocalFileCodeReference {
   filePath: String!
-  lineNumber: Int!
+  lineNumber: Int
+  label: String
+}
+
+type UrlCodeReference {
+  url: String!
   label: String
 }
 
@@ -3298,6 +3305,7 @@ type WorkspaceLocationStatusEntry {
   name: String!
   loadStatus: RepositoryLocationLoadStatus!
   updateTimestamp: Float!
+  permissions: [Permission!]!
 }
 
 union GraphOrError = Graph | GraphNotFoundError | PythonError

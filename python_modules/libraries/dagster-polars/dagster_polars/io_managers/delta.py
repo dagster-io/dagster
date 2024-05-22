@@ -412,11 +412,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
                 # but it's unclear how to get the length of the partition we are appending to
                 pass
             else:
-                metadata["append_row_count"] = metadata["row_count"]
+                metadata["append_row_count"] = metadata["dagster/row_count"]
 
                 path = self._get_path(context)
                 # we need to get row_count from the full table
-                metadata["row_count"] = MetadataValue.int(
+                metadata["dagster/row_count"] = MetadataValue.int(
                     DeltaTable(str(path), storage_options=self.storage_options)
                     .to_pyarrow_dataset()
                     .count_rows()

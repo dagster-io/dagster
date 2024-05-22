@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional
 
 import pendulum
 
@@ -10,6 +10,7 @@ from dagster._core.asset_graph_view.asset_graph_view import (
     AssetSlice,
 )
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
 )
@@ -17,8 +18,10 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
     SchedulingEvaluationInfo,
     SchedulingEvaluationResultNode,
 )
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._model import DagsterModel
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partition import (
+    PartitionsDefinition,
+)
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
@@ -27,7 +30,38 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
-class SchedulingContext(DagsterModel):
+# This class exists purely for organizational purposes so that we understand
+# the interface between scheduling conditions and the instance much more
+# explicitly. This captures all interactions that do not go through AssetGraphView
+# so that we do not access the legacy context or the instance queryer directly
+# in scheduling conditions.
+class NonAGVInstanceInterface:
+    def __init__(self, queryer: "CachingInstanceQueryer"):
+        self._queryer = queryer
+
+    def get_asset_subset_updated_after_time(
+        self, *, asset_key: AssetKey, after_time: datetime.datetime
+    ) -> ValidAssetSubset:
+        return self._queryer.get_asset_subset_updated_after_time(
+            asset_key=asset_key, after_time=after_time
+        )
+
+    def get_parent_asset_partitions_updated_after_child(
+        self,
+        *,
+        asset_partition: AssetKeyPartitionKey,
+        parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        ignored_parent_keys: AbstractSet[AssetKey],
+    ) -> AbstractSet[AssetKeyPartitionKey]:
+        return self._queryer.get_parent_asset_partitions_updated_after_child(
+            asset_partition=asset_partition,
+            parent_asset_partitions=parent_asset_partitions,
+            respect_materialization_data_versions=False,
+            ignored_parent_keys=ignored_parent_keys,
+        )
+
+
+class SchedulingContext(NamedTuple):
     # the slice over which the condition is being evaluated
     candidate_slice: AssetSlice
 
@@ -52,8 +86,11 @@ class SchedulingContext(DagsterModel):
     # asset
     current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo]
 
+    non_agv_instance_interface: NonAGVInstanceInterface
+
     # hack to avoid circular references during pydantic validation
     inner_legacy_context: Any
+    allow_legacy_access: bool
 
     @staticmethod
     def create(
@@ -68,8 +105,7 @@ class SchedulingContext(DagsterModel):
         auto_materialize_policy = check.not_none(asset_graph.get(asset_key).auto_materialize_policy)
         scheduling_condition = auto_materialize_policy.to_scheduling_condition()
 
-        # construct is used here for performance
-        return SchedulingContext.model_construct(
+        return SchedulingContext(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key),
             condition=scheduling_condition,
             condition_unique_id=scheduling_condition.get_unique_id(
@@ -82,13 +118,16 @@ class SchedulingContext(DagsterModel):
             previous_evaluation_info=previous_evaluation_info,
             current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
             inner_legacy_context=legacy_context,
+            non_agv_instance_interface=NonAGVInstanceInterface(
+                asset_graph_view.get_inner_queryer_for_back_compat()
+            ),
+            allow_legacy_access=False,
         )
 
     def for_child_condition(
         self, child_condition: SchedulingCondition, child_index: int, candidate_slice: AssetSlice
     ) -> "SchedulingContext":
-        # construct is used here for performance
-        return SchedulingContext.model_construct(
+        return SchedulingContext(
             candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(
@@ -100,13 +139,15 @@ class SchedulingContext(DagsterModel):
             logger=self.logger,
             previous_evaluation_info=self.previous_evaluation_info,
             current_tick_evaluation_info_by_key=self.current_tick_evaluation_info_by_key,
-            inner_legacy_context=self.legacy_context.for_child(
+            inner_legacy_context=self.inner_legacy_context.for_child(
                 child_condition,
                 child_condition.get_unique_id(
                     parent_unique_id=self.condition_unique_id, index=child_index
                 ),
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
+            non_agv_instance_interface=self.non_agv_instance_interface,
+            allow_legacy_access=self.allow_legacy_access,
         )
 
     @property
@@ -144,11 +185,13 @@ class SchedulingContext(DagsterModel):
 
     @property
     def legacy_context(self) -> LegacyRuleEvaluationContext:
-        return self.inner_legacy_context
-
-    @property
-    def _queryer(self) -> "CachingInstanceQueryer":
-        return self.asset_graph_view._queryer  # noqa
+        return (
+            self.inner_legacy_context
+            if self.allow_legacy_access
+            else check.failed(
+                "Legacy access only allowed in AutoMaterializeRule subclasses in auto_materialize_rules_impls.py"
+            )
+        )
 
     @property
     def previous_requested_slice(self) -> Optional[AssetSlice]:
@@ -182,4 +225,4 @@ class SchedulingContext(DagsterModel):
     @property
     def new_max_storage_id(self) -> Optional[int]:
         # TODO: pull this from the AssetGraphView instead
-        return self.legacy_context.new_max_storage_id
+        return self.inner_legacy_context.new_max_storage_id

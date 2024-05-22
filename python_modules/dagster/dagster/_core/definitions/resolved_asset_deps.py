@@ -103,12 +103,19 @@ def resolve_similar_asset_names(
             and max(len(asset_key.path), len(target_asset_key.path)) > 1
         )
 
+        # If the asset key provided has no prefix and the upstream key has
+        # the same name but a prefix of any length
+        no_prefix_but_is_match_with_prefix = (
+            len(target_asset_key) == 1 and asset_key.path[-1] == target_asset_key.path[-1]
+        )
+
         matches_slashes_turned_to_prefix_gaps = asset_key.path == target_asset_key_split
 
         if (
             is_same_prefix_similar_name
             or is_similar_prefix_same_name
             or is_off_by_one_prefix_component_same_name
+            or no_prefix_but_is_match_with_prefix
             or matches_slashes_turned_to_prefix_gaps
         ):
             similar_names.append(asset_key)

@@ -52,10 +52,13 @@ export interface AppProviderProps {
     telemetryEnabled?: boolean;
     statusPolling: Set<DeploymentStatusType>;
   };
+
+  // Used for localStorage/IndexedDB caching to be isolated between instances/deployments
+  localCacheIdPrefix?: string;
 }
 
 export const AppProvider = (props: AppProviderProps) => {
-  const {appCache, config} = props;
+  const {appCache, config, localCacheIdPrefix} = props;
   const {
     apolloLinks,
     basePath = '',
@@ -116,8 +119,9 @@ export const AppProvider = (props: AppProviderProps) => {
       basePath,
       rootServerURI,
       telemetryEnabled,
+      localCacheIdPrefix,
     }),
-    [basePath, rootServerURI, telemetryEnabled],
+    [basePath, rootServerURI, telemetryEnabled, localCacheIdPrefix],
   );
 
   const analytics = React.useMemo(() => dummyAnalytics(), []);

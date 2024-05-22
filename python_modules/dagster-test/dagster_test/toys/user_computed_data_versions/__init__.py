@@ -39,14 +39,14 @@ from dagster import (
 )
 from typing_extensions import TypedDict
 
-from .external_system import AssetSpec, ExternalSystem, ProvenanceSpec, SourceAssetSpec
+from .external_system import AssetInfo, ExternalSystem, ProvenanceSpec, SourceAssetInfo
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 
-def external_asset(asset_spec: AssetSpec):
+def external_asset(asset_spec: AssetInfo):
     """Factory to build an `AssetsDefinition` object to represent an asset externally defined by an
-    `AssetSpec`.
+    `AssetInfo`.
 
     The op attached to the `AssetsDefinition` forwards materialization requests to the external
     system, sending an asset key and provenance info for the last recorded materialization of the
@@ -56,7 +56,7 @@ def external_asset(asset_spec: AssetSpec):
     `Nothing` because Dagster is not handling passing data in between ops in this scenario.
 
     Args:
-        asset_spec (AssetSpec):
+        asset_spec (AssetInfo):
             A dictionary containing the metadata that defines the asset.
 
     Returns (AssetsDefinition):
@@ -99,14 +99,14 @@ def external_asset(asset_spec: AssetSpec):
     )
 
 
-def external_source_asset(source_asset_spec: SourceAssetSpec) -> SourceAsset:
-    """Factory to build a `SourceAsset` object to represent a source asset externally defined by a `SourceAssetSpec`.
+def external_source_asset(source_asset_spec: SourceAssetInfo) -> SourceAsset:
+    """Factory to build a `SourceAsset` object to represent a source asset externally defined by a `SourceAssetInfo`.
 
     The op attached to the `SourceAsset` forwards observation requests to the external system. The
     external system responds with the current data version of the asset.
 
     Args:
-        source_asset_spec (SourceAssetSpec):
+        source_asset_spec (SourceAssetInfo):
             A dictionary containing the metadata that defines the source asset.
 
     Returns (SourceAsset):
@@ -138,8 +138,8 @@ def provenance_to_dict(provenance: DataProvenance) -> ProvenanceSpec:
 
 
 class Schema(TypedDict):
-    assets: Sequence[AssetSpec]
-    source_assets: Sequence[SourceAssetSpec]
+    assets: Sequence[AssetInfo]
+    source_assets: Sequence[SourceAssetInfo]
 
 
 SCHEMA: Schema = {

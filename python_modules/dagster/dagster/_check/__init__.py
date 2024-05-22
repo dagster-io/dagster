@@ -1189,9 +1189,9 @@ def opt_iterable_param(
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
-) -> Optional[Iterable[T]]:
+) -> Iterable[T]:
     if obj is None:
-        return None
+        return []
 
     return iterable_param(obj, param_name, of_type, additional_message)
 

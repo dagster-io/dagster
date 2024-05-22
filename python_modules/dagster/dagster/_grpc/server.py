@@ -55,7 +55,10 @@ from dagster._core.remote_representation.external_data import (
     external_repository_data_from_def,
 )
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.types.loadable_target_origin import (
+    LoadableTargetOrigin,
+    enter_loadable_target_origin_load_context,
+)
 from dagster._core.utils import FuturesAwareThreadPoolExecutor, RequestUtilizationMetrics
 from dagster._core.workspace.autodiscovery import LoadableTarget
 from dagster._serdes import deserialize_value, serialize_value
@@ -231,49 +234,53 @@ class LoadedRepositories:
         if not loadable_target_origin:
             # empty workspace
             return
-
-        with user_code_error_boundary(
-            DagsterUserCodeLoadError,
-            lambda: "Error occurred during the loading of Dagster definitions in\n"
-            + ", ".join(
-                [f"{k}={v}" for k, v in loadable_target_origin._asdict().items() if v is not None]
-            ),
-        ):
-            loadable_targets = get_loadable_targets(
-                loadable_target_origin.python_file,
-                loadable_target_origin.module_name,
-                loadable_target_origin.package_name,
-                loadable_target_origin.working_directory,
-                loadable_target_origin.attribute,
-            )
-        for loadable_target in loadable_targets:
-            pointer = _get_code_pointer(loadable_target_origin, loadable_target)
-            recon_repo = ReconstructableRepository(
-                pointer,
-                container_image,
-                sys.executable,
-                entry_point=entry_point,
-            )
+        with enter_loadable_target_origin_load_context(loadable_target_origin):
             with user_code_error_boundary(
                 DagsterUserCodeLoadError,
-                lambda: "Error occurred during the loading of Dagster definitions in "
-                + pointer.describe(),
+                lambda: "Error occurred during the loading of Dagster definitions in\n"
+                + ", ".join(
+                    [
+                        f"{k}={v}"
+                        for k, v in loadable_target_origin._asdict().items()
+                        if v is not None
+                    ]
+                ),
             ):
-                repo_def = recon_repo.get_definition()
-                # force load of all lazy constructed code artifacts to prevent
-                # any thread-safety issues loading them later on when serving
-                # definitions from multiple threads
-                repo_def.load_all_definitions()
-
-            self._code_pointers_by_repo_name[repo_def.name] = pointer
-            self._recon_repos_by_name[repo_def.name] = recon_repo
-            self._repo_defs_by_name[repo_def.name] = repo_def
-            self._loadable_repository_symbols.append(
-                LoadableRepositorySymbol(
-                    attribute=loadable_target.attribute,
-                    repository_name=repo_def.name,
+                loadable_targets = get_loadable_targets(
+                    loadable_target_origin.python_file,
+                    loadable_target_origin.module_name,
+                    loadable_target_origin.package_name,
+                    loadable_target_origin.working_directory,
+                    loadable_target_origin.attribute,
                 )
-            )
+            for loadable_target in loadable_targets:
+                pointer = _get_code_pointer(loadable_target_origin, loadable_target)
+                recon_repo = ReconstructableRepository(
+                    pointer,
+                    container_image,
+                    sys.executable,
+                    entry_point=entry_point,
+                )
+                with user_code_error_boundary(
+                    DagsterUserCodeLoadError,
+                    lambda: "Error occurred during the loading of Dagster definitions in "
+                    + pointer.describe(),
+                ):
+                    repo_def = recon_repo.get_definition()
+                    # force load of all lazy constructed code artifacts to prevent
+                    # any thread-safety issues loading them later on when serving
+                    # definitions from multiple threads
+                    repo_def.load_all_definitions()
+
+                self._code_pointers_by_repo_name[repo_def.name] = pointer
+                self._recon_repos_by_name[repo_def.name] = recon_repo
+                self._repo_defs_by_name[repo_def.name] = repo_def
+                self._loadable_repository_symbols.append(
+                    LoadableRepositorySymbol(
+                        attribute=loadable_target.attribute,
+                        repository_name=repo_def.name,
+                    )
+                )
 
     @property
     def loadable_repository_symbols(self) -> Sequence[LoadableRepositorySymbol]:

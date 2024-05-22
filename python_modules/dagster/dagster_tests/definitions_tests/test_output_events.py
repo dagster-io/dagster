@@ -26,22 +26,6 @@ def test_output_object_equality():
     )
 
 
-def test_output_object_with_metadata() -> None:
-    def _get_output() -> Output:
-        return Output(5, output_name="foo", metadata={"foo": "bar"}, tags={"baz": "qux"})
-
-    assert _get_output() == _get_output()
-
-    assert _get_output().with_metadata({"new": "metadata"}) == Output(
-        5, output_name="foo", metadata={"new": "metadata"}, tags={"baz": "qux"}
-    )
-
-    out = _get_output()
-    assert out.with_metadata({**out.metadata, "new": "metadata"}) == Output(
-        5, output_name="foo", metadata={"foo": "bar", "new": "metadata"}, tags={"baz": "qux"}
-    )
-
-
 def test_dynamic_output_object_equality():
     def _get_output():
         return DynamicOutput(5, output_name="foo", mapping_key="bar", metadata={"foo": "bar"})

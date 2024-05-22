@@ -21,6 +21,7 @@ import {failedStatuses, inProgressStatuses, successStatuses} from './RunStatuses
 import {TimeElapsed} from './TimeElapsed';
 import {RunBatch, batchRunsForTimeline} from './batchRunsForTimeline';
 import {mergeStatusToBackground} from './mergeStatusToBackground';
+import {COMMON_COLLATOR} from '../app/Util';
 import {RunStatus} from '../graphql/types';
 import {OVERVIEW_COLLAPSED_KEY} from '../overview/OverviewExpansionKey';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -101,19 +102,21 @@ export const RunTimeline = (props: Props) => {
 
   const flattened: RowType[] = React.useMemo(() => {
     const flat: RowType[] = [];
-    Object.entries(buckets).forEach(([repoKey, bucket]) => {
-      const repoAddress = repoAddressFromPath(repoKey);
-      if (!repoAddress) {
-        return;
-      }
+    Object.entries(buckets)
+      .sort((bucketA, bucketB) => COMMON_COLLATOR.compare(bucketA[0], bucketB[0]))
+      .forEach(([repoKey, bucket]) => {
+        const repoAddress = repoAddressFromPath(repoKey);
+        if (!repoAddress) {
+          return;
+        }
 
-      flat.push({type: 'header', repoAddress, jobCount: bucket.length});
-      if (expandedKeys.includes(repoKey)) {
-        bucket.forEach((job) => {
-          flat.push({type: 'job', repoAddress, job});
-        });
-      }
-    });
+        flat.push({type: 'header', repoAddress, jobCount: bucket.length});
+        if (expandedKeys.includes(repoKey)) {
+          bucket.forEach((job) => {
+            flat.push({type: 'job', repoAddress, job});
+          });
+        }
+      });
 
     return flat;
   }, [buckets, expandedKeys]);

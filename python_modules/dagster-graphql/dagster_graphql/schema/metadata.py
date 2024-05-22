@@ -164,21 +164,29 @@ class GrapheneJobMetadataEntry(graphene.ObjectType):
 
 class GrapheneLocalFileCodeReference(graphene.ObjectType):
     filePath = graphene.NonNull(graphene.String)
-    lineNumber = graphene.NonNull(graphene.Int)
+    lineNumber = graphene.Int()
     label = graphene.String()
 
     class Meta:
         name = "LocalFileCodeReference"
 
 
+class GrapheneUrlCodeReference(graphene.ObjectType):
+    url = graphene.NonNull(graphene.String)
+    label = graphene.String()
+
+    class Meta:
+        name = "UrlCodeReference"
+
+
 class GrapheneSourceLocation(graphene.Union):
     class Meta:
-        types = (GrapheneLocalFileCodeReference,)
+        types = (GrapheneLocalFileCodeReference, GrapheneUrlCodeReference)
         name = "SourceLocation"
 
 
 class GrapheneCodeReferencesMetadataEntry(graphene.ObjectType):
-    code_references = non_null_list(GrapheneSourceLocation)
+    codeReferences = non_null_list(GrapheneSourceLocation)
 
     class Meta:
         interfaces = (GrapheneMetadataEntry,)

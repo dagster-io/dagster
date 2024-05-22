@@ -15,7 +15,10 @@ from typing_extensions import Annotated
 
 from ..dbt_project import DbtProject
 from ..include import STARTER_PROJECT_PATH
-from ..version import __version__ as dagster_dbt_version
+from ..version import (
+    DBT_CORE_VERSION_UPPER_BOUND,
+    __version__ as dagster_dbt_version,
+)
 
 app = typer.Typer(
     no_args_is_help=True,
@@ -157,6 +160,7 @@ def copy_scaffold(
                 dbt_parse_command=dbt_parse_command,
                 dbt_assets_name=f"{dbt_project_name}_dbt_assets",
                 dbt_adapter_packages=dbt_adapter_packages,
+                dbt_core_version_upper_bound=DBT_CORE_VERSION_UPPER_BOUND,
                 project_name=project_name,
                 use_experimental_dbt_state=use_experimental_dbt_state,
                 use_experimental_dbt_project=use_experimental_dbt_project,
