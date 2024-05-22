@@ -69,7 +69,7 @@ export const ScheduleAndSensorDialog = ({
                         <ScheduleSwitch
                           repoAddress={repoAddress}
                           schedule={schedule}
-                          hasOutdatedScheduleState
+                          shouldFetchLatestState
                         />
                       </td>
                     ) : null}
@@ -111,7 +111,7 @@ export const ScheduleAndSensorDialog = ({
                         <SensorSwitch
                           repoAddress={repoAddress}
                           sensor={sensor}
-                          hasOutdatedSensorState
+                          shouldFetchLatestState
                         />
                       </td>
                     ) : null}

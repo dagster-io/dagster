@@ -46,11 +46,11 @@ interface Props {
   repoAddress: RepoAddress;
   sensor: SensorSwitchFragment;
   size?: 'small' | 'large';
-  hasOutdatedSensorState?: boolean;
+  shouldFetchLatestState?: boolean;
 }
 
 export const SensorSwitch = (props: Props) => {
-  const {repoAddress, sensor, size = 'large', hasOutdatedSensorState} = props;
+  const {repoAddress, sensor, size = 'large', shouldFetchLatestState} = props;
   const {
     permissions: {canStartSensor, canStopSensor},
     disabledReasons,
@@ -67,7 +67,7 @@ export const SensorSwitch = (props: Props) => {
     SENSOR_STATE_QUERY,
     {
       variables: {sensorSelector},
-      skip: !hasOutdatedSensorState,
+      skip: !shouldFetchLatestState,
     },
   );
 
@@ -106,10 +106,10 @@ export const SensorSwitch = (props: Props) => {
     }
   };
 
-  if (hasOutdatedSensorState && !data && loading) {
+  if (shouldFetchLatestState && !data && loading) {
     return <Spinner purpose="body-text" />;
   }
-  if (hasOutdatedSensorState && data?.sensorOrError.__typename !== 'Sensor') {
+  if (shouldFetchLatestState && data?.sensorOrError.__typename !== 'Sensor') {
     return (
       <Tooltip content="Error loading sensor state">
         <Icon name="error" color={Colors.accentRed()} />;
@@ -117,8 +117,8 @@ export const SensorSwitch = (props: Props) => {
     );
   }
 
-  const status = hasOutdatedSensorState
-    ? // @ts-expect-error - we refined the type based on hasOutdatedSensorState above
+  const status = shouldFetchLatestState
+    ? // @ts-expect-error - we refined the type based on shouldFetchLatestState above
       data.sensorOrError.sensorState.status
     : sensor.sensorState.status;
   const running = status === InstigationStatus.RUNNING;

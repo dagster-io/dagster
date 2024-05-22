@@ -26,11 +26,11 @@ interface Props {
   repoAddress: RepoAddress;
   schedule: ScheduleSwitchFragment;
   size?: 'small' | 'large';
-  hasOutdatedScheduleState?: boolean;
+  shouldFetchLatestState?: boolean;
 }
 
 export const ScheduleSwitch = (props: Props) => {
-  const {repoAddress, schedule, size = 'large', hasOutdatedScheduleState} = props;
+  const {repoAddress, schedule, size = 'large', shouldFetchLatestState} = props;
   const {name, scheduleState} = schedule;
   const {id, selectorId} = scheduleState;
 
@@ -48,7 +48,7 @@ export const ScheduleSwitch = (props: Props) => {
     SCHEDULE_STATE_QUERY,
     {
       variables: {scheduleSelector},
-      skip: !hasOutdatedScheduleState,
+      skip: !shouldFetchLatestState,
     },
   );
 
@@ -77,11 +77,11 @@ export const ScheduleSwitch = (props: Props) => {
     }
   };
 
-  if (hasOutdatedScheduleState && !data && loading) {
+  if (shouldFetchLatestState && !data && loading) {
     return <Spinner purpose="body-text" />;
   }
 
-  if (hasOutdatedScheduleState && data?.scheduleOrError.__typename !== 'Schedule') {
+  if (shouldFetchLatestState && data?.scheduleOrError.__typename !== 'Schedule') {
     return (
       <Tooltip content="Error loading schedule state">
         <Icon name="error" color={Colors.accentRed()} />;
@@ -89,8 +89,8 @@ export const ScheduleSwitch = (props: Props) => {
     );
   }
 
-  const status = hasOutdatedScheduleState
-    ? // @ts-expect-error - we refined the type based on hasOutdatedScheduleState above
+  const status = shouldFetchLatestState
+    ? // @ts-expect-error - we refined the type based on shouldFetchLatestState above
       data.scheduleOrError.scheduleState.status
     : schedule.scheduleState.status;
   const running = status === InstigationStatus.RUNNING;
