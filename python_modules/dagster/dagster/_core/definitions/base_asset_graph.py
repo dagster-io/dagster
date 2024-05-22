@@ -27,6 +27,7 @@ import toposort
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
@@ -153,10 +154,6 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def check_keys(self) -> AbstractSet[AssetCheckKey]: ...
-
-    @property
-    @abstractmethod
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]: ...
 
     @property
@@ -172,8 +169,15 @@ class BaseAssetNode(ABC):
 T_AssetNode = TypeVar("T_AssetNode", bound=BaseAssetNode)
 
 
+class AssetGraphComputeNode:
+    backfill_policy: Optional[BackfillPolicy]
+    is_observation: bool
+    is_materialization: bool
+
+
 class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     _asset_nodes_by_key: Mapping[AssetKey, T_AssetNode]
+    _compute_nodes_by_key: Mapping[AssetKey, AssetGraphComputeNode]
 
     @property
     def asset_nodes(self) -> Iterable[T_AssetNode]:
@@ -182,13 +186,16 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
     def has(self, asset_key: AssetKey) -> bool:
         return asset_key in self._asset_nodes_by_key
 
-    def get(self, asset_key: AssetKey) -> T_AssetNode:
+    def get(self, asset_key: AssetKey) -> AssetSpec:
         return self._asset_nodes_by_key[asset_key]
+
+    def get_compute_node(self, asset_key: AssetKey) -> AssetGraphComputeNode:
+        return self._compute_nodes_by_key[asset_key]
 
     @cached_property
     def asset_dep_graph(self) -> DependencyGraph[AssetKey]:
         return {
-            "upstream": {node.key: node.parent_keys for node in self.asset_nodes},
+            "upstream": {node.key: node.dep_keys for node in self.asset_nodes},
             "downstream": {node.key: node.child_keys for node in self.asset_nodes},
         }
 

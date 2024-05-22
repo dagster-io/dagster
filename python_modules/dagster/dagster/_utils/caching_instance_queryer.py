@@ -234,7 +234,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         return self._batch_asset_record_loader.get_asset_record(asset_key)
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
-        if self.asset_graph.get(asset_key).is_observable:
+        compute_node = self.asset_graph.get_compute_node(asset_key)
+        if compute_node is not None and compute_node.is_observation:
             return DagsterEventType.ASSET_OBSERVATION
         else:
             return DagsterEventType.ASSET_MATERIALIZATION
@@ -247,13 +248,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         observable source assets, this will be an AssetObservation, otherwise it will be an
         AssetMaterialization.
         """
+        compute_node = self.asset_graph.get_compute_node(asset_partition.asset_key)
         # in the simple case, just use the asset record
         if (
             before_cursor is None
             and asset_partition.partition_key is None
             and not (
                 self.asset_graph.has(asset_partition.asset_key)
-                and self.asset_graph.get(asset_partition.asset_key).is_observable
+                and compute_node
+                and compute_node.is_observation
             )
         ):
             asset_record = self.get_asset_record(asset_partition.asset_key)
@@ -268,7 +271,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ),
             before_storage_id=before_cursor,
         )
-        if self.asset_graph.get(asset_partition.asset_key).is_observable:
+        if compute_node and compute_node.is_observation:
             records = self.instance.fetch_observations(
                 records_filter, ascending=False, limit=1
             ).records
@@ -338,7 +341,8 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 greater than this value will be considered.
         """
         asset_key = asset_partition.asset_key
-        if self.asset_graph.has(asset_key) and self.asset_graph.get(asset_key).is_materializable:
+        compute_node = self.asset_graph.get_compute_node(asset_key)
+        if self.asset_graph.has(asset_key) and compute_node and compute_node.is_materialization:
             asset_record = self.get_asset_record(asset_key)
             if (
                 asset_record is None
@@ -598,7 +602,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         latest_storage_id.
         """
         child_asset = self.asset_graph.get(child_asset_key)
-        if not child_asset.parent_keys:
+        if not child_asset.dep_keys:
             return set(), latest_storage_id
 
         child_time_partitions_def = get_time_partitions_def(child_asset.partitions_def)
@@ -610,7 +614,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 AssetKeyPartitionKey(child_asset_key)
             )
         ]
-        for parent_asset_key in self.asset_graph.get(child_asset_key).parent_keys:
+        for parent_asset_key in self.asset_graph.get(child_asset_key).dep_keys:
             # ignore non-existent parents
             if not self.asset_graph.has(parent_asset_key):
                 continue
@@ -631,9 +635,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 )
             )
 
-            parent_partitions_def: PartitionsDefinition = self.asset_graph.get(
-                parent_asset_key
-            ).partitions_def
+            parent_partitions_def: PartitionsDefinition = cast(
+                PartitionsDefinition, self.asset_graph.get(parent_asset_key).partitions_def
+            )
             if parent_partitions_def is None:
                 latest_parent_record = check.not_none(
                     self.get_latest_materialization_or_observation_record(
@@ -1030,7 +1034,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         # the set of parent keys which we don't need to check
         ignored_parent_keys = {
             parent
-            for parent in self.asset_graph.get(asset_key).parent_keys
+            for parent in self.asset_graph.get(asset_key).dep_keys
             if self.have_ignorable_partition_mapping_for_outdated(asset_key, parent)
         }
 

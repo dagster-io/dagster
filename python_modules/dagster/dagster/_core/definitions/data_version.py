@@ -492,7 +492,7 @@ class CachingStaleStatusResolver:
         code_version = self.asset_graph.get(key.asset_key).code_version
         provenance = self._get_current_data_provenance(key=key)
 
-        asset_deps = self.asset_graph.get(key.asset_key).parent_keys
+        asset_deps = self.asset_graph.get(key.asset_key).dep_keys
 
         # only used if no provenance available
         materialization = check.not_none(self._get_latest_data_version_record(key=key))
@@ -665,7 +665,7 @@ class CachingStaleStatusResolver:
         if asset.is_external:
             return asset.is_observable
         else:
-            deps = asset.get(key).parent_keys
+            deps = asset.get(key).dep_keys
             return len(deps) == 0 or any(self._is_volatile(key=dep_key) for dep_key in deps)
 
     @cached_method
@@ -714,7 +714,7 @@ class CachingStaleStatusResolver:
         )
         from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
-        asset_deps = self.asset_graph.get(key.asset_key).parent_keys
+        asset_deps = self.asset_graph.get(key.asset_key).dep_keys
 
         deps = []
         for dep_asset_key in asset_deps:

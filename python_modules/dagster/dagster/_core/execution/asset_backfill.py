@@ -214,7 +214,9 @@ class AssetBackfillData(NamedTuple):
             for asset_key in self.target_subset.asset_keys
             if all(
                 parent not in self.target_subset.asset_keys
-                for parent in instance_queryer.asset_graph.get(asset_key).parent_keys
+                for parent in {
+                    dep.asset_key for dep in instance_queryer.asset_graph.get(asset_key).deps
+                }
                 - {asset_key}  # Do not include an asset as its own parent
             )
         }
@@ -1299,7 +1301,7 @@ def execute_asset_backfill_iteration_inner(
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
-        asset_graph.get(asset_key).backfill_policy
+        asset_graph.get_compute_node(asset_key).backfill_policy
         for asset_key in {
             asset_partition.asset_key for asset_partition in asset_partitions_to_request
         }
@@ -1368,7 +1370,9 @@ def can_run_with_parent(
     )
 
     parent_node = asset_graph.get(parent.asset_key)
+    parent_compute_node = asset_graph.get_compute_node(parent.asset_key)
     candidate_node = asset_graph.get(candidate.asset_key)
+    candidate_compute_node = asset_graph.get_compute_node(candidate.asset_key)
     # checks if there is a simple partition mapping between the parent and the child
     has_identity_partition_mapping = (
         # both unpartitioned
@@ -1384,7 +1388,7 @@ def can_run_with_parent(
             and partition_mapping.end_offset == 0
         )
     )
-    if parent_node.backfill_policy != candidate_node.backfill_policy:
+    if parent_compute_node.backfill_policy != candidate_compute_node.backfill_policy:
         return (
             False,
             f"parent {parent_node.key} and {candidate_node.key} have different backfill policies",
@@ -1415,14 +1419,14 @@ def can_run_with_parent(
         # parent if...
         or (
             # there is a backfill policy for the parent
-            parent_node.backfill_policy is not None
+            parent_compute_node.backfill_policy is not None
             # the same subset of parents is targeted as the child
             and parent_target_subset.value == candidate_target_subset.value
             and (
                 # there is no limit on the size of a single run or...
-                parent_node.backfill_policy.max_partitions_per_run is None
+                parent_compute_node.backfill_policy.max_partitions_per_run is None
                 # a single run can materialize all requested parent partitions
-                or parent_node.backfill_policy.max_partitions_per_run
+                or parent_compute_node.backfill_policy.max_partitions_per_run
                 > len(asset_partitions_to_request_map[parent.asset_key])
             )
             # all targeted parents are being requested this tick

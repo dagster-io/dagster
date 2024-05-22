@@ -113,10 +113,6 @@ class AssetNode(BaseAssetNode):
         return self.assets_def.code_versions_by_key.get(self.key)
 
     @property
-    def check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return self._check_keys
-
-    @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
         return (
             {self.key}

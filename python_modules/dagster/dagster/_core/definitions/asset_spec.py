@@ -1,5 +1,14 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+)
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -11,6 +20,7 @@ from .events import (
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
+from .partition import PartitionsDefinition
 from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
@@ -71,6 +81,7 @@ class AssetSpec(
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
             ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
         ],
     )
 ):
@@ -145,3 +156,11 @@ class AssetSpec(
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
             tags=validate_tags_strict(tags),
         )
+
+    @property
+    def is_partitioned(self) -> bool:
+        return self.partitions_def is not None
+
+    @property
+    def dep_keys(self) -> AbstractSet[AssetKey]:
+        return {dep.asset_key for dep in self.deps}
