@@ -545,6 +545,7 @@ def test_asset_checks_results(
             ),
         ]
 
+        # filter these out for comparison
         non_deterministic_metadata_keys = ["Execution Duration"]
         check_events_without_non_deterministic_metadata = []
         for event in events:
