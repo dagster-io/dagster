@@ -43,7 +43,7 @@ from dagster._core.errors import (
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -81,7 +81,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         self._asset_graph = asset_graph
         self._logger = logger or logging.getLogger("dagster")
 
-        self._batch_asset_record_loader = BatchAssetRecordLoader(self._instance, set())
+        self._batch_asset_record_loader = AssetSummaryRecordLoader(self._instance, set())
 
         self._asset_partitions_cache: Dict[Optional[int], Dict[AssetKey, Set[str]]] = defaultdict(
             dict
@@ -227,11 +227,11 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ####################
 
     def has_cached_asset_record(self, asset_key: AssetKey) -> bool:
-        return self._batch_asset_record_loader.has_cached_asset_record(asset_key)
+        return self._batch_asset_record_loader.has_cached_asset_summary_record(asset_key)
 
     def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetSummaryRecord"]:
         self._batch_asset_record_loader.add_asset_keys({asset_key})
-        return self._batch_asset_record_loader.get_asset_record(asset_key)
+        return self._batch_asset_record_loader.get_asset_summary_record(asset_key)
 
     def _event_type_for_key(self, asset_key: AssetKey) -> DagsterEventType:
         if self.asset_graph.get(asset_key).is_observable:

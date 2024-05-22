@@ -14,7 +14,7 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.test_utils import instance_for_test
@@ -190,7 +190,7 @@ def test_batch_asset_records_loader():
         defs = Definitions(assets=[return_one, return_two])
         defs.get_implicit_global_asset_job_def().execute_in_process(instance=instance)
 
-        asset_records_loader = BatchAssetRecordLoader(instance, asset_keys={return_two.key})
+        asset_records_loader = AssetSummaryRecordLoader(instance, asset_keys={return_two.key})
 
         fake_key = AssetKey(path=["fake_key"])
 

@@ -34,7 +34,7 @@ from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
 from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -165,7 +165,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         input_name: Optional[str],
         asset_key: AssetKey,
         asset_checks_loader: AssetChecksLoader,
-        asset_record_loader: Optional[BatchAssetRecordLoader] = None,
+        asset_record_loader: Optional[AssetSummaryRecordLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
@@ -180,7 +180,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
             asset_checks_loader, "asset_checks_loader", AssetChecksLoader
         )
         self._asset_record_loader = check.opt_inst_param(
-            asset_record_loader, "asset_record_loader", BatchAssetRecordLoader
+            asset_record_loader, "asset_record_loader", AssetSummaryRecordLoader
         )
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
@@ -247,7 +247,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     _node_definition_snap: Optional[Union[GraphDefSnap, OpDefSnap]]
     _external_job: Optional[ExternalJob]
     _external_repository: ExternalRepository
-    _asset_record_loader: Optional[BatchAssetRecordLoader]
+    _asset_record_loader: Optional[AssetSummaryRecordLoader]
     _stale_status_loader: Optional[StaleStatusLoader]
     _asset_checks_loader: AssetChecksLoader
     _asset_graph_differ: Optional[AssetGraphDiffer]
@@ -353,7 +353,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_repository: ExternalRepository,
         external_asset_node: ExternalAssetNode,
         asset_checks_loader: AssetChecksLoader,
-        asset_record_loader: Optional[BatchAssetRecordLoader] = None,
+        asset_record_loader: Optional[AssetSummaryRecordLoader] = None,
         depended_by_loader: Optional[CrossRepoAssetDependedByLoader] = None,
         stale_status_loader: Optional[StaleStatusLoader] = None,
         dynamic_partitions_loader: Optional[CachingDynamicPartitionsLoader] = None,
@@ -373,7 +373,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             external_asset_node, "external_asset_node", ExternalAssetNode
         )
         self._asset_record_loader = check.opt_inst_param(
-            asset_record_loader, "asset_record_loader", BatchAssetRecordLoader
+            asset_record_loader, "asset_record_loader", AssetSummaryRecordLoader
         )
         self._depended_by_loader = check.opt_inst_param(
             depended_by_loader, "depended_by_loader", CrossRepoAssetDependedByLoader
@@ -827,7 +827,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not depended_by_asset_nodes:
             return []
 
-        asset_record_loader = BatchAssetRecordLoader(
+        asset_record_loader = AssetSummaryRecordLoader(
             instance=graphene_info.context.instance,
             asset_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
         )
@@ -881,7 +881,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not self._external_asset_node.dependencies:
             return []
 
-        asset_record_loader = BatchAssetRecordLoader(
+        asset_record_loader = AssetSummaryRecordLoader(
             instance=graphene_info.context.instance,
             asset_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
         )

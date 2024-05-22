@@ -31,7 +31,7 @@ from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 
 if TYPE_CHECKING:
-    from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+    from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
     from dagster._core.storage.event_log.base import AssetSummaryRecord
 
 
@@ -427,10 +427,10 @@ def get_and_update_asset_status_cache_value(
     asset_key: AssetKey,
     partitions_def: Optional[PartitionsDefinition],
     dynamic_partitions_loader: Optional[DynamicPartitionsStore] = None,
-    batch_asset_record_loader: Optional["BatchAssetRecordLoader"] = None,
+    batch_asset_record_loader: Optional["AssetSummaryRecordLoader"] = None,
 ) -> Optional[AssetStatusCacheValue]:
     if batch_asset_record_loader:
-        asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+        asset_record = batch_asset_record_loader.get_asset_summary_record(asset_key)
     else:
         asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
 
