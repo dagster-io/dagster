@@ -93,6 +93,7 @@ from .base import (
     AssetEntry,
     AssetRecord,
     AssetRecordsFilter,
+    AssetSummaryRecord,
     EventLogConnection,
     EventLogCursor,
     EventLogRecord,
@@ -1193,12 +1194,12 @@ class SqlEventLogStorage(EventLogStorage):
         row,
         last_materialization_record: Optional[EventLogRecord],
         can_cache_asset_status_data: bool,
-    ) -> AssetRecord:
+    ) -> AssetSummaryRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         asset_key = AssetKey.from_db_string(row["asset_key"])
         if asset_key:
-            return AssetRecord(
+            return AssetSummaryRecord(
                 storage_id=row["id"],
                 asset_entry=AssetEntry(
                     asset_key=asset_key,

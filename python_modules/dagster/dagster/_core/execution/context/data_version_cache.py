@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     )
     from dagster._core.event_api import EventLogRecord
     from dagster._core.events import DagsterEventType
-    from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.event_log.base import AssetSummaryRecord
 
 
 if TYPE_CHECKING:
@@ -146,7 +146,9 @@ class DataVersionCache:
                     event.timestamp,
                 )
 
-    def _fetch_asset_records(self, asset_keys: Sequence[AssetKey]) -> Dict[AssetKey, "AssetRecord"]:
+    def _fetch_asset_records(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Dict[AssetKey, "AssetSummaryRecord"]:
         batch_size = int(os.getenv("GET_ASSET_RECORDS_FOR_DATA_VERSION_BATCH_SIZE", "100"))
         asset_records_by_key = {}
         to_fetch = asset_keys
@@ -158,7 +160,7 @@ class DataVersionCache:
         return asset_records_by_key
 
     def _get_input_asset_event(
-        self, key: AssetKey, asset_record: Optional["AssetRecord"]
+        self, key: AssetKey, asset_record: Optional["AssetSummaryRecord"]
     ) -> Optional["EventLogRecord"]:
         event = None
         if asset_record and asset_record.asset_entry.last_materialization_record:

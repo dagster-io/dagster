@@ -134,6 +134,10 @@ class AssetRecord(NamedTuple):
     asset_entry: AssetEntry
 
 
+# This is a stub. Once other repos are updated (e.g. internal) we can delete this -- schrockn 2024-05-22
+class AssetSummaryRecord(AssetRecord): ...
+
+
 class PlannedMaterializationInfo(NamedTuple):
     """Internal representation of an planned materialization event, containing storage_id / run_id.
 
