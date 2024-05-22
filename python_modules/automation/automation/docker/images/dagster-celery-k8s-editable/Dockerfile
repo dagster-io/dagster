@@ -4,9 +4,8 @@ FROM "${BASE_IMAGE}"
 ARG DAGSTER_VERSION
 
 COPY build_cache/ /
-ENV VIRTUAL_ENV=/usr/local
 RUN pip install -U uv
-RUN uv pip install \
+RUN python -m uv pip install \
     -e dagster \
     -e dagster-pipes \
     -e dagster-graphql \
