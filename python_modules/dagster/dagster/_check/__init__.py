@@ -1,16 +1,20 @@
 import collections.abc
 import inspect
+import sys
+from functools import partial
 from os import PathLike, fspath
 from typing import (
     AbstractSet,
     Any,
     Callable,
     Dict,
+    ForwardRef,
     Generator,
     Iterable,
     Iterator,
     List,
     Mapping,
+    NamedTuple,
     NoReturn,
     Optional,
     Sequence,
@@ -19,8 +23,19 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
+    get_origin,
     overload,
 )
+
+from typing_extensions import Annotated
+
+try:
+    # this type only exists in python 3.10+
+    from types import UnionType  # type: ignore
+except ImportError:
+    UnionType = Union
+
 
 TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
@@ -1204,6 +1219,18 @@ def opt_iterable_param(
     return iterable_param(obj, param_name, of_type, additional_message)
 
 
+def opt_nullable_iterable_param(
+    obj: Optional[Iterable[T]],
+    param_name: str,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Iterable[T]]:
+    if obj is None:
+        return None
+
+    return iterable_param(obj, param_name, of_type, additional_message)
+
+
 # ########################
 # ##### SET
 # ########################
@@ -1805,3 +1832,188 @@ def _check_two_dim_mapping_entries(
         )  # check level two
 
     return obj
+
+
+class EvalContext(NamedTuple):
+    global_ns: dict
+    local_ns: dict
+
+    @staticmethod
+    def capture_from_frame(n: int) -> "EvalContext":
+        ctx_frame = sys._getframe(n)  # noqa # surprisingly not costly
+
+        return EvalContext(ctx_frame.f_globals, ctx_frame.f_locals)
+
+    def eval_forward_ref(self, ref: ForwardRef) -> Optional[Type]:
+        if sys.version_info <= (3, 9):
+            return ref._evaluate(self.global_ns, self.local_ns)  # noqa
+        else:
+            return ref._evaluate(self.global_ns, self.local_ns, frozenset())  # noqa
+
+
+def _no_op(_): ...
+
+
+def _coerce(
+    ttype: Optional[TypeOrTupleOfTypes],
+    eval_ctx: Optional[EvalContext],
+) -> Optional[TypeOrTupleOfTypes]:
+    if ttype is Any:
+        return None
+    if isinstance(ttype, str):
+        if eval_ctx is None:
+            failed(
+                f"Can not generate check calls from string {ttype} (assumed ForwardRef) without EvalContext"
+            )
+        return eval_ctx.eval_forward_ref(ForwardRef(ttype))
+    if isinstance(ttype, ForwardRef):
+        if eval_ctx is None:
+            failed(f"Can not evaluate ForwardRef {ttype} without passing in EvalContext")
+        return eval_ctx.eval_forward_ref(ttype)
+    if get_origin(ttype) in (UnionType, Union):
+        optional_args = get_args(ttype)
+        tuple_types = _container_pair_args(optional_args, eval_ctx)
+        if None in tuple_types:
+            failed(f"Unable to turn Optional in to tuple of types for {optional_args} from {ttype}")
+
+    return ttype
+
+
+def _container_pair_args(
+    args: Tuple[Type, ...], eval_ctx
+) -> Tuple[Optional[TypeOrTupleOfTypes], Optional[TypeOrTupleOfTypes]]:
+    if len(args) == 2:
+        return _coerce(args[0], eval_ctx), _coerce(args[1], eval_ctx)
+
+    return None, None
+
+
+def _container_single_arg(
+    args: Tuple[Type, ...], eval_ctx: Optional[EvalContext]
+) -> Optional[TypeOrTupleOfTypes]:
+    if len(args) == 1:
+        return _coerce(args[0], eval_ctx)
+
+    return None
+
+
+def build_check_call(
+    ttype: Type,
+    name: str,
+    # have this be passed in to avoid guessing which stack frame to use
+    eval_ctx: Optional[EvalContext] = None,
+) -> Callable[[Any], Any]:
+    # avoid getting too cute in the impl here to ensure it stays fast
+    origin = get_origin(ttype)
+    args = get_args(ttype)
+
+    # scalars
+    if origin is None:
+        if ttype is str:
+            return partial(str_param, param_name=name)
+        elif ttype is float:
+            return partial(float_param, param_name=name)
+        elif ttype is int:
+            return partial(int_param, param_name=name)
+        elif ttype is bool:
+            return partial(int_param, param_name=name)
+        elif ttype is Any:
+            return _no_op
+
+        # fallback to inst
+        inst_type = _coerce(ttype, eval_ctx)
+        if inst_type:
+            return partial(inst_param, ttype=ttype, param_name=name)
+        else:
+            return _no_op
+    else:
+        if origin is Annotated and args:
+            return build_check_call(args[0], name)
+
+        pair_left, pair_right = _container_pair_args(args, eval_ctx)
+        single = _container_single_arg(args, eval_ctx)
+
+        # containers
+        if origin is list:
+            return partial(list_param, param_name=name, of_type=single)
+        elif origin is dict:
+            return partial(
+                dict_param,
+                param_name=name,
+                key_type=pair_left,
+                value_type=pair_right,
+            )
+        elif origin is set:
+            return partial(set_param, param_name=name, of_type=single)
+        elif origin is collections.abc.Sequence:
+            return partial(sequence_param, param_name=name, of_type=single)
+        elif origin is collections.abc.Iterable:
+            return partial(iterable_param, param_name=name, of_type=single)
+        elif origin is collections.abc.Mapping:
+            return partial(
+                mapping_param,
+                param_name=name,
+                key_type=pair_left,
+                value_type=pair_right,
+            )
+
+        elif origin in (UnionType, Union):
+            # optional
+            if pair_right is type(None):
+                inner_origin = get_origin(pair_left)
+                # optional scalar
+                if inner_origin is None:
+                    if pair_left is str:
+                        return partial(opt_str_param, param_name=name)
+                    elif pair_left is float:
+                        return partial(opt_float_param, param_name=name)
+                    elif pair_left is int:
+                        return partial(opt_int_param, param_name=name)
+                    elif pair_left is bool:
+                        return partial(opt_bool_param, param_name=name)
+
+                    # fallback to opt_inst
+                    inst_type = _coerce(pair_left, eval_ctx)
+                    if inst_type:
+                        return partial(opt_inst_param, ttype=inst_type, param_name=name)
+                    else:
+                        return _no_op
+
+                # optional container
+                else:
+                    inner_args = get_args(pair_left)
+                    inner_pair_left, inner_pair_right = _container_pair_args(inner_args, eval_ctx)
+                    inner_single = _container_single_arg(inner_args, eval_ctx)
+
+                    if inner_origin is list:
+                        return partial(
+                            opt_nullable_list_param, param_name=name, of_type=inner_single
+                        )
+                    elif inner_origin is dict:
+                        return partial(
+                            opt_nullable_dict_param,
+                            param_name=name,
+                            key_type=inner_pair_left,
+                            value_type=inner_pair_right,
+                        )
+                    elif inner_origin is set:
+                        return partial(
+                            opt_nullable_set_param, param_name=name, of_type=inner_single
+                        )
+                    elif inner_origin is collections.abc.Sequence:
+                        return partial(
+                            opt_nullable_sequence_param, param_name=name, of_type=inner_single
+                        )
+                    elif inner_origin is collections.abc.Iterable:
+                        return partial(
+                            opt_nullable_iterable_param, param_name=name, of_type=inner_single
+                        )
+                    elif inner_origin is collections.abc.Mapping:
+                        return partial(
+                            opt_nullable_mapping_param,
+                            param_name=name,
+                            key_type=inner_pair_left,
+                            value_type=inner_pair_right,
+                        )
+
+        failed(f"Unhandled {ttype}")
