@@ -48,8 +48,6 @@ export const useRunsForTimeline = (
 
   const buckets = useMemo(() => getHourlyBuckets(startSec, endSec), [startSec, endSec]);
 
-  const singleBucket = useMemo(() => [range], [range]);
-
   const client = useApolloClient();
 
   const {localCacheIdPrefix} = useContext(AppContext);
