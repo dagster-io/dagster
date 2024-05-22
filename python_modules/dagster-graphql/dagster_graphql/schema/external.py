@@ -146,11 +146,17 @@ class GrapheneWorkspaceLocationStatusEntry(graphene.ObjectType):
     loadStatus = graphene.NonNull(GrapheneRepositoryLocationLoadStatus)
     updateTimestamp = graphene.NonNull(graphene.Float)
 
+    permissions = graphene.Field(non_null_list(GraphenePermission))
+
     class Meta:
         name = "WorkspaceLocationStatusEntry"
 
     def __init__(self, id, name, load_status, update_timestamp):
         super().__init__(id=id, name=name, loadStatus=load_status, updateTimestamp=update_timestamp)
+
+    def resolve_permissions(self, graphene_info):
+        permissions = graphene_info.context.permissions_for_location(location_name=self.name)
+        return [GraphenePermission(permission, value) for permission, value in permissions.items()]
 
 
 class GrapheneWorkspaceLocationStatusEntries(graphene.ObjectType):

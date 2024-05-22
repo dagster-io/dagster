@@ -39,14 +39,13 @@ if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
 
 
-def get_run_by_id(
+async def gen_run_by_id(
     graphene_info: "ResolveInfo", run_id: str
 ) -> Union["GrapheneRun", "GrapheneRunNotFoundError"]:
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
 
-    instance = graphene_info.context.instance
-    record = instance.get_run_record_by_id(run_id)
+    record = await RunRecord.gen(graphene_info.context, run_id)
     if not record:
         return GrapheneRunNotFoundError(run_id)
     else:

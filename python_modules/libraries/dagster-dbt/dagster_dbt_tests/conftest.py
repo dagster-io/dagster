@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator, List, Optional
 
 import pytest
 from dagster_dbt import DbtCliResource
@@ -54,8 +54,12 @@ def disable_openblas_threading_affinity_fixture() -> None:
     os.environ["GOTOBLAS_MAIN_FREE"] = "1"
 
 
-def _create_dbt_invocation(project_dir: Path, build_project: bool = False) -> DbtCliInvocation:
-    dbt = DbtCliResource(project_dir=os.fspath(project_dir), global_config_flags=["--quiet"])
+def _create_dbt_invocation(
+    project_dir: Path, build_project: bool = False, target: Optional[str] = None
+) -> DbtCliInvocation:
+    dbt = DbtCliResource(
+        project_dir=os.fspath(project_dir), global_config_flags=["--quiet"], target=target
+    )
 
     if not project_dir.joinpath("dbt_packages").exists():
         dbt.cli(["deps"], raise_on_error=False).wait()
