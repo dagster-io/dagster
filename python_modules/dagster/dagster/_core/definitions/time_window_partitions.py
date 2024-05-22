@@ -72,7 +72,7 @@ from .partition import (
 from .partition_key_range import PartitionKeyRange
 
 
-def is_second_ambiguous_time(dt: datetime, tz: Optional[str]):
+def is_second_ambiguous_time(dt: datetime, tz: str):
     """Returns if a datetime is the second instance of an ambiguous time in the given timezone due
     to DST transitions.
     """
