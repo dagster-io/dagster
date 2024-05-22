@@ -516,6 +516,12 @@ def test_with_storage_kind_tag_override(test_jaffle_shop_manifest: Dict[str, Any
         def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:
             return {**StorageKindTagSet(storage_kind="my_custom_storage_kind")}
 
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets_no_override(): ...
+
+    for metadata in my_dbt_assets_no_override.tags_by_key.values():
+        assert metadata["dagster/storage_kind"] == "duckdb"
+
     @dbt_assets(
         manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
     )
