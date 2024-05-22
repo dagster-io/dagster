@@ -1091,9 +1091,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         models in a dbt run once they are built. Note that row counts will not be fetched
         for views, since this requires running the view's SQL query which may be costly.
 
-        Args:
-            num_threads (int): The number of threads to use for fetching row counts.
-
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
                 A set of corresponding Dagster events for dbt models, with row counts attached,
@@ -1106,8 +1103,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     def fetch_column_metadata(
         self,
         with_column_lineage: bool = True,
-        *,
-        num_threads=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE,
     ) -> (
         "DbtEventIterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]"
     ):
@@ -1117,7 +1112,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
 
         Args:
             generate_column_lineage (bool): Whether to generate column lineage metadata using sqlglot.
-            num_threads (int): The number of threads to use for fetching column metadata.
 
         Returns:
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
@@ -1127,7 +1121,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         fetch_metadata = lambda invocation, event: _fetch_column_metadata(
             invocation, event, with_column_lineage
         )
-        return self._attach_metadata(fetch_metadata, num_threads=num_threads)
+        return self._attach_metadata(fetch_metadata)
 
     def _attach_metadata(
         self,
