@@ -1,0 +1,7 @@
+load_from:
+  - python_module:
+        module_name: pipeline1
+        working_directory: pipeline1
+  - python_module:
+        module_name: pipeline2
+        working_directory: pipeline2
