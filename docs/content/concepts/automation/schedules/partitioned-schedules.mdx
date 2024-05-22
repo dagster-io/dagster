@@ -98,7 +98,7 @@ asset_partitioned_schedule = build_schedule_from_partitioned_job(
 )
 ```
 
-If the current date is `2024-05-20`, this schedule would submit a run for the `2024-05-19` partition at `2025-05-20-01:30:00`.
+On May 20, 2024, the schedule will evaluate at 1:30 AM UTC and then start a run for the partition key of the previous day, `2024-05-19`.
 
 ### Customizing the ending partition in a set
 
@@ -123,7 +123,7 @@ Continuing with the daily partition example, the `2024-05-20` partition would ha
 - **Start time** - `2024-05-20 00:00:00`
 - **End time** - `2024-05-20 23:59:59`
 
-After `2024-05-20 23:59:59` passes, the time window is complete and the `2024-05-20` partition will be included in the partition set.
+After `2024-05-20 23:59:59` passes, the time window is complete and Dagster will add a new `2024-05-20` partition to the partition set. At this point, the process will repeat with the next time window of `2024-05-21`.
 
 If you need to customize the ending, or most recent partition in a set, use the `end_offset` parameter in the partition's config:
 
