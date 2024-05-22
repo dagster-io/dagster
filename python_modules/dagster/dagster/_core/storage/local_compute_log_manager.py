@@ -111,6 +111,16 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     def is_capture_complete(self, log_key: Sequence[str]) -> bool:
         return os.path.exists(self.complete_artifact_path(log_key))
 
+    def get_log_files_in_directory(self, log_key_dir: Sequence[str]) -> Sequence[str]:
+        base_dir_path = Path(self._base_dir).resolve()
+        log_dir = base_dir_path.joinpath(*log_key_dir).resolve()
+
+        return [
+            filename.rsplit(".", 1)[0]  # TODO - need to remove the file extension. feels hacky
+            for filename in os.listdir(log_dir)
+            if os.path.isfile(os.path.join(log_dir, filename))
+        ]
+
     def get_log_data(
         self, log_key: Sequence[str], cursor: Optional[str] = None, max_bytes: Optional[int] = None
     ) -> CapturedLogData:
