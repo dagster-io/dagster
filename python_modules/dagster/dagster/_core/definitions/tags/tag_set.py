@@ -11,7 +11,7 @@ T_NamespacedTagSet = TypeVar("T_NamespacedTagSet", bound="NamespacedTagSet")
 
 
 class NamespacedTagSet(NamespacedKVSet):
-    """Extend this class to define a set of tags fields in the same namespace.
+    """Extend this class to define a set of tags in the same namespace.
 
     Supports splatting to a dictionary that can be placed inside a tags argument along with
     other tags.
