@@ -2157,6 +2157,21 @@ def test_asset_with_storage_kind_tag() -> None:
     }
 
 
+def test_asset_with_storage_kind() -> None:
+    @asset(storage_kind="snowflake")
+    def asset1(): ...
+
+    assert asset1.tags_by_key[asset1.key] == {"dagster/storage_kind": "snowflake"}
+
+    @asset(storage_kind="snowflake", tags={"a": "b"})
+    def asset2(): ...
+
+    assert asset2.tags_by_key[asset2.key] == {
+        "dagster/storage_kind": "snowflake",
+        "a": "b",
+    }
+
+
 def test_asset_spec_with_tags():
     @multi_asset(specs=[AssetSpec("asset1", tags={"a": "b"})])
     def assets(): ...
@@ -2179,3 +2194,77 @@ def test_asset_out_with_tags():
 
         @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
         def assets(): ...
+
+
+def test_multi_assets_asset_spec_with_storage_kind() -> None:
+    @multi_asset(specs=[AssetSpec("asset1"), AssetSpec("asset2")], storage_kind="snowflake")
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"dagster/storage_kind": "snowflake"}
+    assert assets.tags_by_key[AssetKey("asset2")] == {"dagster/storage_kind": "snowflake"}
+
+    @multi_asset(
+        specs=[AssetSpec("asset1", tags={"a": "b"}), AssetSpec("asset2", tags={"c": "d"})],
+        storage_kind="snowflake",
+    )
+    def assets2(): ...
+
+    assert assets2.tags_by_key[AssetKey("asset1")] == {
+        "dagster/storage_kind": "snowflake",
+        "a": "b",
+    }
+    assert assets2.tags_by_key[AssetKey("asset2")] == {
+        "dagster/storage_kind": "snowflake",
+        "c": "d",
+    }
+
+
+def test_multi_assets_asset_out_with_storage_kind() -> None:
+    @multi_asset(outs={"asset1": AssetOut(), "asset2": AssetOut()}, storage_kind="snowflake")
+    def assets(): ...
+
+    assert assets.tags_by_key[AssetKey("asset1")] == {"dagster/storage_kind": "snowflake"}
+    assert assets.tags_by_key[AssetKey("asset2")] == {"dagster/storage_kind": "snowflake"}
+
+    @multi_asset(
+        outs={"asset1": AssetOut(tags={"a": "b"}), "asset2": AssetOut(tags={"c": "d"})},
+        storage_kind="snowflake",
+    )
+    def assets2(): ...
+
+    assert assets2.tags_by_key[AssetKey("asset1")] == {
+        "dagster/storage_kind": "snowflake",
+        "a": "b",
+    }
+    assert assets2.tags_by_key[AssetKey("asset2")] == {
+        "dagster/storage_kind": "snowflake",
+        "c": "d",
+    }
+
+
+def test_multi_assets_asset_spec_with_storage_kind_override() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1"),
+            AssetSpec("asset2", tags={**StorageKindTagSet(storage_kind="bigquery")}),
+        ],
+        storage_kind="snowflake",
+    )
+    def assets2(): ...
+
+    assert assets2.tags_by_key[AssetKey("asset1")] == {"dagster/storage_kind": "snowflake"}
+    assert assets2.tags_by_key[AssetKey("asset2")] == {"dagster/storage_kind": "bigquery"}
+
+
+def test_multi_assets_asset_out_with_storage_kind_override() -> None:
+    @multi_asset(
+        outs={
+            "asset1": AssetOut(),
+            "asset2": AssetOut(tags={**StorageKindTagSet(storage_kind="bigquery")}),
+        },
+        storage_kind="snowflake",
+    )
+    def assets2(): ...
+
+    assert assets2.tags_by_key[AssetKey("asset1")] == {"dagster/storage_kind": "snowflake"}
+    assert assets2.tags_by_key[AssetKey("asset2")] == {"dagster/storage_kind": "bigquery"}
