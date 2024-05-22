@@ -952,7 +952,7 @@ class GrapheneQuery(graphene.ObjectType):
         if not results:
             return []
 
-        asset_record_loader = graphene_info.context.asset_record_loader
+        asset_record_loader = graphene_info.context.asset_summary_record_loader
         asset_record_loader.add_asset_keys([node.assetKey for node in results])
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
@@ -1086,10 +1086,12 @@ class GrapheneQuery(graphene.ObjectType):
             if node.assetKey in asset_keys
         }
 
-        asset_record_loader = graphene_info.context.asset_record_loader
-        asset_record_loader.add_asset_keys(asset_keys)
+        asset_summary_record_loader = graphene_info.context.asset_summary_record_loader
+        asset_summary_record_loader.add_asset_keys(asset_keys)
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
+        return get_assets_latest_info(
+            graphene_info, step_keys_by_asset, asset_summary_record_loader
+        )
 
     @capture_error
     def resolve_logsForRun(
