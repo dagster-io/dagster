@@ -11,9 +11,6 @@ from dagster._utils.typing_api import flatten_unions
 
 from .metadata_value import MetadataValue, TableColumnLineage, TableSchema
 
-T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
-
-
 # Python types that have a MetadataValue types that directly wraps them
 DIRECTLY_WRAPPED_METADATA_TYPES = {
     str,
@@ -25,38 +22,19 @@ DIRECTLY_WRAPPED_METADATA_TYPES = {
     type(None),
 }
 
-T_NamespacedMetadataSet = TypeVar("T_NamespacedMetadataSet", bound="NamespacedMetadataSet")
+T_NamespacedKVSet = TypeVar("T_NamespacedKVSet", bound="NamespacedKVSet")
 
 
 def is_raw_metadata_type(t: Type) -> bool:
     return issubclass(t, MetadataValue) or t in DIRECTLY_WRAPPED_METADATA_TYPES
 
 
-class NamespacedMetadataSet(ABC, DagsterModel):
-    """Extend this class to define a set of metadata fields in the same namespace.
+class NamespacedKVSet(ABC, DagsterModel):
+    """Base class for defining a set of key-value pairs in the same namespace.
 
-    Supports splatting to a dictionary that can be placed inside a metadata argument along with
-    other dictionary-structured metadata.
+    Includes shared behavior between NamespacedMetadataSet and NamespacedTagSet.
 
-    .. code-block:: python
-
-        my_metadata: NamespacedMetadataSet = ...
-        return MaterializeResult(metadata={**my_metadata, ...})
     """
-
-    def __init__(self, *args, **kwargs):
-        for field_name in model_fields(self).keys():
-            annotation_types = self._get_accepted_types_for_field(field_name)
-            invalid_annotation_types = {
-                annotation_type
-                for annotation_type in annotation_types
-                if not is_raw_metadata_type(annotation_type)
-            }
-            if invalid_annotation_types:
-                check.failed(
-                    f"Type annotation for field '{field_name}' includes invalid metadata type(s): {invalid_annotation_types}"
-                )
-        super().__init__(*args, **kwargs)
 
     @classmethod
     @abstractmethod
@@ -84,9 +62,7 @@ class NamespacedMetadataSet(ABC, DagsterModel):
         return getattr(self, self._strip_namespace_from_key(key))
 
     @classmethod
-    def extract(
-        cls: Type[T_NamespacedMetadataSet], metadata: Mapping[str, Any]
-    ) -> T_NamespacedMetadataSet:
+    def extract(cls: Type[T_NamespacedKVSet], metadata: Mapping[str, Any]) -> T_NamespacedKVSet:
         """Extracts entries from the provided metadata dictionary into an instance of this class.
 
         Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
@@ -114,6 +90,39 @@ class NamespacedMetadataSet(ABC, DagsterModel):
                     kwargs[key] = cls._extract_value(field_name=key, value=value)
 
         return cls(**kwargs)
+
+    @classmethod
+    @abstractmethod
+    def _extract_value(cls, field_name: str, value: Any) -> Any:
+        """Based on type annotation, potentially coerce the value to the expected type."""
+        ...
+
+
+class NamespacedMetadataSet(NamespacedKVSet):
+    """Extend this class to define a set of metadata fields in the same namespace.
+
+    Supports splatting to a dictionary that can be placed inside a metadata argument along with
+    other dictionary-structured metadata.
+
+    .. code-block:: python
+
+        my_metadata: NamespacedMetadataSet = ...
+        return MaterializeResult(metadata={**my_metadata, ...})
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        for field_name in model_fields(self).keys():
+            annotation_types = self._get_accepted_types_for_field(field_name)
+            invalid_annotation_types = {
+                annotation_type
+                for annotation_type in annotation_types
+                if not is_raw_metadata_type(annotation_type)
+            }
+            if invalid_annotation_types:
+                check.failed(
+                    f"Type annotation for field '{field_name}' includes invalid metadata type(s): {invalid_annotation_types}"
+                )
+        super().__init__(*args, **kwargs)
 
     @classmethod
     def _extract_value(cls, field_name: str, value: Any) -> Any:
