@@ -979,6 +979,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._selected_asset_check_keys
 
     @property
+    def check_key(self) -> AssetCheckKey:
+        check.invariant(
+            len(self.check_keys) == 1,
+            "Tried to retrieve asset check key from an assets definition with more or less than 1 asset check key: "
+            + ", ".join([ak.to_user_string() for ak in self.check_keys]),
+        )
+
+        return next(iter(self.check_keys))
+
+    @property
     def execution_type(self) -> AssetExecutionType:
         value = self._get_external_asset_metadata_value(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
         if value is None:

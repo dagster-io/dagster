@@ -5572,6 +5572,201 @@ class TestEventLogStorage:
         assert mat.asset_materialization
         assert mat.asset_materialization.metadata["was"].value == "here"
 
+    def test_asset_check_summary_record(
+        self,
+        storage: EventLogStorage,
+        instance: DagsterInstance,
+    ) -> None:
+        if self.can_wipe():
+            storage.wipe()
+
+        run_id_0, run_id_1 = [make_new_run_id() for _ in range(2)]
+        with create_and_delete_test_runs(instance, [run_id_0, run_id_1]):
+            check_key_1 = AssetCheckKey(AssetKey(["my_asset"]), "my_check")
+            check_key_2 = AssetCheckKey(AssetKey(["my_asset"]), "my_check_2")
+
+            # Initially, records have no last evaluation
+            asset_check_summary_records = storage.get_asset_check_summary_records(
+                asset_check_keys=[check_key_1, check_key_2]
+            )
+            assert len(asset_check_summary_records) == 2
+            assert all(
+                record.last_check_execution_record is None
+                for record in asset_check_summary_records.values()
+            )
+            assert all(
+                record.last_run_id is None for record in asset_check_summary_records.values()
+            )
+
+            # Store a planned event for both check keys; there should now be a planned record
+            # for each.
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=run_id_0,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=check_key_1.asset_key, check_name=check_key_1.name
+                        ),
+                    ),
+                )
+            )
+
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=run_id_0,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=check_key_2.asset_key, check_name=check_key_2.name
+                        ),
+                    ),
+                )
+            )
+
+            asset_check_summary_records = storage.get_asset_check_summary_records(
+                asset_check_keys=[check_key_1, check_key_2]
+            )
+            assert len(asset_check_summary_records) == 2
+            assert all(
+                record.last_check_execution_record is not None
+                for record in asset_check_summary_records.values()
+            )
+            assert all(
+                record.last_run_id == run_id_0 for record in asset_check_summary_records.values()
+            )
+            assert all(
+                record.last_check_execution_record
+                and record.last_check_execution_record.status
+                == AssetCheckExecutionRecordStatus.PLANNED
+                for record in asset_check_summary_records.values()
+            )
+
+            # Store an evaluation for check_key_1
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=run_id_0,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluation(
+                            asset_key=check_key_1.asset_key,
+                            check_name=check_key_1.name,
+                            passed=True,
+                            metadata={},
+                            target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                                storage_id=42, run_id=run_id_0, timestamp=3.3
+                            ),
+                            severity=AssetCheckSeverity.ERROR,
+                        ),
+                    ),
+                )
+            )
+
+            # Check that the summary record for check_key_1 has been updated,
+            # but not 2
+            summary_records = storage.get_asset_check_summary_records(
+                asset_check_keys=[check_key_1, check_key_2]
+            )
+            assert len(summary_records) == 2
+            check_1_summary_record = summary_records[check_key_1]
+            assert check_1_summary_record.last_check_execution_record
+            assert (
+                check_1_summary_record.last_check_execution_record.status
+                == AssetCheckExecutionRecordStatus.SUCCEEDED
+            )
+            assert check_1_summary_record.last_check_execution_record.run_id == run_id_0
+
+            check_2_summary_record = summary_records[check_key_2]
+            assert check_2_summary_record.last_check_execution_record
+            assert (
+                check_2_summary_record.last_check_execution_record.status
+                == AssetCheckExecutionRecordStatus.PLANNED
+            )
+            assert check_2_summary_record.last_check_execution_record.run_id == run_id_0
+
+            # Store an evaluation for check_key_2
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=run_id_0,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluation(
+                            asset_key=check_key_2.asset_key,
+                            check_name=check_key_2.name,
+                            passed=False,
+                            metadata={},
+                            target_materialization_data=AssetCheckEvaluationTargetMaterializationData(
+                                storage_id=42, run_id=run_id_0, timestamp=3.3
+                            ),
+                            severity=AssetCheckSeverity.ERROR,
+                        ),
+                    ),
+                )
+            )
+
+            # Check that the summary record for check_key_2 has been updated
+            summary_records = storage.get_asset_check_summary_records(
+                asset_check_keys=[check_key_2]
+            )
+
+            assert len(summary_records) == 1
+            check_2_summary_record = summary_records[check_key_2]
+            assert check_2_summary_record.last_check_execution_record
+            assert (
+                check_2_summary_record.last_check_execution_record.status
+                == AssetCheckExecutionRecordStatus.FAILED
+            )
+            assert check_2_summary_record.last_check_execution_record.run_id == run_id_0
+
+            # Store another planned evaluation for check_key_1
+            storage.store_event(
+                EventLogEntry(
+                    error_info=None,
+                    user_message="",
+                    level="debug",
+                    run_id=run_id_1,
+                    timestamp=time.time(),
+                    dagster_event=DagsterEvent(
+                        DagsterEventType.ASSET_CHECK_EVALUATION_PLANNED.value,
+                        "nonce",
+                        event_specific_data=AssetCheckEvaluationPlanned(
+                            asset_key=check_key_1.asset_key, check_name=check_key_1.name
+                        ),
+                    ),
+                )
+            )
+
+            # Check that the summary record for check_key_1 has been updated
+            records = storage.get_asset_check_summary_records(asset_check_keys=[check_key_1])
+            assert len(records) == 1
+            check_1_summary_record = records[check_key_1]
+            assert check_1_summary_record.last_check_execution_record
+            assert (
+                check_1_summary_record.last_check_execution_record.status
+                == AssetCheckExecutionRecordStatus.PLANNED
+            )
+            assert check_1_summary_record.last_check_execution_record.run_id == run_id_1
+
     def test_large_asset_metadata(
         self,
         storage: EventLogStorage,
