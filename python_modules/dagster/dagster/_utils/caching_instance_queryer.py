@@ -43,7 +43,7 @@ from dagster._core.errors import (
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
+from dagster._core.storage.asset_summary_record_loader import AssetSummaryRecordLoader
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
