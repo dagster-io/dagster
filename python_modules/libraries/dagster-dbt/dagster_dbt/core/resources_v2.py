@@ -1031,7 +1031,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         ):
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
-                thread_name_prefix="fetch_row_counts",
+                thread_name_prefix=fn.__name__,
             ) as executor:
                 yield from imap(
                     executor=executor,
