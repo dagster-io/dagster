@@ -239,14 +239,7 @@ def test_column_lineage(
     manifest["metadata"]["adapter_type"] = sql_dialect
 
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path))
-    dbt.cli(
-        [
-            "--quiet",
-            "build",
-            "--exclude",
-            "resource_type:test",
-        ]
-    ).wait()
+    dbt.cli(["--quiet", "build", "--exclude", "resource_type:test"]).wait()
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
