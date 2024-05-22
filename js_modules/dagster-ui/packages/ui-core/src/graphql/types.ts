@@ -5505,6 +5505,7 @@ export type WorkspaceLocationStatusEntry = {
   id: Scalars['ID']['output'];
   loadStatus: RepositoryLocationLoadStatus;
   name: Scalars['String']['output'];
+  permissions: Array<Permission>;
   updateTimestamp: Scalars['Float']['output'];
 };
 
@@ -14917,6 +14918,7 @@ export const buildWorkspaceLocationStatusEntry = (
         ? overrides.loadStatus!
         : RepositoryLocationLoadStatus.LOADED,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'corporis',
+    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
   };
