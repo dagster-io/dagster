@@ -9,7 +9,10 @@ from dagster import (
     materialize,
 )
 from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.core.resources_v2 import DbtCliInvocation, DbtCliResource
+from dagster_dbt.core.resources_v2 import (
+    DbtCliInvocation,
+    DbtCliResource,
+)
 
 from ..conftest import _create_dbt_invocation
 from ..dbt_projects import test_jaffle_shop_path
@@ -119,13 +122,13 @@ def test_row_count(request: pytest.FixtureRequest, target: str, manifest_fixture
         for asset_key, metadata in metadata_by_asset_key.items()
         # staging tables are views, so we don't attempt to get row counts for them
         if "stg" in asset_key.path[-1]
-    ), metadata_by_asset_key
+    ), str(metadata_by_asset_key)
     assert all(
         "dagster/row_count" in metadata
         for asset_key, metadata in metadata_by_asset_key.items()
         # staging tables are views, so we don't attempt to get row counts for them
         if "stg" not in asset_key.path[-1]
-    ), metadata_by_asset_key
+    ), str(metadata_by_asset_key)
 
 
 def test_row_count_err(
