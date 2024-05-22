@@ -101,13 +101,12 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
-              {RunMetricsDialog ? (
+              {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
                   tagName="button"
                   icon="asset_plot"
                   text="View container metrics"
                   intent="none"
-                  disabled={!runMetricsEnabled}
                   onClick={() => setVisibleDialog('metrics')}
                 />
               ) : null}
