@@ -320,7 +320,7 @@ class DbtCliEventMessage:
                 "status": node_status,
             }
             if self.raw_event["data"].get("num_failures") is not None:
-                metadata["num_failures"] = self.raw_event["data"]["num_failures"]
+                metadata["dagster_dbt/failed_row_count"] = self.raw_event["data"]["num_failures"]
 
             asset_check_key = get_asset_check_key_for_test(
                 manifest, dagster_dbt_translator, test_unique_id=unique_id

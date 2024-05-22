@@ -503,7 +503,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "pass",
-                    "num_failures": 0,
+                    "dagster_dbt/failed_row_count": 0,
                 },
             ),
             AssetCheckResult(
@@ -516,7 +516,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "pass",
-                    "num_failures": 0,
+                    "dagster_dbt/failed_row_count": 0,
                 },
             ),
             AssetCheckResult(
@@ -530,7 +530,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "warn",
-                    "num_failures": 1,
+                    "dagster_dbt/failed_row_count": 1,
                 },
             ),
             AssetCheckResult(
@@ -544,7 +544,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "fail",
-                    "num_failures": 4,
+                    "dagster_dbt/failed_row_count": 4,
                 },
             ),
         ]
