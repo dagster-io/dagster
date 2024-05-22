@@ -978,7 +978,8 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
         ):
             with ThreadPoolExecutor(
-                max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads
+                max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
+                thread_name_prefix="fetch_row_counts_",
             ) as executor:
                 yield from imap(
                     executor=executor,
