@@ -1,11 +1,14 @@
-import {gql, useMutation} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
   Checkbox,
+  Colors,
   Dialog,
   DialogBody,
   DialogFooter,
+  Icon,
+  Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
@@ -26,7 +29,11 @@ import {
   StopRunningSensorMutation,
   StopRunningSensorMutationVariables,
 } from './types/SensorMutations.types';
-import {SensorSwitchFragment} from './types/SensorSwitch.types';
+import {
+  SensorStateQuery,
+  SensorStateQueryVariables,
+  SensorSwitchFragment,
+} from './types/SensorSwitch.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
 import {TimeFromNow} from '../ui/TimeFromNow';
@@ -39,21 +46,30 @@ interface Props {
   repoAddress: RepoAddress;
   sensor: SensorSwitchFragment;
   size?: 'small' | 'large';
+  hasOutdatedSensorState?: boolean;
 }
 
 export const SensorSwitch = (props: Props) => {
-  const {repoAddress, sensor, size = 'large'} = props;
+  const {repoAddress, sensor, size = 'large', hasOutdatedSensorState} = props;
   const {
     permissions: {canStartSensor, canStopSensor},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
   const {jobOriginId, name, sensorState} = sensor;
-  const {status, selectorId} = sensorState;
+  const {selectorId} = sensorState;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
   };
+
+  const {data, loading} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
+    SENSOR_STATE_QUERY,
+    {
+      variables: {sensorSelector},
+      skip: !hasOutdatedSensorState,
+    },
+  );
 
   const [startSensor, {loading: toggleOnInFlight}] = useMutation<
     StartSensorMutation,
@@ -90,6 +106,21 @@ export const SensorSwitch = (props: Props) => {
     }
   };
 
+  if (hasOutdatedSensorState && !data && loading) {
+    return <Spinner purpose="body-text" />;
+  }
+  if (hasOutdatedSensorState && data?.sensorOrError.__typename !== 'Sensor') {
+    return (
+      <Tooltip content="Error loading sensor state">
+        <Icon name="error" color={Colors.accentRed()} />;
+      </Tooltip>
+    );
+  }
+
+  const status = hasOutdatedSensorState
+    ? // @ts-expect-error - we refined the type based on hasOutdatedSensorState above
+      data.sensorOrError.sensorState.status
+    : sensor.sensorState.status;
   const running = status === InstigationStatus.RUNNING;
   const lastProcessedTimestamp = parseRunStatusSensorCursor(cursor);
 
@@ -234,5 +265,19 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
       }
     }
     sensorType
+  }
+`;
+
+const SENSOR_STATE_QUERY = gql`
+  query SensorStateQuery($sensorSelector: SensorSelector!) {
+    sensorOrError(sensorSelector: $sensorSelector) {
+      ... on Sensor {
+        id
+        sensorState {
+          id
+          status
+        }
+      }
+    }
   }
 `;

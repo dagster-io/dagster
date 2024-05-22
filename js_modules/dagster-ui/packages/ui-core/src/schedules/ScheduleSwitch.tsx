@@ -1,5 +1,5 @@
-import {gql, useMutation} from '@apollo/client';
-import {Checkbox, Tooltip} from '@dagster-io/ui-components';
+import {gql, useMutation, useQuery} from '@apollo/client';
+import {Checkbox, Colors, Icon, Spinner, Tooltip} from '@dagster-io/ui-components';
 
 import {
   START_SCHEDULE_MUTATION,
@@ -12,7 +12,11 @@ import {
   StopScheduleMutation,
   StopScheduleMutationVariables,
 } from './types/ScheduleMutations.types';
-import {ScheduleSwitchFragment} from './types/ScheduleSwitch.types';
+import {
+  ScheduleStateQuery,
+  ScheduleStateQueryVariables,
+  ScheduleSwitchFragment,
+} from './types/ScheduleSwitch.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus} from '../graphql/types';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -22,17 +26,31 @@ interface Props {
   repoAddress: RepoAddress;
   schedule: ScheduleSwitchFragment;
   size?: 'small' | 'large';
+  hasOutdatedScheduleState?: boolean;
 }
 
 export const ScheduleSwitch = (props: Props) => {
-  const {repoAddress, schedule, size = 'large'} = props;
+  const {repoAddress, schedule, size = 'large', hasOutdatedScheduleState} = props;
   const {name, scheduleState} = schedule;
-  const {status, id, selectorId} = scheduleState;
+  const {id, selectorId} = scheduleState;
 
   const {
     permissions: {canStartSchedule, canStopRunningSchedule},
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
+
+  const scheduleSelector = {
+    ...repoAddressToSelector(repoAddress),
+    scheduleName: name,
+  };
+
+  const {data, loading} = useQuery<ScheduleStateQuery, ScheduleStateQueryVariables>(
+    SCHEDULE_STATE_QUERY,
+    {
+      variables: {scheduleSelector},
+      skip: !hasOutdatedScheduleState,
+    },
+  );
 
   const [startSchedule, {loading: toggleOnInFlight}] = useMutation<
     StartThisScheduleMutation,
@@ -47,11 +65,6 @@ export const ScheduleSwitch = (props: Props) => {
     onCompleted: displayScheduleMutationErrors,
   });
 
-  const scheduleSelector = {
-    ...repoAddressToSelector(repoAddress),
-    scheduleName: name,
-  };
-
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
@@ -64,6 +77,22 @@ export const ScheduleSwitch = (props: Props) => {
     }
   };
 
+  if (hasOutdatedScheduleState && !data && loading) {
+    return <Spinner purpose="body-text" />;
+  }
+
+  if (hasOutdatedScheduleState && data?.scheduleOrError.__typename !== 'Schedule') {
+    return (
+      <Tooltip content="Error loading schedule state">
+        <Icon name="error" color={Colors.accentRed()} />;
+      </Tooltip>
+    );
+  }
+
+  const status = hasOutdatedScheduleState
+    ? // @ts-expect-error - we refined the type based on hasOutdatedScheduleState above
+      data.scheduleOrError.scheduleState.status
+    : schedule.scheduleState.status;
   const running = status === InstigationStatus.RUNNING;
 
   if (canStartSchedule && canStopRunningSchedule) {
@@ -116,6 +145,20 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
       id
       selectorId
       status
+    }
+  }
+`;
+
+const SCHEDULE_STATE_QUERY = gql`
+  query ScheduleStateQuery($scheduleSelector: ScheduleSelector!) {
+    scheduleOrError(scheduleSelector: $scheduleSelector) {
+      ... on Schedule {
+        id
+        scheduleState {
+          id
+          status
+        }
+      }
     }
   }
 `;
