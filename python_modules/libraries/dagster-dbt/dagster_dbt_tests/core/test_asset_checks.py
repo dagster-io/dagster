@@ -503,6 +503,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "pass",
+                    "num_failures": 0,
                 },
             ),
             AssetCheckResult(
@@ -515,6 +516,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "pass",
+                    "num_failures": 0,
                 },
             ),
             AssetCheckResult(
@@ -528,6 +530,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "warn",
+                    "num_failures": 1,
                 },
             ),
             AssetCheckResult(
@@ -541,27 +544,33 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "fail",
+                    "num_failures": 4,
                 },
             ),
         ]
 
         # filter these out for comparison
         non_deterministic_metadata_keys = ["Execution Duration"]
-        check_events_without_non_deterministic_metadata = []
+        check_events_without_non_deterministic_metadata = {}
         for event in events:
             if isinstance(event, AssetCheckResult):
-                check_events_without_non_deterministic_metadata.append(
-                    event._replace(
-                        metadata={
-                            k: v
-                            for k, v in event.metadata.items()
-                            if k not in non_deterministic_metadata_keys
-                        }
-                    )
+                check_events_without_non_deterministic_metadata[
+                    event.asset_key, event.check_name
+                ] = event._replace(
+                    metadata={
+                        k: v
+                        for k, v in event.metadata.items()
+                        if k not in non_deterministic_metadata_keys
+                    }
                 )
 
         for expected_asset_check_result in expected_results:
-            assert expected_asset_check_result in check_events_without_non_deterministic_metadata
+            assert (
+                check_events_without_non_deterministic_metadata[
+                    expected_asset_check_result.asset_key, expected_asset_check_result.check_name
+                ]
+                == expected_asset_check_result
+            )
 
         yield from events
 
