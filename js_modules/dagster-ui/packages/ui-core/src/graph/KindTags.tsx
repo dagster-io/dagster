@@ -1,3 +1,4 @@
+import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
@@ -19,17 +20,28 @@ export const AssetComputeKindTag = ({
     return null;
   }
   return (
-    <OpTags
-      {...rest}
-      tags={[
-        {
-          label: definition.computeKind,
-          onClick: () => {
-            window.requestAnimationFrame(() => document.dispatchEvent(new Event('show-kind-info')));
+    <Tooltip
+      content={
+        <>
+          Compute kind <CaptionMono>{definition.computeKind}</CaptionMono>
+        </>
+      }
+      placement="bottom"
+    >
+      <OpTags
+        {...rest}
+        tags={[
+          {
+            label: definition.computeKind,
+            onClick: () => {
+              window.requestAnimationFrame(() =>
+                document.dispatchEvent(new Event('show-kind-info')),
+              );
+            },
           },
-        },
-      ]}
-    />
+        ]}
+      />
+    </Tooltip>
   );
 };
 
@@ -44,16 +56,27 @@ export const AssetStorageKindTag = ({
   reversed?: boolean;
 }) => {
   return (
-    <OpTags
-      {...rest}
-      tags={[
-        {
-          label: storageKind,
-          onClick: () => {
-            window.requestAnimationFrame(() => document.dispatchEvent(new Event('show-kind-info')));
+    <Tooltip
+      content={
+        <>
+          Storage kind <CaptionMono>{storageKind}</CaptionMono>
+        </>
+      }
+      placement="bottom"
+    >
+      <OpTags
+        {...rest}
+        tags={[
+          {
+            label: storageKind,
+            onClick: () => {
+              window.requestAnimationFrame(() =>
+                document.dispatchEvent(new Event('show-kind-info')),
+              );
+            },
           },
-        },
-      ]}
-    />
+        ]}
+      />
+    </Tooltip>
   );
 };
