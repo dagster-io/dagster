@@ -1,5 +1,5 @@
 import {QueryResult, gql, useApolloClient} from '@apollo/client';
-import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
 
 import {HourlyDataCache, getHourlyBuckets} from './HourlyDataCache/HourlyDataCache';
 import {doneStatuses} from './RunStatuses';
@@ -16,6 +16,7 @@ import {
   OngoingRunTimelineQueryVariables,
   RunTimelineFragment,
 } from './types/useRunsForTimeline.types';
+import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
@@ -26,6 +27,7 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
+const BUCKET_SIZE = 3600 * 1000;
 const BATCH_LIMIT = 500;
 
 export const useRunsForTimeline = (
@@ -46,10 +48,16 @@ export const useRunsForTimeline = (
 
   const buckets = useMemo(() => getHourlyBuckets(startSec, endSec), [startSec, endSec]);
 
+  const singleBucket = useMemo(() => [range], [range]);
+
   const client = useApolloClient();
 
+  const {localCacheIdPrefix} = useContext(AppContext);
   const completedRunsCache = useMemo(
-    () => new HourlyDataCache<RunTimelineFragment>(),
+    () =>
+      new HourlyDataCache<RunTimelineFragment>(
+        localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
+      ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [runsFilter],
   );
@@ -98,6 +106,7 @@ export const useRunsForTimeline = (
       buckets,
       setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
+        await completedRunsCache.loadCacheFromIndexedDB();
         const updatedBefore = bucket[1];
 
         let updatedAfter = bucket[0];
@@ -229,6 +238,7 @@ export const useRunsForTimeline = (
     const queryData = await client.query<FutureTicksQuery, FutureTicksQueryVariables>({
       query: FUTURE_TICKS_QUERY,
       variables: {tickCursor: startSec, ticksUntil: _end / 1000.0},
+      fetchPolicy: 'no-cache',
     });
     setFutureTicksQueryData({...queryData, called: true});
   }, [startSec, _end, client]);

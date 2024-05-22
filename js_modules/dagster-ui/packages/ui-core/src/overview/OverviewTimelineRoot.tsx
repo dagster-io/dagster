@@ -1,5 +1,6 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useDeferredValue} from 'react';
 
 import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -79,7 +80,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const {jobs, initialLoading, refreshState} = useRunsForTimeline(range);
+  const runsForTimelineRet = useRunsForTimeline(range);
+
+  // Use deferred value to allow paginating quickly with the UI feeling more responsive.
+  const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
 
   React.useEffect(() => {
     if (!initialLoading) {
