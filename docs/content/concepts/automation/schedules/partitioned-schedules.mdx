@@ -162,8 +162,14 @@ Next, we'll demonstrate how to create a schedule for a job with a static partiti
 
 In this example, the job is partitioned by continent:
 
-```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py startafter=start_job endbefore=end_job
+from dagster import (
+    AssetExecutionContext,
+    Config,
+    asset,
+    define_asset_job,
+    static_partitioned_config,
+)
 
 CONTINENTS = [
     "Africa",
@@ -178,27 +184,27 @@ CONTINENTS = [
 
 @static_partitioned_config(partition_keys=CONTINENTS)
 def continent_config(partition_key: str):
-    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+    return {"ops": {"continents": {"config": {"continent_name": partition_key}}}}
 
 
 class ContinentOpConfig(Config):
     continent_name: str
 
 
-@op
-def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
+@asset
+def continents(context: AssetExecutionContext, config: ContinentOpConfig):
     context.log.info(config.continent_name)
 
 
-@job(config=continent_config)
-def continent_job():
-    continent_op()
+continent_job = define_asset_job(
+    name="continent_job", selection=[continents], config=continent_config
+)
 ```
 
 Using the <PyObject object="schedule" decorator /> decorator, we'll write a schedule that targets each partition, or `continent`:
 
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
-from dagster import schedule, RunRequest
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py startafter=start_schedule_all_partitions endbefore=end_schedule_all_partitions
+from dagster import RunRequest, schedule
 
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
@@ -209,7 +215,10 @@ def continent_schedule():
 
 If we only want to target the `Antarctica` partition, we can create a schedule like the following:
 
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_asset_job.py startafter=start_single_partition endbefore=end_single_partition
+from dagster import RunRequest, schedule
+
+
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
     return RunRequest(partition_key="Antarctica")
