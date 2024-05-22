@@ -992,8 +992,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     def _attach_metadata(
         self,
         fn: Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]],
-        *,
-        num_threads=DEFAULT_EVENT_POSTPROCESSING_THREADPOOL_SIZE,
     ) -> "DbtEventIterator[DbtDagsterEventType]":
         """Runs a threaded task to attach metadata to each event in the iterator.
 
@@ -1001,7 +999,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
             fn (Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]]):
                 A function which takes a DbtCliInvocation and a DbtDagsterEventType and returns
                 a dictionary of metadata to attach to the event.
-            num_threads (int): The number of threads to use for processing the events.
 
         Returns:
              Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
@@ -1029,7 +1026,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         except ImportError:
             pass
 
-        def _threadpool_fetch_and_attach_row_count_metadata() -> (
+        def _threadpool_wrap_map_fn() -> (
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
         ):
             with ThreadPoolExecutor(
@@ -1043,7 +1040,7 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 )
 
         return DbtEventIterator(
-            _threadpool_fetch_and_attach_row_count_metadata(),
+            _threadpool_wrap_map_fn(),
             dbt_cli_invocation=self._dbt_cli_invocation,
         )
 
