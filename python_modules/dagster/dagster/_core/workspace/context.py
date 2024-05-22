@@ -39,7 +39,7 @@ from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget
@@ -314,7 +314,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     @property
     @abstractmethod
-    def asset_record_loader(self) -> BatchAssetRecordLoader:
+    def asset_record_loader(self) -> AssetSummaryRecordLoader:
         pass
 
 
@@ -340,10 +340,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         )
         self._checked_permissions: Set[str] = set()
 
-        self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
+        self._asset_record_loader = AssetSummaryRecordLoader(self._instance, {})
 
     @property
-    def asset_record_loader(self) -> BatchAssetRecordLoader:
+    def asset_record_loader(self) -> AssetSummaryRecordLoader:
         return self._asset_record_loader
 
     @property

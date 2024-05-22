@@ -43,7 +43,7 @@ from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._core.storage.batch_asset_record_loader import AssetSummaryRecordLoader
 from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
 from dagster._core.storage.partition_status_cache import (
     build_failed_and_in_progress_partition_subset,
@@ -416,7 +416,7 @@ def get_partition_subsets(
     instance: DagsterInstance,
     asset_key: AssetKey,
     dynamic_partitions_loader: DynamicPartitionsStore,
-    batch_asset_record_loader: Optional[BatchAssetRecordLoader],
+    batch_asset_record_loader: Optional[AssetSummaryRecordLoader],
     partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Tuple[Optional[PartitionsSubset], Optional[PartitionsSubset], Optional[PartitionsSubset]]:
     """Returns a tuple of PartitionSubset objects: the first is the materialized partitions,
@@ -473,7 +473,7 @@ def get_partition_subsets(
         )
 
         if batch_asset_record_loader:
-            asset_record = batch_asset_record_loader.get_asset_record(asset_key)
+            asset_record = batch_asset_record_loader.get_asset_summary_record(asset_key)
         else:
             asset_record = next(iter(instance.get_asset_records(asset_keys=[asset_key])), None)
 
