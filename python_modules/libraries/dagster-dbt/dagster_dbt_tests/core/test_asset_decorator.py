@@ -511,6 +511,22 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
         assert metadata["customized"] == "tag"
 
 
+def test_with_storage_kind_tag_override(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    expected_tags = {**StorageKindTagSet(storage_kind="my_custom_storage_kind")}
+
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:
+            return expected_tags
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    for metadata in my_dbt_assets.tags_by_key.values():
+        assert metadata["dagster/storage_kind"] == "my_custom_storage_kind"
+
+
 def test_with_owner_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_owners = ["custom@custom.com"]
 
