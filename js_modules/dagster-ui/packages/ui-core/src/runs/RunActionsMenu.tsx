@@ -222,13 +222,12 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                 download
                 href={`${rootServerURI}/download_debug/${run.id}`}
               />
-              {RunMetricsDialog ? (
+              {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
                   tagName="button"
                   icon="asset_plot"
                   text="View container metrics"
                   intent="none"
-                  disabled={!runMetricsEnabled}
                   onClick={() => setVisibleDialog('metrics')}
                 />
               ) : null}
