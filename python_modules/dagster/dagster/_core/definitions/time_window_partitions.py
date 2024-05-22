@@ -48,11 +48,7 @@ from dagster._seven.compat.pendulum import (
     create_pendulum_time,
     to_timezone,
 )
-from dagster._utils.cronstring import (
-    get_fixed_minute_interval,
-    is_basic_daily,
-    is_basic_hourly,
-)
+from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._utils.schedules import (
     cron_string_iterator,
@@ -187,10 +183,7 @@ class DatetimeFieldSerializer(FieldSerializer):
     """Serializes datetime objects to and from floats."""
 
     def pack(
-        self,
-        datetime: Optional[datetime],
-        whitelist_map: WhitelistMap,
-        descent_path: str,
+        self, datetime: Optional[datetime], whitelist_map: WhitelistMap, descent_path: str
     ) -> Optional[Mapping[str, Any]]:
         if datetime:
             check.invariant(datetime.tzinfo is not None, "No timezone set")
@@ -255,10 +248,7 @@ class TimeWindow(NamedTuple):
 
 
 @whitelist_for_serdes(
-    field_serializers={
-        "start": DatetimeFieldSerializer,
-        "end": DatetimeFieldSerializer,
-    },
+    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
     is_pickleable=False,
 )
 class TimeWindowPartitionsDefinition(
@@ -628,10 +618,7 @@ class TimeWindowPartitionsDefinition(
             return dst_safe_strftime(start_time, None, self.fmt, self.cron_schedule)
 
     def get_next_partition_window(
-        self,
-        end_dt: datetime,
-        current_time: Optional[datetime] = None,
-        respect_bounds: bool = True,
+        self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
     ) -> Optional[TimeWindow]:
         windows_iter = iter(self._iterate_time_windows(end_dt))
         next_window = next(windows_iter)
@@ -778,10 +765,7 @@ class TimeWindowPartitionsDefinition(
             if partition_time_window.start.timestamp() < time_window_end_timestamp:
                 result.append(
                     dst_safe_strftime(
-                        partition_time_window.start,
-                        self.timezone,
-                        self.fmt,
-                        self.cron_schedule,
+                        partition_time_window.start, self.timezone, self.fmt, self.cron_schedule
                     )
                 )
             else:
@@ -931,18 +915,15 @@ class TimeWindowPartitionsDefinition(
             )
         else:
             hour_of_day = cast(
-                int,
-                check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset),
+                int, check.opt_int_param(hour_of_day, "hour_of_day", default=self.hour_offset)
             )
 
         if schedule_type == ScheduleType.DAILY:
             check.invariant(
-                day_of_week is None,
-                "Cannot set day of week parameter with daily partitions.",
+                day_of_week is None, "Cannot set day of week parameter with daily partitions."
             )
             check.invariant(
-                day_of_month is None,
-                "Cannot set day of month parameter with daily partitions.",
+                day_of_month is None, "Cannot set day of month parameter with daily partitions."
             )
 
         if schedule_type == ScheduleType.MONTHLY:
@@ -1897,9 +1878,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             )
 
         return TimeWindowPartitionsSubset(
-            partitions_def,
-            num_partitions=num_partitions,
-            included_time_windows=time_windows,
+            partitions_def, num_partitions=num_partitions, included_time_windows=time_windows
         )
 
     @classmethod
@@ -2214,9 +2193,7 @@ class TimeWindowPartitionsSubset(
 
     @classmethod
     def _num_partitions_from_time_windows(
-        cls,
-        partitions_def: TimeWindowPartitionsDefinition,
-        time_windows: Sequence[TimeWindow],
+        cls, partitions_def: TimeWindowPartitionsDefinition, time_windows: Sequence[TimeWindow]
     ) -> int:
         return sum(
             len(partitions_def.get_partition_keys_in_time_window(time_window))
@@ -2454,8 +2431,7 @@ def get_time_partitions_def(
         partitions_def, MultiPartitionsDefinition
     ) and has_one_dimension_time_window_partitioning(partitions_def):
         return cast(
-            TimeWindowPartitionsDefinition,
-            partitions_def.time_window_dimension.partitions_def,
+            TimeWindowPartitionsDefinition, partitions_def.time_window_dimension.partitions_def
         )
     else:
         return None
