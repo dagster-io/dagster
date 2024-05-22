@@ -2246,6 +2246,20 @@ def test_multi_assets_asset_spec_with_storage_kind_override() -> None:
     @multi_asset(
         specs=[
             AssetSpec("asset1"),
+            AssetSpec("asset2", storage_kind="bigquery"),
+        ],
+        storage_kind="snowflake",
+    )
+    def assets2(): ...
+
+    assert assets2.tags_by_key[AssetKey("asset1")] == {"dagster/storage_kind": "snowflake"}
+    assert assets2.tags_by_key[AssetKey("asset2")] == {"dagster/storage_kind": "bigquery"}
+
+
+def test_multi_assets_asset_spec_with_storage_kind_tag_override() -> None:
+    @multi_asset(
+        specs=[
+            AssetSpec("asset1"),
             AssetSpec("asset2", tags={**StorageKindTagSet(storage_kind="bigquery")}),
         ],
         storage_kind="snowflake",

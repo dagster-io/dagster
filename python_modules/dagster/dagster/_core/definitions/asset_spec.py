@@ -11,6 +11,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .auto_materialize_policy import AutoMaterializePolicy
@@ -125,11 +126,17 @@ class AssetSpec(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        storage_kind: Optional[str] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
         key = AssetKey.from_coercible(key)
         asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
+
+        all_tags = {
+            **(tags or {}),
+            **(StorageKindTagSet(storage_kind=storage_kind) if storage_kind else {}),
+        } or None
 
         return super().__new__(
             cls,
@@ -151,5 +158,5 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_tags_strict(tags) or {},
+            tags=validate_tags_strict(all_tags),
         )
