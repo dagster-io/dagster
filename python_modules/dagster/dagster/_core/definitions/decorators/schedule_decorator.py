@@ -91,7 +91,7 @@ def schedule(
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]): The job
             that should execute when the schedule runs.
-        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will immediately be active when starting Dagster. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 
