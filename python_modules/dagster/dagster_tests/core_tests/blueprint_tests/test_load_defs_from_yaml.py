@@ -9,7 +9,7 @@ from dagster._core.blueprints.blueprint import (
     BlueprintDefinitions,
     DagsterBuildDefinitionsFromConfigError,
 )
-from dagster._core.blueprints.load_from_yaml import load_defs_from_yaml
+from dagster._core.blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
@@ -237,3 +237,72 @@ def test_additional_resources() -> None:
     )
 
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+
+def test_loader_schema() -> None:
+    class SimpleAssetBlueprint(Blueprint):
+        key: str
+
+    loader = YamlBlueprintsLoader(path=Path(__file__), per_file_blueprint_type=SimpleAssetBlueprint)
+
+    assert loader.model_json_schema() == {
+        "title": "SimpleAssetBlueprint",
+        "type": "object",
+        "properties": {
+            "key": {"title": "Key", "type": "string"},
+        },
+        "required": ["key"],
+        "additionalProperties": False,
+    }
+
+
+def test_loader_schema_union() -> None:
+    class FooAssetBlueprint(Blueprint):
+        type: Literal["foo"] = "foo"
+        number: int
+
+    class BarAssetBlueprint(Blueprint):
+        type: Literal["bar"] = "bar"
+        string: str
+
+    loader = YamlBlueprintsLoader(
+        path=Path(__file__), per_file_blueprint_type=Union[FooAssetBlueprint, BarAssetBlueprint]
+    )
+
+    assert loader.model_json_schema() == {
+        "$defs": {
+            "BarAssetBlueprint": {
+                "title": "BarAssetBlueprint",
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "const": "bar",
+                        "default": "bar",
+                        "enum": ["bar"],
+                        "title": "Type",
+                        "type": "string",
+                    },
+                    "string": {"title": "String", "type": "string"},
+                },
+                "required": ["string"],
+                "additionalProperties": False,
+            },
+            "FooAssetBlueprint": {
+                "title": "FooAssetBlueprint",
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "const": "foo",
+                        "default": "foo",
+                        "enum": ["foo"],
+                        "title": "Type",
+                        "type": "string",
+                    },
+                    "number": {"title": "Number", "type": "integer"},
+                },
+                "required": ["number"],
+                "additionalProperties": False,
+            },
+        },
+        "anyOf": [{"$ref": "#/$defs/FooAssetBlueprint"}, {"$ref": "#/$defs/BarAssetBlueprint"}],
+    }

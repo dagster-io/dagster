@@ -1,5 +1,6 @@
+import json
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, NamedTuple, Optional, Type, Union
 
 from dagster import (
     Definitions,
@@ -11,6 +12,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
 from .blueprint import Blueprint, BlueprintDefinitions
@@ -120,3 +122,31 @@ def load_defs_from_yaml(
     return BlueprintDefinitions.merge(
         *def_sets_with_code_references, BlueprintDefinitions(resources=resources or {})
     ).to_definitions()
+    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
+
+
+class YamlBlueprintsLoader(NamedTuple):
+    """A loader is responsible for loading a set of Dagster definitions from one or more YAML
+    files based on a set of supplied blueprints.
+    """
+
+    path: Union[Path, str]
+    per_file_blueprint_type: Type[Blueprint]
+
+    def load_defs(self) -> Definitions:
+        return load_defs_from_yaml(
+            path=self.path, per_file_blueprint_type=self.per_file_blueprint_type
+        )
+
+    def model_json_schema(self) -> dict:
+        """Returns a JSON schema for the model or models that the loader is responsible for loading."""
+        # This nicely handles the case where the per_file_blueprint_type is actually
+        # a union type etc.
+        if USING_PYDANTIC_2:
+            from pydantic import TypeAdapter
+
+            return TypeAdapter(self.per_file_blueprint_type).json_schema()
+        else:
+            from pydantic.tools import schema_json_of
+
+            return json.loads(schema_json_of(self.per_file_blueprint_type))
