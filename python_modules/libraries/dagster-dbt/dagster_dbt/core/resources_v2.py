@@ -257,6 +257,12 @@ class DbtCliEventMessage:
             "unique_id": unique_id,
             "invocation_id": invocation_id,
         }
+
+        if event_node_info.get("node_started_at") and event_node_info.get("node_finished_at"):
+            started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
+            finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
+            default_metadata["Execution Duration"] = (finished_at - started_at).total_seconds()
+
         has_asset_def: bool = bool(context and context.has_assets_def)
 
         node_resource_type: str = event_node_info["resource_type"]
@@ -271,10 +277,6 @@ class DbtCliEventMessage:
             and is_node_successful
             and not is_node_ephemeral
         ):
-            started_at = dateutil.parser.isoparse(event_node_info["node_started_at"])
-            finished_at = dateutil.parser.isoparse(event_node_info["node_finished_at"])
-            duration_seconds = (finished_at - started_at).total_seconds()
-
             lineage_metadata = {}
             try:
                 lineage_metadata = self._build_column_lineage_metadata(
@@ -296,7 +298,6 @@ class DbtCliEventMessage:
                     output_name=dagster_name_fn(event_node_info),
                     metadata={
                         **default_metadata,
-                        "Execution Duration": duration_seconds,
                         **lineage_metadata,
                     },
                 )
@@ -308,7 +309,6 @@ class DbtCliEventMessage:
                     asset_key=asset_key,
                     metadata={
                         **default_metadata,
-                        "Execution Duration": duration_seconds,
                         **lineage_metadata,
                     },
                 )

@@ -14,6 +14,7 @@ from dagster import (
     materialize,
     op,
 )
+from dagster._core.definitions.metadata.metadata_value import FloatMetadataValue, TextMetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster_dbt import dbt_assets
@@ -508,3 +509,35 @@ def test_custom_subclass():
         project_dir=os.fspath(test_jaffle_shop_path), custom_field="custom_value"
     )
     assert isinstance(custom, DbtCliResource)
+
+
+def test_metadata(test_jaffle_shop_manifest: Dict[str, Any], dbt: DbtCliResource) -> None:
+    def assert_on_expected_metadata(metadata):
+        assert isinstance(metadata["Execution Duration"], FloatMetadataValue)
+        assert cast(float, metadata["Execution Duration"].value) > 0
+
+        assert isinstance(metadata["unique_id"], TextMetadataValue)
+        assert isinstance(metadata["invocation_id"], TextMetadataValue)
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    outputs = [event for event in result.all_events if event.is_successful_output]
+    assert len(outputs) == 28
+
+    # materialization outputs have metadata, asset check outputs don't
+    outputs_with_metadata = [output for output in outputs if output.step_output_data.metadata]
+    assert len(outputs_with_metadata) == 8
+
+    for output in outputs_with_metadata:
+        assert_on_expected_metadata(output.step_output_data.metadata)
+
+    materializations = result.get_asset_materialization_events()
+    assert len(materializations) == 8
+
+    for materialization in materializations:
+        assert_on_expected_metadata(
+            materialization.step_materialization_data.materialization.metadata
+        )
