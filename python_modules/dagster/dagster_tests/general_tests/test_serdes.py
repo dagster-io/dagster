@@ -8,7 +8,7 @@ from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, 
 import pydantic
 import pytest
 from dagster._check import ParameterCheckError, inst_param, set_param
-from dagster._model import DagsterModel
+from dagster._model import DagsterModel, IHaveNew, dagster_model, dagster_model_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
@@ -25,6 +25,7 @@ from dagster._serdes.serdes import (
     unpack_value,
 )
 from dagster._serdes.utils import hash_str
+from dagster._utils.cached_method import cached_method
 
 
 def test_deserialize_value_ok():
@@ -892,3 +893,50 @@ def test_object_migration():
     # can deserialize previous NamedTuples in to future pydantic models
     py_dc_ent = deserialize_value(ser_nt_ent, whitelist_map=py_m_env)
     assert py_dc_ent
+
+
+def test_dagster_model() -> None:
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    @dagster_model
+    class MyModel:
+        nums: List[int]
+
+    m = MyModel(nums=[1, 2, 3])
+    m_str = serialize_value(m, whitelist_map=test_env)
+    assert m == deserialize_value(m_str, whitelist_map=test_env)
+
+    @_whitelist_for_serdes(test_env)
+    @dagster_model
+    class CachedModel:
+        nums: List[int]
+
+        @cached_method
+        def map(self) -> dict:
+            return {str(v): v for v in self.nums}
+
+    m = CachedModel(nums=[1, 2, 3])
+    m_map = m.map()
+    assert m_map is m.map()
+    m_str = serialize_value(m, whitelist_map=test_env)
+    m_2 = deserialize_value(m_str, whitelist_map=test_env)
+
+    assert m == m_2
+
+    @_whitelist_for_serdes(test_env)
+    @dagster_model_custom
+    class LegacyModel(IHaveNew):
+        nums: List[int]
+
+        def __new__(cls, nums: Optional[List[int]] = None, old_nums: Optional[List[int]] = None):
+            return super().__new__(
+                cls,
+                nums=nums or old_nums,
+            )
+
+    m = LegacyModel(nums=[1, 2, 3])
+
+    m_str = serialize_value(m, whitelist_map=test_env)  # type: ignore # with_new not seen as packable
+    m2_str = m_str.replace("nums", "old_nums")
+    assert m == deserialize_value(m2_str, whitelist_map=test_env)
