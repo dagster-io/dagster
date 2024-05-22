@@ -1,10 +1,21 @@
 import {HourlyDataCache, ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache';
 
+const mockedCache = {
+  has: jest.fn(),
+  get: jest.fn(),
+  set: jest.fn(),
+};
+jest.mock('idb-lru-cache', () => {
+  return {
+    cache: jest.fn(() => mockedCache),
+  };
+});
+
 describe('HourlyDataCache', () => {
   let cache: HourlyDataCache<number>;
 
   beforeEach(() => {
-    cache = new HourlyDataCache<number>();
+    cache = new HourlyDataCache<number>('test');
   });
 
   describe('addData', () => {
@@ -175,5 +186,69 @@ describe('HourlyDataCache Subscriptions', () => {
     cache.addData(ONE_HOUR_S, 2 * ONE_HOUR_S, [4, 5, 6]);
 
     expect(callback).not.toHaveBeenCalled();
+  });
+});
+
+describe('HourlyDataCache with IndexedDB', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should load cache from IndexedDB on initialization', async () => {
+    mockedCache.has.mockResolvedValue(true);
+
+    const sec = Date.now() / 1000;
+    const nowHour = Math.floor(sec / ONE_HOUR_S);
+    mockedCache.get.mockResolvedValue({
+      value: new Map([[nowHour, [{start: nowHour, end: nowHour + ONE_HOUR_S, data: [1, 2, 3]}]]]),
+    });
+
+    const cache = new HourlyDataCache<number>('test');
+
+    await cache.loadCacheFromIndexedDB();
+
+    expect(cache.getHourData(sec)).toEqual([1, 2, 3]);
+    expect(mockedCache.has).toHaveBeenCalledWith('hourlyData');
+    expect(mockedCache.get).toHaveBeenCalledWith('hourlyData');
+  });
+
+  it('should save cache to IndexedDB when data is added', async () => {
+    const cache = new HourlyDataCache<number>('test');
+
+    cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
+
+    const mockCallArgs = mockedCache.set.mock.calls[0];
+    const map = mockCallArgs[1];
+    expect(map).toEqual(
+      new Map<number, {data: number[]; end: number; start: number}[]>([
+        [0, [{data: [1, 2, 3], end: 3600, start: 0}]],
+      ]),
+    );
+  });
+
+  it('should clear old entries from the cache and save to IndexedDB', async () => {
+    const eightDaysAgo = Date.now() / 1000 - 8 * 24 * 60 * 60;
+    const sixDaysAgo = Date.now() / 1000 - 6 * 24 * 60 * 60;
+
+    mockedCache.has.mockResolvedValue(true);
+    mockedCache.get.mockResolvedValue({
+      value: new Map([
+        [
+          Math.floor(eightDaysAgo / ONE_HOUR_S),
+          [{start: eightDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
+        ],
+        [
+          Math.floor(sixDaysAgo / ONE_HOUR_S),
+          [{start: sixDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
+        ],
+      ]),
+    });
+
+    const cache = new HourlyDataCache<number>('test');
+
+    await cache.loadCacheFromIndexedDB();
+
+    expect(cache.getHourData(sixDaysAgo)).toEqual([1, 2, 3]);
+    expect(cache.getHourData(eightDaysAgo)).toEqual([]);
   });
 });

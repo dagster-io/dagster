@@ -1,12 +1,75 @@
+import {cache} from 'idb-lru-cache';
+
 type TimeWindow<T> = {start: number; end: number; data: T[]};
 
 export const ONE_HOUR_S = 60 * 60;
 
 type Subscription<T> = (data: T[]) => void;
 
+export const defaultOptions = {
+  expiry: new Date('3000-01-01'), // never expire,
+};
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
   private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
+  private indexedDBCache?: ReturnType<typeof cache<'hourlyData', typeof this.cache>>;
+
+  constructor(id?: string | false) {
+    if (id) {
+      this.indexedDBCache = cache<'hourlyData', typeof this.cache>({
+        dbName: `HourlyDataCache:${id}`,
+        maxCount: 1, // We only store 1 entry
+      });
+      this.loadCacheFromIndexedDB();
+      this.clearOldEntries();
+    }
+  }
+
+  loadPromise: Promise<void> | undefined;
+
+  public async loadCacheFromIndexedDB() {
+    if (!this.indexedDBCache) {
+      return;
+    }
+    if (this.loadPromise) {
+      return await this.loadPromise;
+    }
+    this.loadPromise = new Promise(async (res) => {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      if (!(await this.indexedDBCache.has('hourlyData'))) {
+        res();
+        return;
+      }
+      const cachedData = await this.indexedDBCache.get('hourlyData');
+      if (cachedData) {
+        this.cache = new Map(cachedData.value);
+      }
+      res();
+    });
+    return await this.loadPromise;
+  }
+
+  private async saveCacheToIndexedDB() {
+    if (!this.indexedDBCache) {
+      return;
+    }
+    await this.indexedDBCache.set('hourlyData', this.cache, defaultOptions);
+  }
+
+  public async clearOldEntries() {
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const hour = Math.floor(oneWeekAgo / (ONE_HOUR_S * 1000));
+
+    await this.loadCacheFromIndexedDB();
+    for (const ts of this.cache.keys()) {
+      if (ts < hour) {
+        this.cache.delete(ts);
+      }
+    }
+    await this.saveCacheToIndexedDB();
+  }
 
   /**
    * Adds data to the cache for the specified time range.
@@ -24,6 +87,7 @@ export class HourlyDataCache<T> {
 
     this.addPartialData(startHour, start, end, data);
     this.notifySubscribers(startHour);
+    this.saveCacheToIndexedDB();
   }
 
   /**
