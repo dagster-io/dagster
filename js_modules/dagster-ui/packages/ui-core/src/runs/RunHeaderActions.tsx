@@ -6,11 +6,13 @@ import {useHistory} from 'react-router-dom';
 import {DeletionDialog} from './DeletionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses} from './RunStatuses';
+import {DagsterTag} from './RunTag';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {TerminationDialog} from './TerminationDialog';
 import {RunFragment} from './types/RunFragments.types';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
+import {InjectedComponentContext} from '../app/InjectedComponentContext';
 import {useCopyToClipboard} from '../app/browser';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
 import {
@@ -20,14 +22,17 @@ import {
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
-type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | null;
+type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | 'metrics' | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
+  const runMetricsEnabled = run.tags.some((t) => t.key === DagsterTag.RunMetrics);
+
   const [visibleDialog, setVisibleDialog] = useState<VisibleDialog>(null);
 
   const {rootServerURI} = useContext(AppContext);
   const {refetch} = useContext(RunsQueryRefetchContext);
+  const {RunMetricsDialog} = useContext(InjectedComponentContext);
 
   const copy = useCopyToClipboard();
   const history = useHistory();
@@ -96,6 +101,16 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
+              {RunMetricsDialog ? (
+                <MenuItem
+                  tagName="button"
+                  icon="asset_plot"
+                  text="View container metrics"
+                  intent="none"
+                  disabled={!runMetricsEnabled}
+                  onClick={() => setVisibleDialog('metrics')}
+                />
+              ) : null}
               {run.hasConcurrencyKeySlots && doneStatuses.has(run.status) ? (
                 <MenuItem
                   text="Free concurrency slots"
@@ -126,6 +141,13 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
         tags={run.tags}
         isJob={isJob}
       />
+      {runMetricsEnabled && RunMetricsDialog ? (
+        <RunMetricsDialog
+          runId={run.id}
+          isOpen={visibleDialog === 'metrics'}
+          onClose={() => setVisibleDialog(null)}
+        />
+      ) : null}
       {run.hasDeletePermission ? (
         <DeletionDialog
           isOpen={visibleDialog === 'delete'}
