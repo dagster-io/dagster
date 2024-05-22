@@ -55,7 +55,7 @@ from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log import EventLogRecord
-    from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.event_log.base import AssetSummaryRecord
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 RECORD_BATCH_SIZE = 1000
@@ -229,7 +229,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     def has_cached_asset_record(self, asset_key: AssetKey) -> bool:
         return self._batch_asset_record_loader.has_cached_asset_record(asset_key)
 
-    def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetRecord"]:
+    def get_asset_record(self, asset_key: AssetKey) -> Optional["AssetSummaryRecord"]:
         self._batch_asset_record_loader.add_asset_keys({asset_key})
         return self._batch_asset_record_loader.get_asset_record(asset_key)
 
