@@ -32,7 +32,7 @@ from dagster._serdes.serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
-    from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.storage.event_log.base import AssetSummaryRecord
 
 
 CACHEABLE_PARTITION_TYPES = (
@@ -225,7 +225,7 @@ def get_validated_partition_keys(
 
 
 def get_last_planned_storage_id(
-    instance: DagsterInstance, asset_key: AssetKey, asset_record: Optional["AssetRecord"]
+    instance: DagsterInstance, asset_key: AssetKey, asset_record: Optional["AssetSummaryRecord"]
 ) -> int:
     if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
         return (
@@ -247,7 +247,7 @@ def _build_status_cache(
     partitions_def: Optional[PartitionsDefinition],
     dynamic_partitions_store: DynamicPartitionsStore,
     stored_cache_value: Optional[AssetStatusCacheValue],
-    asset_record: Optional["AssetRecord"],
+    asset_record: Optional["AssetSummaryRecord"],
 ) -> Optional[AssetStatusCacheValue]:
     """This method refreshes the asset status cache for a given asset key. It recalculates
     the materialized partition subset for the asset key and updates the cache value.

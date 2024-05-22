@@ -91,8 +91,8 @@ from dagster._utils.warnings import deprecation_warning
 from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
     AssetEntry,
-    AssetRecord,
     AssetRecordsFilter,
+    AssetSummaryRecord,
     EventLogConnection,
     EventLogCursor,
     EventLogRecord,
@@ -1193,12 +1193,12 @@ class SqlEventLogStorage(EventLogStorage):
         row,
         last_materialization_record: Optional[EventLogRecord],
         can_cache_asset_status_data: bool,
-    ) -> AssetRecord:
+    ) -> AssetSummaryRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
         asset_key = AssetKey.from_db_string(row["asset_key"])
         if asset_key:
-            return AssetRecord(
+            return AssetSummaryRecord(
                 storage_id=row["id"],
                 asset_entry=AssetEntry(
                     asset_key=asset_key,
@@ -1301,12 +1301,12 @@ class SqlEventLogStorage(EventLogStorage):
 
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
-    ) -> Sequence[AssetRecord]:
+    ) -> Sequence[AssetSummaryRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
         can_cache_asset_status_data = self.can_cache_asset_status_data()
 
-        asset_records: List[AssetRecord] = []
+        asset_records: List[AssetSummaryRecord] = []
         for row in rows:
             asset_key = AssetKey.from_db_string(row["asset_key"])
             if asset_key:

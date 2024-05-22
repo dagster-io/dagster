@@ -1,5 +1,5 @@
 from .base import (
-    AssetRecord as AssetRecord,
+    AssetSummaryRecord as AssetSummaryRecord,
     EventLogRecord as EventLogRecord,
     EventLogStorage as EventLogStorage,
 )
