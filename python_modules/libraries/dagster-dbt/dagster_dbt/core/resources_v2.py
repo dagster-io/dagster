@@ -59,7 +59,7 @@ from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
 from dagster._utils.warnings import disable_dagster_warnings
 from dbt.adapters.base.impl import BaseAdapter, BaseColumn
-from dbt.adapters.factory import get_adapter, register_adapter
+from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
 from dbt.contracts.results import NodeStatus, TestStatus
@@ -1497,6 +1497,9 @@ class DbtCliResource(ConfigurableResource):
             pass
 
         cleanup_event_logger()
+
+        # reset adapters list in case we have instantiated an adapter before in this process
+        reset_adapters()
         if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
             register_adapter(config)  # type: ignore
         else:
