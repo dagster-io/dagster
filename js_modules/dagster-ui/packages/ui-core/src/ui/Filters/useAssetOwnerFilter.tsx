@@ -47,7 +47,7 @@ export const useAssetOwnerFilter = ({
       () =>
         allAssetOwners.map((value) => ({
           value,
-          match: [stringValueFromOwner(value)],
+          match: [`owner:${stringValueFromOwner(value)}`],
         })),
       [allAssetOwners],
     ),
