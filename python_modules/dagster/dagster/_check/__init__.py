@@ -913,7 +913,9 @@ def mapping_param(
     value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Mapping[T, U]:
-    if not isinstance(obj, collections.abc.Mapping):
+    ttype = type(obj)
+    # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
+    if not (ttype is dict or isinstance(obj, collections.abc.Mapping)):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Mapping,), param_name, additional_message=additional_message
         )
@@ -1103,7 +1105,9 @@ def sequence_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Sequence[T]:
-    if not isinstance(obj, collections.abc.Sequence):
+    ttype = type(obj)
+    # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
+    if not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Sequence)):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Sequence,), param_name, additional_message
         )
@@ -1120,9 +1124,11 @@ def opt_sequence_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Sequence[T]:
+    ttype = type(obj)
     if obj is None:
         return []
-    elif not isinstance(obj, collections.abc.Sequence):
+    # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
+    elif not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Sequence)):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Sequence,), param_name, additional_message
         )
@@ -1173,7 +1179,9 @@ def iterable_param(
     of_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Iterable[T]:
-    if not isinstance(obj, collections.abc.Iterable):
+    ttype = type(obj)
+    # isinstance check against abc is costly, so try to handle common cases with cheapest check possible
+    if not (ttype is list or ttype is tuple or isinstance(obj, collections.abc.Iterable)):
         raise _param_type_mismatch_exception(
             obj, (collections.abc.Iterable,), param_name, additional_message
         )
