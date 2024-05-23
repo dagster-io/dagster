@@ -394,14 +394,7 @@ class TimeWindowPartitionsDefinition(
             else pendulum.now(self.timezone)
         ).timestamp()
 
-    def can_compute_num_partitions_quickly(self):
-        return self.is_basic_daily or get_fixed_minute_interval(self.cron_schedule)
-
-    def get_fast_num_partitions_in_window(self, time_window: TimeWindow):
-        """Computes the total number of partitions quickly for common partition windows. Returns
-        None if the count cannot be computed quickly and must enumerate all partitions before
-        counting them.
-        """
+    def get_num_partitions_in_window(self, time_window: TimeWindow) -> int:
         if self.is_basic_daily:
             return (
                 date(
@@ -421,59 +414,22 @@ class TimeWindowPartitionsDefinition(
             minutes_in_window = (time_window.end.timestamp() - time_window.start.timestamp()) / 60
             return int(minutes_in_window // fixed_minute_interval)
 
-        return None
-
-    def _get_fast_num_partitions(self, current_time: Optional[datetime] = None) -> Optional[int]:
-        """Computes the total number of partitions quickly for common partition windows. Returns
-        None if the count cannot be computed quickly and must enumerate all partitions before
-        counting them.
-        """
-        last_partition_window = self.get_last_partition_window(current_time)
-        first_partition_window = self.get_first_partition_window(current_time)
-
-        if not last_partition_window or not first_partition_window:
-            return None
-
-        return self.get_fast_num_partitions_in_window(
-            TimeWindow(start=first_partition_window.start, end=last_partition_window.end)
-        )
+        return len(self.get_partition_keys_in_time_window(time_window))
 
     def get_num_partitions(
         self,
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> int:
-        # Method added for performance reasons.
-        # Fetching partition keys requires significantly more compute time to
-        # string format datetimes.
+        last_partition_window = self.get_last_partition_window(current_time)
+        first_partition_window = self.get_first_partition_window(current_time)
 
-        fast_num_partitions = self._get_fast_num_partitions(current_time)
-        if fast_num_partitions is not None:
-            return fast_num_partitions
+        if not last_partition_window or not first_partition_window:
+            return 0
 
-        current_timestamp = self.get_current_timestamp(current_time=current_time)
-
-        partitions_past_current_time = 0
-
-        num_partitions = 0
-        for time_window in self._iterate_time_windows(self.start):
-            if self.end and time_window.end.timestamp() > self.end.timestamp():
-                break
-            if (
-                time_window.end.timestamp() <= current_timestamp
-                or partitions_past_current_time < self.end_offset
-            ):
-                num_partitions += 1
-
-                if time_window.end.timestamp() > current_timestamp:
-                    partitions_past_current_time += 1
-            else:
-                break
-
-        if self.end_offset < 0:
-            num_partitions += self.end_offset
-
-        return num_partitions
+        return self.get_num_partitions_in_window(
+            TimeWindow(start=first_partition_window.start, end=last_partition_window.end)
+        )
 
     def get_partition_keys_between_indexes(
         self, start_idx: int, end_idx: int, current_time: Optional[datetime] = None
@@ -2309,62 +2265,56 @@ class TimeWindowPartitionsSubset(
         if other is empty_subset:
             return self
 
-        # We only get any benefit from avoiding partition keys if we can then compute the
-        # number of resulting partitions quickly
-        if (
-            not isinstance(other, TimeWindowPartitionsSubset)
-            or not self.partitions_def.can_compute_num_partitions_quickly()
-        ):
+        if not isinstance(other, TimeWindowPartitionsSubset):
             return empty_subset.with_partition_keys(
                 set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
             )
 
-        # can we assume these are already sorted chronologically
         time_windows = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
         other_time_windows = sorted(
             other.included_time_windows, key=lambda tw: tw.start.timestamp()
         )
 
-        next_time_window_to_process = 0
-        next_other_window_to_process = 0
+        next_time_window_index_to_process = 0
+        next_other_window_index_to_process = 0
 
-        while next_time_window_to_process < len(
-            time_windows
-        ) and next_other_window_to_process < len(other_time_windows):
-            time_window = time_windows[next_time_window_to_process]
-            other_time_window = other_time_windows[next_other_window_to_process]
+        # Slide through both sets of windows, moving to the next window once its start has passed
+        # the end of the window is it being compared to
+        while (next_time_window_index_to_process < len(time_windows)) and (
+            next_other_window_index_to_process < len(other_time_windows)
+        ):
+            time_window = time_windows[next_time_window_index_to_process]
+            other_time_window = other_time_windows[next_other_window_index_to_process]
+
+            # Perform the subtraction and splice the 0, 1, or 2 result windows
+            # back into the time_windows list
 
             subtracted_time_windows = time_window.subtract(other_time_window)
 
-            time_windows[next_time_window_to_process : next_time_window_to_process + 1] = (
-                subtracted_time_windows
-            )
+            time_windows[
+                next_time_window_index_to_process : next_time_window_index_to_process + 1
+            ] = subtracted_time_windows
 
             if len(subtracted_time_windows) == 0:
                 # other_time_window fully consumed time_window
-                # next_time_window_to_process can stay the same since everything has shifted over one
+                # next_time_window_index_to_process can stay the same since everything has shifted over one
                 pass
             else:
-                updated_time_window = time_windows[next_time_window_to_process]
+                updated_time_window = time_windows[next_time_window_index_to_process]
                 if updated_time_window.end <= other_time_window.start:
-                    next_time_window_to_process += 1
-                elif updated_time_window.start >= other_time_window.end:
-                    next_other_window_to_process += 1
+                    # Current subtractor is too early to intersect, can advance
+                    next_time_window_index_to_process += 1
+                elif other_time_window.end <= updated_time_window.start:
+                    # current subtractee is too early to intersect, can advance
+                    next_other_window_index_to_process += 1
                 else:
                     check.failed(
                         "After subtraction, the new window should no longer intersect with the other window"
                     )
 
-        new_count = 0
-        for time_window in time_windows:
-            new_count += check.not_none(
-                self.partitions_def.get_fast_num_partitions_in_window(time_window),
-                "get_fast_num_partitions_in_window should return a non-None value for each time window",
-            )
-
         return TimeWindowPartitionsSubset(
             partitions_def=self.partitions_def,
-            num_partitions=new_count,
+            num_partitions=None,
             included_time_windows=time_windows,
         )
 
