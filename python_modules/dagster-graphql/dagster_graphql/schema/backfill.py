@@ -532,7 +532,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         return self._backfill_job.description
 =======
     def resolve_logEvents(self, graphene_info: ResolveInfo, cursor: Optional[str] = None):
-        # very unsure how the cursor gets passed through, especially if called from get_backfills which also has a cursor
         from ..schema.instigation import (
             GrapheneInstigationEvent,
             GrapheneInstigationEventConnection,
@@ -540,7 +539,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         from ..schema.logs.log_level import GrapheneLogLevel
 
         backfill_id = self._backfill_job.backfill_id
-        # TODO find a better way to keep this in sync. maybe store as part of the asset backfill data?
+        # TODO find a better way to keep the log key prefix in sync. maybe store as part of the asset backfill data?
         backfill_log_key_prefix = ["backfill", backfill_id]
 
         instance = graphene_info.context.instance
@@ -549,7 +548,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         if not instance.backfill_log_storage_enabled():
-            # myabe need to return something else to indicate that a setting needs to be changed
+            # maybe need to return something else to indicate that a setting needs to be changed
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         log_keys = sorted(
