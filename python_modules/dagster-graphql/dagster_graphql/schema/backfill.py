@@ -17,8 +17,8 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
 from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
-from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
@@ -284,7 +284,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     description = graphene.Field(graphene.String)
     logEvents = graphene.Field(
         graphene.NonNull("dagster_graphql.schema.instigation.GrapheneInstigationEventConnection"),
-        cursor=graphene.String()
+        cursor=graphene.String(),
     )
 
     def __init__(self, backfill_job: PartitionBackfill):
@@ -551,7 +551,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         # TODO - need to gate to plus only
 
         log_keys = sorted(
-            instance.compute_log_manager.get_log_keys_for_log_key_prefix(backfill_log_key_prefix, io_type=ComputeIOType.STDERR)
+            instance.compute_log_manager.get_log_keys_for_log_key_prefix(
+                backfill_log_key_prefix, io_type=ComputeIOType.STDERR
+            )
         )
         log_key_to_fetch = cursor.split("/") if cursor else log_keys[0]
         log_data = instance.compute_log_manager.get_log_data(log_key_to_fetch)
@@ -582,9 +584,13 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         current_log_key_idx = log_keys.index(log_key_to_fetch)
         has_more = current_log_key_idx < len(log_keys) - 1
         if has_more:
-            next_log_key = log_keys[current_log_key_idx + 1] if current_log_key_idx < len(log_keys) - 1 else None
+            next_log_key = (
+                log_keys[current_log_key_idx + 1]
+                if current_log_key_idx < len(log_keys) - 1
+                else None
+            )
         else:
-            next_log_key = None # TODO what should this be?
+            next_log_key = None  # TODO what should this be?
         return GrapheneInstigationEventConnection(
             events=events,
             cursor="/".join(next_log_key),
