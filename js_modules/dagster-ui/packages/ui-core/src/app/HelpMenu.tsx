@@ -71,7 +71,7 @@ export const HelpMenu = ({showContactSales = true, onShareFeedback}: Props) => {
               />
               <MenuDivider title="Help" />
               {onShareFeedback ? (
-                <MenuItem icon="send" text="Share feedback" onClick={onShareFeedback} />
+                <MenuItem icon="send" text="Create a support ticket" onClick={onShareFeedback} />
               ) : null}
               <MenuExternalLink
                 href="https://dagster.io/slack"
