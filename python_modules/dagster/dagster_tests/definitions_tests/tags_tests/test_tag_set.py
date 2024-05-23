@@ -22,8 +22,8 @@ def test_invalid_tag_set() -> None:
 
 def test_basic_tag_set_validation() -> None:
     class MyValidTagSet(NamespacedTagSet):
-        foo: Optional[str]
-        bar: Optional[str]
+        foo: Optional[str] = None
+        bar: Optional[str] = None
 
         @classmethod
         def namespace(cls) -> str:
@@ -38,8 +38,8 @@ def test_basic_tag_set_validation() -> None:
 
 def test_basic_tag_set_functionality() -> None:
     class MyValidTagSet(NamespacedTagSet):
-        foo: Optional[str]
-        bar: Optional[str]
+        foo: Optional[str] = None
+        bar: Optional[str] = None
 
         @classmethod
         def namespace(cls) -> str:
