@@ -41,6 +41,10 @@ DISALLOWED_NAMES = set(
 VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
+INVALID_TITLE_CHARACTERS_REGEX_STR = r"[\%\*\"]"
+INVALID_TITLE_CHARACTERS_REGEX = re.compile(INVALID_TITLE_CHARACTERS_REGEX_STR)
+MAX_TITLE_LENGTH = 100
+
 
 class NoValueSentinel:
     """Sentinel value to distinguish unset from None."""
@@ -80,6 +84,46 @@ def is_valid_name(name: str) -> bool:
     check.str_param(name, "name")
 
     return name not in DISALLOWED_NAMES and has_valid_name_chars(name)
+
+
+def is_valid_title_and_reason(title: Optional[str]) -> Tuple[bool, Optional[str]]:
+    check.opt_str_param(title, "title")
+
+    if title is None:
+        return True, None
+
+    if len(title) > MAX_TITLE_LENGTH:
+        return (
+            False,
+            f'"{title}" ({len(title)} characters) is not a valid title in Dagster. Titles must not be longer than {MAX_TITLE_LENGTH}.',
+        )
+
+    if not is_valid_title_chars(title):
+        return (
+            False,
+            f'"{title}" is not a valid title in Dagster. Titles must not contain regex {INVALID_TITLE_CHARACTERS_REGEX_STR}.',
+        )
+
+    return True, None
+
+
+def check_valid_title(title: Optional[str]) -> Optional[str]:
+    """A title is distinguished from a name in that the title is a descriptive string meant for display in the UI.
+    It is not used as an identifier for an object.
+    """
+    is_valid, reason = is_valid_title_and_reason(title)
+    if not is_valid:
+        raise DagsterInvariantViolationError(reason)
+
+    return title
+
+
+def is_valid_title(title: Optional[str]) -> bool:
+    return is_valid_title_and_reason(title)[0]
+
+
+def is_valid_title_chars(title: str):
+    return not bool(INVALID_TITLE_CHARACTERS_REGEX.search(title))
 
 
 def _kv_str(key: object, value: object) -> str:
