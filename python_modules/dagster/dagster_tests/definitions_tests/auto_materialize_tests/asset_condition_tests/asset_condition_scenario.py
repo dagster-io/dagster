@@ -93,7 +93,7 @@ class SchedulingConditionScenarioState(ScenarioState):
             else check.not_none(self.scheduling_condition)
         )
         asset_graph = self.scenario_spec.with_asset_properties(
-            asset,
+            keys=[asset],
             auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(asset_condition),
         ).asset_graph
 

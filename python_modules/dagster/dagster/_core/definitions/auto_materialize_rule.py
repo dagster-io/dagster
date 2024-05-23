@@ -1,17 +1,17 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Optional
 
 import pytz
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeDecisionType,
-    AutoMaterializeRuleSnapshot,
-)
 from dagster._utils.schedules import is_valid_cron_string
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_rule_evaluation import (
+        AutoMaterializeDecisionType,
+        AutoMaterializeRuleSnapshot,
+    )
     from dagster._core.definitions.auto_materialize_rule_impls import (
         AutoMaterializeAssetPartitionsFilter,
         MaterializeOnCronRule,
@@ -49,12 +49,14 @@ class AutoMaterializeRule(ABC):
     are produced by the materialize rules. Other than that, there is no ordering between rules.
     """
 
-    @abstractproperty
-    def decision_type(self) -> AutoMaterializeDecisionType:
+    @property
+    @abstractmethod
+    def decision_type(self) -> "AutoMaterializeDecisionType":
         """The decision type of the rule (either `MATERIALIZE` or `SKIP`)."""
         ...
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def description(self) -> str:
         """A human-readable description of this rule. As a basic guideline, this string should
         complete the sentence: 'Indicates an asset should be (materialize/skipped) when ____'.
@@ -252,8 +254,12 @@ class AutoMaterializeRule(ABC):
 
         return SkipOnRunInProgressRule()
 
-    def to_snapshot(self) -> AutoMaterializeRuleSnapshot:
+    def to_snapshot(self) -> "AutoMaterializeRuleSnapshot":
         """Returns a serializable snapshot of this rule for historical evaluations."""
+        from dagster._core.definitions.auto_materialize_rule_evaluation import (
+            AutoMaterializeRuleSnapshot,
+        )
+
         return AutoMaterializeRuleSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
