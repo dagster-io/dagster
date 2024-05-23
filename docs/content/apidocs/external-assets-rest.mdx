@@ -6,21 +6,64 @@ title: "External Assets REST API reference | Dagster Docs"
 
 As Dagster doesn't control scheduling or materializing [external assets](/concepts/assets/external-assets), it's up to you to keep their metadata updated. Use the endpoints described in this reference to report updates for external assets back to Dagster.
 
+---
+
+## API functionality
+
+Using the External Asset APIs, you can:
+
+- Report an <PyObject object="AssetMaterialization" /> event for an external asset to Dagster
+- Report an asset check evaluation for an external asset to Dagster
+- Report an <PyObject object="AssetObservation" /> event for an external asset to Dagster
+
+---
+
+## Authentication
+
+Authentication is required only if requests are being made against a Dagster+ instance. To authenticate, provide a valid [Dagster+ user token](/dagster-plus/account/managing-user-agent-tokens#managing-user-tokens) using the `Dagster-Cloud-Api-Token` header, for example:
+
+```bash
+curl --request POST \
+    --url https://{ORGANIZATION}.dagster.cloud/{deployment_name}/report_asset_materialization/ \
+    --header 'Content-Type: application/json' \
+    --header 'Dagster-Cloud-Api-Token: {TOKEN}' \
+    --data '{
+        "asset_key": "{ASSET_KEY}",
+        "metadata": {
+            "rows": 10
+        },
+    }'
+```
+
+---
+
+## Constructing request URLs
+
+The full URL you send requests to will vary depending on how you access your Dagster instance:
+
+| Location               | URL                                             | Example request URL                                   |
+| ---------------------- | ----------------------------------------------- | ----------------------------------------------------- |
+| Local webserver        | Defaults to `localhost:3000`                    | `localhost:3000/report_asset_check`                   |
+| Dagster+               | `{ORGANIZATION}.dagster.plus/{DEPLOYMENT_NAME}` | `https://my-org.dagster.plus/prod/report_asset_check` |
+| Open source deployment | URL of the Dagster webserver                    | `https://dagster.my-org.com/report_asset_check`       |
+
+---
+
+## Available APIs
+
 | Endpoint                                                                  | Description                                                                        |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [`POST /report_asset_materialization/`](#report-an-asset-materialization) | Records an <PyObject object="AssetMaterialization" /> event for an external asset. |
 | `POST /report_asset_check/`                                               | Records an asset check evaluation for an external asset.                           |
 | `POST /report_asset_observation/`                                         | Records an <PyObject object="AssetObservation" /> event for an external asset.     |
 
----
-
-## Report an asset materialization
+### Report an asset materialization
 
 Records an <PyObject object="AssetMaterialization" /> event for an external asset. This event type notifies the Dagster framework that a materialized value has been produced for an asset.
 
-Using this endpoint, you could report to Dagster that an [external asset](/concepts/assets/external-assets) has been updated and include \[metadata about the materialization]\(/concepts/metadata-tags/asset-metadata. For example, the number of updated rows, the time the update occurred, and so on.
+Using this endpoint, you could report to Dagster that an [external asset](/concepts/assets/external-assets) has been updated and include [metadata about the materialization](/concepts/metadata-tags/asset-metadata). For example, the number of updated rows, the time the update occurred, and so on.
 
-### Resources
+#### Resources
 
 <table
   className="table"
@@ -84,7 +127,7 @@ Using this endpoint, you could report to Dagster that an [external asset](/conce
   </tbody>
 </table>
 
-### Parameters
+#### Parameters
 
 Parameters can be passed in multiple ways and will be considered in the following order:
 
@@ -187,19 +230,19 @@ Parameters can be passed in multiple ways and will be considered in the followin
   </tbody>
 </table>
 
-### Returns
+#### Returns
 
 The API will return JSON, whether the request succeeds or fails.
 
 - `200 OK` - Response body contains an empty object: `{}`
 - `400 Bad request` - Response body contains an `error` object: `{"error": ...}`
 
-### Examples
+#### Examples
 
 <TabGroup>
 <TabItem name="Local webserver">
 
-#### Local webserver
+##### Local webserver
 
 Report an asset materialization against locally running webserver:
 
@@ -210,7 +253,7 @@ curl -X POST localhost:3000/report_asset_materialization/{ASSET_KEY}
 </TabItem>
 <TabItem name="Dagster+">
 
-#### Dagster+
+##### Dagster+
 
 Report an asset materialization against Dagster+ with a JSON body via cURL:
 
@@ -250,7 +293,7 @@ response.raise_for_status()
 </TabItem>
 <TabItem name="Open source deployment">
 
-#### Open source deployment
+##### Open source deployment
 
 Report an asset materialization against an open source deployment (hosted at `DAGSTER_WEBSERVER_HOST`) in Python using `requests`:
 
