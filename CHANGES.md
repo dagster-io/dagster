@@ -1,14 +1,14 @@
 # Changelog
 
-# 1.7.6 (core) / 0.23.6 (libraries)
+# 1.7.7 (core) / 0.23.7 (libraries)
 
 ### New
 
 - [ui] Command clicking on nodes in the asset lineage tab will now open them in a separate tab. Same with external asset links in the asset graph.
-- [dagster-dbt] Added support for `dbt-core==1.8.*`.
 - Added support for setting a custom job namespace in user code deployments. (thanks [@tmatthews0020](https://github.com/tmatthews0020)!)
 - Removed warnings due to use of `datetime.utcfromtimestamp` (thanks @[dbrtly](https://github.com/dbrtly)!)
 - Custom smtp user can now be used for e-mail alerts (thanks @[edsoncezar16](https://github.com/edsoncezar16)!)
+- [dagster-dbt] Added support for `dbt-core==1.8.*`.
 - [dagster-embedded-elt] Failed dlt pipelines are now accurately reflected on the asset materialization (thanks @[edsoncezar16](https://github.com/edsoncezar16)!)
 
 ### Bugfixes
