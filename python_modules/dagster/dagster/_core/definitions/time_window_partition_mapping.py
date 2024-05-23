@@ -3,7 +3,11 @@ from typing import List, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionsDefinition,
+    PartitionsSubset,
+)
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
@@ -129,13 +133,28 @@ class TimeWindowPartitionMapping(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> UpstreamPartitionsResult:
-        if not isinstance(downstream_partitions_subset, BaseTimeWindowPartitionsSubset):
-            check.failed("downstream_partitions_subset must be a BaseTimeWindowPartitionsSubset")
-
+        if isinstance(downstream_partitions_subset, AllPartitionsSubset):
+            from_partitions_subset = TimeWindowPartitionsSubset.from_all_partitions_subset(
+                downstream_partitions_subset
+            )
+        else:
+            from_partitions_subset = check.inst_param(
+                cast(BaseTimeWindowPartitionsSubset, downstream_partitions_subset),
+                "downstream_partitions_subset",
+                BaseTimeWindowPartitionsSubset,
+            )
         return self._map_partitions(
-            downstream_partitions_subset.partitions_def,
-            upstream_partitions_def,
-            downstream_partitions_subset,
+            from_partitions_def=check.inst_param(
+                cast(TimeWindowPartitionsDefinition, downstream_partitions_def),
+                "downstream_partitions_def",
+                TimeWindowPartitionsDefinition,
+            ),
+            to_partitions_def=check.inst_param(
+                cast(TimeWindowPartitionsDefinition, upstream_partitions_def),
+                "upstream_partitions_def",
+                TimeWindowPartitionsDefinition,
+            ),
+            from_partitions_subset=from_partitions_subset,
             start_offset=self.start_offset,
             end_offset=self.end_offset,
             current_time=current_time,
@@ -155,10 +174,29 @@ class TimeWindowPartitionMapping(
         Filters for partitions that exist at the given current_time, fetching the current time
         if not provided.
         """
+        if isinstance(upstream_partitions_subset, AllPartitionsSubset):
+            from_partitions_subset = TimeWindowPartitionsSubset.from_all_partitions_subset(
+                upstream_partitions_subset
+            )
+        else:
+            from_partitions_subset = check.inst_param(
+                cast(BaseTimeWindowPartitionsSubset, upstream_partitions_subset),
+                "upstream_partitions_subset",
+                BaseTimeWindowPartitionsSubset,
+            )
+
         return self._map_partitions(
-            upstream_partitions_def,
-            downstream_partitions_def,
-            upstream_partitions_subset,
+            from_partitions_def=check.inst_param(
+                cast(TimeWindowPartitionsDefinition, upstream_partitions_def),
+                "upstream_partitions_def",
+                TimeWindowPartitionsDefinition,
+            ),
+            to_partitions_def=check.inst_param(
+                cast(TimeWindowPartitionsDefinition, downstream_partitions_def),
+                "downstream_partitions_def",
+                TimeWindowPartitionsDefinition,
+            ),
+            from_partitions_subset=from_partitions_subset,
             end_offset=-self.start_offset,
             start_offset=-self.end_offset,
             current_time=current_time,
@@ -187,9 +225,9 @@ class TimeWindowPartitionMapping(
 
     def _map_partitions(
         self,
-        from_partitions_def: PartitionsDefinition,
-        to_partitions_def: Optional[PartitionsDefinition],
-        from_partitions_subset: PartitionsSubset,
+        from_partitions_def: TimeWindowPartitionsDefinition,
+        to_partitions_def: TimeWindowPartitionsDefinition,
+        from_partitions_subset: BaseTimeWindowPartitionsSubset,
         start_offset: int,
         end_offset: int,
         current_time: Optional[datetime],
@@ -207,15 +245,6 @@ class TimeWindowPartitionMapping(
             mapping_downstream_to_upstream (bool): True if from_partitions_def is the downstream
                 partitions def and to_partitions_def is the upstream partitions def.
         """
-        if not isinstance(from_partitions_subset, BaseTimeWindowPartitionsSubset):
-            check.failed("from_partitions_subset must be a BaseTimeWindowPartitionsSubset")
-
-        if not isinstance(from_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("from_partitions_def must be a TimeWindowPartitionsDefinition")
-
-        if not isinstance(to_partitions_def, TimeWindowPartitionsDefinition):
-            check.failed("to_partitions_def must be a TimeWindowPartitionsDefinition")
-
         if to_partitions_def.timezone != from_partitions_def.timezone:
             raise DagsterInvalidDefinitionError(
                 f"Timezones {to_partitions_def.timezone} and {from_partitions_def.timezone} don't match"
