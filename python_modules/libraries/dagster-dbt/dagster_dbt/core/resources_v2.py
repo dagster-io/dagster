@@ -1673,9 +1673,6 @@ def _get_subset_selection_for_context(
     if exclude:
         default_dbt_selection += ["--exclude", exclude]
 
-    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
-    dbt_resource_props_by_test_name = get_dbt_resource_props_by_test_name(manifest)
-
     assets_def = context.assets_def
     is_asset_subset = assets_def.keys_by_output_name != assets_def.node_keys_by_output_name
     is_checks_subset = (
@@ -1696,15 +1693,15 @@ def _get_subset_selection_for_context(
         # aren't modeled as asset checks currently).
         return default_dbt_selection, None
 
-    selected_dbt_non_test_resources = []
-    for output_name in context.selected_output_names:
-        dbt_resource_props = dbt_resource_props_by_output_name[output_name]
-
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = ".".join(dbt_resource_props["fqn"])
-
-        selected_dbt_non_test_resources.append(fqn_selector)
+    # Explicitly select a dbt resource by its path. Selecting a resource by path is more terse
+    # than selecting it by its fully qualified name.
+    # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
+    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
+    selected_dbt_non_test_resources = get_dbt_resource_names_for_output_names(
+        output_names=context.selected_output_names,
+        dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
@@ -1735,8 +1732,10 @@ def _get_subset_selection_for_context(
         # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
         selected_dbt_resources = [
             *selected_dbt_non_test_resources,
-            *_get_dbt_test_names_for_asset_checks(
-                context.selected_asset_check_keys, dbt_resource_props_by_test_name
+            *get_dbt_test_names_for_asset_checks(
+                check_keys=context.selected_asset_check_keys,
+                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
+                dagster_dbt_translator=dagster_dbt_translator,
             ),
         ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
@@ -1751,8 +1750,10 @@ def _get_subset_selection_for_context(
         # explicitly select the tests that won't be run via indirect selection
         selected_dbt_resources = [
             *selected_dbt_non_test_resources,
-            *_get_dbt_test_names_for_asset_checks(
-                checks_on_non_selected_assets, dbt_resource_props_by_test_name
+            *get_dbt_test_names_for_asset_checks(
+                check_keys=checks_on_non_selected_assets,
+                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
+                dagster_dbt_translator=dagster_dbt_translator,
             ),
         ]
         indirect_selection_override = None
@@ -1794,15 +1795,40 @@ def get_dbt_resource_props_by_test_name(
     }
 
 
-def _get_dbt_test_names_for_asset_checks(
-    check_keys: Iterable[AssetCheckKey], dbt_resource_props_by_test_name
-) -> List[str]:
-    selected_dbt_tests = []
-    for key in check_keys:
-        test_resource_props = dbt_resource_props_by_test_name[key.name]
+def get_dbt_resource_names_for_output_names(
+    output_names: Iterable[str],
+    dbt_resource_props_by_output_name: Mapping[str, Any],
+    dagster_dbt_translator: DagsterDbtTranslator,
+) -> Sequence[str]:
+    # Explicitly select a dbt resource by its file name.
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        return [
+            Path(dbt_resource_props_by_output_name[output_name]["original_file_path"]).stem
+            for output_name in output_names
+        ]
 
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = ".".join(test_resource_props["fqn"])
-        selected_dbt_tests.append(fqn_selector)
-    return selected_dbt_tests
+    # Explictly select a dbt resource by its fully qualified name (FQN).
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+    return [
+        ".".join(dbt_resource_props_by_output_name[output_name]["fqn"])
+        for output_name in output_names
+    ]
+
+
+def get_dbt_test_names_for_asset_checks(
+    check_keys: Iterable[AssetCheckKey],
+    dbt_resource_props_by_test_name: Mapping[str, Any],
+    dagster_dbt_translator: DagsterDbtTranslator,
+) -> Sequence[str]:
+    # Explicitly select a dbt test by its test name.
+    # https://docs.getdbt.com/reference/node-selection/test-selection-examples#more-complex-selection.
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        return [asset_check_key.name for asset_check_key in check_keys]
+
+    # Explictly select a dbt test by its fully qualified name (FQN).
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+    return [
+        ".".join(dbt_resource_props_by_test_name[asset_check_key.name]["fqn"])
+        for asset_check_key in check_keys
+    ]
