@@ -47,12 +47,12 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.utils import is_valid_owner
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -305,9 +305,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
         for key, owners in self._owners_by_key.items():
             for owner in owners:
-                if is_valid_email(owner):
-                    continue
-                elif owner.startswith("team:") and len(owner) > 5:
+                if is_valid_owner(owner):
                     continue
                 else:
                     raise DagsterInvalidDefinitionError(

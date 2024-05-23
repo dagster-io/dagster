@@ -20,6 +20,7 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.sensor_definition import (
     SensorType,
 )
+from dagster._core.definitions.utils import is_valid_email
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -35,7 +36,6 @@ from dagster._core.remote_representation.external_data import (
 )
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
-from dagster._core.utils import is_valid_email
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
