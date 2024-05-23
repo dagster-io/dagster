@@ -41,6 +41,9 @@ DISALLOWED_NAMES = set(
 VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
+VALID_EMAIL_REGEX_STR = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
+VALID_EMAIL_REGEX = re.compile(VALID_EMAIL_REGEX_STR)
+
 INVALID_TITLE_CHARACTERS_REGEX_STR = r"[\%\*\"]"
 INVALID_TITLE_CHARACTERS_REGEX = re.compile(INVALID_TITLE_CHARACTERS_REGEX_STR)
 MAX_TITLE_LENGTH = 100
@@ -262,6 +265,27 @@ def normalize_group_name(group_name: Optional[str]) -> str:
             "Set group_name=None to use the default group_name or set non-empty string"
         )
     return DEFAULT_GROUP_NAME
+
+
+def is_valid_email(email: str) -> bool:
+    return bool(VALID_EMAIL_REGEX.fullmatch(email))
+
+
+def is_valid_user_owner(owner: str) -> bool:
+    return is_valid_email(owner)
+
+
+def is_valid_team_owner(owner: str) -> bool:
+    if not owner.startswith("team:"):
+        return False
+
+    _, _, team_owner = owner.partition("team:")
+
+    return bool(team_owner)
+
+
+def is_valid_owner(owner: str) -> bool:
+    return is_valid_email(owner) or is_valid_team_owner(owner)
 
 
 def config_from_files(config_files: Sequence[str]) -> Mapping[str, Any]:
