@@ -250,3 +250,32 @@ def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
             "primary_key": ["repo_id", "issue_id"],
         },
     }
+
+
+def test_partitioned_materialization(dlt_pipeline: Pipeline) -> None:
+    @dlt_assets(
+        dlt_source=pipeline(),
+        dlt_pipeline=dlt_pipeline,
+        partitions_def=MonthlyPartitionsDefinition(start_date="2022-08-09"),
+    )
+    def example_pipeline_assets(
+        context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+    ):
+        month = context.partition_key[:-3]
+        yield from dlt_pipeline_resource.run(context=context, dlt_source=pipeline(month))
+
+    async def run_partition(year: str):
+        return materialize(
+            [example_pipeline_assets],
+            resources={"dlt_pipeline_resource": DagsterDltResource()},
+            partition_key=year,
+        )
+
+    async def main():
+        [res1, res2] = await asyncio.gather(
+            run_partition("2022-09-01"), run_partition("2022-10-01")
+        )
+        assert res1.success
+        assert res2.success
+
+    asyncio.run(main())
