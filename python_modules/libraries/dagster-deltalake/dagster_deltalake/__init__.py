@@ -7,6 +7,7 @@ from .config import (
     AzureConfig as AzureConfig,
     LocalConfig as LocalConfig,
     S3Config as S3Config,
+    GcsConfig as GcsConfig,
 )
 from .handler import (
     DeltalakeBaseArrowTypeHandler as DeltalakeBaseArrowTypeHandler,
