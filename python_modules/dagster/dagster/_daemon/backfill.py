@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from typing import Iterable, Mapping, Optional, Sequence, cast
 
@@ -12,6 +13,25 @@ from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.error import SerializableErrorInfo
+
+
+def _get_instigation_logger_if_env_var_set(
+    instance, backfill_id: str, default_logger: logging.Logger
+):
+    if os.getenv("STORE_BACKFILL_LOGS", None):
+        evaluation_time = pendulum.now("UTC")
+        log_key = ["backfill", backfill_id, evaluation_time.strftime("%Y%m%d_%H%M%S")]
+        with InstigationLogger(
+            log_key,
+            instance,
+            repository_name=None,
+            name=backfill_id,
+        ) as _logger:
+            backfill_logger = cast(logging.Logger, _logger)
+            yield backfill_logger
+
+    else:
+        yield default_logger
 
 
 def execute_backfill_iteration(
@@ -49,15 +69,9 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        evaluation_time = pendulum.now("UTC")
-        log_key = ["backfill", backfill_id, evaluation_time.strftime("%Y%m%d_%H%M%S")]
-        with InstigationLogger(
-            log_key,
-            instance,
-            repository_name=None,
-            name=backfill_id,
+        with _get_instigation_logger_if_env_var_set(
+            instance, backfill.backfill_id, logger
         ) as _logger:
-            backfill_logger = cast(logging.Logger, _logger)
             # create a logger that will always include the backfill_id as an `extra`
             backfill_logger = cast(
                 logging.Logger,
