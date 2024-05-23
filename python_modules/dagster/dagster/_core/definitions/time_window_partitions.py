@@ -3,7 +3,7 @@ import hashlib
 import json
 import re
 from abc import abstractmethod, abstractproperty
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
 from functools import cached_property
 from typing import (
@@ -383,7 +383,18 @@ class TimeWindowPartitionsDefinition(
             return None
 
         if self.is_basic_daily:
-            return (last_partition_window.start - first_partition_window.start).days + 1
+            return (
+                date(
+                    last_partition_window.start.year,
+                    last_partition_window.start.month,
+                    last_partition_window.start.day,
+                )
+                - date(
+                    first_partition_window.start.year,
+                    first_partition_window.start.month,
+                    first_partition_window.start.day,
+                )
+            ).days + 1
 
         fixed_minute_interval = get_fixed_minute_interval(self.cron_schedule)
         if fixed_minute_interval:
