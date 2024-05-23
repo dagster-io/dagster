@@ -11,17 +11,12 @@ export const FeatureFlag = {
   flagDisableWebsockets: 'flagDisableWebsockets' as const,
   flagSidebarResources: 'flagSidebarResources' as const,
   flagDisableAutoLoadDefaults: 'flagDisableAutoLoadDefaults' as const,
-  flagUseNewOverviewPage: 'flagUseNewOverviewPage' as const,
   flagSettingsPage: 'flagSettingsPage' as const,
 };
 export type FeatureFlagType = keyof typeof FeatureFlag;
 
 export const getFeatureFlags: () => FeatureFlagType[] = memoize(
-  () =>
-    getJSONForKey(DAGSTER_FLAGS_KEY) || [
-      // Enable the new asset details page by default.
-      FeatureFlag.flagUseNewOverviewPage,
-    ],
+  () => getJSONForKey(DAGSTER_FLAGS_KEY) || [],
 );
 
 export const featureEnabled = memoize((flag: FeatureFlagType) => getFeatureFlags().includes(flag));

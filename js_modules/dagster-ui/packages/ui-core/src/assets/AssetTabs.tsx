@@ -4,7 +4,6 @@ import {useMemo} from 'react';
 
 import {AssetViewParams} from './types';
 import {AssetViewDefinitionNodeFragment} from './types/AssetView.types';
-import {FeatureFlag, featureEnabled} from '../app/Flags';
 import {TabLink} from '../ui/TabLink';
 
 interface Props {
@@ -34,8 +33,6 @@ export const DEFAULT_ASSET_TAB_ORDER = [
   'partitions',
   'events',
   'checks',
-  'plots',
-  'definition',
   'lineage',
   'automation',
 ] as const;
@@ -57,14 +54,12 @@ export const buildAssetViewParams = (params: AssetViewParams) => `?${qs.stringif
 
 export const buildAssetTabMap = (input: AssetTabConfigInput) => {
   const {definition, params} = input;
-  const flagUseNewOverviewPage = featureEnabled(FeatureFlag.flagUseNewOverviewPage);
 
   return {
     overview: {
       id: 'overview',
       title: 'Overview',
       to: buildAssetViewParams({...params, view: 'overview'}),
-      hidden: !flagUseNewOverviewPage,
     } as AssetTabConfig,
     partitions: {
       id: 'partitions',
@@ -81,19 +76,6 @@ export const buildAssetTabMap = (input: AssetTabConfigInput) => {
       id: 'events',
       title: 'Events',
       to: buildAssetViewParams({...params, view: 'events', partition: undefined}),
-    } as AssetTabConfig,
-    plots: {
-      id: 'plots',
-      title: 'Plots',
-      to: buildAssetViewParams({...params, view: 'plots'}),
-      hidden: flagUseNewOverviewPage,
-    } as AssetTabConfig,
-    definition: {
-      id: 'definition',
-      title: 'Definition',
-      to: buildAssetViewParams({...params, view: 'definition'}),
-      disabled: !definition,
-      hidden: flagUseNewOverviewPage,
     } as AssetTabConfig,
     lineage: {
       id: 'lineage',
