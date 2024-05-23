@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Generic,
     Iterable,
@@ -893,6 +894,64 @@ class DbtCliInvocation:
 T = TypeVar("T", bound=DbtDagsterEventType)
 
 
+def _get_dbt_resource_props_from_event(
+    invocation: DbtCliInvocation, event: DbtDagsterEventType
+) -> Dict[str, Any]:
+    unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
+    return check.not_none(invocation.manifest["nodes"].get(unique_id))
+
+
+def _fetch_row_count_metadata(
+    invocation: DbtCliInvocation,
+    event: DbtDagsterEventType,
+) -> Optional[Dict[str, Any]]:
+    """Threaded task which fetches row counts for materialized dbt models in a dbt run
+    once they are built, and attaches the row count as metadata to the event.
+    """
+    if not isinstance(event, (AssetMaterialization, Output)):
+        return None
+
+    adapter = check.not_none(invocation.adapter)
+
+    dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+    is_view = dbt_resource_props["config"]["materialized"] == "view"
+
+    # Avoid counting rows for views, since they may include complex SQL queries
+    # that are costly to execute. We can revisit this in the future if there is
+    # a demand for it.
+    if is_view:
+        return None
+
+    unique_id = dbt_resource_props["unique_id"]
+    logger.debug("Fetching row count for %s", unique_id)
+    table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+    try:
+        with adapter.connection_named(f"row_count_{unique_id}"):
+            query_result = adapter.execute(
+                f"""
+                    SELECT
+                    count(*) as row_count
+                    FROM
+                    {table_str}
+                """,
+                fetch=True,
+            )
+        query_result_table = query_result[1]
+        # some adapters do not output the column names, so we need
+        # to index by position
+        row_count = query_result_table[0][0]
+        return {**TableMetadataSet(row_count=row_count)}
+
+    except Exception as e:
+        logger.exception(
+            f"An error occurred while fetching row count for {unique_id}. Row count metadata"
+            " will not be included in the event.\n\n"
+            f"Exception: {e}"
+        )
+        return None
+
+
 class DbtEventIterator(Generic[T], abc.Iterator):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.
@@ -912,63 +971,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     def __iter__(self) -> "DbtEventIterator[T]":
         return self
 
-    def _get_dbt_resource_props_from_event(self, event: DbtDagsterEventType) -> Dict[str, Any]:
-        unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
-        return check.not_none(self._dbt_cli_invocation.manifest["nodes"].get(unique_id))
-
-    def _fetch_and_attach_row_count_metadata(
-        self,
-        event: DbtDagsterEventType,
-    ) -> DbtDagsterEventType:
-        """Threaded task which fetches row counts for materialized dbt models in a dbt run
-        once they are built, and attaches the row count as metadata to the event.
-        """
-        if not isinstance(event, (AssetMaterialization, Output)):
-            return event
-
-        adapter = check.not_none(self._dbt_cli_invocation.adapter)
-        dbt_resource_props = self._get_dbt_resource_props_from_event(event)
-        is_view = dbt_resource_props["config"]["materialized"] == "view"
-
-        # Avoid counting rows for views, since they may include complex SQL queries
-        # that are costly to execute. We can revisit this in the future if there is
-        # a demand for it.
-        if is_view:
-            return event
-
-        unique_id = dbt_resource_props["unique_id"]
-        logger.debug("Fetching row count for %s", unique_id)
-        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
-
-        try:
-            with adapter.connection_named(f"row_count_{unique_id}"):
-                query_result = adapter.execute(
-                    f"""
-                        SELECT
-                        count(*) as row_count
-                        FROM
-                        {table_str}
-                    """,
-                    fetch=True,
-                )
-
-            query_result_table = query_result[1]
-            # some adapters do not output the column names, so we need
-            # to index by position
-            row_count = query_result_table[0][0]
-            new_metadata = {
-                **TableMetadataSet(row_count=row_count),
-            }
-            return event.with_metadata({**event.metadata, **new_metadata})
-
-        except Exception as e:
-            logger.exception(
-                f"An error occurred while fetching row count for {unique_id}. Row count metadata"
-                " will not be included in the event.\n\n"
-                f"Exception: {e}"
-            )
-            return event
-
     @public
     @experimental
     def fetch_row_counts(
@@ -985,6 +987,32 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
+        return self._attach_metadata(_fetch_row_count_metadata)
+
+    def _attach_metadata(
+        self,
+        fn: Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]],
+    ) -> "DbtEventIterator[DbtDagsterEventType]":
+        """Runs a threaded task to attach metadata to each event in the iterator.
+
+        Args:
+            fn (Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]]):
+                A function which takes a DbtCliInvocation and a DbtDagsterEventType and returns
+                a dictionary of metadata to attach to the event.
+
+        Returns:
+             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events for dbt models, with any metadata output
+                by the function attached, yielded in the order they are emitted by dbt.
+        """
+
+        def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
+            result = fn(self._dbt_cli_invocation, event)
+            if result is None:
+                return event
+
+            return event.with_metadata({**event.metadata, **result})
+
         # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
         # so that the DuckDB lock is released. This is because DuckDB does not allow for
         # opening multiple connections to the same database when a write connection, such
@@ -998,21 +1026,21 @@ class DbtEventIterator(Generic[T], abc.Iterator):
         except ImportError:
             pass
 
-        def _threadpool_fetch_and_attach_row_count_metadata() -> (
+        def _threadpool_wrap_map_fn() -> (
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
         ):
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
-                thread_name_prefix="fetch_row_counts",
+                thread_name_prefix=f"dbt_attach_metadata_{fn.__name__}",
             ) as executor:
                 yield from imap(
                     executor=executor,
                     iterable=event_stream,
-                    func=self._fetch_and_attach_row_count_metadata,
+                    func=_map_fn,
                 )
 
         return DbtEventIterator(
-            _threadpool_fetch_and_attach_row_count_metadata(),
+            _threadpool_wrap_map_fn(),
             dbt_cli_invocation=self._dbt_cli_invocation,
         )
 
