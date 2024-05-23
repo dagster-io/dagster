@@ -170,3 +170,19 @@ class TableMetadataSet(NamespacedMetadataSet):
     @classmethod
     def namespace(cls) -> str:
         return "dagster"
+
+
+class StorageAddressMetadataSet(NamespacedMetadataSet):
+    """Metadata entries that describe where an asset is stored.
+
+    Args:
+        storage_address (Optional[str]): A string representation of
+            the place the asset is stored. For example, a URL of an
+            S3 bucket or a fully qualified table name in a database.
+    """
+
+    storage_address: Optional[str] = None
+
+    @classmethod
+    def namespace(cls) -> str:
+        return "dagster"
