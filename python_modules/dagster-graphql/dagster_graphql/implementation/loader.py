@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from dagster import (
     DagsterInstance,
@@ -17,7 +17,6 @@ from dagster._core.remote_representation.external_data import (
     ExternalAssetNode,
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
-from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
@@ -151,32 +150,6 @@ class RepositoryScopedBatchLoader:
             )
         )
         return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)
-
-
-class BatchRunLoader:
-    """A batch loader that fetches a set of runs by run_id. This loader is expected to be instantiated
-    once with a set of run_ids. For example, for a particular asset, we can fetch a list of asset
-    materializations, all of which may have been materialized from a different run.
-    """
-
-    def __init__(self, instance: DagsterInstance, run_ids: Iterable[str]):
-        self._instance = instance
-        self._run_ids: Set[str] = set(run_ids)
-        self._records: Dict[str, RunRecord] = {}
-
-    def get_run_record_by_run_id(self, run_id: str) -> Optional[RunRecord]:
-        if run_id not in self._run_ids:
-            check.failed(
-                f"Run id {run_id} not recognized for this loader.  Expected one of: {self._run_ids}"
-            )
-        if self._records.get(run_id) is None:
-            self._fetch()
-        return self._records.get(run_id)
-
-    def _fetch(self) -> None:
-        records = self._instance.get_run_records(RunsFilter(run_ids=list(self._run_ids)))
-        for record in records:
-            self._records[record.dagster_run.run_id] = record
 
 
 class CrossRepoAssetDependedByLoader:

@@ -72,18 +72,22 @@ export const AssetGroupRoot = ({
   );
 
   const onNavigateToSourceAssetNode = useCallback(
-    (node: AssetLocation) => {
+    (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
+      let path;
       if (node.groupName && node.repoAddress) {
-        history.push(
-          workspacePathFromAddress(
-            node.repoAddress,
-            `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
-              .map(encodeURIComponent)
-              .join('/')}`,
-          ),
+        path = workspacePathFromAddress(
+          node.repoAddress,
+          `/asset-groups/${node.groupName}/lineage/${node.assetKey.path
+            .map(encodeURIComponent)
+            .join('/')}`,
         );
       } else {
-        history.push(assetDetailsPathForKey(node.assetKey, {view: 'definition'}));
+        path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+      }
+      if (e.metaKey) {
+        window.open(path, '_blank');
+      } else {
+        history.push(path);
       }
     },
     [history],

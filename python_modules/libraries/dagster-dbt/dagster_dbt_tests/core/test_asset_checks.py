@@ -1,5 +1,5 @@
 import os
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set, cast
 
 import pytest
 from dagster import (
@@ -421,9 +421,36 @@ def test_materialize_asset_no_checks(
     assert len(result.get_asset_observation_events()) == 0
 
 
+@pytest.mark.parametrize(
+    "dagster_dbt_translator",
+    [
+        dagster_dbt_translator_with_checks,
+        DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(
+                enable_asset_checks=True, enable_dbt_selection_by_name=True
+            )
+        ),
+    ],
+)
 def test_materialize_checks_no_asset(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: Dict[str, Any],
+    dbt_commands: List[List[str]],
+    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> None:
+    expected_dbt_selection = {
+        "test_dagster_asset_checks.not_null_customers_customer_id",
+        "test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
+        "test_dagster_asset_checks.singular_test_with_single_dependency",
+        "test_dagster_asset_checks.unique_customers_customer_id",
+    }
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        expected_dbt_selection = {
+            "not_null_customers_customer_id",
+            "singular_test_with_meta_and_multiple_dependencies",
+            "singular_test_with_single_dependency",
+            "unique_customers_customer_id",
+        }
+
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
         dbt_commands,
@@ -431,12 +458,8 @@ def test_materialize_checks_no_asset(
             AssetSelection.assets(AssetKey(["customers"]))
             - AssetSelection.assets(AssetKey(["customers"])).without_checks()
         ),
-        expected_dbt_selection={
-            "test_dagster_asset_checks.not_null_customers_customer_id",
-            "test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
-            "test_dagster_asset_checks.singular_test_with_single_dependency",
-            "test_dagster_asset_checks.unique_customers_customer_id",
-        },
+        expected_dbt_selection=expected_dbt_selection,
+        dagster_dbt_translator=dagster_dbt_translator,
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 0
@@ -444,6 +467,31 @@ def test_materialize_checks_no_asset(
     # since we're not materializing the asset, we can't use indirect selection and therefore
     # don't run the singular or relationship tests
     assert len(result.get_asset_observation_events()) == 0
+
+
+def test_extra_checks(
+    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+) -> None:
+    result = _materialize_dbt_assets(
+        test_asset_checks_manifest,
+        dbt_commands,
+        selection=(
+            AssetSelection.assets(AssetKey(["customers"]))
+            | AssetSelection.checks(
+                AssetCheckKey(AssetKey(["stg_orders"]), "unique_stg_orders_order_id")
+            )
+        ),
+        expected_dbt_selection={
+            "test_dagster_asset_checks.customers",
+            "test_dagster_asset_checks.staging.unique_stg_orders_order_id",
+        },
+    )
+    assert result.success
+    assert len(result.get_asset_materialization_events()) == 1
+    # 4 tests on customers, and unique_stg_orders_order_id
+    assert len(result.get_asset_check_evaluations()) == 5
+    # no tests were excluded, so we include singular and relationship tests
+    assert len(result.get_asset_observation_events()) == 6
 
 
 def test_asset_checks_results(
@@ -463,6 +511,10 @@ def test_asset_checks_results(
                 "invocation_id"
             ]
 
+        for event in events:
+            if isinstance(event, AssetCheckResult):
+                assert cast(int, event.metadata["Execution Duration"].value) > 0
+
         expected_results = [
             AssetCheckResult(
                 passed=True,
@@ -474,6 +526,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "pass",
+                    "dagster_dbt/failed_row_count": 0,
                 },
             ),
             AssetCheckResult(
@@ -486,6 +539,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "pass",
+                    "dagster_dbt/failed_row_count": 0,
                 },
             ),
             AssetCheckResult(
@@ -499,6 +553,7 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "warn",
+                    "dagster_dbt/failed_row_count": 1,
                 },
             ),
             AssetCheckResult(
@@ -512,12 +567,33 @@ def test_asset_checks_results(
                     ),
                     "invocation_id": invocation_id,
                     "status": "fail",
+                    "dagster_dbt/failed_row_count": 4,
                 },
             ),
         ]
 
+        # filter these out for comparison
+        non_deterministic_metadata_keys = ["Execution Duration"]
+        check_events_without_non_deterministic_metadata = {}
+        for event in events:
+            if isinstance(event, AssetCheckResult):
+                check_events_without_non_deterministic_metadata[
+                    event.asset_key, event.check_name
+                ] = event._replace(
+                    metadata={
+                        k: v
+                        for k, v in event.metadata.items()
+                        if k not in non_deterministic_metadata_keys
+                    }
+                )
+
         for expected_asset_check_result in expected_results:
-            assert expected_asset_check_result in events
+            assert (
+                check_events_without_non_deterministic_metadata[
+                    expected_asset_check_result.asset_key, expected_asset_check_result.check_name
+                ]
+                == expected_asset_check_result
+            )
 
         yield from events
 

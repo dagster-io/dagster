@@ -189,7 +189,7 @@ class MongodbSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Mongodb.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/mongodb
+        Documentation for this source is no longer available (see MongodbV2Source)
 
         Args:
             name (str): The name of the destination.
@@ -959,7 +959,7 @@ class KustomerSingerSource(GeneratedAirbyteSource):
     def __init__(self, name: str, api_token: str, start_date: str):
         """Airbyte Source for Kustomer Singer.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/kustomer
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/kustomer-singer
 
         Args:
             name (str): The name of the destination.
@@ -1011,7 +1011,7 @@ class ScaffoldJavaJdbcSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Scaffold Java Jdbc.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/scaffold_java_jdbc
+        Documentation for this source is no longer available.
 
         Args:
             name (str): The name of the destination.
@@ -1155,7 +1155,7 @@ class GoogleAnalyticsV4Source(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Google Analytics V4.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/google-analytics-universal-analytics
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/google-analytics-v4
 
         Args:
             name (str): The name of the destination.
@@ -1757,7 +1757,7 @@ class ExchangeRatesSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Exchange Rates.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/exchangeratesapi
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/exchange-rates
 
         Args:
             name (str): The name of the destination.
@@ -2094,7 +2094,7 @@ class ElasticsearchSource(GeneratedAirbyteSource):
     ):
         r"""Airbyte Source for Elasticsearch.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/source/elasticsearch
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/elasticsearch
 
         Args:
             name (str): The name of the destination.
@@ -2175,7 +2175,7 @@ class SearchMetricsSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Search Metrics.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/seacrh-metrics
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/search-metrics
 
         Args:
             name (str): The name of the destination.
@@ -3934,7 +3934,7 @@ class PaypalTransactionSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Paypal Transaction.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/paypal-transactions
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/paypal-transaction
 
         Args:
             name (str): The name of the destination.
@@ -4301,7 +4301,7 @@ class PythonHttpTutorialSource(GeneratedAirbyteSource):
     def __init__(self, name: str, start_date: str, base: str, access_key: Optional[str] = None):
         """Airbyte Source for Python Http Tutorial.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/exchangeratesapi
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/exchange-rates
 
         Args:
             name (str): The name of the destination.
@@ -4898,7 +4898,7 @@ class SftpSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Sftp.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/source/sftp
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/sftp
 
         Args:
             name (str): The name of the destination.
@@ -5276,7 +5276,7 @@ class ZendeskSunshineSource(GeneratedAirbyteSource):
     ):
         """Airbyte Source for Zendesk Sunshine.
 
-        Documentation can be found at https://docs.airbyte.com/integrations/sources/zendesk_sunshine
+        Documentation can be found at https://docs.airbyte.com/integrations/sources/zendesk-sunshine
 
         Args:
             name (str): The name of the destination.

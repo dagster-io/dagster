@@ -74,6 +74,8 @@ PARTITION_PROGRESS_QUERY = """
         hasCancelPermission
         hasResumePermission
         user
+        title
+        description
       }
       ... on PythonError {
         message
@@ -1124,6 +1126,71 @@ class TestDaemonPartitionBackfill(ExecutingGraphQLContextTestMatrix):
         assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
         assert result.data["partitionBackfillOrError"]["id"] == backfill_id
         assert result.data["partitionBackfillOrError"]["user"] == user_email
+
+    def test_set_title_and_description_for_backfill(self, graphql_context):
+        title = "Test backfill"
+        description = "This is a test backfill"
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3"],
+                    "title": title,
+                    "description": description,
+                }
+            },
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "LaunchBackfillSuccess"
+        backfill_id = result.data["launchPartitionBackfill"]["backfillId"]
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            PARTITION_PROGRESS_QUERY,
+            variables={"backfillId": backfill_id},
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["partitionBackfillOrError"]["__typename"] == "PartitionBackfill"
+        assert result.data["partitionBackfillOrError"]["id"] == backfill_id
+        assert result.data["partitionBackfillOrError"]["title"] == title
+        assert result.data["partitionBackfillOrError"]["description"] == description
+
+    def test_set_title_and_description_for_backfill_invalid_title(self, graphql_context):
+        title = "Title with invalid characters * %"
+        description = "This is a test backfill"
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            LAUNCH_PARTITION_BACKFILL_MUTATION,
+            variables={
+                "backfillParams": {
+                    "selector": {
+                        "repositorySelector": repository_selector,
+                        "partitionSetName": "integers_partition_set",
+                    },
+                    "partitionNames": ["2", "3"],
+                    "title": title,
+                    "description": description,
+                }
+            },
+        )
+
+        assert result.data
+        assert result.data["launchPartitionBackfill"]["__typename"] == "PythonError"
+        assert (
+            '"Title with invalid characters * %" is not a valid title in Dagster'
+            in result.data["launchPartitionBackfill"]["message"]
+        )
 
 
 class TestLaunchDaemonBackfillFromFailure(ExecutingGraphQLContextTestMatrix):

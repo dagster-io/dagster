@@ -42,8 +42,13 @@ export const AssetsGroupsGlobalGraphRoot = () => {
   );
 
   const onNavigateToSourceAssetNode = useCallback(
-    (node: AssetLocation) => {
-      history.push(assetDetailsPathForKey(node.assetKey, {view: 'definition'}));
+    (e: Pick<React.MouseEvent<any>, 'metaKey'>, node: AssetLocation) => {
+      const path = assetDetailsPathForKey(node.assetKey, {view: 'definition'});
+      if (e.metaKey) {
+        window.open(path, '_blank');
+      } else {
+        history.push(path);
+      }
     },
     [history],
   );

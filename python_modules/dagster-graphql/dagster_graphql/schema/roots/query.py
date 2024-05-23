@@ -76,9 +76,9 @@ from ...implementation.fetch_resources import (
     get_top_level_resources_or_error,
 )
 from ...implementation.fetch_runs import (
+    gen_run_by_id,
     get_execution_plan,
     get_logs_for_run,
-    get_run_by_id,
     get_run_group,
     get_run_tag_keys,
     get_run_tags,
@@ -746,8 +746,8 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
         )
 
-    def resolve_pipelineRunOrError(self, graphene_info: ResolveInfo, runId: graphene.ID):
-        return get_run_by_id(graphene_info, runId)
+    async def resolve_pipelineRunOrError(self, graphene_info: ResolveInfo, runId: graphene.ID):
+        return await gen_run_by_id(graphene_info, runId)
 
     def resolve_runsOrError(
         self,
@@ -779,8 +779,8 @@ class GrapheneQuery(graphene.ObjectType):
             limit=limit,
         )
 
-    def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
-        return get_run_by_id(graphene_info, runId)
+    async def resolve_runOrError(self, graphene_info: ResolveInfo, runId):
+        return await gen_run_by_id(graphene_info, runId)
 
     @capture_error
     def resolve_partitionSetsOrError(

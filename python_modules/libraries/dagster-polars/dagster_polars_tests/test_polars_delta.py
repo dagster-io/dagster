@@ -42,7 +42,7 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
         filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
     )
     saved_path = handled_output_events[0].event_specific_data.metadata["path"].value  # type: ignore
-    assert handled_output_events[0].event_specific_data.metadata["row_count"].value == 3  # type: ignore
+    assert handled_output_events[0].event_specific_data.metadata["dagster/row_count"].value == 3  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
     assert isinstance(saved_path, str)
 
@@ -52,7 +52,7 @@ def test_polars_delta_io_manager_append(polars_delta_io_manager: PolarsDeltaIOMa
     handled_output_events = list(
         filter(lambda evt: evt.is_handled_output, result.events_for_node("append_asset"))
     )
-    assert handled_output_events[0].event_specific_data.metadata["row_count"].value == 6  # type: ignore
+    assert handled_output_events[0].event_specific_data.metadata["dagster/row_count"].value == 6  # type: ignore
     assert handled_output_events[0].event_specific_data.metadata["append_row_count"].value == 3  # type: ignore
 
     pl_testing.assert_frame_equal(pl.concat([df, df]), pl.read_delta(saved_path))

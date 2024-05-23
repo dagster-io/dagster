@@ -1,5 +1,6 @@
 import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useDeferredValue} from 'react';
 
 import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
@@ -14,7 +15,7 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
-const POLL_INTERVAL = 60 * 1000;
+const POLL_INTERVAL = 5 * 1000;
 
 const hourWindowToOffset = (hourWindow: HourWindow) => {
   switch (hourWindow) {
@@ -79,7 +80,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const {jobs, initialLoading, refreshState} = useRunsForTimeline(range);
+  const runsForTimelineRet = useRunsForTimeline(range);
+
+  // Use deferred value to allow paginating quickly with the UI feeling more responsive.
+  const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
 
   React.useEffect(() => {
     if (!initialLoading) {

@@ -134,6 +134,12 @@ class AssetRecord(NamedTuple):
     asset_entry: AssetEntry
 
 
+class AssetCheckSummaryRecord(NamedTuple):
+    asset_check_key: AssetCheckKey
+    last_check_execution_record: Optional[AssetCheckExecutionRecord]
+    last_run_id: Optional[str]
+
+
 class PlannedMaterializationInfo(NamedTuple):
     """Internal representation of an planned materialization event, containing storage_id / run_id.
 
@@ -311,6 +317,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     def get_asset_records(
         self, asset_keys: Optional[Sequence[AssetKey]] = None
     ) -> Sequence[AssetRecord]:
+        pass
+
+    @abstractmethod
+    def get_asset_check_summary_records(
+        self, asset_check_keys: Sequence[AssetCheckKey]
+    ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
         pass
 
     @property

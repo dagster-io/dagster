@@ -27,7 +27,6 @@ const applyTextStyles = (children, colors) => {
 
 const Admonition = ({style, children}) => {
   const {colors, icon} = ADMONITION_STYLES[style];
-  console.log(children);
   return (
     <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} p-4 my-4`}>
       <div className="flex">

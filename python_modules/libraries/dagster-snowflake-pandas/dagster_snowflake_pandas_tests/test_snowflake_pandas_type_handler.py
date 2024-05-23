@@ -336,7 +336,7 @@ def test_time_window_partitioned_asset(io_manager):
             if event.event_type_value == "ASSET_MATERIALIZATION"
         )
         meta = materialization.materialization.metadata["dagster/partition_row_count"]
-        assert cast(IntMetadataValue, meta).value_inner == 3
+        assert cast(IntMetadataValue, meta).value == 3
 
         with snowflake_conn.get_connection() as conn:
             out_df = (

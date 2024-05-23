@@ -5,15 +5,13 @@ from pydantic import BaseModel
 from dagster._annotations import experimental
 from dagster._core.instance import DagsterInstance
 
-from ..asset_check_result import AssetCheckResult
 from ..asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
 from ..asset_checks import AssetChecksDefinition
 from ..asset_key import AssetKey, CoercibleToAssetKey
 from ..assets import AssetsDefinition, SourceAsset
-from ..decorators.asset_check_decorator import multi_asset_check
 from ..events import AssetMaterialization
 from ..metadata import TableColumn, TableMetadataSet, TableSchema
-from .utils import unique_id_from_asset_keys
+from .utils import build_multi_asset_check
 
 
 @experimental
@@ -86,8 +84,8 @@ def build_column_schema_change_checks(
 
         return True, "No changes to column schema between previous and latest materialization"
 
-    @multi_asset_check(
-        specs=[
+    return build_multi_asset_check(
+        check_specs=[
             AssetCheckSpec(
                 "column_schema_change",
                 asset=asset_key,
@@ -96,21 +94,9 @@ def build_column_schema_change_checks(
             )
             for asset_key in asset_keys
         ],
-        can_subset=True,
-        name=unique_id_from_asset_keys(list(asset_keys)),
+        check_fn=_result_for_check_key,
+        severity=severity,
     )
-    def _checks(context):
-        for asset_check_key in context.selected_asset_check_keys:
-            passed, description = _result_for_check_key(context.instance, asset_check_key)
-            yield AssetCheckResult(
-                passed=passed,
-                description=description,
-                severity=severity,
-                check_name=asset_check_key.name,
-                asset_key=asset_check_key.asset_key,
-            )
-
-    return [_checks]
 
 
 class TypeChange(BaseModel):

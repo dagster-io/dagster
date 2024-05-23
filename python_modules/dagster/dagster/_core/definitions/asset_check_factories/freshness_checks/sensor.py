@@ -1,9 +1,11 @@
-from typing import Iterator, Optional, Sequence, cast
+import datetime
+from typing import Iterator, Optional, Sequence, Tuple, cast
 
 import pendulum
 
 from dagster import _check as check
 from dagster._annotations import experimental
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 from ...asset_check_spec import AssetCheckKey
 from ...asset_checks import AssetChecksDefinition
@@ -80,60 +82,25 @@ def build_sensor_for_freshness_checks(
             AssetCheckKey.from_user_string(context.cursor) if context.cursor else None
         )
         start_time = pendulum.now("UTC")
-        checks_iter = ordered_iterator_freshness_checks_starting_with_key(
-            left_off_asset_check_key, freshness_checks
-        )
-        check_key = next(checks_iter, None)
         checks_to_evaluate = []
+        checks_iter = freshness_checks_get_evaluations_iter(
+            context=context,
+            start_time=start_time,
+            left_off_asset_check_key=left_off_asset_check_key,
+            freshness_checks=freshness_checks,
+        )
+        # We evaluate checks using an iterator which yields back control to the main loop every
+        # iteration; this allows us to pause the sensor if it runs into the maximum runtime.
+        check_key, should_evaluate = next(checks_iter, (None, False))
         while (
             pendulum.now("UTC").timestamp() - start_time.timestamp() < MAXIMUM_RUNTIME_SECONDS
-            and check_key is not None
+            and check_key
         ):
-            should_evaluate_check = False
-            prev_check_eval_record = context.instance.get_latest_asset_check_evaluation_record(
-                check_key
-            )
-            if prev_check_eval_record:
-                # If we have already executed this check, only run it if the previous result was a success, and the time limit has passed.
-                evaluation = check.not_none(
-                    check.not_none(
-                        prev_check_eval_record.event,
-                        "Expected the check evaluation record to have an associated dagster event.",
-                    ).asset_check_evaluation,
-                    "Expected the dagster event to be an asset check evaluation.",
-                )
-                if evaluation.passed:
-                    next_deadline = cast(float, evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value)
-                    if next_deadline < start_time.timestamp():
-                        context.log.info(
-                            f"Freshness check {check_key.to_user_string()} previously passed, but "
-                            "enough time has passed that it can be overdue again. Adding to run request."
-                        )
-                        should_evaluate_check = True
-                    else:
-                        how_long_until_next_deadline = next_deadline - start_time.timestamp()
-                        context.log.info(
-                            f"Freshness check {check_key.to_user_string()} previously passed, but "
-                            f"cannot be overdue again until {seconds_in_words(how_long_until_next_deadline)}. Skipping..."
-                        )
-                else:
-                    context.log.info(
-                        f"Freshness check {check_key.to_user_string()} is currently overdue. "
-                        "Waiting to re-evaluate until the asset has received an update."
-                    )
-            else:
-                # If we have never before executed this check, we should run it
-                context.log.info(
-                    f"Freshness check {check_key.to_user_string()} has never been executed before. "
-                    "Adding to run request."
-                )
-                should_evaluate_check = True
-            if should_evaluate_check:
+            if should_evaluate:
                 checks_to_evaluate.append(check_key)
-            check_key = next(checks_iter, None)
+            check_key, should_evaluate = next(checks_iter, (None, False))
         new_cursor = check_key.to_user_string() if check_key else None
-        if new_cursor:
-            context.update_cursor(new_cursor)
+        context.update_cursor(new_cursor)
         if checks_to_evaluate:
             return RunRequest(asset_check_keys=checks_to_evaluate)
 
@@ -155,7 +122,70 @@ def ordered_iterator_freshness_checks_starting_with_key(
     # Offset based on the left off asset check key, but then iterate back through the beginning afterwards
     if left_off_asset_check_key:
         left_off_idx = asset_check_keys_sorted.index(left_off_asset_check_key)
-        yield from asset_check_keys_sorted[left_off_idx:]
-        yield from asset_check_keys_sorted[:left_off_idx]
+        yield from asset_check_keys_sorted[left_off_idx + 1 :]
+        yield from asset_check_keys_sorted[: left_off_idx + 1]
     else:
         yield from asset_check_keys_sorted
+
+
+def freshness_checks_get_evaluations_iter(
+    context: SensorEvaluationContext,
+    start_time: datetime.datetime,
+    left_off_asset_check_key: Optional[AssetCheckKey],
+    freshness_checks: Sequence[AssetChecksDefinition],
+) -> Iterator[Tuple[AssetCheckKey, bool]]:
+    """Yields the set of freshness check keys to evaluate."""
+    for check_key in ordered_iterator_freshness_checks_starting_with_key(
+        left_off_asset_check_key, freshness_checks
+    ):
+        summary_record = context.instance.event_log_storage.get_asset_check_summary_records(
+            [check_key]
+        )[check_key]
+        # Case 1: We have never run the check before. We should run it.
+        if summary_record.last_check_execution_record is None:
+            context.log.info(
+                f"Freshness check {check_key.to_user_string()} has never been executed before. "
+                "Adding to run request."
+            )
+            yield check_key, True
+            continue
+
+        # Case 2: The check is currently evaluating. We shouldn't kick off another evaluation until it's done.
+        if (
+            summary_record.last_check_execution_record.status
+            == AssetCheckExecutionRecordStatus.PLANNED
+        ):
+            context.log.info(
+                f"Freshness check on asset {check_key.asset_key.to_user_string()} is in the planned state, indicating it is currently evaluating. Skipping..."
+            )
+            yield check_key, False
+            continue
+
+        evaluation = check.not_none(
+            summary_record.last_check_execution_record.event
+        ).asset_check_evaluation
+        # Case 3: The check previously failed. We shouldn't kick off another evaluation until the asset has been updated.
+        if not evaluation or not evaluation.passed:
+            context.log.info(
+                f"Freshness check {check_key.to_user_string()} failed its last evaluation. Waiting "
+                "to re-evaluate until the asset has received an update."
+            )
+            yield check_key, False
+            continue
+        # Case 4: The check previously passed. We should re-evaluate if it's possible for the check to be overdue again.
+        next_deadline = cast(float, evaluation.metadata[FRESH_UNTIL_METADATA_KEY].value)
+        if next_deadline < start_time.timestamp():
+            context.log.info(
+                f"Freshness check {check_key.to_user_string()} previously passed, but "
+                "enough time has passed that it can be overdue again. Adding to run request."
+            )
+            yield check_key, True
+            continue
+        else:
+            how_long_until_next_deadline = next_deadline - start_time.timestamp()
+            context.log.info(
+                f"Freshness check {check_key.to_user_string()} previously passed, but "
+                f"cannot be overdue again until {seconds_in_words(how_long_until_next_deadline)} from now. Skipping..."
+            )
+            yield check_key, False
+            continue

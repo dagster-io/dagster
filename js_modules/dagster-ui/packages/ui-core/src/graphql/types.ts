@@ -2149,6 +2149,7 @@ export type LaunchBackfillMutation = {
 export type LaunchBackfillParams = {
   allPartitions?: InputMaybe<Scalars['Boolean']['input']>;
   assetSelection?: InputMaybe<Array<AssetKeyInput>>;
+  description?: InputMaybe<Scalars['String']['input']>;
   forceSynchronousSubmission?: InputMaybe<Scalars['Boolean']['input']>;
   fromFailure?: InputMaybe<Scalars['Boolean']['input']>;
   partitionNames?: InputMaybe<Array<Scalars['String']['input']>>;
@@ -2156,6 +2157,7 @@ export type LaunchBackfillParams = {
   reexecutionSteps?: InputMaybe<Array<Scalars['String']['input']>>;
   selector?: InputMaybe<PartitionSetSelector>;
   tags?: InputMaybe<Array<ExecutionTag>>;
+  title?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type LaunchBackfillResult =
@@ -3036,6 +3038,7 @@ export type PartitionBackfill = {
   __typename: 'PartitionBackfill';
   assetBackfillData: Maybe<AssetBackfillData>;
   assetSelection: Maybe<Array<AssetKey>>;
+  description: Maybe<Scalars['String']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
   error: Maybe<PythonError>;
   fromFailure: Scalars['Boolean']['output'];
@@ -3057,6 +3060,7 @@ export type PartitionBackfill = {
   status: BulkActionStatus;
   tags: Array<PipelineTag>;
   timestamp: Scalars['Float']['output'];
+  title: Maybe<Scalars['String']['output']>;
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']['output']>;
 };
@@ -5505,6 +5509,7 @@ export type WorkspaceLocationStatusEntry = {
   id: Scalars['ID']['output'];
   loadStatus: RepositoryLocationLoadStatus;
   name: Scalars['String']['output'];
+  permissions: Array<Permission>;
   updateTimestamp: Scalars['Float']['output'];
 };
 
@@ -9144,6 +9149,8 @@ export const buildLaunchBackfillParams = (
       overrides && overrides.hasOwnProperty('allPartitions') ? overrides.allPartitions! : false,
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'expedita',
     forceSynchronousSubmission:
       overrides && overrides.hasOwnProperty('forceSynchronousSubmission')
         ? overrides.forceSynchronousSubmission!
@@ -9165,6 +9172,7 @@ export const buildLaunchBackfillParams = (
         ? ({} as PartitionSetSelector)
         : buildPartitionSetSelector({}, relationshipsToOmit),
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
+    title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'soluta',
   };
 };
 
@@ -10567,6 +10575,10 @@ export const buildPartitionBackfill = (
         : buildAssetBackfillData({}, relationshipsToOmit),
     assetSelection:
       overrides && overrides.hasOwnProperty('assetSelection') ? overrides.assetSelection! : [],
+    description:
+      overrides && overrides.hasOwnProperty('description')
+        ? overrides.description!
+        : 'reprehenderit',
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 0.33,
     error:
@@ -10633,6 +10645,7 @@ export const buildPartitionBackfill = (
         : BulkActionStatus.CANCELED,
     tags: overrides && overrides.hasOwnProperty('tags') ? overrides.tags! : [],
     timestamp: overrides && overrides.hasOwnProperty('timestamp') ? overrides.timestamp! : 8.28,
+    title: overrides && overrides.hasOwnProperty('title') ? overrides.title! : 'veritatis',
     unfinishedRuns:
       overrides && overrides.hasOwnProperty('unfinishedRuns') ? overrides.unfinishedRuns! : [],
     user: overrides && overrides.hasOwnProperty('user') ? overrides.user! : 'eius',
@@ -14917,6 +14930,7 @@ export const buildWorkspaceLocationStatusEntry = (
         ? overrides.loadStatus!
         : RepositoryLocationLoadStatus.LOADED,
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'corporis',
+    permissions: overrides && overrides.hasOwnProperty('permissions') ? overrides.permissions! : [],
     updateTimestamp:
       overrides && overrides.hasOwnProperty('updateTimestamp') ? overrides.updateTimestamp! : 7.09,
   };

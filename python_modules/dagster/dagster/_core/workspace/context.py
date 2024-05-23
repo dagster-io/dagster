@@ -6,7 +6,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from itertools import count
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, Type, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -40,8 +40,10 @@ from dagster._core.remote_representation.origin import (
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+from ..loader import LoadingContext
 from .load_target import WorkspaceLoadTarget
 from .permissions import (
     PermissionResult,
@@ -70,7 +72,7 @@ T = TypeVar("T")
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
 
-class BaseWorkspaceRequestContext(IWorkspace):
+class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     """This class is a request-scoped object that stores (1) a reference to all repository locations
     that exist on the `IWorkspaceProcessContext` at the start of the request and (2) a snapshot of the
     workspace at the start of the request.
@@ -339,8 +341,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             read_only_locations, "read_only_locations"
         )
         self._checked_permissions: Set[str] = set()
-
         self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
+        self._loaders = {}
 
     @property
     def asset_record_loader(self) -> BatchAssetRecordLoader:
@@ -404,6 +406,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         For example in the webserver this object represents the web request.
         """
         return self._source
+
+    @property
+    def loaders(self) -> Dict[Type, DataLoader]:
+        return self._loaders
 
 
 class IWorkspaceProcessContext(ABC):
