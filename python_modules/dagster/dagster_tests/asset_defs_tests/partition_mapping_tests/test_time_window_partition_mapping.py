@@ -10,6 +10,7 @@ from dagster import (
     TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
 )
+from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 
@@ -946,3 +947,48 @@ def test_partition_mapping_output_has_no_overlap_ranges() -> None:
     assert downstream_partitions.get_partition_key_ranges(partitions_def) == [
         PartitionKeyRange(start="2023-09-27", end="2024-03-05")
     ]
+
+
+def test_get_upstream_partitions_for_all_partitions_subset() -> None:
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-10")
+    current_time = datetime(2021, 5, 31, hour=1)
+    downstream_subset = AllPartitionsSubset(
+        partitions_def=downstream_partitions_def,
+        dynamic_partitions_store=None,  # type: ignore
+        current_time=current_time,
+    )
+    result = TimeWindowPartitionMapping().get_upstream_mapped_partitions_result_for_partitions(
+        downstream_partitions_subset=downstream_subset,
+        downstream_partitions_def=downstream_partitions_def,
+        upstream_partitions_def=upstream_partitions_def,
+        current_time=current_time,
+    )
+    assert (
+        result.partitions_subset.get_partition_keys()
+        == upstream_partitions_def.get_partition_keys_in_range(
+            # don't include 05-05 through 05-09
+            PartitionKeyRange("2021-05-10", "2021-05-30")
+        )
+    )
+
+
+def test_get_downstream_partitions_for_all_partitions_subset() -> None:
+    upstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-10")
+    downstream_partitions_def = DailyPartitionsDefinition(start_date="2021-05-05")
+    current_time = datetime(2021, 5, 31, hour=1)
+    upstream_subset = AllPartitionsSubset(
+        partitions_def=upstream_partitions_def,
+        dynamic_partitions_store=None,  # type: ignore
+        current_time=current_time,
+    )
+    result = TimeWindowPartitionMapping().get_downstream_partitions_for_partitions(
+        upstream_partitions_subset=upstream_subset,
+        upstream_partitions_def=upstream_partitions_def,
+        downstream_partitions_def=downstream_partitions_def,
+        current_time=current_time,
+    )
+    assert result.get_partition_keys() == upstream_partitions_def.get_partition_keys_in_range(
+        # don't include 05-05 through 05-09
+        PartitionKeyRange("2021-05-10", "2021-05-30")
+    )
