@@ -22,6 +22,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_layer import get_dep_node_handles_of_graph_backed_asset
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
@@ -58,6 +59,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
 
+from .asset_spec import AssetSpec
 from .dependency import NodeHandle
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
@@ -90,22 +92,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _keys_by_input_name: Mapping[str, AssetKey]
     _keys_by_output_name: Mapping[str, AssetKey]
     _partitions_def: Optional[PartitionsDefinition]
+    # partition mappings are also tracked inside the AssetSpecs, but this enables faster access by
+    # upstream asset key
     _partition_mappings: Mapping[AssetKey, PartitionMapping]
-    _asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
     _resource_defs: Mapping[str, ResourceDefinition]
-    _group_names_by_key: Mapping[AssetKey, str]
     _selected_asset_keys: AbstractSet[AssetKey]
     _can_subset: bool
-    _metadata_by_key: Mapping[AssetKey, ArbitraryMetadataMapping]
-    _tags_by_key: Mapping[AssetKey, Mapping[str, str]]
-    _freshness_policies_by_key: Mapping[AssetKey, FreshnessPolicy]
-    _auto_materialize_policies_by_key: Mapping[AssetKey, AutoMaterializePolicy]
     _backfill_policy: Optional[BackfillPolicy]
-    _code_versions_by_key: Mapping[AssetKey, Optional[str]]
-    _descriptions_by_key: Mapping[AssetKey, str]
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
-    _owners_by_key: Mapping[AssetKey, Sequence[str]]
+
+    _specs_by_key: Mapping[AssetKey, AssetSpec]
 
     def __init__(
         self,
@@ -171,36 +168,24 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             all_asset_keys=all_asset_keys,
         )
 
-        self._asset_deps = asset_deps or {
-            out_asset_key: set(keys_by_input_name.values()) for out_asset_key in all_asset_keys
-        }
-        check.invariant(
-            set(self._asset_deps.keys()) == all_asset_keys,
-            "The set of asset keys with dependencies specified in the asset_deps argument must "
-            "equal the set of asset keys produced by this AssetsDefinition. \n"
-            f"asset_deps keys: {set(self._asset_deps.keys())} \n"
-            f"expected keys: {all_asset_keys}",
-        )
+        if asset_deps:
+            check.invariant(
+                set(asset_deps.keys()) == all_asset_keys,
+                "The set of asset keys with dependencies specified in the asset_deps argument must "
+                "equal the set of asset keys produced by this AssetsDefinition. \n"
+                f"asset_deps keys: {set(asset_deps.keys())} \n"
+                f"expected keys: {all_asset_keys}",
+            )
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs")
         )
 
-        group_names_by_key = (
-            check.mapping_param(group_names_by_key, "group_names_by_key")
-            if group_names_by_key
-            else {}
-        )
         self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
             all_asset_keys=all_asset_keys,
             all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
             selected_asset_keys=selected_asset_keys,
             selected_asset_check_keys=selected_asset_check_keys,
         )
-        self._group_names_by_key = {}
-        # assets that don't have a group name get a DEFAULT_GROUP_NAME
-        for key in all_asset_keys:
-            group_name = group_names_by_key.get(key)
-            self._group_names_by_key[key] = normalize_group_name(group_name)
 
         self._check_specs_by_key = {
             spec.key: spec
@@ -209,64 +194,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         }
 
         self._can_subset = can_subset
-
-        self._code_versions_by_key = {}
-        self._metadata_by_key = dict(
-            check.opt_mapping_param(
-                metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
-            )
-        )
-
-        for tags in (tags_by_key or {}).values():
-            validate_tags_strict(tags)
-        self._tags_by_key = tags_by_key or {}
-
-        self._descriptions_by_key = dict(
-            check.opt_mapping_param(
-                descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
-            )
-        )
-        for output_name, asset_key in keys_by_output_name.items():
-            output_def, _ = node_def.resolve_output_to_origin(output_name, None)
-            self._metadata_by_key[asset_key] = {
-                **output_def.metadata,
-                **self._metadata_by_key.get(asset_key, {}),
-            }
-            # We construct description from three sources of truth here. This
-            # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
-            description = (
-                self._descriptions_by_key.get(asset_key, output_def.description)
-                or node_def.description
-            )
-            if description:
-                self._descriptions_by_key[asset_key] = description
-            self._code_versions_by_key[asset_key] = output_def.code_version
-
-        for key, freshness_policy in (freshness_policies_by_key or {}).items():
-            check.param_invariant(
-                not (
-                    freshness_policy
-                    and self._partitions_def is not None
-                    and not isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
-                ),
-                "freshness_policies_by_key",
-                "FreshnessPolicies are currently unsupported for assets with partitions of type"
-                f" {type(self._partitions_def)}.",
-            )
-
-        self._freshness_policies_by_key = check.opt_mapping_param(
-            freshness_policies_by_key,
-            "freshness_policies_by_key",
-            key_type=AssetKey,
-            value_type=FreshnessPolicy,
-        )
-
-        self._auto_materialize_policies_by_key = check.opt_mapping_param(
-            auto_materialize_policies_by_key,
-            "auto_materialize_policies_by_key",
-            key_type=AssetKey,
-            value_type=AutoMaterializePolicy,
-        )
 
         self._backfill_policy = check.opt_inst_param(
             backfill_policy, "backfill_policy", BackfillPolicy
@@ -300,20 +227,56 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
-        self._owners_by_key = check.opt_mapping_param(
-            owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
+        resolved_specs = _asset_specs_from_attr_key_params(
+            all_asset_keys=all_asset_keys,
+            keys_by_input_name=keys_by_input_name,
+            deps_by_asset_key=asset_deps,
+            partition_mappings=partition_mappings,
+            tags_by_key=tags_by_key,
+            owners_by_key=owners_by_key,
+            group_names_by_key=group_names_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
+            metadata_by_key=metadata_by_key,
+            descriptions_by_key=descriptions_by_key,
         )
-        for key, owners in self._owners_by_key.items():
-            for owner in owners:
-                if is_valid_email(owner):
-                    continue
-                elif owner.startswith("team:") and len(owner) > 5:
-                    continue
-                else:
-                    raise DagsterInvalidDefinitionError(
-                        f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team"
-                        " name prefixed with 'team:'."
-                    )
+
+        normalized_specs: List[AssetSpec] = []
+        output_names_by_key = {key: name for name, key in keys_by_output_name.items()}
+        for spec in resolved_specs:
+            if spec.owners:
+                for owner in spec.owners:
+                    validate_asset_owner(owner, spec.key)
+
+            group_name = normalize_group_name(spec.group_name)
+
+            output_def, _ = node_def.resolve_output_to_origin(output_names_by_key[spec.key], None)
+            metadata = {**output_def.metadata, **(spec.metadata or {})}
+            # We construct description from three sources of truth here. This
+            # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
+            description = spec.description or output_def.description or node_def.description
+            code_version = spec.code_version or output_def.code_version
+
+            check.invariant(
+                not (
+                    spec.freshness_policy
+                    and self._partitions_def is not None
+                    and not isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
+                ),
+                "FreshnessPolicies are currently unsupported for assets with partitions of type"
+                f" {type(self._partitions_def)}.",
+            )
+
+            normalized_specs.append(
+                spec._replace(
+                    group_name=group_name,
+                    code_version=code_version,
+                    metadata=metadata,
+                    description=description,
+                )
+            )
+
+        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
     def dagster_internal_init(
         *,
@@ -734,7 +697,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         to the group names assigned to them. If there is no assigned group name for a given AssetKey,
         it will not be present in this dictionary.
         """
-        return self._group_names_by_key
+        return {key: check.not_none(spec.group_name) for key, spec in self._specs_by_key.items()}
 
     @public
     @property
@@ -743,7 +706,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         to the descriptions assigned to them. If there is no assigned description for a given AssetKey,
         it will not be present in this dictionary.
         """
-        return self._descriptions_by_key
+        return {
+            key: spec.description
+            for key, spec in self._specs_by_key.items()
+            if spec.description is not None
+        }
 
     @public
     @property
@@ -773,7 +740,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         produced by this definition, or "external", meaning that they refer to assets that aren't
         produced by this definition.
         """
-        return self._asset_deps
+        return {
+            key: {dep.asset_key for dep in spec.deps} for key, spec in self._specs_by_key.items()
+        }
 
     @property
     def input_names(self) -> Iterable[str]:
@@ -888,11 +857,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
-        return self._freshness_policies_by_key
+        return {
+            key: spec.freshness_policy
+            for key, spec in self._specs_by_key.items()
+            if spec.freshness_policy
+        }
 
     @property
     def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
-        return self._auto_materialize_policies_by_key
+        return {
+            key: spec.auto_materialize_policy
+            for key, spec in self._specs_by_key.items()
+            if spec.auto_materialize_policy
+        }
 
     # Applies only to external observable assets. Can be removed when we fold
     # `auto_observe_interval_minutes` into auto-materialize policies.
@@ -918,7 +895,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     def _get_external_asset_metadata_value(self, metadata_key: str) -> object:
         first_key = next(iter(self.keys), None)
-        return self.metadata_by_key.get(first_key, {}).get(metadata_key) if first_key else None
+        if not first_key:
+            return None
+        return (self._specs_by_key[first_key].metadata or {}).get(metadata_key)
 
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
@@ -932,15 +911,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def metadata_by_key(self) -> Mapping[AssetKey, ArbitraryMetadataMapping]:
-        return self._metadata_by_key
+        return {
+            key: spec.metadata
+            for key, spec in self._specs_by_key.items()
+            if spec.metadata is not None
+        }
 
     @property
     def tags_by_key(self) -> Mapping[AssetKey, Mapping[str, str]]:
-        return self._tags_by_key
+        return {key: spec.tags or {} for key, spec in self._specs_by_key.items()}
 
     @property
     def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
-        return self._code_versions_by_key
+        return {key: spec.code_version for key, spec in self._specs_by_key.items()}
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
@@ -948,7 +931,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
-        return self._owners_by_key
+        return {key: spec.owners or [] for key, spec in self._specs_by_key.items()}
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
@@ -1208,7 +1191,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 **group_names_by_key,
             },
             metadata_by_key={
-                **self._metadata_by_key,
+                **self.metadata_by_key,
                 **replaced_metadata_by_key,
             },
             tags_by_key=replaced_tags_by_key,
@@ -1217,7 +1200,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             auto_materialize_policies_by_key=replaced_auto_materialize_policies_by_key,
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             descriptions_by_key={
-                **self._descriptions_by_key,
+                **self.descriptions_by_key,
                 **replaced_descriptions_by_key,
             },
             is_subset=self.is_subset,
@@ -1467,6 +1450,29 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self.__class__(**attributes_dict)
 
     def get_attributes_dict(self) -> Dict[str, Any]:
+        group_names_by_key = {}
+        freshness_policies_by_key = {}
+        auto_materialize_policies_by_key = {}
+        descriptions_by_key = {}
+        owners_by_key = {}
+        tags_by_key = {}
+        metadata_by_key = {}
+        for key, spec in self._specs_by_key.items():
+            if spec.group_name is not None:
+                group_names_by_key[key] = spec.group_name
+            if spec.freshness_policy is not None:
+                freshness_policies_by_key[key] = spec.freshness_policy
+            if spec.auto_materialize_policy is not None:
+                auto_materialize_policies_by_key[key] = spec.auto_materialize_policy
+            if spec.description is not None:
+                descriptions_by_key[key] = spec.description
+            if spec.owners is not None:
+                owners_by_key[key] = spec.owners
+            if spec.tags is not None:
+                tags_by_key[key] = spec.tags
+            if spec.metadata is not None:
+                metadata_by_key[key] = spec.metadata
+
         return dict(
             keys_by_input_name=self._keys_by_input_name,
             keys_by_output_name=self._keys_by_output_name,
@@ -1477,17 +1483,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=self._resource_defs,
-            group_names_by_key=self._group_names_by_key,
-            metadata_by_key=self._metadata_by_key,
-            freshness_policies_by_key=self._freshness_policies_by_key,
-            auto_materialize_policies_by_key=self._auto_materialize_policies_by_key,
+            group_names_by_key=group_names_by_key,
+            metadata_by_key=metadata_by_key,
+            freshness_policies_by_key=freshness_policies_by_key,
+            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policy=self._backfill_policy,
-            descriptions_by_key=self._descriptions_by_key,
+            descriptions_by_key=descriptions_by_key,
             check_specs_by_output_name=self._check_specs_by_output_name,
             selected_asset_check_keys=self._selected_asset_check_keys,
-            owners_by_key=self._owners_by_key,
-            tags_by_key=self._tags_by_key,
-            is_subset=self._is_subset,
+            owners_by_key=owners_by_key,
+            tags_by_key=tags_by_key,
+            is_subset=self.is_subset,
         )
 
 
@@ -1653,6 +1659,87 @@ def _validate_partition_mappings(
             )
 
 
+def _asset_specs_from_attr_key_params(
+    all_asset_keys: AbstractSet[AssetKey],
+    keys_by_input_name: Mapping[str, AssetKey],
+    deps_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
+    partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
+    group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
+    metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
+    tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
+    freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
+    auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
+    descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
+    owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
+) -> Sequence[AssetSpec]:
+    validated_group_names_by_key = check.opt_mapping_param(
+        group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
+    )
+
+    validated_metadata_by_key = check.opt_mapping_param(
+        metadata_by_key, "metadata_by_key", key_type=AssetKey, value_type=dict
+    )
+
+    for tags in (tags_by_key or {}).values():
+        validate_tags_strict(tags)
+    validated_tags_by_key = tags_by_key or {}
+
+    validated_descriptions_by_key = check.opt_mapping_param(
+        descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
+    )
+
+    validated_freshness_policies_by_key = check.opt_mapping_param(
+        freshness_policies_by_key,
+        "freshness_policies_by_key",
+        key_type=AssetKey,
+        value_type=FreshnessPolicy,
+    )
+
+    validated_auto_materialize_policies_by_key = check.opt_mapping_param(
+        auto_materialize_policies_by_key,
+        "auto_materialize_policies_by_key",
+        key_type=AssetKey,
+        value_type=AutoMaterializePolicy,
+    )
+
+    validated_owners_by_key = check.opt_mapping_param(
+        owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
+    )
+
+    dep_keys_from_keys_by_input_name = set(keys_by_input_name.values())
+    dep_objs_from_keys_by_input_name = [
+        AssetDep(asset=key, partition_mapping=(partition_mappings or {}).get(key))
+        for key in dep_keys_from_keys_by_input_name
+    ]
+
+    result: List[AssetSpec] = []
+    for key in all_asset_keys:
+        if deps_by_asset_key:
+            dep_objs = [
+                AssetDep(asset=key, partition_mapping=(partition_mappings or {}).get(key))
+                for key in deps_by_asset_key.get(key, [])
+            ]
+        else:
+            dep_objs = dep_objs_from_keys_by_input_name
+
+        with disable_dagster_warnings():
+            result.append(
+                AssetSpec(
+                    key=key,
+                    description=validated_descriptions_by_key.get(key),
+                    metadata=validated_metadata_by_key.get(key),
+                    tags=validated_tags_by_key.get(key),
+                    freshness_policy=validated_freshness_policies_by_key.get(key),
+                    auto_materialize_policy=validated_auto_materialize_policies_by_key.get(key),
+                    owners=validated_owners_by_key.get(key),
+                    group_name=validated_group_names_by_key.get(key),
+                    deps=dep_objs,
+                )
+            )
+
+    return result
+
+
 def _validate_self_deps(
     input_keys: Iterable[AssetKey],
     output_keys: Iterable[AssetKey],
@@ -1705,3 +1792,11 @@ def get_self_dep_time_window_partition_mapping(
 
         return time_partition_mapping.partition_mapping
     return None
+
+
+def validate_asset_owner(owner: str, key: AssetKey) -> None:
+    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
+        raise DagsterInvalidDefinitionError(
+            f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
+            "name prefixed with 'team:'."
+        )
