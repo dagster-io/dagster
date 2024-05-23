@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterable, Optional
+from typing import Any, Iterable, Mapping, Optional
 
 from dagster import (
     AssetKey,
@@ -11,6 +11,8 @@ from dlt.extract.resource import DltResource
 
 @dataclass
 class DagsterDltTranslator:
+    metadata_by_resource_name: Optional[Mapping[str, Any]] = None
+
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Defines asset key for a given dlt resource key and dataset name.
@@ -51,3 +53,17 @@ class DagsterDltTranslator:
 
         """
         return None
+
+    @public
+    def get_metadata(self, resource: DltResource) -> Mapping[str, Any]:
+        """Defines resource specific metadata.
+
+        Args:
+            resource (DltResource): dlt resource / transformer
+
+        Returns:
+            Mapping[str, Any]: The custom metadata entries for this resource.
+        """
+        if not self.metadata_by_resource_name:
+            return {}
+        return self.metadata_by_resource_name.get(resource.name, {})
