@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 import duckdb
 from dagster import (
@@ -208,17 +208,19 @@ def test_resource_failure_aware_materialization(dlt_pipeline: Pipeline) -> None:
 
 
 def test_asset_metadata(dlt_pipeline: Pipeline) -> None:
-    custom_dlt_dagster_translator = DagsterDltTranslator(
-        metadata_by_resource_name={
+    class CustomDagsterDltTranslator(DagsterDltTranslator):
+        metadata_by_resource_name = {
             "repos": {"mode": "upsert", "primary_key": "id"},
             "repo_issues": {"mode": "upsert", "primary_key": ["repo_id", "issue_id"]},
         }
-    )
+
+        def get_metadata(self, resource: DltResource) -> Mapping[str, Any]:
+            return self.metadata_by_resource_name.get(resource.name, {})
 
     @dlt_assets(
         dlt_source=pipeline(),
         dlt_pipeline=dlt_pipeline,
-        dlt_dagster_translator=custom_dlt_dagster_translator,
+        dlt_dagster_translator=CustomDagsterDltTranslator(),
     )
     def example_pipeline_assets(
         context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource

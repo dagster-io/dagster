@@ -11,8 +11,6 @@ from dlt.extract.resource import DltResource
 
 @dataclass
 class DagsterDltTranslator:
-    metadata_by_resource_name: Optional[Mapping[str, Any]] = None
-
     @public
     def get_asset_key(self, resource: DltResource) -> AssetKey:
         """Defines asset key for a given dlt resource key and dataset name.
@@ -64,6 +62,4 @@ class DagsterDltTranslator:
         Returns:
             Mapping[str, Any]: The custom metadata entries for this resource.
         """
-        if not self.metadata_by_resource_name:
-            return {}
-        return self.metadata_by_resource_name.get(resource.name, {})
+        return {}
