@@ -569,7 +569,7 @@ class ObjectSerializer(Serializer, Generic[T]):
                     elif context.observed_unknown_serdes_values:
                         unpacked[loaded_name] = context.assert_no_unknown_values(value)
                     else:
-                        unpacked[loaded_name] = cast(PackableValue, value)
+                        unpacked[loaded_name] = value  # type: ignore # 2 hot 4 cast()
 
                 else:
                     context.clear_ignored_unknown_values(value)
@@ -833,7 +833,7 @@ def _transform_for_serialization(
     # this is a hot code path so we handle the common base cases without isinstance
     tval = type(val)
     if tval in (int, float, str, bool) or val is None:
-        return cast(JsonSerializableValue, val)
+        return val  # type: ignore # 2 hot 4 cast()
     if tval is list:
         return [
             _transform_for_serialization(
@@ -1084,7 +1084,7 @@ class UnknownSerdesValue:
 
 def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
     if "__class__" in val:
-        klass_name = cast(str, val["__class__"])
+        klass_name = val["__class__"]
         if not whitelist_map.has_object_deserializer(klass_name):
             return context.observe_unknown_value(
                 UnknownSerdesValue(

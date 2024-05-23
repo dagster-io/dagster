@@ -1,4 +1,4 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental, public
@@ -208,14 +208,11 @@ class TableColumn(
             name=check.str_param(name, "name"),
             type=check.str_param(type, "type"),
             description=check.opt_str_param(description, "description"),
-            constraints=cast(
-                "TableColumnConstraints",
-                check.opt_inst_param(
-                    constraints,
-                    "constraints",
-                    TableColumnConstraints,
-                    default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
-                ),
+            constraints=check.opt_inst_param(
+                constraints,
+                "constraints",
+                TableColumnConstraints,
+                default=_DEFAULT_TABLE_COLUMN_CONSTRAINTS,
             ),
         )
 
