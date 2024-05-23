@@ -299,7 +299,10 @@ export const AssetNodeOverview = ({
       },
     ];
 
-    if (attributes.every((props) => isEmptyChildren(props.children))) {
+    if (
+      attributes.every((props) => isEmptyChildren(props.children)) &&
+      !assetNode.autoMaterializePolicy
+    ) {
       return (
         <SectionEmptyState
           title="No automations found for this asset"
