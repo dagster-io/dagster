@@ -27,18 +27,12 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import (
-    Resources,
-    ScopedResourcesBuilder,
-)
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
-from dagster._utils.schedules import (
-    has_out_of_range_cron_interval,
-    is_valid_cron_schedule,
-)
+from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
 
 from ..decorator_utils import has_at_least_one_parameter
 from ..errors import (
@@ -287,8 +281,7 @@ class ScheduleEvaluationContext:
             resources_dict (Mapping[str, Any]): The resources to replace in the context.
         """
         check.invariant(
-            self._resources is None,
-            "Cannot merge resources in context that has been initialized.",
+            self._resources is None, "Cannot merge resources in context that has been initialized."
         )
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
@@ -455,8 +448,7 @@ class ScheduleExecutionData(
         check.opt_str_param(skip_message, "skip_message")
         check.opt_list_param(log_key, "log_key", str)
         check.invariant(
-            not (run_requests and skip_message),
-            "Found both skip data and run request data",
+            not (run_requests and skip_message), "Found both skip data and run request data"
         )
         return super(ScheduleExecutionData, cls).__new__(
             cls,
@@ -653,9 +645,7 @@ class ScheduleDefinition(IHasInternalInit):
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
-                    tags_fn,
-                    "tags_fn",
-                    default=lambda _context: cast(Mapping[str, str], {}),
+                    tags_fn, "tags_fn", default=lambda _context: cast(Mapping[str, str], {})
                 )
             self._tags_fn = tags_fn
             self._tags = tags
@@ -844,9 +834,7 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(
-        self,
-    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
