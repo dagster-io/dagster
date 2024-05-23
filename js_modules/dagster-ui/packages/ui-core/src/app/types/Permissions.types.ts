@@ -12,13 +12,12 @@ export type PermissionsQuery = {
     value: boolean;
     disabledReason: string | null;
   }>;
-  workspaceOrError:
+  locationStatusesOrError:
     | {__typename: 'PythonError'}
     | {
-        __typename: 'Workspace';
-        id: string;
-        locationEntries: Array<{
-          __typename: 'WorkspaceLocationEntry';
+        __typename: 'WorkspaceLocationStatusEntries';
+        entries: Array<{
+          __typename: 'WorkspaceLocationStatusEntry';
           id: string;
           name: string;
           permissions: Array<{

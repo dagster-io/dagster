@@ -143,8 +143,8 @@ export const PermissionsProvider = (props: {children: React.ReactNode}) => {
     const unscopedPermissions = extractPermissions(unscopedPermissionsRaw);
 
     const locationEntries =
-      data?.workspaceOrError.__typename === 'Workspace'
-        ? data.workspaceOrError.locationEntries
+      data?.locationStatusesOrError.__typename === 'WorkspaceLocationStatusEntries'
+        ? data.locationStatusesOrError.entries
         : [];
 
     const locationPermissions: Record<string, PermissionsMap> = {};
@@ -239,10 +239,10 @@ export const PERMISSIONS_QUERY = gql`
     unscopedPermissions: permissions {
       ...PermissionFragment
     }
-    workspaceOrError {
-      ... on Workspace {
-        id
-        locationEntries {
+    locationStatusesOrError {
+      __typename
+      ... on WorkspaceLocationStatusEntries {
+        entries {
           id
           name
           permissions {
