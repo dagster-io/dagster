@@ -15,7 +15,7 @@ from dagster._utils.error import SerializableErrorInfo
 
 
 @contextmanager
-def _get_instigation_logger_if_env_var_set(
+def _get_instigation_logger_if_log_storage_enabled(
     instance, backfill_id: str, default_logger: logging.Logger
 ):
     if instance.backfill_log_storage_enabled():
@@ -69,7 +69,7 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        with _get_instigation_logger_if_env_var_set(
+        with _get_instigation_logger_if_log_storage_enabled(
             instance, backfill.backfill_id, logger
         ) as _logger:
             # create a logger that will always include the backfill_id as an `extra`
