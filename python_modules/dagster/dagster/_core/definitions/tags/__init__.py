@@ -6,7 +6,7 @@ from .tag_set import NamespacedTagSet as NamespacedTagSet
 class StorageKindTagSet(NamespacedTagSet):
     """Metadata entries which describe how an asset is stored."""
 
-    storage_kind: Optional[str]
+    storage_kind: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
