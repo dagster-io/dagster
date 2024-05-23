@@ -21,6 +21,7 @@ import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
+import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
@@ -175,6 +176,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 const secondaryDataToSearchResults = (
   input: {data?: SearchSecondaryQuery},
   includeAssetFilters: boolean,
+  usersByEmail: Record<string, {name: string | null; email: string}>,
 ) => {
   const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
@@ -250,7 +252,7 @@ const secondaryDataToSearchResults = (
 
     const ownerResults: SearchResult[] = countsBySection.countsByOwner.map(
       ({owner, assetCount}) => ({
-        label: owner,
+        label: usersByEmail[owner]?.name ? `${usersByEmail[owner]?.name} (${owner})` : owner,
         description: '',
         type: AssetFilterSearchResultType.Owner,
         href: linkToAssetTableWithOwnerFilter(owner),
@@ -307,6 +309,18 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
+  const {useAllUserDetails} = useLaunchPadHooks();
+  const {users} = useAllUserDetails ? useAllUserDetails() : {users: []};
+  const usersByEmail = users.reduce(
+    (accum, entry) => {
+      if (entry.user) {
+        accum[entry.user.email] = entry.user;
+      }
+      return accum;
+    },
+    {} as Record<string, {name: string | null; email: string}>,
+  );
+
   const {
     data: primaryData,
     fetch: fetchPrimaryData,
@@ -355,13 +369,17 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
+    const results = secondaryDataToSearchResults(
+      {data: secondaryData},
+      includeAssetFilters,
+      usersByEmail,
+    );
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
     secondarySearch.current.update(results);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, includeAssetFilters]);
+  }, [consumeBufferEffect, secondaryData, includeAssetFilters, users]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
