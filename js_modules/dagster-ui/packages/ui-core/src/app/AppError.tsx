@@ -61,16 +61,18 @@ export const createErrorLink = (toastOnErrors?: boolean) =>
     }
     // if we have a network error but there is still graphql data
     // the payload should contain a meaningful error for the product to handle
-    const serverError = response.networkError;
-
     if (
       'response' in response &&
       response.response &&
       'data' in response.response &&
       response.response.data
     ) {
+      // This is a bit hacky but if you try forwarding response.response directly it seems
+      // the errors property prevents it from making it to the react code so instead we grab just the data property.
       return Observable.from([{data: response.response.data}]);
     }
+
+    const serverError = response.networkError;
     if (serverError && 'result' in serverError && typeof serverError.result === 'object') {
       // we can return an observable here (normally used to perform retries)
       // to flow the error payload to the product
