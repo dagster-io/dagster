@@ -38,6 +38,7 @@ const defaultState: AssetFilterState = {
     repos: [],
     selectAllFilters: [],
     tags: [],
+    storageKindTags: [],
   },
   setAssetTags: () => {},
   setChangedInBranch: () => {},
@@ -48,6 +49,7 @@ const defaultState: AssetFilterState = {
   setRepos: () => {},
   setSelectAllFilters: () => {},
   filterFn: () => true,
+  setStorageKindTags: () => {},
 };
 
 export function useAssetGraphExplorerFilters({
