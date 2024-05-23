@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-from typing import Any, Mapping, Optional
-=======
 import asyncio
-from typing import Optional
->>>>>>> 4365ebda3e (feat: proposal for partitions support in dlt assets)
+from typing import Any, Mapping, Optional
 
 import duckdb
 from dagster import (
