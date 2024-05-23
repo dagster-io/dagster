@@ -25,6 +25,7 @@ export interface AssetValueGraphData {
 export const AssetValueGraph = (props: {
   label: string;
   width: string;
+  height?: number;
   yAxisLabel?: string;
   data: AssetValueGraphData;
   xHover: string | number | null;
@@ -167,5 +168,12 @@ export const AssetValueGraph = (props: {
     },
   };
 
-  return <Line data={graphData} height={100} options={options as any} key={props.width} />;
+  return (
+    <Line
+      data={graphData}
+      height={props.height || 100}
+      options={options as any}
+      key={props.width}
+    />
+  );
 };

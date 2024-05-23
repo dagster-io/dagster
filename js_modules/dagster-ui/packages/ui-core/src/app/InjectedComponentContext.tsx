@@ -21,6 +21,11 @@ type InjectedComponentContextType = {
   UserPreferences?: AComponentFromComponent<typeof UserPreferences> | null;
   AssetsOverview?: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
   FallthroughRoot?: AComponentFromComponent<typeof FallthroughRoot> | null;
+  RunMetricsDialog?: AComponentWithProps<{
+    runId: string;
+    isOpen: boolean;
+    onClose: () => void;
+  }> | null;
 };
 export const InjectedComponentContext = React.createContext<InjectedComponentContextType>({});
 

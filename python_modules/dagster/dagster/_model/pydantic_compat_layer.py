@@ -1,14 +1,7 @@
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Type,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Type
 
 import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 USING_PYDANTIC_1 = int(pydantic.__version__.split(".")[0]) == 1
 USING_PYDANTIC_2 = int(pydantic.__version__.split(".")[0]) >= 2
@@ -141,3 +134,20 @@ except ImportError:
 
 
 compat_model_validator = model_validator
+
+
+def build_validation_error(
+    base_error: ValidationError,
+    line_errors: List,
+    hide_input: bool,
+    input_type: Literal["python", "json"],
+) -> ValidationError:
+    if USING_PYDANTIC_1:
+        return ValidationError(errors=line_errors, model=base_error.model)  # type: ignore
+    else:
+        return ValidationError.from_exception_data(  # type: ignore
+            title=base_error.title,  # type: ignore
+            line_errors=line_errors,
+            input_type=input_type,
+            hide_input=hide_input,
+        )

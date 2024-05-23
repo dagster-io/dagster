@@ -286,6 +286,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     hasResumePermission = graphene.NonNull(graphene.Boolean)
     user = graphene.Field(graphene.String)
     tags = non_null_list("dagster_graphql.schema.tags.GraphenePipelineTag")
+    title = graphene.Field(graphene.String)
+    description = graphene.Field(graphene.String)
 
     def __init__(self, backfill_job: PartitionBackfill):
         self._backfill_job = check.inst_param(backfill_job, "backfill_job", PartitionBackfill)
@@ -523,6 +525,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
     def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._backfill_job.user
+
+    def resolve_title(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._backfill_job.title
+
+    def resolve_description(self, _graphene_info: ResolveInfo) -> Optional[str]:
+        return self._backfill_job.description
 
 
 class GrapheneBackfillNotFoundError(graphene.ObjectType):

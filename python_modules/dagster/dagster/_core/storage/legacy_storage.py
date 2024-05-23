@@ -13,6 +13,7 @@ from dagster import (
     _check as check,
 )
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
@@ -21,6 +22,7 @@ from dagster._core.event_api import EventHandlerFn
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
 )
+from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
@@ -504,6 +506,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
         return self._storage.event_log_storage.get_asset_records(asset_keys)
+
+    def get_asset_check_summary_records(
+        self, asset_check_keys: Sequence["AssetCheckKey"]
+    ) -> Mapping["AssetCheckKey", AssetCheckSummaryRecord]:
+        return self._storage.event_log_storage.get_asset_check_summary_records(asset_check_keys)
 
     def has_asset_key(self, asset_key: "AssetKey") -> bool:
         return self._storage.event_log_storage.has_asset_key(asset_key)

@@ -16,6 +16,3 @@ sqlalchemy<2.0.0
 
 # Added pendulum pin in later versions
 pendulum<3
-
-# 2.32.0 breaks our docker tests https://buildkite.com/dagster/dagster-dagster/builds/83562
-requests<2.32.0

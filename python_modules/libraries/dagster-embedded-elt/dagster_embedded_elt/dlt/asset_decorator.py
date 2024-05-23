@@ -99,6 +99,7 @@ def dlt_assets(
                     META_KEY_SOURCE: dlt_source,
                     META_KEY_PIPELINE: dlt_pipeline,
                     META_KEY_TRANSLATOR: dlt_dagster_translator,
+                    **dlt_dagster_translator.get_metadata(dlt_source_resource),
                 },
             )
             for dlt_source_resource in dlt_source.selected_resources.values()

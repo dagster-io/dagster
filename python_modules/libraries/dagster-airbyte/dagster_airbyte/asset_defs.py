@@ -952,7 +952,7 @@ def load_assets_from_airbyte_project(
     """Loads an Airbyte project into a set of Dagster assets.
 
     Point to the root folder of an Airbyte project synced using the Octavia CLI. For
-    more information, see https://github.com/airbytehq/airbyte/tree/master/octavia-cli#octavia-import-all.
+    more information, see https://airbyte.com/tutorials/version-control-airbyte-configurations.
 
     Args:
         project_dir (str): The path to the root of your Airbyte project, containing sources, destinations,

@@ -5,6 +5,7 @@ from typing import (
     AbstractSet,
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -19,6 +20,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.loader import InstanceLoadableBy
 from dagster._core.origin import JobPythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
@@ -37,6 +39,7 @@ from .tags import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
     from dagster._core.remote_representation.origin import RemoteJobOrigin
 
@@ -580,7 +583,8 @@ class RunRecord(
             ("start_time", Optional[float]),
             ("end_time", Optional[float]),
         ],
-    )
+    ),
+    InstanceLoadableBy[str],
 ):
     """Internal representation of a run record, as stored in a
     :py:class:`~dagster._core.storage.runs.RunStorage`.
@@ -607,6 +611,22 @@ class RunRecord(
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
         )
+
+    @classmethod
+    async def _batch_load(
+        cls,
+        keys: Iterable[str],
+        instance: "DagsterInstance",
+    ) -> Iterable[Optional["RunRecord"]]:
+        result_map: Dict[str, Optional[RunRecord]] = {run_id: None for run_id in keys}
+
+        # this should be replaced with an async DB call
+        records = instance.get_run_records(RunsFilter(run_ids=list(result_map.keys())))
+
+        for record in records:
+            result_map[record.dagster_run.run_id] = record
+
+        return result_map.values()
 
 
 @whitelist_for_serdes

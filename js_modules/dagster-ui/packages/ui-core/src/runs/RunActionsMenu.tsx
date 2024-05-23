@@ -23,6 +23,7 @@ import {DeletionDialog} from './DeletionDialog';
 import {ReexecutionDialog} from './ReexecutionDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses, failedStatuses} from './RunStatuses';
+import {DagsterTag} from './RunTag';
 import {RunTags} from './RunTags';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
@@ -36,6 +37,7 @@ import {useJobAvailabilityErrorForRun} from './useJobAvailabilityErrorForRun';
 import {useJobReexecution} from './useJobReExecution';
 import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
+import {InjectedComponentContext} from '../app/InjectedComponentContext';
 import {DEFAULT_DISABLED_REASON} from '../app/Permissions';
 import {useCopyToClipboard} from '../app/browser';
 import {ReexecutionStrategy} from '../graphql/types';
@@ -53,9 +55,10 @@ interface Props {
 }
 
 export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRun}: Props) => {
+  const {RunMetricsDialog} = React.useContext(InjectedComponentContext);
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<
-    'none' | 'terminate' | 'delete' | 'config' | 'tags'
+    'none' | 'terminate' | 'delete' | 'config' | 'tags' | 'metrics'
   >('none');
 
   const {rootServerURI} = React.useContext(AppContext);
@@ -90,6 +93,7 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
   const pipelineRun =
     data?.pipelineRunOrError?.__typename === 'Run' ? data?.pipelineRunOrError : null;
   const runConfigYaml = pipelineRun?.runConfigYaml;
+  const runMetricsEnabled = run.tags.some((t) => t.key === DagsterTag.RunMetrics);
 
   const repoMatch = useRepositoryForRunWithParentSnapshot(pipelineRun);
   const jobError = useJobAvailabilityErrorForRun({
@@ -218,6 +222,15 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
                 download
                 href={`${rootServerURI}/download_debug/${run.id}`}
               />
+              {runMetricsEnabled && RunMetricsDialog ? (
+                <MenuItem
+                  tagName="button"
+                  icon="asset_plot"
+                  text="View container metrics"
+                  intent="none"
+                  onClick={() => setVisibleDialog('metrics')}
+                />
+              ) : null}
               {run.hasDeletePermission ? (
                 <MenuItem
                   tagName="button"
@@ -245,6 +258,13 @@ export const RunActionsMenu = React.memo(({run, onAddTag, additionalActionsForRu
           onClose={closeDialogs}
           onComplete={onComplete}
           selectedRuns={{[run.id]: run.canTerminate}}
+        />
+      ) : null}
+      {runMetricsEnabled && RunMetricsDialog ? (
+        <RunMetricsDialog
+          runId={run.id}
+          isOpen={visibleDialog === 'metrics'}
+          onClose={closeDialogs}
         />
       ) : null}
       {run.hasDeletePermission ? (
