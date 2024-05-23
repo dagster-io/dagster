@@ -7,6 +7,7 @@ import pendulum
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionSnapshot,
@@ -149,22 +150,58 @@ class SchedulingCondition(ABC, DagsterModel):
         return NewlyTrueCondition(operand=self)
 
     @staticmethod
-    def any_deps_match(condition: "SchedulingCondition") -> "AnyDepsCondition":
+    def any_deps_match(
+        condition: "SchedulingCondition",
+        include_selection: Optional[AssetSelection] = None,
+        exclude_selection: Optional[AssetSelection] = None,
+    ) -> "AnyDepsCondition":
         """Returns a SchedulingCondition that is true for an asset partition if at least one partition
         of any of its dependencies evaluate to True for the given condition.
+
+        Args:
+            condition (SchedulingCondition): The SchedulingCondition that will be evaluated against
+                this asset's dependencies.
+            include_selection (Optional[AssetSelection]): An AssetSelection specifying the
+                dependencies which should be considered when evaluating this condition. By default,
+                all dpendencies will be considered.
+            exclude_selection (Optional[AssetSelection]): An AssetSelection specifying the
+                dependencies which should be ignored when evaluating this condition. By default, no
+                dependencies will be ignored.
         """
         from .operators import AnyDepsCondition
 
-        return AnyDepsCondition(operand=condition)
+        return AnyDepsCondition(
+            operand=condition,
+            include_selection=include_selection,
+            exclude_selection=exclude_selection,
+        )
 
     @staticmethod
-    def all_deps_match(condition: "SchedulingCondition") -> "AllDepsCondition":
+    def all_deps_match(
+        condition: "SchedulingCondition",
+        include_selection: Optional[AssetSelection] = None,
+        exclude_selection: Optional[AssetSelection] = None,
+    ) -> "AllDepsCondition":
         """Returns a SchedulingCondition that is true for an asset partition if at least one partition
         of all of its dependencies evaluate to True for the given condition.
+
+        Args:
+            condition (SchedulingCondition): The SchedulingCondition that will be evaluated against
+                this asset's dependencies.
+            include_selection (Optional[AssetSelection]): An AssetSelection specifying the
+                dependencies which should be considered when evaluating this condition. By default,
+                all dpendencies will be considered.
+            exclude_selection (Optional[AssetSelection]): An AssetSelection specifying the
+                dependencies which should be ignored when evaluating this condition. By default, no
+                dependencies will be ignored.
         """
         from .operators import AllDepsCondition
 
-        return AllDepsCondition(operand=condition)
+        return AllDepsCondition(
+            operand=condition,
+            include_selection=include_selection,
+            exclude_selection=exclude_selection,
+        )
 
     @staticmethod
     def missing() -> "MissingSchedulingCondition":

@@ -1,4 +1,9 @@
+from abc import abstractmethod
+from typing import AbstractSet, Optional
+
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..scheduling_condition import SchedulingCondition, SchedulingResult
@@ -37,20 +42,46 @@ class DepConditionWrapperCondition(SchedulingCondition):
 
 class DepCondition(SchedulingCondition):
     operand: SchedulingCondition
+    include_selection: Optional[AssetSelection] = None
+    exclude_selection: Optional[AssetSelection] = None
+
+    @property
+    @abstractmethod
+    def base_description(self) -> str: ...
+
+    @property
+    def description(self) -> str:
+        description = f"{self.base_description} deps"
+        if self.include_selection is not None:
+            description += f" within selection {self.include_selection}"
+        if self.exclude_selection is not None:
+            description += f" except for {self.exclude_selection}"
+        return description
+
+    def _get_dep_keys(
+        self, asset_key: AssetKey, asset_graph: BaseAssetGraph
+    ) -> AbstractSet[AssetKey]:
+        dep_keys = asset_graph.get(asset_key).parent_keys
+        if self.include_selection is not None:
+            dep_keys &= self.include_selection.resolve(asset_graph)
+        if self.exclude_selection is not None:
+            dep_keys -= self.exclude_selection.resolve(asset_graph)
+        return dep_keys
 
 
 @whitelist_for_serdes
 class AnyDepsCondition(DepCondition):
     @property
-    def description(self) -> str:
-        return "Any deps"
+    def base_description(self) -> str:
+        return "Any"
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
         true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
 
-        dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for i, dep_key in enumerate(sorted(dep_keys)):
+        for i, dep_key in enumerate(
+            sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
+        ):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
@@ -71,15 +102,16 @@ class AnyDepsCondition(DepCondition):
 @whitelist_for_serdes
 class AllDepsCondition(DepCondition):
     @property
-    def description(self) -> str:
-        return "All deps"
+    def base_description(self) -> str:
+        return "All"
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
         true_slice = context.candidate_slice
 
-        dep_keys = context.asset_graph_view.asset_graph.get(context.asset_key).parent_keys
-        for i, dep_key in enumerate(sorted(dep_keys)):
+        for i, dep_key in enumerate(
+            sorted(self._get_dep_keys(context.asset_key, context.asset_graph))
+        ):
             dep_condition = DepConditionWrapperCondition(dep_key=dep_key, operand=self.operand)
             dep_result = dep_condition.evaluate(
                 context.for_child_condition(
