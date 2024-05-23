@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import qs from 'qs';
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useContext, useEffect, useRef} from 'react';
 
 import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -12,6 +12,7 @@ import {
   SearchSecondaryQueryVariables,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -307,6 +308,9 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
+  const {useAugmentSearchResults} = useContext(CloudOSSContext);
+  const augmentSearchResults = useAugmentSearchResults();
+
   const {
     data: primaryData,
     fetch: fetchPrimaryData,
@@ -344,24 +348,26 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
       return;
     }
     const results = primaryDataToSearchResults({data: primaryData});
+    const augmentedResults = augmentSearchResults(results);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
-    primarySearch.current.update(results);
+    primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData]);
+  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
 
   useEffect(() => {
     if (!secondaryData) {
       return;
     }
     const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
+    const augmentedResults = augmentSearchResults(results);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
-    secondarySearch.current.update(results);
+    secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, includeAssetFilters]);
+  }, [consumeBufferEffect, secondaryData, includeAssetFilters, augmentSearchResults]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
