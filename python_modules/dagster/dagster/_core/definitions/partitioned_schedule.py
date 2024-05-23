@@ -54,10 +54,7 @@ class UnresolvedPartitionedAssetScheduleDefinition(NamedTuple):
         return schedule(
             name=self.name,
             cron_schedule=time_partitions_def.get_cron_schedule(
-                self.minute_of_hour,
-                self.hour_of_day,
-                self.day_of_week,
-                self.day_of_month,
+                self.minute_of_hour, self.hour_of_day, self.day_of_week, self.day_of_month
             ),
             job=resolved_job,
             default_status=self.default_status,
