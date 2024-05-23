@@ -12,17 +12,6 @@ type LaunchpadHooksContextValue = {
   LaunchRootExecutionButton?: typeof LaunchRootExecutionButton;
   useLaunchWithTelemetry?: typeof useLaunchWithTelemetry;
   UserDisplay?: typeof UserDisplay;
-  useAllUserDetails?: () => {
-    users: {
-      id: string;
-      user: {
-        name: string | null;
-        email: string;
-        picture: string | null;
-      } | null;
-    }[];
-    loading: boolean;
-  };
   MaterializeButton?: typeof Button;
   PythonErrorInfoHeader?: React.ComponentType<{
     error: GenericError | PythonErrorFragment;
@@ -43,7 +32,6 @@ export function useLaunchPadHooks() {
     useLaunchWithTelemetry: overrideUseLaunchWithTelemetry,
     MaterializeButton: OverrideMaterializeButton,
     UserDisplay: OverrideUserDisplay,
-    useAllUserDetails,
     PythonErrorInfoHeader,
     StaticFilterSorter,
   } = React.useContext(LaunchpadHooksContext);
@@ -54,7 +42,6 @@ export function useLaunchPadHooks() {
     MaterializeButton: OverrideMaterializeButton ?? Button,
     PythonErrorInfoHeader,
     UserDisplay: OverrideUserDisplay ?? UserDisplay,
-    useAllUserDetails,
     StaticFilterSorter,
   };
 }

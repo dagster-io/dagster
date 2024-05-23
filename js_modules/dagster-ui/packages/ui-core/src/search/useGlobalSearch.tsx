@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import qs from 'qs';
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useContext, useEffect, useRef} from 'react';
 
 import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -12,6 +12,7 @@ import {
   SearchSecondaryQueryVariables,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
@@ -21,7 +22,6 @@ import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePath} from '../workspace/workspacePath';
-import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 
 export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) => {
   return `/assets?${qs.stringify({groups: JSON.stringify([groupMetadata])})}`;
@@ -176,7 +176,6 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 const secondaryDataToSearchResults = (
   input: {data?: SearchSecondaryQuery},
   includeAssetFilters: boolean,
-  usersByEmail: Record<string, {name: string | null; email: string}>,
 ) => {
   const {data} = input;
   if (!data?.assetsOrError || data.assetsOrError.__typename === 'PythonError') {
@@ -252,7 +251,7 @@ const secondaryDataToSearchResults = (
 
     const ownerResults: SearchResult[] = countsBySection.countsByOwner.map(
       ({owner, assetCount}) => ({
-        label: usersByEmail[owner]?.name ? `${usersByEmail[owner]?.name} (${owner})` : owner,
+        label: owner,
         description: '',
         type: AssetFilterSearchResultType.Owner,
         href: linkToAssetTableWithOwnerFilter(owner),
@@ -309,17 +308,8 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
-  const {useAllUserDetails} = useLaunchPadHooks();
-  const {users} = useAllUserDetails ? useAllUserDetails() : {users: []};
-  const usersByEmail = users.reduce(
-    (accum, entry) => {
-      if (entry.user) {
-        accum[entry.user.email] = entry.user;
-      }
-      return accum;
-    },
-    {} as Record<string, {name: string | null; email: string}>,
-  );
+  const {useAugmentSearchResults} = useContext(CloudOSSContext);
+  const augmentSearchResults = useAugmentSearchResults();
 
   const {
     data: primaryData,
@@ -358,28 +348,26 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
       return;
     }
     const results = primaryDataToSearchResults({data: primaryData});
+    const augmentedResults = augmentSearchResults(results);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
-    primarySearch.current.update(results);
+    primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData]);
+  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
 
   useEffect(() => {
     if (!secondaryData) {
       return;
     }
-    const results = secondaryDataToSearchResults(
-      {data: secondaryData},
-      includeAssetFilters,
-      usersByEmail,
-    );
+    const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
+    const augmentedResults = augmentSearchResults(results);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
-    secondarySearch.current.update(results);
+    secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, includeAssetFilters, users]);
+  }, [consumeBufferEffect, secondaryData, includeAssetFilters, augmentSearchResults]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
