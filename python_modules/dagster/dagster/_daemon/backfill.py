@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 from contextlib import contextmanager
 from typing import Iterable, Mapping, Optional, Sequence, cast
@@ -19,7 +18,7 @@ from dagster._utils.error import SerializableErrorInfo
 def _get_instigation_logger_if_env_var_set(
     instance, backfill_id: str, default_logger: logging.Logger
 ):
-    if os.getenv("STORE_BACKFILL_LOGS", None):
+    if instance.backfill_log_storage_enabled():
         evaluation_time = pendulum.now("UTC")
         log_key = ["backfill", backfill_id, evaluation_time.strftime("%Y%m%d_%H%M%S")]
         with InstigationLogger(
