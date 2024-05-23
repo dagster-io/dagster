@@ -18,6 +18,7 @@ from dagster import (
     in_process_executor,
     materialize,
     mem_io_manager,
+    multiprocess_executor,
     op,
     repository,
     sensor,
@@ -756,3 +757,100 @@ def test_asset_cycle():
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
         Definitions(assets=[a, b, c, s]).get_all_job_defs()
+
+
+def test_merge():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    @job
+    def job1(): ...
+
+    @job
+    def job2(): ...
+
+    schedule1 = ScheduleDefinition(name="schedule1", job=job1, cron_schedule="@daily")
+    schedule2 = ScheduleDefinition(name="schedule2", job=job2, cron_schedule="@daily")
+
+    @sensor(job=job1)
+    def sensor1(): ...
+
+    @sensor(job=job2)
+    def sensor2(): ...
+
+    resource1 = object()
+    resource2 = object()
+
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    @logger
+    def logger2(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(
+        assets=[asset1],
+        jobs=[job1],
+        schedules=[schedule1],
+        sensors=[sensor1],
+        resources={"resource1": resource1},
+        loggers={"logger1": logger1},
+        executor=in_process_executor,
+    )
+    defs2 = Definitions(
+        assets=[asset2],
+        jobs=[job2],
+        schedules=[schedule2],
+        sensors=[sensor2],
+        resources={"resource2": resource2},
+        loggers={"logger2": logger2},
+    )
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.assets == [asset1, asset2]
+    assert merged.jobs == [job1, job2]
+    assert merged.schedules == [schedule1, schedule2]
+    assert merged.sensors == [sensor1, sensor2]
+    assert merged.resources == {"resource1": resource1, "resource2": resource2}
+    assert merged.loggers == {"logger1": logger1, "logger2": logger2}
+    assert merged.executor == in_process_executor
+
+
+def test_resource_conflict_on_merge():
+    defs1 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 4})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_logger_conflict_on_merge():
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger1})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_executor_conflict_on_merge():
+    defs1 = Definitions(executor=in_process_executor)
+    defs2 = Definitions(executor=multiprocess_executor)
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
+    ):
+        Definitions.merge(defs1, defs2)
