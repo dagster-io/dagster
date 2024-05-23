@@ -548,7 +548,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         if not isinstance(instance.compute_log_manager, CapturedLogManager):
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
-        # TODO - need to gate to plus only
+        if not instance.backfill_log_storage_enabled():
+            # myabe need to return something else to indicate that a setting needs to be changed
+            return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         log_keys = sorted(
             instance.compute_log_manager.get_log_keys_for_log_key_prefix(
