@@ -4,6 +4,28 @@
 
 ### New
 
+- [ui] Command clicking on nodes in the asset lineage tab will now open them in a separate tab. Same with external asset links in the asset graph.
+- [dagster-dbt] Added support for `dbt-core==1.8.*`.
+- Added support for setting a custom job namespace in user code deployments. (thanks [@tmatthews0020](https://github.com/tmatthews0020)!)
+- Removed warnings due to use of `datetime.utcfromtimestamp` (thanks @[dbrtly](https://github.com/dbrtly)!)
+- Custom smtp user can now be used for e-mail alerts (thanks @[edsoncezar16](https://github.com/edsoncezar16)!)
+- [dagster-embedded-elt] Failed dlt pipelines are now accurately reflected on the asset materialization (thanks @[edsoncezar16](https://github.com/edsoncezar16)!)
+
+### Bugfixes
+
+- Fixed spurious errors in logs due to module shadowing.
+- Fixed an issue in the Backfill Daemon where if the assets to be materialized had different `BackfillPolicy`s, each asset would get materialized in its own run, rather than grouping assets together into single run.
+- Fixed an issue that could cause the Asset Daemon to lose information in its cursor about an asset if that asset’s code location was temporarily unavailable.
+- [dagster-dbt] Mitigated issues with cli length limits by only listing specific dbt tests as needed when the tests aren’t included via indirect selection, rather than listing all tests.
+
+### Documentation
+
+- Markdoc tags can now be used in place of MDX components (thanks @[nikomancy](https://github.com/nikomancy))
+
+# 1.7.6 (core) / 0.23.6 (libraries)
+
+### New
+
 - The backfill daemon now has additional logging to document the progression through each tick and why assets are and are not materialized during each evaluation of a backfill.
 - Made performance improvements in both calculating and storing data version for assets, especially for assets with a large fan-in.
 - Standardized table row count metadata output by various integrations to `dagster/row_count` .
