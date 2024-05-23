@@ -1240,6 +1240,26 @@ def test_time_window_partition_len():
         partitions_def.get_partition_keys(current_time)
     )
 
+    @daily_partitioned_config(start_date="2020-01-01", timezone="US/Pacific")
+    def my_daily_dst_transition_partitioned_config(_start, _end):
+        return {}
+
+    partitions_def = cast(
+        TimeWindowPartitionsDefinition, my_daily_dst_transition_partitioned_config.partitions_def
+    )
+
+    current_time_post_transition = datetime.strptime("2024-05-22", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time_post_transition) == len(
+        partitions_def.get_partition_keys(current_time_post_transition)
+    )
+
+    current_time_pre_transition = datetime.strptime("2024-02-01", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time_pre_transition) == len(
+        partitions_def.get_partition_keys(current_time_pre_transition)
+    )
+
 
 def test_get_first_partition_window():
     assert DailyPartitionsDefinition(
