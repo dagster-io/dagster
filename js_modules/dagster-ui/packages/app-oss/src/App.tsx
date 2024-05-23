@@ -1,6 +1,6 @@
 import {App} from '@dagster-io/ui-core/app/App';
 import {createAppCache} from '@dagster-io/ui-core/app/AppCache';
-import {errorLink, setupErrorToasts} from '@dagster-io/ui-core/app/AppError';
+import {createErrorLink, setupErrorToasts} from '@dagster-io/ui-core/app/AppError';
 import {AppProvider} from '@dagster-io/ui-core/app/AppProvider';
 import {AppTopNav} from '@dagster-io/ui-core/app/AppTopNav/AppTopNav';
 import {ContentRoot} from '@dagster-io/ui-core/app/ContentRoot';
@@ -19,7 +19,7 @@ import {telemetryLink} from './telemetryLink';
 
 const {pathPrefix, telemetryEnabled, liveDataPollRate, instanceId} = extractInitializationData();
 
-const apolloLinks = [logLink, errorLink, timeStartLink];
+const apolloLinks = [logLink, createErrorLink(true), timeStartLink];
 
 if (telemetryEnabled) {
   apolloLinks.unshift(telemetryLink(pathPrefix));
