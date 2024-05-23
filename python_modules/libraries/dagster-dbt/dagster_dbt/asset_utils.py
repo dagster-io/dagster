@@ -39,6 +39,7 @@ from dagster._core.definitions.decorators.asset_decorator import (
     _validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.definitions.metadata.metadata_set import StorageAddressMetadataSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
@@ -408,8 +409,8 @@ def default_metadata_from_dbt_resource_props(
     metadata: Dict[str, Any] = {}
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        return dict(
-            TableMetadataSet(
+        metadata = {
+            **TableMetadataSet(
                 column_schema=TableSchema(
                     columns=[
                         TableColumn(
@@ -421,7 +422,17 @@ def default_metadata_from_dbt_resource_props(
                     ]
                 )
             )
-        )
+        }
+
+    # all nodes should have these props defined
+    if (
+        "database" in dbt_resource_props
+        and "schema" in dbt_resource_props
+        and "name" in dbt_resource_props
+    ):
+        storage_address = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+        metadata = {**metadata, **StorageAddressMetadataSet(storage_address=storage_address)}
+
     return metadata
 
 
