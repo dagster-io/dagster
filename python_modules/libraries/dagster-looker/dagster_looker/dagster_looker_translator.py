@@ -6,10 +6,18 @@ from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, c
 
 from dagster import AssetKey
 from dagster._annotations import experimental, public
+from dagster._core.definitions.utils import (
+    is_valid_definition_tag_key,
+    is_valid_owner,
+    is_valid_team_owner,
+)
 from sqlglot import exp, parse_one, to_table
 from sqlglot.optimizer import Scope, build_scope, optimize
 
 LookMLStructureType = Literal["dashboard", "explore", "table", "view"]
+
+DAGSTER_LOOKER_OWNER_TAG_PREFIX = "owner:"
+DAGSTER_LOOKER_GROUP_TAG_PREFIX = "group:"
 
 logger = logging.getLogger("dagster_looker")
 
@@ -343,6 +351,30 @@ class DagsterLookerTranslator:
         Returns:
             Optional[str]: A Dagster group name for the LookML structure.
         """
+        _, lookml_structure_type, lookml_structure_props = lookml_structure
+
+        if lookml_structure_type == "explore":
+            lookml_explore_tags: Sequence[str] = lookml_structure_props.get("tags", [])
+
+            dagster_group_names = []
+            for lookml_explore_tag in lookml_explore_tags:
+                if not lookml_explore_tag.startswith(DAGSTER_LOOKER_GROUP_TAG_PREFIX):
+                    continue
+
+                _, _, dagster_group_name_from_lookml_tag = lookml_explore_tag.partition(
+                    DAGSTER_LOOKER_GROUP_TAG_PREFIX
+                )
+                dagster_group_name_from_lookml_tag = (
+                    dagster_group_name_from_lookml_tag.strip().replace(" ", "_")
+                )
+
+                dagster_group_names.append(dagster_group_name_from_lookml_tag)
+
+            if not dagster_group_names:
+                return None
+
+            return dagster_group_names.pop()
+
         return None
 
     @public
@@ -371,6 +403,38 @@ class DagsterLookerTranslator:
         Returns:
             Optional[Sequence[str]]: A sequence of Dagster owners for the LookML structure.
         """
+        _, lookml_structure_type, lookml_structure_props = lookml_structure
+
+        if lookml_structure_type == "explore":
+            lookml_explore_tags: Sequence[str] = lookml_structure_props.get("tags", [])
+
+            dagster_owner_names = []
+            for lookml_explore_tag in lookml_explore_tags:
+                if not lookml_explore_tag.startswith(DAGSTER_LOOKER_OWNER_TAG_PREFIX):
+                    continue
+
+                _, _, dagster_owner_name_from_lookml_tag = lookml_explore_tag.partition(
+                    DAGSTER_LOOKER_OWNER_TAG_PREFIX
+                )
+
+                # Coerce owner to team if it is not a valid owner.
+                dagster_owner_name_from_lookml_tag = (
+                    dagster_owner_name_from_lookml_tag.strip().replace(" ", "_")
+                )
+                if not is_valid_owner(dagster_owner_name_from_lookml_tag):
+                    dagster_owner_name_from_lookml_tag = (
+                        f"team:{dagster_owner_name_from_lookml_tag}"
+                    )
+                    if not is_valid_team_owner(dagster_owner_name_from_lookml_tag):
+                        continue
+
+                dagster_owner_names.append(dagster_owner_name_from_lookml_tag)
+
+            if not dagster_owner_names:
+                return None
+
+            return dagster_owner_names
+
         return None
 
     @public
@@ -400,4 +464,24 @@ class DagsterLookerTranslator:
             Optional[Mapping[str, str]]: A dictionary representing the Dagster tags for the
                 LookML structure.
         """
+        _, lookml_structure_type, lookml_structure_props = lookml_structure
+
+        if lookml_structure_type == "explore":
+            lookml_explore_tags: Sequence[str] = lookml_structure_props.get("tags", [])
+
+            dagster_tags = {}
+            for lookml_explore_tag in lookml_explore_tags:
+                if lookml_explore_tag.startswith(
+                    (DAGSTER_LOOKER_OWNER_TAG_PREFIX, DAGSTER_LOOKER_GROUP_TAG_PREFIX)
+                ):
+                    continue
+
+                dagster_tag_from_lookml_tag = lookml_explore_tag.strip().replace(" ", "_")
+                if not is_valid_definition_tag_key(dagster_tag_from_lookml_tag):
+                    continue
+
+                dagster_tags[dagster_tag_from_lookml_tag] = ""
+
+            return dagster_tags
+
         return None

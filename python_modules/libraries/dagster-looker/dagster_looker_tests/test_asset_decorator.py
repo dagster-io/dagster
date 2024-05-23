@@ -3,10 +3,15 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
 from dagster import AssetKey
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster_looker.asset_decorator import looker_assets
 from dagster_looker.dagster_looker_translator import DagsterLookerTranslator, LookMLStructureType
 
-from .looker_projects import test_exception_derived_table_path, test_retail_demo_path
+from .looker_projects import (
+    test_exception_derived_table_path,
+    test_looker_tags_path,
+    test_retail_demo_path,
+)
 
 
 def test_asset_deps() -> None:
@@ -402,3 +407,69 @@ def test_with_tag_replacements() -> None:
 
     for tags in my_looker_assets.tags_by_key.values():
         assert tags == expected_tags
+
+
+def test_looker_tags_group() -> None:
+    @looker_assets(
+        project_dir=test_looker_tags_path.joinpath("models", "as_dagster_group", "with_valid_tags")
+    )
+    def my_looker_assets(): ...
+
+    assert my_looker_assets.group_names_by_key == {
+        AssetKey(["explore", "looker_group_tag"]): "customized_group",
+        AssetKey(["explore", "looker_group_tag_has_trimmed_whitespace"]): "customized_group",
+        AssetKey(["explore", "looker_group_tag_has_replaced_whitespace"]): "customized_group",
+    }
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+
+        @looker_assets(
+            project_dir=test_looker_tags_path.joinpath(
+                "models", "as_dagster_group", "with_invalid_tags"
+            )
+        )
+        def my_looker_assets_with_invalid_group_tags(): ...
+
+
+def test_looker_tags_owners() -> None:
+    @looker_assets(
+        project_dir=test_looker_tags_path.joinpath("models", "as_dagster_owners", "with_valid_tags")
+    )
+    def my_looker_assets(): ...
+
+    assert my_looker_assets.owners_by_key == {
+        AssetKey(["explore", "looker_owner_user_tag"]): ["owner@company.com"],
+        AssetKey(["explore", "looker_owner_user_tag_has_trimmed_whitespace"]): [
+            "owner@company.com"
+        ],
+        AssetKey(["explore", "looker_owner_team_tag"]): ["team:customized_owner"],
+        AssetKey(["explore", "looker_owner_coerced_team_tag"]): ["team:customized_owner"],
+        AssetKey(["explore", "looker_owner_coerced_team_tag_has_replaced_whitespace"]): [
+            "team:customized_owner"
+        ],
+        AssetKey(["explore", "looker_owner_team_tag_has_trimmed_whitespace"]): [
+            "team:customized_owner"
+        ],
+    }
+
+
+def test_looker_tags() -> None:
+    @looker_assets(
+        project_dir=test_looker_tags_path.joinpath("models", "as_dagster_group", "with_valid_tags")
+    )
+    def my_looker_assets(): ...
+
+    assert my_looker_assets.tags_by_key == {
+        AssetKey(["explore", "looker_group_tag"]): {
+            "customized_tag": "",
+            "customized_tag_with_whitespace": "",
+        },
+        AssetKey(["explore", "looker_group_tag_has_trimmed_whitespace"]): {
+            "customized_tag": "",
+            "customized_tag_with_whitespace": "",
+        },
+        AssetKey(["explore", "looker_group_tag_has_replaced_whitespace"]): {
+            "customized_tag": "",
+            "customized_tag_with_whitespace": "",
+        },
+    }
