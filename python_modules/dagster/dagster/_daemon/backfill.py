@@ -1,10 +1,10 @@
 import logging
 import os
 import sys
+from contextlib import contextmanager
 from typing import Iterable, Mapping, Optional, Sequence, cast
 
 import pendulum
-from contextlib import contextmanager
 
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
@@ -15,6 +15,7 @@ from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.error import SerializableErrorInfo
 
 
+@contextmanager
 def _get_instigation_logger_if_env_var_set(
     instance, backfill_id: str, default_logger: logging.Logger
 ):
