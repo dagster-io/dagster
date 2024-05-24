@@ -237,13 +237,15 @@ Consider the following example:
   }
   ```
 
-- **But a specific job** has the `pod_spec_config` key in the `dagster-k8s/config` tag set to:
+- **But a specific job** has the `dagster-k8s/config` tag set to:
 
   ```json
   {
-    "node_selector": { "region": "east" },
-    "dns_policy": "Default",
-    "image_pull_secrets": [{ "name": "another-secret" }]
+    "pod_spec_config": {
+      "node_selector": { "region": "east" },
+      "dns_policy": "Default",
+      "image_pull_secrets": [{ "name": "another-secret" }]
+    }
   }
   ```
 
@@ -271,12 +273,14 @@ To modify the previous example:
   }
   ```
 
-- **But a specific job** has the `pod_spec_config` key in the `dagster-k8s/config` tag set to:
+- **But a specific job** has the `dagster-k8s/config` tag set to:
 
   ```json
   {
-    "node_selector": { "region": "east" },
-    "image_pull_secrets": [{ "name": "another-secret" }],
+    "pod_spec_config": {
+      "node_selector": { "region": "east" },
+      "image_pull_secrets": [{ "name": "another-secret" }]
+    },
     "merge_behavior": "SHALLOW"
   }
   ```
