@@ -61,6 +61,7 @@ import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
 import {PipelineTag} from '../pipelines/PipelineReference';
+import {numberFormatter} from '../ui/formatters';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -149,11 +150,11 @@ export const AssetNodeOverview = ({
             />
           </Box>
         ) : undefined}
-        {rowCountMeta ? (
+        {rowCountMeta?.intValue ? (
           <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
             <Box>
-              <Tag icon="table_rows">{rowCountMeta.intValue}</Tag>
+              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
             </Box>
           </Box>
         ) : undefined}
