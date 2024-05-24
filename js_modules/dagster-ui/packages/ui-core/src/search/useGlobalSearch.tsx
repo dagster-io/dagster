@@ -17,6 +17,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -31,6 +32,12 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
+
+export const linkToAssetTableWithStorageKindFilter = (tag: DefinitionTag) => {
+  return `/assets?${qs.stringify({
+    storageKindTags: JSON.stringify([tag]),
   })}`;
 };
 
@@ -214,14 +221,25 @@ const secondaryDataToSearchResults = (
         numResults: assetCount,
       }),
     );
+    const storageKindResults: SearchResult[] = countsBySection.countPerTag
+      .filter(({tag}) => isCanonicalStorageKindTag(tag))
+      .map(({tag, assetCount}) => ({
+        label: tag.value,
+        description: '',
+        type: AssetFilterSearchResultType.StorageKind,
+        href: linkToAssetTableWithStorageKindFilter(tag),
+        numResults: assetCount,
+      }));
 
-    const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
-      label: buildTagString(tag),
-      description: '',
-      type: AssetFilterSearchResultType.Tag,
-      href: linkToAssetTableWithTagFilter(tag),
-      numResults: assetCount,
-    }));
+    const tagResults: SearchResult[] = countsBySection.countPerTag
+      .filter(({tag}) => !isCanonicalStorageKindTag(tag))
+      .map(({tag, assetCount}) => ({
+        label: buildTagString(tag),
+        description: '',
+        type: AssetFilterSearchResultType.Tag,
+        href: linkToAssetTableWithTagFilter(tag),
+        numResults: assetCount,
+      }));
 
     const codeLocationResults: SearchResult[] = countsBySection.countPerCodeLocation.map(
       (codeLocationAssetCount) => ({
@@ -262,6 +280,7 @@ const secondaryDataToSearchResults = (
     return [
       ...assets,
       ...computeKindResults,
+      ...storageKindResults,
       ...tagResults,
       ...codeLocationResults,
       ...ownerResults,
