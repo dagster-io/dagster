@@ -1,18 +1,18 @@
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict
 
 from setuptools import find_packages, setup
 
 
-def get_version() -> Tuple[str, str]:
+def get_version() -> str:
     version: Dict[str, str] = {}
     with open(Path(__file__).parent / "dagster_dbt/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
-    return version["__version__"], version["DBT_CORE_VERSION_UPPER_BOUND"]
+    return version["__version__"]
 
 
-dagster_dbt_version, DBT_CORE_VERSION_UPPER_BOUND = get_version()
+dagster_dbt_version, DBT_CORE_VERSION_UPPER_BOUND = get_version(), "1.9"
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if dagster_dbt_version == "1!0+dev" else f"=={dagster_dbt_version}"
 setup(
