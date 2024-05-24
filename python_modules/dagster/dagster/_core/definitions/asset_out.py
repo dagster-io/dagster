@@ -2,6 +2,8 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import (
@@ -14,6 +16,7 @@ from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster._utils.warnings import disable_dagster_warnings
 
 from .utils import validate_tags_strict
 
@@ -135,3 +138,19 @@ class AssetOut(
             io_manager_key=self.io_manager_key,
             code_version=self.code_version,
         )
+
+    def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
+        with disable_dagster_warnings():
+            return AssetSpec(
+                key=key,
+                metadata=self.metadata,
+                description=self.description,
+                skippable=not self.is_required,
+                group_name=self.group_name,
+                code_version=self.code_version,
+                freshness_policy=self.freshness_policy,
+                auto_materialize_policy=self.auto_materialize_policy,
+                owners=self.owners,
+                tags=self.tags,
+                deps=deps,
+            )

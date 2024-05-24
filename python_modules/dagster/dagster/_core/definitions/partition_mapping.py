@@ -1,8 +1,10 @@
 import collections.abc
 import itertools
+import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from collections import defaultdict
 from datetime import datetime
+from functools import lru_cache
 from typing import (
     Collection,
     Dict,
@@ -1127,6 +1129,7 @@ def infer_partition_mapping(
         return AllPartitionMapping()
 
 
+@lru_cache(maxsize=1)
 def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
     from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
@@ -1140,3 +1143,19 @@ def get_builtin_partition_mapping_types() -> Tuple[Type[PartitionMapping], ...]:
         MultiToSingleDimensionPartitionMapping,
         MultiPartitionMapping,
     )
+
+
+def warn_if_partition_mapping_not_builtin(partition_mapping: PartitionMapping) -> None:
+    builtin_partition_mappings = get_builtin_partition_mapping_types()
+    if not isinstance(partition_mapping, builtin_partition_mappings):
+        warnings.warn(
+            f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
+            "are deprecated and will not work with asset reconciliation. The built-in "
+            "partition mappings are "
+            + ", ".join(
+                builtin_partition_mapping.__name__
+                for builtin_partition_mapping in builtin_partition_mappings
+            )
+            + ".",
+            category=DeprecationWarning,
+        )
