@@ -114,7 +114,6 @@ else:
     from dbt.node_types import REFABLE_NODE_TYPES as REFABLE_NODE_TYPES
     from dbt_common.events.event_manager_client import cleanup_event_logger
 
-
 logger = get_dagster_logger()
 
 
@@ -1508,6 +1507,7 @@ class DbtCliResource(ConfigurableResource):
         if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
             register_adapter(config)  # type: ignore
         else:
+            from dbt.adapters.protocol import MacroContextGeneratorCallable
             from dbt.context.providers import generate_runtime_macro_context
             from dbt.mp_context import get_mp_context
             from dbt.parser.manifest import ManifestLoader
@@ -1516,11 +1516,13 @@ class DbtCliResource(ConfigurableResource):
             adapter = cast(BaseAdapter, get_adapter(config))
             manifest = ManifestLoader.load_macros(
                 config,
-                adapter.connections.set_query_header,
+                adapter.connections.set_query_header,  # type: ignore
                 base_macros_only=True,
             )
             adapter.set_macro_resolver(manifest)
-            adapter.set_macro_context_generator(generate_runtime_macro_context)
+            adapter.set_macro_context_generator(
+                cast(MacroContextGeneratorCallable, generate_runtime_macro_context)
+            )
 
         adapter = cast(BaseAdapter, get_adapter(config))
 
