@@ -532,7 +532,7 @@ def test_all_asset_selection_subclasses_serializable():
 
     for asset_selection_subclass in asset_selection_subclasses:
         if asset_selection_subclass != AssetSelection:
-            assert _WHITELIST_MAP.has_object_serializer(asset_selection_subclass.__name__)
+            assert asset_selection_subclass.__name__ in _WHITELIST_MAP.object_serializers
 
 
 def test_to_serializable_asset_selection():

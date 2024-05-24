@@ -266,4 +266,4 @@ class AutoMaterializeRule(ABC):
 
     def __hash__(self) -> int:
         # override the default NamedTuple __hash__ method to factor in types
-        return hash(hash(type(self)) + super().__hash__())
+        return hash(hash(type(self).__name__) + super().__hash__())
