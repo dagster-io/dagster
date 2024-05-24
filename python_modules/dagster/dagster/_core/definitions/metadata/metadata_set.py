@@ -62,27 +62,27 @@ class NamespacedKVSet(ABC, DagsterModel):
         return getattr(self, self._strip_namespace_from_key(key))
 
     @classmethod
-    def extract(cls: Type[T_NamespacedKVSet], metadata: Mapping[str, Any]) -> T_NamespacedKVSet:
-        """Extracts entries from the provided metadata dictionary into an instance of this class.
+    def extract(cls: Type[T_NamespacedKVSet], values: Mapping[str, Any]) -> T_NamespacedKVSet:
+        """Extracts entries from the provided dictionary into an instance of this class.
 
-        Ignores any entries in the metadata dictionary whose keys don't correspond to fields on this
+        Ignores any entries in the dictionary whose keys don't correspond to fields on this
         class.
 
         In general, the following should always pass:
 
         .. code-block:: python
 
-            class MyMetadataSet(NamedspacedMetadataSet):
+            class MyKVSet(NamespacedKVSet):
                 ...
 
-            metadata: MyMetadataSet  = ...
-            assert MyMetadataSet.extract(dict(metadata)) == metadata
+            metadata: MyKVSet  = ...
+            assert MyKVSet.extract(dict(metadata)) == metadata
 
         Args:
-            metadata (Mapping[str, Any]): A dictionary of metadata entries.
+            values (Mapping[str, Any]): A dictionary of entries to extract.
         """
         kwargs = {}
-        for namespaced_key, value in metadata.items():
+        for namespaced_key, value in values.items():
             splits = namespaced_key.split("/")
             if len(splits) == 2:
                 namespace, key = splits

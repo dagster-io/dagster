@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from typing_extensions import TypeVar, get_args
 
@@ -40,6 +40,6 @@ class NamespacedTagSet(NamespacedKVSet):
         super().__init__(*args, **kwargs)
 
     @classmethod
-    def _extract_value(cls, field_name: str, value: Any) -> Any:
+    def _extract_value(cls, field_name: str, value: Any) -> str:
         """Since all tag values are strings, we don't need to do any type coercion."""
-        return value
+        return cast(str, value)
