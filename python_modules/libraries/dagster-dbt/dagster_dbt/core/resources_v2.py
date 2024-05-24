@@ -289,15 +289,19 @@ class DbtCliEventMessage:
                     ).items()
                 }
 
-                lineage_metadata = _build_column_lineage_metadata(
-                    event_history_metadata=EventHistoryMetadata(
-                        columns=column_data, parents=parent_column_data
-                    ),
-                    dbt_resource_props=dbt_resource_props,
-                    manifest=manifest,
-                    dagster_dbt_translator=dagster_dbt_translator,
-                    target_path=target_path,
-                )
+                if (
+                    # Column lineage can only be built if initial metadata is provided.
+                    self.has_column_lineage_metadata
+                ):
+                    lineage_metadata = _build_column_lineage_metadata(
+                        event_history_metadata=EventHistoryMetadata(
+                            columns=column_data, parents=parent_column_data
+                        ),
+                        dbt_resource_props=dbt_resource_props,
+                        manifest=manifest,
+                        dagster_dbt_translator=dagster_dbt_translator,
+                        target_path=target_path,
+                    )
             except Exception as e:
                 logger.warning(
                     "An error occurred while building column lineage metadata for the dbt resource"
