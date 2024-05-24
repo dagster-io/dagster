@@ -12,6 +12,7 @@ import {
   SearchSecondaryQueryVariables,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
+import {AppContext} from '../app/AppContext';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
@@ -311,13 +312,15 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const {useAugmentSearchResults} = useContext(CloudOSSContext);
   const augmentSearchResults = useAugmentSearchResults();
 
+  const {localCacheIdPrefix} = useContext(AppContext);
+
   const {
     data: primaryData,
     fetch: fetchPrimaryData,
     loading: primaryDataLoading,
   } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
     query: SEARCH_PRIMARY_QUERY,
-    key: 'SearchPrimary',
+    key: `${localCacheIdPrefix}/SearchPrimary`,
     version: SEARCH_PRIMARY_DATA_VERSION,
   });
 
@@ -327,7 +330,7 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
     loading: secondaryDataLoading,
   } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
     query: SEARCH_SECONDARY_QUERY,
-    key: 'SearchSecondary',
+    key: `${localCacheIdPrefix}/SearchSecondary`,
     version: SEARCH_SECONDARY_DATA_VERSION,
   });
 
