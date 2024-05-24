@@ -150,7 +150,7 @@ export const AssetNodeOverview = ({
             />
           </Box>
         ) : undefined}
-        {rowCountMeta ? (
+        {rowCountMeta?.intValue ? (
           <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
             <Box>
