@@ -2,9 +2,11 @@ import {CaptionMono, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {OpTags} from './OpTags';
-import {DefinitionTag} from '../graphql/types';
+import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
 
 export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === 'dagster/storage_kind';
+export const buildStorageKindTag = (storageKind: string): DefinitionTag =>
+  buildDefinitionTag({key: 'dagster/storage_kind', value: storageKind});
 
 export const AssetComputeKindTag = ({
   definition,
