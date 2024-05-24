@@ -1,7 +1,7 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
 import * as React from 'react';
-import {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
+import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
 import {useSetRecoilState} from 'recoil';
 
@@ -18,6 +18,7 @@ import {
 } from './types/AssetsCatalogTable.types';
 import {useAssetCatalogFiltering} from './useAssetCatalogFiltering';
 import {AssetViewType, useAssetView} from './useAssetView';
+import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
@@ -40,11 +41,13 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     assets: Asset[] | undefined;
   }>({error: undefined, assets: undefined});
 
+  const {localCacheIdPrefix} = useContext(AppContext);
+
   const assetsQuery = useIndexedDBCachedQuery<
     AssetCatalogTableQuery,
     AssetCatalogTableQueryVariables
   >({
-    key: 'allAssets',
+    key: `${localCacheIdPrefix}/allAssets`,
     query: ASSET_CATALOG_TABLE_QUERY,
     version: 1,
   });
