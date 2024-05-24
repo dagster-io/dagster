@@ -68,7 +68,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
         </AssetNodeBox>
-        <Box style={{right: -2}} flex={{direction: 'row-reverse', gap: 8}}>
+        <Box flex={{direction: 'row-reverse', gap: 8}}>
           {storageKindTag && (
             <AssetStorageKindTag
               storageKind={storageKindTag.value}

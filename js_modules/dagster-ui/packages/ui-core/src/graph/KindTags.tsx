@@ -69,11 +69,7 @@ export const AssetStorageKindTag = ({
         tags={[
           {
             label: storageKind,
-            onClick: () => {
-              window.requestAnimationFrame(() =>
-                document.dispatchEvent(new Event('show-kind-info')),
-              );
-            },
+            onClick: () => {},
           },
         ]}
       />
