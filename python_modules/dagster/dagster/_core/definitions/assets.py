@@ -90,6 +90,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     :py:func:`@asset <asset>` or :py:func:`@multi_asset <multi_asset>` decorators.
     """
 
+    # Constructor arguments that are redundant with the specs argument
+    _dagster_internal_init_excluded_args = {
+        "group_names_by_key",
+        "metadata_by_key",
+        "tags_by_key",
+        "freshness_policies_by_key",
+        "auto_materialize_policies_by_key",
+        "partition_mappings",
+        "descriptions_by_key",
+        "asset_deps",
+        "owners_by_key",
+    }
+
     _node_def: NodeDefinition
     _keys_by_input_name: Mapping[str, AssetKey]
     _keys_by_output_name: Mapping[str, AssetKey]
@@ -1418,7 +1431,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             resource_defs_to_merge_in=resource_defs,
             requires_resources=self,
         )
-        return self.__class__.dagster_internal_init(**attributes_dict)
+        with disable_dagster_warnings():
+            return self.__class__(**attributes_dict)
 
     def get_attributes_dict(self) -> Dict[str, Any]:
         return dict(

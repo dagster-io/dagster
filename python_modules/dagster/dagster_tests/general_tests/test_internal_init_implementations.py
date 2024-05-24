@@ -33,6 +33,10 @@ def test_dagster_internal_init_class_follow_rules(cls: Type):
         " dagster_internal_init methods can only have keyword-only arguments"
     )
 
-    assert [*dagster_internal_init_params.keys()] == (
-        [k for k in init_params.keys() if k != "self"]
+    excluded_args = getattr(cls, "_dagster_internal_init_excluded_args", set())
+    dagster_internal_init_expected_param_names = [
+        k for k in init_params.keys() if k not in excluded_args and k != "self"
+    ]
+    assert (
+        [*dagster_internal_init_params.keys()] == dagster_internal_init_expected_param_names
     ), f"{cls.__name__}.dagster_internal_init has different arguments than __init__"
