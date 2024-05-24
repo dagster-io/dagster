@@ -41,18 +41,14 @@ class DataprocClient:
     def dataproc_clusters(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            self.dataproc.projects()
-            .regions()
-            .clusters()
+            self.dataproc.projects().regions().clusters()
         )
 
     @property
     def dataproc_jobs(self):
         return (
             # Google APIs dynamically genned, so pylint pukes
-            self.dataproc.projects()
-            .regions()
-            .jobs()
+            self.dataproc.projects().regions().jobs()
         )
 
     def create_cluster(self):

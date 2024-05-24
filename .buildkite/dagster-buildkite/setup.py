@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="dagster_buildkite",
+    name="dagster-buildkite",
     version="0.0.1",
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
@@ -29,6 +29,7 @@ setup(
     entry_points={
         "console_scripts": [
             "dagster-buildkite = dagster_buildkite.cli:dagster",
+            "dagster-buildkite-nightly = dagster_buildkite.cli:dagster_nightly",
         ]
     },
 )

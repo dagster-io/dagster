@@ -55,8 +55,7 @@ def is_config_scalar_valid(config_type_snap: ConfigTypeSnap, config_value: objec
 
 
 def validate_config(config_schema: object, config_value: T) -> EvaluateValueResult[T]:
-    config_type = resolve_to_config_type(config_schema)
-    config_type = check.inst(cast(ConfigType, config_type), ConfigType)
+    config_type = check.inst(resolve_to_config_type(config_schema), ConfigType)
 
     return validate_config_from_snap(
         config_schema_snapshot=config_type.get_schema_snapshot(),
@@ -221,9 +220,7 @@ def validate_selector_config(
     )
 
     if child_evaluate_value_result.success:
-        return EvaluateValueResult.for_value(  # type: ignore
-            {field_name: child_evaluate_value_result.value}
-        )
+        return EvaluateValueResult.for_value({field_name: child_evaluate_value_result.value})
     else:
         return child_evaluate_value_result
 
@@ -301,7 +298,7 @@ def _validate_shape_config(
     if errors:
         return EvaluateValueResult.for_errors(errors)
     else:
-        return EvaluateValueResult.for_value(config_value)  # type: ignore
+        return EvaluateValueResult.for_value(config_value)
 
 
 def validate_permissive_shape_config(
@@ -434,7 +431,7 @@ def validate_enum_config(
 
 def process_config(
     config_type: object, config_dict: Mapping[str, object]
-) -> EvaluateValueResult[Mapping[str, object]]:
+) -> EvaluateValueResult[Mapping[str, Any]]:
     config_type = resolve_to_config_type(config_type)
     config_type = check.inst(cast(ConfigType, config_type), ConfigType)
     validate_evr = validate_config(config_type, config_dict)

@@ -30,15 +30,15 @@ from .attach_other_object_to_context import (
 )
 from .config import Config
 from .conversion_utils import TResValue
-from .inheritance_utils import safe_is_subclass
 from .resource import (
     AllowDelayedDependencies,
     ConfigurableResourceFactory,
     PartialResource,
     ResourceId,
     ResourceWithKeyMapping,
-    Self,
+    T_Self,
 )
+from .type_check_utils import safe_is_subclass
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -111,12 +111,23 @@ class IOManagerWithKeyMapping(ResourceWithKeyMapping, IOManagerDefinition):
         resource_id_to_key_mapping: Dict[ResourceId, str],
     ):
         ResourceWithKeyMapping.__init__(self, resource, resource_id_to_key_mapping)
+
+        if isinstance(resource, IOManagerDefinition):
+            input_config_schema = resource.input_config_schema
+            output_config_schema = resource.output_config_schema
+        else:
+            input_config_schema = None
+            output_config_schema = None
         IOManagerDefinition.__init__(
-            self, resource_fn=self.resource_fn, config_schema=resource.config_schema
+            self,
+            resource_fn=self.resource_fn,
+            config_schema=resource.config_schema,
+            input_config_schema=input_config_schema,
+            output_config_schema=output_config_schema,
         )
 
 
-class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue]):
+class ConfigurableIOManagerFactory(ConfigurableResourceFactory, Generic[TResValue]):
     """Base class for Dagster IO managers that utilize structured config. This base class
     is useful for cases in which the returned IO manager is not the same as the class itself
     (e.g. when it is a wrapper around the actual IO manager implementation).
@@ -165,19 +176,19 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         ConfigurableResourceFactory.__init__(self, **data)
 
     @abstractmethod
-    def create_io_manager(self, context) -> TIOManagerValue:
+    def create_io_manager(self, context) -> TResValue:
         """Implement as one would implement a @io_manager decorator function."""
         raise NotImplementedError()
 
-    def create_resource(self, context: InitResourceContext) -> TIOManagerValue:
+    def create_resource(self, context: InitResourceContext) -> TResValue:
         return self.create_io_manager(context)
 
     @classmethod
-    def configure_at_launch(cls: "Type[Self]", **kwargs) -> "PartialIOManager[Self]":
+    def configure_at_launch(cls: "Type[T_Self]", **kwargs) -> "PartialIOManager[T_Self]":
         """Returns a partially initialized copy of the IO manager, with remaining config fields
         set at runtime.
         """
-        return PartialIOManager(cls, data=kwargs)
+        return PartialIOManager(resource_cls=cls, data=kwargs)
 
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
@@ -206,14 +217,10 @@ class ConfigurableIOManagerFactory(ConfigurableResourceFactory[TIOManagerValue])
         return None
 
 
-class PartialIOManager(Generic[TResValue], PartialResource[TResValue]):
-    def __init__(
-        self,
-        resource_cls: Type[ConfigurableResourceFactory[TResValue]],
-        data: Dict[str, Any],
-    ):
-        PartialResource.__init__(self, resource_cls, data)
-
+class PartialIOManager(
+    PartialResource[TResValue],
+    Generic[TResValue],
+):
     @cached_method
     def get_resource_definition(self) -> ConfigurableIOManagerFactoryResourceDefinition:
         input_config_schema = None

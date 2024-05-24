@@ -5,13 +5,11 @@ import requests
 from .assets_initial_state import topstory_ids
 
 # start_topstories_asset_with_logger
-from dagster import asset, get_dagster_logger
+from dagster import asset, AssetExecutionContext
 
 
 @asset(deps=[topstory_ids])
-def topstories() -> None:
-    logger = get_dagster_logger()
-
+def topstories(context: AssetExecutionContext) -> None:
     with open("data/topstory_ids.json", "r") as f:
         topstory_ids = json.load(f)
 
@@ -23,7 +21,7 @@ def topstories() -> None:
         results.append(item)
 
         if len(results) % 20 == 0:
-            logger.info(f"Got {len(results)} items so far.")
+            context.log.info(f"Got {len(results)} items so far.")
 
     df = pd.DataFrame(results)
     df.to_csv("data/topstories.csv")

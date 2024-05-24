@@ -5,7 +5,7 @@ from dagster._core.definitions import (
     AssetMaterialization,
     NodeHandle,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
@@ -29,7 +29,7 @@ class StepOutputProperties(
             ("should_materialize", bool),
             ("asset_key", Optional[AssetKey]),
             ("is_asset_partitioned", bool),
-            ("asset_check_handle", Optional[AssetCheckHandle]),
+            ("asset_check_key", Optional[AssetCheckKey]),
         ],
     )
 ):
@@ -41,7 +41,7 @@ class StepOutputProperties(
         should_materialize: bool,
         asset_key: Optional[AssetKey] = None,
         is_asset_partitioned: bool = False,
-        asset_check_handle: Optional[AssetCheckHandle] = None,
+        asset_check_key: Optional[AssetCheckKey] = None,
     ):
         return super(StepOutputProperties, cls).__new__(
             cls,
@@ -51,7 +51,7 @@ class StepOutputProperties(
             check.bool_param(should_materialize, "should_materialize"),
             check.opt_inst_param(asset_key, "asset_key", AssetKey),
             check.bool_param(is_asset_partitioned, "is_asset_partitioned"),
-            check.opt_inst_param(asset_check_handle, "asset_check_handle", AssetCheckHandle),
+            check.opt_inst_param(asset_check_key, "asset_check_key", AssetCheckKey),
         )
 
 

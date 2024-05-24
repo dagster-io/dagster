@@ -1,7 +1,7 @@
 module.exports = {
   presets: [
     ['@babel/preset-env', {targets: {node: 'current'}}],
-    '@babel/preset-react',
+    ['@babel/preset-react', {runtime: 'automatic'}],
     '@babel/preset-typescript',
   ],
   plugins: [
@@ -12,5 +12,6 @@ module.exports = {
     '@babel/plugin-proposal-private-property-in-object',
     '@babel/plugin-proposal-private-methods',
     'babel-plugin-macros',
+    'babel-plugin-transform-import-meta',
   ],
 };

@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type UsedSolidDetailsQueryVariables = Types.Exact<{
-  name: Types.Scalars['String'];
+  name: Types.Scalars['String']['input'];
   repositorySelector: Types.RepositorySelector;
 }>;
 

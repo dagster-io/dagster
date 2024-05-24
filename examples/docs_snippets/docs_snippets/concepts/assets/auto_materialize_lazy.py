@@ -2,8 +2,7 @@ from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
 
 
 @asset
-def asset1():
-    ...
+def asset1(): ...
 
 
 @asset(
@@ -11,5 +10,4 @@ def asset1():
     freshness_policy=FreshnessPolicy(maximum_lag_minutes=24 * 60),
     deps=[asset1],
 )
-def asset2():
-    ...
+def asset2(): ...

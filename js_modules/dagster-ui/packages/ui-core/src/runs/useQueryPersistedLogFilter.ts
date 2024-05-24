@@ -1,12 +1,11 @@
 import {tokenizedValueFromString} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useMemo} from 'react';
 
 import {DefaultLogLevels, LogLevel} from './LogLevel';
 import {LogFilter} from './LogsProvider';
 import {getRunFilterProviders} from './getRunFilterProviders';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 const DELIMITER = '|';
 
@@ -99,7 +98,7 @@ export function useQueryPersistedLogFilter(): [LogFilter, (updates: LogFilter) =
   // should *not* implicitly update the persisted values.
   const [storedLogLevels] = useStateWithStorage(EnabledRunLogLevelsKey, validateLogLevels);
 
-  const defaults = React.useMemo(() => {
+  const defaults = useMemo(() => {
     const levels = storedLogLevels ?? DefaultLogLevels;
     return {...DefaultQuerystring, levels: levelsToQuery(levels)};
   }, [storedLogLevels]);

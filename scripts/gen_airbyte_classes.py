@@ -60,21 +60,21 @@ class SchemaType(ABC):
     description: Optional[str] = None
 
     @abstractmethod
-    def get_check(self, name: str, scope: Optional[str] = None):
+    def get_check(self, name: str, scope: Optional[str] = None) -> str:
         """Returns the dagster._check check for this type, e.g. check.str_param(name, 'name')."""
 
     @abstractmethod
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
-    ):
+    ) -> str:
         """Returns the Python type annotation for this type, e.g. str or Union[str, int]."""
 
     @property
-    def const_value(self):
+    def const_value(self) -> object:
         """If this is a constant field, returns the constant value, otherwise returns None."""
         return None
 
-    def add_description(self, description: str):
+    def add_description(self, description: str) -> None:
         if not description:
             return
         self.description = description.replace("\n", " ")
@@ -154,9 +154,7 @@ class OptType(SchemaType):
     def annotation(
         self, scope: Optional[str] = None, quote: bool = False, hide_default: bool = False
     ):
-        return (
-            f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
-        )
+        return f"Optional[{self.inner.annotation(scope, quote, hide_default)}]{' = None' if not hide_default else ''}"
 
     def get_check(self, name: str, scope: Optional[str] = None):
         inner_check = self.inner.get_check(name, scope)
@@ -591,7 +589,7 @@ from dagster._annotations import public
                 if failure[0] not in EXPECTED_FAILURES:
                     raise failure[1]
 
-            subprocess.call(["black", out_file])
+            subprocess.call(["ruff", "format", out_file])
 
 
 if __name__ == "__main__":

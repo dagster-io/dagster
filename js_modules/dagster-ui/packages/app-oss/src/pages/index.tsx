@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import {useRouter} from 'next/router';
-import React from 'react';
+import {useEffect} from 'react';
 
 const App = dynamic(() => import('../App'), {
   ssr: false,
@@ -12,7 +12,7 @@ const App = dynamic(() => import('../App'), {
 export default function IndexPage() {
   const router = useRouter();
 
-  React.useEffect(() => {
+  useEffect(() => {
     router.beforePopState(() => {
       // Disable Next.js client side routing until we migrate to Next.js routing
       return false;
@@ -39,6 +39,8 @@ if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    return originalError(...args);
+    const err = originalError(...args);
+    Object.setPrototypeOf(err, window.Error.prototype);
+    return err;
   };
 }

@@ -1,19 +1,16 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 
 import {
+  buildAssetKey,
   buildAssetNode,
   buildAutoMaterializePolicy,
   buildCompositeConfigType,
-  buildConfigType,
   buildConfigTypeField,
-  buildDagsterType,
   buildFreshnessPolicy,
   buildIntMetadataEntry,
   buildPathMetadataEntry,
   buildResourceRequirement,
-  buildAssetKey,
 } from '../../graphql/types';
 import {AssetNodeDefinition} from '../AssetNodeDefinition';
 
@@ -30,14 +27,11 @@ export const MinimalAsset = () => {
         dependsOnSelf={false}
         downstream={[]}
         upstream={[]}
-        liveDataByNode={{}}
         assetNode={
           buildAssetNode({
             description: null,
             freshnessPolicy: null,
             autoMaterializePolicy: null,
-            configField: buildConfigTypeField({configType: buildConfigType({key: 'Any'})}),
-            type: buildDagsterType({displayName: 'Any'}),
             metadataEntries: [],
           }) as any
         }
@@ -56,7 +50,6 @@ export const FullUseAsset = () => {
           buildAssetNode({assetKey: buildAssetKey({path: ['downstream_1']})}),
           buildAssetNode({assetKey: buildAssetKey({path: ['downstream_2']})}),
         ]}
-        liveDataByNode={{}}
         assetNode={
           buildAssetNode({
             description: `
@@ -93,7 +86,6 @@ export const FullUseAsset = () => {
                 fields: [],
               }),
             }),
-            type: buildDagsterType(),
             metadataEntries: [buildIntMetadataEntry({}), buildPathMetadataEntry()],
           }) as any
         }

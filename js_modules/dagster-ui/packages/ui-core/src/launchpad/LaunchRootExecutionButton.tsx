@@ -1,11 +1,10 @@
 import * as React from 'react';
 
+import {LaunchButton} from './LaunchButton';
+import {useLaunchPadHooks} from './LaunchpadHooksContext';
 import {IconName} from '../../../ui-components/src';
 import {LaunchBehavior} from '../runs/RunUtils';
 import {LaunchPipelineExecutionMutationVariables} from '../runs/types/RunUtils.types';
-
-import {LaunchButton} from './LaunchButton';
-import {useLaunchPadHooks} from './LaunchpadHooksContext';
 
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
@@ -20,7 +19,7 @@ interface LaunchRootExecutionButtonProps {
 
 export const NO_LAUNCH_PERMISSION_MESSAGE = 'You do not have permission to launch this job';
 
-export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
+export const LaunchRootExecutionButton = (props: LaunchRootExecutionButtonProps) => {
   const {hasLaunchPermission} = props;
   const {useLaunchWithTelemetry} = useLaunchPadHooks();
   const launchWithTelemetry = useLaunchWithTelemetry();

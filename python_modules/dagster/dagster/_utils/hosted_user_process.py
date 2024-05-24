@@ -8,20 +8,13 @@ These should only be invoked from contexts where we know this
 to be the case.
 """
 
-from typing import TYPE_CHECKING
-
 import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.host_representation import ExternalJob, ExternalRepository
-from dagster._core.host_representation.external_data import (
-    external_job_data_from_def,
-    external_repository_data_from_def,
-)
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.host_representation.handle import RepositoryHandle
+from dagster._core.remote_representation import ExternalJob
+from dagster._core.remote_representation.external_data import (
+    external_job_data_from_def,
+)
 
 
 def recon_job_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:
@@ -41,12 +34,6 @@ def recon_repository_from_origin(origin: RepositoryPythonOrigin) -> "Reconstruct
     )
 
 
-def external_repo_from_def(
-    repository_def: "RepositoryDefinition", repository_handle: "RepositoryHandle"
-) -> ExternalRepository:
-    return ExternalRepository(external_repository_data_from_def(repository_def), repository_handle)
-
-
 def external_job_from_recon_job(recon_job, op_selection, repository_handle, asset_selection=None):
     if op_selection or asset_selection:
         sub_recon_job = recon_job.get_subset(
@@ -57,6 +44,6 @@ def external_job_from_recon_job(recon_job, op_selection, repository_handle, asse
         job_def = recon_job.get_definition()
 
     return ExternalJob(
-        external_job_data_from_def(job_def),
+        external_job_data_from_def(job_def, include_parent_snapshot=True),
         repository_handle=repository_handle,
     )

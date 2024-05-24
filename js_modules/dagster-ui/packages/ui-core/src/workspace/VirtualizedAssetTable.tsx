@@ -1,13 +1,12 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
 import * as React from 'react';
 
+import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
+import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
 import {AssetKeyInput} from '../graphql/types';
 import {Container, Inner} from '../ui/VirtualizedTable';
-
-import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedAssetRow';
-import {buildRepoAddress} from './buildRepoAddress';
 
 type Row =
   | {type: 'asset'; path: string[]; displayKey: string; asset: AssetTableFragment}
@@ -24,7 +23,7 @@ interface Props {
   view?: AssetViewType;
 }
 
-export const VirtualizedAssetTable: React.FC<Props> = (props) => {
+export const VirtualizedAssetTable = (props: Props) => {
   const {
     headerCheckbox,
     prefixPath,

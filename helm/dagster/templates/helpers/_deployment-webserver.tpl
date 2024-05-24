@@ -43,6 +43,7 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       serviceAccountName: {{ include "dagster.serviceAccountName" . }}
+      automountServiceAccountToken: true
       securityContext:
         {{- toYaml $_.Values.dagsterWebserver.podSecurityContext | nindent 8 }}
       initContainers:
@@ -52,6 +53,10 @@ spec:
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
+          {{- if $_.Values.dagsterWebserver.initContainerResources }}
+          resources:
+            {{- toYaml $_.Values.dagsterWebserver.initContainerResources | nindent 12 }}
+          {{- end }}
         {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
         {{- range $deployment := $userDeployments.deployments }}
         - name: "init-user-deployment-{{- $deployment.name -}}"
@@ -59,6 +64,10 @@ spec:
           command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
           securityContext:
             {{- toYaml $_.Values.dagsterWebserver.securityContext | nindent 12 }}
+          {{- if $_.Values.dagsterWebserver.initContainerResources }}
+          resources:
+            {{- toYaml $_.Values.dagsterWebserver.initContainerResources | nindent 12 }}
+          {{- end }}
         {{- end }}
         {{- end }}
       containers:

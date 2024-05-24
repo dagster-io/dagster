@@ -1,7 +1,7 @@
 from typing import Any
 
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._utils import file_relative_path

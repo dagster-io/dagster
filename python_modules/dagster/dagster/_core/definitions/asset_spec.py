@@ -1,10 +1,9 @@
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.errors import DagsterInvariantViolationError
+from dagster._annotations import PublicAttr, experimental_param
+from dagster._serdes.serdes import whitelist_for_serdes
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -12,13 +11,51 @@ from .events import (
     CoercibleToAssetKey,
 )
 from .freshness_policy import FreshnessPolicy
-from .metadata import MetadataUserInput
+from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep
+    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+
+# SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
+# (which currently ends up on the Output associated with the asset key)
+# whih encodes the execution type the of asset. "Unexecutable" assets are assets
+# that cannot be materialized in Dagster, but can have events in the event
+# log keyed off of them, making Dagster usable as a observability and lineage tool
+# for externally materialized assets.
+SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
+
+# SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES lives on the metadata of
+# external assets resulting from a source asset conversion. It contains the
+# `auto_observe_interval_minutes` value from the source asset and is consulted
+# in the auto-materialize daemon. It should eventually be eliminated in favor
+# of an implementation of `auto_observe_interval_minutes` in terms of
+# `AutoMaterializeRule`.
+SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES = "dagster/auto_observe_interval_minutes"
+
+# SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET lives on the metadata of external assets that are
+# created for undefined but referenced assets during asset graph normalization. For example, in the
+# below definitions, `foo` is referenced by upstream `bar` but has no corresponding definition:
+#
+#
+#     @asset(deps=["foo"])
+#     def bar(context: AssetExecutionContext):
+#         ...
+#
+#     defs=Definitions(assets=[bar])
+#
+# During normalization we create a "stub" definition for `foo` and attach this metadata to it.
+SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET = "dagster/auto_created_stub_asset"
 
 
-@experimental
+@whitelist_for_serdes
+class AssetExecutionType(Enum):
+    OBSERVATION = "OBSERVATION"
+    UNEXECUTABLE = "UNEXECUTABLE"
+    MATERIALIZATION = "MATERIALIZATION"
+
+
+@experimental_param(param="owners")
+@experimental_param(param="tags")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -32,6 +69,8 @@ class AssetSpec(
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("owners", PublicAttr[Optional[Sequence[str]]]),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
         ],
     )
 ):
@@ -52,54 +91,42 @@ class AssetSpec(
             not provided, the name "default" is used.
         code_version (Optional[str]): The version of the code for this specific asset,
             overriding the code version of the materialization function
-        freshness_policy (Optional[FreshnessPolicy]): A policy which indicates how up to date this
-            asset is intended to be.
+        freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
+            to date this asset is intended to be.
         auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
+        owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
+            string can be a user's email address, or a team name prefixed with `team:`,
+            e.g. `team:finops`.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
+            attached to runs of the asset.
     """
 
     def __new__(
         cls,
         key: CoercibleToAssetKey,
         *,
-        deps: Optional[
-            Iterable[
-                Union[CoercibleToAssetKey, "AssetSpec", AssetsDefinition, SourceAsset, "AssetDep"]
-            ]
-        ] = None,
+        deps: Optional[Iterable["CoercibleToAssetDep"]] = None,
         description: Optional[str] = None,
-        metadata: Optional[MetadataUserInput] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
         skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        owners: Optional[Sequence[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
     ):
-        from dagster._core.definitions.asset_dep import AssetDep
+        from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
-        dep_set = {}
-        if deps:
-            for dep in deps:
-                if not isinstance(dep, AssetDep):
-                    asset_dep = AssetDep(dep)
-                else:
-                    asset_dep = dep
-
-                # we cannot do deduplication via a set because MultiPartitionMappings have an internal
-                # dictionary that cannot be hashed. Instead deduplicate by making a dictionary and checking
-                # for existing keys.
-                if asset_dep.asset_key in dep_set.keys():
-                    raise DagsterInvariantViolationError(
-                        f"Cannot set a dependency on asset {asset_dep.asset_key} more than once for"
-                        f" AssetSpec {key}"
-                    )
-                dep_set[asset_dep.asset_key] = asset_dep
+        key = AssetKey.from_coercible(key)
+        asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
 
         return super().__new__(
             cls,
-            key=AssetKey.from_coercible(key),
-            deps=list(dep_set.values()),
+            key=key,
+            deps=asset_deps,
             description=check.opt_str_param(description, "description"),
             metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
             skippable=check.bool_param(skippable, "skippable"),
@@ -115,4 +142,6 @@ class AssetSpec(
                 "auto_materialize_policy",
                 AutoMaterializePolicy,
             ),
+            owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            tags=validate_tags_strict(tags),
         )

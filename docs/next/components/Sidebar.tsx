@@ -86,9 +86,9 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
       );
     }
 
-    const linkElement = (
+    return (
       <div className={itemClassName}>
-        <a
+        <NextLink
           className={innerClassName}
           href={item.path}
           ref={ref}
@@ -97,19 +97,9 @@ const MenuItem = React.forwardRef<HTMLAnchorElement, React.PropsWithChildren<Men
           onClick={onClick}
         >
           {itemContents}
-        </a>
+        </NextLink>
         {rightIcon()}
       </div>
-    );
-
-    if (item.isExternalLink) {
-      return linkElement;
-    }
-
-    return (
-      <NextLink href={item.path} passHref legacyBehavior>
-        {linkElement}
-      </NextLink>
     );
   },
 );
@@ -193,7 +183,7 @@ const RecursiveNavigation = ({
     itemOrSection === currentSection ||
     itemOrSection.path === asPathWithoutAnchor ||
     (itemOrSection.children &&
-      itemOrSection.children.find((item) => item.path === asPathWithoutAnchor));
+      itemOrSection.children.find((item) => asPathWithoutAnchor.startsWith(item.path)));
 
   const expanded = Boolean(navKeysToExpanded[navKey]);
 
@@ -214,7 +204,7 @@ const RecursiveNavigation = ({
   return (
     <div
       className={cx({
-        'mt-0 ml-1 space-y-0': lvl >= 2,
+        'mt-0 space-y-0': lvl >= 2,
       })}
       role="group"
       aria-labelledby={`${lvl + 1}-level-nav`}

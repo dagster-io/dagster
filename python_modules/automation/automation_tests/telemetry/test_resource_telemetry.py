@@ -27,7 +27,7 @@ def test_resource_telemetry():
     libraries = [
         library.name.replace("-", "_")
         for library in os.scandir(libraries_dir)
-        if not library.name.endswith("CONTRIBUTING.md")
+        if not (library.name.startswith(".") or library.name.endswith("CONTRIBUTING.md"))
     ]
     libraries.append("dagster")
 
@@ -35,6 +35,8 @@ def test_resource_telemetry():
     libraries.remove("dagster_ge")
     # airflow isn't correctly installed in the BuildKite environment
     libraries.remove("dagster_airflow")
+    # new library, not added yet
+    libraries.remove("dagster_embedded_elt")
 
     resources_without_telemetry = []
 

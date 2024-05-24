@@ -13,7 +13,6 @@ from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-    from dagster._core.definitions.events import AssetKey
 
     from ..execution.execute_in_process_result import ExecuteInProcessResult
 
@@ -90,16 +89,15 @@ def materialize(
     partition_key = check.opt_str_param(partition_key, "partition_key")
     resources = check.opt_mapping_param(resources, "resources", key_type=str)
 
-    all_executable_keys: Set[AssetKey] = set()
-    for asset in assets:
-        if isinstance(asset, AssetsDefinition):
-            all_executable_keys = all_executable_keys.union(set(asset.keys))
-
     defs = Definitions(
         jobs=[define_asset_job(name=EPHEMERAL_JOB_NAME, selection=selection)],
         assets=assets,
         resources=resources,
     )
+
+    # validate input asset graph and resources
+    defs.get_all_job_defs()
+
     return check.not_none(
         defs.get_job_def(EPHEMERAL_JOB_NAME),
         "This should always return a job",
@@ -203,7 +201,7 @@ def materialize_to_memory(
 
 
 def _get_required_io_manager_keys(
-    assets: Sequence[Union[AssetsDefinition, SourceAsset]]
+    assets: Sequence[Union[AssetsDefinition, SourceAsset]],
 ) -> Set[str]:
     io_manager_keys = set()
     for asset in assets:

@@ -75,13 +75,6 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
         recon_job = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
             start_termination_thread(self.term_event)
-            execution_plan = create_execution_plan(
-                job=recon_job,
-                run_config=self.run_config,
-                step_keys_to_execute=[self.step_key],
-                known_state=self.known_state,
-                repository_load_data=self.repository_load_data,
-            )
 
             log_manager = create_context_free_log_manager(instance, self.dagster_run)
 
@@ -94,7 +87,13 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 },
                 step_key=self.step_key,
             )
-
+            execution_plan = create_execution_plan(
+                job=recon_job,
+                run_config=self.run_config,
+                step_keys_to_execute=[self.step_key],
+                known_state=self.known_state,
+                repository_load_data=self.repository_load_data,
+            )
             yield from execute_plan_iterator(
                 execution_plan,
                 recon_job,
@@ -187,8 +186,9 @@ class MultiprocessExecutor(Executor):
         timer_result: Optional[TimerResult] = None
         with ExitStack() as stack:
             timer_result = stack.enter_context(time_execution_scope())
+
             instance_concurrency_context = stack.enter_context(
-                InstanceConcurrencyContext(plan_context.instance, plan_context.run_id)
+                InstanceConcurrencyContext(plan_context.instance, plan_context.dagster_run)
             )
             active_execution = stack.enter_context(
                 ActiveExecution(
@@ -221,6 +221,8 @@ class MultiprocessExecutor(Executor):
                     steps = active_execution.get_steps_to_execute(
                         limit=(limit - len(active_iters)),
                     )
+
+                    yield from active_execution.concurrency_event_iterator(plan_context)
 
                     if not steps:
                         break
@@ -319,8 +321,7 @@ class MultiprocessExecutor(Executor):
         if timer_result:
             yield DagsterEvent.engine_event(
                 plan_context,
-                "Multiprocess executor: parent process exiting after {duration} (pid: {pid})"
-                .format(duration=format_duration(timer_result.millis), pid=os.getpid()),
+                f"Multiprocess executor: parent process exiting after {format_duration(timer_result.millis)} (pid: {os.getpid()})",
                 event_specific_data=EngineEventData.multiprocess(os.getpid()),
             )
 

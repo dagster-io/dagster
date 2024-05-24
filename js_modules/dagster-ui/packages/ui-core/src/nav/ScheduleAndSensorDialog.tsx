@@ -1,5 +1,4 @@
 import {Box, Button, Dialog, DialogFooter, Subheading, Table} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {ScheduleSwitch} from '../schedules/ScheduleSwitch';
@@ -67,7 +66,11 @@ export const ScheduleAndSensorDialog = ({
                   <tr key={schedule.name}>
                     {showSwitch ? (
                       <td>
-                        <ScheduleSwitch repoAddress={repoAddress} schedule={schedule} />
+                        <ScheduleSwitch
+                          repoAddress={repoAddress}
+                          schedule={schedule}
+                          shouldFetchLatestState
+                        />
                       </td>
                     ) : null}
                     <td>
@@ -105,7 +108,11 @@ export const ScheduleAndSensorDialog = ({
                   <tr key={sensor.name}>
                     {showSwitch ? (
                       <td>
-                        <SensorSwitch repoAddress={repoAddress} sensor={sensor} />
+                        <SensorSwitch
+                          repoAddress={repoAddress}
+                          sensor={sensor}
+                          shouldFetchLatestState
+                        />
                       </td>
                     ) : null}
                     <td>

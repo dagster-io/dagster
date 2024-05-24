@@ -2,7 +2,7 @@ import logging
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
@@ -39,13 +39,13 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             alembic_config = get_alembic_config(__file__, "sqlite/alembic/alembic.ini")
             stamp_alembic_rev(alembic_config, self._held_conn)
 
-        self.reindex_events()
-        self.reindex_assets()
-
         if preload:
             for payload in preload:
                 for event in payload.event_list:
                     self.store_event(event)
+
+    def has_secondary_index(self, name: str) -> bool:
+        return True
 
     @contextmanager
     def _connect(self):
@@ -91,10 +91,10 @@ class InMemoryEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             except Exception:
                 logging.exception("Exception in callback for event watch on run %s.", event.run_id)
 
-    def watch(self, run_id: str, cursor: str, callback: Callable):
+    def watch(self, run_id: str, cursor: str, callback: Callable[..., Any]):
         self._handlers[run_id].add(callback)
 
-    def end_watch(self, run_id: str, handler: Callable):
+    def end_watch(self, run_id: str, handler: Callable[..., Any]):
         if handler in self._handlers[run_id]:
             self._handlers[run_id].remove(handler)
 

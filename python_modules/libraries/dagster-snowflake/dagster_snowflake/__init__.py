@@ -4,6 +4,7 @@ from .ops import snowflake_op_for_query as snowflake_op_for_query
 from .resources import (
     SnowflakeConnection as SnowflakeConnection,
     SnowflakeResource as SnowflakeResource,
+    fetch_last_updated_timestamps as fetch_last_updated_timestamps,
     snowflake_resource as snowflake_resource,
 )
 from .snowflake_io_manager import (

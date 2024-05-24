@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {StyledButton, StyledButtonText} from './StyledButton';
 
 interface CommonButtonProps {
@@ -8,8 +8,11 @@ interface CommonButtonProps {
   label?: React.ReactNode;
   loading?: boolean;
   rightIcon?: React.ReactNode;
+  iconColor?: string;
   fillColor?: string;
+  fillColorHover?: string;
   strokeColor?: string;
+  strokeColorHover?: string;
   textColor?: string;
 }
 
@@ -18,14 +21,17 @@ interface BaseButtonProps extends CommonButtonProps, React.ComponentPropsWithRef
 export const BaseButton = React.forwardRef(
   (props: BaseButtonProps, ref: React.ForwardedRef<HTMLButtonElement>) => {
     const {
-      fillColor = Colors.White,
+      fillColor = Colors.backgroundDefault(),
+      fillColorHover = Colors.backgroundDefaultHover(),
       disabled,
       icon,
       label,
       loading,
       rightIcon,
-      textColor = Colors.Dark,
-      strokeColor = Colors.Gray300,
+      iconColor = Colors.accentReversed(),
+      textColor = Colors.textDefault(),
+      strokeColor = Colors.accentGray(),
+      strokeColorHover = Colors.accentGray(),
       ...rest
     } = props;
 
@@ -34,8 +40,11 @@ export const BaseButton = React.forwardRef(
         {...rest}
         as="button"
         disabled={!!(disabled || loading)}
+        $iconColor={iconColor}
         $fillColor={fillColor}
+        $fillColorHover={fillColorHover}
         $strokeColor={strokeColor}
+        $strokeColorHover={strokeColorHover}
         $textColor={textColor}
         ref={ref}
       >

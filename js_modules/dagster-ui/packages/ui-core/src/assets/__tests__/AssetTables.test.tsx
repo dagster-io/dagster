@@ -1,9 +1,12 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {render, screen} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
 import {MemoryRouter} from 'react-router';
+import {RecoilRoot} from 'recoil';
 
+import {buildWorkspace} from '../../graphql/types';
+import {buildWorkspaceContextMockedResponse} from '../../runs/__fixtures__/RunsFilterInput.fixtures';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -14,6 +17,8 @@ import {
   SingleAssetQueryTrafficDashboard,
 } from '../__fixtures__/AssetTables.fixtures';
 
+const workspaceMock = buildWorkspaceContextMockedResponse(buildWorkspace({}));
+
 const MOCKS = [
   AssetCatalogTableMock,
   AssetCatalogGroupTableMock,
@@ -21,21 +26,39 @@ const MOCKS = [
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryMaterializedStaleAndLate,
   SingleAssetQueryLastRunFailed,
+  workspaceMock,
 ];
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 describe('AssetTable', () => {
+  let nativeGBRC: any;
+
+  beforeAll(() => {
+    nativeGBRC = window.Element.prototype.getBoundingClientRect;
+    window.Element.prototype.getBoundingClientRect = jest
+      .fn()
+      .mockReturnValue({height: 400, width: 400});
+  });
+
+  afterAll(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  });
+
   describe('Materialize button', () => {
     it('is enabled when rows are selected', async () => {
       const Test = () => {
         return (
-          <MemoryRouter>
-            <MockedProvider mocks={MOCKS}>
-              <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
-            </MockedProvider>
-          </MemoryRouter>
+          <RecoilRoot>
+            <MemoryRouter>
+              <MockedProvider mocks={MOCKS}>
+                <WorkspaceProvider>
+                  <AssetsCatalogTable prefixPath={['dashboards']} setPrefixPath={() => {}} />
+                </WorkspaceProvider>
+              </MockedProvider>
+            </MemoryRouter>
+          </RecoilRoot>
         );
       };
       render(<Test />);

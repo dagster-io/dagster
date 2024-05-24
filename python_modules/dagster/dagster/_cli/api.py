@@ -29,6 +29,7 @@ from dagster._core.origin import (
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.server import DagsterApiServer
@@ -39,6 +40,11 @@ from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._utils.interrupts import capture_interrupts, setup_interrupt_handlers
 from dagster._utils.log import configure_loggers
 
+from .._core.execution.run_metrics_thread import (
+    DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
+    start_run_metrics_thread,
+    stop_run_metrics_thread,
+)
 from .utils import get_instance_for_cli
 
 
@@ -78,6 +84,43 @@ def execute_run_command(input_json):
                 sys.exit(return_code)
 
 
+def _truthy_tag_value(dagster_run: DagsterRun, tag: str, default: str = "false") -> bool:
+    return dagster_run.tags.get(tag, default).casefold() not in ["false", "0", "off", "no", ""]
+
+
+def _should_start_metrics_thread(dagster_run: DagsterRun) -> bool:
+    return _truthy_tag_value(dagster_run, "dagster/run_metrics")
+
+
+def _enable_python_runtime_metrics(dagster_run: DagsterRun) -> bool:
+    return _truthy_tag_value(dagster_run, "dagster/python_runtime_metrics")
+
+
+def _report_container_metrics_as_engine_events(dagster_run: DagsterRun) -> bool:
+    return _truthy_tag_value(dagster_run, "dagster/container_metrics_engine_events")
+
+
+def _metrics_polling_interval(
+    dagster_run: DagsterRun, logger: Optional[logging.Logger] = None
+) -> float:
+    try:
+        return float(
+            dagster_run.tags.get(
+                "dagster/run_metrics_polling_interval_seconds",
+                DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS,
+            )
+        )
+    except ValueError:
+        if logger:
+            logger.warning(
+                (
+                    "Invalid value for dagster/run_metrics_polling_interval_seconds tag."
+                    f"Setting metric polling interval to default value: {DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS}."
+                )
+            )
+        return DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS
+
+
 def _execute_run_command_body(
     run_id: str,
     instance: DagsterInstance,
@@ -96,11 +139,25 @@ def _execute_run_command_body(
         f"Run with id '{run_id}' not found for run execution.",
     )
 
-    check.inst(
+    check.not_none(
         dagster_run.job_code_origin,
-        JobPythonOrigin,
         f"Run with id '{run_id}' does not include an origin.",
     )
+
+    start_metric_thread = _should_start_metrics_thread(dagster_run)
+    if start_metric_thread:
+        logger = logging.getLogger("run_metrics")
+        polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
+        metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
+            instance,
+            dagster_run,
+            container_metrics_enabled=True,
+            python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
+            polling_interval=polling_interval,
+            logger=logger,
+        )
+    else:
+        metrics_thread, metrics_thread_shutdown_event = None, None
 
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
@@ -127,6 +184,11 @@ def _execute_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
+        if metrics_thread and metrics_thread_shutdown_event:
+            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
+            if not stopped:
+                instance.report_engine_event("Metrics thread did not shutdown properly")
+
         if instance.should_start_background_run_thread:
             cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
             cancellation_thread = check.not_none(cancellation_thread)
@@ -192,11 +254,25 @@ def _resume_run_command_body(
         instance.get_run_by_id(run_id),  # type: ignore
         f"Run with id '{run_id}' not found for run execution.",
     )
-    check.inst(
+    check.not_none(
         dagster_run.job_code_origin,
-        JobPythonOrigin,
         f"Run with id '{run_id}' does not include an origin.",
     )
+
+    start_metric_thread = _should_start_metrics_thread(dagster_run)
+    if start_metric_thread:
+        logger = logging.getLogger("run_metrics")
+        polling_interval = _metrics_polling_interval(dagster_run, logger=logger)
+        metrics_thread, metrics_thread_shutdown_event = start_run_metrics_thread(
+            instance,
+            dagster_run,
+            container_metrics_enabled=True,
+            python_metrics_enabled=_enable_python_runtime_metrics(dagster_run),
+            polling_interval=polling_interval,
+            logger=logger,
+        )
+    else:
+        metrics_thread, metrics_thread_shutdown_event = None, None
 
     recon_job = recon_job_from_origin(cast(JobPythonOrigin, dagster_run.job_code_origin))
 
@@ -225,6 +301,11 @@ def _resume_run_command_body(
         # relies on core_execute_run writing failures to the event log before raising
         run_worker_failed = True
     finally:
+        if metrics_thread and metrics_thread_shutdown_event:
+            stopped = stop_run_metrics_thread(metrics_thread, metrics_thread_shutdown_event)
+            if not stopped:
+                instance.report_engine_event("Metrics thread did not shutdown properly")
+
         if instance.should_start_background_run_thread:
             cancellation_thread_shutdown_event = check.not_none(cancellation_thread_shutdown_event)
             cancellation_thread = check.not_none(cancellation_thread)
@@ -327,7 +408,10 @@ def execute_step_command(input_json, compressed_input_json):
         args = deserialize_value(input_json, ExecuteStepArgs)
 
         with get_instance_for_cli(instance_ref=args.instance_ref) as instance:
-            dagster_run = instance.get_run_by_id(args.run_id)
+            dagster_run = check.not_none(
+                instance.get_run_by_id(args.run_id),
+                f"Run with id '{args.run_id}' not found for step execution",
+            )
 
             buff = []
 
@@ -352,14 +436,8 @@ def _execute_step_command_body(
         else None
     )
     try:
-        check.inst(
-            dagster_run,
-            DagsterRun,
-            f"Run with id '{args.run_id}' not found for step execution",
-        )
-        check.inst(
+        check.not_none(
             dagster_run.job_code_origin,
-            JobPythonOrigin,
             f"Run with id '{args.run_id}' does not include an origin.",
         )
 
@@ -405,6 +483,7 @@ def _execute_step_command_body(
             .get_subset(
                 op_selection=dagster_run.resolved_op_selection,
                 asset_selection=dagster_run.asset_selection,
+                asset_check_selection=dagster_run.asset_check_selection,
             )
         )
 
@@ -476,6 +555,7 @@ def _execute_step_command_body(
     required=False,
     default=None,
     help="Maximum number of (threaded) workers to use in the GRPC server",
+    envvar="DAGSTER_GRPC_MAX_WORKERS",
 )
 @click.option(
     "--heartbeat",
@@ -548,6 +628,14 @@ def _execute_step_command_body(
     help="Level at which to log output from the code server process",
 )
 @click.option(
+    "--log-format",
+    type=click.Choice(["colored", "json", "rich"], case_sensitive=False),
+    show_default=True,
+    required=False,
+    default="colored",
+    help="Format of the log output from the code server process",
+)
+@click.option(
     "--container-image",
     type=click.STRING,
     required=False,
@@ -586,6 +674,14 @@ def _execute_step_command_body(
     help="[INTERNAL] Serialized InstanceRef to use for accessing the instance",
     envvar="DAGSTER_INSTANCE_REF",
 )
+@click.option(
+    "--enable-metrics",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="[INTERNAL] Retrieves current utilization metrics from GRPC server.",
+    envvar="DAGSTER_ENABLE_SERVER_METRICS",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -596,12 +692,14 @@ def grpc_command(
     lazy_load_user_code=False,
     fixed_server_id=None,
     log_level="INFO",
+    log_format="colored",
     use_python_environment_entry_point=False,
     container_image=None,
     container_context=None,
     location_name=None,
     instance_ref=None,
     inject_env_vars_from_instance=False,
+    enable_metrics=False,
     **kwargs,
 ):
     check.invariant(heartbeat_timeout > 0, "heartbeat_timeout must be greater than 0")
@@ -621,7 +719,7 @@ def grpc_command(
 
     setup_interrupt_handlers()
 
-    configure_loggers(log_level=log_level.upper())
+    configure_loggers(formatter=log_format, log_level=log_level.upper())
     logger = logging.getLogger("dagster.code_server")
 
     container_image = container_image or os.getenv("DAGSTER_CURRENT_IMAGE")
@@ -655,7 +753,25 @@ def grpc_command(
             package_name=kwargs["package_name"],
         )
 
+    code_desc = " "
+    if loadable_target_origin:
+        if loadable_target_origin.python_file:
+            code_desc = f" for file {loadable_target_origin.python_file} "
+        elif loadable_target_origin.package_name:
+            code_desc = f" for package {loadable_target_origin.package_name} "
+        elif loadable_target_origin.module_name:
+            code_desc = f" for module {loadable_target_origin.module_name} "
+
+    server_desc = (
+        f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
+        if port
+        else f"Dagster code server{code_desc}in process {os.getpid()}"
+    )
+
+    logger.info("Starting %s", server_desc)
+
     server_termination_event = threading.Event()
+    threadpool_executor = FuturesAwareThreadPoolExecutor(max_workers=max_workers)
     api_servicer = DagsterApiServer(
         server_termination_event=server_termination_event,
         logger=logger,
@@ -676,6 +792,8 @@ def grpc_command(
         inject_env_vars_from_instance=inject_env_vars_from_instance,
         instance_ref=deserialize_value(instance_ref, InstanceRef) if instance_ref else None,
         location_name=location_name,
+        enable_metrics=enable_metrics,
+        server_threadpool_executor=threadpool_executor,
     )
 
     server = DagsterGrpcServer(
@@ -684,23 +802,9 @@ def grpc_command(
         port=port,
         socket=socket,
         host=host,
-        max_workers=max_workers,
         logger=logger,
-    )
-
-    code_desc = " "
-    if loadable_target_origin:
-        if loadable_target_origin.python_file:
-            code_desc = f" for file {loadable_target_origin.python_file} "
-        elif loadable_target_origin.package_name:
-            code_desc = f" for package {loadable_target_origin.package_name} "
-        elif loadable_target_origin.module_name:
-            code_desc = f" for module {loadable_target_origin.module_name} "
-
-    server_desc = (
-        f"Dagster code server{code_desc}on port {port} in process {os.getpid()}"
-        if port
-        else f"Dagster code server{code_desc}in process {os.getpid()}"
+        enable_metrics=enable_metrics,
+        threadpool_executor=threadpool_executor,
     )
 
     logger.info("Started %s", server_desc)

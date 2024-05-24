@@ -1,33 +1,38 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, Spinner, Tooltip} from '@dagster-io/ui-components';
-import React from 'react';
+import {useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-
-import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
-import {StepStatusDot} from '../gantt/GanttStatusPanel';
-import {linkToRunEvent} from '../runs/RunUtils';
-import {RepoAddress} from '../workspace/types';
 
 import {SidebarSection} from './SidebarComponents';
 import {
   SidebarOpGraphsQuery,
   SidebarOpGraphsQueryVariables,
 } from './types/SidebarOpExecutionGraphs.types';
+import {AssetValueGraph, AssetValueGraphData} from '../assets/AssetValueGraph';
+import {StepStatusDot} from '../gantt/GanttStatusPanel';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {linkToRunEvent} from '../runs/RunUtils';
+import {RepoAddress} from '../workspace/types';
 
 const StateColors = {
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  SKIPPED: Colors.Gray500,
-  IN_PROGRESS: Colors.Gray200,
+  SUCCESS: Colors.accentGreen(),
+  FAILURE: Colors.accentRed(),
+  SKIPPED: Colors.accentGray(),
+  IN_PROGRESS: Colors.accentBlue(),
 };
 
-export const SidebarOpExecutionGraphs: React.FC<{
+export const SidebarOpExecutionGraphs = ({
+  repoAddress,
+  handleID,
+  pipelineName,
+  solidName,
+}: {
   handleID: string;
   solidName: string;
   pipelineName: string;
   repoAddress: RepoAddress;
-}> = ({repoAddress, handleID, pipelineName, solidName}) => {
-  const [highlightedStartTime, setHighlightedStartTime] = React.useState<number | null>(null);
+}) => {
+  const [highlightedStartTime, setHighlightedStartTime] = useState<number | null>(null);
   const result = useQuery<SidebarOpGraphsQuery, SidebarOpGraphsQueryVariables>(
     SIDEBAR_OP_GRAPHS_QUERY,
     {
@@ -41,6 +46,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
       },
     },
   );
+  useBlockTraceOnQueryResult(result, 'SidebarOpGraphsQuery');
   const stepStats =
     result.data?.pipelineOrError.__typename === 'Pipeline'
       ? result.data.pipelineOrError.solidHandle?.stepStats
@@ -49,7 +55,7 @@ export const SidebarOpExecutionGraphs: React.FC<{
   const nodes =
     stepStats && stepStats.__typename === 'SolidStepStatsConnection' ? stepStats.nodes : null;
 
-  const executionTime = React.useMemo(() => {
+  const executionTime = useMemo(() => {
     const values = nodes
       ? nodes
           .filter((s) => s.startTime && s.endTime)
@@ -117,10 +123,10 @@ export const SidebarOpExecutionGraphs: React.FC<{
                       style={{
                         border: `2px solid ${
                           startTime && startTime * 1000 === highlightedStartTime
-                            ? Colors.Blue500
+                            ? Colors.accentBlue()
                             : 'transparent'
                         }`,
-                        backgroundColor: status ? StateColors[status] : Colors.Gray200,
+                        backgroundColor: status ? StateColors[status] : Colors.accentGray(),
                       }}
                     />
                   </Link>

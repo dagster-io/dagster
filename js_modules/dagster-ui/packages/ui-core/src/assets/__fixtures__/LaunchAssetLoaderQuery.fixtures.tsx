@@ -8,6 +8,7 @@ import {
   buildConfigTypeField,
   buildDimensionDefinitionType,
   buildPartitionDefinition,
+  buildQuery,
   buildRegularConfigType,
   buildRepository,
   buildRepositoryLocation,
@@ -33,6 +34,7 @@ export const assetNodes: AssetNode[] = [
       ],
     }),
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: buildAssetKey({
       path: ['release_files'],
@@ -81,6 +83,7 @@ export const assetNodes: AssetNode[] = [
       ],
     }),
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: buildAssetKey({
       path: ['release_files_metadata'],
@@ -129,6 +132,7 @@ export const assetNodes: AssetNode[] = [
       ],
     }),
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: buildAssetKey({
       path: ['release_zips'],
@@ -177,6 +181,7 @@ export const assetNodes: AssetNode[] = [
       ],
     }),
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: buildAssetKey({
       path: ['releases_metadata'],
@@ -212,6 +217,7 @@ export const assetNodes: AssetNode[] = [
     hasMaterializePermission: true,
     partitionDefinition: null,
     isObservable: false,
+    isExecutable: true,
     isSource: false,
     assetKey: buildAssetKey({
       path: ['releases_summary'],
@@ -272,10 +278,10 @@ export const ReleasesWorkspace: MockedResponse<LaunchAssetLoaderQuery> = {
     },
   },
   result: {
-    data: {
-      __typename: 'Query' as const,
-      assetNodes: assetNodes as any[],
+    data: buildQuery({
+      assetNodes,
       assetNodeDefinitionCollisions: [],
-    },
+      assetNodeAdditionalRequiredKeys: [],
+    }),
   },
 };

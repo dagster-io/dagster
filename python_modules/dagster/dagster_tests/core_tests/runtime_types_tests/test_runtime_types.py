@@ -149,8 +149,7 @@ def test_double_dagster_type():
             yup(return_a_thing())
 
     assert (
-        str(exc_info.value)
-        == 'You have created two dagster types with the same name "Foo". '
+        str(exc_info.value) == 'You have created two dagster types with the same name "Foo". '
         "Dagster types have must have unique names."
     )
 

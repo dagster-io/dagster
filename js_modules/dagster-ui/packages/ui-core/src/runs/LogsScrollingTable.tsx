@@ -3,11 +3,11 @@ import {Colors, NonIdealState} from '@dagster-io/ui-components';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import {
-  CellMeasurer as _CellMeasurer,
   CellMeasurerCache,
-  List as _List,
   ListRowProps,
   ScrollParams,
+  CellMeasurer as _CellMeasurer,
+  List as _List,
 } from 'react-virtualized';
 import styled from 'styled-components';
 
@@ -104,7 +104,7 @@ function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: s
   };
 }
 
-export const LogsScrollingTable: React.FC<ILogsScrollingTableProps> = (props) => {
+export const LogsScrollingTable = (props: ILogsScrollingTableProps) => {
   const {filterKey, filterStepKeys, metadata, filter, logs} = props;
   const table = React.useRef<LogsScrollingTableSized>(null);
 
@@ -297,7 +297,7 @@ class LogsScrollingTableSized extends React.Component<ILogsScrollingTableSizedPr
     const isLastRow = index === this.props.filteredNodes.length - 1;
     const lastRowStyles = isLastRow
       ? {
-          borderBottom: `1px solid ${Colors.Gray100}`,
+          borderBottom: `1px solid ${Colors.keylineDefault()}`,
         }
       : {};
 
@@ -410,7 +410,7 @@ class AutoSizer extends React.Component<{
 }
 
 const ListEmptyState = styled.div`
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: ${Colors.backgroundDefault()};
   z-index: 100;
   position: absolute;
   width: 100%;

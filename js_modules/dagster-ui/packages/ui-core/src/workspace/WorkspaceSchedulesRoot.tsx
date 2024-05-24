@@ -1,20 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
-import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
-import {makeScheduleKey} from '../schedules/makeScheduleKey';
-import {CheckAllBox} from '../ui/CheckAllBox';
-import {useFilters} from '../ui/Filters';
-import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {useMemo} from 'react';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
 import {WorkspaceHeader} from './WorkspaceHeader';
@@ -25,6 +11,20 @@ import {
   WorkspaceSchedulesQuery,
   WorkspaceSchedulesQueryVariables,
 } from './types/WorkspaceSchedulesRoot.types';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
+import {makeScheduleKey} from '../schedules/makeScheduleKey';
+import {CheckAllBox} from '../ui/CheckAllBox';
+import {useFilters} from '../ui/Filters';
+import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 
 export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
@@ -39,7 +39,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   });
 
   const runningStateFilter = useInstigationStatusFilter();
-  const filters = React.useMemo(() => [runningStateFilter], [runningStateFilter]);
+  const filters = useMemo(() => [runningStateFilter], [runningStateFilter]);
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
   const queryResultOverview = useQuery<WorkspaceSchedulesQuery, WorkspaceSchedulesQueryVariables>(
@@ -50,13 +50,14 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
       variables: {selector},
     },
   );
+  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSchedulesQuery');
   const {data, loading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
-  const schedules = React.useMemo(() => {
+  const schedules = useMemo(() => {
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.schedules;
     }
@@ -64,13 +65,13 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   }, [data]);
 
   const {state: runningState} = runningStateFilter;
-  const filteredByRunningState = React.useMemo(() => {
+  const filteredByRunningState = useMemo(() => {
     return runningState.size
       ? schedules.filter(({scheduleState}) => runningState.has(scheduleState.status))
       : schedules;
   }, [schedules, runningState]);
 
-  const filteredBySearch = React.useMemo(() => {
+  const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
     return filteredByRunningState.filter(({name}) =>
       name.toLocaleLowerCase().includes(searchToLower),
@@ -79,21 +80,20 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
 
   const anySchedulesVisible = filteredBySearch.length > 0;
 
-  const permissionedSchedules = React.useMemo(() => {
+  const permissionedSchedules = useMemo(() => {
     return filteredBySearch.filter(({scheduleState}) =>
       filterPermissionedInstigationState(scheduleState),
     );
   }, [filteredBySearch]);
 
-  const permissionedKeys = React.useMemo(() => {
+  const permissionedKeys = useMemo(() => {
     return permissionedSchedules.map(({name}) => makeScheduleKey(repoAddress, name));
   }, [permissionedSchedules, repoAddress]);
 
-  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    permissionedKeys,
-  );
+  const [{checkedIds: checkedKeys}, {onToggleFactory, onToggleAll}] =
+    useSelectionReducer(permissionedKeys);
 
-  const checkedSchedules = React.useMemo(() => {
+  const checkedSchedules = useMemo(() => {
     return permissionedSchedules
       .filter(({name}) => checkedKeys.has(makeScheduleKey(repoAddress, name)))
       .map(({name, scheduleState}) => {
@@ -112,7 +112,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
             <Spinner purpose="body-text" />
-            <div style={{color: Colors.Gray600}}>Loading schedules…</div>
+            <div style={{color: Colors.textLight()}}>Loading schedules…</div>
           </Box>
         </Box>
       );

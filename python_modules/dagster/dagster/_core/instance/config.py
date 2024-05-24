@@ -7,10 +7,20 @@ from dagster import (
     Bool,
     _check as check,
 )
-from dagster._config import Field, Permissive, ScalarUnion, Selector, StringSource, validate_config
+from dagster._config import (
+    Field,
+    IntSource,
+    Permissive,
+    ScalarUnion,
+    Selector,
+    StringSource,
+    validate_config,
+)
+from dagster._config.source import BoolSource
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
+from dagster._utils.concurrency import get_max_concurrency_limit_value
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import load_yaml_from_globs
 
@@ -107,6 +117,21 @@ def dagster_instance_config(
                 dagster_config_dict["storage"],
             )
 
+    # validate default op concurrency limits
+    if "concurrency" in dagster_config_dict:
+        default_concurrency_limit = dagster_config_dict["concurrency"].get(
+            "default_op_concurrency_limit"
+        )
+        if default_concurrency_limit is not None:
+            max_limit = get_max_concurrency_limit_value()
+            if default_concurrency_limit < 0 or default_concurrency_limit > max_limit:
+                raise DagsterInvalidConfigError(
+                    f"Found value `{default_concurrency_limit}` for `default_op_concurrency_limit`, "
+                    f"Expected value between 0-{max_limit}.",
+                    [],
+                    None,
+                )
+
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
@@ -158,6 +183,7 @@ def python_logs_config_schema() -> Field:
                 {
                     "handlers": Field(dict, is_required=False),
                     "formatters": Field(dict, is_required=False),
+                    "filters": Field(dict, is_required=False),
                 },
                 is_required=False,
             ),
@@ -182,7 +208,7 @@ def get_default_tick_retention_settings(
             TickStatus.SUCCESS: -1,
             TickStatus.FAILURE: -1,
         }
-    # for sensor
+    # for sensor / auto-materialize
     return {
         TickStatus.STARTED: -1,
         TickStatus.SKIPPED: 7,
@@ -213,6 +239,7 @@ def retention_config_schema() -> Field:
         {
             "schedule": _tick_retention_config_schema(),
             "sensor": _tick_retention_config_schema(),
+            "auto_materialize": _tick_retention_config_schema(),
         },
         is_required=False,
     )
@@ -338,6 +365,17 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             {
                 "enabled": Field(bool, is_required=False, default_value=False),
                 "max_retries": Field(int, is_required=False, default_value=0),
+                "retry_on_asset_or_op_failure": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="Whether to retry runs that failed due to assets or ops in the run failing. "
+                    "Set this to false if you only want to retry failures that occur "
+                    "due to the run worker crashing or unexpectedly terminating, and instead "
+                    "rely on op or asset-level retry policies to retry asset or op failures. Setting this "
+                    "field to false will only change retry behavior for runs on dagster "
+                    "version 1.6.7 or greater.",
+                ),
             }
         ),
         "code_servers": Field(
@@ -354,10 +392,36 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
         "schedules": schedules_daemon_config(),
         "auto_materialize": Field(
             {
-                "enabled": Field(Bool, is_required=False),
-                "minimum_interval_seconds": Field(int, is_required=False),
+                "enabled": Field(BoolSource, is_required=False),
+                "minimum_interval_seconds": Field(IntSource, is_required=False),
                 "run_tags": Field(dict, is_required=False),
-                "respect_materialization_data_versions": Field(Bool, is_required=False),
+                "respect_materialization_data_versions": Field(BoolSource, is_required=False),
+                "max_tick_retries": Field(
+                    IntSource,
+                    default_value=3,
+                    is_required=False,
+                    description=(
+                        "For each auto-materialize tick that raises an error, how many times to retry that tick"
+                    ),
+                ),
+                "use_sensors": Field(BoolSource, is_required=False),
+                "use_threads": Field(Bool, is_required=False, default_value=False),
+                "num_workers": Field(
+                    int,
+                    is_required=False,
+                    description=(
+                        "How many threads to use to process ticks from multiple automation policy sensors in parallel"
+                    ),
+                ),
+            }
+        ),
+        "concurrency": Field(
+            {
+                "default_op_concurrency_limit": Field(
+                    int,
+                    is_required=False,
+                    description="The default maximum number of concurrent operations for an unconfigured concurrency key",
+                ),
             }
         ),
     }

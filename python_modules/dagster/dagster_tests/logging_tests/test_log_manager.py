@@ -1,6 +1,7 @@
 import logging
 import sys
 import textwrap
+from typing import Optional
 
 import pytest
 from dagster import DagsterEvent
@@ -9,33 +10,28 @@ from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_
 from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.log_manager import (
-    DagsterLoggingMetadata,
     DagsterLogHandler,
+    DagsterLogHandlerMetadata,
     DagsterLogManager,
-    DagsterMessageProps,
-    construct_log_string,
+    DagsterLogRecordMetadata,
+    construct_log_record_message,
 )
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
-def test_metadata_event_tags():
-    logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
-        job_name="my_job",
-        job_tags={"foo": "bar"},
-    )
-
-    all_tags = logging_metadata.all_tags()
-    event_tags = logging_metadata.event_tags()
-
-    assert all_tags["job_name"] == "my_job"
-    assert all_tags["job_tags"] == "{'foo': 'bar'}"
-
-    assert event_tags["job_name"] == "my_job"
-    assert "job_tags" not in event_tags
+def _construct_log_handler_metadata(**kwargs) -> DagsterLogRecordMetadata:
+    all_keys = DagsterLogHandlerMetadata.__annotations__.keys()
+    defaults = {k: None for k in all_keys if k not in kwargs}
+    return DagsterLogHandlerMetadata(**kwargs, **defaults)  # type: ignore
 
 
-def test_construct_log_string_for_event():
+def _construct_log_record_metadata(**kwargs) -> DagsterLogRecordMetadata:
+    all_keys = DagsterLogRecordMetadata.__annotations__.keys()
+    defaults = {k: None for k in all_keys if k not in kwargs}
+    return DagsterLogRecordMetadata(**kwargs, **defaults)  # type: ignore
+
+
+def test_construct_log_message_for_event():
     step_output_event = DagsterEvent(
         event_type_value="STEP_OUTPUT",
         job_name="my_job",
@@ -48,34 +44,35 @@ def test_construct_log_string_for_event():
         pid=54348,
     )
 
-    logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
-    )
-
-    dagster_message_props = DagsterMessageProps(
+    metadata = _construct_log_record_metadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
+        job_name="my_job",
         orig_message=step_output_event.message,
         dagster_event=step_output_event,
     )
 
     assert (
-        construct_log_string(logging_metadata=logging_metadata, message_props=dagster_message_props)
+        construct_log_record_message(metadata)
         == "my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_OUTPUT - Yielded"
         ' output "result" of type "Any" for step "op2". (Type check passed).'
     )
 
 
-def test_construct_log_string_for_log():
-    logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
+def test_construct_log_message_for_log():
+    metadata = _construct_log_record_metadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
+        job_name="my_job",
+        orig_message="hear my tale",
     )
-    dagster_message_props = DagsterMessageProps(orig_message="hear my tale")
     assert (
-        construct_log_string(logging_metadata, dagster_message_props)
+        construct_log_record_message(metadata)
         == "my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - hear my tale"
     )
 
 
-def make_log_string(error, error_source=None):
+def _make_error_log_message(
+    error: SerializableErrorInfo, error_source: Optional[ErrorSource] = None
+):
     step_failure_event = DagsterEvent(
         event_type_value="STEP_FAILURE",
         job_name="my_job",
@@ -90,36 +87,37 @@ def make_log_string(error, error_source=None):
         pid=54348,
     )
 
-    logging_metadata = DagsterLoggingMetadata(
-        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d", job_name="my_job"
-    )
-    dagster_message_props = DagsterMessageProps(
+    metadata = _construct_log_record_metadata(
+        run_id="f79a8a93-27f1-41b5-b465-b35d0809b26d",
+        job_name="my_job",
         orig_message=step_failure_event.message,
         dagster_event=step_failure_event,
     )
-    return construct_log_string(logging_metadata, dagster_message_props)
+    return construct_log_record_message(metadata)
 
 
-def test_construct_log_string_with_error():
+def test_construct_log_message_with_error():
     error = None
     try:
         raise ValueError("some error")
     except ValueError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
-    log_string = make_log_string(error)
-    expected_start = textwrap.dedent("""
+    log_string = _make_error_log_message(error)
+    expected_start = textwrap.dedent(
+        """
         my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         ValueError: some error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
     assert log_string.startswith(expected_start)
 
 
-def test_construct_log_string_with_user_code_error():
+def test_construct_log_message_with_user_code_error():
     error = None
     try:
         with user_code_error_boundary(
@@ -129,8 +127,9 @@ def test_construct_log_string_with_user_code_error():
     except DagsterUserCodeExecutionError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
-    log_string = make_log_string(error, error_source=ErrorSource.USER_CODE_ERROR)
-    expected_start = textwrap.dedent("""
+    log_string = _make_error_log_message(error, error_source=ErrorSource.USER_CODE_ERROR)
+    expected_start = textwrap.dedent(
+        """
         my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         dagster._core.errors.DagsterUserCodeExecutionError: Error occurred while eating a banana:
@@ -139,12 +138,13 @@ def test_construct_log_string_with_user_code_error():
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert log_string.startswith(expected_start)
 
 
-def test_construct_log_string_with_error_raise_from():
+def test_construct_log_message_with_error_raise_from():
     error = None
     try:
         try:
@@ -157,35 +157,41 @@ def test_construct_log_string_with_error_raise_from():
     except ValueError:
         error = serializable_error_info_from_exc_info(sys.exc_info())
 
-    log_string = make_log_string(error)
-    expected_start = textwrap.dedent("""
+    log_string = _make_error_log_message(error)
+    expected_start = textwrap.dedent(
+        """
         my_job - f79a8a93-27f1-41b5-b465-b35d0809b26d - 54348 - STEP_FAILURE - Execution of step "op2" failed.
 
         ValueError: outer error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert log_string.startswith(expected_start)
 
-    expected_cause_substr = textwrap.dedent("""
+    expected_cause_substr = textwrap.dedent(
+        """
         The above exception was caused by the following exception:
         ValueError: middle error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert expected_cause_substr in log_string
 
-    expected_context_substr = textwrap.dedent("""
+    expected_context_substr = textwrap.dedent(
+        """
         The above exception occurred during handling of the following exception:
         ValueError: inner error
 
         Stack Trace:
           File "
-        """).strip()
+        """
+    ).strip()
 
     assert expected_context_substr in log_string
 
@@ -211,7 +217,7 @@ def test_user_code_error_boundary_python_capture(use_handler):
         lambda: "Some Error Message",
         log_manager=DagsterLogManager(
             dagster_handler=DagsterLogHandler(
-                logging_metadata=DagsterLoggingMetadata(
+                metadata=_construct_log_handler_metadata(
                     run_id="123456", job_name="job", step_key="some_step"
                 ),
                 loggers=[user_logger] if not use_handler else [],
@@ -255,7 +261,7 @@ def test_log_handler_emit_by_handlers_level():
         lambda: "Some Error Message",
         log_manager=DagsterLogManager(
             dagster_handler=DagsterLogHandler(
-                logging_metadata=DagsterLoggingMetadata(
+                metadata=_construct_log_handler_metadata(
                     run_id="123456",
                     job_name="job",
                     step_key="some_step",

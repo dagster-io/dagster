@@ -17,8 +17,8 @@ dagster-dbt
 ***********
 
 .. click:: dagster_dbt.cli.app:project_app_typer_click_object
-    :prog: dagster-dbt project scaffold
-    :nested:
+    :prog: dagster-dbt project
+    :nested: full
 
 ********
 dbt Core
@@ -30,13 +30,11 @@ Here, we provide interfaces to manage dbt projects invoked by the local dbt comm
 Assets (dbt Core)
 =================
 
-.. autofunction:: load_assets_from_dbt_project
-
-.. autofunction:: load_assets_from_dbt_manifest
-
 .. autodecorator:: dbt_assets
 
 .. autoclass:: DagsterDbtTranslator
+
+.. autoclass:: DagsterDbtTranslatorSettings
 
 .. autoclass:: DbtManifestAssetSelection
 
@@ -49,6 +47,8 @@ Assets (dbt Core)
 .. autofunction:: get_asset_key_for_source
 
 .. autofunction:: get_asset_keys_by_output_name_for_source
+
+.. autoclass:: DbtProject
 
 Resources (dbt Core)
 ====================
@@ -64,6 +64,10 @@ CLI Resource
 
 Deprecated (dbt Core)
 -----------------------
+
+.. autofunction:: load_assets_from_dbt_project
+
+.. autofunction:: load_assets_from_dbt_manifest
 
 .. autoclass:: DbtCliOutput
 

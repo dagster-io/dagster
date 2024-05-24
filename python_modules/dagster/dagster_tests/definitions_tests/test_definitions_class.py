@@ -18,6 +18,7 @@ from dagster import (
     in_process_executor,
     materialize,
     mem_io_manager,
+    multiprocess_executor,
     op,
     repository,
     sensor,
@@ -31,6 +32,7 @@ from dagster._core.definitions.cacheable_assets import (
 )
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.repository_definition import (
@@ -50,18 +52,7 @@ from dagster._core.test_utils import instance_for_test
 
 
 def get_all_assets_from_defs(defs: Definitions):
-    # could not find public method on repository to do this
-    repo = resolve_pending_repo_if_required(defs)
-    return list(repo.assets_defs_by_key.values())
-
-
-def resolve_pending_repo_if_required(definitions: Definitions) -> RepositoryDefinition:
-    repo_or_caching_repo = definitions.get_inner_repository_for_loading_process()
-    return (
-        repo_or_caching_repo.compute_repository_definition()
-        if isinstance(repo_or_caching_repo, PendingRepositoryDefinition)
-        else repo_or_caching_repo
-    )
+    return list(defs.get_repository_def().asset_graph.assets_defs)
 
 
 def test_basic_asset():
@@ -151,7 +142,7 @@ def test_with_resource_binding():
         assets=[requires_foo],
         resources={"foo": ResourceDefinition.hardcoded_resource("wrapped")},
     )
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
 
     assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
@@ -172,7 +163,7 @@ def test_nested_resources() -> None:
     defs = Definitions(
         resources={"foo": MyOuterResource(inner=inner)},
     )
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
 
     assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
@@ -190,7 +181,7 @@ def test_resource_coercion():
         assets=[requires_foo],
         resources={"foo": "object-to-coerce"},
     )
-    repo = resolve_pending_repo_if_required(defs)
+    repo = defs.get_repository_def()
 
     assert len(repo.get_top_level_resources()) == 1
     assert "foo" in repo.get_top_level_resources()
@@ -202,8 +193,8 @@ def test_resource_coercion():
 
 def test_source_asset():
     defs = Definitions(assets=[SourceAsset("a-source-asset")])
-    repo = resolve_pending_repo_if_required(defs)
-    all_assets = list(repo.source_assets_by_key.values())
+    repo = defs.get_repository_def()
+    all_assets = list(repo.asset_graph.assets_defs)
     assert len(all_assets) == 1
     assert all_assets[0].key.to_user_string() == "a-source-asset"
 
@@ -232,7 +223,7 @@ def test_pending_repo():
             ]
 
     # This section of the test was just to test my understanding of what is happening
-    # here and then it also documents why resolve_pending_repo_if_required is necessary
+    # here and then it also documents why pending repo resolution is necessary
     @repository
     def a_pending_repo():
         return [MyCacheableAssetsDefinition("foobar")]
@@ -620,6 +611,15 @@ def test_asset_missing_resources():
     ):
         Definitions(assets=[source_asset_io_req])
 
+    external_asset_io_req = create_external_asset_from_source_asset(source_asset_io_req)
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=re.escape(
+            "io manager with key 'foo' required by external asset with key [\"foo\"] was not provided"
+        ),
+    ):
+        Definitions(assets=[external_asset_io_req])
+
 
 def test_assets_with_executor():
     @asset
@@ -683,7 +683,7 @@ def test_conflicting_asset_resource_defs():
             "provided to assets must match by reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset])
+        Definitions([the_asset, other_asset]).get_all_job_defs()
 
 
 def test_graph_backed_asset_resources():
@@ -721,7 +721,7 @@ def test_graph_backed_asset_resources():
             " reference equality for a given key."
         ),
     ):
-        Definitions([the_asset, other_asset])
+        Definitions([the_asset, other_asset]).get_all_job_defs()
 
 
 def test_job_with_reserved_name():
@@ -756,4 +756,101 @@ def test_asset_cycle():
 
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
-        Definitions(assets=[a, b, c, s])
+        Definitions(assets=[a, b, c, s]).get_all_job_defs()
+
+
+def test_merge():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    @job
+    def job1(): ...
+
+    @job
+    def job2(): ...
+
+    schedule1 = ScheduleDefinition(name="schedule1", job=job1, cron_schedule="@daily")
+    schedule2 = ScheduleDefinition(name="schedule2", job=job2, cron_schedule="@daily")
+
+    @sensor(job=job1)
+    def sensor1(): ...
+
+    @sensor(job=job2)
+    def sensor2(): ...
+
+    resource1 = object()
+    resource2 = object()
+
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    @logger
+    def logger2(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(
+        assets=[asset1],
+        jobs=[job1],
+        schedules=[schedule1],
+        sensors=[sensor1],
+        resources={"resource1": resource1},
+        loggers={"logger1": logger1},
+        executor=in_process_executor,
+    )
+    defs2 = Definitions(
+        assets=[asset2],
+        jobs=[job2],
+        schedules=[schedule2],
+        sensors=[sensor2],
+        resources={"resource2": resource2},
+        loggers={"logger2": logger2},
+    )
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.assets == [asset1, asset2]
+    assert merged.jobs == [job1, job2]
+    assert merged.schedules == [schedule1, schedule2]
+    assert merged.sensors == [sensor1, sensor2]
+    assert merged.resources == {"resource1": resource1, "resource2": resource2}
+    assert merged.loggers == {"logger1": logger1, "logger2": logger2}
+    assert merged.executor == in_process_executor
+
+
+def test_resource_conflict_on_merge():
+    defs1 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 4})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_logger_conflict_on_merge():
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger1})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_executor_conflict_on_merge():
+    defs1 = Definitions(executor=in_process_executor)
+    defs2 = Definitions(executor=multiprocess_executor)
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
+    ):
+        Definitions.merge(defs1, defs2)

@@ -11,12 +11,13 @@ function getAbsolutePath(value) {
 const config = {
   stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
+    getAbsolutePath('@storybook/addon-themes'),
     getAbsolutePath('@storybook/addon-links'),
     getAbsolutePath('@storybook/addon-essentials'),
     getAbsolutePath('@storybook/addon-mdx-gfm'),
   ],
   framework: {
-    name: getAbsolutePath('@storybook/react-webpack5'),
+    name: '@storybook/react-webpack5',
     options: {},
   },
   // https://storybook.js.org/docs/react/configure/webpack#bundle-splitting
@@ -54,8 +55,12 @@ const config = {
     };
   },
   docs: {
-    autodocs: true,
+    autodocs: false,
   },
+  env: (config) => ({
+    ...config,
+    STORYBOOK: true,
+  }),
 };
 
 export default config;

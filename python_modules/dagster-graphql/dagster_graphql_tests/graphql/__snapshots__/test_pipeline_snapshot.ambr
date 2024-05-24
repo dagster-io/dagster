@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_fetch_snapshot_or_error_by_active_pipeline_name_not_found[0]
   '''
   {

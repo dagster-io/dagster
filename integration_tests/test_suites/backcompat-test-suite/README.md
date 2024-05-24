@@ -3,59 +3,64 @@
 This test suite ensures that the branch Dagster code can successfully communicate cross-process with older Dagster code.
 
 ## Looking at test artifacts in BuildKite
+
 In buildkite the backcompat test suite uploads the docker logs of all of the containers it spins up during the test. If you
 see these tests failing, looking at the logs should be your first step in debugging.
 
 Logs from the following containers should get uploaded:
-* dagster_webserver
-* docker_daemon
-* dagster_grpc_server
-* docker_postgresql
+
+- dagster_webserver
+- docker_daemon
+- dagster_grpc_server
+- docker_postgresql
 
 To download the logs, go to the Artifacts tab in the buildkite test.
 
 If for some reason you don't see logs for one of the containers, there might be some helpful information
 in the test logs. If you download those logs you can search for some stdout and see if any of the following occurred:
-* if you search for `container log dump failed with stdout` you will find the stdout and stderr for the command
-`docker logs <container>` if the command failed.
-* if you search for `Buildkite artifact added with stdout` you will get the stdout and stderr for the command to upload
-artifacts to buildkite.
+
+- if you search for `container log dump failed with stdout` you will find the stdout and stderr for the command
+  `docker logs <container>` if the command failed.
+- if you search for `Buildkite artifact added with stdout` you will get the stdout and stderr for the command to upload
+  artifacts to buildkite.
 
 ## Running tests locally
 
 In order to run, the `EARLIEST_TESTED_RELEASE` environment variable needs to be set.
 
 - Set `EARLIEST_TESTED_RELEASE` to match the earliest release to test:
+
 ```bash
 export EARLIEST_TESTED_RELEASE="0.12.8"
 ```
 
-
 If you are on MacOS, ensure you have docker running
 
 From `integration_tests/test_suites/backcompat-test-suite` run any of the following commands
-* `pytest -m webserver-latest-release -xvv -ff tests/test_backcompat.py`
-* `pytest -m webserver-earliest-release -xvv -ff tests/test_backcompat.py`
-* `pytest -m user-code-latest-release -xvv -ff tests/test_backcompat.py`
-* `pytest -m user-code-earliest-release -xvv -ff tests/test_backcompat.py`
-* `tox webserver-latest-release`
-* `tox webserver-earliest-release`
-* `tox user-code-latest-release`
-* `tox user-code-earliest-release`
 
+- `pytest -m webserver-latest-release -xvv -ff tests/test_backcompat.py`
+- `pytest -m webserver-earliest-release -xvv -ff tests/test_backcompat.py`
+- `pytest -m user-code-latest-release -xvv -ff tests/test_backcompat.py`
+- `pytest -m user-code-earliest-release -xvv -ff tests/test_backcompat.py`
+- `tox webserver-latest-release`
+- `tox webserver-earliest-release`
+- `tox user-code-latest-release`
+- `tox user-code-earliest-release`
 
 where:
-* webserver-latest-release: webserver on most recent release (`dagster-webserver`) and user code on current branch
-* webserver-earliest-release: webserver on earliest release (this will run the deprecated `dagit` package if `EARLIEST_TESTED_RELEASE` is less than 1.3.14) to maintain backcompat for, and user code on current branch
-* user-code-latest-release: webserver on current branch and user code on latest minor release
-* user-code-earliest-release: webserver on current branch and user code on earliest release to maintain backcompat for
 
+- webserver-latest-release: webserver on most recent release (`dagster-webserver`) and user code on current branch
+- webserver-earliest-release: webserver on earliest release (this will run the deprecated `dagit` package if `EARLIEST_TESTED_RELEASE` is less than 1.3.14) to maintain backcompat for, and user code on current branch
+- user-code-latest-release: webserver on current branch and user code on latest minor release
+- user-code-earliest-release: webserver on current branch and user code on earliest release to maintain backcompat for
 
 ## Debugging tips
 
 ### Option 1:
+
 To view the logs of the docker containers that are spun up during testing, you'll need to comment out a line in the
 test suite so that the containers are not removed. In `tests/test_backcompat.py` in `docker_service_up()` the final lines will be
+
 ```python
     try:
         yield
@@ -63,7 +68,9 @@ test suite so that the containers are not removed. In `tests/test_backcompat.py`
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
 ```
+
 change them to
+
 ```python
     try:
         yield
@@ -71,10 +78,12 @@ change them to
         subprocess.check_output(["docker-compose", "-f", docker_compose_file, "stop"])
       #  subprocess.check_output(["docker-compose", "-f", docker_compose_file, "rm", "-f"])
 ```
+
 When you run the backcompat test, you can view the docker containers using `docker container ls -a` and view the logs for the container in
 question using `docker logs <CONTAINER ID>`
 
 ### Option 2:
+
 Most of the tests are run in subprocesses and inside docker containers, so if you're having trouble debugging
 in this setup, you can emulate what the test is doing using two clones of dagster
 

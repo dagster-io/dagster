@@ -1,10 +1,8 @@
 from dagster import (
     AssetIn,
-    AssetKey,
     AssetOut,
     AssetsDefinition,
     GraphOut,
-    Out,
     asset,
     graph,
     graph_multi_asset,
@@ -22,10 +20,10 @@ def materialize_expect_metadata(assets_def: AssetsDefinition):
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             if context.asset_key != downstream_asset.key:
-                assert context.metadata["fruit"] == "apple"
+                assert context.definition_metadata["fruit"] == "apple"
 
         def load_input(self, context):
-            assert context.upstream_output.metadata["fruit"] == "apple"
+            assert context.upstream_output.definition_metadata["fruit"] == "apple"
 
     assert materialize(
         assets=[assets_def, downstream_asset],
@@ -40,33 +38,11 @@ def test_asset_with_metadata():
     materialize_expect_metadata(basic_asset_with_metadata)
 
 
-def test_with_attributes_metadata():
-    @asset
-    def basic_asset_without_metadata(): ...
-
-    materialize_expect_metadata(
-        basic_asset_without_metadata.with_attributes(
-            metadata_by_key={AssetKey("basic_asset_without_metadata"): {"fruit": "apple"}}
-        ),
-    )
-
-
 def test_multi_asset_with_metadata():
     @multi_asset(outs={"asset1": AssetOut(metadata={"fruit": "apple"})})
     def multi_asset_with_metadata(): ...
 
     materialize_expect_metadata(multi_asset_with_metadata)
-
-
-def test_multi_asset_with_attributes_metadata():
-    @multi_asset(outs={"asset1": AssetOut()})
-    def multi_asset_without_metadata(): ...
-
-    materialize_expect_metadata(
-        multi_asset_without_metadata.with_attributes(
-            metadata_by_key={AssetKey("asset1"): {"fruit": "apple"}}
-        ),
-    )
 
 
 def test_graph_asset_outer_metadata():
@@ -78,21 +54,6 @@ def test_graph_asset_outer_metadata():
         return op_without_output_metadata()
 
     materialize_expect_metadata(graph_with_outer_metadata)
-
-
-def test_graph_asset_op_metadata():
-    @op(out=Out(metadata={"fruit": "apple"}))
-    def op_without_output_metadata(): ...
-
-    @graph_multi_asset(outs={"asset1": AssetOut()})
-    def graph_without_metadata():
-        return op_without_output_metadata()
-
-    materialize_expect_metadata(
-        graph_without_metadata.with_attributes(
-            metadata_by_key={AssetKey("asset1"): {"fruit": "apple"}}
-        )
-    )
 
 
 def test_assets_definition_from_graph_metadata():

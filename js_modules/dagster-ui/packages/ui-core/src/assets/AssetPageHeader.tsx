@@ -1,28 +1,31 @@
 // eslint-disable-next-line no-restricted-imports
-import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
+import {BreadcrumbProps, Breadcrumbs2 as Breadcrumbs} from '@blueprintjs/popover2';
 import {
   Box,
   Colors,
-  PageHeader,
   Heading,
   Icon,
-  Tooltip,
   IconWrapper,
+  PageHeader,
+  Tooltip,
 } from '@dagster-io/ui-components';
-import React from 'react';
+import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
+import {AnchorButton} from '../ui/AnchorButton';
 
-type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
+type Props = {assetKey: {path: string[]}; headerBreadcrumbs: BreadcrumbProps[]} & Partial<
+  React.ComponentProps<typeof PageHeader>
+>;
 
-export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
+export const AssetPageHeader = ({assetKey, headerBreadcrumbs, ...extra}: Props) => {
   const copy = useCopyToClipboard();
   const copyableString = assetKey.path.join('/');
   const [didCopy, setDidCopy] = React.useState(false);
-  const iconTimeout = React.useRef<NodeJS.Timeout>();
+  const iconTimeout = React.useRef<ReturnType<typeof setTimeout>>();
 
   const performCopy = React.useCallback(async () => {
     if (iconTimeout.current) {
@@ -43,7 +46,7 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   }, [copy, copyableString]);
 
   const breadcrumbs = React.useMemo(() => {
-    const list: BreadcrumbProps[] = [{text: 'Assets', href: '/assets'}];
+    const list: BreadcrumbProps[] = [...headerBreadcrumbs];
 
     assetKey.path.reduce((accum: string, elem: string) => {
       const href = `${accum}/${encodeURIComponent(elem)}`;
@@ -52,7 +55,7 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
     }, '/assets');
 
     return list;
-  }, [assetKey.path]);
+  }, [assetKey.path, headerBreadcrumbs]);
 
   return (
     <PageHeader
@@ -69,15 +72,19 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
                 <BreadcrumbLink to={href || '#'}>{text}</BreadcrumbLink>
               </Heading>
             )}
+            $numHeaderBreadcrumbs={headerBreadcrumbs.length}
+            popoverProps={{popoverClassName: 'dagster-popover'}}
           />
-          <Tooltip placement="bottom" content="Copy asset key">
-            <CopyButton onClick={performCopy}>
-              <Icon
-                name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
-                color={Colors.Gray400}
-              />
-            </CopyButton>
-          </Tooltip>
+          {copyableString ? (
+            <Tooltip placement="bottom" content="Copy asset key">
+              <CopyButton onClick={performCopy}>
+                <Icon
+                  name={didCopy ? 'copy_to_clipboard_done' : 'copy_to_clipboard'}
+                  color={Colors.accentGray()}
+                />
+              </CopyButton>
+            </Tooltip>
+          ) : undefined}
         </Box>
       }
       {...extra}
@@ -101,25 +108,32 @@ const CopyButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    background-color: ${Colors.Gray800};
+    background-color: ${Colors.accentGrayHover()};
   }
 `;
 
 export const AssetGlobalLineageLink = () => (
   <Link to="/asset-groups">
     <Box flex={{gap: 4}}>
-      <Icon color={Colors.Link} name="schema" />
+      <Icon color={Colors.linkDefault()} name="schema" />
       View global asset lineage
     </Box>
   </Link>
 );
 
-const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
-  & li:not(:first-child)::after {
+export const AssetGlobalLineageButton = () => (
+  <AnchorButton intent="primary" icon={<Icon name="schema" />} to="/asset-groups">
+    View lineage
+  </AnchorButton>
+);
+
+// Only add slashes within the asset key path
+const BreadcrumbsWithSlashes = styled(Breadcrumbs)<{$numHeaderBreadcrumbs: number}>`
+  & li:nth-child(n + ${(p) => p.$numHeaderBreadcrumbs + 1})::after {
     background: none;
     font-size: 20px;
     font-weight: bold;
-    color: #5c7080;
+    color: ${Colors.textLighter()};
     content: '/';
     width: 8px;
     line-height: 16px;
@@ -127,10 +141,11 @@ const BreadcrumbsWithSlashes = styled(Breadcrumbs)`
 `;
 
 const BreadcrumbLink = styled(Link)`
-  color: ${Colors.Gray800};
+  color: ${Colors.textLight()};
+  white-space: nowrap;
 
   :hover,
   :active {
-    color: ${Colors.Gray800};
+    color: ${Colors.textLight()};
   }
 `;

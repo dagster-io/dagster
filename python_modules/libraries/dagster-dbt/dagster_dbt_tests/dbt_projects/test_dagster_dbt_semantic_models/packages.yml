@@ -1,0 +1,5 @@
+# We keep use `packages.yml` for compatability with `dbt-core==1.5.*`.
+# Once we remove support for that version, we should rename this file to `dependencies.yml`
+packages:
+  - package: calogica/dbt_date
+    version: [">=0.8.0", "<0.9.0"]

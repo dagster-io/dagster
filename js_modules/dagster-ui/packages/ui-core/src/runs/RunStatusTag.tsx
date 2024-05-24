@@ -1,11 +1,9 @@
 import {Box, CaptionMono, Colors, Popover, Tag} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {assertUnreachable} from '../app/Util';
-import {RunStatus} from '../graphql/types';
 
 import {RunStats} from './RunStats';
 import {RunStatusIndicator} from './RunStatusDots';
+import {assertUnreachable} from '../app/Util';
+import {RunStatus} from '../graphql/types';
 
 const statusToIntent = (status: RunStatus) => {
   switch (status) {
@@ -76,18 +74,18 @@ export const runStatusToBackfillStateString = (status: RunStatus) => {
 };
 
 export const RUN_STATUS_COLORS = {
-  QUEUED: Colors.Blue200,
-  NOT_STARTED: Colors.Gray600,
-  MANAGED: Colors.Gray400,
-  STARTED: Colors.Blue500,
-  STARTING: Colors.Blue500,
-  CANCELING: Colors.Blue500,
-  SUCCESS: Colors.Green500,
-  FAILURE: Colors.Red500,
-  CANCELED: Colors.Gray400,
+  QUEUED: Colors.accentGray(),
+  NOT_STARTED: Colors.accentGrayHover(),
+  MANAGED: Colors.accentGray(),
+  STARTED: Colors.accentBlue(),
+  STARTING: Colors.accentBlue(),
+  CANCELING: Colors.accentBlue(),
+  SUCCESS: Colors.accentGreen(),
+  FAILURE: Colors.accentRed(),
+  CANCELED: Colors.accentRed(),
 
   // Not technically a RunStatus, but useful.
-  SCHEDULED: Colors.Blue200,
+  SCHEDULED: Colors.accentGray(),
 };
 
 export const RunStatusTag = (props: {status: RunStatus}) => {

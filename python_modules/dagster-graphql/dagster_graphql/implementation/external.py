@@ -5,8 +5,8 @@ import dagster._check as check
 from dagster._config import validate_config_from_snap
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import ExternalJob
-from dagster._core.host_representation.external import ExternalExecutionPlan
+from dagster._core.remote_representation import ExternalJob
+from dagster._core.remote_representation.external import ExternalExecutionPlan
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceRequestContext
 from dagster._utils.error import serializable_error_info_from_exc_info
 
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         GrapheneRepository,
         GrapheneRepositoryConnection,
         GrapheneWorkspace,
+        GrapheneWorkspaceLocationEntry,
         GrapheneWorkspaceLocationStatusEntries,
     )
     from dagster_graphql.schema.util import ResolveInfo
@@ -111,7 +112,7 @@ def fetch_repositories(graphene_info: "ResolveInfo") -> "GrapheneRepositoryConne
     return GrapheneRepositoryConnection(
         nodes=[
             GrapheneRepository(
-                instance=graphene_info.context.instance,
+                workspace_context=graphene_info.context,
                 repository=repository,
                 repository_location=location,
             )
@@ -133,17 +134,20 @@ def fetch_repository(
         repo_loc = graphene_info.context.get_code_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(
-                instance=graphene_info.context.instance,
+                workspace_context=graphene_info.context,
                 repository=repo_loc.get_repository(repository_selector.repository_name),
                 repository_location=repo_loc,
             )
 
-    return GrapheneRepositoryNotFoundError(
-        repository_selector.location_name, repository_selector.repository_name
+    raise UserFacingGraphQLError(
+        GrapheneRepositoryNotFoundError(
+            repository_selector.location_name,
+            repository_selector.repository_name,
+        )
     )
 
 
-def fetch_workspace(workspace_request_context: WorkspaceRequestContext) -> "GrapheneWorkspace":
+def fetch_workspace(workspace_request_context: BaseWorkspaceRequestContext) -> "GrapheneWorkspace":
     from ..schema.external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 
     check.inst_param(
@@ -185,3 +189,15 @@ def fetch_location_statuses(
             for status_entry in workspace_request_context.get_code_location_statuses()
         ]
     )
+
+
+def fetch_location_entry(
+    request_context: WorkspaceRequestContext, name: str
+) -> Optional["GrapheneWorkspaceLocationEntry"]:
+    from ..schema.external import GrapheneWorkspaceLocationEntry
+
+    location_entry = request_context.get_location_entry(name)
+    if location_entry is None:
+        return None
+
+    return GrapheneWorkspaceLocationEntry(location_entry)

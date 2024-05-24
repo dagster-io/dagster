@@ -13,8 +13,10 @@ from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
 from dagster_aws.s3 import S3ComputeLogManager
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager
 
 HELLO_WORLD = "Hello World"

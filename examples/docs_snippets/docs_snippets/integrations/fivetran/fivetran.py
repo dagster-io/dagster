@@ -154,7 +154,7 @@ def scope_add_downstream_assets():
         # only run the airbyte syncs necessary to materialize survey_responses_file
         my_upstream_job = define_asset_job(
             "my_upstream_job",
-            AssetSelection.keys("survey_responses_file")
+            AssetSelection.assets(survey_responses_file)
             .upstream()  # all upstream assets (in this case, just the survey_responses Fivetran asset)
             .required_multi_asset_neighbors(),  # all Fivetran assets linked to the same connection
         )

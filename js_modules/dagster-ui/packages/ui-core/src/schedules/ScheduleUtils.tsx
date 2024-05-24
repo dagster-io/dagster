@@ -16,6 +16,8 @@ export const SCHEDULE_FRAGMENT = gql`
       id
       name
     }
+    defaultStatus
+    canReset
     scheduleState {
       id
       ...InstigationStateFragment

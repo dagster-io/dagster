@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.external_data import ExternalScheduleExecutionErrorData
-from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._serdes import deserialize_value
 from dagster._seven.compat.pendulum import PendulumDateTime
@@ -19,6 +19,8 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
     repository_handle: RepositoryHandle,
     schedule_name: str,
     scheduled_execution_time: Any,
+    log_key: Optional[Sequence[str]],
+    timeout: Optional[int] = None,
 ) -> ScheduleExecutionData:
     from dagster._grpc.client import ephemeral_grpc_api_client
 
@@ -32,6 +34,8 @@ def sync_get_external_schedule_execution_data_ephemeral_grpc(
             repository_handle,
             schedule_name,
             scheduled_execution_time,
+            log_key,
+            timeout,
         )
 
 
@@ -41,6 +45,8 @@ def sync_get_external_schedule_execution_data_grpc(
     repository_handle: RepositoryHandle,
     schedule_name: str,
     scheduled_execution_time: Any,
+    log_key: Optional[Sequence[str]],
+    timeout: Optional[int] = None,
 ) -> ScheduleExecutionData:
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(schedule_name, "schedule_name")
@@ -59,6 +65,8 @@ def sync_get_external_schedule_execution_data_grpc(
                 scheduled_execution_timezone=(
                     scheduled_execution_time.timezone.name if scheduled_execution_time else None
                 ),
+                log_key=log_key,
+                timeout=timeout,
             )
         ),
         (ScheduleExecutionData, ExternalScheduleExecutionErrorData),

@@ -3,7 +3,7 @@
 ## Getting started
 
 ```bash
-dagster project from-example --name my-dagster-project --example asset_yaml_dsl 
+dagster project from-example --name my-dagster-project --example asset_yaml_dsl
 ```
 
 To install this example and its Python dependencies, run:

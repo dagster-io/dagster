@@ -1,19 +1,18 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
-import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
-import {BulkActionStatus} from '../../graphql/types';
-import {cancelableStatuses} from '../../runs/RunStatuses';
-import {TerminationDialog} from '../../runs/TerminationDialog';
+import {Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
+import {useMemo, useState} from 'react';
 
 import {SINGLE_BACKFILL_STATUS_DETAILS_QUERY} from './BackfillRow';
 import {SingleBackfillQuery, SingleBackfillQueryVariables} from './types/BackfillRow.types';
 import {
+  BackfillTerminationDialogBackfillFragment,
   CancelBackfillMutation,
   CancelBackfillMutationVariables,
-  BackfillTerminationDialogBackfillFragment,
 } from './types/BackfillTerminationDialog.types';
+import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
+import {BulkActionStatus} from '../../graphql/types';
+import {cancelableStatuses} from '../../runs/RunStatuses';
+import {TerminationDialog} from '../../runs/TerminationDialog';
 
 interface Props {
   backfill?: BackfillTerminationDialogBackfillFragment;
@@ -35,8 +34,8 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
       skip: !backfill,
     },
   );
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const unfinishedMap = React.useMemo(() => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const unfinishedMap = useMemo(() => {
     if (!backfill || !data || data.partitionBackfillOrError.__typename !== 'PartitionBackfill') {
       return {};
     }

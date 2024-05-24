@@ -9,7 +9,35 @@ from ..step_builder import CommandStepBuilder
 from ..utils import CommandStep, is_feature_branch
 
 
-def skip_if_no_dagster_ui_changes():
+def skip_if_no_dagster_ui_components_changes():
+    if not is_feature_branch():
+        return None
+
+    # If anything changes in the ui-components directory
+    if any(
+        Path("js_modules/dagster-ui/packages/ui-components") in path.parents
+        for path in ChangedFiles.all
+    ):
+        return None
+
+    return "No changes that affect the ui-components JS library"
+
+
+def build_dagster_ui_components_steps() -> List[CommandStep]:
+    return [
+        CommandStepBuilder(":typescript: dagster-ui-components")
+        .run(
+            "cd js_modules/dagster-ui/packages/ui-components",
+            "pip install -U uv",
+            f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
+        )
+        .on_test_image(AvailablePythonVersion.get_default())
+        .with_skip(skip_if_no_dagster_ui_components_changes())
+        .build(),
+    ]
+
+
+def skip_if_no_dagster_ui_core_changes():
     if not is_feature_branch():
         return None
 
@@ -25,18 +53,19 @@ def skip_if_no_dagster_ui_changes():
     return "No changes that affect the JS webapp"
 
 
-def build_dagster_ui_steps() -> List[CommandStep]:
+def build_dagster_ui_core_steps() -> List[CommandStep]:
     return [
-        CommandStepBuilder(":typescript: dagster-ui")
+        CommandStepBuilder(":typescript: dagster-ui-core")
         .run(
             "cd js_modules/dagster-ui",
-            # Explicitly install Node 16.x because BK is otherwise running 12.x.
-            # Todo: Fix BK images to use newer Node versions, remove this.
-            "curl -sL https://deb.nodesource.com/setup_16.x | bash -",
-            "apt-get -yqq --no-install-recommends install nodejs",
-            "tox -vv -e py310",
+            "pip install -U uv",
+            f"tox -vv -e {AvailablePythonVersion.to_tox_factor(AvailablePythonVersion.get_default())}",
         )
         .on_test_image(AvailablePythonVersion.get_default())
-        .with_skip(skip_if_no_dagster_ui_changes())
+        .with_skip(skip_if_no_dagster_ui_core_changes())
         .build(),
     ]
+
+
+def skip_if_no_dagster_ui_changes():
+    return skip_if_no_dagster_ui_components_changes() or skip_if_no_dagster_ui_core_changes()

@@ -1,6 +1,6 @@
 import {createGlobalStyle} from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {Icons} from './Icon';
 import {FontFamily} from './styles';
 
@@ -8,11 +8,15 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   .CodeMirror-gutter-elt {
     .CodeMirror-lint-marker-error {
       background-image: none;
-      background: ${Colors.Red500};
+      background: ${Colors.accentRed()};
       mask-image: url(${Icons.error});
       mask-size: cover;
       margin-bottom: 2px;
     }
+  }
+
+  .CodeMirror-cursor {
+    border-color: ${Colors.textLight()};
   }
 
   .CodeMirror-hint,
@@ -21,99 +25,106 @@ export const DagsterCodeMirrorStyle = createGlobalStyle`
   .CodeMirror-lint-message-error,
   .CodeMirror-lint-message-warning {
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .CodeMirror.cm-s-dagster {
+    background-color: ${Colors.backgroundLight()};
+    color: ${Colors.textDefault()};
+
     font-family: ${FontFamily.monospace};
-    font-size: 16px;
+    font-size: 14px;
 
     /* Note: Theme overrides */
     &.cm-s-default .cm-comment {
-      color: #999;
+      color: ${Colors.textLight()};
     }
 
     .cm-atom {
-      color: ${Colors.Blue700};
+      color: ${Colors.textBlue()};
     }
 
     .cm-comment {
-      color: ${Colors.Gray400};
+      color: ${Colors.textLight()};
     }
 
     .cm-meta {
-      color: ${Colors.Gray700};
+      color: ${Colors.textLight()};
     }
 
     .cm-number {
-      color: ${Colors.Red700};
+      color: ${Colors.textRed()};
     }
 
     .cm-string {
-      color: ${Colors.Green700};
+      color: ${Colors.textGreen()};
     }
 
     .cm-string-2 {
-      color: ${Colors.Olive700};
+      color: ${Colors.textCyan()};
     }
 
     .cm-variable-2 {
-      color: ${Colors.Blue500};
+      color: ${Colors.textBlue()};
     }
 
     .cm-keyword {
-      color: ${Colors.Yellow700};
+      color: ${Colors.textYellow()};
     }
 
     .CodeMirror-selected {
-      background-color: ${Colors.Blue50};
+      background-color: ${Colors.backgroundBlueHover()};
     }
 
     .CodeMirror-gutters {
-      background-color: ${Colors.Gray50};
+      background-color: ${Colors.backgroundDefault()};
+      opacity: 0.6;
     }
 
     .cm-indent {
       display: inline-block;
 
       &.cm-zero {
-        box-shadow: -1px 0 0 ${Colors.Green200};
+        box-shadow: -1px 0 0 ${Colors.backgroundGreen()};
       }
 
       &.cm-one {
-        box-shadow: -1px 0 0 ${Colors.Blue100};
+        box-shadow: -1px 0 0 ${Colors.backgroundBlue()};
       }
 
       &.cm-two {
-        box-shadow: -1px 0 0 ${Colors.LightPurple};
+        box-shadow: -1px 0 0 ${Colors.backgroundCyan()};
       }
 
       &.cm-three {
-        box-shadow: -1px 0 0 ${Colors.Red200};
+        box-shadow: -1px 0 0 ${Colors.backgroundRed()};
       }
 
       &.cm-four {
-        box-shadow: -1px 0 0 ${Colors.Yellow200};
+        box-shadow: -1px 0 0 ${Colors.backgroundYellow()};
       }
 
       &.cm-five {
-        box-shadow: -1px 0 0 ${Colors.Olive200};
+        box-shadow: -1px 0 0 ${Colors.backgroundOlive()};
       }
 
       &.cm-six {
-        box-shadow: -1px 0 0 ${Colors.Gray300};
+        box-shadow: -1px 0 0 ${Colors.backgroundGray()};
       }
     }
   }
 
   div.CodeMirror-lint-tooltip {
-    background: rgba(255, 247, 231, 1);
-    border: 1px solid ${Colors.Gray200};
+    background: ${Colors.backgroundDefault()};
+    border: 1px solid ${Colors.borderDefault()};
+    color: ${Colors.textDefault()};
+    font-family: ${FontFamily.monospace};
   }
 
   .CodeMirror-lint-message {
     background: transparent;
   }
+
   .CodeMirror-lint-message.CodeMirror-lint-message-error {
     background: transparent;
   }

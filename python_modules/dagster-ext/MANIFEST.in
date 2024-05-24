@@ -1,3 +1,0 @@
-include README.md
-include LICENSE
-include dagster_external/py.typed

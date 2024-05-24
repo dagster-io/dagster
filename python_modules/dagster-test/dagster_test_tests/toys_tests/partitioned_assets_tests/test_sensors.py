@@ -21,7 +21,7 @@ def test_ints_sensors():
             for ints_sensor in ints_sensors:
                 result = ints_sensor(context)
                 assert len(result.run_requests) == 1
-                assert len(result.dynamic_partitions_requests) == 1
+                assert len(result.dynamic_partitions_requests) == 3
 
 
 def test_daily_partitioned_sensor():

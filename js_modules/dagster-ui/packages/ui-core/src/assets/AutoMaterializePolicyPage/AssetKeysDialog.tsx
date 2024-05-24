@@ -13,20 +13,21 @@ interface Props {
   setIsOpen: (value: boolean) => void;
   header: React.ReactNode;
   content: React.ReactNode;
+  height?: number;
 }
 
 export const AssetKeysDialog = (props: Props) => {
-  const {isOpen, setIsOpen, header, content} = props;
+  const {isOpen, setIsOpen, header, content, height = 272} = props;
   return (
     <Dialog
       isOpen={isOpen}
       onClose={() => setIsOpen(false)}
-      style={{width: '750px', maxWidth: '80vw', minWidth: '500px'}}
+      style={{width: '750px', maxWidth: '80vw', minWidth: '500px', transform: 'scale(1)'}}
       canOutsideClickClose
       canEscapeKeyClose
     >
       {header}
-      <div style={{height: '272px', overflow: 'hidden'}}>{content}</div>
+      <div style={{height: `${height}px`, overflow: 'hidden'}}>{content}</div>
       <DialogFooter topBorder>
         <Button onClick={() => setIsOpen(false)}>Close</Button>
       </DialogFooter>

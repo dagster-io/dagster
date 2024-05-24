@@ -1,5 +1,5 @@
 from dagster import Field, Float, Noneable, StringSource
-from dagster._core.host_representation import IN_PROCESS_NAME
+from dagster._core.remote_representation import IN_PROCESS_NAME
 from dagster._utils.merger import merge_dicts
 from dagster_celery.executor import CELERY_CONFIG
 from dagster_k8s import DagsterK8sJobConfig
@@ -72,7 +72,8 @@ def get_celery_engine_job_config(image_pull_policy=None, additional_env_config_m
                     "job_namespace": {"env": "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE"},
                     "env_config_maps": [
                         {"env": "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP"},
-                    ] + (additional_env_config_maps if additional_env_config_maps else []),
+                    ]
+                    + (additional_env_config_maps if additional_env_config_maps else []),
                 },
                 (
                     {

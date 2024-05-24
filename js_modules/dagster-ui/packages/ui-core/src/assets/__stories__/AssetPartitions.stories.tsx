@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import React from 'react';
+import {useState} from 'react';
 
 import {StorybookProvider} from '../../testing/StorybookProvider';
 import {AssetPartitions} from '../AssetPartitions';
@@ -19,7 +19,7 @@ export default {
 };
 
 export const SingleDimensionStaticAsset = () => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+  const [params, setParams] = useState<AssetViewParams>({});
 
   return (
     <StorybookProvider>
@@ -38,7 +38,7 @@ export const SingleDimensionStaticAsset = () => {
 };
 
 export const SingleDimensionTimeAsset = () => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+  const [params, setParams] = useState<AssetViewParams>({});
 
   return (
     <StorybookProvider>
@@ -57,7 +57,7 @@ export const SingleDimensionTimeAsset = () => {
 };
 
 export const MultiDimensionStaticAsset = () => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+  const [params, setParams] = useState<AssetViewParams>({});
 
   return (
     <StorybookProvider>
@@ -76,7 +76,7 @@ export const MultiDimensionStaticAsset = () => {
 };
 
 export const MultiDimensionTimeFirstAsset = () => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+  const [params, setParams] = useState<AssetViewParams>({});
 
   return (
     <StorybookProvider>
@@ -95,7 +95,7 @@ export const MultiDimensionTimeFirstAsset = () => {
 };
 
 export const MultiDimensionTimeSecondAsset = () => {
-  const [params, setParams] = React.useState<AssetViewParams>({});
+  const [params, setParams] = useState<AssetViewParams>({});
 
   return (
     <StorybookProvider>

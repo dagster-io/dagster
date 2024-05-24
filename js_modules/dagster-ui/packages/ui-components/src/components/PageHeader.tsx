@@ -2,7 +2,7 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {IconName} from './Icon';
 
 interface Props {
@@ -19,12 +19,12 @@ export const PageHeader = (props: Props) => {
   const {title, tags, right, tabs} = props;
   return (
     <PageHeaderContainer
-      background={Colors.Gray50}
+      background={Colors.backgroundLight()}
       padding={{top: 16, left: 24, right: 12}}
       border="bottom"
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}} padding={{bottom: 16}}>
-        <Box flex={{direction: 'row', alignItems: 'flex-start', gap: 12, wrap: 'wrap'}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 12, wrap: 'wrap'}}>
           {title}
           {tags}
         </Box>

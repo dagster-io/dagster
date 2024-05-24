@@ -21,7 +21,7 @@ from toposort import CircularDependencyError, toposort_flatten
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster._core.definitions.policy import RetryPolicy
@@ -32,6 +32,7 @@ from dagster._core.types.dagster_type import (
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
+from dagster._utils.warnings import normalize_renamed_param
 
 from .dependency import (
     DependencyMapping,
@@ -51,6 +52,7 @@ from .node_container import create_execution_structure, normalize_dependency_dic
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
 from .resource_requirement import ResourceRequirement
+from .utils import NormalizedTags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -58,6 +60,7 @@ if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
 
     from .asset_layer import AssetLayer
+    from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
@@ -80,10 +83,10 @@ def _check_node_defs_arg(
             continue
         elif callable(node_def):
             raise DagsterInvalidDefinitionError(
-                """You have passed a lambda or function {func} into {name} that is
+                f"""You have passed a lambda or function {node_def.__name__} into {graph_name} that is
                 not a node. You have likely forgetten to annotate this function with
                 the @op or @graph decorators.'
-                """.format(name=graph_name, func=node_def.__name__)
+                """
             )
         else:
             raise DagsterInvalidDefinitionError(f"Invalid item in node list: {node_def!r}")
@@ -119,6 +122,11 @@ def create_adjacency_lists(
     return (forward_edges, backward_edges)
 
 
+@deprecated_param(
+    param="node_input_source_assets",
+    breaking_version="2.0",
+    additional_warn_text="Use `input_assets` instead.",
+)
 class GraphDefinition(NodeDefinition):
     """Defines a Dagster op graph.
 
@@ -182,11 +190,11 @@ class GraphDefinition(NodeDefinition):
     _config_mapping: Optional[ConfigMapping]
     _nodes_in_topological_order: Sequence[Node]
 
-    # (node name within the graph -> (input name -> SourceAsset to load that input from))
+    # (node name within the graph -> (input name -> AssetsDefinition to load that input from))
     # Does NOT include keys for:
     # - Inputs to the graph itself
     # - Inputs to nodes within sub-graphs of the graph
-    _node_input_source_assets: Mapping[str, Mapping[str, "SourceAsset"]]
+    _input_assets: Mapping[str, Mapping[str, "AssetsDefinition"]]
 
     def __init__(
         self,
@@ -200,10 +208,16 @@ class GraphDefinition(NodeDefinition):
         input_mappings: Optional[Sequence[InputMapping]] = None,
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
+        input_assets: Optional[
+            Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
+        ] = None,
         **kwargs: Any,
     ):
+        from .external_asset import create_external_asset_from_source_asset
+        from .source_asset import SourceAsset
+
         self._node_defs = _check_node_defs_arg(name, node_defs)
 
         # `dependencies` will be converted to `dependency_structure` and `node_dict`, which may
@@ -246,9 +260,31 @@ class GraphDefinition(NodeDefinition):
         # eager computation to detect cycles
         self._nodes_in_topological_order = self._get_nodes_in_topological_order()
         self._dagster_type_dict = construct_dagster_type_dictionary([self])
-        self._node_input_source_assets = check.opt_mapping_param(
-            node_input_source_assets, "node_input_source_assets", key_type=str, value_type=dict
+
+        # Backcompat: the previous  API `node_input_source_assets` with a Dict[str, Dict[str,
+        # SourceAsset]]. The new API is `input_assets` and accepts external assets as well as
+        # SourceAsset.
+        self._input_assets = {}
+        input_assets = check.opt_mapping_param(
+            normalize_renamed_param(
+                new_val=input_assets,
+                new_arg="input_assets",
+                old_val=node_input_source_assets,
+                old_arg="node_input_source_assets",
+            ),
+            "input_assets",
+            key_type=str,
+            value_type=dict,
         )
+        for node_name, inputs in input_assets.items():
+            self._input_assets[node_name] = {
+                input_name: (
+                    create_external_asset_from_source_asset(asset)
+                    if isinstance(asset, SourceAsset)
+                    else asset
+                )
+                for input_name, asset in inputs.items()
+            }
 
     def _get_nodes_in_topological_order(self) -> Sequence[Node]:
         _forward_edges, backward_edges = create_adjacency_lists(
@@ -312,8 +348,8 @@ class GraphDefinition(NodeDefinition):
         return self._nodes_in_topological_order
 
     @property
-    def node_input_source_assets(self) -> Mapping[str, Mapping[str, "SourceAsset"]]:
-        return self._node_input_source_assets
+    def input_assets(self) -> Mapping[str, Mapping[str, "AssetsDefinition"]]:
+        return self._input_assets
 
     def has_node_named(self, name: str) -> bool:
         check.str_param(name, "name")
@@ -512,9 +548,9 @@ class GraphDefinition(NodeDefinition):
         output_mappings: Optional[Sequence[OutputMapping]] = None,
         config: Optional[ConfigMapping] = None,
         tags: Optional[Mapping[str, str]] = None,
-        node_input_source_assets: Optional[Mapping[str, Mapping[str, "SourceAsset"]]] = None,
+        input_assets: Optional[Mapping[str, Mapping[str, "AssetsDefinition"]]] = None,
     ) -> Self:
-        return GraphDefinition(
+        return self.__class__(
             node_defs=self.node_defs,
             dependencies=self.dependencies,
             name=name or self.name,
@@ -523,7 +559,7 @@ class GraphDefinition(NodeDefinition):
             output_mappings=output_mappings or self._output_mappings,
             config=config or self.config_mapping,
             tags=tags or self.tags,
-            node_input_source_assets=node_input_source_assets or self.node_input_source_assets,
+            input_assets=input_assets or self._input_assets,
         )
 
     def copy_for_configured(
@@ -531,7 +567,7 @@ class GraphDefinition(NodeDefinition):
         name: str,
         description: Optional[str],
         config_schema: Any,
-    ) -> "GraphDefinition":
+    ) -> Self:
         if not self.has_config_mapping:
             raise DagsterInvalidDefinitionError(
                 "Only graphs utilizing config mapping can be pre-configured. The graph "
@@ -561,7 +597,7 @@ class GraphDefinition(NodeDefinition):
         config: Optional[
             Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
         ] = None,
-        tags: Optional[Mapping[str, str]] = None,
+        tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         metadata: Optional[Mapping[str, RawMetadataValue]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,

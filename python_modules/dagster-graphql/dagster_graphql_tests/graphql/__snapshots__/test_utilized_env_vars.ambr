@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_get_used_env_vars[0]
   dict({
     'utilizedEnvVarsOrError': dict({

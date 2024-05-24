@@ -15,6 +15,7 @@ These configurations are most commonly added at the run-level and can be passed 
 Let’s write a new configuration that we can use to customize the asset materialization.
 
 1. In the `assets` directory, create a `requests.py` file.
+
 2. Add the following import to the top of the file:
 
    ```bash
@@ -35,8 +36,8 @@ The `requests.py` file should look like the code snippet below:
 from dagster import Config
 
 class AdhocRequestConfig(Config):
-  filename: str
-  borough: str
-  start_date: str
-  end_date: str
+    filename: str
+    borough: str
+    start_date: str
+    end_date: str
 ```

@@ -1,6 +1,8 @@
 import graphene
 import pendulum
+from dagster._core.events import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._utils import check
 
 from .pipelines.status import GrapheneRunStatus
 from .runs import GrapheneRunConfigData
@@ -37,7 +39,9 @@ class GrapheneRunsFilter(graphene.InputObjectType):
     statuses = graphene.List(graphene.NonNull(GrapheneRunStatus))
     snapshotId = graphene.InputField(graphene.String)
     updatedAfter = graphene.InputField(graphene.Float)
+    updatedBefore = graphene.InputField(graphene.Float)
     createdBefore = graphene.InputField(graphene.Float)
+    createdAfter = graphene.InputField(graphene.Float)
     mode = graphene.InputField(graphene.String)
 
     class Meta:
@@ -56,8 +60,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
+        updated_before = pendulum.from_timestamp(self.updatedBefore) if self.updatedBefore else None
         updated_after = pendulum.from_timestamp(self.updatedAfter) if self.updatedAfter else None
         created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = pendulum.from_timestamp(self.createdAfter) if self.createdAfter else None
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,
@@ -65,8 +71,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
             tags=tags,
             statuses=statuses,
             snapshot_id=self.snapshotId,
+            updated_before=updated_before,
             updated_after=updated_after,
             created_before=created_before,
+            created_after=created_after,
         )
 
 
@@ -173,6 +181,14 @@ class GraphenePartitionsByAssetSelector(graphene.InputObjectType):
         name = "PartitionsByAssetSelector"
 
 
+class GrapheneAssetBackfillPreviewParams(graphene.InputObjectType):
+    partitionNames = graphene.InputField(non_null_list(graphene.String))
+    assetSelection = graphene.InputField(non_null_list(GrapheneAssetKeyInput))
+
+    class Meta:
+        name = "AssetBackfillPreviewParams"
+
+
 class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     selector = graphene.InputField(GraphenePartitionSetSelector)
     partitionNames = graphene.List(graphene.NonNull(graphene.String))
@@ -183,9 +199,39 @@ class GrapheneLaunchBackfillParams(graphene.InputObjectType):
     allPartitions = graphene.Boolean()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     forceSynchronousSubmission = graphene.Boolean()
+    title = graphene.String()
+    description = graphene.String()
 
     class Meta:
         name = "LaunchBackfillParams"
+
+
+class GrapheneRunlessAssetEventType(graphene.Enum):
+    """The event type of an asset event."""
+
+    ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_OBSERVATION = "ASSET_OBSERVATION"
+
+    class Meta:
+        name = "AssetEventType"
+
+    def to_dagster_event_type(self) -> DagsterEventType:
+        if self == GrapheneRunlessAssetEventType.ASSET_MATERIALIZATION:
+            return DagsterEventType.ASSET_MATERIALIZATION
+        elif self == GrapheneRunlessAssetEventType.ASSET_OBSERVATION:
+            return DagsterEventType.ASSET_OBSERVATION
+        else:
+            check.assert_never(self)
+
+
+class GrapheneReportRunlessAssetEventsParams(graphene.InputObjectType):
+    eventType = graphene.NonNull(GrapheneRunlessAssetEventType)
+    assetKey = graphene.NonNull(GrapheneAssetKeyInput)
+    partitionKeys = graphene.InputField(graphene.List(graphene.String))
+    description = graphene.String()
+
+    class Meta:
+        name = "ReportRunlessAssetEventsParams"
 
 
 class GrapheneSensorSelector(graphene.InputObjectType):
@@ -221,7 +267,6 @@ class GrapheneResourceSelector(graphene.InputObjectType):
 
 
 class GrapheneExecutionMetadata(graphene.InputObjectType):
-    runId = graphene.String()
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     rootRunId = graphene.String(
         description="""The ID of the run at the root of the run group. All partial /
@@ -348,4 +393,5 @@ types = [
     GrapheneStepExecution,
     GrapheneStepOutputHandle,
     GrapheneInputTag,
+    GrapheneReportRunlessAssetEventsParams,
 ]

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {useCallback, useContext, useMemo} from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
@@ -13,7 +13,7 @@ export const buildStorageKey = (basePath: string, key: string) => `${basePath}:d
  * e.g. for the left nav or run timeline.
  */
 export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) => {
-  const {basePath} = React.useContext(AppContext);
+  const {basePath} = useContext(AppContext);
 
   const collapsedStorageKey = buildStorageKey(basePath, collapsedKey);
   const [collapsedKeys, setCollapsedKeys] = useStateWithStorage<string[]>(
@@ -21,9 +21,9 @@ export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) =
     validateExpandedKeys,
   );
 
-  const onToggle = React.useCallback(
-    (repoAddress: RepoAddress) => {
-      const key = repoAddressAsHumanString(repoAddress);
+  const onToggle = useCallback(
+    (_key: string | RepoAddress) => {
+      const key = typeof _key === 'object' ? repoAddressAsHumanString(_key) : _key;
       setCollapsedKeys((current) => {
         const nextCollapsedKeys = new Set(current || []);
         if (nextCollapsedKeys.has(key)) {
@@ -37,7 +37,7 @@ export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) =
     [setCollapsedKeys],
   );
 
-  const onToggleAll = React.useCallback(
+  const onToggleAll = useCallback(
     (expand: boolean) => {
       setCollapsedKeys((current) => {
         const nextCollapsedKeys = new Set(current || []);
@@ -50,12 +50,12 @@ export const useRepoExpansionState = (collapsedKey: string, allKeys: string[]) =
     [allKeys, setCollapsedKeys],
   );
 
-  const expandedKeys = React.useMemo(() => {
+  const expandedKeys = useMemo(() => {
     const collapsedSet = new Set(collapsedKeys);
     return allKeys.filter((key) => !collapsedSet.has(key));
   }, [allKeys, collapsedKeys]);
 
-  return React.useMemo(
+  return useMemo(
     () => ({
       expandedKeys,
       onToggle,

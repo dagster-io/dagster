@@ -12,7 +12,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
 from dagster._serdes import whitelist_for_serdes
@@ -28,7 +28,7 @@ class AssetsDefinitionCacheableData(
             ("keys_by_output_name", Optional[Mapping[str, AssetKey]]),
             ("internal_asset_deps", Optional[Mapping[str, AbstractSet[AssetKey]]]),
             ("group_name", Optional[str]),
-            ("metadata_by_output_name", Optional[Mapping[str, MetadataUserInput]]),
+            ("metadata_by_output_name", Optional[Mapping[str, RawMetadataMapping]]),
             ("key_prefix", Optional[CoercibleToAssetKeyPrefix]),
             ("can_subset", bool),
             ("extra_metadata", Optional[Mapping[Any, Any]]),
@@ -51,7 +51,7 @@ class AssetsDefinitionCacheableData(
         keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         internal_asset_deps: Optional[Mapping[str, AbstractSet[AssetKey]]] = None,
         group_name: Optional[str] = None,
-        metadata_by_output_name: Optional[Mapping[str, MetadataUserInput]] = None,
+        metadata_by_output_name: Optional[Mapping[str, RawMetadataMapping]] = None,
         key_prefix: Optional[Sequence[str]] = None,
         can_subset: bool = False,
         extra_metadata: Optional[Mapping[Any, Any]] = None,

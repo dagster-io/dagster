@@ -1,12 +1,7 @@
-import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
+import {ApolloQueryResult, gql} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import * as React from 'react';
-
-import {AppContext} from '../app/AppContext';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
-import {PipelineSelector} from '../graphql/types';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {useMemo} from 'react';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -21,6 +16,14 @@ import {
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
 } from './types/WorkspaceContext.types';
+import {AppContext} from '../app/AppContext';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
+import {PipelineSelector} from '../graphql/types';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
@@ -42,6 +45,7 @@ type WorkspaceState = {
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
+  data: RootWorkspaceQuery | null;
 
   refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
   toggleVisible: SetVisibleOrHiddenFn;
@@ -77,6 +81,10 @@ export const ROOT_WORKSPACE_QUERY = gql`
       ...WorkspaceDisplayMetadata
     }
     updatedTimestamp
+    featureFlags {
+      name
+      enabled
+    }
     locationOrLoadError {
       ... on RepositoryLocation {
         id
@@ -130,9 +138,11 @@ export const ROOT_WORKSPACE_QUERY = gql`
       pipelineName
     }
     assetGroups {
+      id
       groupName
     }
     allTopLevelResourceDetails {
+      id
       name
     }
     ...RepositoryInfoFragment
@@ -164,11 +174,16 @@ export const ROOT_WORKSPACE_QUERY = gql`
       id
       selectorId
       status
+      ...BasicInstigationStateFragment
     }
+    sensorType
+    ...SensorSwitchFragment
   }
 
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
+  ${SENSOR_SWITCH_FRAGMENT}
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
 `;
 
 /**
@@ -177,9 +192,17 @@ export const ROOT_WORKSPACE_QUERY = gql`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
-  const {data, loading, refetch} = useQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>(
-    ROOT_WORKSPACE_QUERY,
-  );
+  const {
+    data,
+    loading,
+    fetch: refetch,
+  } = useIndexedDBCachedQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>({
+    query: ROOT_WORKSPACE_QUERY,
+    key: 'RootWorkspace',
+    version: 1,
+  });
+  useMemo(() => refetch(), [refetch]);
+
   const workspaceOrError = data?.workspaceOrError;
 
   const locationEntries = React.useMemo(
@@ -223,6 +246,7 @@ const useWorkspaceState = (): WorkspaceState => {
     loading: loading && !data, // Only "loading" on initial load.
     error,
     locationEntries,
+    data,
     allRepos,
     visibleRepos,
     toggleVisible,
@@ -365,6 +389,27 @@ export const useActivePipelineForName = (pipelineName: string, snapshotId?: stri
     return match.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
   }
   return null;
+};
+
+export const getFeatureFlagForCodeLocation = (
+  locationEntries: WorkspaceLocationNodeFragment[],
+  locationName: string,
+  flagName: string,
+) => {
+  const matchingLocation = locationEntries.find(({id}) => id === locationName);
+  if (matchingLocation) {
+    const {featureFlags} = matchingLocation;
+    const matchingFlag = featureFlags.find(({name}) => name === flagName);
+    if (matchingFlag) {
+      return matchingFlag.enabled;
+    }
+  }
+  return false;
+};
+
+export const useFeatureFlagForCodeLocation = (locationName: string, flagName: string) => {
+  const {locationEntries} = useWorkspaceState();
+  return getFeatureFlagForCodeLocation(locationEntries, locationName, flagName);
 };
 
 export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobName: string) => {

@@ -1,8 +1,6 @@
-# start_example
-
 import pandas as pd
 
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, StaticPartitionsDefinition, asset
 
 
 @asset(
@@ -11,8 +9,8 @@ from dagster import StaticPartitionsDefinition, asset
     ),
     metadata={"partition_expr": "SPECIES"},
 )
-def iris_dataset_partitioned(context) -> pd.DataFrame:
-    species = context.asset_partition_key_for_output()
+def iris_dataset_partitioned(context: AssetExecutionContext) -> pd.DataFrame:
+    species = context.partition_key
 
     full_df = pd.read_csv(
         "https://docs.dagster.io/assets/iris.csv",
@@ -31,6 +29,3 @@ def iris_dataset_partitioned(context) -> pd.DataFrame:
 @asset
 def iris_cleaned(iris_dataset_partitioned: pd.DataFrame):
     return iris_dataset_partitioned.dropna().drop_duplicates()
-
-
-# end_example

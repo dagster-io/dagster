@@ -104,7 +104,7 @@ def run_migrate_command(from_label, **kwargs):
         ) as external_job:
             new_job_origin = external_job.get_external_origin()
             job_name = external_job.name
-            to_label = new_job_origin.external_repository_origin.get_label()
+            to_label = new_job_origin.repository_origin.get_label()
 
         if not to_label:
             raise click.UsageError("Must specify valid job targets to migrate history to.")

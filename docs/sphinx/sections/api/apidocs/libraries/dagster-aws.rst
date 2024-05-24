@@ -95,6 +95,10 @@ Resources which surface SecretsManager secrets for use in Dagster resources and 
 .. autoconfigurable:: dagster_aws.secretsmanager.SecretsManagerSecretsResource
   :annotation: ResourceDefinition
 
+Pipes
+--------------
+
+.. autoclass:: dagster_aws.pipes.PipesLambdaClient
 
 Legacy
 --------

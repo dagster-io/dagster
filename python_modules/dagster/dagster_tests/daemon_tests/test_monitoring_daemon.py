@@ -29,6 +29,7 @@ from dagster._daemon.monitoring.run_monitoring import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 from typing_extensions import Self
 
 
@@ -54,7 +55,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return TestRunLauncher(inst_data=inst_data)
+        return cls(inst_data=inst_data)
 
     def launch_run(self, context):
         self.launch_run_calls += 1
@@ -285,7 +286,7 @@ def test_long_running_termination(
 ):
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
         initial = pendulum.datetime(2021, 1, 1, tz="UTC")
-        with pendulum.test(initial):
+        with pendulum_freeze_time(initial):
             too_long_run = create_run_for_test(
                 instance,
                 job_name="foo",
@@ -302,7 +303,7 @@ def test_long_running_termination(
                 instance, job_name="foo", status=DagsterRunStatus.STARTING
             )
         started_time = initial.add(seconds=1)
-        with pendulum.test(started_time):
+        with pendulum_freeze_time(started_time):
             report_started_event(instance, too_long_run, started_time.timestamp())
             report_started_event(instance, okay_run, started_time.timestamp())
             report_started_event(instance, run_no_tag, started_time.timestamp())
@@ -326,7 +327,7 @@ def test_long_running_termination(
         run_launcher = cast(TestRunLauncher, instance.run_launcher)
 
         eval_time = started_time.add(seconds=501)
-        with pendulum.test(eval_time):
+        with pendulum_freeze_time(eval_time):
             # run_no_tag has no maximum run tag set, so no termination event should be
             # triggered.
             monitor_started_run(instance, workspace, no_tag_record, logger)
@@ -373,7 +374,7 @@ def test_long_running_termination_failure(
         else:
             instance.run_launcher.should_except_termination = True  # type: ignore
         initial = pendulum.datetime(2021, 1, 1, tz="UTC")
-        with pendulum.test(initial):
+        with pendulum_freeze_time(initial):
             too_long_run = create_run_for_test(
                 instance,
                 job_name="foo",
@@ -381,7 +382,7 @@ def test_long_running_termination_failure(
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )
         started_time = initial.add(seconds=1)
-        with pendulum.test(started_time):
+        with pendulum_freeze_time(started_time):
             report_started_event(instance, too_long_run, started_time.timestamp())
 
         too_long_record = instance.get_run_record_by_id(too_long_run.run_id)
@@ -393,7 +394,7 @@ def test_long_running_termination_failure(
         run_launcher = cast(TestRunLauncher, instance.run_launcher)
 
         eval_time = started_time.add(seconds=501)
-        with pendulum.test(eval_time):
+        with pendulum_freeze_time(eval_time):
             # Enough runtime has elapsed for too_long_run to hit its maximum runtime so a
             # termination event should be triggered.
             monitor_started_run(instance, workspace, too_long_record, logger)
@@ -415,7 +416,6 @@ def test_long_running_termination_failure(
         event = run_failure_events[0].dagster_event
         assert event
         assert (
-            event.message
-            == "This job is being forcibly marked as failed. The "
+            event.message == "This job is being forcibly marked as failed. The "
             "computational resources created by the run may not have been fully cleaned up."
         )

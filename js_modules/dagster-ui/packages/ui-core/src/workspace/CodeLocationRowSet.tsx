@@ -9,10 +9,18 @@ import {
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
+import {CodeLocationMenu} from './CodeLocationMenu';
+import {RepositoryCountTags} from './RepositoryCountTags';
+import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
+import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
+import {buildRepoAddress} from './buildRepoAddress';
+import {repoAddressAsHumanString} from './repoAddressAsString';
+import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
+import {workspacePathFromAddress} from './workspacePath';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -25,26 +33,17 @@ import {
 } from '../nav/useRepositoryLocationReload';
 import {TimeFromNow} from '../ui/TimeFromNow';
 
-import {CodeLocationMenu} from './CodeLocationMenu';
-import {RepositoryCountTags} from './RepositoryCountTags';
-import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
-import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
-import {workspacePathFromAddress} from './workspacePath';
-
 interface Props {
   locationNode: WorkspaceRepositoryLocationNode;
 }
 
-export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
+export const CodeLocationRowSet = ({locationNode}: Props) => {
   const {name, locationOrLoadError} = locationNode;
 
   if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
     return (
       <tr>
-        <td style={{maxWidth: '400px', color: Colors.Gray500}}>
+        <td style={{maxWidth: '400px', color: Colors.textLight()}}>
           <MiddleTruncate text={name} />
         </td>
         <td>
@@ -108,12 +107,12 @@ export const CodeLocationRowSet: React.FC<Props> = ({locationNode}) => {
   );
 };
 
-export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({metadata}) => {
+export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
   const imageKV = metadata.find(({key}) => key === 'image');
   const value = imageKV?.value || '';
 
-  const onClick = React.useCallback(async () => {
+  const onClick = useCallback(async () => {
     copy(value);
     await showSharedToaster({
       intent: 'success',
@@ -139,7 +138,7 @@ export const ImageName: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}>
 
 const ImageNameBox = styled(Box)`
   width: 100%;
-  color: ${Colors.Gray700};
+  color: ${Colors.textLight()};
   font-size: 12px;
 
   .bp4-popover2-target {
@@ -147,9 +146,9 @@ const ImageNameBox = styled(Box)`
   }
 
   button {
-    background: transparent;
+    background: ${Colors.backgroundDefault()};
     border: none;
-    color: ${Colors.Gray700};
+    color: ${Colors.textLight()};
     cursor: pointer;
     font-size: 12px;
     overflow: hidden;
@@ -163,8 +162,10 @@ const ImageNameBox = styled(Box)`
   }
 `;
 
-export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadataFragment[]}> = ({
+export const ModuleOrPackageOrFile = ({
   metadata,
+}: {
+  metadata: WorkspaceDisplayMetadataFragment[];
 }) => {
   const imageKV = metadata.find(
     ({key}) => key === 'module_name' || key === 'package_name' || key === 'python_file',
@@ -173,7 +174,7 @@ export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadata
     return (
       <Box
         flex={{direction: 'row', gap: 4}}
-        style={{width: '100%', color: Colors.Gray700, fontSize: 12}}
+        style={{width: '100%', color: Colors.textLight(), fontSize: 12}}
       >
         <span style={{fontWeight: 500}}>{imageKV.key}:</span>
         <MiddleTruncate text={imageKV.value} />
@@ -183,14 +184,14 @@ export const ModuleOrPackageOrFile: React.FC<{metadata: WorkspaceDisplayMetadata
   return null;
 };
 
-const LocationStatus: React.FC<{
+export const LocationStatus = (props: {
   location: string;
   locationOrError: WorkspaceRepositoryLocationNode;
-}> = (props) => {
+}) => {
   const {location, locationOrError} = props;
-  const [showDialog, setShowDialog] = React.useState(false);
+  const [showDialog, setShowDialog] = useState(false);
 
-  const reloadFn = React.useMemo(() => buildReloadFnForLocation(location), [location]);
+  const reloadFn = useMemo(() => buildReloadFnForLocation(location), [location]);
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,
@@ -242,7 +243,7 @@ const LocationStatus: React.FC<{
   );
 };
 
-const ReloadButton: React.FC<{location: string}> = ({location}) => {
+export const ReloadButton = ({location}: {location: string}) => {
   return (
     <ReloadRepositoryLocationButton
       location={location}

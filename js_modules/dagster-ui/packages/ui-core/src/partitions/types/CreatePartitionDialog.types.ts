@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type AddDynamicPartitionMutationVariables = Types.Exact<{
-  partitionsDefName: Types.Scalars['String'];
-  partitionKey: Types.Scalars['String'];
+  partitionsDefName: Types.Scalars['String']['input'];
+  partitionKey: Types.Scalars['String']['input'];
   repositorySelector: Types.RepositorySelector;
 }>;
 

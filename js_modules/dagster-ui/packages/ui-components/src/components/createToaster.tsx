@@ -1,6 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
 import {IToasterProps, Toaster} from '@blueprintjs/core';
-import * as React from 'react';
 import {createRoot} from 'react-dom/client';
 
 // https://github.com/palantir/blueprint/issues/5212#issuecomment-1318397270

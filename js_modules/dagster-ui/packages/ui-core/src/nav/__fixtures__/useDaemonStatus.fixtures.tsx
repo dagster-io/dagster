@@ -1,19 +1,19 @@
 import {MockedResponse} from '@apollo/client/testing';
 
 import {
-  buildWorkspace,
-  buildWorkspaceLocationEntry,
-  buildRepositoryLocation,
-  buildRepository,
-  buildSchedule,
-  buildInstigationState,
   InstigationStatus,
-  buildSensor,
-  buildInstance,
   buildDaemonHealth,
   buildDaemonStatus,
-  buildPartitionBackfills,
+  buildInstance,
+  buildInstigationState,
   buildPartitionBackfill,
+  buildPartitionBackfills,
+  buildRepository,
+  buildRepositoryLocation,
+  buildSchedule,
+  buildSensor,
+  buildWorkspace,
+  buildWorkspaceLocationEntry,
 } from '../../graphql/types';
 import {InstanceWarningQuery} from '../../instance/types/useDaemonStatus.types';
 import {INSTANCE_WARNING_QUERY} from '../../instance/useDaemonStatus';
@@ -55,32 +55,33 @@ const buildRepo = ({
   });
 };
 
-export const buildWorkspaceQueryWithNoSchedulesOrSensors = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: 'ipsum-entry',
-              name: 'ipsum-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'ipsum',
-                name: 'ipsum',
-                repositories: [buildRepo({name: 'lorem'})],
-              }),
-            }),
-          ],
-        }),
+export const buildWorkspaceQueryWithNoSchedulesOrSensors =
+  (): MockedResponse<RootWorkspaceQuery> => {
+    return {
+      request: {
+        query: ROOT_WORKSPACE_QUERY,
+        variables: {},
       },
-    },
+      result: {
+        data: {
+          __typename: 'Query',
+          workspaceOrError: buildWorkspace({
+            locationEntries: [
+              buildWorkspaceLocationEntry({
+                id: 'ipsum-entry',
+                name: 'ipsum-entry',
+                locationOrLoadError: buildRepositoryLocation({
+                  id: 'ipsum',
+                  name: 'ipsum',
+                  repositories: [buildRepo({name: 'lorem'})],
+                }),
+              }),
+            ],
+          }),
+        },
+      },
+    };
   };
-};
 
 export const buildWorkspaceQueryWithScheduleAndSensor = ({
   schedule,

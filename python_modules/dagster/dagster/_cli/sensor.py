@@ -15,8 +15,8 @@ from dagster._cli.workspace.cli_target import (
     repository_target_argument,
 )
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.host_representation import ExternalRepository
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalRepository
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -239,7 +239,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
 @click.argument("sensor_name", nargs=-1)
 @click.option(
     "--since",
-    help="Set the last_completion_time value as a timestamp float for the sensor context",
+    help="Set the last_tick_completion_time value as a timestamp float for the sensor context",
     default=None,
 )
 @click.option(
@@ -283,25 +283,20 @@ def execute_preview_command(
                         since,
                         last_run_key,
                         cursor,
+                        log_key=None,
+                        last_sensor_start_time=None,
                     )
                 except Exception:
                     error_info = serializable_error_info_from_exc_info(sys.exc_info())
                     print_fn(
-                        "Failed to resolve sensor for {sensor_name} : {error_info}".format(
-                            sensor_name=external_sensor.name,
-                            error_info=error_info.to_string(),
-                        )
+                        f"Failed to resolve sensor for {external_sensor.name} : {error_info.to_string()}"
                     )
                     return
 
                 if not sensor_runtime_data.run_requests:
                     if sensor_runtime_data.skip_message:
                         print_fn(
-                            "Sensor returned false for {sensor_name}, skipping: {skip_message}"
-                            .format(
-                                sensor_name=external_sensor.name,
-                                skip_message=sensor_runtime_data.skip_message,
-                            )
+                            f"Sensor returned false for {external_sensor.name}, skipping: {sensor_runtime_data.skip_message}"
                         )
                     else:
                         print_fn(f"Sensor returned false for {external_sensor.name}, skipping")
@@ -362,7 +357,9 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                         InstigatorType.SENSOR,
                         InstigatorStatus.STOPPED,
                         SensorInstigatorData(
-                            min_interval=external_sensor.min_interval_seconds, cursor=cursor_value
+                            min_interval=external_sensor.min_interval_seconds,
+                            cursor=cursor_value,
+                            sensor_type=external_sensor.sensor_type,
                         ),
                     )
                 )
@@ -374,6 +371,9 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                             last_run_key=job_state.instigator_data.last_run_key,
                             min_interval=external_sensor.min_interval_seconds,
                             cursor=cursor_value,
+                            last_tick_start_timestamp=job_state.instigator_data.last_tick_start_timestamp,
+                            last_sensor_start_timestamp=job_state.instigator_data.last_sensor_start_timestamp,
+                            sensor_type=external_sensor.sensor_type,
                         ),
                     )
                 )

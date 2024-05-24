@@ -111,5 +111,6 @@ db.Index(
     "idx_asset_daemon_asset_evaluations_asset_key_evaluation_id",
     AssetDaemonAssetEvaluationsTable.c.asset_key,
     AssetDaemonAssetEvaluationsTable.c.evaluation_id,
+    mysql_length={"asset_key": 64},
     unique=True,
 )

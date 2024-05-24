@@ -138,35 +138,36 @@ export const buildWorkspaceQueryWithThreeLocations = (): MockedResponse<RootWork
   };
 };
 
-export const buildWorkspaceQueryWithOneLocationAndAssetGroup = (): MockedResponse<RootWorkspaceQuery> => {
-  return {
-    request: {
-      query: ROOT_WORKSPACE_QUERY,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
-              id: 'ipsum-entry',
-              name: 'ipsum-entry',
-              locationOrLoadError: buildRepositoryLocation({
-                id: 'ipsum',
-                name: 'ipsum',
-                repositories: [
-                  buildRepo({
-                    name: 'lorem',
-                    jobNames: ['my_pipeline', 'other_pipeline'],
-                    assetGroupNames: ['my_asset_group'],
-                  }),
-                ],
-              }),
-            }),
-          ],
-        }),
+export const buildWorkspaceQueryWithOneLocationAndAssetGroup =
+  (): MockedResponse<RootWorkspaceQuery> => {
+    return {
+      request: {
+        query: ROOT_WORKSPACE_QUERY,
+        variables: {},
       },
-    },
+      result: {
+        data: {
+          __typename: 'Query',
+          workspaceOrError: buildWorkspace({
+            locationEntries: [
+              buildWorkspaceLocationEntry({
+                id: 'ipsum-entry',
+                name: 'ipsum-entry',
+                locationOrLoadError: buildRepositoryLocation({
+                  id: 'ipsum',
+                  name: 'ipsum',
+                  repositories: [
+                    buildRepo({
+                      name: 'lorem',
+                      jobNames: ['my_pipeline', 'other_pipeline'],
+                      assetGroupNames: ['my_asset_group'],
+                    }),
+                  ],
+                }),
+              }),
+            ],
+          }),
+        },
+      },
+    };
   };
-};

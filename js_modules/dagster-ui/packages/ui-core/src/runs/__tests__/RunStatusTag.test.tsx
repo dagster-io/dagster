@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import React from 'react';
 
 import {RunStatus} from '../../graphql/types';
 import {RunStatusTag} from '../RunStatusTag';

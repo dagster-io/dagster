@@ -1,19 +1,21 @@
-import {Box, TextInput, Button, ButtonGroup, ErrorBoundary} from '@dagster-io/ui-components';
+import {Box, Button, ButtonGroup, ErrorBoundary, TextInput} from '@dagster-io/ui-components';
 import * as React from 'react';
+import {useDeferredValue} from 'react';
 
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
+import {RefreshState} from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
+import {usePageLoadTrace} from '../performance';
 import {RunTimeline} from '../runs/RunTimeline';
-import {useHourWindow, HourWindow} from '../runs/useHourWindow';
+import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
-const POLL_INTERVAL = 60 * 1000;
+const POLL_INTERVAL = 5 * 1000;
 
 const hourWindowToOffset = (hourWindow: HourWindow) => {
   switch (hourWindow) {
@@ -29,12 +31,14 @@ const hourWindowToOffset = (hourWindow: HourWindow) => {
 };
 
 type Props = {
-  Header: React.FC<{refreshState: ReturnType<typeof useQueryRefreshAtInterval>}>;
-  TabButton: React.FC<{selected: 'timeline' | 'assets'}>;
+  Header: React.ComponentType<{refreshState: RefreshState}>;
+  TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
+
 export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   useTrackPageView();
   useDocumentTitle('Overview | Timeline');
+  const trace = usePageLoadTrace('OverviewTimelineRoot');
 
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
@@ -47,7 +51,6 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   });
 
   React.useEffect(() => {
-    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, POLL_INTERVAL);
@@ -77,8 +80,16 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const {jobs, initialLoading, queryData} = useRunsForTimeline(range);
-  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
+  const runsForTimelineRet = useRunsForTimeline(range);
+
+  // Use deferred value to allow paginating quickly with the UI feeling more responsive.
+  const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
+
+  React.useEffect(() => {
+    if (!initialLoading) {
+      trace.endTrace();
+    }
+  }, [initialLoading, trace]);
 
   const visibleJobKeys = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase().trim();
@@ -91,10 +102,10 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     return new Set(flat);
   }, [visibleRepos, searchValue]);
 
-  const visibleJobs = React.useMemo(() => jobs.filter(({key}) => visibleJobKeys.has(key)), [
-    jobs,
-    visibleJobKeys,
-  ]);
+  const visibleJobs = React.useMemo(
+    () => jobs.filter(({key}) => visibleJobKeys.has(key)),
+    [jobs, visibleJobKeys],
+  );
 
   return (
     <>
@@ -104,7 +115,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         flex={{alignItems: 'center', justifyContent: 'space-between'}}
       >
         <Box flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}>
-          <TabButton selected="timeline" />
+          {TabButton && <TabButton selected="timeline" />}
           {allRepos.length > 1 && <RepoFilterButton />}
           <TextInput
             icon="search"

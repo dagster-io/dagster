@@ -5,6 +5,7 @@ Revises: d9092588866f
 Create Date: 2023-05-04 09:12:34.974039
 
 """
+
 from alembic import op
 from dagster._core.storage.migration.utils import get_primary_key, has_column, has_table
 

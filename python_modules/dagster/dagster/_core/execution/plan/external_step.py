@@ -164,7 +164,7 @@ def external_instance_from_step_run_ref(
     by a StepRunRef by pre-populating certain values.
 
     Args:
-        step_run_ref (StepRunRef): The reference to the the step that we want to execute
+        step_run_ref (StepRunRef): The reference to the step that we want to execute
         event_listener_fn (EventLogEntry -> Any): A function that handles each individual
             EventLogEntry created on this instance. Generally used to send these events back to
             the host instance.

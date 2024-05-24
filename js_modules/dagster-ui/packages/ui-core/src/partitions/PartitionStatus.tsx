@@ -1,16 +1,15 @@
-import {Box, Tooltip, Colors, useViewport} from '@dagster-io/ui-components';
+import {Box, Colors, Tooltip, useViewport} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {assembleIntoSpans} from './SpanRepresentation';
 import {
   assetPartitionStatusToText,
   assetPartitionStatusesToStyle,
 } from '../assets/AssetPartitionStatus';
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
-import {runStatusToBackfillStateString, RUN_STATUS_COLORS} from '../runs/RunStatusTag';
-
-import {assembleIntoSpans} from './SpanRepresentation';
+import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
 
 type SelectionRange = {
   start: string;
@@ -50,7 +49,7 @@ interface PartitionStatusProps {
   selectionWindowSize?: number;
 }
 
-export const PartitionStatus: React.FC<PartitionStatusProps> = ({
+export const PartitionStatus = ({
   partitionNames,
   selected,
   onSelect,
@@ -61,7 +60,7 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
   hideStatusTooltip,
   tooltipMessage,
   splitPartitions = false,
-}) => {
+}: PartitionStatusProps) => {
   const ref = React.useRef<HTMLDivElement>(null);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
@@ -303,7 +302,7 @@ export const PartitionStatus: React.FC<PartitionStatusProps> = ({
         <Box
           flex={{justifyContent: 'space-between'}}
           margin={{top: 4}}
-          style={{fontSize: '0.8rem', color: Colors.Gray500, minHeight: 17}}
+          style={{fontSize: '0.8rem', color: Colors.textLight(), minHeight: 17}}
         >
           <span>{partitionNames[0]}</span>
           <span>{partitionNames[partitionNames.length - 1]}</span>
@@ -370,9 +369,9 @@ function assetHealthToColorSegments(ranges: Range[]) {
 
 const statusToBackgroundColor = (status: RunStatus | undefined) => {
   if (status === undefined) {
-    return Colors.Gray600;
+    return Colors.accentGray();
   }
-  return status === RunStatus.NOT_STARTED ? Colors.Gray200 : RUN_STATUS_COLORS[status];
+  return status === RunStatus.NOT_STARTED ? Colors.accentGrayHover() : RUN_STATUS_COLORS[status];
 };
 
 function opRunStatusToColorRanges(
@@ -411,7 +410,7 @@ const SelectionSpansContainer = styled.div`
     position: absolute;
     top: 0;
     height: 8px;
-    border: 2px solid ${Colors.Blue500};
+    border: 2px solid ${Colors.accentBlue()};
     border-bottom: 0;
   }
 `;
@@ -422,7 +421,7 @@ const PartitionSpansContainer = styled.div`
   border-radius: 4px;
   overflow: hidden;
   cursor: col-resize;
-  background: ${Colors.Gray200};
+  background: ${Colors.backgroundLighter()};
 
   .color-span {
     width: 100%;
@@ -434,7 +433,7 @@ const PartitionSpansContainer = styled.div`
     width: 1px;
     position: absolute;
     z-index: 4;
-    background: ${Colors.KeylineGray};
+    background: ${Colors.keylineDefault()};
     top: 0;
   }
 `;
@@ -442,7 +441,7 @@ const PartitionSpansContainer = styled.div`
 const SelectionFade = styled.div`
   position: absolute;
   z-index: 5;
-  background: ${Colors.White};
+  background: ${Colors.backgroundDefault()};
   opacity: 0.5;
   top: 0;
 `;
@@ -451,7 +450,7 @@ const SelectionHoverHighlight = styled.div`
   min-width: 2px;
   position: absolute;
   z-index: 4;
-  background: ${Colors.White};
+  background: ${Colors.backgroundDefault()};
   opacity: 0.7;
   top: 0;
 `;
@@ -460,7 +459,7 @@ const SelectionBorder = styled.div`
   min-width: 2px;
   position: absolute;
   z-index: 5;
-  border: 3px solid ${Colors.Dark};
+  border: 3px solid ${Colors.borderDefault()};
   border-radius: 4px;
   top: 0;
 `;

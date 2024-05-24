@@ -1,4 +1,5 @@
 """Test interrupt handling."""
+
 import sys
 import time
 

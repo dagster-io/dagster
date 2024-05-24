@@ -1,4 +1,3 @@
-import * as generic from '../plugins/generic';
 import * as ipynb from '../plugins/ipynb';
 import * as sql from '../plugins/sql';
 import {RepoAddress} from '../workspace/types';
@@ -22,7 +21,7 @@ export interface IPluginSidebarProps {
 }
 
 interface IPluginInterface {
-  SidebarComponent: React.ComponentClass<IPluginSidebarProps> | React.FC<IPluginSidebarProps>;
+  SidebarComponent: React.ComponentType<IPluginSidebarProps>;
 }
 
 export function pluginForMetadata(
@@ -32,5 +31,5 @@ export function pluginForMetadata(
   if (!kindMetadata) {
     return null;
   }
-  return plugins[kindMetadata.value] || generic;
+  return plugins[kindMetadata.value];
 }

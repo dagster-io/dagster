@@ -2,7 +2,7 @@ import {MockedResponse} from '@apollo/client/testing';
 
 import {PERMISSIONS_QUERY} from '../../app/Permissions';
 import {PermissionsQuery} from '../../app/types/Permissions.types';
-import {buildPermission, buildWorkspace, buildWorkspaceLocationEntry} from '../../graphql/types';
+import {buildPermission} from '../../graphql/types';
 
 export const buildPermissionsQuery = (canReload: boolean): MockedResponse<PermissionsQuery> => {
   return {
@@ -13,9 +13,11 @@ export const buildPermissionsQuery = (canReload: boolean): MockedResponse<Permis
       data: {
         __typename: 'Query',
         unscopedPermissions: [],
-        workspaceOrError: buildWorkspace({
-          locationEntries: [
-            buildWorkspaceLocationEntry({
+        locationStatusesOrError: {
+          __typename: 'WorkspaceLocationStatusEntries',
+          entries: [
+            {
+              __typename: 'WorkspaceLocationStatusEntry',
               id: 'foobar',
               name: 'foobar',
               permissions: [
@@ -25,9 +27,9 @@ export const buildPermissionsQuery = (canReload: boolean): MockedResponse<Permis
                   disabledReason: canReload ? null : 'nope',
                 }),
               ],
-            }),
+            },
           ],
-        }),
+        },
       },
     },
   };

@@ -1,9 +1,9 @@
-import * as React from 'react';
 import styled, {css} from 'styled-components';
 
-import {Colors} from './Colors';
+import {Box} from './Box';
+import {Colors} from './Color';
 
-type Color =
+type Colors =
   | string
   | {
       link: string;
@@ -14,12 +14,12 @@ type Color =
 type Underline = 'never' | 'always' | 'hover';
 
 interface Props {
-  color: Color;
+  color: Colors;
   disabled?: boolean;
   underline?: Underline;
 }
 
-const fontColor = (color: Color) => {
+const fontColor = (color: Colors) => {
   if (typeof color === 'string') {
     return css`
       color: ${color};
@@ -34,13 +34,6 @@ const fontColor = (color: Color) => {
   `;
 };
 
-const outlineColor = (color: Color) => {
-  if (typeof color === 'string') {
-    return color;
-  }
-  return color.link;
-};
-
 const textDecoration = (underline: Underline) => {
   switch (underline) {
     case 'always':
@@ -51,6 +44,9 @@ const textDecoration = (underline: Underline) => {
       return css`
         &:hover {
           text-decoration: underline;
+          & > ${Box} {
+            text-decoration: underline;
+          }
         }
       `;
     case 'never':
@@ -59,7 +55,9 @@ const textDecoration = (underline: Underline) => {
   }
 };
 
-export const ButtonLink = styled(({color, underline, ...rest}) => <button {...rest} />)<Props>`
+export const ButtonLink = styled(({color: _color, underline: _underline, ...rest}) => (
+  <button {...rest} />
+))<Props>`
   background: transparent;
   border: 0;
   cursor: pointer;
@@ -69,19 +67,13 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
   margin: -8px;
   text-align: left;
 
-  &:active,
-  &:focus {
-    outline: none;
-  }
-
-  &:focus-visible {
-    outline: 1px auto ${({color}) => outlineColor(color)};
-    outline-offset: 2px;
-  }
-
   &:disabled {
     cursor: default;
     opacity: 0.7;
+  }
+
+  &:focus:not(:focus-visible) {
+    outline: none;
   }
 
   transition: 30ms color linear;
@@ -91,6 +83,6 @@ export const ButtonLink = styled(({color, underline, ...rest}) => <button {...re
 `;
 
 ButtonLink.defaultProps = {
-  color: Colors.Link,
+  color: Colors.linkDefault(),
   underline: 'hover',
 };

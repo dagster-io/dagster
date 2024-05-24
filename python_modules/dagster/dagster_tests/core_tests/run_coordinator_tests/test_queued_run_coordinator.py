@@ -3,8 +3,8 @@ from typing import Iterator
 import pytest
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.events import DagsterEventType
-from dagster._core.host_representation.external import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.run_coordinator import SubmitRunContext
 from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
@@ -87,6 +87,10 @@ class TestQueuedRunCoordinator:
                             "dequeue_interval_seconds": {
                                 "env": "DEQUEUE_INTERVAL",
                             },
+                            "block_op_concurrency_limited_runs": {
+                                "enabled": True,
+                                "op_concurrency_slot_buffer": 1,
+                            },
                         },
                     }
                 }
@@ -139,27 +143,25 @@ class TestQueuedRunCoordinator:
 
     def test_submit_run(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
+            instance, external_pipeline, status=DagsterRunStatus.NOT_STARTED
         )
         returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
-        assert returned_run.run_id == "foo-1"
+        assert returned_run.run_id == run.run_id
         assert returned_run.status == DagsterRunStatus.QUEUED
 
         assert len(instance.run_launcher.queue()) == 0
-        stored_run = instance.get_run_by_id("foo-1")
+        stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.QUEUED
 
     def test_submit_run_checks_status(self, instance, coordinator, workspace, external_pipeline):
-        run = self.create_run_for_test(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.QUEUED
-        )
+        run = self.create_run_for_test(instance, external_pipeline, status=DagsterRunStatus.QUEUED)
         coordinator.submit_run(SubmitRunContext(run, workspace))
 
         # check that no enqueue event is reported (the submit run call is a no-op)
         assert (
             len(
                 instance.get_records_for_run(
-                    "foo-1", of_type=DagsterEventType.PIPELINE_ENQUEUED
+                    run.run_id, of_type=DagsterEventType.PIPELINE_ENQUEUED
                 ).records
             )
             == 0
@@ -167,13 +169,13 @@ class TestQueuedRunCoordinator:
 
     def test_cancel_run(self, instance, coordinator, workspace, external_pipeline):
         run = self.create_run_for_test(
-            instance, external_pipeline, run_id="foo-1", status=DagsterRunStatus.NOT_STARTED
+            instance, external_pipeline, status=DagsterRunStatus.NOT_STARTED
         )
 
         coordinator.submit_run(SubmitRunContext(run, workspace))
 
         coordinator.cancel_run(run.run_id)
-        stored_run = instance.get_run_by_id("foo-1")
+        stored_run = instance.get_run_by_id(run.run_id)
         assert stored_run.status == DagsterRunStatus.CANCELED
 
 

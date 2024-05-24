@@ -1,0 +1,13 @@
+# alert_policies.yaml
+
+alert_policies:
+  - name: "pagerduty-alert-policy"
+    description: "An alert policy to create a PagerDuty incident upon job failure."
+    tags:
+      - key: "level"
+        value: "critical"
+    event_types:
+      - "AGENT_UNAVAILABLE"
+    notification_service:
+      pagerduty:
+        integration_key: "<pagerduty_integration_key>"

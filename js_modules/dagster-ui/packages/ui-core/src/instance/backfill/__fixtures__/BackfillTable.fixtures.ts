@@ -13,6 +13,7 @@ import {
   buildPythonError,
   buildRepositoryOrigin,
 } from '../../../graphql/types';
+import {DagsterTag} from '../../../runs/RunTag';
 import {
   SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
   SINGLE_BACKFILL_STATUS_DETAILS_QUERY,
@@ -29,8 +30,8 @@ function buildTimePartitionNames(start: Date, count: number) {
   return results;
 }
 
-export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment = buildPartitionBackfill(
-  {
+export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment =
+  buildPartitionBackfill({
     id: 'qtpussca',
     status: BulkActionStatus.REQUESTED,
     numPartitions: 2000,
@@ -48,43 +49,43 @@ export const BackfillTableFragmentRequested2000AssetsPure: BackfillTableFragment
         path: ['global_graph_asset'],
       }),
     ],
-  },
-);
+  });
 
-export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<SingleBackfillCountsQuery> = {
-  request: {
-    query: SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
-    variables: {
-      backfillId: 'qtpussca',
-    },
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      partitionBackfillOrError: buildPartitionBackfill({
-        id: 'qtpussca',
-        isAssetBackfill: true,
-        partitionStatusCounts: [
-          buildPartitionStatusCounts({
-            runStatus: RunStatus.NOT_STARTED,
-            count: 108088,
-          }),
-          buildPartitionStatusCounts({
-            runStatus: RunStatus.SUCCESS,
-            count: 71,
-          }),
-          buildPartitionStatusCounts({
-            runStatus: RunStatus.FAILURE,
-            count: 10,
-          }),
-        ],
-      }),
-    },
-  },
-};
-
-export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFragment = buildPartitionBackfill(
+export const BackfillTableFragmentRequested2000AssetsPureStatus: MockedResponse<SingleBackfillCountsQuery> =
   {
+    request: {
+      query: SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
+      variables: {
+        backfillId: 'qtpussca',
+      },
+    },
+    result: {
+      data: {
+        __typename: 'Query',
+        partitionBackfillOrError: buildPartitionBackfill({
+          id: 'qtpussca',
+          isAssetBackfill: true,
+          partitionStatusCounts: [
+            buildPartitionStatusCounts({
+              runStatus: RunStatus.NOT_STARTED,
+              count: 108088,
+            }),
+            buildPartitionStatusCounts({
+              runStatus: RunStatus.SUCCESS,
+              count: 71,
+            }),
+            buildPartitionStatusCounts({
+              runStatus: RunStatus.FAILURE,
+              count: 10,
+            }),
+          ],
+        }),
+      },
+    },
+  };
+
+export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFragment =
+  buildPartitionBackfill({
     id: 'tclwoggv',
     status: BulkActionStatus.CANCELED,
     isValidSerialization: true,
@@ -115,28 +116,35 @@ export const BackfillTableFragmentCancelledAssetsPartitionSet: BackfillTableFrag
         path: ['multipartitioned_asset'],
       }),
     ],
-  },
-);
+    tags: [
+      {
+        __typename: 'PipelineTag',
+        key: DagsterTag.SensorName,
+        value: 'MySensor',
+      },
+    ],
+  });
 
-export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedResponse<SingleBackfillCountsQuery> = {
-  request: {
-    query: SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
-    variables: {
-      backfillId: 'tclwoggv',
+export const BackfillTableFragmentCancelledAssetsPartitionSetStatus: MockedResponse<SingleBackfillCountsQuery> =
+  {
+    request: {
+      query: SINGLE_BACKFILL_STATUS_COUNTS_QUERY,
+      variables: {
+        backfillId: 'tclwoggv',
+      },
     },
-  },
-  result: {
-    data: {
-      __typename: 'Query',
-      partitionBackfillOrError: buildPartitionBackfill({
-        id: 'tclwoggv',
-        partitionStatusCounts: [
-          {runStatus: RunStatus.NOT_STARTED, count: 6524, __typename: 'PartitionStatusCounts'},
-        ],
-      }),
+    result: {
+      data: {
+        __typename: 'Query',
+        partitionBackfillOrError: buildPartitionBackfill({
+          id: 'tclwoggv',
+          partitionStatusCounts: [
+            {runStatus: RunStatus.NOT_STARTED, count: 6524, __typename: 'PartitionStatusCounts'},
+          ],
+        }),
+      },
     },
-  },
-};
+  };
 
 export const BackfillTableFragmentFailedError: BackfillTableFragment = buildPartitionBackfill({
   id: 'sjqzcfhe',
@@ -231,6 +239,13 @@ export const BackfillTableFragmentCompletedAssetJob: BackfillTableFragment = bui
       buildAssetKey({
         path: ['multipartitioned_asset'],
       }),
+    ],
+    tags: [
+      {
+        __typename: 'PipelineTag',
+        key: DagsterTag.User,
+        value: 'user@dagsterlabs.com',
+      },
     ],
   },
 );
@@ -407,8 +422,8 @@ export const BackfillTableFragmentCompletedOpJobStatus: MockedResponse<SingleBac
   },
 };
 
-export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = buildPartitionBackfill(
-  {
+export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment =
+  buildPartitionBackfill({
     id: 'jzduiapb',
     status: BulkActionStatus.COMPLETED,
     isValidSerialization: false,
@@ -432,8 +447,7 @@ export const BackfillTableFragmentInvalidPartitionSet: BackfillTableFragment = b
         __typename: 'AssetKey',
       }),
     ],
-  },
-);
+  });
 
 export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPartitionBackfill({
   id: 'likqkgna',
@@ -473,8 +487,8 @@ export const BackfillTablePureAssetCountsOnly: BackfillTableFragment = buildPart
   ],
 });
 
-const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = buildPartitionBackfill(
-  {
+const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment =
+  buildPartitionBackfill({
     id: 'vlpmimsl',
     status: BulkActionStatus.COMPLETED,
     isValidSerialization: true,
@@ -501,8 +515,7 @@ const BackfillTablePureAssetNoCountsOrPartitionNames: BackfillTableFragment = bu
         path: ['asset_weekly'],
       }),
     ],
-  },
-);
+  });
 
 export const BackfillTableFragments: BackfillTableFragment[] = [
   BackfillTableFragmentRequested2000AssetsPure,

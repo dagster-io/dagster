@@ -7,7 +7,7 @@ from graphene import ResolveInfo
 from .utils import UserFacingGraphQLError
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.code_location import CodeLocation
 
     from ..schema.resources import GrapheneResourceDetails, GrapheneResourceDetailsList
 

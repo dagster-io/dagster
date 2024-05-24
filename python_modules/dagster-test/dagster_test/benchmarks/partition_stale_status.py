@@ -1,5 +1,4 @@
 # ruff: noqa: T201
-
 import argparse
 from random import randint
 from typing import Sequence, Union

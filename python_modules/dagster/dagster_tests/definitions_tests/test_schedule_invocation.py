@@ -282,3 +282,14 @@ def test_dynamic_partition_run_request_schedule():
         assert len(run_requests) == 2
         for request in run_requests:
             assert request.tags.get(PARTITION_NAME_TAG) == "1"
+
+
+def test_logging():
+    @schedule(cron_schedule="* * * * *", job_name="no_pipeline")
+    def logs(context):
+        context.log.info("hello there")
+        return {}
+
+    ctx = build_schedule_context()
+
+    logs.evaluate_tick(ctx)

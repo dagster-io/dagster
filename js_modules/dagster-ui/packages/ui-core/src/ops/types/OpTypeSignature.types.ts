@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type OpTypeSignatureFragment_CompositeSolidDefinition_ = {
+export type OpTypeSignatureFragment_CompositeSolidDefinition = {
   __typename: 'CompositeSolidDefinition';
   outputDefinitions: Array<{
     __typename: 'OutputDefinition';
@@ -52,7 +52,7 @@ export type OpTypeSignatureFragment_CompositeSolidDefinition_ = {
   }>;
 };
 
-export type OpTypeSignatureFragment_SolidDefinition_ = {
+export type OpTypeSignatureFragment_SolidDefinition = {
   __typename: 'SolidDefinition';
   outputDefinitions: Array<{
     __typename: 'OutputDefinition';
@@ -103,5 +103,5 @@ export type OpTypeSignatureFragment_SolidDefinition_ = {
 };
 
 export type OpTypeSignatureFragment =
-  | OpTypeSignatureFragment_CompositeSolidDefinition_
-  | OpTypeSignatureFragment_SolidDefinition_;
+  | OpTypeSignatureFragment_CompositeSolidDefinition
+  | OpTypeSignatureFragment_SolidDefinition;

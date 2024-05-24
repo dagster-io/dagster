@@ -36,10 +36,13 @@ def hackernews_topstories(
 
     df = pd.DataFrame(results)
 
+    # Rename the column to avoid conflict with the reserved keyword "by"
+    df.rename(columns={"by": "by_"}, inplace=True)
+
     # Dagster supports attaching arbitrary metadata to asset materializations. This metadata will be
     # shown in the run logs and also be displayed on the "Activity" tab of the "Asset Details" page in the UI.
     # This metadata would be useful for monitoring and maintaining the asset as you iterate.
-    # Read more about in asset metadata in https://docs.dagster.io/concepts/assets/software-defined-assets#recording-materialization-metadata
+    # Read more about in asset metadata in https://docs.dagster.io/concepts/metadata-tags/asset-metadata
     context.add_output_metadata(
         {
             "num_records": len(df),

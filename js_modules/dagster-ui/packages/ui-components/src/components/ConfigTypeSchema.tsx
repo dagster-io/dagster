@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {Popover} from './Popover';
 import {ConfigSchema_allConfigTypes as TypeData} from './configeditor/types/ConfigSchema';
 import {FontFamily} from './styles';
@@ -17,12 +17,32 @@ interface ConfigTypeSchemaProps {
   maxDepth?: number;
 }
 
-function renderTypeRecursive(
+// Either type is guaranteed not to be undefined or if its possibly undefined
+// then pass in the type name. This is a union to avoid called of ConfigEditorHelp from needing to pass a type name
+// which doens't make sense at the root
+type renderTypeRecursiveType = ((
   type: TypeData,
   typeLookup: {[typeName: string]: TypeData},
   depth: number,
   props: ConfigTypeSchemaProps,
-): React.ReactElement<HTMLElement> {
+  typeName?: string,
+) => React.ReactElement<HTMLElement>) &
+  ((
+    type: TypeData | undefined,
+    typeLookup: {[typeName: string]: TypeData},
+    depth: number,
+    props: ConfigTypeSchemaProps,
+    typeName: string,
+  ) => React.ReactElement<HTMLElement>);
+
+const renderTypeRecursive: renderTypeRecursiveType = (type, typeLookup, depth, props, typeName) => {
+  if (!type) {
+    return (
+      <span style={{color: Colors.textRed(), opacity: 0.8}}>
+        type &quot;{typeName}&quot; not found
+      </span>
+    );
+  }
   if (type.__typename === 'CompositeConfigType' && props.maxDepth && depth === props.maxDepth) {
     return <span>...</span>;
   }
@@ -41,7 +61,7 @@ function renderTypeRecursive(
               theme={props.theme}
               style={
                 fieldData.defaultValueAsJson
-                  ? {borderBottom: `dashed ${Colors.Blue200} 1px`, cursor: 'pointer'}
+                  ? {borderBottom: `dashed ${Colors.accentBlue()} 1px`, cursor: 'pointer'}
                   : undefined
               }
             >
@@ -67,10 +87,11 @@ function renderTypeRecursive(
               {!fieldData.isRequired && Optional}
               {`: `}
               {renderTypeRecursive(
-                typeLookup[fieldData.configTypeKey]!,
+                typeLookup[fieldData.configTypeKey],
                 typeLookup,
                 depth + 1,
                 props,
+                fieldData.configTypeKey,
               )}
             </DictEntry>
           );
@@ -82,7 +103,7 @@ function renderTypeRecursive(
 
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0]!;
-    return <>[{renderTypeRecursive(typeLookup[ofTypeKey]!, typeLookup, depth, props)}]</>;
+    return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}]</>;
   }
 
   if (type.__typename === 'MapConfigType') {
@@ -98,8 +119,15 @@ function renderTypeRecursive(
         {`{`}
         <DictEntry>
           {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
-          {renderTypeRecursive(typeLookup[keyTypeKey]!, typeLookup, depth + 1, props)}]{`: `}
-          {renderTypeRecursive(typeLookup[valueTypeKey]!, typeLookup, depth + 1, props)}
+          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props, keyTypeKey)}]
+          {`: `}
+          {renderTypeRecursive(
+            typeLookup[valueTypeKey],
+            typeLookup,
+            depth + 1,
+            props,
+            valueTypeKey,
+          )}
         </DictEntry>
         {'  '.repeat(depth) + '}'}
       </>
@@ -110,7 +138,7 @@ function renderTypeRecursive(
     const ofTypeKey = type.typeParamKeys[0]!;
     return (
       <>
-        {renderTypeRecursive(typeLookup[ofTypeKey]!, typeLookup, depth, props)}
+        {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props, ofTypeKey)}
         {Optional}
       </>
     );
@@ -118,16 +146,18 @@ function renderTypeRecursive(
 
   if (type.__typename === 'ScalarUnionConfigType') {
     const nonScalarTypeMarkup = renderTypeRecursive(
-      typeLookup[type.nonScalarTypeKey]!,
+      typeLookup[type.nonScalarTypeKey],
       typeLookup,
       depth,
       props,
+      type.nonScalarTypeKey,
     );
     const scalarTypeMarkup = renderTypeRecursive(
-      typeLookup[type.scalarTypeKey]!,
+      typeLookup[type.scalarTypeKey],
       typeLookup,
       depth,
       props,
+      type.scalarTypeKey,
     );
 
     return (
@@ -138,7 +168,7 @@ function renderTypeRecursive(
   }
 
   return <span>{type.givenName}</span>;
-}
+};
 
 export const tryPrettyPrintJSON = (jsonString: string) => {
   try {
@@ -161,18 +191,18 @@ const ConfigContent = React.memo(({value}: {value: string}) => (
 ));
 
 const ConfigHeader = styled.div`
-  background-color: ${Colors.Gray800};
-  color: ${Colors.White};
+  background-color: ${Colors.tooltipBackground()};
+  color: ${Colors.tooltipText()};
   font-size: 13px;
   padding: 8px;
 `;
 
 const ConfigJSON = styled.pre`
-  background-color: ${Colors.Gray900};
-  color: ${Colors.White};
+  background-color: ${Colors.tooltipBackground()};
+  color: ${Colors.tooltipText()};
   whitespace: pre-wrap;
   font-family: ${FontFamily.monospace};
-  font-size: 14px;
+  font-size: 12px;
   padding: 8px;
   margin: 0;
 `;
@@ -276,9 +306,8 @@ const DictEntry = React.forwardRef(
     props: React.ComponentProps<typeof DictEntryDiv>,
     ref: React.ForwardedRef<HTMLButtonElement>,
   ) => {
-    const {hovered, onMouseEnter, onMouseLeave} = React.useContext(
-      HoveredDictEntryContext,
-    ).useDictEntryHover();
+    const {hovered, onMouseEnter, onMouseLeave} =
+      React.useContext(HoveredDictEntryContext).useDictEntryHover();
 
     return (
       <DictEntryDiv2>
@@ -301,10 +330,10 @@ const DictEntryDiv = styled.div<{$hovered: boolean}>`
   ${({$hovered}) =>
     $hovered
       ? `
-      border: 1px solid ${Colors.Gray200};
-      background-color: ${Colors.Gray100};
+      border: 1px solid ${Colors.borderDefault()};
+      background-color: ${Colors.backgroundLight()};
       >${DictEntryDiv2} {
-        background-color: ${Colors.Gray50};
+        background-color: ${Colors.backgroundLighter()};
       }
     `
       : ``}
@@ -312,15 +341,15 @@ const DictEntryDiv = styled.div<{$hovered: boolean}>`
 `;
 
 const TypeSchemaContainer = styled.code`
-  color: ${Colors.Gray400};
+  color: ${Colors.textLighter()};
   display: block;
   white-space: pre-wrap;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 18px;
 `;
 
 const DictKey = styled.span<{theme: ConfigTypeSchemaTheme | undefined}>`
-  color: ${({theme}) => (theme === 'dark' ? Colors.White : Colors.Dark)};
+  color: ${({theme}) => (theme === 'dark' ? Colors.accentReversed() : Colors.accentPrimary())};
 `;
 
 const DictComment = styled.div`
@@ -336,4 +365,4 @@ const DictBlockComment = ({indent = '', content}: {indent: string; content: stri
     <DictComment>{`${indent.replace(/ /g, '\u00A0')}/* ${content} */`}</DictComment>
   ) : null;
 
-const Optional = <span style={{fontWeight: 500, color: Colors.Yellow700}}>?</span>;
+const Optional = <span style={{fontWeight: 500, color: Colors.accentYellow()}}>?</span>;

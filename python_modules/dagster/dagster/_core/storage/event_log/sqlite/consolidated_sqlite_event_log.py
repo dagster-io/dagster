@@ -77,7 +77,7 @@ class ConsolidatedSqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return ConsolidatedSqliteEventLogStorage(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def _init_db(self):
         mkdir_p(self._base_dir)

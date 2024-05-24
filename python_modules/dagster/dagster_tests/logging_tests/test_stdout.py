@@ -19,6 +19,7 @@ from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.utils import make_new_run_id
 from dagster._utils import ensure_dir, touch_file
 
 HELLO_FROM_OP = "HELLO FROM OP"
@@ -211,7 +212,7 @@ def test_compute_log_manager_subscription_updates():
 
     with tempfile.TemporaryDirectory() as temp_dir:
         compute_log_manager = LocalComputeLogManager(temp_dir, polling_timeout=0.5)
-        run_id = "fake_run_id"
+        run_id = make_new_run_id()
         step_key = "spew"
         stdout_path = compute_log_manager.get_local_path(run_id, step_key, ComputeIOType.STDOUT)
 

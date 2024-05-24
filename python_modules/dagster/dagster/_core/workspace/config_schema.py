@@ -16,7 +16,7 @@ from dagster._utils.merger import merge_dicts
 
 
 def process_workspace_config(
-    workspace_config: Mapping[str, object]
+    workspace_config: Mapping[str, object],
 ) -> EvaluateValueResult[Mapping[str, object]]:
     workspace_config = check.mapping_param(workspace_config, "workspace_config")
 

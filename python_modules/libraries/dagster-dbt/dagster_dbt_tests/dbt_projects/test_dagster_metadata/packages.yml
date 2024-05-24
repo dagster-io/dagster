@@ -1,0 +1,4 @@
+# We keep use `packages.yml` for compatability with `dbt-core==1.5.*`.
+# Once we remove support for that version, we should rename this file to `dependencies.yml`
+packages:
+  - local: "../../../dbt_packages/dagster"

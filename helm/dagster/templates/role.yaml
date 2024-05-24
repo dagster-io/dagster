@@ -12,10 +12,16 @@ metadata:
 # Allow the Dagster service account to read and write Kubernetes jobs, deployments, pods, and events.
 rules:
   - apiGroups: ["batch"]
-    resources: ["jobs", "jobs/status"]
-    verbs: ["*"]
+    resources: ["jobs"]
+    verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs/status"]
+    verbs: ["get", "watch", "list"]
   # The empty arg "" corresponds to the core API group
   - apiGroups: [""]
-    resources: ["pods", "pods/log", "pods/status", "events"]
-    verbs: ["*"]
+    resources: ["pods", "events"]
+    verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log", "pods/status"]
+    verbs: ["get", "watch", "list"]
 {{- end -}}

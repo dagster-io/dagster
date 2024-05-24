@@ -1,6 +1,6 @@
 import {
-  gql,
   OnSubscriptionDataOptions,
+  gql,
   useApolloClient,
   useQuery,
   useSubscription,
@@ -9,22 +9,22 @@ import {TokenizingFieldValue} from '@dagster-io/ui-components';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 
-import {WebSocketContext} from '../app/WebSocketProvider';
-import {RunStatus} from '../graphql/types';
-
 import {LogLevelCounts} from './LogsToolbar';
 import {RUN_DAGSTER_RUN_EVENT_FRAGMENT} from './RunFragments';
 import {logNodeLevel} from './logNodeLevel';
 import {LogNode} from './types';
 import {
-  RunLogsSubscriptionSuccessFragment,
-  PipelineRunLogsSubscriptionStatusFragment,
-  RunLogsQuery,
   PipelineRunLogsSubscription,
-  RunLogsQueryVariables,
+  PipelineRunLogsSubscriptionStatusFragment,
   PipelineRunLogsSubscriptionVariables,
+  RunLogsQuery,
+  RunLogsQueryVariables,
+  RunLogsSubscriptionSuccessFragment,
 } from './types/LogsProvider.types';
 import {RunDagsterRunEventFragment} from './types/RunFragments.types';
+import {WebSocketContext} from '../app/WebSocketProvider';
+import {RunStatus} from '../graphql/types';
+import {CompletionType, useTraceDependency} from '../performance/TraceContext';
 
 export interface LogFilterValue extends TokenizingFieldValue {
   token?: 'step' | 'type' | 'query';
@@ -265,7 +265,7 @@ interface LogsProviderProps {
   children: (result: LogsProviderLogs) => React.ReactChild;
 }
 
-const LogsProviderWithSubscription: React.FC<LogsProviderProps> = (props) => {
+const LogsProviderWithSubscription = (props: LogsProviderProps) => {
   const state = useLogsProviderWithSubscription(props.runId);
   return (
     <>
@@ -287,6 +287,8 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {counts, cursor, nodes} = state;
 
+  const dependency = useTraceDependency('RunLogsQuery');
+
   const {stopPolling, startPolling} = useQuery<RunLogsQuery, RunLogsQueryVariables>(
     RUN_LOGS_QUERY,
     {
@@ -301,6 +303,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
           data?.pipelineRunOrError.__typename !== 'Run' ||
           data?.logsForRun.__typename !== 'EventConnection'
         ) {
+          dependency.completeDependency(CompletionType.ERROR);
           return;
         }
 
@@ -316,6 +319,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
           status !== RunStatus.CANCELED;
 
         dispatch({type: 'append', queued, hasMore, cursor});
+        dependency.completeDependency(CompletionType.SUCCESS);
 
         if (hasMore) {
           startPolling(POLL_INTERVAL);
@@ -335,7 +339,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
   );
 };
 
-export const LogsProvider: React.FC<LogsProviderProps> = (props) => {
+export const LogsProvider = (props: LogsProviderProps) => {
   const {children, runId} = props;
   const {availability, disabled} = React.useContext(WebSocketContext);
 

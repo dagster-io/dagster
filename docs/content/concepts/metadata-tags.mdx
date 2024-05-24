@@ -1,0 +1,45 @@
+---
+title: "Metadata & tags | Dagster Docs"
+description: "Dagster offers several ways to provide useful information and documentation alongside your data pipelines, including metadata and tagging."
+---
+
+# Metadata & tags
+
+One of the core benefits of Dagster is fostering collaboration between the engineers who build data pipelines and the end users who consume the data pipelines produce.
+
+Dagster offers several ways to provide useful information and documentation alongside your data pipelines, including metadata and tagging.
+
+---
+
+## Benefits
+
+Using metadata and tags helps you:
+
+- Create built-in documentation that makes your pipelines easy to understand
+- Provide useful context for other users of your project (and your future self!)
+- Improve the ease of debugging when issues arise
+- Organize definitions in your Dagster project and improve filtering in the Dagster UI
+
+---
+
+## How metadata works
+
+There are two main types of metadata in Dagster: definition and runtime. In code, you can attach metadata to definitions like assets, jobs, and runs. You'll then be able to view the metadata in the Dagster UI.
+
+- **Definition metadata** is information that's fixed or doesn't frequently change. For example, definition metadata could be:
+
+  - The columns an asset is expected to contain
+  - A link to source file in Github that contains the code that defines the asset or job
+
+- **Runtime metadata** is information that changes after an action occurs. This could be how many records were processed, how long an asset took to materialize, etc.
+
+How metadata is defined depends on whether you're using assets or ops and jobs:
+
+- [Assets](/concepts/metadata-tags/asset-metadata)
+- [Op jobs](/concepts/metadata-tags/op-job-metadata)
+
+---
+
+## How tags work
+
+In addition to definition metadata, you can also use tags to label and organize definitions in your Dagster project. Definitions like assets, jobs, and runs can have multiple tags, which are applied in code. Refer to the [Tags](/concepts/metadata-tags/tags) documentation to get started.

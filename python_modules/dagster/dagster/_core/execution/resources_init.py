@@ -72,7 +72,7 @@ def resource_initialization_manager(
 
 
 def resolve_resource_dependencies(
-    resource_defs: Mapping[str, ResourceDefinition]
+    resource_defs: Mapping[str, ResourceDefinition],
 ) -> Mapping[str, AbstractSet[str]]:
     """Generates a dictionary that maps resource key to resource keys it requires for initialization."""
     resource_dependencies = {
@@ -434,7 +434,7 @@ def get_required_resource_keys_for_step(
 
 
 def _wrapped_resource_iterator(
-    resource_or_gen: Union[Any, Generator[Any, None, None]]
+    resource_or_gen: Union[Any, Generator[Any, None, None]],
 ) -> Generator[Any, None, None]:
     """Returns an iterator which yields a single item, which is the resource.
 

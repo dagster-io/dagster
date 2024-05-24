@@ -1,25 +1,26 @@
 import {gql} from '@apollo/client';
-import {Box} from '@dagster-io/ui-components';
+import {Box, Button, Dialog, DialogBody, DialogFooter} from '@dagster-io/ui-components';
 import * as React from 'react';
-
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
-import {LogLevel} from '../graphql/types';
-import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {useMemo, useState} from 'react';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
 import {
   EventTypeColumn,
-  Row,
   OpColumn,
+  Row,
   StructuredContent,
   TimestampColumn,
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {LogsRowStructuredFragment, LogsRowUnstructuredFragment} from './types/LogsRow.types';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
+import {LogLevel} from '../graphql/types';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
+import {autolinkTextContent} from '../ui/autolinking';
 
 interface StructuredProps {
   node: LogsRowStructuredFragment;
@@ -28,16 +29,13 @@ interface StructuredProps {
   highlighted: boolean;
 }
 
-interface StructuredState {
-  expanded: boolean;
-}
+export const Structured = (props: StructuredProps) => {
+  const {node, metadata, style, highlighted} = props;
+  const [expanded, setExpanded] = useState(false);
 
-export class Structured extends React.Component<StructuredProps, StructuredState> {
-  onExpand = () => {
-    const {node, metadata} = this.props;
-
+  const {title, body} = useMemo(() => {
     if (node.__typename === 'ExecutionStepFailureEvent') {
-      showCustomAlert({
+      return {
         title: 'Error',
         body: (
           <PythonErrorInfo
@@ -46,46 +44,59 @@ export class Structured extends React.Component<StructuredProps, StructuredState
             errorSource={node.errorSource}
           />
         ),
-      });
-    } else if (node.__typename === 'ExecutionStepUpForRetryEvent') {
-      showCustomAlert({
+      };
+    }
+
+    if (node.__typename === 'ExecutionStepUpForRetryEvent') {
+      return {
         title: 'Step Retry',
         body: <PythonErrorInfo error={node.error ? node.error : node} />,
-      });
-    } else if (
+      };
+    }
+
+    if (
       (node.__typename === 'EngineEvent' && node.error) ||
       (node.__typename === 'RunFailureEvent' && node.error) ||
       node.__typename === 'HookErroredEvent' ||
       node.__typename === 'ResourceInitFailureEvent'
     ) {
-      showCustomAlert({
+      return {
         title: 'Error',
         body: <PythonErrorInfo error={node.error ? node.error : node} />,
-      });
-    } else {
-      showCustomAlert({
-        title: node.stepKey || 'Info',
-        body: (
-          <StructuredContent>
-            <LogsRowStructuredContent node={node} metadata={metadata} />
-          </StructuredContent>
-        ),
-      });
+      };
     }
-  };
 
-  render() {
-    return (
-      <CellTruncationProvider style={this.props.style} onExpand={this.onExpand}>
-        <StructuredMemoizedContent
-          node={this.props.node}
-          metadata={this.props.metadata}
-          highlighted={this.props.highlighted}
-        />
-      </CellTruncationProvider>
-    );
-  }
-}
+    return {
+      title: node.stepKey || 'Info',
+      body: (
+        <StructuredContent>
+          <LogsRowStructuredContent node={node} metadata={metadata} />
+        </StructuredContent>
+      ),
+    };
+  }, [metadata, node]);
+
+  return (
+    <CellTruncationProvider style={style} onExpand={() => setExpanded(true)}>
+      <StructuredMemoizedContent node={node} metadata={metadata} highlighted={highlighted} />
+      <Dialog
+        title={title}
+        isOpen={expanded}
+        canEscapeKeyClose
+        canOutsideClickClose
+        onClose={() => setExpanded(false)}
+        style={{width: 'auto', maxWidth: '80vw'}}
+      >
+        <DialogBody>{body}</DialogBody>
+        <DialogFooter topBorder>
+          <Button intent="primary" onClick={() => setExpanded(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </CellTruncationProvider>
+  );
+};
 
 export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   fragment LogsRowStructuredFragment on DagsterRunEvent {
@@ -209,11 +220,14 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-const StructuredMemoizedContent: React.FC<{
+interface StructuredMemoizedContentProps {
   node: LogsRowStructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
-}> = React.memo(({node, metadata, highlighted}) => {
+}
+
+const StructuredMemoizedContent = React.memo((props: StructuredMemoizedContentProps) => {
+  const {node, metadata, highlighted} = props;
   const stepKey = node.stepKey;
   const step = stepKey ? metadata.steps[stepKey] : null;
   const stepStartTime = step?.start;
@@ -247,11 +261,26 @@ interface UnstructuredProps {
   metadata: IRunMetadataDict;
 }
 
+export const UnstructuredDialogContent = ({message}: {message: string}) => {
+  const messageEl = React.createRef<HTMLDivElement>();
+  React.useEffect(() => {
+    if (messageEl.current) {
+      autolinkTextContent(messageEl.current, {useIdleCallback: true});
+    }
+  }, [message, messageEl]);
+
+  return (
+    <div style={{whiteSpace: 'pre-wrap', maxHeight: '70vh', overflow: 'auto'}} ref={messageEl}>
+      {message}
+    </div>
+  );
+};
+
 export class Unstructured extends React.Component<UnstructuredProps> {
   onExpand = () => {
     showCustomAlert({
       title: 'Log',
-      body: <div style={{whiteSpace: 'pre-wrap'}}>{this.props.node.message}</div>,
+      body: <UnstructuredDialogContent message={this.props.node.message} />,
     });
   };
 
@@ -279,14 +308,29 @@ export const LOGS_ROW_UNSTRUCTURED_FRAGMENT = gql`
   }
 `;
 
-const UnstructuredMemoizedContent: React.FC<{
+interface UnstructuredMemoizedContentProps {
   node: LogsRowUnstructuredFragment;
   metadata: IRunMetadataDict;
   highlighted: boolean;
-}> = React.memo(({node, highlighted, metadata}) => {
+}
+
+const UnstructuredMemoizedContent = React.memo((props: UnstructuredMemoizedContentProps) => {
+  const {node, highlighted, metadata} = props;
   const stepKey = node.stepKey;
   const step = stepKey ? metadata.steps[stepKey] : null;
   const stepStartTime = step?.start;
+
+  // Note: We need to render enough of our text content that the TruncationProvider wrapping the
+  // element knows whether to show "View full message", but that shows a modal with the full
+  // message - the full text is never needed in the log table. Clip to a max of 15,000 characters
+  // to avoid rendering 1M characters in a small box. 15k is 2700x580px with no whitespace.
+  const messageClipped = node.message.length > 15000 ? node.message.slice(0, 15000) : node.message;
+  const messageEl = React.createRef<HTMLDivElement>();
+  React.useEffect(() => {
+    if (messageEl.current) {
+      autolinkTextContent(messageEl.current, {useIdleCallback: messageClipped.length > 5000});
+    }
+  }, [messageClipped, messageEl]);
 
   return (
     <Row
@@ -304,8 +348,8 @@ const UnstructuredMemoizedContent: React.FC<{
       <EventTypeColumn>
         <span style={{marginLeft: 8}}>{node.level}</span>
       </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
-        {node.message}
+      <Box padding={{horizontal: 12}} style={{flex: 1}} ref={messageEl}>
+        {messageClipped}
       </Box>
     </Row>
   );

@@ -1,5 +1,4 @@
 import {render, screen, waitFor} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
@@ -48,7 +47,7 @@ describe('PipelineReference', () => {
       await waitFor(() => {
         const link = screen.getByRole('link', {name: /foobar/i});
         expect(link).toBeVisible();
-        expect(link.getAttribute('href')).toBe('/guess/jobs/foobar');
+        expect(link.getAttribute('href')).toBe('/guess/foobar');
       });
     });
 

@@ -1,6 +1,5 @@
 """Facilities for running arbitrary commands in child processes."""
 
-
 import os
 import queue
 import sys

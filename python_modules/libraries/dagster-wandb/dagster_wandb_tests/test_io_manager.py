@@ -19,9 +19,10 @@ from dagster_wandb import (
     wandb_artifacts_io_manager,
     wandb_resource,
 )
+from dagster_wandb.io_manager import UNIT_TEST_RUN_ID
 from wandb import Artifact
 
-DAGSTER_RUN_ID = "unit-testing"
+DAGSTER_RUN_ID = UNIT_TEST_RUN_ID
 DAGSTER_RUN_ID_SHORT = DAGSTER_RUN_ID[0:8]
 DAGSTER_HOME = "/path/to/dagster_home"
 WANDB_PROJECT = "project"
@@ -200,7 +201,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output(
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -306,7 +307,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -413,7 +414,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -520,7 +521,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -632,7 +633,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -740,7 +741,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_and_
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -849,7 +850,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_partitioned_op_with_simple
     PARTITION_KEY = "partition_key"
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -1018,7 +1019,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_raises_when_unsupported
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -1088,7 +1089,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_with_simple_output(
 
     context = build_output_context(
         asset_key=ASSET_NAME,
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "type": ARTIFACT_TYPE,
             }
@@ -1194,7 +1195,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_asset_raise_when_double_na
 
     context = build_output_context(
         asset_key=ASSET_NAME,
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -1263,7 +1264,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_simple_output_all_
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -1478,7 +1479,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_object_outpu
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "type": ARTIFACT_TYPE,
@@ -1682,7 +1683,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
             }
@@ -1769,7 +1770,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "type": ARTIFACT_TYPE,
             }
@@ -1856,7 +1857,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
     )
 
     context = build_output_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "description": ARTIFACT_DESCRIPTION,
             }
@@ -1938,7 +1939,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
     context = build_output_context(
         asset_key=AssetKey([ARTIFACT_NAME]),
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "aliases": [EXTRA_ALIAS],
                 "add_dirs": DIRS,
@@ -2050,7 +2051,7 @@ def test_wandb_artifacts_io_manager_handle_output_for_op_with_wandb_artifact_out
 
     context = build_output_context(
         asset_key=AssetKey(["asset_key_name"]),
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "aliases": [EXTRA_ALIAS],
                 "add_dirs": DIRS,
@@ -2166,7 +2167,7 @@ def test_wandb_artifacts_io_manager_handle_partition_key_output_for_op_suffixes_
     context = build_output_context(
         asset_key=AssetKey(["asset_key_name"]),
         partition_key="partition_key",
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "aliases": [EXTRA_ALIAS],
                 "add_dirs": DIRS,
@@ -2319,7 +2320,7 @@ def test_wandb_artifacts_io_manager_load_input(
     )
 
     context = build_input_context(
-        metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME}},
+        definition_metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME}},
     )
 
     assert manager.load_input(context) == run_mock.use_artifact.return_value
@@ -2372,7 +2373,9 @@ def test_wandb_artifacts_io_manager_load_input_get(
 
     object_named = "name"
     context = build_input_context(
-        metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME, "get": object_named}}
+        definition_metadata={
+            "wandb_artifact_configuration": {"name": ARTIFACT_NAME, "get": object_named}
+        }
     )
 
     assert manager.load_input(context) == run_mock.use_artifact.return_value.get.return_value
@@ -2421,7 +2424,9 @@ def test_wandb_artifacts_io_manager_load_input_get_path(
 
     path = "path/to/files"
     context = build_input_context(
-        metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME, "get_path": path}}
+        definition_metadata={
+            "wandb_artifact_configuration": {"name": ARTIFACT_NAME, "get_path": path}
+        }
     )
 
     assert (
@@ -2461,7 +2466,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_version_and_alias_are_
     )
 
     context = build_input_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "version": ARTIFACT_VERSION,
@@ -2496,7 +2501,7 @@ def test_wandb_artifacts_io_manager_load_input_raise_when_get_and_get_path_are_p
     )
 
     context = build_input_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {
                 "name": ARTIFACT_NAME,
                 "get": "file",
@@ -2542,7 +2547,7 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_version(
     )
 
     context = build_input_context(
-        metadata={
+        definition_metadata={
             "wandb_artifact_configuration": {"name": ARTIFACT_NAME, "version": ARTIFACT_VERSION}
         }
     )
@@ -2596,7 +2601,9 @@ def test_wandb_artifacts_io_manager_load_input_with_specific_alias(
     )
 
     context = build_input_context(
-        metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME, "alias": EXTRA_ALIAS}}
+        definition_metadata={
+            "wandb_artifact_configuration": {"name": ARTIFACT_NAME, "alias": EXTRA_ALIAS}
+        }
     )
 
     assert manager.load_input(context) == run_mock.use_artifact.return_value
@@ -2649,7 +2656,9 @@ def test_wandb_artifacts_io_manager_load_partitioned_input(
 
     PARTITION_KEY = "partition_key"
     context = build_input_context(
-        metadata={"wandb_artifact_configuration": {"name": ARTIFACT_NAME, "alias": EXTRA_ALIAS}},
+        definition_metadata={
+            "wandb_artifact_configuration": {"name": ARTIFACT_NAME, "alias": EXTRA_ALIAS}
+        },
         partition_key=PARTITION_KEY,
     )
 

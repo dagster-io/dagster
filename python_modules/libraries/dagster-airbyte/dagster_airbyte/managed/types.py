@@ -4,7 +4,14 @@ from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Union
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, public
+from typing_extensions import Self
+
+MANAGED_ELEMENTS_DEPRECATION_MSG = (
+    "Dagster is deprecating support for ingestion-as-code."
+    " We suggest using the Airbyte terraform provider:"
+    " https://reference.airbyte.com/reference/using-the-terraform-provider."
+)
 
 
 class AirbyteSyncMode(ABC):
@@ -87,7 +94,7 @@ class AirbyteSyncMode(ABC):
         which records are new, and the primary key used to determine which records
         are duplicates.
 
-        https://docs.airbyte.com/understanding-airbyte/connections/incremental-append-dedup/
+        https://docs.airbyte.com/using-airbyte/core-concepts/sync-modes/incremental-append-deduped
         """
         cursor_field = check.opt_str_param(cursor_field, "cursor_field")
         if isinstance(primary_key, str):
@@ -110,7 +117,7 @@ class AirbyteSource:
     Args:
         name (str): The display name of the source.
         source_type (str): The type of the source, from Airbyte's list
-            of sources https://airbytehq.github.io/category/sources/.
+            of sources https://docs.airbyte.com/integrations/sources/.
         source_configuration (Mapping[str, Any]): The configuration for the
             source, as defined by Airbyte's API.
     """
@@ -154,7 +161,7 @@ class AirbyteDestination:
     Args:
         name (str): The display name of the destination.
         destination_type (str): The type of the destination, from Airbyte's list
-            of destinations https://airbytehq.github.io/category/destinations/.
+            of destinations https://docs.airbyte.com/integrations/destinations/.
         destination_configuration (Mapping[str, Any]): The configuration for the
             destination, as defined by Airbyte's API.
     """
@@ -206,6 +213,7 @@ class AirbyteDestinationNamespace(Enum):
     DESTINATION_DEFAULT = "destination"
 
 
+@deprecated(breaking_version="2.0", additional_warn_text=MANAGED_ELEMENTS_DEPRECATION_MSG)
 class AirbyteConnection:
     """A user-defined Airbyte connection, pairing an Airbyte source and destination and configuring
     which streams to sync.
@@ -296,7 +304,7 @@ class InitializedAirbyteConnection:
         api_dict: Mapping[str, Any],
         init_sources: Mapping[str, InitializedAirbyteSource],
         init_dests: Mapping[str, InitializedAirbyteDestination],
-    ):
+    ) -> Self:
         source = next(
             (
                 source.source

@@ -3,7 +3,7 @@
 import * as Types from '../../../graphql/types';
 
 export type ResumeBackfillMutationVariables = Types.Exact<{
-  backfillId: Types.Scalars['String'];
+  backfillId: Types.Scalars['String']['input'];
 }>;
 
 export type ResumeBackfillMutation = {

@@ -11,9 +11,6 @@ export type AssetGroupMetadataQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    autoMaterializePolicy: {
-      __typename: 'AutoMaterializePolicy';
-      policyType: Types.AutoMaterializePolicyType;
-    } | null;
+    autoMaterializePolicy: {__typename: 'AutoMaterializePolicy'} | null;
   }>;
 };

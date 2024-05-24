@@ -13,6 +13,8 @@ export const SENSOR_FRAGMENT = gql`
     nextTick {
       timestamp
     }
+    defaultStatus
+    canReset
     sensorState {
       id
       ...InstigationStateFragment

@@ -16,7 +16,7 @@ description: Resources enable you to separate graph logic from environment, and 
   guide.
 </Note>
 
-Resources are objects that are shared across the implementations of multiple [software-defined assets](/concepts/assets/software-defined-assets) and [ops](/concepts/ops-jobs-graphs/ops) and that can be plugged in after defining those ops and assets.
+Resources are objects that are shared across the implementations of multiple [asset definitions](/concepts/assets/software-defined-assets) and [ops](/concepts/ops-jobs-graphs/ops) and that can be plugged in after defining those ops and assets.
 
 Resources typically model external components that assets and ops interact with. For example, a resource might be a connection to a data warehouse like Snowflake or a service like Slack.
 
@@ -37,7 +37,7 @@ So, why use resources?
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
 | <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
-| <PyObject object="with_resources"/>              | Function for providing resources to software-defined assets and source assets.                                                                                                                                              |
+| <PyObject object="with_resources"/>              | Function for providing resources to asset definitions.                                                                                                                                                                      |
 
 ---
 
@@ -63,35 +63,35 @@ def cereal_fetcher(init_context):
 
 ## Using resources
 
-- [With software-defined assets](#using-resources-with-software-defined-assets)
+- [With asset definitions](#using-resources-with-asset-definitions)
 - [With ops](#using-resources-with-ops)
 
-### Using resources with software-defined assets
+### Using resources with asset definitions
 
-- [Accessing resources](#accessing-resources-in-software-defined-assets)
-- [Providing resources](#providing-resources-to-software-defined-assets)
+- [Accessing resources](#accessing-resources-in-asset-definitions)
+- [Providing resources](#providing-resources-to-asset-definitions)
 
-#### Accessing resources in software-defined assets
+#### Accessing resources in asset definitions
 
-Software-defined assets use resource keys to access resources:
+Asset definitions use resource keys to access resources:
 
 ```python file=/concepts/resources/resources.py startafter=start_asset_use_resource endbefore=end_asset_use_resource
-from dagster import asset
+from dagster import asset, AssetExecutionContext
 
 
 @asset(required_resource_keys={"foo"})
-def asset_requires_resource(context):
+def asset_requires_resource(context: AssetExecutionContext):
     do_something_with_resource(context.resources.foo)
 ```
 
-#### Providing resources to software-defined assets
+#### Providing resources to asset definitions
 
 How resources are provided to assets depends on how you're organizing your code definitions in Dagster.
 
 <TabGroup>
 <TabItem name="Using Definitions (recommended)">
 
-Resources can be provided to software-defined assets by passing them to a <PyObject object="Definitions" /> object. The resources provided to <PyObject object="Definitions" /> are automatically bound to the assets.
+Resources can be provided to asset definitions by passing them to a <PyObject object="Definitions" /> object. The resources provided to <PyObject object="Definitions" /> are automatically bound to the assets.
 
 ```python file=/concepts/resources/resources.py startafter=start_asset_provide_resource endbefore=end_asset_provide_resource
 from dagster import Definitions
@@ -138,7 +138,7 @@ def repo():
 
 #### Accessing resources in ops
 
-Like software-defined assets, ops use resource keys to access resources:
+Like asset definitions, ops use resource keys to access resources:
 
 ```python file=/concepts/resources/resources.py startafter=start_op_with_resources_example endbefore=end_op_with_resources_example
 from dagster import op
@@ -147,7 +147,7 @@ CREATE_TABLE_1_QUERY = "create table_1 as select * from table_0"
 
 
 @op(required_resource_keys={"database"})
-def op_requires_resources(context):
+def op_requires_resources(context: OpExecutionContext):
     context.resources.database.execute_query(CREATE_TABLE_1_QUERY)
 ```
 
@@ -230,7 +230,7 @@ At spinup time, Dagster will run the code within the try block, and be expecting
 
 ```python file=/concepts/resources/resources.py startafter=start_cm_resource_op endbefore=end_cm_resource_op
 @op(required_resource_keys={"db_connection"})
-def use_db_connection(context):
+def use_db_connection(context: OpExecutionContext):
     db_conn = context.resources.db_connection
     ...
 ```
@@ -305,8 +305,7 @@ from dagster import resource, build_resources
 
 
 @resource
-def the_credentials():
-    ...
+def the_credentials(): ...
 
 
 @resource(required_resource_keys={"credentials"})
@@ -350,7 +349,7 @@ from dagster import graph, op
 
 
 @op(required_resource_keys={"client"})
-def get_client(context):
+def get_client(context: OpExecutionContext):
     return context.resources.client
 ```
 

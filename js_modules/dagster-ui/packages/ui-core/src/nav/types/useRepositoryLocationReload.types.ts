@@ -101,7 +101,7 @@ export type ReloadWorkspaceMutation = {
 };
 
 export type ReloadRepositoryLocationMutationVariables = Types.Exact<{
-  location: Types.Scalars['String'];
+  location: Types.Scalars['String']['input'];
 }>;
 
 export type ReloadRepositoryLocationMutation = {

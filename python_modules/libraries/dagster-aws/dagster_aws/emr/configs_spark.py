@@ -7,7 +7,6 @@ parse_spark_configs.py \
 
 """
 
-
 from dagster import Bool, Field, Float, IntSource, Permissive, StringSource
 
 

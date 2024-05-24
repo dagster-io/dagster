@@ -29,11 +29,6 @@ export type RunFragment = {
     repositoryLocationName: string;
   } | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  assets: Array<{
-    __typename: 'Asset';
-    id: string;
-    key: {__typename: 'AssetKey'; path: Array<string>};
-  }>;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   assetCheckSelection: Array<{
     __typename: 'AssetCheckhandle';
@@ -64,7 +59,7 @@ export type RunFragment = {
   }>;
 };
 
-export type RunDagsterRunEventFragment_AlertFailureEvent_ = {
+export type RunDagsterRunEventFragment_AlertFailureEvent = {
   __typename: 'AlertFailureEvent';
   message: string;
   timestamp: string;
@@ -73,7 +68,7 @@ export type RunDagsterRunEventFragment_AlertFailureEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_AlertStartEvent_ = {
+export type RunDagsterRunEventFragment_AlertStartEvent = {
   __typename: 'AlertStartEvent';
   message: string;
   timestamp: string;
@@ -82,7 +77,7 @@ export type RunDagsterRunEventFragment_AlertStartEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_AlertSuccessEvent_ = {
+export type RunDagsterRunEventFragment_AlertSuccessEvent = {
   __typename: 'AlertSuccessEvent';
   message: string;
   timestamp: string;
@@ -91,7 +86,7 @@ export type RunDagsterRunEventFragment_AlertSuccessEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
+export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent = {
   __typename: 'AssetCheckEvaluationEvent';
   message: string;
   timestamp: string;
@@ -122,6 +117,20 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -131,6 +140,14 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -166,6 +183,20 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -214,12 +245,18 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent_ = {
+export type RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent = {
   __typename: 'AssetCheckEvaluationPlannedEvent';
   message: string;
   timestamp: string;
@@ -228,7 +265,7 @@ export type RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_AssetMaterializationPlannedEvent_ = {
+export type RunDagsterRunEventFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
   timestamp: string;
@@ -237,7 +274,7 @@ export type RunDagsterRunEventFragment_AssetMaterializationPlannedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_EngineEvent_ = {
+export type RunDagsterRunEventFragment_EngineEvent = {
   __typename: 'EngineEvent';
   message: string;
   timestamp: string;
@@ -262,6 +299,20 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -271,6 +322,14 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -301,6 +360,20 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -349,6 +422,12 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -363,7 +442,7 @@ export type RunDagsterRunEventFragment_EngineEvent_ = {
   } | null;
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
   __typename: 'ExecutionStepFailureEvent';
   message: string;
   timestamp: string;
@@ -397,6 +476,20 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -406,6 +499,14 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -441,6 +542,20 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -489,12 +604,18 @@ export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   } | null;
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepInputEvent = {
   __typename: 'ExecutionStepInputEvent';
   message: string;
   timestamp: string;
@@ -521,6 +642,20 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -530,6 +665,14 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -565,6 +708,20 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -613,12 +770,18 @@ export type RunDagsterRunEventFragment_ExecutionStepInputEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepOutputEvent = {
   __typename: 'ExecutionStepOutputEvent';
   message: string;
   timestamp: string;
@@ -642,6 +805,20 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -651,6 +828,14 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -681,6 +866,20 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -729,6 +928,12 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   typeCheck: {
@@ -750,6 +955,20 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -759,6 +978,14 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -794,6 +1021,20 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -842,12 +1083,18 @@ export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepRestartEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepRestartEvent = {
   __typename: 'ExecutionStepRestartEvent';
   message: string;
   timestamp: string;
@@ -856,7 +1103,7 @@ export type RunDagsterRunEventFragment_ExecutionStepRestartEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepSkippedEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepSkippedEvent = {
   __typename: 'ExecutionStepSkippedEvent';
   message: string;
   timestamp: string;
@@ -865,7 +1112,7 @@ export type RunDagsterRunEventFragment_ExecutionStepSkippedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepStartEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepStartEvent = {
   __typename: 'ExecutionStepStartEvent';
   message: string;
   timestamp: string;
@@ -874,7 +1121,7 @@ export type RunDagsterRunEventFragment_ExecutionStepStartEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepSuccessEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepSuccessEvent = {
   __typename: 'ExecutionStepSuccessEvent';
   message: string;
   timestamp: string;
@@ -883,7 +1130,7 @@ export type RunDagsterRunEventFragment_ExecutionStepSuccessEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_ = {
+export type RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent = {
   __typename: 'ExecutionStepUpForRetryEvent';
   message: string;
   timestamp: string;
@@ -902,7 +1149,7 @@ export type RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_ = {
   } | null;
 };
 
-export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
+export type RunDagsterRunEventFragment_HandledOutputEvent = {
   __typename: 'HandledOutputEvent';
   message: string;
   timestamp: string;
@@ -927,6 +1174,20 @@ export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -936,6 +1197,14 @@ export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -966,6 +1235,20 @@ export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1014,11 +1297,17 @@ export type RunDagsterRunEventFragment_HandledOutputEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type RunDagsterRunEventFragment_HookCompletedEvent_ = {
+export type RunDagsterRunEventFragment_HookCompletedEvent = {
   __typename: 'HookCompletedEvent';
   message: string;
   timestamp: string;
@@ -1027,7 +1316,7 @@ export type RunDagsterRunEventFragment_HookCompletedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_HookErroredEvent_ = {
+export type RunDagsterRunEventFragment_HookErroredEvent = {
   __typename: 'HookErroredEvent';
   message: string;
   timestamp: string;
@@ -1046,7 +1335,7 @@ export type RunDagsterRunEventFragment_HookErroredEvent_ = {
   } | null;
 };
 
-export type RunDagsterRunEventFragment_HookSkippedEvent_ = {
+export type RunDagsterRunEventFragment_HookSkippedEvent = {
   __typename: 'HookSkippedEvent';
   message: string;
   timestamp: string;
@@ -1055,7 +1344,7 @@ export type RunDagsterRunEventFragment_HookSkippedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
+export type RunDagsterRunEventFragment_LoadedInputEvent = {
   __typename: 'LoadedInputEvent';
   message: string;
   timestamp: string;
@@ -1082,6 +1371,20 @@ export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1091,6 +1394,14 @@ export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1121,6 +1432,20 @@ export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1169,11 +1494,17 @@ export type RunDagsterRunEventFragment_LoadedInputEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type RunDagsterRunEventFragment_LogMessageEvent_ = {
+export type RunDagsterRunEventFragment_LogMessageEvent = {
   __typename: 'LogMessageEvent';
   message: string;
   timestamp: string;
@@ -1182,7 +1513,7 @@ export type RunDagsterRunEventFragment_LogMessageEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_LogsCapturedEvent_ = {
+export type RunDagsterRunEventFragment_LogsCapturedEvent = {
   __typename: 'LogsCapturedEvent';
   message: string;
   timestamp: string;
@@ -1197,7 +1528,7 @@ export type RunDagsterRunEventFragment_LogsCapturedEvent_ = {
   externalUrl: string | null;
 };
 
-export type RunDagsterRunEventFragment_MaterializationEvent_ = {
+export type RunDagsterRunEventFragment_MaterializationEvent = {
   __typename: 'MaterializationEvent';
   message: string;
   timestamp: string;
@@ -1220,6 +1551,20 @@ export type RunDagsterRunEventFragment_MaterializationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1229,6 +1574,14 @@ export type RunDagsterRunEventFragment_MaterializationEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1259,6 +1612,20 @@ export type RunDagsterRunEventFragment_MaterializationEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1307,12 +1674,18 @@ export type RunDagsterRunEventFragment_MaterializationEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
-export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
+export type RunDagsterRunEventFragment_ObjectStoreOperationEvent = {
   __typename: 'ObjectStoreOperationEvent';
   message: string;
   timestamp: string;
@@ -1336,6 +1709,20 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -1345,6 +1732,14 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -1380,6 +1775,20 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -1428,12 +1837,18 @@ export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type RunDagsterRunEventFragment_ObservationEvent_ = {
+export type RunDagsterRunEventFragment_ObservationEvent = {
   __typename: 'ObservationEvent';
   message: string;
   timestamp: string;
@@ -1456,6 +1871,20 @@ export type RunDagsterRunEventFragment_ObservationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1465,6 +1894,14 @@ export type RunDagsterRunEventFragment_ObservationEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1495,6 +1932,20 @@ export type RunDagsterRunEventFragment_ObservationEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1543,12 +1994,18 @@ export type RunDagsterRunEventFragment_ObservationEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
-export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
+export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
   __typename: 'ResourceInitFailureEvent';
   message: string;
   timestamp: string;
@@ -1573,6 +2030,20 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1582,6 +2053,14 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1612,6 +2091,20 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1660,6 +2153,12 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -1674,7 +2173,7 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent_ = {
   } | null;
 };
 
-export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
+export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {
   __typename: 'ResourceInitStartedEvent';
   message: string;
   timestamp: string;
@@ -1699,6 +2198,20 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1708,6 +2221,14 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1738,6 +2259,20 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1786,11 +2321,17 @@ export type RunDagsterRunEventFragment_ResourceInitStartedEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
+export type RunDagsterRunEventFragment_ResourceInitSuccessEvent = {
   __typename: 'ResourceInitSuccessEvent';
   message: string;
   timestamp: string;
@@ -1815,6 +2356,20 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1824,6 +2379,14 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1854,6 +2417,20 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1902,11 +2479,17 @@ export type RunDagsterRunEventFragment_ResourceInitSuccessEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type RunDagsterRunEventFragment_RunCanceledEvent_ = {
+export type RunDagsterRunEventFragment_RunCanceledEvent = {
   __typename: 'RunCanceledEvent';
   message: string;
   timestamp: string;
@@ -1915,7 +2498,7 @@ export type RunDagsterRunEventFragment_RunCanceledEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_RunCancelingEvent_ = {
+export type RunDagsterRunEventFragment_RunCancelingEvent = {
   __typename: 'RunCancelingEvent';
   message: string;
   timestamp: string;
@@ -1924,7 +2507,7 @@ export type RunDagsterRunEventFragment_RunCancelingEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_RunDequeuedEvent_ = {
+export type RunDagsterRunEventFragment_RunDequeuedEvent = {
   __typename: 'RunDequeuedEvent';
   message: string;
   timestamp: string;
@@ -1933,7 +2516,7 @@ export type RunDagsterRunEventFragment_RunDequeuedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_RunEnqueuedEvent_ = {
+export type RunDagsterRunEventFragment_RunEnqueuedEvent = {
   __typename: 'RunEnqueuedEvent';
   message: string;
   timestamp: string;
@@ -1942,7 +2525,7 @@ export type RunDagsterRunEventFragment_RunEnqueuedEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_RunFailureEvent_ = {
+export type RunDagsterRunEventFragment_RunFailureEvent = {
   __typename: 'RunFailureEvent';
   message: string;
   timestamp: string;
@@ -1961,7 +2544,7 @@ export type RunDagsterRunEventFragment_RunFailureEvent_ = {
   } | null;
 };
 
-export type RunDagsterRunEventFragment_RunStartEvent_ = {
+export type RunDagsterRunEventFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
   timestamp: string;
@@ -1970,7 +2553,7 @@ export type RunDagsterRunEventFragment_RunStartEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_RunStartingEvent_ = {
+export type RunDagsterRunEventFragment_RunStartingEvent = {
   __typename: 'RunStartingEvent';
   message: string;
   timestamp: string;
@@ -1979,7 +2562,7 @@ export type RunDagsterRunEventFragment_RunStartingEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_RunSuccessEvent_ = {
+export type RunDagsterRunEventFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
   message: string;
   timestamp: string;
@@ -1988,7 +2571,7 @@ export type RunDagsterRunEventFragment_RunSuccessEvent_ = {
   eventType: Types.DagsterEventType | null;
 };
 
-export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
+export type RunDagsterRunEventFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
   timestamp: string;
@@ -2014,6 +2597,20 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -2023,6 +2620,14 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -2058,6 +2663,20 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -2106,12 +2725,18 @@ export type RunDagsterRunEventFragment_StepExpectationResultEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
+export type RunDagsterRunEventFragment_StepWorkerStartedEvent = {
   __typename: 'StepWorkerStartedEvent';
   message: string;
   timestamp: string;
@@ -2136,6 +2761,20 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2145,6 +2784,14 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -2175,6 +2822,20 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -2223,11 +2884,17 @@ export type RunDagsterRunEventFragment_StepWorkerStartedEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
+export type RunDagsterRunEventFragment_StepWorkerStartingEvent = {
   __typename: 'StepWorkerStartingEvent';
   message: string;
   timestamp: string;
@@ -2252,6 +2919,20 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2261,6 +2942,14 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -2291,6 +2980,20 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -2339,50 +3042,56 @@ export type RunDagsterRunEventFragment_StepWorkerStartingEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
 export type RunDagsterRunEventFragment =
-  | RunDagsterRunEventFragment_AlertFailureEvent_
-  | RunDagsterRunEventFragment_AlertStartEvent_
-  | RunDagsterRunEventFragment_AlertSuccessEvent_
-  | RunDagsterRunEventFragment_AssetCheckEvaluationEvent_
-  | RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent_
-  | RunDagsterRunEventFragment_AssetMaterializationPlannedEvent_
-  | RunDagsterRunEventFragment_EngineEvent_
-  | RunDagsterRunEventFragment_ExecutionStepFailureEvent_
-  | RunDagsterRunEventFragment_ExecutionStepInputEvent_
-  | RunDagsterRunEventFragment_ExecutionStepOutputEvent_
-  | RunDagsterRunEventFragment_ExecutionStepRestartEvent_
-  | RunDagsterRunEventFragment_ExecutionStepSkippedEvent_
-  | RunDagsterRunEventFragment_ExecutionStepStartEvent_
-  | RunDagsterRunEventFragment_ExecutionStepSuccessEvent_
-  | RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent_
-  | RunDagsterRunEventFragment_HandledOutputEvent_
-  | RunDagsterRunEventFragment_HookCompletedEvent_
-  | RunDagsterRunEventFragment_HookErroredEvent_
-  | RunDagsterRunEventFragment_HookSkippedEvent_
-  | RunDagsterRunEventFragment_LoadedInputEvent_
-  | RunDagsterRunEventFragment_LogMessageEvent_
-  | RunDagsterRunEventFragment_LogsCapturedEvent_
-  | RunDagsterRunEventFragment_MaterializationEvent_
-  | RunDagsterRunEventFragment_ObjectStoreOperationEvent_
-  | RunDagsterRunEventFragment_ObservationEvent_
-  | RunDagsterRunEventFragment_ResourceInitFailureEvent_
-  | RunDagsterRunEventFragment_ResourceInitStartedEvent_
-  | RunDagsterRunEventFragment_ResourceInitSuccessEvent_
-  | RunDagsterRunEventFragment_RunCanceledEvent_
-  | RunDagsterRunEventFragment_RunCancelingEvent_
-  | RunDagsterRunEventFragment_RunDequeuedEvent_
-  | RunDagsterRunEventFragment_RunEnqueuedEvent_
-  | RunDagsterRunEventFragment_RunFailureEvent_
-  | RunDagsterRunEventFragment_RunStartEvent_
-  | RunDagsterRunEventFragment_RunStartingEvent_
-  | RunDagsterRunEventFragment_RunSuccessEvent_
-  | RunDagsterRunEventFragment_StepExpectationResultEvent_
-  | RunDagsterRunEventFragment_StepWorkerStartedEvent_
-  | RunDagsterRunEventFragment_StepWorkerStartingEvent_;
+  | RunDagsterRunEventFragment_AlertFailureEvent
+  | RunDagsterRunEventFragment_AlertStartEvent
+  | RunDagsterRunEventFragment_AlertSuccessEvent
+  | RunDagsterRunEventFragment_AssetCheckEvaluationEvent
+  | RunDagsterRunEventFragment_AssetCheckEvaluationPlannedEvent
+  | RunDagsterRunEventFragment_AssetMaterializationPlannedEvent
+  | RunDagsterRunEventFragment_EngineEvent
+  | RunDagsterRunEventFragment_ExecutionStepFailureEvent
+  | RunDagsterRunEventFragment_ExecutionStepInputEvent
+  | RunDagsterRunEventFragment_ExecutionStepOutputEvent
+  | RunDagsterRunEventFragment_ExecutionStepRestartEvent
+  | RunDagsterRunEventFragment_ExecutionStepSkippedEvent
+  | RunDagsterRunEventFragment_ExecutionStepStartEvent
+  | RunDagsterRunEventFragment_ExecutionStepSuccessEvent
+  | RunDagsterRunEventFragment_ExecutionStepUpForRetryEvent
+  | RunDagsterRunEventFragment_HandledOutputEvent
+  | RunDagsterRunEventFragment_HookCompletedEvent
+  | RunDagsterRunEventFragment_HookErroredEvent
+  | RunDagsterRunEventFragment_HookSkippedEvent
+  | RunDagsterRunEventFragment_LoadedInputEvent
+  | RunDagsterRunEventFragment_LogMessageEvent
+  | RunDagsterRunEventFragment_LogsCapturedEvent
+  | RunDagsterRunEventFragment_MaterializationEvent
+  | RunDagsterRunEventFragment_ObjectStoreOperationEvent
+  | RunDagsterRunEventFragment_ObservationEvent
+  | RunDagsterRunEventFragment_ResourceInitFailureEvent
+  | RunDagsterRunEventFragment_ResourceInitStartedEvent
+  | RunDagsterRunEventFragment_ResourceInitSuccessEvent
+  | RunDagsterRunEventFragment_RunCanceledEvent
+  | RunDagsterRunEventFragment_RunCancelingEvent
+  | RunDagsterRunEventFragment_RunDequeuedEvent
+  | RunDagsterRunEventFragment_RunEnqueuedEvent
+  | RunDagsterRunEventFragment_RunFailureEvent
+  | RunDagsterRunEventFragment_RunStartEvent
+  | RunDagsterRunEventFragment_RunStartingEvent
+  | RunDagsterRunEventFragment_RunSuccessEvent
+  | RunDagsterRunEventFragment_StepExpectationResultEvent
+  | RunDagsterRunEventFragment_StepWorkerStartedEvent
+  | RunDagsterRunEventFragment_StepWorkerStartingEvent;
 
 export type RunPageFragment = {
   __typename: 'Run';
@@ -2412,11 +3121,6 @@ export type RunPageFragment = {
     repositoryLocationName: string;
   } | null;
   tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
-  assets: Array<{
-    __typename: 'Asset';
-    id: string;
-    key: {__typename: 'AssetKey'; path: Array<string>};
-  }>;
   assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
   assetCheckSelection: Array<{
     __typename: 'AssetCheckhandle';

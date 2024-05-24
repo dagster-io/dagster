@@ -1,9 +1,8 @@
 import * as React from 'react';
 
-import {RepoAddress} from '../workspace/types';
-
 import {JobTabConfig, JobTabConfigInput, buildJobTabs} from './JobTabs';
 import {PipelineOverviewRoot} from './PipelineOverviewRoot';
+import {RepoAddress} from '../workspace/types';
 
 export type JobViewFeatureInput = {
   selectedTab: string;

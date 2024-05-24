@@ -53,8 +53,8 @@ class _TypedPythonTuple(DagsterType):
             return TypeCheck(
                 success=False,
                 description=(
-                    "Tuple with key {key} requires {n} entries, received {m} values"
-                ).format(key=self.key, n=len(self.dagster_types), m=len(value)),
+                    f"Tuple with key {self.key} requires {len(self.dagster_types)} entries, received {len(value)} values"
+                ),
             )
 
         for item, dagster_type in zip(value, self.dagster_types):

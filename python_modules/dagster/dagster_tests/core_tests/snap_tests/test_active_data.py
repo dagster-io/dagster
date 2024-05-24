@@ -5,11 +5,11 @@ from unittest import mock
 import pendulum
 from dagster import daily_partitioned_config, job, op, repository
 from dagster._core.definitions.decorators.schedule_decorator import schedule
-from dagster._core.host_representation import (
+from dagster._core.remote_representation import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
-from dagster._core.host_representation.external_data import (
+from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 from dagster._core.snap.job_snapshot import create_job_snapshot_id
@@ -66,20 +66,23 @@ def test_external_repository_data(snapshot):
 
     now = pendulum.now()
 
-    assert job_partition_set_data.external_partitions_data.get_partitions_definition().get_partition_keys(
-        now
-    ) == my_partitioned_config.partitions_def.get_partition_keys(
-        now
+    assert (
+        job_partition_set_data.external_partitions_data.get_partitions_definition().get_partition_keys(
+            now
+        )
+        == my_partitioned_config.partitions_def.get_partition_keys(now)
     )
 
     snapshot.assert_match(serialize_pp(external_repo_data))
 
 
 def test_external_job_data(snapshot):
-    snapshot.assert_match(serialize_pp(external_job_data_from_def(foo_job)))
+    snapshot.assert_match(
+        serialize_pp(external_job_data_from_def(foo_job, include_parent_snapshot=True))
+    )
 
 
-@mock.patch("dagster._core.host_representation.job_index.create_job_snapshot_id")
+@mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")
 def test_external_repo_shared_index(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly
 
@@ -101,7 +104,7 @@ def test_external_repo_shared_index(snapshot_mock):
             assert snapshot_mock.call_count == 1
 
 
-@mock.patch("dagster._core.host_representation.job_index.create_job_snapshot_id")
+@mock.patch("dagster._core.remote_representation.job_index.create_job_snapshot_id")
 def test_external_repo_shared_index_threaded(snapshot_mock):
     # ensure we don't rebuild indexes / snapshot ids repeatedly across threads
 

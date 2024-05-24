@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {PipelineNav} from '../../nav/PipelineNav';

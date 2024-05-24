@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SetSensorCursorMutationVariables = Types.Exact<{
   sensorSelector: Types.SensorSelector;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
 }>;
 
 export type SetSensorCursorMutation = {

@@ -172,8 +172,7 @@ def new_resource_runtime() -> "Definitions":
     class DatabaseResource(ConfigurableResource):
         table: str
 
-        def read(self):
-            ...
+        def read(self): ...
 
     @asset
     def data_from_database(db_conn: DatabaseResource):
@@ -228,17 +227,19 @@ def new_resources_nesting() -> "Definitions":
         pass
 
     # start_new_resources_nesting
-    from dagster import Definitions, ConfigurableResource
+    from dagster import Definitions, ConfigurableResource, ResourceDependency
 
     class CredentialsResource(ConfigurableResource):
         username: str
         password: str
 
     class FileStoreBucket(ConfigurableResource):
-        credentials: CredentialsResource
+        credentials: ResourceDependency[CredentialsResource]
         region: str
 
         def write(self, data: str):
+            # We can access the credentials resource via `self.credentials`,
+            # which will be an initialized instance of `CredentialsResource`
             get_filestore_client(
                 username=self.credentials.username,
                 password=self.credentials.password,
@@ -287,7 +288,7 @@ def new_resources_env_vars() -> None:
         password: str
 
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={
             "credentials": CredentialsResource(
                 username=EnvVar("MY_USERNAME"),
@@ -302,7 +303,7 @@ class GitHubOrganization:
     def __init__(self, name: str):
         self.name = name
 
-    def repositories(self):
+    def repositories(self) -> Any:
         return ["dagster", "dagster-webserver", "dagster-graphql"]
 
 
@@ -310,7 +311,7 @@ class GitHub:
     def __init__(*args, **kwargs):
         pass
 
-    def organization(self, name: str):
+    def organization(self, name: str) -> GitHubOrganization:
         return GitHubOrganization(name)
 
 
@@ -373,7 +374,7 @@ def raw_github_resource_dep() -> None:
 
     engine = create_engine(...)
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={"db": DBResource(engine=engine)},
     )
 
@@ -473,7 +474,7 @@ def io_adapter() -> None:
             return old_file_io_manager
 
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={
             "io_manager": MyIOManager(base_path="/tmp/"),
         },
@@ -551,7 +552,7 @@ def new_io_manager() -> None:
             return read_csv(self._get_path(context.asset_key))
 
     defs = Definitions(
-        assets=...,  # type: ignore
+        assets=...,
         resources={"io_manager": MyIOManager(root_path="/tmp/")},
     )
 
@@ -624,7 +625,7 @@ def new_resource_testing_with_context():
 
 def with_state_example() -> None:
     # start_with_state_example
-    from dagster import ConfigurableResource, asset
+    from dagster import ConfigurableResource, InitResourceContext, asset
     import requests
 
     from pydantic import PrivateAttr
@@ -635,7 +636,7 @@ def with_state_example() -> None:
 
         _api_token: str = PrivateAttr()
 
-        def setup_for_execution(self, context) -> None:
+        def setup_for_execution(self, context: InitResourceContext) -> None:
             # Fetch and set up an API token based on the username and password
             self._api_token = requests.get(
                 "https://my-api.com/token", auth=(self.username, self.password)
@@ -657,19 +658,17 @@ def with_state_example() -> None:
 def with_complex_state_example() -> None:
     # start_with_complex_state_example
 
-    from dagster import ConfigurableResource, asset
+    from dagster import ConfigurableResource, asset, InitResourceContext
     from contextlib import contextmanager
     from pydantic import PrivateAttr
 
     class DBConnection:
         ...
 
-        def query(self, body: str):
-            ...
+        def query(self, body: str): ...
 
-    @contextmanager
-    def get_database_connection(username: str, password: str):
-        ...
+    @contextmanager  # type: ignore
+    def get_database_connection(username: str, password: str): ...
 
     class MyClientResource(ConfigurableResource):
         username: str
@@ -678,7 +677,7 @@ def with_complex_state_example() -> None:
         _db_connection: DBConnection = PrivateAttr()
 
         @contextmanager
-        def yield_for_execution(self, context):
+        def yield_for_execution(self, context: InitResourceContext):
             # keep connection open for the duration of the execution
             with get_database_connection(self.username, self.password) as conn:
                 # set up the connection attribute so it can be used in the execution
@@ -706,8 +705,7 @@ def new_resource_testing_with_state_ops() -> None:
     class MyClient:
         ...
 
-        def query(self, body: str):
-            ...
+        def query(self, body: str): ...
 
     class MyClientResource(ConfigurableResource):
         username: str
@@ -755,8 +753,7 @@ def new_resource_on_sensor() -> None:
             return requests.get(self.url).json()
 
     @job
-    def process_user():
-        ...
+    def process_user(): ...
 
     @sensor(job=process_user)
     def process_new_users_sensor(
@@ -819,8 +816,7 @@ def new_resource_on_schedule() -> None:
             return dt.strftime(self.format)
 
     @job
-    def process_data():
-        ...
+    def process_data(): ...
 
     @schedule(job=process_data, cron_schedule="* * * * *")
     def process_data_schedule(

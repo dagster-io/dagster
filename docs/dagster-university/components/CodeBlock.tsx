@@ -7,6 +7,7 @@ Prism.manual = true;
 interface Props {
   children: React.ReactNode;
   'data-language': string;
+  obfuscated: boolean;
 }
 
 const COPY_CONFIRMATION_MSC = 3000;
@@ -14,19 +15,22 @@ const COPY_CONFIRMATION_MSC = 3000;
 export const CodeBlock = (props: Props) => {
   const text = props.children;
   const language = props['data-language'];
+  const {obfuscated} = props;
 
+  const [hidden, setHidden] = React.useState(obfuscated);
   const [copied, setCopied] = React.useState(false);
 
+  const copy = useCopyToClipboard();
+
   const copyToClipboard = React.useCallback(() => {
-    const clipboardAPI = navigator.clipboard;
-    if (clipboardAPI && typeof text === 'string') {
-      clipboardAPI.writeText(text);
+    if (typeof text === 'string') {
+      copy(text);
       setCopied(true);
       setTimeout(() => {
         setCopied(false);
       }, COPY_CONFIRMATION_MSC);
     }
-  }, [text]);
+  }, [copy, text]);
 
   React.useEffect(() => {
     Prism.highlightAll();
@@ -80,6 +84,40 @@ export const CodeBlock = (props: Props) => {
           </span>
         </div>
       </Transition>
+      {hidden ? (
+        <div className="absolute backdrop-blur top-2 left-0 right-0 bottom-2 flex flex-row justify-center">
+          <div className="mt-8">
+            <button
+              className="bg-white py-2 px-4 rounded-full transition hover:no-underline cursor-pointer border text-gable-green hover:text-gable-green-darker hover:border-gable-green"
+              onClick={() => setHidden(false)}
+            >
+              View answer
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
+};
+
+export const useCopyToClipboard = () => {
+  const node = React.useRef<HTMLTextAreaElement | null>(null);
+
+  React.useEffect(() => {
+    node.current = document.createElement('textarea');
+    node.current.style.position = 'fixed';
+    node.current.style.top = '-10000px';
+    document.body.appendChild(node.current);
+    return () => {
+      node.current && document.body.removeChild(node.current);
+    };
+  }, []);
+
+  return React.useCallback((text: string) => {
+    if (node.current) {
+      node.current.value = text;
+      node.current.select();
+      document.execCommand('copy');
+    }
+  }, []);
 };

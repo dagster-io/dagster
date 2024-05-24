@@ -87,6 +87,7 @@ def test_merge(
         "cpu": "2048",
         "memory": "4096",
         "ephemeral_storage": 25,
+        "replica_count": 2,
     }
 
     assert merged.server_ecs_tags == [
@@ -145,6 +146,7 @@ def test_merge(
             ],
         },
     ]
+    assert merged.server_health_check == other_secrets_container_context.server_health_check
     assert merged.run_sidecar_containers == [
         {
             "name": "OtherRunAgent",

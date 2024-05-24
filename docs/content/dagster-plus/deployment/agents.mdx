@@ -1,0 +1,159 @@
+---
+title: "Dagster+ Hybrid agents | Dagster Docs"
+
+platform_type: "cloud"
+---
+
+# Dagster+ Hybrid agents
+
+For [Hybrid deployments](/dagster-plus/deployment/hybrid), Dagster+ uses an agent that is responsible for executing your code. The agent streams metadata about code execution over HTTPS to Dagster+’s Agent API.
+
+Dagster+ currently supports agents running on the following backends:
+
+<table
+  className="table"
+  style={{
+    width: "100%",
+  }}
+>
+  <thead>
+    <tr>
+      <th
+        style={{
+          width: "30%",
+        }}
+      >
+        Name
+      </th>
+      <th>How it works</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <a href="#amazon-ecs-agents">Amazon Elastic Container Service (ECS)</a>
+      </td>
+      <td>
+        The Amazon Elastic Container Service (ECS) agent executes Dagster jobs
+        as Amazon Web Services (AWS) ECS tasks. This agent is appropriate for
+        scaled production deployments; ECS is a good choice for teams who have
+        already standardized on ECS or who don't plan to run their own container
+        orchestration infrastructure.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="#docker-agents">Docker</a>
+      </td>
+      <td>
+        The Docker agent executes Dagster jobs in Docker containers on your
+        computer.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="#kubernetes-agents">Kubernetes</a>
+      </td>
+      <td>
+        The Kubernetes agent executes Dagster jobs on a Kubernetes cluster. This
+        agent is appropriate for scaled production deployments and is a good
+        choice for teams who have already standardized on Kubernetes.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <a href="#local-agents">Local</a>
+      </td>
+      <td>
+        The local agent executes Dagster jobs as processes on your computer.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+---
+
+## Amazon ECS agents
+
+<ArticleList>
+  <ArticleListItem
+    title="Creating an Amazon ECS agent in a new VPC (Recommended)"
+    href="/dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-new-vpc"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Creating an Amazon ECS agent in an existing VPC"
+    href="dagster-plus/deployment/agents/amazon-ecs/creating-ecs-agent-existing-vpc"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Manually provisioning an Amazon ECS agent (Advanced)"
+    href="/dagster-plus/deployment/agents/amazon-ecs/manually-provisioning-ecs-agent"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Amazon ECS agent configuration reference"
+    href="/dagster-plus/deployment/agents/amazon-ecs/configuration-reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Upgrading CloudFormation for Amazon ECS"
+    href="/dagster-plus/deployment/agents/amazon-ecs/upgrading-cloudformation-template"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Docker agents
+
+<ArticleList>
+  <ArticleListItem
+    title="Configuring and running a Docker agent"
+    href="/dagster-plus/deployment/agents/docker/configuring-running-docker-agent"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Docker agent configuration reference"
+    href="/dagster-plus/deployment/agents/docker/configuration-reference"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Kubernetes agents
+
+<ArticleList>
+  <ArticleListItem
+    title="Configuring and running a Kubernetes agent"
+    href="/dagster-plus/deployment/agents/kubernetes/configuring-running-kubernetes-agent"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Kubernetes agent configuration reference"
+    href="/dagster-plus/deployment/agents/kubernetes/configuration-reference"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Local agents
+
+<ArticleList>
+  <ArticleListItem
+    title="Configuring and running a local agent"
+    href="/dagster-plus/deployment/agents/local"
+  ></ArticleListItem>
+</ArticleList>
+
+---
+
+## Customizing agents
+
+<ArticleList>
+  <ArticleListItem
+    title="Customizing agent settings"
+    href="/dagster-plus/deployment/agents/customizing-configuration"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Running multiple agents"
+    href="/dagster-plus/deployment/agents/running-multiple-agents"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Setting up environment variables using Hybrid agent configuration"
+    href="/dagster-plus/managing-deployments/setting-environment-variables-agents"
+  ></ArticleListItem>
+</ArticleList>

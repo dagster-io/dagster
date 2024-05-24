@@ -1,5 +1,14 @@
-import * as React from 'react';
+import {createContext, useCallback, useContext, useLayoutEffect} from 'react';
 import {useLocation, useRouteMatch} from 'react-router-dom';
+import {atom, useRecoilValue, useSetRecoilState} from 'recoil';
+
+import {CloudOSSContext} from './CloudOSSContext';
+import {useDangerousRenderEffect} from '../hooks/useDangerousRenderEffect';
+
+export const currentPageAtom = atom<{path: string; specificPath: string}>({
+  key: 'currentPageAtom',
+  default: {path: '/', specificPath: '/'},
+});
 
 export interface GenericAnalytics {
   group?: (groupId: string, traits?: Record<string, any>) => void;
@@ -8,19 +17,16 @@ export interface GenericAnalytics {
   track: (eventName: string, properties?: Record<string, any>) => void;
 }
 
-export const AnalyticsContext = React.createContext<GenericAnalytics>(undefined!);
+export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
 
 const PAGEVIEW_DELAY = 300;
 
-const usePageContext = () => {
-  const match = useRouteMatch();
-  const {pathname: specificPath} = useLocation();
-  const {path} = match;
-  return React.useMemo(() => ({path, specificPath}), [path, specificPath]);
+export const usePageContext = () => {
+  return useRecoilValue(currentPageAtom);
 };
 
 const useAnalytics = () => {
-  const analytics = React.useContext(AnalyticsContext);
+  const analytics = useContext(AnalyticsContext);
   if (!analytics && typeof 'jest' === undefined && !process.env.STORYBOOK) {
     throw new Error('Analytics may only be used within `AnalyticsContext.Provider`.');
   }
@@ -52,28 +58,43 @@ export const dummyAnalytics = () => ({
 
 export const useTrackPageView = () => {
   const analytics = useAnalytics();
-  const {path, specificPath} = usePageContext();
+  const match = useRouteMatch();
+  const {pathname: specificPath} = useLocation();
+  const {path} = match;
 
-  React.useEffect(() => {
+  const setCurrentPage = useSetRecoilState(currentPageAtom);
+
+  useLayoutEffect(() => {
     // Wait briefly to allow redirects.
     const timer = setTimeout(() => {
       analytics.page(path, specificPath);
     }, PAGEVIEW_DELAY);
+    setCurrentPage({path, specificPath});
 
     return () => {
       clearTimeout(timer);
     };
-  }, [analytics, path, specificPath]);
+  }, [analytics, path, setCurrentPage, specificPath]);
+
+  const {onViewChange} = useContext(CloudOSSContext);
+
+  useDangerousRenderEffect(() => {
+    // Update Cloud synchronously that the view is changing in order to
+    // better capture the dependencies of the view
+    onViewChange({path});
+  }, [path]);
 };
 
 export const useTrackEvent = () => {
   const analytics = useAnalytics();
-  const pathValues = usePageContext();
+  const match = useRouteMatch();
+  const {pathname: specificPath} = useLocation();
+  const {path} = match;
 
-  return React.useCallback(
+  return useCallback(
     (eventName: string, properties?: Record<string, any>) => {
-      analytics.track(eventName, {...properties, ...pathValues});
+      analytics.track(eventName, {...properties, path, specificPath});
     },
-    [analytics, pathValues],
+    [analytics, path, specificPath],
   );
 };

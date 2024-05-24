@@ -1,15 +1,13 @@
 import {QueryResult} from '@apollo/client';
 import {Box, Tabs} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {useContext} from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
+import {InstancePageContext} from './InstancePageContext';
+import {useCanSeeConfig} from './useCanSeeConfig';
 import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {WorkspaceStatus} from '../nav/WorkspaceStatus';
 import {TabLink} from '../ui/TabLink';
-
-import {InstancePageContext} from './InstancePageContext';
-import {useCanSeeConfig} from './useCanSeeConfig';
 
 interface Props<TData> {
   refreshState?: QueryRefreshState;
@@ -20,9 +18,8 @@ interface Props<TData> {
 export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {refreshState, tab} = props;
 
-  const {healthTitle} = React.useContext(InstancePageContext);
+  const {healthTitle} = useContext(InstancePageContext);
   const canSeeConfig = useCanSeeConfig();
-  const {flagInstanceConcurrencyLimits} = useFeatureFlags();
 
   return (
     <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'flex-end'}}>
@@ -34,7 +31,7 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
           icon={<WorkspaceStatus placeholder={false} />}
         />
         <TabLink id="health" title={healthTitle} to="/health" icon={<InstanceWarningIcon />} />
-        {canSeeConfig && flagInstanceConcurrencyLimits ? (
+        {canSeeConfig ? (
           <TabLink id="concurrency" title="Concurrency limits" to="/concurrency" />
         ) : null}
         {canSeeConfig ? <TabLink id="config" title="Configuration" to="/config" /> : null}

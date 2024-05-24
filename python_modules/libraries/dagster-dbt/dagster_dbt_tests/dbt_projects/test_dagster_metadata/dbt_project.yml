@@ -1,9 +1,9 @@
-name: 'test_dagster_metadata'
+name: "test_dagster_metadata"
 
 config-version: 2
-version: '0.1'
+version: "0.1"
 
-profile: 'jaffle_shop'
+profile: "jaffle_shop"
 
 model-paths: ["models"]
 seed-paths: ["seeds"]
@@ -13,29 +13,20 @@ macro-paths: ["macros"]
 
 target-path: "target"
 clean-targets:
-    - "target"
-    - "dbt_modules"
-    - "logs"
+  - "target"
+  - "dbt_modules"
+  - "logs"
 
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
-seeds:
-  +docs:
-    node_color: '#cd7f32'
-
 models:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=var('dagster_enable_parent_relation_metadata_collection', 'true')) }}"
   test_dagster_metadata:
     materialized: table
     staging:
       materialized: view
-      +docs:
-        node_color: 'silver'
-    +docs:
-      node_color: 'gold'
-    +meta:
-      dagster:
-        auto_materialize_policy:
-          type: 'eager'
-        freshness_policy:
-          maximum_lag_minutes: 60
-          cron_schedule: '* * * * *'
+
+seeds:
+  +post-hook:
+    - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=var('dagster_enable_parent_relation_metadata_collection', 'true')) }}"

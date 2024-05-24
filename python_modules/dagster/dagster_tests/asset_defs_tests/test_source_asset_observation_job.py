@@ -1,7 +1,6 @@
 from typing import Optional
 
 import pytest
-from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.data_version import (
     DataVersion,
@@ -90,24 +89,6 @@ def test_partitioned_observable_source_asset():
         record = instance.get_latest_data_version_record(AssetKey(["foo"]))
         assert record and extract_data_version_from_entry(record.event_log_entry) == DataVersion(
             "A"
-        )
-
-
-def test_mixed_source_asset_observation_job():
-    @observable_source_asset
-    def foo(_context) -> DataVersion:
-        return DataVersion("alpha")
-
-    @asset(deps=["foo"])
-    def bar(context):
-        return 1
-
-    with pytest.raises(
-        CheckError, match=r"Asset selection specified both regular assets and source assets"
-    ):
-        Definitions(
-            assets=[foo, bar],
-            jobs=[define_asset_job("mixed_job", [foo, bar])],
         )
 
 

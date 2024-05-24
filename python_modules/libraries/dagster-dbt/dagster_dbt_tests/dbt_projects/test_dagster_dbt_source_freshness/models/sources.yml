@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: jaffle_shop
+    database: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_NAME') }}"
+    schema: main
+    freshness:
+      warn_after: { count: 12, period: hour }
+      error_after: { count: 24, period: hour }
+    loaded_at_field: created_at
+    tables:
+      - name: raw_customers

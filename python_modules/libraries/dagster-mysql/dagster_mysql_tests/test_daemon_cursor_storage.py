@@ -1,5 +1,8 @@
 import pytest
+from dagster._core.test_utils import ensure_dagster_tests_import
 from dagster_mysql.run_storage import MySQLRunStorage
+
+ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.daemon_cursor_storage import TestDaemonCursorStorage
 
 

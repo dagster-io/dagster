@@ -201,7 +201,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def set_cursor_values(self, pairs: Mapping[str, str]) -> None:
         check.mapping_param(pairs, "pairs", key_type=str, value_type=str)
 
-        # pg speciic on_conflict_do_update
+        # pg specific on_conflict_do_update
         insert_stmt = db_dialects.postgresql.insert(KeyValueStoreTable).values(
             [{"key": k, "value": v} for k, v in pairs.items()]
         )

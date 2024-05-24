@@ -11,11 +11,11 @@ from pyspark.sql.types import (
     StructType,
 )
 
-from dagster import Definitions, asset
+from dagster import AssetExecutionContext, Definitions, asset
 
 
 @asset(required_resource_keys={"pyspark"})
-def iris_dataset(context) -> DataFrame:
+def iris_dataset(context: AssetExecutionContext) -> DataFrame:
     spark = context.resources.pyspark.spark_session
 
     schema = StructType(

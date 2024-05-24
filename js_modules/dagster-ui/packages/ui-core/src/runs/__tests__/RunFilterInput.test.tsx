@@ -1,8 +1,8 @@
-import {MockedResponse, MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {act, render, waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import userEvent from '@testing-library/user-event';
-import React from 'react';
+import * as React from 'react';
 
 import {
   buildPipeline,
@@ -16,12 +16,12 @@ import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {DagsterTag} from '../RunTag';
 import {
-  RunsFilterInputProps,
   RUN_TAG_KEYS_QUERY,
+  RunFilterToken,
+  RunsFilterInputProps,
   tagSuggestionValueObject,
   tagValueToFilterObject,
   useRunsFilterInput,
-  RunFilterToken,
   useTagDataFilterValues,
 } from '../RunsFilterInput';
 import {
@@ -29,6 +29,29 @@ import {
   buildWorkspaceContextMockedResponse,
 } from '../__fixtures__/RunsFilterInput.fixtures';
 import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
+
+const workspaceMock = buildWorkspaceContextMockedResponse(
+  buildWorkspace({
+    locationEntries: [
+      buildWorkspaceLocationEntry({
+        name: 'some_workspace',
+        locationOrLoadError: buildRepositoryLocation({
+          name: 'some_location',
+          repositories: [
+            buildRepository({
+              name: 'some_repo',
+              pipelines: [
+                buildPipeline({
+                  name: 'some_job',
+                }),
+              ],
+            }),
+          ],
+        }),
+      }),
+    ],
+  }),
+);
 
 const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
   request: {
@@ -48,6 +71,19 @@ const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTa
   'value1',
   'value2',
 ]);
+
+let nativeGBRC: any;
+
+beforeAll(() => {
+  nativeGBRC = window.Element.prototype.getBoundingClientRect;
+  window.Element.prototype.getBoundingClientRect = jest
+    .fn()
+    .mockReturnValue({height: 400, width: 400});
+});
+
+afterAll(() => {
+  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+});
 
 describe('useTagDataFilterValues', () => {
   it('should return the correct filter values based on the tag data', async () => {
@@ -73,6 +109,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value1',
           },
           match: ['value1'],
+          final: true,
         },
         {
           label: 'value2',
@@ -82,6 +119,7 @@ describe('useTagDataFilterValues', () => {
             value: 'value2',
           },
           match: ['value2'],
+          final: true,
         },
       ]);
     });
@@ -130,7 +168,7 @@ function TestRunsFilterInput({
     );
   }
   return (
-    <MockedProvider mocks={mocks}>
+    <MockedProvider mocks={mocks?.length ? [workspaceMock, ...mocks] : [workspaceMock]}>
       <WorkspaceProvider>
         <RunsFilterInput tokens={tokens} onChange={onChange} enabledFilters={enabledFilters} />
       </WorkspaceProvider>
@@ -150,8 +188,8 @@ describe('<RunFilterInput  />', () => {
     const {getByText} = render(<TestRunsFilterInput tokens={tokens} onChange={onChange} />);
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'created_date_before', value: '1609459200'},
       {token: 'created_date_after', value: '1577836800'},
+      {token: 'created_date_before', value: '1609459200'},
     ]);
 
     onChange.mockClear();
@@ -181,30 +219,7 @@ describe('<RunFilterInput  />', () => {
         tokens={tokens}
         onChange={onChange}
         enabledFilters={['job']}
-        mocks={[
-          buildWorkspaceContextMockedResponse(
-            buildWorkspace({
-              locationEntries: [
-                buildWorkspaceLocationEntry({
-                  name: 'some_workspace',
-                  locationOrLoadError: buildRepositoryLocation({
-                    name: 'some_location',
-                    repositories: [
-                      buildRepository({
-                        name: 'some_repo',
-                        pipelines: [
-                          buildPipeline({
-                            name: 'some_job',
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-                }),
-              ],
-            }),
-          ),
-        ]}
+        mocks={[workspaceMock]}
       />,
     );
 

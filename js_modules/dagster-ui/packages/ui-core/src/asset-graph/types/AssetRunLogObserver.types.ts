@@ -3,7 +3,7 @@
 import * as Types from '../../graphql/types';
 
 export type AssetLiveRunLogsSubscriptionVariables = Types.Exact<{
-  runId: Types.Scalars['ID'];
+  runId: Types.Scalars['ID']['input'];
 }>;
 
 export type AssetLiveRunLogsSubscription = {

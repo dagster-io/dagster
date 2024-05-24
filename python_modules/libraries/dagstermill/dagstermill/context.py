@@ -8,6 +8,9 @@ from dagster import (
 )
 from dagster._annotations import public
 from dagster._core.definitions.dependency import Node, NodeHandle
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 from dagster._core.execution.context.compute import AbstractComputeExecutionContext
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster._core.log_manager import DagsterLogManager
@@ -99,6 +102,11 @@ class DagstermillExecutionContext(AbstractComputeExecutionContext):
         This will be a dagstermill-specific shim.
         """
         return self._job_def
+
+    @property
+    def repository_def(self) -> RepositoryDefinition:
+        """:class:`dagster.RepositoryDefinition`: The repository definition for the context."""
+        raise NotImplementedError
 
     @property
     def resources(self) -> Any:

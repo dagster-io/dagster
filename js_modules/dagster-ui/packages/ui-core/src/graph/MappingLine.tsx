@@ -1,4 +1,4 @@
-import * as React from 'react';
+import {Colors} from '@dagster-io/ui-components';
 
 import {Edge} from './OpEdges';
 import {IPoint, isHighlighted} from './common';
@@ -13,7 +13,7 @@ interface MappingLineProps {
   highlightedEdges: Edge[];
   onHighlightEdges: (edges: Edge[]) => void;
 }
-export const MappingLine: React.FC<MappingLineProps> = ({
+export const MappingLine = ({
   source,
   target,
   minified,
@@ -21,7 +21,7 @@ export const MappingLine: React.FC<MappingLineProps> = ({
   edge,
   highlightedEdges,
   onHighlightEdges,
-}) => {
+}: MappingLineProps) => {
   const highlighted = isHighlighted(highlightedEdges, edge);
 
   return (
@@ -29,16 +29,16 @@ export const MappingLine: React.FC<MappingLineProps> = ({
       <path
         d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"
-        strokeWidth={minified ? 6 : 5}
+        strokeWidth={minified ? 10 : 6}
         strokeLinecap="round"
-        stroke={highlighted ? 'black' : 'rgb(137, 206, 206)'}
+        stroke={highlighted ? Colors.lineageEdgeHighlighted() : Colors.lineageEdge()}
       />
       <path
         d={`M ${source.x} ${source.y} H ${leftEdgeX} V ${target.y} H ${target.x}`}
         fill="none"
-        strokeWidth={4}
+        strokeWidth={3}
         strokeLinecap="round"
-        stroke="white"
+        stroke={Colors.backgroundDefault()}
       />
     </g>
   );

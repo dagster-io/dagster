@@ -11,7 +11,7 @@ from dagster_graphql.schema.env_vars import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation.code_location import CodeLocation
+    from dagster._core.remote_representation.code_location import CodeLocation
 
 
 def get_utilized_env_vars_or_error(

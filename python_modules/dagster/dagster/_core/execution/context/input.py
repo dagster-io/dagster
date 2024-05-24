@@ -12,7 +12,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import public
+from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
 from dagster._core.definitions.metadata import (
     ArbitraryMetadataMapping,
@@ -20,9 +20,12 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
     from dagster._core.definitions import PartitionsDefinition
@@ -36,6 +39,11 @@ if TYPE_CHECKING:
     from .output import OutputContext
 
 
+@deprecated_param(
+    param="metadata",
+    breaking_version="2.0",
+    additional_warn_text="Use `definition_metadata` instead.",
+)
 class InputContext:
     """The ``context`` object available to the load_input method of :py:class:`InputManager`.
 
@@ -60,7 +68,7 @@ class InputContext:
         job_name: Optional[str] = None,
         op_def: Optional["OpDefinition"] = None,
         config: Optional[Any] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
+        definition_metadata: Optional[ArbitraryMetadataMapping] = None,
         upstream_output: Optional["OutputContext"] = None,
         dagster_type: Optional["DagsterType"] = None,
         log_manager: Optional["DagsterLogManager"] = None,
@@ -72,6 +80,8 @@ class InputContext:
         asset_partitions_subset: Optional[PartitionsSubset] = None,
         asset_partitions_def: Optional["PartitionsDefinition"] = None,
         instance: Optional[DagsterInstance] = None,
+        # deprecated
+        metadata: Optional[ArbitraryMetadataMapping] = None,
     ):
         from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
@@ -80,7 +90,13 @@ class InputContext:
         self._job_name = job_name
         self._op_def = op_def
         self._config = config
-        self._metadata = metadata or {}
+        self._definition_metadata = (
+            normalize_renamed_param(
+                definition_metadata, "definition_metadata", metadata, "metadata"
+            )
+            or {}
+        )
+        self._user_generated_metadata = {}
         self._upstream_output = upstream_output
         self._dagster_type = dagster_type
         self._log = log_manager
@@ -179,15 +195,22 @@ class InputContext:
         """The config attached to the input that we're loading."""
         return self._config
 
+    @deprecated(breaking_version="2.0.0", additional_warn_text="Use definition_metadata instead")
     @public
     @property
     def metadata(self) -> Optional[ArbitraryMetadataMapping]:
-        """A dict of metadata that is assigned to the InputDefinition that we're loading for.
+        """Deprecated: Use definitiion_metadata instead."""
+        return self._definition_metadata
+
+    @public
+    @property
+    def definition_metadata(self) -> ArbitraryMetadataMapping:
+        """A dict of metadata that is assigned to the InputDefinition that we're loading.
         This property only contains metadata passed in explicitly with :py:class:`AssetIn`
-        or :py:class:`In`. To access metadata of an upstream asset or operation definition,
-        use the metadata in :py:attr:`.InputContext.upstream_output`.
+        or :py:class:`In`. To access metadata of an upstream asset or op definition,
+        use the definition_metadata in :py:attr:`.InputContext.upstream_output`.
         """
-        return self._metadata
+        return self._definition_metadata
 
     @public
     @property
@@ -362,7 +385,7 @@ class InputContext:
             )
 
         partition_key_ranges = subset.get_partition_key_ranges(
-            dynamic_partitions_store=self.instance
+            self.asset_partitions_def, dynamic_partitions_store=self.instance
         )
         if len(partition_key_ranges) != 1:
             check.failed(
@@ -393,7 +416,8 @@ class InputContext:
 
         Raises an error if either of the following are true:
         - The input asset has no partitioning.
-        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition or a
+        MultiPartitionsDefinition with one time-partitioned dimension.
         """
         subset = self._asset_partitions_subset
 
@@ -402,20 +426,7 @@ class InputContext:
                 "Tried to access asset_partitions_time_window, but the asset is not partitioned.",
             )
 
-        if not isinstance(subset, TimeWindowPartitionsSubset):
-            check.failed(
-                "Tried to access asset_partitions_time_window, but the asset is not partitioned"
-                " with time windows.",
-            )
-
-        time_windows = subset.included_time_windows
-        if len(time_windows) != 1:
-            check.failed(
-                "Tried to access asset_partitions_time_window, but there are "
-                f"({len(time_windows)}) time windows associated with this input.",
-            )
-
-        return time_windows[0]
+        return self.step_context.asset_partitions_time_window_for_input(self.name)
 
     @public
     def get_identifier(self) -> Sequence[str]:
@@ -483,7 +494,10 @@ class InputContext:
         from dagster._core.events import DagsterEvent
 
         metadata = check.mapping_param(metadata, "metadata", key_type=str)
-        self._metadata = {**self._metadata, **normalize_metadata(metadata)}
+        self._user_generated_metadata = {
+            **self._user_generated_metadata,
+            **normalize_metadata(metadata),
+        }
         if self.has_asset_key:
             check.opt_str_param(description, "description")
 
@@ -523,16 +537,28 @@ class InputContext:
         """
         return self._observations
 
-    def consume_metadata(self) -> Mapping[str, MetadataValue]:
-        result = self._metadata
-        self._metadata = {}
+    def consume_logged_metadata(self) -> Mapping[str, MetadataValue]:
+        """Pops and yields all user-generated metadata entries that have been recorded from this context.
+
+        If consume_logged_metadata has not yet been called, this will yield all logged events since
+        the call to `load_input`. If consume_logged_metadata has been called, it will yield all
+        events since the last time consume_logged_metadata was called. Designed for internal
+        use. Users should never need to invoke this method.
+        """
+        result = self._user_generated_metadata
+        self._user_generated_metadata = {}
         return result
 
 
+@deprecated_param(
+    param="metadata",
+    breaking_version="2.0",
+    additional_warn_text="Use `definition_metadata` instead.",
+)
 def build_input_context(
     name: Optional[str] = None,
     config: Optional[Any] = None,
-    metadata: Optional[ArbitraryMetadataMapping] = None,
+    definition_metadata: Optional[ArbitraryMetadataMapping] = None,
     upstream_output: Optional["OutputContext"] = None,
     dagster_type: Optional["DagsterType"] = None,
     resource_config: Optional[Mapping[str, Any]] = None,
@@ -544,6 +570,8 @@ def build_input_context(
     asset_partition_key_range: Optional[PartitionKeyRange] = None,
     asset_partitions_def: Optional["PartitionsDefinition"] = None,
     instance: Optional[DagsterInstance] = None,
+    # deprecated
+    metadata: Optional[ArbitraryMetadataMapping] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -554,7 +582,7 @@ def build_input_context(
     Args:
         name (Optional[str]): The name of the input that we're loading.
         config (Optional[Any]): The config attached to the input that we're loading.
-        metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
+        definition_metadata (Optional[Dict[str, Any]]): A dict of metadata that is assigned to the
             InputDefinition that we're loading for.
         upstream_output (Optional[OutputContext]): Info about the output that produced the object
             we're loading.
@@ -569,7 +597,8 @@ def build_input_context(
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
         step_context (Optional[StepExecutionContext]): For internal use.
         partition_key (Optional[str]): String value representing partition key to execute with.
-        asset_partition_key_range (Optional[str]): The range of asset partition keys to load.
+        asset_partition_key_range (Optional[PartitionKeyRange]): The range of asset partition keys
+            to load.
         asset_partitions_def: Optional[PartitionsDefinition]: The PartitionsDefinition of the asset
             being loaded.
 
@@ -588,7 +617,14 @@ def build_input_context(
     from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
-    metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+    check.opt_mapping_param(definition_metadata, "definition_metadata", key_type=str)
+    check.opt_mapping_param(metadata, "metadata", key_type=str)
+    definition_metadata = normalize_renamed_param(
+        definition_metadata,
+        "definition_metadata",
+        metadata,
+        "metadata",
+    )
     upstream_output = check.opt_inst_param(upstream_output, "upstream_output", OutputContext)
     dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
     resource_config = check.opt_mapping_param(resource_config, "resource_config", key_type=str)
@@ -605,7 +641,7 @@ def build_input_context(
     )
     if asset_partitions_def and asset_partition_key_range:
         asset_partitions_subset = asset_partitions_def.empty_subset().with_partition_key_range(
-            asset_partition_key_range, dynamic_partitions_store=instance
+            asset_partitions_def, asset_partition_key_range, dynamic_partitions_store=instance
         )
     elif asset_partition_key_range:
         asset_partitions_subset = KeyRangeNoPartitionsDefPartitionsSubset(asset_partition_key_range)
@@ -616,7 +652,7 @@ def build_input_context(
         name=name,
         job_name=None,
         config=config,
-        metadata=metadata,
+        definition_metadata=definition_metadata,
         upstream_output=upstream_output,
         dagster_type=dagster_type,
         log_manager=initialize_console_manager(None),
@@ -640,6 +676,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_keys_not_in_subset(
         self,
+        partitions_def: "PartitionsDefinition",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Iterable[str]:
@@ -653,6 +690,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
 
     def get_partition_key_ranges(
         self,
+        partitions_def: "PartitionsDefinition",
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> Sequence[PartitionKeyRange]:
@@ -672,7 +710,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @property
-    def partitions_def(self) -> "PartitionsDefinition":
+    def partitions_def(self) -> Optional["PartitionsDefinition"]:
         raise NotImplementedError()
 
     def __len__(self) -> int:
@@ -698,5 +736,7 @@ class KeyRangeNoPartitionsDefPartitionsSubset(PartitionsSubset):
         raise NotImplementedError()
 
     @classmethod
-    def empty_subset(cls, partitions_def: "PartitionsDefinition") -> "PartitionsSubset":
+    def empty_subset(
+        cls, partitions_def: Optional["PartitionsDefinition"] = None
+    ) -> "PartitionsSubset":
         raise NotImplementedError()

@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type SidebarOpGraphsQueryVariables = Types.Exact<{
   selector: Types.PipelineSelector;
-  handleID: Types.Scalars['String'];
+  handleID: Types.Scalars['String']['input'];
 }>;
 
 export type SidebarOpGraphsQuery = {

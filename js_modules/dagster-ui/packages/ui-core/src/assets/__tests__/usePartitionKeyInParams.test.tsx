@@ -1,11 +1,10 @@
-import {render, waitFor, screen} from '@testing-library/react';
-import React from 'react';
+import {render, screen, waitFor} from '@testing-library/react';
 
 import {usePartitionKeyInParams} from '../usePartitionKeyInParams';
 
 describe('usePartitionKeyInParams', () => {
   it('should parse and set a one-dimensional partition key', async () => {
-    const HookUse: React.FC = () => {
+    const HookUse = () => {
       const setParams = jest.fn();
       const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
         params: {partition: 'VA'},
@@ -25,7 +24,7 @@ describe('usePartitionKeyInParams', () => {
   });
 
   it('should default to no value for a one-dimensional partition key', async () => {
-    const HookUse: React.FC = () => {
+    const HookUse = () => {
       const [focusedDimensionKeys] = usePartitionKeyInParams({
         params: {},
         setParams: jest.fn(),
@@ -41,7 +40,7 @@ describe('usePartitionKeyInParams', () => {
   });
 
   it('should parse and set a two-dimensional partition key', async () => {
-    const HookUse: React.FC = () => {
+    const HookUse = () => {
       const setParams = jest.fn();
       const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
         params: {partition: '2022-05-01|VA'},
@@ -69,7 +68,7 @@ describe('usePartitionKeyInParams', () => {
   });
 
   it('should allow a partial selection of just the first partition key', async () => {
-    const HookUse: React.FC = () => {
+    const HookUse = () => {
       const setParams = jest.fn();
       const [, setFocusedDimensionKey] = usePartitionKeyInParams({
         params: {partition: ''},
@@ -88,7 +87,7 @@ describe('usePartitionKeyInParams', () => {
   });
 
   it('should default to no values for a two-dimensional partition key', async () => {
-    const HookUse: React.FC = () => {
+    const HookUse = () => {
       const [focusedDimensionKeys] = usePartitionKeyInParams({
         params: {},
         setParams: jest.fn(),
@@ -105,7 +104,7 @@ describe('usePartitionKeyInParams', () => {
   });
 
   it('should default to the 1st key of dimension 1 if dimension 2 is selected first', async () => {
-    const HookUse: React.FC = () => {
+    const HookUse = () => {
       const setParams = jest.fn();
       const [focusedDimensionKeys, setFocusedDimensionKey] = usePartitionKeyInParams({
         params: {},

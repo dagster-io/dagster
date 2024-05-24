@@ -8,7 +8,7 @@ lesson: '7'
 
 Like other Dagster definitions, jobs and schedules can be viewed and managed in the Dagster UI. The UI contains information about where the jobs and schedules are used, as well as the ability to toggle them on and off.
 
-In addition to viewing and managing jobs and schedules in the UI, running `dagster dev` also spins up the `dagster-daemon`. The `dagster-daemon` is a long-running process that does things like check the time to see if a schedule should be run or if a sensor should be ticked, which we’ll cover more in the next lesson.
+In addition to viewing and managing jobs and schedules in the UI, running `dagster dev` also spins up the `dagster-daemon`. The `dagster-daemon` is a long-running process that does things like check the time to see if a schedule should be run or if a sensor should be ticked, which we’ll cover more in a later lesson.
 
 To ensure the jobs and schedules are visible, **reload the definitions** before continuing.
 

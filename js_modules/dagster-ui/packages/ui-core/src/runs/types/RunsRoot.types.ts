@@ -3,8 +3,8 @@
 import * as Types from '../../graphql/types';
 
 export type RunsRootQueryVariables = Types.Exact<{
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
   filter: Types.RunsFilter;
 }>;
 
@@ -39,6 +39,8 @@ export type RunsRootQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          rootConcurrencyKeys: Array<string> | null;
+          hasUnconstrainedRootNodes: boolean;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -57,25 +59,4 @@ export type RunsRootQuery = {
           tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       };
-};
-
-export type QueueDaemonStatusQueryVariables = Types.Exact<{[key: string]: never}>;
-
-export type QueueDaemonStatusQuery = {
-  __typename: 'Query';
-  instance: {
-    __typename: 'Instance';
-    id: string;
-    daemonHealth: {
-      __typename: 'DaemonHealth';
-      id: string;
-      daemonStatus: {
-        __typename: 'DaemonStatus';
-        id: string;
-        daemonType: string;
-        healthy: boolean | null;
-        required: boolean;
-      };
-    };
-  };
 };

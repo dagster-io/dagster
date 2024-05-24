@@ -69,7 +69,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
     def from_config_value(
         cls, inst_data: ConfigurableClassData, config_value: Mapping[str, Any]
     ) -> Self:
-        return DockerRunLauncher(inst_data=inst_data, **config_value)
+        return cls(inst_data=inst_data, **config_value)
 
     def get_container_context(self, dagster_run: DagsterRun) -> DockerContainerContext:
         return DockerContainerContext.create_for_run(dagster_run, self)

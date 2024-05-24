@@ -61,6 +61,11 @@ config:
   {{- if $gcsComputeLogManagerConfig.uploadInterval }}
   upload_interval: {{ $gcsComputeLogManagerConfig.uploadInterval }}
   {{- end }}
+
+  {{- if $gcsComputeLogManagerConfig.showUrlOnly }}
+  show_url_only: {{ $gcsComputeLogManagerConfig.showUrlOnly }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.s3" }}

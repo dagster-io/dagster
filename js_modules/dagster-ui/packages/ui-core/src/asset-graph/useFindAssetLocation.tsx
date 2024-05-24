@@ -1,16 +1,15 @@
 import {gql, useApolloClient} from '@apollo/client';
-import React from 'react';
-
-import {AssetKey} from '../assets/types';
-import {AssetKeyInput} from '../graphql/types';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {RepoAddress} from '../workspace/types';
+import {useCallback} from 'react';
 
 import {isHiddenAssetGroupJob} from './Utils';
 import {
   AssetForNavigationQuery,
   AssetForNavigationQueryVariables,
 } from './types/useFindAssetLocation.types';
+import {AssetKey} from '../assets/types';
+import {AssetKeyInput} from '../graphql/types';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
 
 export interface AssetLocation {
   assetKey: AssetKey;
@@ -23,7 +22,7 @@ export interface AssetLocation {
 export function useFindAssetLocation() {
   const apollo = useApolloClient();
 
-  return React.useCallback(
+  return useCallback(
     async (key: AssetKeyInput): Promise<AssetLocation> => {
       const {data} = await apollo.query<AssetForNavigationQuery, AssetForNavigationQueryVariables>({
         query: ASSET_FOR_NAVIGATION_QUERY,

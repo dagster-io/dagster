@@ -1,22 +1,26 @@
 import os
 import random
+import re
 import string
 import uuid
 import warnings
 from collections import OrderedDict
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from contextvars import copy_context
 from typing import (
     AbstractSet,
     Any,
     Iterable,
     Mapping,
+    Optional,
     Sequence,
     Tuple,
+    TypedDict,
     TypeVar,
     Union,
     cast,
 )
+from weakref import WeakSet
 
 import toposort as toposort_
 from typing_extensions import Final
@@ -113,6 +117,13 @@ def check_dagster_package_version(library_name: str, library_version: str) -> No
             warnings.warn(message)
 
 
+def get_env_var_name(env_var_str: str):
+    if "=" in env_var_str:
+        return env_var_str.split("=", maxsplit=1)[0]
+    else:
+        return env_var_str
+
+
 def parse_env_var(env_var_str: str) -> Tuple[str, str]:
     if "=" in env_var_str:
         split = env_var_str.split("=", maxsplit=1)
@@ -124,9 +135,64 @@ def parse_env_var(env_var_str: str) -> Tuple[str, str]:
         return (env_var_str, cast(str, env_var_value))
 
 
-class InheritContextThreadPoolExecutor(ThreadPoolExecutor):
+class RequestUtilizationMetrics(TypedDict):
+    """A dict of utilization metrics for a threadpool executor. We use generic language in case we use this metrics in a scenario where we switch away from a threadpool executor at a later time."""
+
+    max_concurrent_requests: Optional[int]
+    num_running_requests: Optional[int]
+    num_queued_requests: Optional[int]
+
+
+class FuturesAwareThreadPoolExecutor(ThreadPoolExecutor):
+    def __init__(
+        self,
+        max_workers: Optional[int] = None,
+        thread_name_prefix: str = "",
+        initializer: Any = None,
+        initargs: Tuple[Any, ...] = (),
+    ) -> None:
+        super().__init__(max_workers, thread_name_prefix, initializer, initargs)
+        # The default threadpool class doesn't track the futures it creates,
+        # so if we want to be able to count the number of running futures, we need to do it ourselves.
+        self._tracked_futures: WeakSet[Future] = WeakSet()
+
+    def submit(self, fn, *args, **kwargs) -> Future:
+        new_future = super().submit(fn, *args, **kwargs)
+        self._tracked_futures.add(new_future)
+        return new_future
+
+    @property
+    def max_workers(self) -> int:
+        return self._max_workers
+
+    @property
+    def weak_tracked_futures_count(self) -> int:
+        return len(self._tracked_futures)
+
+    @property
+    def num_running_futures(self) -> int:
+        return sum(1 for f in self._tracked_futures if not f.done()) - self.num_queued_futures
+
+    @property
+    def num_queued_futures(self) -> int:
+        return self._work_queue.qsize()
+
+    def get_current_utilization_metrics(self) -> RequestUtilizationMetrics:
+        return {
+            "max_concurrent_requests": self.max_workers,
+            "num_running_requests": self.num_running_futures,
+            "num_queued_requests": self.num_queued_futures,
+        }
+
+
+class InheritContextThreadPoolExecutor(FuturesAwareThreadPoolExecutor):
     """A ThreadPoolExecutor that copies over contextvars at submit time."""
 
     def submit(self, fn, *args, **kwargs):
         ctx = copy_context()
         return super().submit(ctx.run, fn, *args, **kwargs)
+
+
+def is_valid_email(email: str) -> bool:
+    regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b"
+    return bool(re.fullmatch(regex, email))

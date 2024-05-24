@@ -1,12 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
-import {
-  LiveDataForNodeMaterialized,
-  LiveDataForNodeMaterializedAndOverdue,
-} from '../../asset-graph/__fixtures__/AssetNode.fixtures';
 import {
   AssetFreshnessInfo,
   FreshnessPolicy,
@@ -29,13 +24,13 @@ const TEST_LAG_MINUTES = 4 * 60 + 30;
 const TEST_TIME = Date.now();
 const LAST_MATERIALIZATION_TIME = TEST_TIME - 4 * 60 * 1000;
 
-const mockLiveData = {
-  ...LiveDataForNodeMaterializedAndOverdue,
-  lastMaterialization: {
-    ...LiveDataForNodeMaterializedAndOverdue.lastMaterialization!,
-    timestamp: `${LAST_MATERIALIZATION_TIME}`,
-  },
-};
+// const mockLiveData = {
+//   ...LiveDataForNodeMaterializedAndOverdue,
+//   lastMaterialization: {
+//     ...LiveDataForNodeMaterializedAndOverdue.lastMaterialization!,
+//     timestamp: `${LAST_MATERIALIZATION_TIME}`,
+//   },
+// };
 
 function buildOverduePopoverMock(
   policy: FreshnessPolicy,
@@ -105,11 +100,7 @@ export const OverdueCronSchedule = () => {
       mocks={[buildOverduePopoverMock(mockFreshnessPolicyCron, freshnessInfo)]}
     >
       <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
-        <OverdueTag
-          assetKey={{path: ['inp8']}}
-          liveData={{...mockLiveData, freshnessInfo}}
-          policy={mockFreshnessPolicyCron}
-        />
+        <OverdueTag assetKey={{path: ['inp8']}} policy={mockFreshnessPolicyCron} />
         Hover for details, times are relative to last cron tick (eg: earlier). Note: The relative
         materialization times in the modal are not mocked to align with the cron schedule tick.
       </Box>
@@ -136,11 +127,7 @@ export const OverdueNoSchedule = () => {
       mocks={[buildOverduePopoverMock(mockFreshnessPolicy, freshnessInfo)]}
     >
       <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
-        <OverdueTag
-          assetKey={{path: ['inp8']}}
-          liveData={{...mockLiveData, freshnessInfo}}
-          policy={mockFreshnessPolicy}
-        />
+        <OverdueTag assetKey={{path: ['inp8']}} policy={mockFreshnessPolicy} />
         {' Hover for details, times are relative to now (eg: "ago")'}
       </Box>
     </MockedProvider>
@@ -168,11 +155,7 @@ export const OverdueNoUpstreams = () => {
       mocks={[buildOverduePopoverMock(mockFreshnessPolicy, freshnessInfo, false)]}
     >
       <Box style={{width: 400}} flex={{gap: 8, alignItems: 'center'}}>
-        <OverdueTag
-          assetKey={{path: ['inp8']}}
-          liveData={{...mockLiveData, freshnessInfo}}
-          policy={mockFreshnessPolicy}
-        />
+        <OverdueTag assetKey={{path: ['inp8']}} policy={mockFreshnessPolicy} />
         {' Hover for details. "derived from upstream data" omitted from description.'}
       </Box>
     </MockedProvider>
@@ -186,19 +169,15 @@ export const NeverMaterialized = () => {
     maximumLagMinutes: 24 * 60,
     lastEvaluationTimestamp: `${TEST_TIME}`,
   });
-  const freshnessInfo = {
-    __typename: 'AssetFreshnessInfo' as const,
-    currentMinutesLate: null,
-    currentLagMinutes: null,
-  };
+  // const freshnessInfo = {
+  //   __typename: 'AssetFreshnessInfo' as const,
+  //   currentMinutesLate: null,
+  //   currentLagMinutes: null,
+  // };
 
   return (
     <MockedProvider cache={createAppCache()} mocks={[]}>
-      <OverdueTag
-        assetKey={{path: ['inp8']}}
-        policy={mockFreshnessPolicy}
-        liveData={{...mockLiveData, freshnessInfo}}
-      />
+      <OverdueTag assetKey={{path: ['inp8']}} policy={mockFreshnessPolicy} />
     </MockedProvider>
   );
 };
@@ -221,11 +200,7 @@ export const Fresh = () => {
       cache={createAppCache()}
       mocks={[buildOverduePopoverMock(mockFreshnessPolicyMet, freshnessInfo)]}
     >
-      <OverdueTag
-        assetKey={{path: ['inp8']}}
-        policy={mockFreshnessPolicyMet}
-        liveData={{...mockLiveData, freshnessInfo}}
-      />
+      <OverdueTag assetKey={{path: ['inp8']}} policy={mockFreshnessPolicyMet} />
     </MockedProvider>
   );
 };
@@ -239,11 +214,7 @@ export const NoFreshnessInfo = () => {
   });
   return (
     <MockedProvider cache={createAppCache()} mocks={[]}>
-      <OverdueTag
-        assetKey={{path: ['inp8']}}
-        liveData={LiveDataForNodeMaterialized}
-        policy={mockFreshnessPolicy}
-      />
+      <OverdueTag assetKey={{path: ['inp8']}} policy={mockFreshnessPolicy} />
     </MockedProvider>
   );
 };

@@ -1,9 +1,9 @@
 import {Meta} from '@storybook/react';
-import * as React from 'react';
 import styled from 'styled-components';
 
+import {Colors} from '../Color';
 import {Group} from '../Group';
-import {Menu, MenuItem, MenuDivider} from '../Menu';
+import {Menu, MenuDivider, MenuItem} from '../Menu';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -37,10 +37,20 @@ export const Default = () => {
           <MenuItem intent="danger" icon="delete" text="Delete" />
         </Menu>
       </Container>
+      <Container style={{width: '180px'}}>
+        <Menu>
+          <MenuDivider title="Here you can save" />
+          <MenuItem icon="download_for_offline" text="Save" />
+          <MenuDivider title="Here you can attach" />
+          <MenuItem icon="attach_file" text="Attach" />
+          <MenuDivider title="Here you can delete" />
+          <MenuItem intent="danger" icon="delete" text="Delete" />
+        </Menu>
+      </Container>
     </Group>
   );
 };
 
 const Container = styled.div`
-  box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
+  box-shadow: ${Colors.shadowDefault()} 0px 2px 12px;
 `;

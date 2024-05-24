@@ -1,8 +1,8 @@
-import React from 'react';
+import * as React from 'react';
 import styled from 'styled-components';
 
 import {Box} from './Box';
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {Body, Subheading} from './Text';
 import {FontFamily} from './styles';
 
@@ -48,6 +48,9 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, info: any) {
+    if (typeof jest !== 'undefined') {
+      throw error;
+    }
     (this.context as ErrorCollectionContextValue).onReportError(error, {
       info,
       region: this.props.region,
@@ -64,12 +67,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       return (
         <Box
           style={{width: '100%', height: '100%', flex: 1, overflow: 'hidden'}}
-          border={{side: 'all', color: Colors.HighlightRed}}
+          border={{side: 'all', color: Colors.accentRed()}}
           flex={{direction: 'column', gap: 8}}
           padding={16}
         >
           <Subheading>Sorry, {this.props.region} can&apos;t be displayed.</Subheading>
-          <Body color={Colors.Gray700}>{errorCollectionMessage}</Body>
+          <Body color={Colors.textLight()}>{errorCollectionMessage}</Body>
           {errorStackIncluded && <Trace>{`${error.message}\n\n${error.stack}`}</Trace>}
         </Box>
       );
@@ -80,7 +83,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 }
 
 const Trace = styled.div`
-  color: ${Colors.Gray700};
+  color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
   font-size: 1em;
   white-space: pre;

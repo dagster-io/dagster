@@ -1,16 +1,15 @@
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
 
-import {PartitionDefinitionType} from '../graphql/types';
-
 import {AssetPartitionStatus, emptyAssetPartitionStatusCounts} from './AssetPartitionStatus';
 import {
-  PartitionHealthData,
-  PartitionHealthDimension,
   PartitionDimensionSelection,
-  Range,
+  PartitionHealthData,
   PartitionHealthDataMerged,
+  PartitionHealthDimension,
+  Range,
 } from './usePartitionHealthData';
+import {PartitionDefinitionType} from '../graphql/types';
 
 export function isTimeseriesDimension(dimension: PartitionHealthDimension) {
   return isTimeseriesPartition(dimension.partitionKeys[0]);
@@ -36,7 +35,10 @@ the asset health bar you see is a flattened representation of the health of all 
 "show per-asset health" button beneath.
 
 */
-export function mergedAssetHealth(assetHealth: PartitionHealthData[]): PartitionHealthDataMerged {
+export function mergedAssetHealth(
+  assetHealth: PartitionHealthData[],
+  skipDimensionLengthsMatchingCheck: boolean = false,
+): PartitionHealthDataMerged {
   if (!assetHealth.length) {
     return {
       dimensions: [],
@@ -57,7 +59,8 @@ export function mergedAssetHealth(assetHealth: PartitionHealthData[]): Partition
       h.dimensions.every(
         (dim, idx) => dim.partitionKeys.length === dimensions[idx]!.partitionKeys.length,
       ),
-    )
+    ) &&
+    !skipDimensionLengthsMatchingCheck
   ) {
     throw new Error(
       'Attempting to show unified asset health for assets with dimension of different lengths',

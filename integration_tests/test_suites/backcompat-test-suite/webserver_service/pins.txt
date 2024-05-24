@@ -13,3 +13,6 @@ grpcio<1.48.1; python_version < '3.10'
 
 # Added sqlalchemy pins in later versions
 sqlalchemy<2.0.0
+
+# Added pendulum pin in later versions
+pendulum<3

@@ -19,38 +19,41 @@ Now that you have a query that produces an asset, let’s use Dagster to manage 
 
    ```python
    @asset(
-   	deps=["taxi_trips_file"]
+       deps=["taxi_trips_file"]
    )
-   def taxi_trips():
-   		"""
-           The raw taxi trips dataset, loaded into a DuckDB database
+   def taxi_trips() -> None:
        """
-   		sql_query = """
-   				create or replace table trips as (
-   						select
-   								VendorID as vendor_id,
-   								PULocationID as pickup_zone_id,
-   								DOLocationID as dropoff_zone_id,
-   								RatecodeID as rate_code_id,
-   								payment_type as payment_type,
-   								tpep_dropoff_datetime as dropoff_datetime,
-   								tpep_pickup_datetime as pickup_datetime,
-   								trip_distance as trip_distance,
-   								passenger_count as passenger_count,
-   								total_amount as total_amount
-   						from 'data/raw/taxi_trips_2023-03.parquet'
-   				);
-   		"""
+         The raw taxi trips dataset, loaded into a DuckDB database
+       """
+       sql_query = """
+           create or replace table trips as (
+             select
+               VendorID as vendor_id,
+               PULocationID as pickup_zone_id,
+               DOLocationID as dropoff_zone_id,
+               RatecodeID as rate_code_id,
+               payment_type as payment_type,
+               tpep_dropoff_datetime as dropoff_datetime,
+               tpep_pickup_datetime as pickup_datetime,
+               trip_distance as trip_distance,
+               passenger_count as passenger_count,
+               total_amount as total_amount
+             from 'data/raw/taxi_trips_2023-03.parquet'
+           );
+       """
 
-   		conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
-   		conn.execute(sql_query)
+       conn = duckdb.connect(os.getenv("DUCKDB_DATABASE"))
+       conn.execute(sql_query)
    ```
 
    Let’s walk through what this code does:
 
    1. Using the `@asset` decorator, an asset named `taxi_trips` is created.
+
    2. The `taxi_trips_file` asset is defined as a dependency of `taxi_trips` through the `deps` argument.
+
    3. Next, a variable named `sql_query` is created. This variable contains a SQL query that creates a table named `trips`, which sources its data from the `data/raw/taxi_trips_2023-03.parquet` file. This is the file created by the `taxi_trips_file` asset.
+
    4. A variable named `conn` is created, which defines the connection to the DuckDB database in the project. To do this, it uses the `.connect` method from the `duckdb` library, passing in the `DUCKDB_DATABASE` environment variable to tell DuckDB where the database is located.
 
       The `DUCKDB_DATABASE` environment variable, sourced from your project’s `.env` file, resolves to `data/staging/data.duckdb`. **Note**: We set up this file in Lesson 2 - refer to this lesson if you need a refresher. If this file isn’t set up correctly, the materialization will result in an error.
@@ -58,6 +61,7 @@ Now that you have a query that produces an asset, let’s use Dagster to manage 
    5. Finally, `conn` is paired with the DuckDB `execute` method, where our SQL query (`sql_query`) is passed in as an argument. This tells the asset that, when materializing, to connect to the DuckDB database and execute the query in `sql_query`.
 
 3. Save the changes to the file.
+
 4. In the Dagster UI, navigate to the **Global asset lineage** page:
 
    ![The asset graph in the Dagster UI with the taxi_trips_file and taxi_zones_file assets](/images/dagster-essentials/lesson-4/asset-graph.png)
@@ -72,7 +76,10 @@ Once reloaded, the `taxi_trips` asset will display in the asset graph:
 
 Notice the arrow from the `taxi_trips` file asset to the `taxi_trips` asset: this indicates the dependency that `taxi_trips` has on `taxi_trips_file`.
 
-> **When should definitions be reloaded**? If you installed dependencies with `pip install -e ".[dev]"`, you’ll only need to reload definitions when adding new assets or other Dagster objects, such as schedules, to your project. Because of the `-e` editable flag, Dagster can pick up the changes in your asset function’s code without needing to reload the code location again.
+{% callout %}
+
+> 💡 **When should definitions be reloaded**? If you installed dependencies with `pip install -e ".[dev]"`, you’ll only need to reload definitions when adding new assets or other Dagster objects, such as schedules, to your project. Because of the `-e` editable flag, Dagster can pick up the changes in your asset function’s code without needing to reload the code location again.
+> {% /callout %}
 
 ---
 

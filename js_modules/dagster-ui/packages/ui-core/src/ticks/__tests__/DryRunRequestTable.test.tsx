@@ -1,5 +1,4 @@
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 
 import {RunRequestTable} from '../DryRunRequestTable';

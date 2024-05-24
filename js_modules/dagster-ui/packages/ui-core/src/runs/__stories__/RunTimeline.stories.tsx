@@ -1,6 +1,6 @@
 import {Meta} from '@storybook/react';
 import faker from 'faker';
-import * as React from 'react';
+import {useMemo} from 'react';
 
 import {RunStatus} from '../../graphql/types';
 import {RunTimeline, TimelineJob} from '../../runs/RunTimeline';
@@ -17,10 +17,10 @@ const makeRepoAddress = () =>
   buildRepoAddress(faker.random.words(1).toLowerCase(), faker.random.words(1).toLowerCase());
 
 export const OneRow = () => {
-  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const sixHoursAgo = useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     const repoAddress = makeRepoAddress();
     return [
@@ -39,10 +39,10 @@ export const OneRow = () => {
 };
 
 export const RowWithOverlappingRuns = () => {
-  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const sixHoursAgo = useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     const repoAddress = makeRepoAddress();
     const [first, second, third] = generateRunMocks(3, [sixHoursAgo, now]);
@@ -62,10 +62,10 @@ export const RowWithOverlappingRuns = () => {
 };
 
 export const OverlapWithRunning = () => {
-  const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const twoHoursAgo = useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     const repoAddress = makeRepoAddress();
     return [
@@ -103,10 +103,10 @@ export const OverlapWithRunning = () => {
 };
 
 export const ManyRows = () => {
-  const sixHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const sixHoursAgo = useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const repoAddress = makeRepoAddress();
     return [...new Array(12)].reduce((accum) => {
       const jobKey = faker.random.words(3).split(' ').join('-').toLowerCase();
@@ -127,12 +127,12 @@ export const ManyRows = () => {
 };
 
 export const VeryLongRunning = () => {
-  const fourHoursAgo = React.useMemo(() => Date.now() - 4 * 60 * 60 * 1000, []);
-  const sixHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
-  const twoDaysAgo = React.useMemo(() => Date.now() - 48 * 60 * 60 * 1000, []);
-  const future = React.useMemo(() => Date.now() + 1 * 60 * 60 * 1000, []);
+  const fourHoursAgo = useMemo(() => Date.now() - 4 * 60 * 60 * 1000, []);
+  const sixHoursAgo = useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const twoDaysAgo = useMemo(() => Date.now() - 48 * 60 * 60 * 1000, []);
+  const future = useMemo(() => Date.now() + 1 * 60 * 60 * 1000, []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const repoAddress = makeRepoAddress();
     const jobKeyA = faker.random.words(2).split(' ').join('-').toLowerCase();
     const jobKeyB = faker.random.words(2).split(' ').join('-').toLowerCase();
@@ -174,10 +174,10 @@ export const VeryLongRunning = () => {
 };
 
 export const MultipleStatusesBatched = () => {
-  const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const twoHoursAgo = useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     const repoAddress = makeRepoAddress();
     return [
@@ -227,10 +227,10 @@ export const MultipleStatusesBatched = () => {
 };
 
 export const BatchThresholdTesting = () => {
-  const threeHoursAgo = React.useMemo(() => Date.now() - 3 * 60 * 60 * 1000, []);
-  const now = React.useMemo(() => Date.now(), []);
+  const threeHoursAgo = useMemo(() => Date.now() - 3 * 60 * 60 * 1000, []);
+  const now = useMemo(() => Date.now(), []);
 
-  const jobs: TimelineJob[] = React.useMemo(() => {
+  const jobs: TimelineJob[] = useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     const repoAddress = makeRepoAddress();
     return [

@@ -2,10 +2,10 @@ import os
 import sys
 from contextlib import contextmanager
 from threading import Event
-from typing import Any, Iterator, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterator, NoReturn, Optional, Sequence, Tuple, Type, cast
 
+import google.protobuf.message
 import grpc
-from google.protobuf.reflection import GeneratedProtocolMessageType
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
@@ -13,8 +13,8 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
-from dagster._core.host_representation.origin import ExternalRepositoryOrigin
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
@@ -33,11 +33,21 @@ from .types import (
     PartitionSetExecutionParamArgs,
     SensorExecutionArgs,
 )
-from .utils import default_grpc_timeout, max_rx_bytes, max_send_bytes
+from .utils import (
+    default_grpc_timeout,
+    default_repository_grpc_timeout,
+    default_schedule_grpc_timeout,
+    default_sensor_grpc_timeout,
+    max_rx_bytes,
+    max_send_bytes,
+)
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 
 DEFAULT_GRPC_TIMEOUT = default_grpc_timeout()
+DEFAULT_SCHEDULE_GRPC_TIMEOUT = default_schedule_grpc_timeout()
+DEFAULT_SENSOR_GRPC_TIMEOUT = default_sensor_grpc_timeout()
+DEFAULT_REPOSITORY_GRPC_TIMEOUT = default_repository_grpc_timeout()
 
 
 def client_heartbeat_thread(client: "DagsterGrpcClient", shutdown_event: Event) -> None:
@@ -62,6 +72,7 @@ class DagsterGrpcClient:
         metadata: Optional[Sequence[Tuple[str, str]]] = None,
     ):
         self.port = check.opt_int_param(port, "port")
+
         self.socket = check.opt_str_param(socket, "socket")
         self.host = check.opt_str_param(host, "host")
         self._use_ssl = check.bool_param(use_ssl, "use_ssl")
@@ -122,14 +133,19 @@ class DagsterGrpcClient:
     def _get_response(
         self,
         method: str,
-        request: str,
+        request: google.protobuf.message.Message,
         timeout: int = DEFAULT_GRPC_TIMEOUT,
     ):
         with self._channel() as channel:
             stub = DagsterApiStub(channel)
             return getattr(stub, method)(request, metadata=self._metadata, timeout=timeout)
 
-    def _raise_grpc_exception(self, e: Exception, timeout, custom_timeout_message=None):
+    def _raise_grpc_exception(
+        self,
+        e: Exception,
+        timeout: int,
+        custom_timeout_message: Optional[str] = None,
+    ) -> NoReturn:
         if isinstance(e, grpc.RpcError):
             if e.code() == grpc.StatusCode.DEADLINE_EXCEEDED:  # type: ignore  # (bad stubs)
                 raise DagsterUserCodeUnreachableError(
@@ -146,9 +162,9 @@ class DagsterGrpcClient:
     def _query(
         self,
         method: str,
-        request_type: GeneratedProtocolMessageType,
-        timeout=DEFAULT_GRPC_TIMEOUT,
-        custom_timeout_message=None,
+        request_type: Type[google.protobuf.message.Message],
+        timeout: int = DEFAULT_GRPC_TIMEOUT,
+        custom_timeout_message: Optional[str] = None,
         **kwargs,
     ):
         try:
@@ -161,7 +177,7 @@ class DagsterGrpcClient:
     def _get_streaming_response(
         self,
         method: str,
-        request: str,
+        request: google.protobuf.message.Message,
         timeout: int = DEFAULT_GRPC_TIMEOUT,
     ) -> Iterator[Any]:
         with self._channel() as channel:
@@ -170,8 +186,8 @@ class DagsterGrpcClient:
 
     def _streaming_query(
         self,
-        method,
-        request_type,
+        method: str,
+        request_type: Type[google.protobuf.message.Message],
         timeout=DEFAULT_GRPC_TIMEOUT,
         custom_timeout_message=None,
         **kwargs,
@@ -185,17 +201,20 @@ class DagsterGrpcClient:
                 e, timeout=timeout, custom_timeout_message=custom_timeout_message
             )
 
-    def ping(self, echo: str):
+    def ping(self, echo: str) -> Dict[str, Any]:
         check.str_param(echo, "echo")
         res = self._query("Ping", api_pb2.PingRequest, echo=echo)
-        return res.echo
+        return {
+            "echo": res.echo,
+            "serialized_server_utilization_metrics": res.serialized_server_utilization_metrics,
+        }
 
-    def heartbeat(self, echo: str = ""):
+    def heartbeat(self, echo: str = "") -> str:
         check.str_param(echo, "echo")
         res = self._query("Heartbeat", api_pb2.PingRequest, echo=echo)
         return res.echo
 
-    def streaming_ping(self, sequence_length: int, echo: str):
+    def streaming_ping(self, sequence_length: int, echo: str) -> Iterator[dict]:
         check.int_param(sequence_length, "sequence_length")
         check.str_param(echo, "echo")
 
@@ -214,7 +233,9 @@ class DagsterGrpcClient:
         res = self._query("GetServerId", api_pb2.Empty, timeout=timeout)
         return res.server_id
 
-    def execution_plan_snapshot(self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs):
+    def execution_plan_snapshot(
+        self, execution_plan_snapshot_args: ExecutionPlanSnapshotArgs
+    ) -> str:
         check.inst_param(
             execution_plan_snapshot_args, "execution_plan_snapshot_args", ExecutionPlanSnapshotArgs
         )
@@ -225,11 +246,11 @@ class DagsterGrpcClient:
         )
         return res.serialized_execution_plan_snapshot
 
-    def list_repositories(self):
+    def list_repositories(self) -> str:
         res = self._query("ListRepositories", api_pb2.ListRepositoriesRequest)
         return res.serialized_list_repositories_response_or_error
 
-    def external_partition_names(self, partition_names_args):
+    def external_partition_names(self, partition_names_args: PartitionNamesArgs) -> str:
         check.inst_param(partition_names_args, "partition_names_args", PartitionNamesArgs)
 
         res = self._query(
@@ -240,7 +261,7 @@ class DagsterGrpcClient:
 
         return res.serialized_external_partition_names_or_external_partition_execution_error
 
-    def external_partition_config(self, partition_args):
+    def external_partition_config(self, partition_args: PartitionArgs) -> str:
         check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         res = self._query(
@@ -251,7 +272,7 @@ class DagsterGrpcClient:
 
         return res.serialized_external_partition_config_or_external_partition_execution_error
 
-    def external_partition_tags(self, partition_args):
+    def external_partition_tags(self, partition_args: PartitionArgs) -> str:
         check.inst_param(partition_args, "partition_args", PartitionArgs)
 
         res = self._query(
@@ -262,7 +283,9 @@ class DagsterGrpcClient:
 
         return res.serialized_external_partition_tags_or_external_partition_execution_error
 
-    def external_partition_set_execution_params(self, partition_set_execution_param_args):
+    def external_partition_set_execution_params(
+        self, partition_set_execution_param_args: PartitionSetExecutionParamArgs
+    ) -> str:
         check.inst_param(
             partition_set_execution_param_args,
             "partition_set_execution_param_args",
@@ -281,7 +304,7 @@ class DagsterGrpcClient:
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
-    def external_pipeline_subset(self, pipeline_subset_snapshot_args):
+    def external_pipeline_subset(self, pipeline_subset_snapshot_args: JobSubsetSnapshotArgs) -> str:
         check.inst_param(
             pipeline_subset_snapshot_args,
             "pipeline_subset_snapshot_args",
@@ -296,18 +319,18 @@ class DagsterGrpcClient:
 
         return res.serialized_external_pipeline_subset_result
 
-    def reload_code(self, timeout: int):
+    def reload_code(self, timeout: int) -> api_pb2.ReloadCodeReply:
         return self._query("ReloadCode", api_pb2.ReloadCodeRequest, timeout=timeout)
 
     def external_repository(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
-    ):
+    ) -> str:
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
-            ExternalRepositoryOrigin,
+            RemoteRepositoryOrigin,
         )
 
         res = self._query(
@@ -322,13 +345,13 @@ class DagsterGrpcClient:
 
     def external_job(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         job_name: str,
-    ):
+    ) -> api_pb2.ExternalJobReply:
         check.inst_param(
             external_repository_origin,
             "external_repository_origin",
-            ExternalRepositoryOrigin,
+            RemoteRepositoryOrigin,
         )
 
         return self._query(
@@ -340,45 +363,96 @@ class DagsterGrpcClient:
 
     def streaming_external_repository(
         self,
-        external_repository_origin: ExternalRepositoryOrigin,
+        external_repository_origin: RemoteRepositoryOrigin,
         defer_snapshots: bool = False,
-    ):
+        timeout=DEFAULT_REPOSITORY_GRPC_TIMEOUT,
+    ) -> Iterator[dict]:
         for res in self._streaming_query(
             "StreamingExternalRepository",
             api_pb2.ExternalRepositoryRequest,
             # Rename parameter
             serialized_repository_python_origin=serialize_value(external_repository_origin),
             defer_snapshots=defer_snapshots,
+            timeout=timeout,
         ):
             yield {
                 "sequence_number": res.sequence_number,
                 "serialized_external_repository_chunk": res.serialized_external_repository_chunk,
             }
 
-    def external_schedule_execution(self, external_schedule_execution_args):
+    def _is_unimplemented_error(self, e: Exception) -> bool:
+        return (
+            isinstance(e.__cause__, grpc.RpcError)
+            and cast(grpc.RpcError, e.__cause__).code() == grpc.StatusCode.UNIMPLEMENTED
+        )
+
+    def external_schedule_execution(
+        self, external_schedule_execution_args: ExternalScheduleExecutionArgs
+    ) -> str:
         check.inst_param(
             external_schedule_execution_args,
             "external_schedule_execution_args",
             ExternalScheduleExecutionArgs,
         )
 
-        chunks = list(
-            self._streaming_query(
-                "ExternalScheduleExecution",
+        # The timeout for the schedule can be defined in one of three ways.
+        #   1. By the default grpc timeout
+        #   2. By the DEFAULT_SCHEDULE_GRPC_TIMEOUT environment variable
+        #   3. By the client.
+        # The DEFAULT_SCHEDULE_GRPC_TIMEOUT constant takes the maximum of (1) and
+        # (2), while
+        # the client may pass a timeout argument via the
+        # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
+        timeout = (
+            external_schedule_execution_args.timeout
+            if external_schedule_execution_args.timeout is not None
+            else DEFAULT_SCHEDULE_GRPC_TIMEOUT
+        )
+
+        try:
+            return self._query(
+                "SyncExternalScheduleExecution",
                 api_pb2.ExternalScheduleExecutionRequest,
                 serialized_external_schedule_execution_args=serialize_value(
                     external_schedule_execution_args
                 ),
-            )
-        )
+                timeout=timeout,
+            ).serialized_schedule_result
+        except Exception as e:
+            # On older servers that only have the streaming API call implemented, fall back to that API
+            if self._is_unimplemented_error(e):
+                chunks = list(
+                    self._streaming_query(
+                        "ExternalScheduleExecution",
+                        api_pb2.ExternalScheduleExecutionRequest,
+                        serialized_external_schedule_execution_args=serialize_value(
+                            external_schedule_execution_args
+                        ),
+                        timeout=timeout,
+                    )
+                )
+                return "".join([chunk.serialized_chunk for chunk in chunks])
+            else:
+                raise
 
-        return "".join([chunk.serialized_chunk for chunk in chunks])
-
-    def external_sensor_execution(self, sensor_execution_args, timeout=DEFAULT_GRPC_TIMEOUT):
+    def external_sensor_execution(self, sensor_execution_args: SensorExecutionArgs) -> str:
         check.inst_param(
             sensor_execution_args,
             "sensor_execution_args",
             SensorExecutionArgs,
+        )
+        # The timeout for the sensor can be defined in one of three ways.
+        #   1. By the default grpc timeout
+        #   2. By the DEFAULT_SENSOR_GRPC_TIMEOUT environment variable
+        #   3. By the client.
+        # The DEFAULT_SENSOR_GRPC_TIMEOUT constant takes the maximum of (1) and
+        # (2), while
+        # the client may pass a timeout argument via the
+        # `sensor_execution_args` object. If the timeout is passed from the client, we use that value irrespective of what the other timeout values may be set to.
+        timeout = (
+            sensor_execution_args.timeout
+            if sensor_execution_args.timeout is not None
+            else DEFAULT_SENSOR_GRPC_TIMEOUT
         )
 
         custom_timeout_message = (
@@ -388,19 +462,34 @@ class DagsterGrpcClient:
             " left off."
         )
 
-        chunks = list(
-            self._streaming_query(
-                "ExternalSensorExecution",
+        try:
+            return self._query(
+                "SyncExternalSensorExecution",
                 api_pb2.ExternalSensorExecutionRequest,
                 timeout=timeout,
                 serialized_external_sensor_execution_args=serialize_value(sensor_execution_args),
                 custom_timeout_message=custom_timeout_message,
-            )
-        )
+            ).serialized_sensor_result
+        except Exception as e:
+            # On older servers that only have the streaming API call implemented, fall back to that API
+            if self._is_unimplemented_error(e):
+                chunks = list(
+                    self._streaming_query(
+                        "ExternalSensorExecution",
+                        api_pb2.ExternalSensorExecutionRequest,
+                        timeout=timeout,
+                        serialized_external_sensor_execution_args=serialize_value(
+                            sensor_execution_args
+                        ),
+                        custom_timeout_message=custom_timeout_message,
+                    )
+                )
 
-        return "".join([chunk.serialized_chunk for chunk in chunks])
+                return "".join([chunk.serialized_chunk for chunk in chunks])
+            else:
+                raise
 
-    def external_notebook_data(self, notebook_path: str):
+    def external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         res = self._query(
             "ExternalNotebookData",
@@ -409,11 +498,11 @@ class DagsterGrpcClient:
         )
         return res.content
 
-    def shutdown_server(self, timeout=15):
+    def shutdown_server(self, timeout: int = 15) -> str:
         res = self._query("ShutdownServer", api_pb2.Empty, timeout=timeout)
         return res.serialized_shutdown_server_result
 
-    def cancel_execution(self, cancel_execution_request):
+    def cancel_execution(self, cancel_execution_request: CancelExecutionRequest) -> str:
         check.inst_param(
             cancel_execution_request,
             "cancel_execution_request",
@@ -432,7 +521,7 @@ class DagsterGrpcClient:
         self,
         can_cancel_execution_request: CanCancelExecutionRequest,
         timeout: int = DEFAULT_GRPC_TIMEOUT,
-    ):
+    ) -> str:
         check.inst_param(
             can_cancel_execution_request,
             "can_cancel_execution_request",
@@ -448,7 +537,7 @@ class DagsterGrpcClient:
 
         return res.serialized_can_cancel_execution_result
 
-    def start_run(self, execute_run_args: ExecuteExternalJobArgs):
+    def start_run(self, execute_run_args: ExecuteExternalJobArgs) -> str:
         check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalJobArgs)
 
         with DagsterInstance.from_ref(execute_run_args.instance_ref) as instance:  # type: ignore # (possible none)
@@ -471,11 +560,11 @@ class DagsterGrpcClient:
                 )
                 raise
 
-    def get_current_image(self):
+    def get_current_image(self) -> str:
         res = self._query("GetCurrentImage", api_pb2.Empty)
         return res.serialized_current_image
 
-    def get_current_runs(self):
+    def get_current_runs(self) -> str:
         res = self._query("GetCurrentRuns", api_pb2.Empty)
         return res.serialized_current_runs
 

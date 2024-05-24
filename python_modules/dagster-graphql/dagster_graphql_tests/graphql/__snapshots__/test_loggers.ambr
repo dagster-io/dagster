@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_mode_fetch_loggers[0]
   dict({
     'pipelineOrError': dict({

@@ -1,19 +1,18 @@
 import {useVirtualizer} from '@tanstack/react-virtual';
-import * as React from 'react';
-
-import {Container, Inner} from '../ui/VirtualizedTable';
-import {RepoAddress} from '../workspace/types';
+import {useRef} from 'react';
 
 import {VirtualizedResourceHeader, VirtualizedResourceRow} from './VirtualizedResourceRow';
 import {ResourceEntryFragment} from './types/WorkspaceResourcesRoot.types';
+import {Container, Inner} from '../ui/VirtualizedTable';
+import {RepoAddress} from '../workspace/types';
 
 interface Props {
   repoAddress: RepoAddress;
   resources: ResourceEntryFragment[];
 }
 
-export const VirtualizedResourceTable: React.FC<Props> = ({repoAddress, resources}) => {
-  const parentRef = React.useRef<HTMLDivElement | null>(null);
+export const VirtualizedResourceTable = ({repoAddress, resources}: Props) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const rowVirtualizer = useVirtualizer({
     count: resources.length,
@@ -26,26 +25,24 @@ export const VirtualizedResourceTable: React.FC<Props> = ({repoAddress, resource
   const items = rowVirtualizer.getVirtualItems();
 
   return (
-    <>
-      <VirtualizedResourceHeader />
-      <div style={{overflow: 'hidden'}}>
-        <Container ref={parentRef}>
-          <Inner $totalHeight={totalHeight}>
-            {items.map(({index, key, size, start}) => {
-              const row: ResourceEntryFragment = resources[index]!;
-              return (
-                <VirtualizedResourceRow
-                  key={key}
-                  repoAddress={repoAddress}
-                  height={size}
-                  start={start}
-                  {...row}
-                />
-              );
-            })}
-          </Inner>
-        </Container>
-      </div>
-    </>
+    <div style={{overflow: 'hidden'}}>
+      <Container ref={parentRef}>
+        <VirtualizedResourceHeader />
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const row: ResourceEntryFragment = resources[index]!;
+            return (
+              <VirtualizedResourceRow
+                key={key}
+                repoAddress={repoAddress}
+                height={size}
+                start={start}
+                {...row}
+              />
+            );
+          })}
+        </Inner>
+      </Container>
+    </div>
   );
 };

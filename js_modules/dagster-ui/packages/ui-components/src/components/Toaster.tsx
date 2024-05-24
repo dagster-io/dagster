@@ -1,10 +1,9 @@
 // eslint-disable-next-line no-restricted-imports
-import {IToasterProps, ToasterInstance, ToastProps} from '@blueprintjs/core';
-import React from 'react';
+import {IToasterProps, ToastProps, ToasterInstance} from '@blueprintjs/core';
 import {createGlobalStyle} from 'styled-components';
 
-import {Colors} from './Colors';
-import {IconName, Icon} from './Icon';
+import {Colors} from './Color';
+import {Icon, IconName, IconWrapper} from './Icon';
 import {createToaster} from './createToaster';
 
 export const GlobalToasterStyle = createGlobalStyle`
@@ -14,8 +13,8 @@ export const GlobalToasterStyle = createGlobalStyle`
       border-radius: 8px;
       font-size: 14px;
       line-height: 22px;
-      color: ${Colors.White};
-      background-color: ${Colors.Gray700};
+      color: ${Colors.alwaysWhite()};
+      background-color: ${Colors.accentGray()};
     }
 
     .bp4-button-group {
@@ -29,28 +28,32 @@ export const GlobalToasterStyle = createGlobalStyle`
       gap: 8px;
     }
 
+    .bp4-icon-cross {
+      color: ${Colors.alwaysWhite()} !important;
+    }
+
+    ${IconWrapper} {
+      background-color: ${Colors.alwaysWhite()} !important;
+    }
+
     .bp4-toast.bp4-intent-primary,
     .bp4-toast.bp4-intent-primary .bp4-button {
-      background-color: ${Colors.Gray700} !important;
+      background-color: ${Colors.accentGray()} !important;
     }
 
     .bp4-toast.bp4-intent-success,
     .bp4-toast.bp4-intent-success .bp4-button {
-      background-color: ${Colors.Blue500} !important;
+      background-color: ${Colors.accentBlue()} !important;
     }
 
     .bp4-toast.bp4-intent-warning,
     .bp4-toast.bp4-intent-warning .bp4-button {
-      background-color: ${Colors.Gray700} !important;
-
-      .bp4-icon-cross {
-        color: ${Colors.Gray300} !important;
-      }
+      background-color: ${Colors.accentGray()} !important;
     }
 
     .bp4-toast.bp4-intent-danger,
     .bp4-toast.bp4-intent-danger .bp4-button {
-      background-color: ${Colors.Red500} !important;
+      background-color: ${Colors.accentRed()} !important;
     }
   }
 `;
@@ -66,7 +69,7 @@ const setup = (instance: ToasterInstance): DToaster => {
     if (icon && typeof icon === 'string') {
       rest.message = (
         <>
-          <Icon name={icon} color={Colors.White} />
+          <Icon name={icon} color={Colors.accentPrimary()} />
           {rest.message}
         </>
       );

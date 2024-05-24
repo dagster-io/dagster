@@ -1,5 +1,4 @@
 import {render, screen, waitFor} from '@testing-library/react';
-import * as React from 'react';
 
 import {
   IExecutionSession,
@@ -223,6 +222,8 @@ describe('ExecutionSessionStorage', () => {
               mode: 'default',
               needsRefresh: false,
               assetSelection: null,
+              assetChecksAvailable: [],
+              includeSeparatelyExecutableChecks: true,
               solidSelection: null,
               solidSelectionQuery: '*',
               flattenGraphs: false,
@@ -271,6 +272,8 @@ describe('ExecutionSessionStorage', () => {
               mode: 'default',
               needsRefresh: false,
               assetSelection: null,
+              assetChecksAvailable: [],
+              includeSeparatelyExecutableChecks: true,
               solidSelection: null,
               solidSelectionQuery: '*',
               flattenGraphs: false,

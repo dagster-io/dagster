@@ -1,7 +1,5 @@
 import {Colors} from '@dagster-io/ui-components';
 
-import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
-
 import {
   BOX_DOT_WIDTH_CUTOFF,
   BOX_SPACING_X,
@@ -15,7 +13,8 @@ import {
   IGanttNode,
   LEFT_INSET,
 } from './Constants';
-import {isDynamicStep, isPlannedDynamicStep, dynamicKeyWithoutIndex} from './DynamicStepSupport';
+import {dynamicKeyWithoutIndex, isDynamicStep, isPlannedDynamicStep} from './DynamicStepSupport';
+import {IRunMetadataDict, IStepAttempt, IStepState} from '../runs/RunMetadataProvider';
 
 export interface BuildLayoutParams {
   nodes: IGanttNode[];
@@ -254,21 +253,21 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
 };
 
 const TextColorForStates = {
-  [IStepState.RUNNING]: Colors.Blue700,
-  [IStepState.RETRY_REQUESTED]: Colors.White,
-  [IStepState.SUCCEEDED]: Colors.White,
-  [IStepState.FAILED]: Colors.White,
-  [IStepState.SKIPPED]: Colors.White,
-  [IStepState.UNKNOWN]: Colors.White,
+  [IStepState.RUNNING]: Colors.textBlue(),
+  [IStepState.RETRY_REQUESTED]: Colors.accentWhite(),
+  [IStepState.SUCCEEDED]: Colors.accentWhite(),
+  [IStepState.FAILED]: Colors.accentWhite(),
+  [IStepState.SKIPPED]: Colors.accentWhite(),
+  [IStepState.UNKNOWN]: Colors.accentWhite(),
 };
 
 const BackgroundColorForStates = {
-  [IStepState.RUNNING]: Colors.Blue100,
-  [IStepState.RETRY_REQUESTED]: Colors.Yellow500,
-  [IStepState.SUCCEEDED]: Colors.Green500,
-  [IStepState.FAILED]: Colors.Red500,
-  [IStepState.SKIPPED]: Colors.Gray500,
-  [IStepState.UNKNOWN]: Colors.Gray400,
+  [IStepState.RUNNING]: Colors.backgroundBlue(),
+  [IStepState.RETRY_REQUESTED]: Colors.accentYellow(),
+  [IStepState.SUCCEEDED]: Colors.accentGreen(),
+  [IStepState.FAILED]: Colors.accentRed(),
+  [IStepState.SKIPPED]: Colors.accentGray(),
+  [IStepState.UNKNOWN]: Colors.accentGrayHover(),
 };
 
 export const boxStyleFor = (
@@ -289,16 +288,16 @@ export const boxStyleFor = (
   // Step has started and has state? Return state color.
   if (state && state !== IStepState.PREPARING) {
     return {
-      color: TextColorForStates[state] || Colors.White,
-      background: BackgroundColorForStates[state] || Colors.Gray400,
+      color: TextColorForStates[state] || Colors.accentReversed(),
+      background: BackgroundColorForStates[state] || Colors.backgroundLight(),
     };
   }
 
   // Step has not started, use "hypothetical dotted box".
   return {
-    color: Colors.Gray600,
-    background: Colors.White,
-    border: `1.5px dotted ${Colors.Gray500}`,
+    color: Colors.textLight(),
+    background: Colors.backgroundDefault(),
+    border: `1.5px dotted ${Colors.accentGray()}`,
   };
 };
 

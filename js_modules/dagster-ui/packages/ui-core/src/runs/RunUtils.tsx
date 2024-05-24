@@ -1,16 +1,7 @@
 import {gql} from '@apollo/client';
 import {History} from 'history';
 import qs from 'qs';
-import * as React from 'react';
-
-import {Mono} from '../../../ui-components/src';
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {showSharedToaster} from '../app/DomUtils';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
-import {Timestamp} from '../app/time/Timestamp';
-import {AssetKey} from '../assets/types';
-import {ExecutionParams, RunStatus} from '../graphql/types';
+import {createContext, memo, useEffect} from 'react';
 
 import {DagsterTag} from './RunTag';
 import {StepSelection} from './StepSelection';
@@ -18,6 +9,15 @@ import {TimeElapsed} from './TimeElapsed';
 import {RunFragment} from './types/RunFragments.types';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
+import {Mono} from '../../../ui-components/src';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {showSharedToaster} from '../app/DomUtils';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {Timestamp} from '../app/time/Timestamp';
+import {asAssetCheckHandleInput, asAssetKeyInput} from '../assets/asInput';
+import {AssetKey} from '../assets/types';
+import {ExecutionParams, RunStatus} from '../graphql/types';
 
 export function titleForRun(run: {id: string}) {
   return run.id.split('-').shift();
@@ -35,7 +35,7 @@ export function assetKeysForRun(run: {
 
 export function linkToRunEvent(
   run: {id: string},
-  event: {timestamp?: string; stepKey: string | null},
+  event: {timestamp?: string | number; stepKey: string | null},
 ) {
   return `/runs/${run.id}?${qs.stringify({
     focusedTime: event.timestamp ? Number(event.timestamp) : undefined,
@@ -44,12 +44,12 @@ export function linkToRunEvent(
   })}`;
 }
 
-export const RunsQueryRefetchContext = React.createContext<{
+export const RunsQueryRefetchContext = createContext<{
   refetch: () => void;
 }>({refetch: () => {}});
 
 export function useDidLaunchEvent(cb: () => void, delay = 1500) {
-  React.useEffect(() => {
+  useEffect(() => {
     const handler = () => {
       setTimeout(cb, delay);
     };
@@ -144,22 +144,13 @@ function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   };
 }
 
-export type ReExecutionStyle =
-  | {type: 'all'}
-  | {type: 'from-failure'}
-  | {type: 'selection'; selection: StepSelection};
-
-export function getReexecutionVariables(input: {
+export function getReexecutionParamsForSelection(input: {
   run: (RunFragment | RunTableRunFragment) & {runConfigYaml: string};
-  style: ReExecutionStyle;
+  selection: StepSelection;
   repositoryLocationName: string;
   repositoryName: string;
 }) {
-  const {run, style, repositoryLocationName, repositoryName} = input;
-
-  if (!run || !run.pipelineSnapshotId) {
-    return undefined;
-  }
+  const {run, selection, repositoryLocationName, repositoryName} = input;
 
   const executionParams: ExecutionParams = {
     mode: run.mode,
@@ -170,28 +161,20 @@ export function getReexecutionVariables(input: {
       repositoryName,
       pipelineName: run.pipelineName,
       solidSelection: run.solidSelection,
-      assetSelection: run.assetSelection
-        ? run.assetSelection.map((asset_key) => ({
-            path: asset_key.path,
-          }))
-        : null,
+      assetSelection: run.assetSelection ? run.assetSelection.map(asAssetKeyInput) : [],
+      assetCheckSelection: run.assetCheckSelection
+        ? run.assetCheckSelection.map(asAssetCheckHandleInput)
+        : [],
     },
   };
 
-  if (style.type === 'from-failure') {
-    executionParams.executionMetadata?.tags?.push({
-      key: DagsterTag.IsResumeRetry,
-      value: 'true',
-    });
-  }
-  if (style.type === 'selection') {
-    executionParams.stepKeys = style.selection.keys;
-    executionParams.executionMetadata?.tags?.push({
-      key: DagsterTag.StepSelection,
-      value: style.selection.query,
-    });
-  }
-  return {executionParams};
+  executionParams.stepKeys = selection.keys;
+  executionParams.executionMetadata?.tags?.push({
+    key: DagsterTag.StepSelection,
+    value: selection.query,
+  });
+
+  return executionParams;
 }
 
 export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
@@ -238,27 +221,32 @@ export const DELETE_MUTATION = gql`
 `;
 
 export const TERMINATE_MUTATION = gql`
-  mutation Terminate($runId: String!, $terminatePolicy: TerminateRunPolicy) {
-    terminatePipelineExecution(runId: $runId, terminatePolicy: $terminatePolicy) {
-      ... on TerminateRunFailure {
-        message
-      }
-      ... on RunNotFoundError {
-        message
-      }
-      ... on TerminateRunSuccess {
-        run {
-          id
-          canTerminate
+  mutation Terminate($runIds: [String!]!, $terminatePolicy: TerminateRunPolicy) {
+    terminateRuns(runIds: $runIds, terminatePolicy: $terminatePolicy) {
+      ...PythonErrorFragment
+      ... on TerminateRunsResult {
+        terminateRunResults {
+          ...PythonErrorFragment
+          ... on RunNotFoundError {
+            message
+          }
+          ... on UnauthorizedError {
+            message
+          }
+          ... on TerminateRunFailure {
+            message
+          }
+          ... on TerminateRunSuccess {
+            run {
+              id
+              canTerminate
+            }
+          }
         }
-      }
-      ... on UnauthorizedError {
-        message
       }
       ...PythonErrorFragment
     }
   }
-
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
@@ -301,7 +289,7 @@ interface RunTimeProps {
   run: RunTimeFragment;
 }
 
-export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
+export const RunTime = memo(({run}: RunTimeProps) => {
   const {startTime, updateTime} = run;
 
   return (
@@ -315,7 +303,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   );
 });
 
-export const RunStateSummary: React.FC<RunTimeProps> = React.memo(({run}) => {
+export const RunStateSummary = memo(({run}: RunTimeProps) => {
   // kind of a hack, but we manually set the start time to the end time in the graphql resolver
   // for this case, so check for start/end time equality for the failed to start condition
   const failedToStart =

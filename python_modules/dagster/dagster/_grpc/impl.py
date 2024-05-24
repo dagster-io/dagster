@@ -3,13 +3,23 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Generator, Iterator, Optional, Sequence, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Generator,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import pendulum
 
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -31,8 +41,10 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_run_iterator
-from dagster._core.host_representation import external_job_data_from_def
-from dagster._core.host_representation.external_data import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_representation import external_job_data_from_def
+from dagster._core.remote_representation.external_data import (
     ExternalJobSubsetResult,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
@@ -44,8 +56,7 @@ from dagster._core.host_representation.external_data import (
     ExternalSensorExecutionErrorData,
     job_name_for_external_partition_set_name,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
+from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
@@ -60,6 +71,10 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
 
 from .types import ExecuteExternalJobArgs
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+    from dagster._core.definitions.sensor_definition import SensorExecutionData
 
 
 class RunInSubprocessComplete:
@@ -192,10 +207,8 @@ def _run_in_subprocess(
 
             if not dagster_run:
                 raise DagsterRunNotFoundError(
-                    "gRPC server could not load run {run_id} in order to execute it. Make sure that"
-                    " the gRPC server has access to your run storage.".format(
-                        run_id=execute_run_args.run_id
-                    ),
+                    f"gRPC server could not load run {execute_run_args.run_id} in order to execute it. Make sure that"
+                    " the gRPC server has access to your run storage.",
                     invalid_run_id=execute_run_args.run_id,
                 )
 
@@ -263,7 +276,8 @@ def get_external_pipeline_subset_result(
     job_name: str,
     op_selection: Optional[Sequence[str]],
     asset_selection: Optional[AbstractSet[AssetKey]],
-    asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+    asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
+    include_parent_snapshot: bool,
 ):
     try:
         definition = repo_def.get_maybe_subset_job_def(
@@ -272,7 +286,9 @@ def get_external_pipeline_subset_result(
             asset_selection=asset_selection,
             asset_check_selection=asset_check_selection,
         )
-        external_job_data = external_job_data_from_def(definition)
+        external_job_data = external_job_data_from_def(
+            definition, include_parent_snapshot=include_parent_snapshot
+        )
         return ExternalJobSubsetResult(success=True, external_job_data=external_job_data)
     except Exception:
         return ExternalJobSubsetResult(
@@ -286,7 +302,8 @@ def get_external_schedule_execution(
     schedule_name: str,
     scheduled_execution_timestamp: Optional[float],
     scheduled_execution_timezone: Optional[str],
-):
+    log_key: Optional[Sequence[str]],
+) -> Union["ScheduleExecutionData", ExternalScheduleExecutionErrorData]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
     try:
@@ -311,6 +328,7 @@ def get_external_schedule_execution(
         with ScheduleEvaluationContext(
             instance_ref,
             scheduled_execution_time,
+            log_key,
             repo_def.name,
             schedule_name,
             resources=resources_to_build,
@@ -331,12 +349,15 @@ def get_external_schedule_execution(
 
 def get_external_sensor_execution(
     repo_def: RepositoryDefinition,
+    code_location_origin: CodeLocationOrigin,
     instance_ref: Optional[InstanceRef],
     sensor_name: str,
-    last_completion_timestamp: Optional[float],
+    last_tick_completion_timestamp: Optional[float],
     last_run_key: Optional[str],
     cursor: Optional[str],
-):
+    log_key: Optional[Sequence[str]],
+    last_sensor_start_timestamp: Optional[float],
+) -> Union["SensorExecutionData", ExternalSensorExecutionErrorData]:
     from dagster._core.execution.resources_init import get_transitive_required_resource_keys
 
     try:
@@ -353,19 +374,21 @@ def get_external_sensor_execution(
 
         with SensorEvaluationContext(
             instance_ref,
-            last_completion_time=last_completion_timestamp,
+            last_tick_completion_time=last_tick_completion_timestamp,
             last_run_key=last_run_key,
             cursor=cursor,
+            log_key=log_key,
             repository_name=repo_def.name,
             repository_def=repo_def,
             sensor_name=sensor_name,
             resources=resources_to_build,
+            last_sensor_start_time=last_sensor_start_timestamp,
+            code_location_origin=code_location_origin,
         ) as sensor_context:
             with user_code_error_boundary(
                 SensorExecutionError,
                 lambda: (
-                    "Error occurred during the execution of evaluation_fn for sensor {sensor_name}"
-                    .format(sensor_name=sensor_def.name)
+                    f"Error occurred during the execution of evaluation_fn for sensor {sensor_def.name}"
                 ),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
@@ -554,11 +577,9 @@ def get_partition_set_execution_param_data(
             for key in partition_keys:
 
                 def _error_message_fn(partition_name: str):
-                    return (
-                        lambda: (
-                            "Error occurred during the partition config and tag generation for"
-                            f" '{partition_name}' in partitioned config on job '{job_def.name}'"
-                        )
+                    return lambda: (
+                        "Error occurred during the partition config and tag generation for"
+                        f" '{partition_name}' in partitioned config on job '{job_def.name}'"
                     )
 
                 with user_code_error_boundary(PartitionExecutionError, _error_message_fn(key)):

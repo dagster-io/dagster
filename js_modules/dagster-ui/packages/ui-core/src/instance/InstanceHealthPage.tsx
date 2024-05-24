@@ -1,35 +1,39 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Colors, PageHeader, Heading, Subheading} from '@dagster-io/ui-components';
-import * as React from 'react';
-
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {useTrackPageView} from '../app/analytics';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {Box, Colors, Heading, PageHeader, Subheading} from '@dagster-io/ui-components';
+import {useContext} from 'react';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstancePageContext} from './InstancePageContext';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceHealthQuery, InstanceHealthQueryVariables} from './types/InstanceHealthPage.types';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
+import {useTrackPageView} from '../app/analytics';
+import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
-export const InstanceHealthPage = () => {
+export const InstanceHealthPageContent = () => {
   useTrackPageView();
   useDocumentTitle('Daemons');
 
-  const {pageTitle} = React.useContext(InstancePageContext);
   const queryData = useQuery<InstanceHealthQuery, InstanceHealthQueryVariables>(
     INSTANCE_HEALTH_QUERY,
     {
       notifyOnNetworkStatusChange: true,
     },
   );
+  useBlockTraceOnQueryResult(queryData, 'InstanceHealthQuery');
   const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
   const {loading, data} = queryData;
 
   const daemonContent = () => {
     if (loading && !data?.instance) {
       return (
-        <Box padding={{horizontal: 24}} style={{color: Colors.Gray400}}>
+        <Box padding={{horizontal: 24}} style={{color: Colors.textLight()}}>
           Loading…
         </Box>
       );
@@ -40,15 +44,27 @@ export const InstanceHealthPage = () => {
   };
 
   return (
-    <>
-      <PageHeader
-        title={<Heading>{pageTitle}</Heading>}
-        tabs={<InstanceTabs tab="health" refreshState={refreshState} />}
-      />
-      <Box padding={{vertical: 16, horizontal: 24}}>
+    <div style={{overflowY: 'auto'}}>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
+      >
         <Subheading>Daemon statuses</Subheading>
+        <div>
+          <QueryRefreshCountdown refreshState={refreshState} />
+        </div>
       </Box>
       {daemonContent()}
+    </div>
+  );
+};
+
+export const InstanceHealthPage = () => {
+  const {pageTitle} = useContext(InstancePageContext);
+  return (
+    <>
+      <PageHeader title={<Heading>{pageTitle}</Heading>} tabs={<InstanceTabs tab="health" />} />
+      <InstanceHealthPageContent />
     </>
   );
 };

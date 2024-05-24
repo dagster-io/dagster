@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import * as React from 'react';
 
 import {InstigationStateFragment} from '../instigation/types/InstigationUtils.types';
 
@@ -18,9 +17,11 @@ export const REPOSITORY_INFO_FRAGMENT = gql`
   }
 `;
 
-export const InstigatorSelectorInformation: React.FC<{
+export const InstigatorSelectorInformation = ({
+  instigatorState,
+}: {
   instigatorState: InstigationStateFragment;
-}> = ({instigatorState}) => {
+}) => {
   return (
     <>
       <div>

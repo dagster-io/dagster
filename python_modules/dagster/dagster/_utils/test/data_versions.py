@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, c
 from typing_extensions import Literal
 
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
@@ -186,6 +187,7 @@ def materialize_assets(
     partition_key: Optional[str] = None,
     run_config: Optional[Mapping[str, Any]] = None,
     tags: Optional[Mapping[str, str]] = None,
+    selection: Optional[CoercibleToAssetSelection] = None,
 ) -> MaterializationTable:
     result = materialize(
         assets,
@@ -194,6 +196,7 @@ def materialize_assets(
         partition_key=partition_key,
         run_config=run_config,
         tags=tags,
+        selection=selection,
     )
     return get_mats_from_result(result, assets)
 

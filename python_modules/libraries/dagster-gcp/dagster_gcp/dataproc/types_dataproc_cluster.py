@@ -7,7 +7,6 @@ parse_dataproc_configs.py \
 
 """
 
-
 from dagster import Enum, EnumValue
 
 Component = Enum(

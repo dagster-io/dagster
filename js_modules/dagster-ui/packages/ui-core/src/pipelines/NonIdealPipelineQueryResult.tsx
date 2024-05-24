@@ -1,5 +1,4 @@
 import {NonIdealState} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -26,7 +25,7 @@ interface Props {
       };
 }
 
-export const NonIdealPipelineQueryResult: React.FC<Props> = ({isGraph, repoAddress, result}) => {
+export const NonIdealPipelineQueryResult = ({isGraph, repoAddress, result}: Props) => {
   if (result.__typename === 'PipelineSnapshotNotFoundError') {
     return (
       <NonIdealState

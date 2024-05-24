@@ -1,6 +1,6 @@
 from dagster_k8s import k8s_job_executor
 
-from dagster import asset, define_asset_job
+from dagster import AssetExecutionContext, asset, define_asset_job
 
 
 # fmt: off
@@ -16,7 +16,7 @@ from dagster import asset, define_asset_job
         }
     }
 )
-def my_asset(context):
+def my_asset(context: AssetExecutionContext):
     context.log.info("running")
 
 my_job = define_asset_job(name="my_job", selection="my_asset", executor_def=k8s_job_executor)

@@ -17,11 +17,11 @@ from dagster import (
     _seven,
 )
 from dagster._config.pythonic_config import Config, infer_schema_from_config_class
-from dagster._config.pythonic_config.inheritance_utils import safe_is_subclass
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.utils import validate_tags
+from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
@@ -199,9 +199,7 @@ def execute_notebook(
 
         except Exception as ex:
             step_context.log.warn(
-                "Error when attempting to materialize executed notebook: {exc}".format(
-                    exc=str(serializable_error_info_from_exc_info(sys.exc_info()))
-                )
+                f"Error when attempting to materialize executed notebook: {serializable_error_info_from_exc_info(sys.exc_info())!s}"
             )
 
             if isinstance(ex, ExecutionError):
@@ -414,7 +412,7 @@ def define_dagstermill_op(
     default_description = f"This op is backed by the notebook at {notebook_path}"
     description = check.opt_str_param(description, "description", default=default_description)
 
-    user_tags = validate_tags(tags)
+    user_tags = normalize_tags(tags).tags
     if tags is not None:
         check.invariant(
             "notebook_path" not in tags,

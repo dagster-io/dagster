@@ -1,6 +1,5 @@
 import {waitFor} from '@testing-library/dom';
 import {render, screen} from '@testing-library/react';
-import * as React from 'react';
 
 import {DeploymentStatusContext} from '../../instance/DeploymentStatusProvider';
 import {WorkspaceStatus} from '../WorkspaceStatus';

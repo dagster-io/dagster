@@ -15,7 +15,7 @@ def items(context) -> pd.DataFrame:
     rows = []
     log_count = 0
     # Hacker News API is 1-indexed, so adjust range by 1
-    for item_id in range(max_id - context.op_config["N"] + 1, max_id + 1):
+    for item_id in range(max_id - context.op_execution_context.op_config["N"] + 1, max_id + 1):
         rows.append(hn_client.fetch_item_by_id(item_id))
         log_count += 1
         if log_count >= 50:

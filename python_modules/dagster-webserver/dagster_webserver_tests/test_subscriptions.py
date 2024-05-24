@@ -1,6 +1,7 @@
 import gc
 import sys
 from contextlib import contextmanager
+from typing import Iterator
 from unittest import mock
 
 import objgraph
@@ -36,7 +37,7 @@ COMPUTE_LOG_SUBSCRIPTION = """
 
 
 @contextmanager
-def create_asgi_client(instance):
+def create_asgi_client(instance) -> Iterator[TestClient]:
     yaml_paths = [file_relative_path(__file__, "./workspace.yaml")]
 
     with WorkspaceProcessContext(
@@ -82,7 +83,7 @@ def example_job():
     example_op()
 
 
-def test_event_log_subscription():
+def test_event_log_subscription() -> None:
     with instance_for_test() as instance:
         run = example_job.execute_in_process(instance=instance)
         assert run.success
@@ -90,6 +91,7 @@ def test_event_log_subscription():
 
         with create_asgi_client(instance) as client:
             with client.websocket_connect("/graphql", GraphQLWS.PROTOCOL) as ws:
+                assert str(ws.accepted_subprotocol) == "graphql-ws"
                 start_subscription(ws, EVENT_LOG_SUBSCRIPTION, {"runId": run.run_id})
                 gc.collect()
                 assert len(objgraph.by_type("async_generator")) == 1

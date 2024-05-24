@@ -28,10 +28,17 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_k8s_tests*"]),
-    install_requires=[f"dagster{pin}", "kubernetes"],
+    python_requires=">=3.8,<3.13",
+    install_requires=[
+        f"dagster{pin}",
+        "kubernetes",
+        # exclude a google-auth release that added an overly restrictive urllib3 pin that confuses dependency resolvers
+        "google-auth!=2.23.1",
+    ],
     zip_safe=False,
 )

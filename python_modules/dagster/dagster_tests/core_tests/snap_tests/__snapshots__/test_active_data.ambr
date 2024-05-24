@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: test_external_job_data
   '''
   {
@@ -1131,6 +1132,7 @@
     "external_partition_set_datas": [
       {
         "__class__": "ExternalPartitionSetData",
+        "backfill_policy": null,
         "external_partitions_data": {
           "__class__": "ExternalTimeWindowPartitionsDefinitionData",
           "cron_schedule": "15 0 * * *",

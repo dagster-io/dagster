@@ -11,7 +11,13 @@ class SchedulerType(str, Enum):
     CUSTOM = "CustomScheduler"
 
 
+class DaemonSchedulerConfig(BaseModel):
+    maxCatchupRuns: Optional[int]
+    maxTickRetries: Optional[int]
+
+
 class SchedulerConfig(BaseModel):
+    daemonScheduler: Optional[DaemonSchedulerConfig]
     customScheduler: Optional[ConfigurableClass]
 
     class Config:

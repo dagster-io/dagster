@@ -6,17 +6,22 @@ import {
   Button,
   ButtonLink,
   Checkbox,
+  Code,
   Colors,
+  FontFamily,
   Icon,
   SplitPanelContainer,
   Tag,
-  Code,
   Tooltip,
-  FontFamily,
 } from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {LaunchpadType} from './types';
+import {
+  RunPreviewValidationErrorsFragment,
+  RunPreviewValidationFragment,
+} from './types/RunPreview.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {useConfirmation} from '../app/CustomConfirmationProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -26,12 +31,6 @@ import {
   CompositeConfigTypeForSchemaFragment,
   ConfigEditorRunConfigSchemaFragment,
 } from '../configeditor/types/ConfigEditorUtils.types';
-
-import {LaunchpadType} from './types';
-import {
-  RunPreviewValidationErrorsFragment,
-  RunPreviewValidationFragment,
-} from './types/RunPreview.types';
 
 type ValidationError = RunPreviewValidationErrorsFragment;
 type ValidationErrorOrNode = ValidationError | React.ReactNode;
@@ -137,7 +136,7 @@ const RemoveExtraConfigButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           No extra config to remove
         </Box>
       ) : null}
@@ -192,7 +191,7 @@ const ScaffoldConfigButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           No missing config
         </Box>
       ) : null}
@@ -229,7 +228,7 @@ const ExpandDefaultButton = ({
       </Button>
       {disabled ? (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="check_circle" color={Colors.Green500} />
+          <Icon name="check_circle" color={Colors.accentGreen()} />
           All defaults expanded
         </Box>
       ) : null}
@@ -251,7 +250,7 @@ interface RunPreviewProps {
   solidSelection: string[] | null;
 }
 
-export const RunPreview: React.FC<RunPreviewProps> = (props) => {
+export const RunPreview = (props: RunPreviewProps) => {
   const {
     document,
     validation,
@@ -423,7 +422,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               ))
             ) : (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                <Icon name="check_circle" color={Colors.Green500} />
+                <Icon name="check_circle" color={Colors.accentGreen()} />
                 No errors
               </Box>
             )}
@@ -488,11 +487,11 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
               top: 0,
               right: 0,
               padding: '12px 15px 0px 10px',
-              background: 'rgba(255,255,255,0.7)',
+              background: Colors.backgroundDefault(),
             }}
           >
             <Checkbox
-              label="Errors Only"
+              label="Errors only"
               checked={errorsOnly}
               onChange={() => setErrorsOnly(!errorsOnly)}
             />
@@ -560,7 +559,7 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
 `;
 
 const SectionTitle = styled.div`
-  color: ${Colors.Gray400};
+  color: ${Colors.textLight()};
   text-transform: uppercase;
   font-size: 12px;
   margin-bottom: 8px;
@@ -592,7 +591,7 @@ const ErrorListContainer = styled.div`
 
 const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   text-align: left;
-  font-size: 13px;
+  font-size: 11px;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: ${FontFamily.monospace};
@@ -610,7 +609,7 @@ const ErrorRowContainer = styled.div<{hoverable: boolean}>`
   ${({hoverable}) =>
     hoverable &&
     `&:hover {
-      background: ${Colors.Gray50};
+      background: ${Colors.backgroundLight()};
     }
   `}
 `;
@@ -623,10 +622,13 @@ const RuntimeAndResourcesSection = styled.div`
   }
 `;
 
-const ErrorRow: React.FC<{
+const ErrorRow = ({
+  error,
+  onHighlight,
+}: {
   error: ValidationError | React.ReactNode;
   onHighlight: (path: string[]) => void;
-}> = ({error, onHighlight}) => {
+}) => {
   let message: React.ReactNode = null;
   let target: ValidationError | null = null;
   if (isValidationError(error)) {
@@ -647,7 +649,7 @@ const ErrorRow: React.FC<{
       onClick={() => target && onHighlight(errorStackToYamlPath(target.stack.entries))}
     >
       <div style={{paddingRight: 4}}>
-        <Icon name="error" color={Colors.Red500} />
+        <Icon name="error" color={Colors.accentRed()} />
       </div>
       <div>
         {displayed}

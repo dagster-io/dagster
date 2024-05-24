@@ -1,0 +1,7 @@
+*
+!.gitignore
+!extensions.json
+!README.md
+!settings.json.default
+!launch.json.default
+!tasks.json.default

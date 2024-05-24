@@ -61,6 +61,12 @@ class SecretsManagerResource(ResourceWithBoto3Configuration):
             max_attempts=self.max_attempts,
             region_name=self.region_name,
             profile_name=self.profile_name,
+            endpoint_url=self.endpoint_url,
+            use_ssl=self.use_ssl,
+            verify=self.verify,
+            aws_access_key_id=self.aws_access_key_id,
+            aws_secret_access_key=self.aws_secret_access_key,
+            aws_session_token=self.aws_session_token,
         )
 
 

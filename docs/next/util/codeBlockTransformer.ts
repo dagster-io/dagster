@@ -81,9 +81,14 @@ export default ({setCodeBlockStats: setCodeBlockStats}: CodeTransformerOptions) 
         );
 
         // remove pragmas
-        contentWithLimit = contentWithLimit.replace(/^\s*# (type|ruff|isort|noqa):.*$/g, '');
-        contentWithLimit = contentWithLimit.replace(/  # (type|ruff|isort|noqa):.*$/g, '');
-
+        contentWithLimit = contentWithLimit.replace(
+          /^\s*# (type|ruff|isort|noqa|pyright):.*$/g,
+          '',
+        );
+        contentWithLimit = contentWithLimit.replace(
+          /(.*?)(# (type|ruff|isort|noqa|pyright):.*)$/gm,
+          '$1',
+        );
         if (metaOptions.trim) {
           contentWithLimit = contentWithLimit.trim();
         }

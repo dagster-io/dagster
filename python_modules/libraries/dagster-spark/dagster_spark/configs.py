@@ -5,6 +5,7 @@ in a variety of deployment contexts. See the Spark documentation at
 https://spark.apache.org/docs/latest/submitting-applications.html for a more in-depth summary of
 Spark deployment contexts and configuration.
 """
+
 from dagster import Field, StringSource
 
 from .configs_spark import spark_config

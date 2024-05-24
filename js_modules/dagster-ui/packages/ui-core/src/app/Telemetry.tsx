@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {print} from 'graphql';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
+import {useCallback, useContext} from 'react';
 import {v4 as uuidv4} from 'uuid';
 
 import {AppContext} from './AppContext';
@@ -61,8 +61,8 @@ export async function logTelemetry(
 }
 
 export const useTelemetryAction = () => {
-  const {basePath, telemetryEnabled} = React.useContext(AppContext);
-  return React.useCallback(
+  const {basePath, telemetryEnabled} = useContext(AppContext);
+  return useCallback(
     (action: TelemetryAction, metadata: {[key: string]: string | null | undefined} = {}) => {
       if (telemetryEnabled) {
         logTelemetry(basePath, action, metadata);

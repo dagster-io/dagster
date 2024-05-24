@@ -303,12 +303,12 @@ def error_job():
 
 if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
     # We need type-ignores here because type checkers don't understand the `*_PRESENT` kwargs.
-    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})  # type: ignore
+    clean_data = test_nb_op("clean_data", outs={DEFAULT_OUTPUT: Out(DataFrame)})
 
     # FIXME add an output to this
-    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})  # type: ignore
+    tutorial_LR = test_nb_op("tutorial_LR", ins={"df": In(DataFrame)})
 
-    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})  # type: ignore
+    tutorial_RF = test_nb_op("tutorial_RF", ins={"df": In(DataFrame)})
 
     @job(resource_defs=common_resource_defs)
     def tutorial_job():

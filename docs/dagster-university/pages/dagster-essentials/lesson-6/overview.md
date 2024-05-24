@@ -8,7 +8,7 @@ lesson: '6'
 
 In previous lessons, you learned about assets, how to connect assets to represent a data pipeline, and how to start a run that materializes the assets.
 
-Dagster’s role is to be the single pane of glass across all data pipelines in an organization. To do make this possible, Dagster needs to know about the services and systems used in your data pipelines, such as cloud storage or a data warehouse. In this lesson, we’ll show you how to accomplish this using software engineering best practices.
+Dagster’s role is to be the single pane of glass across all data pipelines in an organization. To make this possible, Dagster needs to know about the services and systems used in your data pipelines, such as cloud storage or a data warehouse. In this lesson, we’ll show you how to accomplish this using software engineering best practices.
 
 With this in mind, the best practice we’ll focus on in this lesson is called **Don’t Repeat Yourself**, or **DRY** for short. This principle recommends that engineers do something once and only once, thereby reducing duplication and redundancy. By being intentional and writing DRY code, you can reduce the number of bugs, increase the ability to understand the project’s codebase, and improve observability over how logic and functionality are used.
 

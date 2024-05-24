@@ -31,7 +31,7 @@ from dagster._core.definitions.cacheable_assets import (
     CacheableAssetsDefinition,
 )
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.metadata import MetadataUserInput
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
@@ -51,7 +51,7 @@ def _build_fivetran_assets(
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
     table_to_asset_key_map: Optional[Mapping[str, AssetKey]] = None,
     resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     group_name: Optional[str] = None,
@@ -138,7 +138,7 @@ def build_fivetran_assets(
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
     asset_key_prefix: Optional[Sequence[str]] = None,
-    metadata_by_table_name: Optional[Mapping[str, MetadataUserInput]] = None,
+    metadata_by_table_name: Optional[Mapping[str, RawMetadataMapping]] = None,
     group_name: Optional[str] = None,
     infer_missing_tables: bool = False,
     op_tags: Optional[Mapping[str, Any]] = None,
@@ -162,7 +162,7 @@ def build_fivetran_assets(
         io_manager_key (Optional[str]): The io_manager to be used to handle each of these assets.
         asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
             If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
-        metadata_by_table_name (Optional[Mapping[str, MetadataUserInput]]): A mapping from destination
+        metadata_by_table_name (Optional[Mapping[str, RawMetadataMapping]]): A mapping from destination
             table name to user-supplied metadata that should be associated with the asset for that table.
         group_name (Optional[str]): A string name used to organize multiple assets into groups. This
             group name will be applied to all assets produced by this multi_asset.
@@ -242,7 +242,7 @@ class FivetranConnectionMetadata(
         table_to_asset_key_fn: Callable[[str], AssetKey],
         io_manager_key: Optional[str] = None,
     ) -> AssetsDefinitionCacheableData:
-        schema_table_meta: Dict[str, MetadataUserInput] = {}
+        schema_table_meta: Dict[str, RawMetadataMapping] = {}
         if "schemas" in self.schemas:
             schemas_inner = cast(Dict[str, Any], self.schemas["schemas"])
             for schema in schemas_inner.values():
@@ -299,7 +299,7 @@ def _build_fivetran_assets_from_metadata(
         ),
         asset_key_prefix=list(assets_defn_meta.key_prefix or []),
         metadata_by_table_name=cast(
-            Dict[str, MetadataUserInput], assets_defn_meta.metadata_by_output_name
+            Dict[str, RawMetadataMapping], assets_defn_meta.metadata_by_output_name
         ),
         io_manager_key=io_manager_key,
         table_to_asset_key_map=assets_defn_meta.keys_by_output_name,
@@ -319,15 +319,26 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         connector_filter: Optional[Callable[[FivetranConnectionMetadata], bool]],
         connector_to_io_manager_key_fn: Optional[Callable[[str], Optional[str]]],
         connector_to_asset_key_fn: Optional[Callable[[FivetranConnectionMetadata, str], AssetKey]],
+        destination_ids: Optional[List[str]],
         poll_interval: float,
         poll_timeout: Optional[float],
     ):
         self._fivetran_resource_def = fivetran_resource_def
-        self._fivetran_instance: FivetranResource = (
-            fivetran_resource_def.process_config_and_initialize()
-            if isinstance(fivetran_resource_def, FivetranResource)
-            else fivetran_resource_def(build_init_resource_context())
-        )
+        if isinstance(fivetran_resource_def, FivetranResource):
+            # We hold a copy which is not fully processed, this retains e.g. EnvVars for
+            # display in the UI
+            self._partially_initialized_fivetran_instance = fivetran_resource_def
+            # The processed copy is used to query the Fivetran instance
+            self._fivetran_instance: FivetranResource = (
+                self._partially_initialized_fivetran_instance.process_config_and_initialize()
+            )
+        else:
+            self._partially_initialized_fivetran_instance = fivetran_resource_def(
+                build_init_resource_context()
+            )
+            self._fivetran_instance: FivetranResource = (
+                self._partially_initialized_fivetran_instance
+            )
 
         self._key_prefix = key_prefix
         self._connector_to_group_fn = connector_to_group_fn
@@ -336,6 +347,7 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         self._connector_to_asset_key_fn: Callable[[FivetranConnectionMetadata, str], AssetKey] = (
             connector_to_asset_key_fn or (lambda _, table: AssetKey(path=table.split(".")))
         )
+        self._destination_ids = destination_ids
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
 
@@ -349,7 +361,10 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
     def _get_connectors(self) -> Sequence[FivetranConnectionMetadata]:
         output_connectors: List[FivetranConnectionMetadata] = []
 
-        groups = self._fivetran_instance.make_request("GET", "groups")["items"]
+        if not self._destination_ids:
+            groups = self._fivetran_instance.make_request("GET", "groups")["items"]
+        else:
+            groups = [{"id": destination_id} for destination_id in self._destination_ids]
 
         for group in groups:
             group_id = group["id"]
@@ -413,7 +428,9 @@ class FivetranInstanceCacheableAssetsDefinition(CacheableAssetsDefinition):
         return [
             _build_fivetran_assets_from_metadata(
                 meta,
-                {"fivetran": self._fivetran_instance.get_resource_definition()},
+                {
+                    "fivetran": self._partially_initialized_fivetran_instance.get_resource_definition()
+                },
                 poll_interval=self._poll_interval,
                 poll_timeout=self._poll_timeout,
             )
@@ -436,6 +453,7 @@ def load_assets_from_fivetran_instance(
     connector_to_asset_key_fn: Optional[
         Callable[[FivetranConnectionMetadata, str], AssetKey]
     ] = None,
+    destination_ids: Optional[List[str]] = None,
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
 ) -> CacheableAssetsDefinition:
@@ -460,6 +478,8 @@ def load_assets_from_fivetran_instance(
         connector_to_asset_key_fn (Optional[Callable[[FivetranConnectorMetadata, str], AssetKey]]): Optional function
             which takes in connector metadata and a table name and returns an AssetKey for that table. Defaults to
             a function that generates an AssetKey matching the table name, split by ".".
+        destination_ids (Optional[List[str]]): A list of destination IDs to fetch connectors from. If None, all destinations
+            will be polled for connectors.
         poll_interval (float): The time (in seconds) that will be waited between successive polls.
         poll_timeout (Optional[float]): The maximum time that will waited before this operation is
             timed out. By default, this will never time out.
@@ -515,6 +535,7 @@ def load_assets_from_fivetran_instance(
         connector_to_io_manager_key_fn=connector_to_io_manager_key_fn,
         connector_filter=connector_filter,
         connector_to_asset_key_fn=connector_to_asset_key_fn,
+        destination_ids=destination_ids,
         poll_interval=poll_interval,
         poll_timeout=poll_timeout,
     )

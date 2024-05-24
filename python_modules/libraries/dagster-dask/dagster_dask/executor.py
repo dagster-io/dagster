@@ -277,8 +277,7 @@ class DaskExecutor(Executor):
             # Allow interrupts while waiting for the results from Dask
             for future, result in iterate_with_context(raise_execution_interrupts, futures):
                 for step_event in result:
-                    check.inst(step_event, DagsterEvent)
-                    yield step_event
+                    yield check.inst(step_event, DagsterEvent)
 
     def build_dict(self, job_name):
         """Returns a dict we can use for kwargs passed to dask client instantiation.

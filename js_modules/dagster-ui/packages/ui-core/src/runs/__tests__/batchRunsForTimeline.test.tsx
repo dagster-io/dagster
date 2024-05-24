@@ -1,4 +1,4 @@
-import {batchRunsForTimeline, RunWithTime} from '../batchRunsForTimeline';
+import {RunWithTime, batchRunsForTimeline} from '../batchRunsForTimeline';
 
 describe('batchRunsForTimeline', () => {
   const start = 0;
@@ -151,9 +151,9 @@ describe('batchRunsForTimeline', () => {
       const batched = getBatch(runs);
       expect(batched.length).toBe(2);
 
-      // Batch A contains the later run due to sorting.
-      const batchB = batched[0]!;
-      const batchA = batched[1]!;
+      // Batch A contains the earlier run due to sorting.
+      const batchA = batched[0]!;
+      const batchB = batched[1]!;
 
       expect(batchA.startTime).toBe(10);
       expect(batchA.endTime).toBe(30);
@@ -182,10 +182,9 @@ describe('batchRunsForTimeline', () => {
       const batched = getBatch(runs);
       expect(batched.length).toBe(3);
 
-      // Sorting results in later runs being in the first batch.
-      const batchC = batched[0]!;
+      const batchA = batched[0]!;
       const batchB = batched[1]!;
-      const batchA = batched[2]!;
+      const batchC = batched[2]!;
 
       expect(batchA.startTime).toBe(10);
       expect(batchA.endTime).toBe(30);
@@ -281,8 +280,8 @@ describe('batchRunsForTimeline', () => {
       const batched = getBatch(runs);
       expect(batched.length).toBe(2);
 
-      const batchB = batched[0]!;
-      const batchA = batched[1]!;
+      const batchA = batched[0]!;
+      const batchB = batched[1]!;
 
       expect(batchA.startTime).toBe(10);
       expect(batchA.endTime).toBe(40);
@@ -295,6 +294,44 @@ describe('batchRunsForTimeline', () => {
       expect(batchB.left).toBe(40);
       expect(batchB.width).toBe(30);
       expect(batchB.runs).toContain(runB);
+    });
+  });
+
+  describe('Pre-batch sort order', () => {
+    // This is a case where sort by descending `start` value results in
+    // incorrect batching, but sort by ascending `start` value results in correct
+    // batching.
+    it('batches correctly for the strange sorting case', () => {
+      Date.now = jest.fn(() => 82600000);
+
+      const runs = [
+        // Here's a batch:
+        {startTime: 82167812, endTime: 82247921},
+        {startTime: 82194099, endTime: 82264135},
+        {startTime: 82225412, endTime: 82403992},
+        {startTime: 82318006, endTime: 82447677},
+
+        // Here's another batch, taking place after all the others:
+        {startTime: 82467775, endTime: 82559004},
+        {startTime: 82495068, endTime: 82560063},
+
+        // Here's a run that would be in a separate batch, before the others...
+        {startTime: 81181571, endTime: 81227100},
+
+        // ...except that this run bridges it together with the first batch
+        {startTime: 80172146, endTime: 82195103},
+      ];
+
+      const batched = batchRunsForTimeline({
+        runs,
+        start: 80000000,
+        end: 82600000,
+        width: 1000,
+        minChunkWidth,
+        minMultipleWidth,
+      });
+
+      expect(batched.length).toBe(2);
     });
   });
 });

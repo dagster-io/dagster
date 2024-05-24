@@ -85,9 +85,7 @@ def webserver_debug_command(input_files, port):
             debug_payload = deserialize_value(blob, DebugRunPayload)
 
             click.echo(
-                "\trun_id: {} \n\tdagster version: {}".format(
-                    debug_payload.dagster_run.run_id, debug_payload.version
-                )
+                f"\trun_id: {debug_payload.dagster_run.run_id} \n\tdagster version: {debug_payload.version}"
             )
             debug_payloads.append(debug_payload)
 

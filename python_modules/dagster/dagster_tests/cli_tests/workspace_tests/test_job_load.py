@@ -2,8 +2,8 @@ import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
-from dagster._core.host_representation import ExternalJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import ExternalJob
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 
@@ -46,10 +46,15 @@ def get_all_loading_combos():
         for location_args in possible_location_args:
             for repo_args in possible_repo_args:
                 for job_args in possible_job_args:
-                    yield [
-                        "-w",
-                        PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE,
-                    ] + location_args + repo_args + job_args
+                    yield (
+                        [
+                            "-w",
+                            PYTHON_FILE_IN_NAMED_LOCATION_WORKSPACE,
+                        ]
+                        + location_args
+                        + repo_args
+                        + job_args
+                    )
 
     return tuple(_iterate_combos())
 

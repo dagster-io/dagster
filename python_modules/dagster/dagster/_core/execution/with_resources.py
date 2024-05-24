@@ -55,7 +55,10 @@ def with_resources(
                 ...
 
             asset1_with_foo, asset2_with_foo = with_resources(
-                [the_asset, other_asset],
+                [asset1, asset2],
+                resource_defs={
+                    "foo": foo_resource
+                },
                 resource_config_by_key={
                     "foo": {
                         "config": {"bar": ...}

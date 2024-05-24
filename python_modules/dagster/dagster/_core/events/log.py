@@ -1,8 +1,10 @@
-from typing import Mapping, NamedTuple, Optional, Union
+from typing import Callable, Mapping, NamedTuple, Optional, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
+from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import (
@@ -12,7 +14,6 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.log import (
-    JsonEventLoggerHandler,
     StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
@@ -111,7 +112,7 @@ class EventLogEntry(
         return serialize_value(self)
 
     @staticmethod
-    def from_json(json_str: str):
+    def from_json(json_str: str) -> "EventLogEntry":
         return deserialize_value(json_str, EventLogEntry)
 
     @public
@@ -156,6 +157,18 @@ class EventLogEntry(
         return None
 
     @property
+    def asset_check_evaluation(self) -> Optional[AssetCheckEvaluation]:
+        if (
+            self.dagster_event
+            and self.dagster_event.event_type_value == DagsterEventType.ASSET_CHECK_EVALUATION
+        ):
+            evaluation = self.dagster_event.asset_check_evaluation_data
+            if isinstance(evaluation, AssetCheckEvaluation):
+                return evaluation
+
+        return None
+
+    @property
     def tags(self) -> Optional[Mapping[str, str]]:
         materialization = self.asset_materialization
         if materialization:
@@ -183,7 +196,9 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
     )
 
 
-def construct_event_logger(event_record_callback):
+def construct_event_logger(
+    event_record_callback: Callable[[EventLogEntry], None],
+) -> LoggerDefinition:
     """Callback receives a stream of event_records. Piggybacks on the logging machinery."""
     check.callable_param(event_record_callback, "event_record_callback")
 
@@ -192,26 +207,5 @@ def construct_event_logger(event_record_callback):
         "debug",
         StructuredLoggerHandler(
             lambda logger_message: event_record_callback(construct_event_record(logger_message))
-        ),
-    )
-
-
-def construct_json_event_logger(json_path):
-    """Record a stream of event records to json."""
-    check.str_param(json_path, "json_path")
-    return construct_single_handler_logger(
-        "json-event-record-logger",
-        "debug",
-        JsonEventLoggerHandler(
-            json_path,
-            lambda record: construct_event_record(
-                StructuredLoggerMessage(
-                    name=record.name,
-                    message=record.msg,
-                    level=record.levelno,
-                    meta=record.dagster_meta,
-                    record=record,
-                )
-            ),
         ),
     )

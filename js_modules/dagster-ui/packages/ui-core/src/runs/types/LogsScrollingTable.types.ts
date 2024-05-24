@@ -2,7 +2,7 @@
 
 import * as Types from '../../graphql/types';
 
-export type LogsScrollingTableMessageFragment_AlertFailureEvent_ = {
+export type LogsScrollingTableMessageFragment_AlertFailureEvent = {
   __typename: 'AlertFailureEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -11,7 +11,7 @@ export type LogsScrollingTableMessageFragment_AlertFailureEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_AlertStartEvent_ = {
+export type LogsScrollingTableMessageFragment_AlertStartEvent = {
   __typename: 'AlertStartEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -20,7 +20,7 @@ export type LogsScrollingTableMessageFragment_AlertStartEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_AlertSuccessEvent_ = {
+export type LogsScrollingTableMessageFragment_AlertSuccessEvent = {
   __typename: 'AlertSuccessEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -29,7 +29,7 @@ export type LogsScrollingTableMessageFragment_AlertSuccessEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_ = {
+export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent = {
   __typename: 'AssetCheckEvaluationEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -60,6 +60,20 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -69,6 +83,14 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -104,6 +126,20 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -152,12 +188,18 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent_ = {
+export type LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent = {
   __typename: 'AssetCheckEvaluationPlannedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -166,7 +208,7 @@ export type LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent_ 
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent_ = {
+export type LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent = {
   __typename: 'AssetMaterializationPlannedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -175,7 +217,7 @@ export type LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent_ 
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_EngineEvent_ = {
+export type LogsScrollingTableMessageFragment_EngineEvent = {
   __typename: 'EngineEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -200,6 +242,20 @@ export type LogsScrollingTableMessageFragment_EngineEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -209,6 +265,14 @@ export type LogsScrollingTableMessageFragment_EngineEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -239,6 +303,20 @@ export type LogsScrollingTableMessageFragment_EngineEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -287,6 +365,12 @@ export type LogsScrollingTableMessageFragment_EngineEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -301,7 +385,7 @@ export type LogsScrollingTableMessageFragment_EngineEvent_ = {
   } | null;
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent = {
   __typename: 'ExecutionStepFailureEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -335,6 +419,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -344,6 +442,14 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -379,6 +485,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -427,12 +547,18 @@ export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   } | null;
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent = {
   __typename: 'ExecutionStepInputEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -459,6 +585,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -468,6 +608,14 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -503,6 +651,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -551,12 +713,18 @@ export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent = {
   __typename: 'ExecutionStepOutputEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -580,6 +748,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -589,6 +771,14 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -619,6 +809,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -667,6 +871,12 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   typeCheck: {
@@ -688,6 +898,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -697,6 +921,14 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -732,6 +964,20 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -780,12 +1026,18 @@ export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepRestartEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepRestartEvent = {
   __typename: 'ExecutionStepRestartEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -794,7 +1046,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepRestartEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent = {
   __typename: 'ExecutionStepSkippedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -803,7 +1055,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepStartEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepStartEvent = {
   __typename: 'ExecutionStepStartEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -812,7 +1064,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepStartEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepSuccessEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepSuccessEvent = {
   __typename: 'ExecutionStepSuccessEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -821,7 +1073,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepSuccessEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_ = {
+export type LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent = {
   __typename: 'ExecutionStepUpForRetryEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -840,7 +1092,7 @@ export type LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_ = {
   } | null;
 };
 
-export type LogsScrollingTableMessageFragment_HandledOutputEvent_ = {
+export type LogsScrollingTableMessageFragment_HandledOutputEvent = {
   __typename: 'HandledOutputEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -865,6 +1117,20 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -874,6 +1140,14 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -904,6 +1178,20 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -952,11 +1240,17 @@ export type LogsScrollingTableMessageFragment_HandledOutputEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type LogsScrollingTableMessageFragment_HookCompletedEvent_ = {
+export type LogsScrollingTableMessageFragment_HookCompletedEvent = {
   __typename: 'HookCompletedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -965,7 +1259,7 @@ export type LogsScrollingTableMessageFragment_HookCompletedEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_HookErroredEvent_ = {
+export type LogsScrollingTableMessageFragment_HookErroredEvent = {
   __typename: 'HookErroredEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -984,7 +1278,7 @@ export type LogsScrollingTableMessageFragment_HookErroredEvent_ = {
   } | null;
 };
 
-export type LogsScrollingTableMessageFragment_HookSkippedEvent_ = {
+export type LogsScrollingTableMessageFragment_HookSkippedEvent = {
   __typename: 'HookSkippedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -993,7 +1287,7 @@ export type LogsScrollingTableMessageFragment_HookSkippedEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_LoadedInputEvent_ = {
+export type LogsScrollingTableMessageFragment_LoadedInputEvent = {
   __typename: 'LoadedInputEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1020,6 +1314,20 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1029,6 +1337,14 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1059,6 +1375,20 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1107,11 +1437,17 @@ export type LogsScrollingTableMessageFragment_LoadedInputEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type LogsScrollingTableMessageFragment_LogMessageEvent_ = {
+export type LogsScrollingTableMessageFragment_LogMessageEvent = {
   __typename: 'LogMessageEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1120,7 +1456,7 @@ export type LogsScrollingTableMessageFragment_LogMessageEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_LogsCapturedEvent_ = {
+export type LogsScrollingTableMessageFragment_LogsCapturedEvent = {
   __typename: 'LogsCapturedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1134,7 +1470,7 @@ export type LogsScrollingTableMessageFragment_LogsCapturedEvent_ = {
   externalStderrUrl: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_MaterializationEvent_ = {
+export type LogsScrollingTableMessageFragment_MaterializationEvent = {
   __typename: 'MaterializationEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1157,6 +1493,20 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1166,6 +1516,14 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1196,6 +1554,20 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1244,12 +1616,18 @@ export type LogsScrollingTableMessageFragment_MaterializationEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
-export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_ = {
+export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent = {
   __typename: 'ObjectStoreOperationEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1273,6 +1651,20 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -1282,6 +1674,14 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -1317,6 +1717,20 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -1365,12 +1779,18 @@ export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type LogsScrollingTableMessageFragment_ObservationEvent_ = {
+export type LogsScrollingTableMessageFragment_ObservationEvent = {
   __typename: 'ObservationEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1393,6 +1813,20 @@ export type LogsScrollingTableMessageFragment_ObservationEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1402,6 +1836,14 @@ export type LogsScrollingTableMessageFragment_ObservationEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1432,6 +1874,20 @@ export type LogsScrollingTableMessageFragment_ObservationEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1480,12 +1936,18 @@ export type LogsScrollingTableMessageFragment_ObservationEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   assetKey: {__typename: 'AssetKey'; path: Array<string>} | null;
 };
 
-export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_ = {
+export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent = {
   __typename: 'ResourceInitFailureEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1510,6 +1972,20 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1519,6 +1995,14 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1549,6 +2033,20 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1597,6 +2095,12 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
   error: {
@@ -1611,7 +2115,7 @@ export type LogsScrollingTableMessageFragment_ResourceInitFailureEvent_ = {
   } | null;
 };
 
-export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent_ = {
+export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent = {
   __typename: 'ResourceInitStartedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1636,6 +2140,20 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1645,6 +2163,14 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1675,6 +2201,20 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1723,11 +2263,17 @@ export type LogsScrollingTableMessageFragment_ResourceInitStartedEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent_ = {
+export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent = {
   __typename: 'ResourceInitSuccessEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1752,6 +2298,20 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -1761,6 +2321,14 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -1791,6 +2359,20 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -1839,11 +2421,17 @@ export type LogsScrollingTableMessageFragment_ResourceInitSuccessEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type LogsScrollingTableMessageFragment_RunCanceledEvent_ = {
+export type LogsScrollingTableMessageFragment_RunCanceledEvent = {
   __typename: 'RunCanceledEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1852,7 +2440,7 @@ export type LogsScrollingTableMessageFragment_RunCanceledEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunCancelingEvent_ = {
+export type LogsScrollingTableMessageFragment_RunCancelingEvent = {
   __typename: 'RunCancelingEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1861,7 +2449,7 @@ export type LogsScrollingTableMessageFragment_RunCancelingEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunDequeuedEvent_ = {
+export type LogsScrollingTableMessageFragment_RunDequeuedEvent = {
   __typename: 'RunDequeuedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1870,7 +2458,7 @@ export type LogsScrollingTableMessageFragment_RunDequeuedEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunEnqueuedEvent_ = {
+export type LogsScrollingTableMessageFragment_RunEnqueuedEvent = {
   __typename: 'RunEnqueuedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1879,7 +2467,7 @@ export type LogsScrollingTableMessageFragment_RunEnqueuedEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunFailureEvent_ = {
+export type LogsScrollingTableMessageFragment_RunFailureEvent = {
   __typename: 'RunFailureEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1898,7 +2486,7 @@ export type LogsScrollingTableMessageFragment_RunFailureEvent_ = {
   } | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunStartEvent_ = {
+export type LogsScrollingTableMessageFragment_RunStartEvent = {
   __typename: 'RunStartEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1907,7 +2495,7 @@ export type LogsScrollingTableMessageFragment_RunStartEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunStartingEvent_ = {
+export type LogsScrollingTableMessageFragment_RunStartingEvent = {
   __typename: 'RunStartingEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1916,7 +2504,7 @@ export type LogsScrollingTableMessageFragment_RunStartingEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_RunSuccessEvent_ = {
+export type LogsScrollingTableMessageFragment_RunSuccessEvent = {
   __typename: 'RunSuccessEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1925,7 +2513,7 @@ export type LogsScrollingTableMessageFragment_RunSuccessEvent_ = {
   stepKey: string | null;
 };
 
-export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_ = {
+export type LogsScrollingTableMessageFragment_StepExpectationResultEvent = {
   __typename: 'StepExpectationResultEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -1951,6 +2539,20 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_ = {
           description: string | null;
         }
       | {
+          __typename: 'CodeReferencesMetadataEntry';
+          label: string;
+          description: string | null;
+          codeReferences: Array<
+            | {
+                __typename: 'LocalFileCodeReference';
+                filePath: string;
+                lineNumber: number | null;
+                label: string | null;
+              }
+            | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+          >;
+        }
+      | {
           __typename: 'FloatMetadataEntry';
           floatValue: number | null;
           label: string;
@@ -1960,6 +2562,14 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_ = {
           __typename: 'IntMetadataEntry';
           intValue: number | null;
           intRepr: string;
+          label: string;
+          description: string | null;
+        }
+      | {
+          __typename: 'JobMetadataEntry';
+          jobName: string;
+          repositoryName: string | null;
+          locationName: string;
           label: string;
           description: string | null;
         }
@@ -1995,6 +2605,20 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_ = {
           name: string;
           label: string;
           description: string | null;
+        }
+      | {
+          __typename: 'TableColumnLineageMetadataEntry';
+          label: string;
+          description: string | null;
+          lineage: Array<{
+            __typename: 'TableColumnLineageEntry';
+            columnName: string;
+            columnDeps: Array<{
+              __typename: 'TableColumnDep';
+              columnName: string;
+              assetKey: {__typename: 'AssetKey'; path: Array<string>};
+            }>;
+          }>;
         }
       | {
           __typename: 'TableMetadataEntry';
@@ -2043,12 +2667,18 @@ export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_ = {
           };
         }
       | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+      | {
+          __typename: 'TimestampMetadataEntry';
+          timestamp: number;
+          label: string;
+          description: string | null;
+        }
       | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
     >;
   };
 };
 
-export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent_ = {
+export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent = {
   __typename: 'StepWorkerStartedEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -2073,6 +2703,20 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2082,6 +2726,14 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -2112,6 +2764,20 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -2160,11 +2826,17 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartedEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
-export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent_ = {
+export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent = {
   __typename: 'StepWorkerStartingEvent';
   message: string;
   eventType: Types.DagsterEventType | null;
@@ -2189,6 +2861,20 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent_ = {
         description: string | null;
       }
     | {
+        __typename: 'CodeReferencesMetadataEntry';
+        label: string;
+        description: string | null;
+        codeReferences: Array<
+          | {
+              __typename: 'LocalFileCodeReference';
+              filePath: string;
+              lineNumber: number | null;
+              label: string | null;
+            }
+          | {__typename: 'UrlCodeReference'; url: string; label: string | null}
+        >;
+      }
+    | {
         __typename: 'FloatMetadataEntry';
         floatValue: number | null;
         label: string;
@@ -2198,6 +2884,14 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent_ = {
         __typename: 'IntMetadataEntry';
         intValue: number | null;
         intRepr: string;
+        label: string;
+        description: string | null;
+      }
+    | {
+        __typename: 'JobMetadataEntry';
+        jobName: string;
+        repositoryName: string | null;
+        locationName: string;
         label: string;
         description: string | null;
       }
@@ -2228,6 +2922,20 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent_ = {
         name: string;
         label: string;
         description: string | null;
+      }
+    | {
+        __typename: 'TableColumnLineageMetadataEntry';
+        label: string;
+        description: string | null;
+        lineage: Array<{
+          __typename: 'TableColumnLineageEntry';
+          columnName: string;
+          columnDeps: Array<{
+            __typename: 'TableColumnDep';
+            columnName: string;
+            assetKey: {__typename: 'AssetKey'; path: Array<string>};
+          }>;
+        }>;
       }
     | {
         __typename: 'TableMetadataEntry';
@@ -2276,47 +2984,53 @@ export type LogsScrollingTableMessageFragment_StepWorkerStartingEvent_ = {
         };
       }
     | {__typename: 'TextMetadataEntry'; text: string; label: string; description: string | null}
+    | {
+        __typename: 'TimestampMetadataEntry';
+        timestamp: number;
+        label: string;
+        description: string | null;
+      }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
 };
 
 export type LogsScrollingTableMessageFragment =
-  | LogsScrollingTableMessageFragment_AlertFailureEvent_
-  | LogsScrollingTableMessageFragment_AlertStartEvent_
-  | LogsScrollingTableMessageFragment_AlertSuccessEvent_
-  | LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent_
-  | LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent_
-  | LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent_
-  | LogsScrollingTableMessageFragment_EngineEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepRestartEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepStartEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepSuccessEvent_
-  | LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent_
-  | LogsScrollingTableMessageFragment_HandledOutputEvent_
-  | LogsScrollingTableMessageFragment_HookCompletedEvent_
-  | LogsScrollingTableMessageFragment_HookErroredEvent_
-  | LogsScrollingTableMessageFragment_HookSkippedEvent_
-  | LogsScrollingTableMessageFragment_LoadedInputEvent_
-  | LogsScrollingTableMessageFragment_LogMessageEvent_
-  | LogsScrollingTableMessageFragment_LogsCapturedEvent_
-  | LogsScrollingTableMessageFragment_MaterializationEvent_
-  | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_
-  | LogsScrollingTableMessageFragment_ObservationEvent_
-  | LogsScrollingTableMessageFragment_ResourceInitFailureEvent_
-  | LogsScrollingTableMessageFragment_ResourceInitStartedEvent_
-  | LogsScrollingTableMessageFragment_ResourceInitSuccessEvent_
-  | LogsScrollingTableMessageFragment_RunCanceledEvent_
-  | LogsScrollingTableMessageFragment_RunCancelingEvent_
-  | LogsScrollingTableMessageFragment_RunDequeuedEvent_
-  | LogsScrollingTableMessageFragment_RunEnqueuedEvent_
-  | LogsScrollingTableMessageFragment_RunFailureEvent_
-  | LogsScrollingTableMessageFragment_RunStartEvent_
-  | LogsScrollingTableMessageFragment_RunStartingEvent_
-  | LogsScrollingTableMessageFragment_RunSuccessEvent_
-  | LogsScrollingTableMessageFragment_StepExpectationResultEvent_
-  | LogsScrollingTableMessageFragment_StepWorkerStartedEvent_
-  | LogsScrollingTableMessageFragment_StepWorkerStartingEvent_;
+  | LogsScrollingTableMessageFragment_AlertFailureEvent
+  | LogsScrollingTableMessageFragment_AlertStartEvent
+  | LogsScrollingTableMessageFragment_AlertSuccessEvent
+  | LogsScrollingTableMessageFragment_AssetCheckEvaluationEvent
+  | LogsScrollingTableMessageFragment_AssetCheckEvaluationPlannedEvent
+  | LogsScrollingTableMessageFragment_AssetMaterializationPlannedEvent
+  | LogsScrollingTableMessageFragment_EngineEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepInputEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepRestartEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepSkippedEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepStartEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepSuccessEvent
+  | LogsScrollingTableMessageFragment_ExecutionStepUpForRetryEvent
+  | LogsScrollingTableMessageFragment_HandledOutputEvent
+  | LogsScrollingTableMessageFragment_HookCompletedEvent
+  | LogsScrollingTableMessageFragment_HookErroredEvent
+  | LogsScrollingTableMessageFragment_HookSkippedEvent
+  | LogsScrollingTableMessageFragment_LoadedInputEvent
+  | LogsScrollingTableMessageFragment_LogMessageEvent
+  | LogsScrollingTableMessageFragment_LogsCapturedEvent
+  | LogsScrollingTableMessageFragment_MaterializationEvent
+  | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent
+  | LogsScrollingTableMessageFragment_ObservationEvent
+  | LogsScrollingTableMessageFragment_ResourceInitFailureEvent
+  | LogsScrollingTableMessageFragment_ResourceInitStartedEvent
+  | LogsScrollingTableMessageFragment_ResourceInitSuccessEvent
+  | LogsScrollingTableMessageFragment_RunCanceledEvent
+  | LogsScrollingTableMessageFragment_RunCancelingEvent
+  | LogsScrollingTableMessageFragment_RunDequeuedEvent
+  | LogsScrollingTableMessageFragment_RunEnqueuedEvent
+  | LogsScrollingTableMessageFragment_RunFailureEvent
+  | LogsScrollingTableMessageFragment_RunStartEvent
+  | LogsScrollingTableMessageFragment_RunStartingEvent
+  | LogsScrollingTableMessageFragment_RunSuccessEvent
+  | LogsScrollingTableMessageFragment_StepExpectationResultEvent
+  | LogsScrollingTableMessageFragment_StepWorkerStartedEvent
+  | LogsScrollingTableMessageFragment_StepWorkerStartingEvent;

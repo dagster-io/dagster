@@ -7,7 +7,7 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     execute_dagster_graphql_and_finish_runs,
-    infer_pipeline_selector,
+    infer_job_selector,
 )
 
 from .utils import (
@@ -19,7 +19,7 @@ from .utils import (
 
 
 def test_dynamic_resume_reexecution(graphql_context: WorkspaceRequestContext):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
+    selector = infer_job_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql_and_finish_runs(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -92,7 +92,7 @@ def test_dynamic_resume_reexecution(graphql_context: WorkspaceRequestContext):
 
 
 def test_dynamic_full_reexecution(graphql_context: WorkspaceRequestContext):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
+    selector = infer_job_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql_and_finish_runs(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -165,7 +165,7 @@ def test_dynamic_full_reexecution(graphql_context: WorkspaceRequestContext):
 
 
 def test_dynamic_subset(graphql_context: WorkspaceRequestContext):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
+    selector = infer_job_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql_and_finish_runs(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -271,7 +271,7 @@ query PresetsQuery($selector: PipelineSelector!) {
 
 
 def test_dynamic_dep_fields(graphql_context):
-    selector = infer_pipeline_selector(graphql_context, "dynamic_job")
+    selector = infer_job_selector(graphql_context, "dynamic_job")
     result = execute_dagster_graphql(graphql_context, DEP_QUERY, variables={"selector": selector})
     assert not result.errors
     ops = {op["name"]: op for op in result.data["pipelineOrError"]["solids"]}

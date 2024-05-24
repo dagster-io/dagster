@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {IconWrapper} from './Icon';
 
 export const RadioContainer = styled.div`
@@ -20,7 +20,7 @@ export const RadioContainer = styled.div`
 
   .bp4-control.bp4-radio.bp4-disabled {
     cursor: default;
-    color: ${Colors.Gray300};
+    color: ${Colors.backgroundDisabled()};
 
     ${IconWrapper} {
       opacity: 0.3;
@@ -33,7 +33,7 @@ export const RadioContainer = styled.div`
   }
 
   .bp4-control input:checked ~ .bp4-control-indicator {
-    background-color: ${Colors.Blue500};
+    background-color: ${Colors.accentBlue()};
   }
 
   .bp4-control.bp4-radio input:disabled ~ .bp4-control-indicator {
@@ -42,7 +42,7 @@ export const RadioContainer = styled.div`
   }
 
   .bp4-control.bp4-radio input:disabled:checked ~ .bp4-control-indicator {
-    background-color: ${Colors.Blue200};
+    background-color: ${Colors.accentBlue()};
   }
 
   .bp4-control .bp4-control-indicator,

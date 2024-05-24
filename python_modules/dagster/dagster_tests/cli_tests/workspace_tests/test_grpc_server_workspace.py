@@ -5,7 +5,7 @@ import yaml
 from dagster import _seven
 from dagster._check import CheckError
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.host_representation import GrpcServerCodeLocationOrigin
+from dagster._core.remote_representation import GrpcServerCodeLocationOrigin
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import location_origins_from_config
 from dagster._grpc.server import GrpcServerProcess
@@ -48,7 +48,7 @@ load_from:
 
             with ExitStack() as stack:
                 code_locations = {
-                    name: stack.enter_context(origin.create_location())
+                    name: stack.enter_context(origin.create_location(instance))
                     for name, origin in origins.items()
                 }
                 assert len(code_locations) == 2
@@ -141,7 +141,7 @@ load_from:
         # Actually connecting to the server will fail since it's expecting SSL
         # and we didn't set up the server with SSL
         try:
-            with origin.create_location():
+            with origin.create_location(instance):
                 assert False
         except DagsterUserCodeUnreachableError:
             pass
@@ -176,7 +176,7 @@ load_from:
 
             with ExitStack() as stack:
                 code_locations = {
-                    name: stack.enter_context(origin.create_location())
+                    name: stack.enter_context(origin.create_location(instance))
                     for name, origin in origins.items()
                 }
                 assert len(code_locations) == 2

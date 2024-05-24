@@ -4,7 +4,7 @@ import * as Types from '../../graphql/types';
 
 export type OverduePopoverQueryVariables = Types.Exact<{
   assetKey: Types.AssetKeyInput;
-  timestamp: Types.Scalars['String'];
+  timestamp: Types.Scalars['String']['input'];
 }>;
 
 export type OverduePopoverQuery = {

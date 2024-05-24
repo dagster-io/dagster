@@ -93,8 +93,7 @@ def test_cloudwatch_logging_bad_region(log_group, log_stream):
     with pytest.raises(
         Exception,
         match=(
-            "Failed to initialize Cloudwatch logger: Could not find log group with name {log_group}"
-            .format(log_group=log_group)
+            f"Failed to initialize Cloudwatch logger: Could not find log group with name {log_group}"
         ),
     ):
         hello_cloudwatch.execute_in_process(

@@ -20,15 +20,15 @@ from .databricks_pyspark_step_launcher import (
     DatabricksPySparkStepLauncher as DatabricksPySparkStepLauncher,
     databricks_pyspark_step_launcher as databricks_pyspark_step_launcher,
 )
-from .ext import (
-    ExtDatabricks as ExtDatabricks,
-    ExtDbfsContextInjector as ExtDbfsContextInjector,
-    ExtDbfsMessageReader as ExtDbfsMessageReader,
-    dbfs_tempdir as dbfs_tempdir,
-)
 from .ops import (
     create_databricks_run_now_op as create_databricks_run_now_op,
     create_databricks_submit_run_op as create_databricks_submit_run_op,
+)
+from .pipes import (
+    PipesDatabricksClient as PipesDatabricksClient,
+    PipesDbfsContextInjector as PipesDbfsContextInjector,
+    PipesDbfsLogReader as PipesDbfsLogReader,
+    PipesDbfsMessageReader as PipesDbfsMessageReader,
 )
 from .resources import (
     DatabricksClientResource as DatabricksClientResource,

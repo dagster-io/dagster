@@ -4,7 +4,7 @@ from typing import NamedTuple, Optional, Sequence
 
 import tomli
 
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,

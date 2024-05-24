@@ -39,9 +39,6 @@ class InMemoryRunStorage(SqlRunStorage):
             if "instance_info" not in table_names:
                 InstanceInfo.create(self._held_conn)
 
-        self.migrate()
-        self.optimize()
-
         if preload:
             for payload in preload:
                 self.add_job_snapshot(payload.job_snapshot, payload.dagster_run.job_snapshot_id)
@@ -49,6 +46,9 @@ class InMemoryRunStorage(SqlRunStorage):
                     payload.execution_plan_snapshot, payload.dagster_run.execution_plan_snapshot_id
                 )
                 self.add_run(payload.dagster_run)
+
+    def has_secondary_index(self, name: str) -> bool:
+        return True
 
     @contextmanager
     def connect(self) -> Iterator[Connection]:

@@ -13,6 +13,7 @@ from ..logger_definition import LoggerDefinition
 from ..metadata import RawMetadataValue
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
+from ..utils import normalize_tags
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -44,7 +45,7 @@ class _Job:
 
         self.name = name
         self.description = description
-        self.tags = tags
+        self.tags = normalize_tags(tags, warning_stacklevel=5)
         self.metadata = metadata
         self.resource_defs = resource_defs
         self.config = convert_config_input(config)
@@ -71,7 +72,7 @@ class _Job:
             node_defs,
             config_mapping,
             positional_inputs,
-            node_input_source_assets,
+            input_assets,
         ) = do_composition(
             decorator_name="@job",
             graph_name=self.name,
@@ -92,7 +93,7 @@ class _Job:
             config=config_mapping,
             positional_inputs=positional_inputs,
             tags=self.tags,
-            node_input_source_assets=node_input_source_assets,
+            input_assets=input_assets,
         )
 
         job_def = graph_def.to_job(

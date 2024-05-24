@@ -40,7 +40,7 @@ export type RepositoryForNextTicksFragment = {
 
 export type ScheduleTickConfigQueryVariables = Types.Exact<{
   scheduleSelector: Types.ScheduleSelector;
-  tickTimestamp: Types.Scalars['Int'];
+  tickTimestamp: Types.Scalars['Int']['input'];
 }>;
 
 export type ScheduleTickConfigQuery = {

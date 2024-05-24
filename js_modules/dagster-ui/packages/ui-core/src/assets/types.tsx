@@ -21,4 +21,6 @@ export interface AssetViewParams {
   evaluation?: string;
   checkDetail?: string;
   default_range?: string;
+  column?: string;
+  showAllEvents?: boolean;
 }

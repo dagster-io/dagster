@@ -1,10 +1,8 @@
-import {ServerError} from '@apollo/client';
-import {ErrorResponse, onError} from '@apollo/client/link/error';
+import {onError} from '@apollo/client/link/error';
 import {Observable} from '@apollo/client/utilities';
-import {FontFamily, Toaster} from '@dagster-io/ui-components';
+import {Colors, FontFamily, Toaster} from '@dagster-io/ui-components';
 import {GraphQLError} from 'graphql';
 import memoize from 'lodash/memoize';
-import * as React from 'react';
 
 import {showCustomAlert} from './CustomAlertProvider';
 import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from './HTTPErrorCodes';
@@ -49,36 +47,52 @@ const showNetworkError = async (statusCode: number) => {
   }
 };
 
-export const errorLink = onError((response: ErrorResponse) => {
-  if (response.graphQLErrors) {
-    const {graphQLErrors, operation} = response;
-    const {operationName} = operation;
-    graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
-  }
-  if (response.networkError) {
+export const createErrorLink = (toastOnErrors?: boolean) =>
+  onError((response) => {
+    if (response.graphQLErrors) {
+      const {graphQLErrors, operation} = response;
+      const {operationName} = operation;
+      graphQLErrors.forEach((error) => {
+        if (toastOnErrors) {
+          showGraphQLError(error, operationName);
+        }
+        console.error('[Graphql error]', operationName, error);
+      });
+    }
     // if we have a network error but there is still graphql data
     // the payload should contain a meaningful error for the product to handle
-    const serverError = response.networkError as ServerError;
-    if (serverError.result && serverError.result.data) {
+    if (
+      'response' in response &&
+      response.response &&
+      'data' in response.response &&
+      response.response.data
+    ) {
+      // This is a bit hacky but if you try forwarding response.response directly it seems
+      // the errors property prevents it from making it to the react code so instead we grab just the data property.
+      return Observable.from([{data: response.response.data}]);
+    }
+
+    const serverError = response.networkError;
+    if (serverError && 'result' in serverError && typeof serverError.result === 'object') {
       // we can return an observable here (normally used to perform retries)
       // to flow the error payload to the product
       return Observable.from([serverError.result]);
     }
-
-    if (response.networkError && 'statusCode' in response.networkError) {
-      showNetworkError(response.networkError.statusCode);
+    if (response.networkError) {
+      if (toastOnErrors && 'statusCode' in response.networkError) {
+        showNetworkError(response.networkError.statusCode);
+      }
+      console.error('[Network error]', response.networkError);
     }
-    console.error('[Network error]', response.networkError);
-  }
-  return;
-});
+    return;
+  });
 
 interface AppStackTraceLinkProps {
   error: DagsterGraphQLError;
   operationName?: string;
 }
 
-const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
+export const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
   const title = 'Error';
   const stackTrace = error?.extensions?.errorInfo?.stack;
   const cause = error?.extensions?.errorInfo?.cause;
@@ -133,16 +147,15 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
       <div
         className="errorInfo"
         style={{
-          backgroundColor: 'rgba(206, 17, 38, 0.05)',
-          border: '1px solid #d17257',
+          backgroundColor: Colors.backgroundRed(),
+          border: `1px solid ${Colors.accentRed()}`,
           borderRadius: 3,
           maxWidth: '90vw',
           maxHeight: '80vh',
           padding: '1em 2em',
           overflow: 'auto',
-          color: 'rgb(41, 50, 56)',
+          color: Colors.textDefault(),
           fontFamily: FontFamily.monospace,
-          fontSize: '1em',
           whiteSpace: 'pre',
           overflowX: 'auto',
         }}

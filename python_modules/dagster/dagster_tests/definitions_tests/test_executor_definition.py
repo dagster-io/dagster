@@ -21,9 +21,12 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
     DagsterUnmetExecutorRequirementsError,
 )
-from dagster._core.events import DagsterEventType
+from dagster._core.events import DagsterEventType, RunFailureReason
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
+from dagster._core.storage.tags import (
+    RUN_FAILURE_REASON_TAG,
+)
 from dagster._core.test_utils import environ, instance_for_test
 
 
@@ -267,6 +270,9 @@ def test_failing_executor_initialization():
         event_records = instance.all_logs(result.run_id)
         assert len(event_records) == 1
         assert event_records[0].dagster_event_type == DagsterEventType.RUN_FAILURE
+
+        run = instance.get_run_by_id(result.run_id)
+        assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.JOB_INITIALIZATION_FAILURE.value
 
 
 def test_multiprocess_executor_default():

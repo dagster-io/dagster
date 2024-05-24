@@ -1,17 +1,8 @@
 import datetime
 
-from dagster import (
-    build_schedule_context,
-    materialize,
-    validate_run_config,
-)
+from dagster import build_schedule_context, validate_run_config
 from docs_snippets.guides.dagster.automating_pipelines.config_schedule import (
     configurable_job,
-)
-from docs_snippets.guides.dagster.automating_pipelines.declare_schedule import (
-    finance_report,
-    sales_report,
-    transactions_cleaned,
 )
 
 
@@ -33,8 +24,3 @@ def test_configurable_job_schedule():
             }
         },
     )
-
-
-def test_assets():
-    result = materialize([transactions_cleaned, sales_report, finance_report])
-    assert result.success

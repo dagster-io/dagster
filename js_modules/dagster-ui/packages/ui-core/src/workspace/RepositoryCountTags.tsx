@@ -1,18 +1,19 @@
 import {Box, Tag, Tooltip} from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
 import {DagsterRepoOption} from './WorkspaceContext';
 import {RepoAddress} from './types';
 import {workspacePathFromAddress} from './workspacePath';
+import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 
-export const RepositoryCountTags: React.FC<{
+export const RepositoryCountTags = ({
+  repo,
+  repoAddress,
+}: {
   repo: DagsterRepoOption['repository'];
   repoAddress: RepoAddress;
-}> = ({repo, repoAddress}) => {
+}) => {
   const assetGroupCount = repo.assetGroups.length;
   const jobCount = repo.pipelines.filter(({name}) => !isHiddenAssetGroupJob(name)).length;
   const scheduleCount = repo.schedules.length;

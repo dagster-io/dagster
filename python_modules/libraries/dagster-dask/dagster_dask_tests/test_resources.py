@@ -1,6 +1,6 @@
-from typing import Any, Mapping
+from typing import Any, Dict, Mapping
 
-from dagster import Dict, Output, op
+from dagster import Output, op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out

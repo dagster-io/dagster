@@ -4,7 +4,7 @@ from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from ...implementation.fetch_schedules import start_schedule, stop_schedule
+from ...implementation.fetch_schedules import reset_schedule, start_schedule, stop_schedule
 from ...implementation.utils import (
     assert_permission_for_location,
     capture_error,
@@ -100,6 +100,33 @@ class GrapheneStopRunningScheduleMutation(graphene.Mutation):
         return stop_schedule(graphene_info, schedule_origin_id, schedule_selector_id)
 
 
+class GrapheneResetScheduleMutation(graphene.Mutation):
+    """Reset a schedule to its status defined in code, otherwise disable it from launching runs for a job."""
+
+    Output = graphene.NonNull(GrapheneScheduleMutationResult)
+
+    class Arguments:
+        schedule_selector = graphene.NonNull(GrapheneScheduleSelector)
+
+    class Meta:
+        name = "ResetScheduleMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.START_SCHEDULE)
+    @require_permission_check(Permissions.STOP_RUNNING_SCHEDULE)
+    def mutate(self, graphene_info: ResolveInfo, schedule_selector):
+        selector = ScheduleSelector.from_graphql_input(schedule_selector)
+
+        assert_permission_for_location(
+            graphene_info, Permissions.START_SCHEDULE, selector.location_name
+        )
+        assert_permission_for_location(
+            graphene_info, Permissions.STOP_RUNNING_SCHEDULE, selector.location_name
+        )
+
+        return reset_schedule(graphene_info, selector)
+
+
 def types():
     from .ticks import (
         GrapheneScheduleTick,
@@ -126,4 +153,5 @@ def types():
         GrapheneScheduleTickSuccessData,
         GrapheneStartScheduleMutation,
         GrapheneStopRunningScheduleMutation,
+        GrapheneResetScheduleMutation,
     ]

@@ -169,12 +169,7 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}"
-            .format(
-                webserver_host=webserver_host,
-                query_string=LAUNCH_PIPELINE_MUTATION,
-                variables=json.dumps(variables),
-            )
+            f"http://{webserver_host}:3000/graphql?query={LAUNCH_PIPELINE_MUTATION}&variables={json.dumps(variables)}"
         ).json()
 
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -199,12 +194,7 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}"
-            .format(
-                webserver_host=webserver_host,
-                query_string=LAUNCH_PIPELINE_MUTATION,
-                variables=json.dumps(variables),
-            )
+            f"http://{webserver_host}:3000/graphql?query={LAUNCH_PIPELINE_MUTATION}&variables={json.dumps(variables)}"
         ).json()
 
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -228,12 +218,7 @@ def test_deploy_docker():
         }
 
         launch_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}"
-            .format(
-                webserver_host=webserver_host,
-                query_string=LAUNCH_PIPELINE_MUTATION,
-                variables=json.dumps(variables),
-            )
+            f"http://{webserver_host}:3000/graphql?query={LAUNCH_PIPELINE_MUTATION}&variables={json.dumps(variables)}"
         ).json()
 
         assert launch_res["data"]["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
@@ -244,8 +229,7 @@ def test_deploy_docker():
         _wait_for_run_status(hanging_run_id, webserver_host, DagsterRunStatus.STARTED)
 
         terminate_res = requests.post(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}"
-            .format(
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
                 webserver_host=webserver_host,
                 query_string=TERMINATE_MUTATION,
                 variables=json.dumps({"runId": hanging_run_id}),
@@ -268,8 +252,7 @@ def _wait_for_run_status(run_id, webserver_host, desired_status):
             raise Exception(f"Timed out waiting for run to reach status {desired_status}")
 
         run_res = requests.get(
-            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}"
-            .format(
+            "http://{webserver_host}:3000/graphql?query={query_string}&variables={variables}".format(
                 webserver_host=webserver_host,
                 query_string=RUN_QUERY,
                 variables=json.dumps({"runId": run_id}),

@@ -86,8 +86,7 @@ def snapshot():
         if current_query_name not in legacy_query_info.legacy_queries:
             click.echo(
                 f"Couldn't find query history subdirectory for query {current_query_name}, so"
-                " making a new one"
-                + f"\n\t at {query_dir}"
+                " making a new one" + f"\n\t at {query_dir}"
             )
             os.mkdir(query_dir)
 

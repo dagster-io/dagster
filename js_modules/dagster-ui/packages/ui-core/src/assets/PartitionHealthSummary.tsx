@@ -1,20 +1,22 @@
-import {Spinner, Box, Colors, Caption} from '@dagster-io/ui-components';
-import React from 'react';
-
-import {displayNameForAssetKey} from '../asset-graph/Utils';
-import {PartitionStatus} from '../partitions/PartitionStatus';
+import {Box, Caption, Spinner} from '@dagster-io/ui-components';
+import {memo} from 'react';
 
 import {AssetPartitionStatus} from './AssetPartitionStatus';
 import {isTimeseriesDimension} from './MultipartitioningSupport';
 import {AssetKey} from './types';
-import {PartitionHealthData, PartitionDimensionSelection} from './usePartitionHealthData';
+import {PartitionDimensionSelection, PartitionHealthData} from './usePartitionHealthData';
+import {displayNameForAssetKey} from '../asset-graph/Utils';
+import {PartitionStatus} from '../partitions/PartitionStatus';
 
-export const PartitionHealthSummary: React.FC<{
+interface Props {
   assetKey: AssetKey;
   showAssetKey?: boolean;
   data: PartitionHealthData[];
   selections?: PartitionDimensionSelection[];
-}> = React.memo(({showAssetKey, assetKey, data, selections}) => {
+}
+
+export const PartitionHealthSummary = memo((props: Props) => {
+  const {showAssetKey, assetKey, data, selections} = props;
   const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
   if (!assetData) {
@@ -42,7 +44,7 @@ export const PartitionHealthSummary: React.FC<{
     .filter((dkeys) => assetData.stateForKey(dkeys) === AssetPartitionStatus.MATERIALIZED).length;
 
   return (
-    <Box color={Colors.Gray500}>
+    <div>
       <Box flex={{justifyContent: 'space-between'}} style={{fontWeight: 600}} margin={{bottom: 4}}>
         <Caption>{showAssetKey ? displayNameForAssetKey(assetKey) : 'Materialized'}</Caption>
         <Caption>{`${success.toLocaleString()}/${total.toLocaleString()}`}</Caption>
@@ -64,6 +66,6 @@ export const PartitionHealthSummary: React.FC<{
           />
         </Box>
       ))}
-    </Box>
+    </div>
   );
 });

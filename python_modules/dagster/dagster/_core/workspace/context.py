@@ -6,7 +6,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import ExitStack
 from itertools import count
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Set, Type, TypeVar, Union
 
 from typing_extensions import Self
 
@@ -17,7 +17,8 @@ from dagster._core.errors import (
     DagsterCodeLocationNotFoundError,
 )
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.host_representation import (
+from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation import (
     CodeLocation,
     CodeLocationOrigin,
     ExternalExecutionPlan,
@@ -26,21 +27,23 @@ from dagster._core.host_representation import (
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
-from dagster._core.host_representation.grpc_server_registry import (
+from dagster._core.remote_representation.grpc_server_registry import (
     GrpcServerRegistry,
 )
-from dagster._core.host_representation.grpc_server_state_subscriber import (
+from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.host_representation.origin import (
+from dagster._core.remote_representation.origin import (
     GrpcServerCodeLocationOrigin,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.instance import DagsterInstance
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
+from dagster._utils.aiodataloader import DataLoader
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
+from ..loader import LoadingContext
 from .load_target import WorkspaceLoadTarget
 from .permissions import (
     PermissionResult,
@@ -56,7 +59,7 @@ from .workspace import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.host_representation import (
+    from dagster._core.remote_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionNamesData,
@@ -69,7 +72,7 @@ T = TypeVar("T")
 WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL = 45
 
 
-class BaseWorkspaceRequestContext(IWorkspace):
+class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
     """This class is a request-scoped object that stores (1) a reference to all repository locations
     that exist on the `IWorkspaceProcessContext` at the start of the request and (2) a snapshot of the
     workspace at the start of the request.
@@ -135,6 +138,12 @@ class BaseWorkspaceRequestContext(IWorkspace):
     @property
     def show_instance_config(self) -> bool:
         return True
+
+    def get_viewer_tags(self) -> Dict[str, str]:
+        return {}
+
+    def get_reporting_user_tags(self) -> Dict[str, str]:
+        return {}
 
     def get_code_location(self, location_name: str) -> CodeLocation:
         location_entry = self.get_location_entry(location_name)
@@ -205,7 +214,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def shutdown_code_location(self, name: str):
         self.process_context.shutdown_code_location(name)
 
-    def reload_workspace(self) -> Self:
+    def reload_workspace(self) -> "BaseWorkspaceRequestContext":
         self.process_context.reload_workspace()
         return self.process_context.create_request_context()
 
@@ -302,6 +311,14 @@ class BaseWorkspaceRequestContext(IWorkspace):
         code_location = self.get_code_location(code_location_name)
         return code_location.get_external_notebook_data(notebook_path=notebook_path)
 
+    def get_base_deployment_context(self) -> Optional["BaseWorkspaceRequestContext"]:
+        return None
+
+    @property
+    @abstractmethod
+    def asset_record_loader(self) -> BatchAssetRecordLoader:
+        pass
+
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
@@ -324,6 +341,12 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             read_only_locations, "read_only_locations"
         )
         self._checked_permissions: Set[str] = set()
+        self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
+        self._loaders = {}
+
+    @property
+    def asset_record_loader(self) -> BatchAssetRecordLoader:
+        return self._asset_record_loader
 
     @property
     def instance(self) -> DagsterInstance:
@@ -383,6 +406,10 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         For example in the webserver this object represents the web request.
         """
         return self._source
+
+    @property
+    def loaders(self) -> Dict[Type, DataLoader]:
+        return self._loaders
 
 
 class IWorkspaceProcessContext(ABC):
@@ -599,10 +626,13 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     heartbeat=True,
                     watch_server=False,
                     grpc_server_registry=self._grpc_server_registry,
+                    instance=self._instance,
                 )
             else:
                 location = (
-                    origin.reload_location(self.instance) if reload else origin.create_location()
+                    origin.reload_location(self.instance)
+                    if reload
+                    else origin.create_location(self.instance)
                 )
 
         except Exception:

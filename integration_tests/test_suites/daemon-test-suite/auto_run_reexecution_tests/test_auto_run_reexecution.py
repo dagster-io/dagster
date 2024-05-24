@@ -3,6 +3,7 @@ import time
 from typing import cast
 
 from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
+from dagster._core.events import JobFailureData, RunFailureReason
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.snap import snapshot_from_execution_plan
@@ -71,6 +72,45 @@ def test_filter_runs_to_should_retry(instance):
             )
         )
         == 1
+    )
+
+
+def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_or_op_failure):
+    instance = instance_no_retry_on_asset_or_op_failure
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+
+    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # doesn't retry because its a step failure
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    assert any(
+        "Not retrying run since it failed due to an asset or op failure and run retries are configured with retry_on_asset_or_op_failure set to false."
+        in str(event)
+        for event in instance.all_logs(run.run_id)
     )
 
 

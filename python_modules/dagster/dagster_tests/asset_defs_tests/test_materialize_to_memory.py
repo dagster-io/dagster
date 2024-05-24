@@ -1,5 +1,6 @@
 import pytest
 from dagster import (
+    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetsDefinition,
@@ -38,7 +39,7 @@ def test_basic_materialize_to_memory():
 def test_materialize_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     assert materialize_to_memory(
         [the_asset_reqs_config],
@@ -49,7 +50,7 @@ def test_materialize_config():
 def test_materialize_bad_config():
     @asset(config_schema={"foo_str": str})
     def the_asset_reqs_config(context):
-        assert context.op_config["foo_str"] == "foo"
+        assert context.op_execution_context.op_config["foo_str"] == "foo"
 
     with pytest.raises(DagsterInvalidConfigError, match="Error in config for job"):
         materialize_to_memory(
@@ -243,8 +244,8 @@ def test_materialize_multi_asset():
 
 def test_materialize_to_memory_partition_key():
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-01-01"))
-    def the_asset(context):
-        assert context.asset_partition_key_for_output() == "2022-02-02"
+    def the_asset(context: AssetExecutionContext):
+        assert context.partition_key == "2022-02-02"
 
     result = materialize_to_memory([the_asset], partition_key="2022-02-02")
     assert result.success
@@ -252,8 +253,8 @@ def test_materialize_to_memory_partition_key():
 
 def test_materialize_tags():
     @asset
-    def the_asset(context):
-        assert context.get_tag("key1") == "value1"
+    def the_asset(context: AssetExecutionContext):
+        assert context.run.tags.get("key1") == "value1"
 
     result = materialize_to_memory([the_asset], tags={"key1": "value1"})
     assert result.success
@@ -263,7 +264,7 @@ def test_materialize_tags():
 def test_materialize_to_memory_partition_key_and_run_config():
     @asset(config_schema={"value": str})
     def configurable(context):
-        assert context.op_config["value"] == "a"
+        assert context.op_execution_context.op_config["value"] == "a"
 
     @asset(partitions_def=DailyPartitionsDefinition(start_date="2022-09-11"))
     def partitioned(context):

@@ -3,6 +3,7 @@
 This example demonstrates how to write a smoke test that exercises all the transformations in a data pipeline.
 
 It contains two separate asset graphs:
+
 - assets_smoke_test/pure_python_assets.py contains an asset graph implemented entirely in Python.
 - assets_smoke_test/python_and_dbt_assets.py contains an asset graph implemented both in Python and dbt.
 

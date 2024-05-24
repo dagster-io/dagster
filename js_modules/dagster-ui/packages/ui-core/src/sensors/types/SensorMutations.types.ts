@@ -29,8 +29,8 @@ export type StartSensorMutation = {
 };
 
 export type StopRunningSensorMutationVariables = Types.Exact<{
-  jobOriginId: Types.Scalars['String'];
-  jobSelectorId: Types.Scalars['String'];
+  jobOriginId: Types.Scalars['String']['input'];
+  jobSelectorId: Types.Scalars['String']['input'];
 }>;
 
 export type StopRunningSensorMutation = {
@@ -54,5 +54,31 @@ export type StopRunningSensorMutation = {
           status: Types.InstigationStatus;
         } | null;
       }
+    | {__typename: 'UnauthorizedError'; message: string};
+};
+
+export type ResetSensorMutationVariables = Types.Exact<{
+  sensorSelector: Types.SensorSelector;
+}>;
+
+export type ResetSensorMutation = {
+  __typename: 'Mutation';
+  resetSensor:
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
+    | {
+        __typename: 'Sensor';
+        id: string;
+        sensorState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
+      }
+    | {__typename: 'SensorNotFoundError'; message: string}
     | {__typename: 'UnauthorizedError'; message: string};
 };

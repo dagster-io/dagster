@@ -146,7 +146,8 @@ def _composite_descent(
                 )
 
             complete_config_object = merge_dicts(
-                current_op_config, config_mapped_node_config.value  # type: ignore  # (unknown EVR type)
+                current_op_config,
+                config_mapped_node_config.value,  # type: ignore  # (unknown EVR type)
             )
             yield OpConfigEntry(current_handle, OpConfig.from_dict(complete_config_object))
             continue
@@ -221,7 +222,7 @@ def _apply_top_level_config_mapping(
             dependency_structure=graph_def.dependency_structure,
             resource_defs=resource_defs,
             asset_layer=job_def.asset_layer,
-            node_input_source_assets=graph_def.node_input_source_assets,
+            input_assets=graph_def.input_assets,
         )
 
         # process against that new type
@@ -289,7 +290,7 @@ def _apply_config_mapping(
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,
         asset_layer=asset_layer,
-        node_input_source_assets=graph_def.node_input_source_assets,
+        input_assets=graph_def.input_assets,
     )
 
     # process against that new type
@@ -315,11 +316,9 @@ def _get_error_lambda(current_stack: DescentStack) -> Callable[[], str]:
 
 
 def _get_top_level_error_lambda(job_def: JobDefinition) -> Callable[[], str]:
-    return (
-        lambda: (
-            f"The config mapping function on top-level graph {job_def.graph.name} in job"
-            f" {job_def.name} has thrown an unexpected error during its execution."
-        )
+    return lambda: (
+        f"The config mapping function on top-level graph {job_def.graph.name} in job"
+        f" {job_def.name} has thrown an unexpected error during its execution."
     )
 
 

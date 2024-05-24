@@ -23,6 +23,7 @@ from dagster import (
     op,
 )
 from dagster._cli.debug import DebugRunPayload
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
 from dagster._core.definitions.metadata import MetadataValue
@@ -31,8 +32,10 @@ from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.host_representation.external_data import ExternalStaticPartitionsDefinitionData
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
@@ -667,15 +670,15 @@ def test_external_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster._core.host_representation.origin import (
-        ExternalInstigatorOrigin,
-        ExternalRepositoryOrigin,
+    from dagster._core.remote_representation.origin import (
         GrpcServerCodeLocationOrigin,
+        RemoteInstigatorOrigin,
+        RemoteRepositoryOrigin,
     )
 
     # serialize from current code, compare against old code
-    instigator_origin = ExternalInstigatorOrigin(
-        external_repository_origin=ExternalRepositoryOrigin(
+    instigator_origin = RemoteInstigatorOrigin(
+        repository_origin=RemoteRepositoryOrigin(
             code_location_origin=GrpcServerCodeLocationOrigin(
                 host="localhost", port=1234, location_name="test_location"
             ),
@@ -701,7 +704,7 @@ def test_external_job_origin_instigator_origin():
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
 
-    job_to_instigator = deserialize_value(job_origin_str, ExternalInstigatorOrigin)
+    job_to_instigator = deserialize_value(job_origin_str, RemoteInstigatorOrigin)
     # ensure that the origin id is stable
     assert job_to_instigator.get_id() == job_origin.get_id()
 
@@ -912,10 +915,10 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster._core.host_representation.origin import (
-        ExternalPartitionSetOrigin,
-        ExternalRepositoryOrigin,
+    from dagster._core.remote_representation.origin import (
         GrpcServerCodeLocationOrigin,
+        RemotePartitionSetOrigin,
+        RemoteRepositoryOrigin,
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
@@ -955,8 +958,8 @@ def test_add_bulk_actions_columns():
             assert backfill_count == migrated_row_count
 
             # check that we are writing to selector id, action types
-            external_origin = ExternalPartitionSetOrigin(
-                external_repository_origin=ExternalRepositoryOrigin(
+            external_origin = RemotePartitionSetOrigin(
+                repository_origin=RemoteRepositoryOrigin(
                     code_location_origin=GrpcServerCodeLocationOrigin(port=1234, host="localhost"),
                     repository_name="fake_repository",
                 ),
@@ -1019,7 +1022,7 @@ def test_add_kvs_table():
 def test_add_asset_event_tags_table():
     @op
     def yields_materialization_w_tags(_):
-        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={"dagster/foo": "bar"})
+        yield AssetMaterialization(asset_key=AssetKey(["a"]), tags={DATA_VERSION_TAG: "bar"})
         yield Output(1)
 
     @job
@@ -1048,7 +1051,7 @@ def test_add_asset_event_tags_table():
 
             asset_job.execute_in_process(instance=instance)
             assert instance._event_storage.get_event_tags_for_asset(asset_key=AssetKey(["a"])) == [
-                {"dagster/foo": "bar"}
+                {DATA_VERSION_TAG: "bar"}
             ]
 
             indexes = get_sqlite3_indexes(db_path, "asset_event_tags")
@@ -1260,3 +1263,29 @@ def test_static_partitions_definition_dup_keys_backcompat():
     assert received_from_user.get_partitions_definition() == StaticPartitionsDefinition(
         partition_keys=["a", "b"]
     )
+
+
+# 1.6.13 added a custom field serializer to KnownExecutionState.step_output_versions and deleted the
+# class `StepOutputVersionData`, but we still serialize to `StepOutputVersionData` for backcompat.
+def test_known_execution_state_step_output_version_serialization() -> None:
+    known_state = KnownExecutionState(
+        previous_retry_attempts=None,
+        dynamic_mappings=None,
+        step_output_versions={StepOutputHandle("foo", "bar"): "1"},
+    )
+
+    serialized = serialize_value(known_state)
+    assert json.loads(serialized)["step_output_versions"] == [
+        {
+            "__class__": "StepOutputVersionData",
+            "step_output_handle": {
+                "__class__": "StepOutputHandle",
+                "step_key": "foo",
+                "output_name": "bar",
+                "mapping_key": None,
+            },
+            "version": "1",
+        }
+    ]
+
+    assert deserialize_value(serialized, KnownExecutionState) == known_state

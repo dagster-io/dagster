@@ -1,11 +1,11 @@
 // eslint-disable-next-line no-restricted-imports
 import {Placement} from '@blueprintjs/popover2';
-import React from 'react';
+import * as React from 'react';
 import styled, {CSSProperties} from 'styled-components';
 
 import {Box} from './Box';
 import {Button} from './Button';
-import {Colors} from './Colors';
+import {Colors} from './Color';
 import {Popover} from './Popover';
 import {Subheading} from './Text';
 
@@ -28,15 +28,18 @@ type Props = {
   children: React.ReactNode;
   title: React.ReactNode;
   description?: React.ReactNode;
+  canShow?: boolean;
   actions?: {
+    custom?: React.ReactNode;
     next?: () => void;
     dismiss?: () => void;
   };
   position: ProductTourPosition;
   width?: CSSProperties['width'];
+  modifiers?: React.ComponentProps<typeof Popover>['modifiers'];
 } & ObjectType;
 
-export const ProductTour: React.FC<Props> = ({
+export const ProductTour = ({
   title,
   description,
   actions,
@@ -45,8 +48,10 @@ export const ProductTour: React.FC<Props> = ({
   img,
   video,
   object,
+  modifiers = {},
   width = '260px',
-}) => {
+  canShow = true,
+}: Props) => {
   const media = React.useMemo(() => {
     if (img) {
       return <img src={img} style={{borderRadius: '6px'}} />;
@@ -60,19 +65,22 @@ export const ProductTour: React.FC<Props> = ({
   const actionsJsx = React.useMemo(() => {
     return (
       <ActionsContainer flex={{gap: 6, direction: 'row'}} margin={{top: 8}}>
+        {actions?.custom}
         {actions?.next ? <Button onClick={actions.next}>Next</Button> : null}
         {actions?.dismiss ? <Button onClick={actions.dismiss}>Dismiss</Button> : null}
       </ActionsContainer>
     );
-  }, [actions?.next, actions?.dismiss]);
+  }, [actions?.custom, actions?.next, actions?.dismiss]);
 
   return (
     <Popover
-      isOpen={true}
+      popoverClassName="bp4-dark"
+      isOpen={canShow}
       placement={position as Placement}
       modifiers={{
         arrow: {enabled: true},
         preventOverflow: {enabled: true},
+        ...modifiers,
       }}
       minimal={false}
       content={
@@ -97,17 +105,17 @@ export const ProductTour: React.FC<Props> = ({
 
 const ProductTourContainer = styled(Box)`
   pointer-events: all;
-  background: ${Colors.Gray900};
+  background: ${Colors.tooltipBackground()};
   border-radius: 4px;
   padding: 16px;
-  box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0px 2px 12px ${Colors.shadowDefault()};
 
   &,
   button {
     &,
     &:hover,
     &:focus {
-      color: ${Colors.White};
+      color: ${Colors.tooltipText()};
     }
   }
 `;

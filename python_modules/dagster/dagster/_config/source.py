@@ -90,9 +90,7 @@ class BoolSourceType(ScalarUnion):
             return bool(value)
         except ValueError as e:
             raise PostProcessingError(
-                (
-                    'Value "{value}" stored in env variable "{var}" cannot be coerced into an bool.'
-                ).format(value=value, var=cfg)
+                (f'Value "{value}" stored in env variable "{cfg}" cannot be coerced into an bool.')
             ) from e
 
 

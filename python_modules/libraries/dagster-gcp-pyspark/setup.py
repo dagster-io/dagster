@@ -16,7 +16,7 @@ ver = get_version()
 # dont pin dev installs to avoid pip dep resolver issues
 pin = "" if ver == "1!0+dev" else f"=={ver}"
 setup(
-    name="dagster_gcp_pyspark",
+    name="dagster-gcp-pyspark",
     version=get_version(),
     author="Dagster Labs",
     author_email="hello@dagsterlabs.com",
@@ -34,6 +34,7 @@ setup(
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["dagster_gcp_pyspark_tests*"]),
+    python_requires=">=3.8,<3.13",
     install_requires=[
         f"dagster{pin}",
         f"dagster-gcp{pin}",

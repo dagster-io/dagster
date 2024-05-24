@@ -157,15 +157,10 @@ class TestPostgresInstance:
             )  # buildkite docker is handled in pipeline setup
             return
 
-        try:
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
-            )
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-            )
-        except subprocess.CalledProcessError:
-            pass
+        subprocess.run(
+            ["docker-compose", "-f", docker_compose_file, "down", service_name],
+            check=False,
+        )
 
         try:
             subprocess.check_output(
@@ -181,17 +176,13 @@ class TestPostgresInstance:
 
         conn_str = TestPostgresInstance.conn_string(**conn_args)
         wait_for_connection(conn_str, retry_limit=10, retry_wait=3)
-        yield conn_str
-
         try:
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "stop", service_name]
+            yield conn_str
+        finally:
+            subprocess.run(
+                ["docker-compose", "-f", docker_compose_file, "down", service_name],
+                check=False,
             )
-            subprocess.check_output(
-                ["docker-compose", "-f", docker_compose_file, "rm", "-f", service_name]
-            )
-        except subprocess.CalledProcessError:
-            pass
 
     @staticmethod
     @contextmanager

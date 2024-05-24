@@ -7,30 +7,32 @@ import {
   Spinner,
   Tooltip,
 } from '@dagster-io/ui-components';
-import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
-
-import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {
   NO_RELOAD_PERMISSION_TEXT,
   ReloadRepositoryLocationButton,
 } from './ReloadRepositoryLocationButton';
+import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePathFromAddress} from '../workspace/workspacePath';
 
-export const RepositoryLink: React.FC<{
+export const RepositoryLink = ({
+  repoAddress,
+  showIcon = false,
+  showRefresh = true,
+}: {
   repoAddress: RepoAddress;
   showIcon?: boolean;
   showRefresh?: boolean;
-}> = ({repoAddress, showIcon = false, showRefresh = true}) => {
+}) => {
   const {location} = repoAddress;
   const repoString = repoAddressAsHumanString(repoAddress);
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}} title={repoString}>
-      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.Gray400} />}
+      {showIcon && <Icon name="folder" style={{marginRight: 8}} color={Colors.accentGray()} />}
       <RepositoryName to={workspacePathFromAddress(repoAddress)} style={{flex: 1}}>
         <MiddleTruncate text={repoString} />
       </RepositoryName>
@@ -60,7 +62,7 @@ export const RepositoryLink: React.FC<{
                   <StyledButton disabled={!hasReloadPermission} onClick={tryReload}>
                     <Icon
                       name="refresh"
-                      color={hasReloadPermission ? Colors.Gray400 : Colors.Gray300}
+                      color={hasReloadPermission ? Colors.accentGray() : Colors.accentGrayHover()}
                     />
                   </StyledButton>
                 )}
@@ -107,6 +109,6 @@ const StyledButton = styled.button`
   }
 
   :hover ${IconWrapper} {
-    color: ${Colors.Blue500};
+    color: ${Colors.accentBlue()};
   }
 `;

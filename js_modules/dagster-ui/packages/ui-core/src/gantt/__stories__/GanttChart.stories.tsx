@@ -1,7 +1,7 @@
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {Box, Button, CustomTooltipProvider} from '@dagster-io/ui-components';
 import {Meta} from '@storybook/react';
-import React, {useState} from 'react';
+import {useState} from 'react';
 
 import {GraphQueryItem} from '../../app/GraphQueryImpl';
 import {RunStatus, buildRun, buildRunGroup, buildRunStatsSnapshot} from '../../graphql/types';
@@ -67,11 +67,15 @@ const runGroupMock: MockedResponse<RunGroupPanelQuery, RunGroupPanelQueryVariabl
   },
 };
 
-const GanttTestCase: React.FC<{
+const GanttTestCase = ({
+  graph,
+  logs,
+  focusedTime,
+}: {
   graph: GraphQueryItem[];
   logs: RunMetadataProviderMessageFragment[];
   focusedTime: number;
-}> = ({graph, logs, focusedTime}) => {
+}) => {
   const [selectionQuery, setSelectionQuery] = useState<string>('');
   const [selectionKeys, setSelectionKeys] = useState<string[]>([]);
   const [progress, setProgress] = useState<number>(5);

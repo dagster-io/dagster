@@ -1,4 +1,3 @@
-import * as React from 'react';
 import styled from 'styled-components';
 
 import {Button} from './Button';
@@ -12,12 +11,12 @@ export interface CursorPaginationProps {
   reset: () => void;
 }
 
-export const CursorPaginationControls: React.FC<CursorPaginationProps> = ({
+export const CursorPaginationControls = ({
   hasPrevCursor,
   hasNextCursor,
   popCursor,
   advanceCursor,
-}) => {
+}: CursorPaginationProps) => {
   return (
     <CursorControlsContainer>
       <Button disabled={!hasPrevCursor} icon={<Icon name="arrow_back" />} onClick={popCursor}>
@@ -34,12 +33,12 @@ export const CursorPaginationControls: React.FC<CursorPaginationProps> = ({
   );
 };
 
-export const CursorHistoryControls: React.FC<CursorPaginationProps> = ({
+export const CursorHistoryControls = ({
   hasPrevCursor,
   hasNextCursor,
   popCursor,
   advanceCursor,
-}) => {
+}: CursorPaginationProps) => {
   return (
     <CursorControlsContainer>
       <Button icon={<Icon name="arrow_back" />} disabled={!hasPrevCursor} onClick={popCursor}>

@@ -473,6 +473,14 @@ def test_webserver_scheduler_name_override(deployment_template: HelmTemplate):
     assert webserver_deployment.spec.template.spec.scheduler_name == "myscheduler"
 
 
+def test_automount_svc_acct_token(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagsterWebserver=Webserver.construct())
+
+    [deployment] = deployment_template.render(helm_values)
+
+    assert deployment.spec.template.spec.automount_service_account_token
+
+
 def test_webserver_security_context(deployment_template: HelmTemplate):
     security_context = {
         "allowPrivilegeEscalation": False,
@@ -499,6 +507,29 @@ def test_webserver_security_context(deployment_template: HelmTemplate):
         == k8s_model_from_dict(
             k8s_client.models.V1SecurityContext,
             k8s_snake_case_dict(k8s_client.models.V1SecurityContext, security_context),
+        )
+        for container in webserver_deployment.spec.template.spec.init_containers
+    )
+
+
+def test_init_container_resources(deployment_template: HelmTemplate):
+    init_container_resources = {"limits": {"cpu": "200m"}, "requests": {"memory": "1Gi"}}
+    helm_values = DagsterHelmValues.construct(
+        dagsterWebserver=Webserver.construct(initContainerResources=init_container_resources)
+    )
+
+    [webserver_deployment] = deployment_template.render(helm_values)
+
+    assert len(webserver_deployment.spec.template.spec.init_containers) == 2
+
+    assert all(
+        container.resources
+        == k8s_model_from_dict(
+            k8s_client.models.v1_resource_requirements.V1ResourceRequirements,
+            k8s_snake_case_dict(
+                k8s_client.models.v1_resource_requirements.V1ResourceRequirements,
+                init_container_resources,
+            ),
         )
         for container in webserver_deployment.spec.template.spec.init_containers
     )
@@ -547,7 +578,7 @@ def test_env_configmap(configmap_template):
         )
     )
     [cm] = configmap_template.render(helm_values)
-    assert len(cm.data) == 7
+    assert len(cm.data) == 5
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert "TEST_ENV" not in cm.data
 
@@ -558,6 +589,6 @@ def test_env_configmap(configmap_template):
         )
     )
     [cm] = configmap_template.render(helm_values)
-    assert len(cm.data) == 8
+    assert len(cm.data) == 6
     assert cm.data["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert cm.data["TEST_ENV"] == "test_value"

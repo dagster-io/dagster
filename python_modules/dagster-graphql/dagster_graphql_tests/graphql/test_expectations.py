@@ -2,7 +2,7 @@ import json
 
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
-from dagster_graphql.test.utils import infer_pipeline_selector
+from dagster_graphql.test.utils import infer_job_selector
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_events
@@ -28,7 +28,7 @@ class TestExpectations(ExecutingGraphQLContextTestMatrix):
     def test_basic_expectations_within_compute_step_events(
         self, graphql_context: WorkspaceRequestContext, snapshot
     ):
-        selector = infer_pipeline_selector(graphql_context, "job_with_expectations")
+        selector = infer_job_selector(graphql_context, "job_with_expectations")
         logs = sync_execute_get_events(
             context=graphql_context,
             variables={"executionParams": {"selector": selector}},
@@ -71,7 +71,7 @@ class TestExpectations(ExecutingGraphQLContextTestMatrix):
     def test_basic_input_output_expectations(
         self, graphql_context: WorkspaceRequestContext, snapshot
     ):
-        selector = infer_pipeline_selector(graphql_context, "csv_hello_world_with_expectations")
+        selector = infer_job_selector(graphql_context, "csv_hello_world_with_expectations")
         logs = sync_execute_get_events(
             context=graphql_context,
             variables={

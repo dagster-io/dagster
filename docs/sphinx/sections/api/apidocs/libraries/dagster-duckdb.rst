@@ -1,7 +1,7 @@
 DuckDB (dagster-duckdb)
 -----------------------------
 
-This library provides an integration with the `DuckDB <hhttps://duckdb.org/>`_ database.
+This library provides an integration with the `DuckDB <https://duckdb.org/>`_ database.
 
 Related Guides:
 

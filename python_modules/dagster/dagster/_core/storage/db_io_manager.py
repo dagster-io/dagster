@@ -4,6 +4,7 @@ from typing import (
     Any,
     Dict,
     Generic,
+    Iterator,
     List,
     Mapping,
     NamedTuple,
@@ -26,7 +27,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager
@@ -64,10 +65,12 @@ class DbTypeHandler(ABC, Generic[T]):
         pass
 
 
-class DbClient:
+class DbClient(Generic[T]):
     @staticmethod
     @abstractmethod
-    def delete_table_slice(context: OutputContext, table_slice: TableSlice, connection) -> None: ...
+    def delete_table_slice(
+        context: OutputContext, table_slice: TableSlice, connection: T
+    ) -> None: ...
 
     @staticmethod
     @abstractmethod
@@ -76,12 +79,15 @@ class DbClient:
     @staticmethod
     @abstractmethod
     def ensure_schema_exists(
-        context: OutputContext, table_slice: TableSlice, connection
+        context: OutputContext, table_slice: TableSlice, connection: T
     ) -> None: ...
 
     @staticmethod
+    @abstractmethod
     @contextmanager
-    def connect(context: Union[OutputContext, InputContext], table_slice: TableSlice): ...
+    def connect(
+        context: Union[OutputContext, InputContext], table_slice: TableSlice
+    ) -> Iterator[T]: ...
 
 
 class DbIOManager(IOManager):
@@ -120,31 +126,33 @@ class DbIOManager(IOManager):
             self._default_load_type = default_load_type
 
     def handle_output(self, context: OutputContext, obj: object) -> None:
+        # If the output type is set to Nothing, handle_output will not be
+        # called. We still need to raise an error when the return value
+        # is None, but the typing type is not Nothing
+        if obj is None:
+            raise DagsterInvariantViolationError(
+                "Unexpected 'None' output value. If a 'None' value is intentional, set the output"
+                " type to None by adding return type annotation '-> None'.",
+            )
+
+        obj_type = type(obj)
+        self._check_supported_type(obj_type)
+
         table_slice = self._get_table_slice(context, context)
 
-        if obj is not None:
-            obj_type = type(obj)
-            self._check_supported_type(obj_type)
+        with self._db_client.connect(context, table_slice) as conn:
+            self._db_client.ensure_schema_exists(context, table_slice, conn)
+            self._db_client.delete_table_slice(context, table_slice, conn)
 
-            with self._db_client.connect(context, table_slice) as conn:
-                self._db_client.ensure_schema_exists(context, table_slice, conn)
-                self._db_client.delete_table_slice(context, table_slice, conn)
-
-                handler_metadata = (
-                    self._handlers_by_type[obj_type].handle_output(context, table_slice, obj, conn)
-                    or {}
-                )
-        else:
-            check.invariant(
-                context.dagster_type.is_nothing,
-                "Unexpected 'None' output value. If a 'None' value is intentional, set the"
-                " output type to None.",
+            handler_metadata = self._handlers_by_type[obj_type].handle_output(
+                context, table_slice, obj, conn
             )
-            # if obj is None, assume that I/O was handled in the op body
-            handler_metadata = {}
 
         context.add_output_metadata(
-            {**handler_metadata, "Query": self._db_client.get_select_statement(table_slice)}
+            {
+                **(handler_metadata or {}),
+                "Query": self._db_client.get_select_statement(table_slice),
+            }
         )
 
     def load_input(self, context: InputContext) -> object:
@@ -164,7 +172,7 @@ class DbIOManager(IOManager):
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
     ) -> TableSlice:
-        output_context_metadata = output_context.metadata or {}
+        output_context_metadata = output_context.definition_metadata or {}
 
         schema: str
         table: str
@@ -172,19 +180,16 @@ class DbIOManager(IOManager):
         if context.has_asset_key:
             asset_key_path = context.asset_key.path
             table = asset_key_path[-1]
-            if len(asset_key_path) > 1 and self._schema:
-                raise DagsterInvalidDefinitionError(
-                    f"Asset {asset_key_path} specifies a schema with "
-                    f"its key prefixes {asset_key_path[:-1]}, but schema  "
-                    f"{self._schema} was also provided via run config. "
-                    "Schema can only be specified one way."
-                )
-            elif len(asset_key_path) > 1:
-                schema = asset_key_path[-2]
+            # schema order of precedence: metadata, I/O manager 'schema' config, key_prefix
+            if output_context_metadata.get("schema"):
+                schema = cast(str, output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
+            elif len(asset_key_path) > 1:
+                schema = asset_key_path[-2]
             else:
                 schema = "public"
+
             if context.has_asset_partitions:
                 partition_expr = output_context_metadata.get("partition_expr")
                 if partition_expr is None:
@@ -242,14 +247,7 @@ class DbIOManager(IOManager):
                     )
         else:
             table = output_context.name
-            if output_context_metadata.get("schema") and self._schema:
-                raise DagsterInvalidDefinitionError(
-                    f"Schema {output_context_metadata.get('schema')} "
-                    "specified via output metadata, but conflicting schema "
-                    f"{self._schema} was provided via run_config. "
-                    "Schema can only be specified one way."
-                )
-            elif output_context_metadata.get("schema"):
+            if output_context_metadata.get("schema"):
                 schema = cast(str, output_context_metadata["schema"])
             elif self._schema:
                 schema = self._schema
@@ -261,7 +259,7 @@ class DbIOManager(IOManager):
             schema=schema,
             database=self._database,
             partition_dimensions=partition_dimensions,
-            columns=(context.metadata or {}).get("columns"),
+            columns=(context.definition_metadata or {}).get("columns"),
         )
 
     def _check_supported_type(self, obj_type):

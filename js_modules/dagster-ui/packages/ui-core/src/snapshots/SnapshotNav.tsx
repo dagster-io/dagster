@@ -1,14 +1,13 @@
 import {gql, useQuery} from '@apollo/client';
-import {PageHeader, Tabs, Tag, Heading, FontFamily} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {FontFamily, Heading, PageHeader, Tabs, Tag} from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {explorerPathToString, ExplorerPath} from '../pipelines/PipelinePathUtils';
+import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {ExplorerPath, explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {TabLink} from '../ui/TabLink';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
-
-import {SnapshotQuery, SnapshotQueryVariables} from './types/SnapshotNav.types';
 
 const SNAPSHOT_PARENT_QUERY = gql`
   query SnapshotQuery($snapshotId: String!) {
@@ -35,12 +34,14 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   });
 
   const currentPipelineState = useActivePipelineForName(pipelineName);
-  const isJob = !!currentPipelineState?.isJob;
   const currentSnapshotID = currentPipelineState?.pipelineSnapshotId;
 
-  const {data, loading} = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
+  const queryResult = useQuery<SnapshotQuery, SnapshotQueryVariables>(SNAPSHOT_PARENT_QUERY, {
     variables: {snapshotId},
   });
+
+  const {data, loading} = queryResult;
+  useBlockTraceOnQueryResult(queryResult, 'SnapshotQuery');
 
   const tag = () => {
     if (loading) {
@@ -87,7 +88,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
   return (
     <PageHeader
       title={
-        <Heading style={{fontFamily: FontFamily.monospace, fontSize: '20px'}}>
+        <Heading style={{fontFamily: FontFamily.monospace, fontSize: '16px'}}>
           {explorerPath.snapshotId?.slice(0, 8)}
         </Heading>
       }
@@ -95,7 +96,7 @@ export const SnapshotNav = (props: SnapshotNavProps) => {
         <>
           <Tag icon="schema">
             Snapshot of{' '}
-            <Link to={workspacePipelinePathGuessRepo(explorerPath.pipelineName, isJob)}>
+            <Link to={workspacePipelinePathGuessRepo(explorerPath.pipelineName)}>
               {explorerPath.pipelineName}
             </Link>
           </Tag>

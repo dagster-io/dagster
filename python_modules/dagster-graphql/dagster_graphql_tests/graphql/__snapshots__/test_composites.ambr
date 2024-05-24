@@ -1,3 +1,4 @@
+# serializer version: 1
 # name: TestComposites.test_composites[0]
   dict({
     'pipelineOrError': dict({

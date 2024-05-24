@@ -1,8 +1,15 @@
-from dagster import RunRequest, ScheduleEvaluationContext, job, op, schedule
+from dagster import (
+    OpExecutionContext,
+    RunRequest,
+    ScheduleEvaluationContext,
+    job,
+    op,
+    schedule,
+)
 
 
 @op(config_schema={"activity_selection": str})
-def configurable_op(context):
+def configurable_op(context: OpExecutionContext):
     pass
 
 

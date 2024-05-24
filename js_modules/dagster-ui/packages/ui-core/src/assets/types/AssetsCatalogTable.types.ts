@@ -16,14 +16,21 @@ export type AssetCatalogTableQuery = {
           definition: {
             __typename: 'AssetNode';
             id: string;
-            groupName: string | null;
+            changedReasons: Array<Types.ChangeReason>;
+            groupName: string;
             opNames: Array<string>;
             isSource: boolean;
             isObservable: boolean;
+            isExecutable: boolean;
             computeKind: string | null;
             hasMaterializePermission: boolean;
             description: string | null;
             partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+            owners: Array<
+              | {__typename: 'TeamAssetOwner'; team: string}
+              | {__typename: 'UserAssetOwner'; email: string}
+            >;
+            tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
             repository: {
               __typename: 'Repository';
               id: string;
@@ -54,15 +61,21 @@ export type AssetCatalogGroupTableQuery = {
   assetNodes: Array<{
     __typename: 'AssetNode';
     id: string;
-    groupName: string | null;
+    changedReasons: Array<Types.ChangeReason>;
+    groupName: string;
     opNames: Array<string>;
     isSource: boolean;
     isObservable: boolean;
+    isExecutable: boolean;
     computeKind: string | null;
     hasMaterializePermission: boolean;
     description: string | null;
     assetKey: {__typename: 'AssetKey'; path: Array<string>};
     partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+    owners: Array<
+      {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+    >;
+    tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
     repository: {
       __typename: 'Repository';
       id: string;
@@ -75,15 +88,21 @@ export type AssetCatalogGroupTableQuery = {
 export type AssetCatalogGroupTableNodeFragment = {
   __typename: 'AssetNode';
   id: string;
-  groupName: string | null;
+  changedReasons: Array<Types.ChangeReason>;
+  groupName: string;
   opNames: Array<string>;
   isSource: boolean;
   isObservable: boolean;
+  isExecutable: boolean;
   computeKind: string | null;
   hasMaterializePermission: boolean;
   description: string | null;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
   partitionDefinition: {__typename: 'PartitionDefinition'; description: string} | null;
+  owners: Array<
+    {__typename: 'TeamAssetOwner'; team: string} | {__typename: 'UserAssetOwner'; email: string}
+  >;
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
   repository: {
     __typename: 'Repository';
     id: string;

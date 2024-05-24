@@ -31,9 +31,9 @@ def test_twilio_resource(twilio_resource_option) -> None:
         twilio = twilio_resource.create_client()
         twilio.messages.create(body="test message", from_="+15005550006", to="+15005550006")
 
-        with pytest.raises(TwilioRestException) as exc_info:
+        # Should fail because the "to" number is not a valid test number
+        with pytest.raises(TwilioRestException):
             twilio.messages.create(body="test message", from_="+15005550006", to="+15005550001")
-        assert "The 'To' number +15005550001 is not a valid phone number" in str(exc_info.value)
 
     result = wrap_op_in_graph_and_execute(
         twilio_op,

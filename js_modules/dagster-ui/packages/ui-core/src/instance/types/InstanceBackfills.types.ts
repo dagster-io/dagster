@@ -36,8 +36,9 @@ export type InstanceHealthForBackfillsQuery = {
 };
 
 export type InstanceBackfillsQueryVariables = Types.Exact<{
-  cursor?: Types.InputMaybe<Types.Scalars['String']>;
-  limit?: Types.InputMaybe<Types.Scalars['Int']>;
+  status?: Types.InputMaybe<Types.BulkActionStatus>;
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']['input']>;
 }>;
 
 export type InstanceBackfillsQuery = {
@@ -82,6 +83,7 @@ export type InstanceBackfillsQuery = {
             }>;
           } | null;
           assetSelection: Array<{__typename: 'AssetKey'; path: Array<string>}> | null;
+          tags: Array<{__typename: 'PipelineTag'; key: string; value: string}>;
         }>;
       }
     | {

@@ -127,7 +127,6 @@ def load_python_module(
         list(remove_from_path_fn()) if remove_from_path_fn else []
     )  # hook for tests
     remove_paths.insert(0, sys.path[0])  # remove the script path
-
     with alter_sys_path(
         to_add=([working_directory] if working_directory else []), to_remove=remove_paths
     ):
@@ -310,9 +309,7 @@ class CustomPointer(
         )
 
     def describe(self) -> str:
-        return "reconstructable using {module}.{fn_name}".format(
-            module=self.reconstructor_pointer.module, fn_name=self.reconstructor_pointer.fn_name
-        )
+        return f"reconstructable using {self.reconstructor_pointer.module}.{self.reconstructor_pointer.fn_name}"
 
     # Allow this to be hashed for use in `lru_cache`. This is needed because:
     # - `ReconstructableJob` uses `lru_cache`

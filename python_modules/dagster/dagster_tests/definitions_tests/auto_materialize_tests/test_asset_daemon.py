@@ -1,259 +1,786 @@
+import dataclasses
+import datetime
+from contextlib import contextmanager, nullcontext
+from typing import Any, Generator, Mapping, Optional, Sequence, cast
+
+import pendulum
 import pytest
-from dagster import AssetKey
-from dagster._core.instance_for_test import instance_for_test
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._daemon.asset_daemon import get_current_evaluation_id, set_auto_materialize_paused
-
-from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
-from .scenarios.auto_observe_scenarios import auto_observe_scenarios
-from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
-from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
-
-
-@pytest.fixture
-def instance():
-    with instance_for_test() as the_instance:
-        yield the_instance
-
-
-@pytest.mark.parametrize(
-    "scenario_item",
-    list(ASSET_RECONCILIATION_SCENARIOS.items()),
-    ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
+from dagster import (
+    AssetSpec,
+    AutoMaterializeRule,
+    DagsterInstance,
+    instance_for_test,
 )
-def test_reconcile_with_external_asset_graph(scenario_item, instance):
-    scenario_name, scenario = scenario_item
-    if not scenario.supports_with_external_asset_graph:
-        pytest.skip("Scenario does not support with_external_asset_graph")
-    run_requests, _, _ = scenario.do_sensor_scenario(
-        instance, scenario_name=scenario_name, with_external_asset_graph=True
-    )
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
+)
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.scheduler.instigation import (
+    InstigatorStatus,
+    InstigatorTick,
+    InstigatorType,
+    SensorInstigatorData,
+    TickData,
+    TickStatus,
+)
+from dagster._core.storage.tags import (
+    ASSET_EVALUATION_ID_TAG,
+    AUTO_MATERIALIZE_TAG,
+    SENSOR_NAME_TAG,
+    TICK_ID_TAG,
+)
+from dagster._core.utils import InheritContextThreadPoolExecutor
+from dagster._daemon.asset_daemon import (
+    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    asset_daemon_cursor_from_instigator_serialized_cursor,
+    get_has_migrated_to_sensors,
+    set_auto_materialize_paused,
+)
+from dagster._serdes.serdes import serialize_value
 
-    assert len(run_requests) == len(scenario.expected_run_requests), run_requests
+from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
-    def sort_run_request_key_fn(run_request):
-        return (min(run_request.asset_selection), run_request.partition_key)
+from .base_scenario import (
+    run_request,
+)
+from .scenario_specs import (
+    one_asset,
+    two_assets_in_sequence,
+    two_partitions_def,
+)
+from .updated_scenarios.asset_daemon_scenario import (
+    AssetDaemonScenario,
+    AssetRuleEvaluationSpec,
+)
+from .updated_scenarios.basic_scenarios import basic_scenarios
+from .updated_scenarios.cron_scenarios import (
+    basic_hourly_cron_rule,
+    basic_hourly_cron_schedule,
+    get_cron_policy,
+)
+from .updated_scenarios.partition_scenarios import partition_scenarios
 
-    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
-    sorted_expected_run_requests = sorted(
-        scenario.expected_run_requests, key=sort_run_request_key_fn
-    )
 
-    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
-        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
-        assert run_request.partition_key == expected_run_request.partition_key
-
-
-daemon_scenarios = {
-    **auto_materialize_policy_scenarios,
-    **multi_code_location_scenarios,
-    **auto_observe_scenarios,
-}
-
-
-@pytest.fixture
-def daemon_not_paused_instance():
+@contextmanager
+def get_daemon_instance(
+    paused: bool = False,
+    extra_overrides: Optional[Mapping[str, Any]] = None,
+) -> Generator[DagsterInstance, None, None]:
     with instance_for_test(
         overrides={
             "run_launcher": {
                 "module": "dagster._core.launcher.sync_in_memory_run_launcher",
                 "class": "SyncInMemoryRunLauncher",
-            }
+            },
+            **(extra_overrides or {}),
         }
     ) as instance:
-        set_auto_materialize_paused(instance, False)
+        set_auto_materialize_paused(instance, paused)
         yield instance
 
 
-@pytest.mark.parametrize(
-    "scenario_item",
-    list(daemon_scenarios.items()),
-    ids=list(daemon_scenarios.keys()),
+@contextmanager
+def _get_threadpool_executor(instance: DagsterInstance):
+    settings = instance.get_settings("auto_materialize")
+    with InheritContextThreadPoolExecutor(
+        max_workers=settings.get("num_workers"),
+        thread_name_prefix="asset_daemon_worker",
+    ) if settings.get("use_threads") else nullcontext() as executor:
+        yield executor
+
+
+# just run over a subset of the total scenarios
+daemon_scenarios = [*basic_scenarios, *partition_scenarios]
+
+
+# Additional repo with assets that should be not be included in the evaluation
+extra_definitions = ScenarioSpec(
+    [
+        AssetSpec("extra_asset1", auto_materialize_policy=AutoMaterializePolicy.eager()),
+        AssetSpec(
+            "extra_asset2",
+            deps=["extra_asset1"],
+            auto_materialize_policy=AutoMaterializePolicy.eager(),
+        ),
+    ]
 )
-def test_daemon(scenario_item, daemon_not_paused_instance):
-    scenario_name, scenario = scenario_item
-    scenario.do_daemon_scenario(daemon_not_paused_instance, scenario_name=scenario_name)
 
-    runs = daemon_not_paused_instance.get_runs()
+other_repo_definitions = ScenarioSpec(
+    asset_specs=[AssetSpec("asset1", auto_materialize_policy=AutoMaterializePolicy.eager())]
+)
 
-    expected_runs = 0
-    inner_scenario = scenario
-    while inner_scenario is not None:
-        expected_runs += len(inner_scenario.unevaluated_runs or []) + len(
-            inner_scenario.expected_run_requests or []
+
+second_asset_in_our_repo = ScenarioSpec(
+    asset_specs=[AssetSpec("asset2", deps=["asset1"])]
+).with_additional_repositories([other_repo_definitions])
+
+
+cross_repo_sensor_scenario = AssetDaemonScenario(
+    id="two_cross_repo_assets",
+    initial_spec=second_asset_in_our_repo.with_all_eager(),
+    # No runs since the first asset is not yet materialized and is not being considered by this sensor
+    execution_fn=lambda state: state.evaluate_tick().assert_requested_runs(),
+)
+
+
+auto_materialize_sensor_scenarios = [
+    cross_repo_sensor_scenario,
+    AssetDaemonScenario(
+        id="basic_hourly_cron_unpartitioned",
+        initial_spec=one_asset.with_asset_properties(
+            auto_materialize_policy=get_cron_policy(basic_hourly_cron_schedule)
         )
-        inner_scenario = inner_scenario.cursor_from
+        .with_current_time("2020-01-01T00:05")
+        .with_additional_repositories([extra_definitions]),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request(["A"]))
+        .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)])
+        # next tick should not request any more runs
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # still no runs should be requested
+        .with_current_time_advanced(minutes=50)
+        .evaluate_tick()
+        .assert_requested_runs()
+        # moved to a new cron schedule tick, request another run
+        .with_current_time_advanced(minutes=10)
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["A"]))
+        .assert_evaluation("A", [AssetRuleEvaluationSpec(basic_hourly_cron_rule)]),
+    ),
+    AssetDaemonScenario(
+        id="sensor_interval_respected",
+        initial_spec=two_assets_in_sequence.with_all_eager().with_additional_repositories(
+            [extra_definitions]
+        ),
+        execution_fn=lambda state: state.with_runs(run_request(["A", "B"]))
+        .evaluate_tick()
+        .assert_requested_runs()  # No runs initially
+        .with_runs(run_request(["A"]))
+        .evaluate_tick()
+        .assert_requested_runs()  # Still no runs because no time has passed
+        .with_current_time_advanced(seconds=10)  # 5 seconds later, no new tick
+        .evaluate_tick()
+        .assert_requested_runs()
+        .with_current_time_advanced(seconds=20)  # Once 30 seconds have passed, runs are created
+        .evaluate_tick()
+        .assert_requested_runs(run_request(["B"])),
+    ),
+    AssetDaemonScenario(
+        id="one_asset_never_materialized",
+        initial_spec=one_asset.with_all_eager().with_additional_repositories([extra_definitions]),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request(asset_keys=["A"]))
+        .assert_evaluation(
+            "A", [AssetRuleEvaluationSpec(rule=AutoMaterializeRule.materialize_on_missing())]
+        ),
+    ),
+    AssetDaemonScenario(
+        id="one_asset_already_launched",
+        initial_spec=one_asset.with_all_eager().with_additional_repositories([extra_definitions]),
+        execution_fn=lambda state: state.evaluate_tick()
+        .assert_requested_runs(run_request(asset_keys=["A"]))
+        .with_current_time_advanced(seconds=30)
+        .evaluate_tick()
+        .assert_requested_runs(),
+    ),
+]
 
-    assert len(runs) == expected_runs
 
-    for run in runs:
-        if any(
-            op_config["config"].get("fail") for op_config in run.run_config.get("ops", {}).values()
-        ):
-            assert run.status == DagsterRunStatus.FAILURE
-        else:
-            assert run.status == DagsterRunStatus.SUCCESS
+@pytest.mark.parametrize(
+    "scenario", daemon_scenarios, ids=[scenario.id for scenario in daemon_scenarios]
+)
+def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
+    with get_daemon_instance() as instance:
+        scenario.evaluate_daemon(instance)
 
-    def sort_run_request_key_fn(run_request):
-        return (min(run_request.asset_selection), run_request.partition_key)
 
-    def sort_run_key_fn(run):
-        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
 
-    # Get all of the runs that were submitted in the most recent asset evaluation
-    asset_evaluation_id = get_current_evaluation_id(daemon_not_paused_instance)
-    submitted_runs_in_scenario = (
+
+@pytest.mark.parametrize(
+    "scenario",
+    daemon_scenarios_with_threadpool_without_sensor,
+    ids=[scenario.id for scenario in daemon_scenarios_with_threadpool_without_sensor],
+)
+def test_asset_daemon_with_threadpool_without_sensor(scenario: AssetDaemonScenario) -> None:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"use_threads": True, "num_workers": 4}}
+    ) as instance:
+        with _get_threadpool_executor(instance) as threadpool_executor:
+            scenario.evaluate_daemon(instance, threadpool_executor=threadpool_executor)
+
+
+@pytest.mark.parametrize(
+    "scenario",
+    auto_materialize_sensor_scenarios,
+    ids=[scenario.id for scenario in auto_materialize_sensor_scenarios],
+)
+@pytest.mark.parametrize("num_threads", [0, 4])
+def test_asset_daemon_with_sensor(scenario: AssetDaemonScenario, num_threads: int) -> None:
+    with get_daemon_instance(
+        extra_overrides={
+            "auto_materialize": {
+                "use_sensors": True,
+                "use_threads": num_threads > 0,
+                "num_workers": num_threads,
+            }
+        }
+    ) as instance:
+        with _get_threadpool_executor(instance) as threadpool_executor:
+            scenario.evaluate_daemon(
+                instance,
+                sensor_name="default_auto_materialize_sensor",
+                threadpool_executor=threadpool_executor,
+            )
+
+
+def _get_asset_daemon_ticks(instance: DagsterInstance) -> Sequence[InstigatorTick]:
+    """Returns the set of ticks created by the asset daemon for the given instance."""
+    return sorted(
+        instance.get_ticks(
+            origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+        ),
+        key=lambda tick: tick.tick_id,
+    )
+
+
+def _create_tick(instance: DagsterInstance, status: TickStatus, timestamp: float) -> InstigatorTick:
+    return instance.create_tick(
+        TickData(
+            instigator_origin_id=_PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+            instigator_name=_PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
+            instigator_type=InstigatorType.AUTO_MATERIALIZE,
+            status=status,
+            timestamp=timestamp,
+            selector_id=_PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+            run_ids=[],
+        )
+    )
+
+
+# simple scenario to test the daemon in some more exotic states. does not make any assertions
+# as this state will be evaluated multiple times on the same instance and therefore assertions
+# valid at the start may not be valid when repeated.
+daemon_scenario = AssetDaemonScenario(
+    id="simple_daemon_scenario",
+    initial_spec=two_assets_in_sequence.with_asset_properties(
+        partitions_def=two_partitions_def
+    ).with_all_eager(2),
+    execution_fn=lambda state: state.evaluate_tick(),
+)
+
+
+def test_daemon_paused() -> None:
+    with get_daemon_instance(paused=True) as instance:
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 0
+
+        # Daemon paused, so no ticks
+        state = daemon_scenario.evaluate_daemon(instance)
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 0
+
+        set_auto_materialize_paused(instance, False)
+
+        state = daemon_scenario.execution_fn(state)
+        ticks = _get_asset_daemon_ticks(instance)
+
+        assert len(ticks) == 1
+        assert ticks[0]
+        assert ticks[0].status == TickStatus.SUCCESS
+        assert ticks[0].timestamp == state.current_time.timestamp()
+        assert ticks[0].tick_data.end_timestamp == state.current_time.timestamp()
+        assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
+
+        state = daemon_scenario.execution_fn(state)
+        ticks = _get_asset_daemon_ticks(instance)
+
+        # no new runs, so tick is now skipped
+        assert len(ticks) == 2
+        assert ticks[-1].status == TickStatus.SKIPPED
+        assert ticks[-1].timestamp == state.current_time.timestamp()
+        assert ticks[-1].tick_data.end_timestamp == state.current_time.timestamp()
+        assert ticks[-1].tick_data.auto_materialize_evaluation_id == 2
+
+
+three_assets = ScenarioSpec(asset_specs=[AssetSpec("A"), AssetSpec("B"), AssetSpec("C")])
+
+daemon_sensor_scenario = AssetDaemonScenario(
+    id="simple_daemon_scenario",
+    initial_spec=three_assets.with_sensors(
         [
-            run
-            for run in runs
-            if run.tags.get("dagster/asset_evaluation_id") == str(asset_evaluation_id)
+            AutoMaterializeSensorDefinition(
+                name="auto_materialize_sensor_a",
+                asset_selection=AssetSelection.assets("A"),
+                default_status=DefaultSensorStatus.RUNNING,
+                run_tags={
+                    "foo_tag": "bar_val",
+                },
+            ),
+            AutoMaterializeSensorDefinition(
+                name="auto_materialize_sensor_b",
+                asset_selection=AssetSelection.assets("B"),
+                default_status=DefaultSensorStatus.STOPPED,
+                minimum_interval_seconds=15,
+            ),
+            # default sensor picks up "C"
         ]
-        if asset_evaluation_id
-        else []
+    ).with_all_eager(3),
+    execution_fn=lambda state: state.evaluate_tick(),
+)
+
+
+def _assert_sensor_state(
+    instance,
+    sensor_name: str,
+    expected_num_ticks: int,
+    expected_status: InstigatorStatus = InstigatorStatus.RUNNING,
+):
+    sensor_states = [
+        sensor_state
+        for sensor_state in instance.schedule_storage.all_instigator_state(
+            instigator_type=InstigatorType.SENSOR
+        )
+        if sensor_state.origin.instigator_name == sensor_name
+    ]
+    assert len(sensor_states) == 1
+    sensor_state = sensor_states[0]
+
+    assert sensor_state.status == expected_status
+
+    ticks = instance.get_ticks(
+        sensor_state.instigator_origin_id,
+        sensor_state.selector_id,
     )
 
-    assert len(submitted_runs_in_scenario) == len(scenario.expected_run_requests), (
-        "Expected the following run requests to be submitted:"
-        f" {scenario.expected_run_requests} \n"
-        " but instead submitted runs with asset and partition selection:"
-        f" {[(list(run.asset_selection), run.tags.get(PARTITION_NAME_TAG)) for run in submitted_runs_in_scenario]}"
-    )
-
-    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
-    sorted_expected_run_requests = sorted(
-        scenario.expected_run_requests, key=sort_run_request_key_fn
-    )
-    for run, expected_run_request in zip(sorted_runs, sorted_expected_run_requests):
-        assert run.asset_selection is not None
-        assert set(run.asset_selection) == set(expected_run_request.asset_selection)
-        assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
+    assert len(ticks) == expected_num_ticks
 
 
-def test_daemon_run_tags():
-    scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
-    scenario = auto_materialize_policy_scenarios[scenario_name]
-
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-            "auto_materialize": {"run_tags": {"foo": "bar"}},
-        }
+def test_auto_materialize_sensor_no_transition():
+    # have not been using global AMP before - first tick does not create
+    # any sensor states except for the one that is declared in code
+    with get_daemon_instance(
+        paused=False,
+        extra_overrides={
+            "auto_materialize": {
+                "use_sensors": True,
+            }
+        },
     ) as instance:
-        set_auto_materialize_paused(instance, False)
+        assert not get_has_migrated_to_sensors(instance)
 
-        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
+        result = daemon_sensor_scenario.evaluate_daemon(instance)
+
+        assert get_has_migrated_to_sensors(instance)
+
+        sensor_states = instance.schedule_storage.all_instigator_state(
+            instigator_type=InstigatorType.SENSOR
+        )
+
+        assert len(sensor_states) == 1
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_a",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.DECLARED_IN_CODE,
+        )
+
+        # new sensor started with an empty cursor, reached evaluation ID 1
+        assert (
+            asset_daemon_cursor_from_instigator_serialized_cursor(
+                cast(SensorInstigatorData, sensor_states[0].instigator_data).cursor,
+                None,
+            ).evaluation_id
+            == 1
+        )
+        result = result.with_current_time_advanced(seconds=30)
+        result = result.evaluate_tick()
+        daemon_sensor_scenario.evaluate_daemon(instance)
+        sensor_states = instance.schedule_storage.all_instigator_state(
+            instigator_type=InstigatorType.SENSOR
+        )
+        assert len(sensor_states) == 1
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_a",
+            expected_num_ticks=2,
+            expected_status=InstigatorStatus.DECLARED_IN_CODE,
+        )
+        # now on evaluation ID 2
+        assert (
+            asset_daemon_cursor_from_instigator_serialized_cursor(
+                cast(SensorInstigatorData, sensor_states[0].instigator_data).cursor,
+                None,
+            ).evaluation_id
+            == 2
+        )
+
+
+def test_auto_materialize_sensor_transition():
+    with get_daemon_instance(
+        paused=False,
+        extra_overrides={
+            "auto_materialize": {
+                "use_sensors": True,
+            }
+        },
+    ) as instance:
+        # Have been using global AMP, so there is a cursor
+        pre_sensor_evaluation_id = 12345
+
+        assert not get_has_migrated_to_sensors(instance)
+
+        instance.daemon_cursor_storage.set_cursor_values(
+            {
+                _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                    dataclasses.replace(
+                        AssetDaemonCursor.empty(), evaluation_id=pre_sensor_evaluation_id
+                    )
+                )
+            }
+        )
+
+        # Since the global pause setting was off, all the sensors are running
+        daemon_sensor_scenario.evaluate_daemon(instance)
+
+        assert get_has_migrated_to_sensors(instance)
+
+        sensor_states = instance.schedule_storage.all_instigator_state(
+            instigator_type=InstigatorType.SENSOR
+        )
+
+        assert len(sensor_states) == 3  # sensor states for each sensor were created
+
+        # Only sensor that was set with default status RUNNING turned on and ran
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_a",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.DECLARED_IN_CODE,
+        )
+        _assert_sensor_state(
+            instance,
+            "auto_materialize_sensor_b",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.RUNNING,
+        )
+        _assert_sensor_state(
+            instance,
+            "default_auto_materialize_sensor",
+            expected_num_ticks=1,
+            expected_status=InstigatorStatus.RUNNING,
+        )
+
+        for sensor_state in sensor_states:
+            # cursor was propagated to each sensor, so all subsequent evaluation IDs are higher
+            assert (
+                asset_daemon_cursor_from_instigator_serialized_cursor(
+                    cast(SensorInstigatorData, sensor_state.instigator_data).cursor,
+                    None,
+                ).evaluation_id
+                > pre_sensor_evaluation_id
+            )
+
+
+@pytest.mark.parametrize("num_threads", [0, 4])
+def test_auto_materialize_sensor_ticks(num_threads):
+    with get_daemon_instance(
+        paused=True,
+        extra_overrides={
+            "auto_materialize": {
+                "use_sensors": True,
+                "use_threads": num_threads > 0,
+                "num_workers": num_threads,
+            }
+        },
+    ) as instance:
+        with _get_threadpool_executor(instance) as threadpool_executor:
+            pre_sensor_evaluation_id = 12345
+
+            instance.daemon_cursor_storage.set_cursor_values(
+                {
+                    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY: serialize_value(
+                        dataclasses.replace(
+                            AssetDaemonCursor.empty(),
+                            evaluation_id=pre_sensor_evaluation_id,
+                        )
+                    )
+                }
+            )
+
+            # Global pause setting ignored by sensors, but per-sensor status is not ignored
+            result = daemon_sensor_scenario.evaluate_daemon(
+                instance, threadpool_executor=threadpool_executor
+            )
+
+            sensor_states = instance.schedule_storage.all_instigator_state(
+                instigator_type=InstigatorType.SENSOR
+            )
+
+            assert len(sensor_states) == 3  # sensor states for each sensor were created
+
+            # Only sensor that was set with default status RUNNING turned on and ran
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=1,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_b",
+                expected_num_ticks=0,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+            _assert_sensor_state(
+                instance,
+                "default_auto_materialize_sensor",
+                expected_num_ticks=0,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+
+            runs = instance.get_runs()
+
+            assert len(runs) == 1
+            run = runs[0]
+            assert run.tags[AUTO_MATERIALIZE_TAG] == "true"
+            assert run.tags["foo_tag"] == "bar_val"
+            assert int(run.tags[ASSET_EVALUATION_ID_TAG]) > pre_sensor_evaluation_id
+            assert run.tags[SENSOR_NAME_TAG] == "auto_materialize_sensor_a"
+
+            assert int(run.tags[TICK_ID_TAG]) > 0
+
+            # Starting a sensor causes it to make ticks too
+            result = result.start_sensor("auto_materialize_sensor_b")
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+            sensor_states = instance.schedule_storage.all_instigator_state(
+                instigator_type=InstigatorType.SENSOR
+            )
+            assert len(sensor_states) == 3
+
+            # No new tick yet for A since only 15 seconds have passed
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=1,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=1)
+
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=2,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=2)
+
+            # Starting a default sensor causes it to make ticks too
+            result = result.start_sensor("default_auto_materialize_sensor")
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            sensor_states = instance.schedule_storage.all_instigator_state(
+                instigator_type=InstigatorType.SENSOR
+            )
+
+            assert len(sensor_states) == 3
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=2,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=3)
+            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=1)
+
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=3,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=4)
+            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=1)
+
+            result = result.with_current_time_advanced(seconds=15)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=3,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(instance, "auto_materialize_sensor_b", expected_num_ticks=5)
+            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=2)
+
+            # Stop each sensor, ticks stop too
+            result = result.stop_sensor("auto_materialize_sensor_b")
+            result = result.with_current_time_advanced(seconds=30)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=4,
+                expected_status=InstigatorStatus.DECLARED_IN_CODE,
+            )
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_b",
+                expected_num_ticks=5,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=3)
+
+            result = result.stop_sensor("auto_materialize_sensor_a")
+            result = result.with_current_time_advanced(seconds=30)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=4,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_b",
+                expected_num_ticks=5,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+            _assert_sensor_state(instance, "default_auto_materialize_sensor", expected_num_ticks=4)
+
+            result = result.stop_sensor("default_auto_materialize_sensor")
+            result = result.with_current_time_advanced(seconds=30)
+            result = result.evaluate_tick()
+
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_a",
+                expected_num_ticks=4,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+            _assert_sensor_state(
+                instance,
+                "auto_materialize_sensor_b",
+                expected_num_ticks=5,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+            _assert_sensor_state(
+                instance,
+                "default_auto_materialize_sensor",
+                expected_num_ticks=4,
+                expected_status=InstigatorStatus.STOPPED,
+            )
+
+            seen_evaluation_ids = set()
+
+            # Assert every tick has a unique evaluation ID, all are distinct, all are greater
+            # than the pre-sensor evaluation ID and they are increasing for each sensor
+            sensor_states = [
+                sensor_state
+                for sensor_state in instance.schedule_storage.all_instigator_state(
+                    instigator_type=InstigatorType.SENSOR
+                )
+            ]
+
+            for sensor_state in sensor_states:
+                ticks = instance.get_ticks(
+                    sensor_state.instigator_origin_id,
+                    sensor_state.selector_id,
+                )
+
+                prev_evaluation_id = None
+                for tick in ticks:
+                    evaluation_id = tick.tick_data.auto_materialize_evaluation_id
+                    assert evaluation_id > pre_sensor_evaluation_id
+                    assert evaluation_id not in seen_evaluation_ids
+                    seen_evaluation_ids.add(evaluation_id)
+                    assert prev_evaluation_id is None or prev_evaluation_id > evaluation_id
+                    prev_evaluation_id = evaluation_id
+
+
+def test_default_purge() -> None:
+    with get_daemon_instance() as instance:
+        scenario_time = daemon_scenario.initial_spec.current_time
+        _create_tick(
+            instance, TickStatus.SKIPPED, (scenario_time - datetime.timedelta(days=8)).timestamp()
+        )
+        tick_1 = _create_tick(
+            instance, TickStatus.SKIPPED, (scenario_time - datetime.timedelta(days=6)).timestamp()
+        )
+        tick_2 = _create_tick(
+            instance, TickStatus.SKIPPED, (scenario_time - datetime.timedelta(days=1)).timestamp()
+        )
+
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 3
+
+        state = daemon_scenario.evaluate_daemon(instance)
+
+        # creates one SUCCESS tick and purges the old SKIPPED tick
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 3
+
+        assert ticks[-1].status == TickStatus.SUCCESS
+        assert ticks[-1].timestamp == state.current_time.timestamp()
+
+        assert ticks[0] == tick_1
+        assert ticks[1] == tick_2
+
+
+def test_custom_purge() -> None:
+    with get_daemon_instance(
+        extra_overrides={"retention": {"auto_materialize": {"purge_after_days": {"skipped": 2}}}},
+    ) as instance:
+        freeze_datetime = pendulum.now("UTC")
+
+        _create_tick(instance, TickStatus.SKIPPED, freeze_datetime.subtract(days=8).timestamp())
+        _create_tick(instance, TickStatus.SKIPPED, freeze_datetime.subtract(days=6).timestamp())
+        tick_1 = _create_tick(
+            instance, TickStatus.SKIPPED, freeze_datetime.subtract(days=1).timestamp()
+        )
+
+        ticks = _get_asset_daemon_ticks(instance)
+        assert len(ticks) == 3
+
+        # creates one SUCCESS tick and purges the old SKIPPED ticks
+        state = daemon_scenario.evaluate_daemon(instance)
+        ticks = _get_asset_daemon_ticks(instance)
+
+        assert len(ticks) == 2
+
+        assert ticks[-1]
+        assert ticks[-1].status == TickStatus.SUCCESS
+        assert ticks[-1].timestamp == state.current_time.timestamp()
+
+        assert ticks[0] == tick_1
+
+
+def test_custom_run_tags() -> None:
+    with get_daemon_instance(
+        extra_overrides={"auto_materialize": {"run_tags": {"foo": "bar"}}}
+    ) as instance:
+        daemon_scenario.evaluate_daemon(instance)
 
         runs = instance.get_runs()
-
-        assert len(runs) == len(
-            scenario.expected_run_requests
-            + scenario.unevaluated_runs
-            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-        )
-
         for run in runs:
-            assert run.status == DagsterRunStatus.SUCCESS
-
-        def sort_run_request_key_fn(run_request):
-            return (min(run_request.asset_selection), run_request.partition_key)
-
-        def sort_run_key_fn(run):
-            return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
-
-        sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
-        sorted_expected_run_requests = sorted(
-            scenario.expected_run_requests, key=sort_run_request_key_fn
-        )
-        for run, expected_run_request in zip(sorted_runs, sorted_expected_run_requests):
-            assert run.asset_selection is not None
-            assert set(run.asset_selection) == set(expected_run_request.asset_selection)
-            assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
             assert run.tags["foo"] == "bar"
-
-
-def test_daemon_paused():
-    scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
-    scenario = auto_materialize_policy_scenarios[scenario_name]
-
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-        }
-    ) as instance:
-        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
-
-        runs = instance.get_runs()
-
-        # daemon is paused by default , so no new runs should have been created
-        assert len(runs) == len(
-            scenario.unevaluated_runs
-            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-        )
-
-        instance.wipe()
-        set_auto_materialize_paused(instance, False)
-        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
-        runs = instance.get_runs()
-
-        assert len(runs) == len(
-            scenario.expected_run_requests
-            + scenario.unevaluated_runs
-            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-        )
-
-
-def test_run_ids():
-    scenario_name = "auto_materialize_policy_eager_with_freshness_policies"
-    scenario = auto_materialize_policy_scenarios[scenario_name]
-
-    with instance_for_test(
-        overrides={
-            "run_launcher": {
-                "module": "dagster._core.launcher.sync_in_memory_run_launcher",
-                "class": "SyncInMemoryRunLauncher",
-            },
-        }
-    ) as instance:
-        set_auto_materialize_paused(instance, False)
-
-        scenario.do_daemon_scenario(instance, scenario_name=scenario_name)
-
-        runs = instance.get_runs()
-
-        assert len(runs) == len(
-            scenario.expected_run_requests
-            + scenario.unevaluated_runs
-            + (scenario.cursor_from.unevaluated_runs if scenario.cursor_from else [])
-        )
-
-        for run in runs:
-            assert run.status == DagsterRunStatus.SUCCESS
-
-        def sort_run_request_key_fn(run_request):
-            return (min(run_request.asset_selection), run_request.partition_key)
-
-        def sort_run_key_fn(run):
-            return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
-
-        sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
-        sorted_expected_run_requests = sorted(
-            scenario.expected_run_requests, key=sort_run_request_key_fn
-        )
-        for run, expected_run_request in zip(sorted_runs, sorted_expected_run_requests):
-            assert run.asset_selection is not None
-            assert set(run.asset_selection) == set(expected_run_request.asset_selection)
-            assert run.tags.get(PARTITION_NAME_TAG) == expected_run_request.partition_key
-
-        evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("asset4"), limit=100
-        )
-        assert len(evaluations) == 1
-        assert evaluations[0].evaluation.asset_key == AssetKey("asset4")
-        assert evaluations[0].evaluation.run_ids == {run.run_id for run in sorted_runs}

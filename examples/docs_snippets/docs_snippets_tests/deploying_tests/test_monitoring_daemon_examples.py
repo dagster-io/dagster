@@ -1,5 +1,5 @@
+from dagster import MAX_RUNTIME_SECONDS_TAG
 from docs_snippets.deploying.monitoring_daemon.run_timeouts import (
-    MAX_RUNTIME_SECONDS_TAG,
     asset_job,
     my_job,
 )

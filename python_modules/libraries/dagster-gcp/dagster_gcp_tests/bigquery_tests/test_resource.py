@@ -1,11 +1,23 @@
 import base64
 import os
 
+import pendulum
 import pytest
-from dagster import EnvVar, asset, materialize
-from dagster_gcp import BigQueryResource, bigquery_resource
+from dagster import (
+    DagsterInstance,
+    EnvVar,
+    FloatMetadataValue,
+    ObserveResult,
+    asset,
+    materialize,
+    observable_source_asset,
+)
+from dagster._check import CheckError
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.observe import observe
+from dagster_gcp import BigQueryResource, bigquery_resource, fetch_last_updated_timestamps
 
-IS_BUILDKITE = os.getenv("BUILDKITE") is not None
+from .conftest import IS_BUILDKITE, SHARED_BUILDKITE_BQ_CONFIG, temporary_bigquery_table
 
 
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
@@ -115,3 +127,54 @@ def test_pythonic_resource_authenticate_via_env():
         resources=resource_defs,
     )
     assert result.success
+
+
+def test_fetch_last_updated_timestamps_no_table():
+    with pytest.raises(CheckError):
+        fetch_last_updated_timestamps(
+            client={},
+            dataset_id="foo",
+            table_ids=[],
+        )
+
+
+@pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
+@pytest.mark.integration
+def test_fetch_last_updated_timestamps():
+    start_timestamp = pendulum.now("UTC").timestamp()
+    dataset_name = "BIGQUERY_IO_MANAGER_SCHEMA"
+    with temporary_bigquery_table(schema_name=dataset_name, column_str="FOO string") as table_name:
+
+        @observable_source_asset
+        def retrieve_freshness(bigquery: BigQueryResource) -> ObserveResult:
+            with bigquery.get_client() as client:
+                freshness_datetime = fetch_last_updated_timestamps(
+                    client=client, dataset_id=dataset_name, table_ids=[table_name]
+                )[table_name]
+                if freshness_datetime is None:
+                    return ObserveResult(
+                        metadata={"freshness_timestamp": None},
+                    )
+                else:
+                    return ObserveResult(
+                        data_version=DataVersion("foo"),
+                        metadata={
+                            "freshness_timestamp": FloatMetadataValue(
+                                freshness_datetime.timestamp()
+                            )
+                        },
+                    )
+
+        instance = DagsterInstance.ephemeral()
+        result = observe(
+            [retrieve_freshness],
+            instance=instance,
+            resources={"bigquery": BigQueryResource(project=SHARED_BUILDKITE_BQ_CONFIG["project"])},
+        )
+        observations = result.asset_observations_for_node(retrieve_freshness.op.name)
+        assert len(observations) == 1
+        observation = observations[0]
+        assert observation.tags["dagster/data_version"] == "foo"
+        assert observation.metadata["freshness_timestamp"] is not None
+        assert isinstance(observation.metadata["freshness_timestamp"], FloatMetadataValue)
+        assert start_timestamp < observation.metadata["freshness_timestamp"].value

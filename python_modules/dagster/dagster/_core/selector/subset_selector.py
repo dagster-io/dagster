@@ -17,13 +17,12 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     TypeVar,
 )
 
 from typing_extensions import Literal, TypeAlias
 
-from dagster._core.definitions.asset_check_spec import AssetCheckHandle
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -33,7 +32,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
 
 MAX_NUM = sys.maxsize
 
@@ -85,7 +83,7 @@ class AssetSelectionData(
         "_AssetSelectionData",
         [
             ("asset_selection", AbstractSet[AssetKey]),
-            ("asset_check_selection", Optional[AbstractSet[AssetCheckHandle]]),
+            ("asset_check_selection", Optional[AbstractSet[AssetCheckKey]]),
             ("parent_job_def", "JobDefinition"),
         ],
     )
@@ -100,29 +98,23 @@ class AssetSelectionData(
 
     def __new__(
         cls,
-        asset_selection: AbstractSet[AssetKey],
-        asset_check_selection: Optional[AbstractSet[AssetCheckHandle]],
+        asset_selection: Optional[AbstractSet[AssetKey]],
+        asset_check_selection: Optional[AbstractSet[AssetCheckKey]],
         parent_job_def: "JobDefinition",
     ):
         from dagster._core.definitions.job_definition import JobDefinition
 
-        check.opt_set_param(asset_check_selection, "asset_check_selection", AssetCheckHandle)
-
         return super(AssetSelectionData, cls).__new__(
             cls,
-            asset_selection=check.set_param(asset_selection, "asset_selection", AssetKey),
+            asset_selection=check.opt_set_param(asset_selection, "asset_selection", AssetKey),
             asset_check_selection=asset_check_selection,
             parent_job_def=check.inst_param(parent_job_def, "parent_job_def", JobDefinition),
         )
 
 
 def generate_asset_dep_graph(
-    assets_defs: Iterable["AssetsDefinition"], source_assets: Iterable["SourceAsset"]
+    assets_defs: Iterable["AssetsDefinition"],
 ) -> DependencyGraph[AssetKey]:
-    from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
-
-    resolved_asset_deps = ResolvedAssetDependencies(assets_defs, source_assets)
-
     upstream: Dict[AssetKey, Set[AssetKey]] = {}
     downstream: Dict[AssetKey, Set[AssetKey]] = {}
     for assets_def in assets_defs:
@@ -130,10 +122,7 @@ def generate_asset_dep_graph(
             upstream[asset_key] = set()
             downstream[asset_key] = downstream.get(asset_key, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
-            upstream_asset_keys = resolved_asset_deps.get_resolved_upstream_asset_keys(
-                assets_def, asset_key
-            )
-            for upstream_key in upstream_asset_keys:
+            for upstream_key in assets_def.asset_deps[asset_key]:
                 upstream[asset_key].add(upstream_key)
                 downstream[upstream_key] = downstream.get(upstream_key, set()) | {asset_key}
     return {"upstream": upstream, "downstream": downstream}
@@ -289,7 +278,13 @@ def fetch_connected_assets_definitions(
     return frozenset(name_to_definition_map[n] for n in connected_names)
 
 
-def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
+class GraphSelectionClause(NamedTuple):
+    up_depth: int
+    item_name: str
+    down_depth: int
+
+
+def parse_clause(clause: str) -> Optional[GraphSelectionClause]:
     def _get_depth(part: str) -> int:
         if part == "":
             return 0
@@ -310,7 +305,7 @@ def parse_clause(clause: str) -> Optional[Tuple[int, str, int]]:
     up_depth = _get_depth(ancestor_part)
     down_depth = _get_depth(descendant_part)
 
-    return (up_depth, item_name, down_depth)
+    return GraphSelectionClause(up_depth, item_name, down_depth)
 
 
 def parse_items_from_selection(selection: Sequence[str]) -> Sequence[str]:
@@ -465,7 +460,6 @@ def parse_step_selection(
 
 def parse_asset_selection(
     assets_defs: Sequence["AssetsDefinition"],
-    source_assets: Sequence["SourceAsset"],
     asset_selection: Sequence[str],
     raise_on_clause_has_no_matches: bool = True,
 ) -> AbstractSet[AssetKey]:
@@ -486,7 +480,7 @@ def parse_asset_selection(
     if len(asset_selection) == 1 and asset_selection[0] == "*":
         return {key for ad in assets_defs for key in ad.keys}
 
-    graph = generate_asset_dep_graph(assets_defs, source_assets)
+    graph = generate_asset_dep_graph(assets_defs)
     assets_set: Set[AssetKey] = set()
 
     # loop over clauses

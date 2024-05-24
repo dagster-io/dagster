@@ -1,27 +1,32 @@
-import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
-import {Button, DialogBody, DialogFooter, Dialog, Group} from '@dagster-io/ui-components';
-import * as React from 'react';
+import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
+import {Button, Dialog, DialogBody, DialogFooter, Group} from '@dagster-io/ui-components';
 
+import {asAssetKeyInput} from './asInput';
+import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeDialog.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
-
-import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeDialog.types';
 
 interface AssetKey {
   path: string[];
 }
 
-export const AssetWipeDialog: React.FC<{
+export const AssetWipeDialog = ({
+  assetKeys,
+  isOpen,
+  onClose,
+  onComplete,
+  requery,
+}: {
   assetKeys: AssetKey[];
   isOpen: boolean;
   onClose: () => void;
   onComplete: (assetKeys: AssetKey[]) => void;
   requery?: RefetchQueriesFunction;
-}> = ({assetKeys, isOpen, onClose, onComplete, requery}) => {
+}) => {
   const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
     ASSET_WIPE_MUTATION,
     {
-      variables: {assetKeys: assetKeys.map((key) => ({path: key.path || []}))},
+      variables: {assetKeys: assetKeys.map(asAssetKeyInput)},
       refetchQueries: requery,
     },
   );

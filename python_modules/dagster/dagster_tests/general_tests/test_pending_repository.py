@@ -70,7 +70,7 @@ def pending_repo():
         define_cacheable_and_uncacheable_assets(),
         define_asset_job(
             "all_asset_job",
-            selection=AssetSelection.keys(
+            selection=AssetSelection.assets(
                 AssetKey("a"), AssetKey("b"), AssetKey("upstream"), AssetKey("downstream")
             ),
         ),
@@ -133,7 +133,7 @@ def test_resolve_wrong_data():
         )
 
 
-def define_resource_dependent_cacheable_and_uncacheable_assets():
+def define_uncacheable_and_resource_dependent_cacheable_assets():
     class ResourceDependentCacheableAsset(CacheableAssetsDefinition):
         def __init__(self):
             super().__init__("res_downstream")
@@ -160,11 +160,11 @@ def define_resource_dependent_cacheable_and_uncacheable_assets():
                 for cd in data
             ]
 
-    @asset(required_resource_keys={"foo"})
+    @asset
     def res_upstream(context):
         return context.resources.foo
 
-    @asset(required_resource_keys={"foo"})
+    @asset
     def res_downstream(context, res_midstream):
         return res_midstream + context.resources.foo
 
@@ -181,13 +181,13 @@ def test_resolve_no_resources():
             @repository
             def resource_dependent_repo_no_resources():
                 return [
-                    define_resource_dependent_cacheable_and_uncacheable_assets(),
+                    define_uncacheable_and_resource_dependent_cacheable_assets(),
                     define_asset_job(
                         "all_asset_job",
                     ),
                 ]
 
-            resource_dependent_repo_no_resources.compute_repository_definition()
+            resource_dependent_repo_no_resources.compute_repository_definition().get_all_jobs()
         except DagsterInvalidDefinitionError as e:
             # Make sure we get an error for the cacheable asset in particular
             assert "res_midstream" in str(e)
@@ -207,7 +207,7 @@ def test_resolve_with_resources():
     def resource_dependent_repo_with_resources():
         return [
             with_resources(
-                define_resource_dependent_cacheable_and_uncacheable_assets(), {"foo": foo_resource}
+                define_uncacheable_and_resource_dependent_cacheable_assets(), {"foo": foo_resource}
             ),
             define_asset_job(
                 "all_asset_job",
@@ -289,7 +289,7 @@ def test_multiple_wrapped_cached_assets():
         for x in with_resources(
             [
                 x.with_attributes(group_names_by_key={AssetKey("res_midstream"): "my_cool_group"})
-                for x in define_resource_dependent_cacheable_and_uncacheable_assets()
+                for x in define_uncacheable_and_resource_dependent_cacheable_assets()
             ],
             {"foo": foo_resource},
         )

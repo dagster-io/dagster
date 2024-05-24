@@ -550,3 +550,63 @@ def test_telemetry_dagster_io_manager_factory():
             return MyIOManager()
 
     assert AnIOManagerFactory()._is_dagster_maintained()  # noqa: SLF001
+
+
+def test_inherited_io_config_schemas() -> None:
+    files = {}
+
+    class MyIOManager(IOManager):
+        def __init__(self, base_path) -> None:
+            self._base_path = base_path
+
+        def handle_output(self, context: OutputContext, obj):
+            file_path = self._base_path + context.config["file_name"]
+            files[file_path] = obj
+
+        def load_input(self, context: InputContext):
+            if context.upstream_output:
+                file_path = self._base_path + context.upstream_output.config["file_name"]
+                return files[file_path]
+
+    class MyIOManagerOutputConfigSchema(Config):
+        file_name: str
+
+    class MyConfigurableIOManager(ConfigurableIOManagerFactory):
+        base_path: str
+
+        def create_io_manager(self, context) -> IOManager:
+            return MyIOManager(self.base_path)
+
+        @classmethod
+        def output_config_schema(cls) -> MyIOManagerOutputConfigSchema:
+            return MyIOManagerOutputConfigSchema
+
+    @op
+    def op_1() -> str:
+        return "output 1"
+
+    @op
+    def op_2(input_data) -> str:
+        assert input_data == "output 1"
+        return "output 2"
+
+    @job
+    def my_job():
+        op_2(op_1())
+
+    defs = Definitions(
+        resources={"io_manager": MyConfigurableIOManager(base_path="my-bucket/")},
+        jobs=[my_job],
+    )
+    defs.get_job_def("my_job").execute_in_process(
+        run_config={
+            "ops": {
+                "op_1": {"outputs": {"result": {"file_name": "table1"}}},
+                "op_2": {"outputs": {"result": {"file_name": "table2"}}},
+            }
+        },
+    )
+    assert files == {
+        "my-bucket/table1": "output 1",
+        "my-bucket/table2": "output 2",
+    }

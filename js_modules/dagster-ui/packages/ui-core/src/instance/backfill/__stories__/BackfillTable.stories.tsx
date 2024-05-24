@@ -1,5 +1,4 @@
 import {MockedProvider} from '@apollo/client/testing';
-import React from 'react';
 
 import {StorybookProvider} from '../../../testing/StorybookProvider';
 import {BackfillTable} from '../BackfillTable';

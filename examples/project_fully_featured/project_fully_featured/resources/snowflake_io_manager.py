@@ -170,7 +170,7 @@ class SnowflakeIOManager(ConfigurableIOManager):
                 sql=self._get_select_statement(
                     table,
                     schema,
-                    (context.metadata or {}).get("columns"),
+                    (context.definition_metadata or {}).get("columns"),
                     context.asset_partitions_time_window if context.has_asset_partitions else None,
                 ),
                 con=con,

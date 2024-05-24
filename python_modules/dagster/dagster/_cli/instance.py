@@ -127,7 +127,7 @@ def get_concurrency(key, **kwargs):
 
 def concurrency_print_key(instance: DagsterInstance, key: str):
     key_info = instance.event_log_storage.get_concurrency_info(key)
-    click.echo(f'"{key}": {key_info.active_slot_count} / {key_info.slot_count} slots occupied')
+    click.echo(f'"{key}": {len(key_info.claimed_slots)} / {key_info.slot_count} slots occupied')
 
 
 @concurrency_cli.command(name="set", help="Set op concurrency limits")

@@ -84,6 +84,13 @@ export async function makeSVGPortable(svg: SVGElement) {
       if (!USED_ATTRIBUTES.some((prefix) => attrName.startsWith(prefix))) {
         continue;
       }
+
+      // For any style values that are implemented with CSS vars, use the computed value.
+      const uncomputedStyleValue = (node.style as any)[attrName];
+      if (typeof uncomputedStyleValue === 'string' && uncomputedStyleValue.startsWith('var(--')) {
+        (node.style as any)[attrName] = (nodeStyles as any)[attrName];
+      }
+
       if (
         !(node.style as any)[attrName] &&
         (nodeStyles as any)[attrName] !== (baseStyles as any)[attrName]
@@ -129,13 +136,16 @@ export async function makeSVGPortable(svg: SVGElement) {
   const cssSources = Array.from<HTMLStyleElement | HTMLLinkElement>(
     document.querySelectorAll('style,link[rel=stylesheet]'),
   );
-  const fontFaces = cssSources.flatMap((el) =>
-    el.sheet
-      ? Array.from(el.sheet.cssRules)
-          .filter((r) => r instanceof CSSFontFaceRule)
-          .map((r) => r.cssText)
-      : [],
-  );
+  const fontFaces = cssSources.flatMap((el) => {
+    let sheetRules: CSSRule[];
+    try {
+      sheetRules = el.sheet ? Array.from(el.sheet.cssRules) : [];
+    } catch (err) {
+      // https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
+      sheetRules = [];
+    }
+    return sheetRules.filter((r) => r instanceof CSSFontFaceRule).map((r) => r.cssText);
+  });
 
   const styleEl = document.createElement('style');
   styleEl.textContent = fontFaces.join('\n\n');

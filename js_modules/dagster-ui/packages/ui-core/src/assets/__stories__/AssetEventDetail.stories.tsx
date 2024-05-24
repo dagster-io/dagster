@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
 import {Box} from '@dagster-io/ui-components';
-import React from 'react';
 
 import {createAppCache} from '../../app/AppCache';
 import {StorybookProvider} from '../../testing/StorybookProvider';

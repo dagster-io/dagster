@@ -17,7 +17,7 @@ export type AssetForNavigationQuery = {
           id: string;
           opNames: Array<string>;
           jobNames: Array<string>;
-          groupName: string | null;
+          groupName: string;
           repository: {
             __typename: 'Repository';
             id: string;

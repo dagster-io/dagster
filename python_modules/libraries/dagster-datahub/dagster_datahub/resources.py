@@ -25,7 +25,7 @@ class DatahubRESTEmitterResource(ConfigurableResource):
     retry_max_times: Optional[int] = None
     extra_headers: Optional[Dict[str, str]] = None
     ca_certificate_path: Optional[str] = None
-    server_telemetry_id: Optional[str] = None
+    server_telemetry_id: Optional[str] = None  # No-op - no longer accepted in DatahubRestEmitter
     disable_ssl_verification: bool = False
 
     @classmethod
@@ -43,7 +43,6 @@ class DatahubRESTEmitterResource(ConfigurableResource):
             retry_max_times=self.retry_max_times,
             extra_headers=self.extra_headers,
             ca_certificate_path=self.ca_certificate_path,
-            server_telemetry_id=self.server_telemetry_id,
             disable_ssl_verification=self.disable_ssl_verification,
         )
 
@@ -61,7 +60,6 @@ def datahub_rest_emitter(init_context: InitResourceContext) -> DatahubRestEmitte
         retry_max_times=init_context.resource_config.get("retry_max_times"),
         extra_headers=init_context.resource_config.get("extra_headers"),
         ca_certificate_path=init_context.resource_config.get("ca_certificate_path"),
-        server_telemetry_id=init_context.resource_config.get("server_telemetry_id"),
         disable_ssl_verification=init_context.resource_config.get("disable_ssl_verification"),
     )
     # Attempt to hit the server to ensure the resource is properly configured
@@ -93,7 +91,9 @@ class DatahubKafkaEmitterResource(ConfigurableResource):
 
     def get_emitter(self) -> DatahubKafkaEmitter:
         return DatahubKafkaEmitter(
-            KafkaEmitterConfig.parse_obj(self._convert_to_config_dictionary())
+            KafkaEmitterConfig.parse_obj(
+                {k: v for k, v in self._convert_to_config_dictionary().items() if v is not None}
+            )
         )
 
 

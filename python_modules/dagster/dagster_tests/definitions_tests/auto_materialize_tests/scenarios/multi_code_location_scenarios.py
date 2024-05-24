@@ -1,32 +1,39 @@
-import copy
 from typing import Sequence
 
-from dagster import (
-    AssetsDefinition,
-)
+from dagster import AssetsDefinition, FreshnessPolicy
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-from ..base_scenario import (
-    AssetReconciliationScenario,
-    run,
-    run_request,
-)
-from .freshness_policy_scenarios import diamond_freshness, overlapping_freshness_inf
+from ..base_scenario import AssetReconciliationScenario, asset_def, run, run_request
+from .basic_scenarios import diamond
+
+freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)
+freshness_inf = FreshnessPolicy(maximum_lag_minutes=99999)
+
+diamond_freshness = diamond[:-1] + [
+    asset_def("asset4", ["asset2", "asset3"], freshness_policy=freshness_30m)
+]
+
+overlapping_freshness_inf = diamond + [
+    asset_def("asset5", ["asset3"], freshness_policy=freshness_30m),
+    asset_def("asset6", ["asset4"], freshness_policy=freshness_inf),
+]
 
 
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
 ) -> Sequence[AssetsDefinition]:
-    """Note: this should be implemented in core dagster at some point, and this implementation is
-    a lazy hack.
-    """
     ret = []
     for assets_def in assets_defs:
-        new_assets_def = copy.copy(assets_def)
-        new_assets_def._auto_materialize_policies_by_key = {  # noqa: SLF001
-            asset_key: auto_materialize_policy for asset_key in new_assets_def.keys
-        }
-        ret.append(new_assets_def)
+        ret.append(
+            AssetsDefinition.dagster_internal_init(
+                **{
+                    **assets_def.get_attributes_dict(),
+                    "auto_materialize_policies_by_key": {
+                        key: auto_materialize_policy for key in assets_def.keys
+                    },
+                }
+            )
+        )
     return ret
 
 

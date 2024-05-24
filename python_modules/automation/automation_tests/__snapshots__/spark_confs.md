@@ -3,17 +3,18 @@ layout: global
 displayTitle: Spark Configuration
 title: Configuration
 ---
-* This will become a table of contents (this text will be scraped).
-{:toc}
+
+- This will become a table of contents (this text will be scraped).
+  {:toc}
 
 Spark provides three locations to configure the system:
 
-* [Spark properties](#spark-properties) control most application parameters and can be set by using
+- [Spark properties](#spark-properties) control most application parameters and can be set by using
   a [SparkConf](api/scala/index.html#org.apache.spark.SparkConf) object, or through Java
   system properties.
-* [Environment variables](#environment-variables) can be used to set per-machine settings, such as
+- [Environment variables](#environment-variables) can be used to set per-machine settings, such as
   the IP address, through the `conf/spark-env.sh` script on each node.
-* [Logging](#configuring-logging) can be configured through `log4j.properties`.
+- [Logging](#configuring-logging) can be configured through `log4j.properties`.
 
 # Spark Properties
 
@@ -29,8 +30,8 @@ which can help detect bugs that only exist when we run in a distributed context.
 
 {% highlight scala %}
 val conf = new SparkConf()
-             .setMaster("local[2]")
-             .setAppName("CountingSheep")
+.setMaster("local[2]")
+.setAppName("CountingSheep")
 val sc = new SparkContext(conf)
 {% endhighlight %}
 
@@ -47,7 +48,6 @@ The following format is accepted:
     5d (days)
     1y (years)
 
-
 Properties that specify a byte size should be configured with a unit of size.
 The following format is accepted:
 
@@ -59,7 +59,7 @@ The following format is accepted:
     1p or 1pb (pebibytes = 1024 tebibytes)
 
 While numbers without units are generally interpreted as bytes, a few are interpreted as KiB or MiB.
-See documentation of individual configuration properties. Specifying units is desirable where 
+See documentation of individual configuration properties. Specifying units is desirable where
 possible.
 
 ## Dynamically Loading Spark Properties
@@ -75,7 +75,7 @@ val sc = new SparkContext(new SparkConf())
 Then, you can supply configuration values at runtime:
 {% highlight bash %}
 ./bin/spark-submit --name "My app" --master local[4] --conf spark.eventLog.enabled=false
-  --conf "spark.executor.extraJavaOptions=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps" myApp.jar
+--conf "spark.executor.extraJavaOptions=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps" myApp.jar
 {% endhighlight %}
 
 The Spark shell and [`spark-submit`](submitting-applications.html)
@@ -223,6 +223,7 @@ of the most common options to set are:
 
     NOTE: In Spark 1.0 and later this will be overridden by SPARK_LOCAL_DIRS (Standalone), MESOS_SANDBOX (Mesos) or
     LOCAL_DIRS (YARN) environment variables set by the cluster manager.
+
   </td>
 </tr>
 <tr>
@@ -284,6 +285,7 @@ Apart from these, the following properties are also available, and may be useful
     directly in your application, because the driver JVM has already started at that point.
     Instead, please set this through the <code>--driver-class-path</code> command line option or in
     your default properties file.
+
   </td>
 </tr>
 <tr>
@@ -299,6 +301,7 @@ Apart from these, the following properties are also available, and may be useful
     directly in your application, because the driver JVM has already started at that point.
     Instead, please set this through the <code>--driver-java-options</code> command line option or in
     your default properties file.
+
   </td>
 </tr>
 <tr>
@@ -311,6 +314,7 @@ Apart from these, the following properties are also available, and may be useful
     directly in your application, because the driver JVM has already started at that point.
     Instead, please set this through the <code>--driver-library-path</code> command line option or in
     your default properties file.
+
   </td>
 </tr>
 <tr>
@@ -322,6 +326,7 @@ Apart from these, the following properties are also available, and may be useful
     dependencies and user dependencies. It is currently an experimental feature.
 
     This is used in cluster mode only.
+
   </td>
 </tr>
 <tr>
@@ -346,6 +351,7 @@ Apart from these, the following properties are also available, and may be useful
     application ID and {{EXECUTOR_ID}} will be replaced by executor ID. For example, to enable
     verbose gc logging to a file named for the executor ID of the app in /tmp, pass a 'value' of:
     <code>-verbose:gc -Xloggc:/tmp/{{APP_ID}}-{{EXECUTOR_ID}}.gc</code>
+
   </td>
 </tr>
 <tr>
@@ -437,6 +443,7 @@ Apart from these, the following properties are also available, and may be useful
 
     By default the <code>pyspark.profiler.BasicProfiler</code> will be used, but this can be overridden by
     passing a profiler class in as a parameter to the <code>SparkContext</code> constructor.
+
   </td>
 </tr>
 <tr>
@@ -927,6 +934,7 @@ Apart from these, the following properties are also available, and may be useful
     <br /><code>spark.ui.filters=com.test.filter1</code>
     <br /><code>spark.com.test.filter1.param.name1=foo</code>
     <br /><code>spark.com.test.filter1.param.name2=bar</code>
+
   </td>
 </tr>
 </table>
@@ -1273,6 +1281,7 @@ Apart from these, the following properties are also available, and may be useful
 
     In standalone and Mesos coarse-grained modes, for more detail, see
     <a href="spark-standalone.html#Executors Scheduling">this description</a>.
+
   </td>
 </tr>
 <tr>
@@ -1422,6 +1431,7 @@ Apart from these, the following properties are also available, and may be useful
     This is useful, for example, when running containers with bridged networking. For this to properly work,
     the different ports used by the driver (RPC, block manager and UI) need to be forwarded from the
     container's host.
+
   </td>
 </tr>
 <tr>
@@ -1913,12 +1923,15 @@ spark.sql("SET -v").show(numRows = 200, truncate = false)
 // spark is an existing SparkSession
 spark.sql("SET -v").show(200, false);
 {% endhighlight %}
+
 </div>
 
 <div data-lang="python"  markdown="1">
 
 {% highlight python %}
+
 # spark is an existing SparkSession
+
 spark.sql("SET -v").show(n=200, truncate=False)
 {% endhighlight %}
 
@@ -1934,7 +1947,6 @@ showDF(properties, numRows = 200, truncate = FALSE)
 
 </div>
 </div>
-
 
 ### Spark Streaming
 
@@ -2152,7 +2164,6 @@ showDF(properties, numRows = 200, truncate = FALSE)
   </tr>
 </table>
 
-
 ### Cluster Managers
 
 Each cluster manager in Spark has additional configuration options. Configurations
@@ -2177,7 +2188,6 @@ Note that `conf/spark-env.sh` does not exist by default when Spark is installed.
 copy `conf/spark-env.sh.template` to create it. Make sure you make the copy executable.
 
 The following variables can be set in `spark-env.sh`:
-
 
 <table class="table">
   <tr><th style="width:21%">Environment Variable</th><th>Meaning</th></tr>
@@ -2217,7 +2227,7 @@ to use on each machine and maximum memory.
 Since `spark-env.sh` is a shell script, some of these can be set programmatically -- for example, you might
 compute `SPARK_LOCAL_IP` by looking up the IP of a specific network interface.
 
-Note: When running Spark on YARN in `cluster` mode, environment variables need to be set using the `spark.yarn.appMasterEnv.[EnvironmentVariableName]` property in your `conf/spark-defaults.conf` file.  Environment variables that are set in `spark-env.sh` will not be reflected in the YARN Application Master process in `cluster` mode.  See the [YARN-related Spark Properties](running-on-yarn.html#spark-properties) for more information.
+Note: When running Spark on YARN in `cluster` mode, environment variables need to be set using the `spark.yarn.appMasterEnv.[EnvironmentVariableName]` property in your `conf/spark-defaults.conf` file. Environment variables that are set in `spark-env.sh` will not be reflected in the YARN Application Master process in `cluster` mode. See the [YARN-related Spark Properties](running-on-yarn.html#spark-properties) for more information.
 
 # Configuring Logging
 
@@ -2236,8 +2246,8 @@ from this directory.
 If you plan to read and write from HDFS using Spark, there are two Hadoop configuration files that
 should be included on Spark's classpath:
 
-* `hdfs-site.xml`, which provides default behaviors for the HDFS client.
-* `core-site.xml`, which sets the default filesystem name.
+- `hdfs-site.xml`, which provides default behaviors for the HDFS client.
+- `core-site.xml`, which sets the default filesystem name.
 
 The location of these configuration files varies across Hadoop versions, but
 a common location is inside of `/etc/hadoop/conf`. Some tools create
@@ -2256,7 +2266,7 @@ You can copy and modify `hdfs-site.xml`, `core-site.xml`, `yarn-site.xml`, `hive
 Spark's classpath for each application. In a Spark cluster running on YARN, these configuration
 files are set cluster-wide, and cannot safely be changed by the application.
 
-The better choice is to use spark hadoop properties in the form of `spark.hadoop.*`. 
+The better choice is to use spark hadoop properties in the form of `spark.hadoop.*`.
 They can be considered as same as normal spark properties which can be set in `$SPARK_HOME/conf/spark-defaults.conf`
 
 In some cases, you may want to avoid hard-coding certain configurations in a `SparkConf`. For
@@ -2269,11 +2279,11 @@ val sc = new SparkContext(conf)
 
 Also, you can modify or add configurations at runtime:
 {% highlight bash %}
-./bin/spark-submit \ 
-  --name "My app" \ 
-  --master local[4] \  
-  --conf spark.eventLog.enabled=false \ 
-  --conf "spark.executor.extraJavaOptions=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps" \ 
-  --conf spark.hadoop.abc.def=xyz \ 
-  myApp.jar
+./bin/spark-submit \
+--name "My app" \
+--master local[4] \  
+ --conf spark.eventLog.enabled=false \
+--conf "spark.executor.extraJavaOptions=-XX:+PrintGCDetails -XX:+PrintGCTimeStamps" \
+--conf spark.hadoop.abc.def=xyz \
+myApp.jar
 {% endhighlight %}

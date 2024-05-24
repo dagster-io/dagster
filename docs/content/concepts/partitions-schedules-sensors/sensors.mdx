@@ -51,7 +51,7 @@ class FileConfig(Config):
 
 
 @op
-def process_file(context, config: FileConfig):
+def process_file(context: OpExecutionContext, config: FileConfig):
     context.log.info(config.filename)
 
 
@@ -97,8 +97,7 @@ Once a sensor is added to a <PyObject object="Definitions" /> object with the jo
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
 @sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
-def my_running_sensor():
-    ...
+def my_running_sensor(): ...
 ```
 
 If you manually start or stop a sensor in the UI, that will override any default status that is set in code.
@@ -166,6 +165,8 @@ def my_directory_sensor_cursor(context):
 ```
 
 For sensors that consume multiple event streams, you may need to serialize and deserialize a more complex data structure in and out of the cursor string to keep track of the sensor's progress over the multiple streams.
+
+Note also that in the example above, both a `run_key` _and_ cursor are being used. This means that if the cursor is reset but the target files don't change, new runs will not be launched because the run keys have not changed. If you want the ability to fully reset the state of your sensor by resetting the cursor, then you should not set `run_key` on `RunRequest`.
 
 ---
 
@@ -248,8 +249,7 @@ class UsersAPI(ConfigurableResource):
         return requests.get(self.url).json()
 
 @job
-def process_user():
-    ...
+def process_user(): ...
 
 @sensor(job=process_user)
 def process_new_users_sensor(
@@ -276,6 +276,30 @@ defs = Definitions(
 ```
 
 For more information on resources, refer to the [Resources documentation](/concepts/resources). To see how to test schedules with resources, refer to the section on [Testing sensors with resources](#testing-sensors-with-resources).
+
+---
+
+## Logging in sensors
+
+<Note>
+  Sensor logs are stored in your{" "}
+  <a href="/deployment/dagster-instance#compute-log-storage">
+    Dagster instance's compute log storage
+  </a>
+  . You should ensure that your compute log storage is configured to view your sensor
+  logs.
+</Note>
+
+Any sensor can emit log messages during its evaluation function:
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
+@sensor(job=the_job)
+def logs_then_skips(context):
+    context.log.info("Logging from a sensor!")
+    return SkipReason("Nothing to do")
+```
+
+These logs can be viewed when inspecting a tick in the tick history view on the corresponding sensor page.
 
 ---
 
@@ -420,25 +444,6 @@ def test_process_new_users_sensor():
 
 ---
 
-## Logging in sensors
-
-<Note>
-  This feature is <strong>experimental</strong>.
-</Note>
-
-Any sensor can emit log messages during its evaluation function:
-
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_logging endbefore=end_sensor_logging
-@sensor(job=the_job)
-def logs_then_skips(context):
-    context.log.info("Logging from a sensor!")
-    return SkipReason("Nothing to do")
-```
-
-These logs can be viewed in the UI on the corresponding sensor page, after first enabling the **Experimental schedule/sensor logging view** option in **User Settings**.
-
----
-
 ## Monitoring sensors in the Dagster UI
 
 <!--
@@ -568,7 +573,10 @@ you create a run failure sensor that will message a given Slack channel:
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
+slack_on_run_failure = make_slack_on_run_failure_sensor(
+    "#my_channel",
+    os.getenv("MY_SLACK_TOKEN"),
+)
 ```
 
 <br></br>
@@ -619,14 +627,14 @@ def code_location_a_data_update_failure_sensor():
     send_slack_alert()
 ```
 
-You can also monitor every job in your Dagster instance by specifying `monitor_all_repositories=True` on the sensor decorator. Note that `monitor_all_repositories` cannot be used along with jobs specified via `monitored_jobs`.
+You can also monitor every job in your Dagster instance by specifying `monitor_all_code_locations=True` on the sensor decorator. Note that `monitor_all_code_locations` cannot be used along with jobs specified via `monitored_jobs`.
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_instance_sensor endbefore=end_instance_sensor
 @run_status_sensor(
-    monitor_all_repositories=True,
+    monitor_all_code_locations=True,
     run_status=DagsterRunStatus.SUCCESS,
 )
-def instance_sensor():
+def sensor_monitor_all_code_locations():
     # when any job in the Dagster instance succeeds, this sensor will trigger
     send_slack_alert()
 ```

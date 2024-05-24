@@ -1014,17 +1014,21 @@ def test_run_id_execute_in_process():
         pass
 
     with instance_for_test() as instance:
-        result = blank.execute_in_process(instance=instance, run_id="foo")
-        assert result.success
-        assert instance.get_run_by_id("foo")
+        result_one = blank.execute_in_process(instance=instance)
+        assert result_one.success
+        assert instance.get_run_by_id(result_one.dagster_run.run_id)
 
-        result = blank.to_job().execute_in_process(instance=instance, run_id="bar")
-        assert result.success
-        assert instance.get_run_by_id("bar")
+        result_two = blank.to_job().execute_in_process(instance=instance)
+        assert result_two.success
+        assert instance.get_run_by_id(result_two.dagster_run.run_id)
+        assert result_one.dagster_run.run_id != result_two.dagster_run.run_id
 
-        result = blank.alias("some_name").execute_in_process(instance=instance, run_id="baz")
-        assert result.success
-        assert instance.get_run_by_id("baz")
+        result_three = blank.alias("some_name").execute_in_process(instance=instance)
+        assert result_three.success
+        assert instance.get_run_by_id(result_three.dagster_run.run_id)
+        assert result_three.dagster_run.run_id not in set(
+            [result_one.dagster_run.run_id, result_two.dagster_run.run_id]
+        )
 
 
 def test_graphs_break_type_checks():

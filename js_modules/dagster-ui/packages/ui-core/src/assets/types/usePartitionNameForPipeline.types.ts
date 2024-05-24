@@ -3,9 +3,9 @@
 import * as Types from '../../graphql/types';
 
 export type AssetJobPartitionSetsQueryVariables = Types.Exact<{
-  pipelineName: Types.Scalars['String'];
-  repositoryName: Types.Scalars['String'];
-  repositoryLocationName: Types.Scalars['String'];
+  pipelineName: Types.Scalars['String']['input'];
+  repositoryName: Types.Scalars['String']['input'];
+  repositoryLocationName: Types.Scalars['String']['input'];
 }>;
 
 export type AssetJobPartitionSetsQuery = {

@@ -4,11 +4,17 @@ module: 'dagster_essentials'
 lesson: '1'
 ---
 
+# Orchestration approaches
+
 Data engineers see orchestration as key to solidifying a data pipeline for business and real-world use. In this section, we’ll go through two different approaches to workflow orchestration and the pros and cons of each.
 
 But first, what’s a workflow?
 
-> _A workflow is a system for managing repetitive processes and tasks which occur in a particular order. They are the mechanism by which people and enterprises accomplish their work […]._ - [IBM](https://www.ibm.com/topics/workflow)
+{% callout %}
+
+> A workflow is a system for managing repetitive processes and tasks which occur in a particular order. They are the mechanism by which people and enterprises accomplish their work \[…].\_ - [IBM](https://www.ibm.com/topics/workflow) >
+
+{% /callout %}
 
 A workflow can be visualized using a **directed acyclic graph,** or **DAG**, which depicts the steps required to complete the workflow. For example, sending a CSV of a report by email every Friday might have a DAG that looks like this:
 

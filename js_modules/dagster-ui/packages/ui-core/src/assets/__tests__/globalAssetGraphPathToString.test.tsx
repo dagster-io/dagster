@@ -1,6 +1,6 @@
 import {
-  globalAssetGraphPathToString,
   globalAssetGraphPathForAssetsAndDescendants,
+  globalAssetGraphPathToString,
 } from '../globalAssetGraphPathToString';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.

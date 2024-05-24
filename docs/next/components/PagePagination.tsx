@@ -135,24 +135,22 @@ export function PagePagination(props: {currentPageIndex: number; totalPageCount:
             href={{
               query: {...query, page: currentPageIndex + 2},
             }}
+            className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
           >
-            <a className="inline-flex items-center border-t-2 border-transparent pl-1 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700">
-              Next
-              {/* Heroicon name: arrow-narrow-right */}
-              <svg
-                className="ml-3 h-5 w-5 text-gray-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </a>
+            Next{/* Heroicon name: arrow-narrow-right */}
+            <svg
+              className="ml-3 h-5 w-5 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
           </NextLink>
         )}
       </div>
@@ -172,16 +170,13 @@ function PaginationItem(props: {targetIndex: number; isCurrentPage?: boolean}) {
       href={{
         query: {...query, page: targetIndex + 1},
       }}
+      className={cx({
+        'inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700':
+          true,
+        'border-indigo-500 text-indigo-600': isCurrentPage,
+      })}
     >
-      <a
-        className={cx({
-          'inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700':
-            true,
-          'border-indigo-500 text-indigo-600': isCurrentPage,
-        })}
-      >
-        {targetIndex + 1}
-      </a>
+      {targetIndex + 1}
     </NextLink>
   );
 }
