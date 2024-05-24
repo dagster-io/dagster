@@ -89,10 +89,10 @@ class AssetSubset(DagsterModel):
 
     @property
     def is_empty(self) -> bool:
-        # avoid calculating the full size of the subset if it's an AllPartitionsSubset
-        if isinstance(self.value, AllPartitionsSubset):
-            return False
-        return self.size == 0
+        if isinstance(self.value, PartitionsSubset):
+            return self.value.is_empty
+        else:
+            return not self.value
 
     def is_compatible_with_partitions_def(
         self, partitions_def: Optional[PartitionsDefinition]
@@ -245,17 +245,27 @@ class ValidAssetSubset(AssetSubset):
 
     def __and__(self, other: AssetSubset) -> "ValidAssetSubset":
         """Returns an AssetSubset representing self.asset_partitions & other.asset_partitions."""
+        if self.is_empty:
+            return self
+        if other.is_empty:
+            return self.get_valid(other)
         return self._oper(self.get_valid(other), operator.and_)
 
     def __or__(self, other: AssetSubset) -> "ValidAssetSubset":
         """Returns an AssetSubset representing self.asset_partitions | other.asset_partitions."""
+        if self.is_empty:
+            return self.get_valid(other)
+        if other.is_empty:
+            return self
         return self._oper(self.get_valid(other), operator.or_)
 
     def get_valid(self, other: AssetSubset) -> "ValidAssetSubset":
         """Creates a ValidAssetSubset from the given AssetSubset by returning a copy of the given
         AssetSubset if it is compatible with this AssetSubset, otherwise returns an empty subset.
         """
-        if self._is_compatible_with_subset(other):
+        if isinstance(other, ValidAssetSubset):
+            return other
+        elif self._is_compatible_with_subset(other):
             return ValidAssetSubset(asset_key=other.asset_key, value=other.value)
         else:
             return self.model_copy(

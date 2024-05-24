@@ -60,10 +60,10 @@ class SchedulingEvaluationResultNode(DagsterModel):
         # we store AllPartitionsSubset as a sentinel value to avoid serializing the entire set of
         # partitions on each tick. this logic handles converting that back to an AllPartitionsSubset
         # at read time.
-        candidate_subset = (
-            condition_evaluation.candidate_subset
+        candidate_slice = (
+            asset_graph_view.get_asset_slice_from_subset(condition_evaluation.candidate_subset)
             if isinstance(condition_evaluation.candidate_subset, AssetSubset)
-            else asset_graph_view.get_asset_slice(asset_key).convert_to_valid_asset_subset()
+            else asset_graph_view.get_asset_slice(asset_key=asset_key)
         )
 
         # only carry forward subsets that are compatible with the current partitions def
@@ -79,13 +79,13 @@ class SchedulingEvaluationResultNode(DagsterModel):
                 ],
             )
         )
-        node = SchedulingEvaluationResultNode(
+        node = SchedulingEvaluationResultNode.model_construct(
             asset_key=asset_key,
             condition_unique_id=unique_id,
             true_slice=asset_graph_view.get_asset_slice_from_subset(
                 condition_evaluation.true_subset
             ),
-            candidate_slice=asset_graph_view.get_asset_slice_from_subset(candidate_subset),
+            candidate_slice=candidate_slice,
             slices_with_metadata=slices_with_metadata,
             extra_state=state.extra_state_by_unique_id.get(unique_id),
         )

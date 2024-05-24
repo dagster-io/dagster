@@ -121,9 +121,6 @@ class AssetDaemonContext:
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
 
-        # cache data before the tick starts
-        self.prefetch()
-
     @property
     def logger(self) -> logging.Logger:
         return self._logger
@@ -153,38 +150,12 @@ class AssetDaemonContext:
         return self._auto_materialize_asset_keys
 
     @property
-    def auto_materialize_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
-        return {
-            parent
-            for asset_key in self.auto_materialize_asset_keys
-            for parent in self.asset_graph.get(asset_key).parent_keys
-        } | self.auto_materialize_asset_keys
-
-    @property
-    def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
-        return [
-            key for key in self.auto_materialize_asset_keys_and_parents if self.asset_graph.has(key)
-        ]
-
-    @property
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
 
     @property
     def auto_materialize_run_tags(self) -> Mapping[str, str]:
         return self._materialize_run_tags or {}
-
-    def prefetch(self) -> None:
-        """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
-        value is calculated using information that comes in after the set of asset partitions with
-        new parent materializations is calculated, as this can result in materializations being
-        ignored if they happen between the two calculations.
-        """
-        self._logger.info(
-            f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
-        )
-        self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
-        self._logger.info("Done prefetching asset records.")
 
     def get_asset_condition_evaluations(
         self,

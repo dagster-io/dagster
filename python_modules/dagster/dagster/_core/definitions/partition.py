@@ -1039,6 +1039,10 @@ class PartitionsSubset(ABC, Generic[T_str]):
     def to_serializable_subset(self) -> "PartitionsSubset":
         return self
 
+    @property
+    def is_empty(self) -> bool:
+        return len(self) == 0
+
 
 @whitelist_for_serdes
 class SerializedPartitionsSubset(NamedTuple):
@@ -1232,6 +1236,10 @@ class AllPartitionsSubset(
             current_time=current_time,
         )
 
+    @property
+    def is_empty(self) -> bool:
+        return False
+
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         check.param_invariant(current_time is None, "current_time")
         return self.partitions_def.get_partition_keys(
@@ -1276,8 +1284,12 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        from .time_window_partitions import TimeWindowPartitionsSubset
+
         if self == other:
             return self.partitions_def.empty_subset()
+        if isinstance(other, TimeWindowPartitionsSubset):
+            return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
         )
