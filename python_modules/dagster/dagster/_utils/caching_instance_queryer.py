@@ -597,14 +597,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Finds asset partitions of the given child whose parents have been materialized since
         latest_storage_id.
         """
+        child_asset = self.asset_graph.get(child_asset_key)
         max_storage_ids = [
-            self.get_latest_materialization_or_observation_storage_id(
-                AssetKeyPartitionKey(child_asset_key)
-            )
+            self.get_latest_materialization_or_observation_storage_id(AssetKeyPartitionKey(key))
+            for key in [child_asset_key, *child_asset.parent_keys]
         ]
 
-        child_asset = self.asset_graph.get(child_asset_key)
-        if not child_asset.parent_keys:
+        if not child_asset.parent_keys or latest_storage_id is None:
             # return set(), latest_storage_id
             return set(), max(filter(None, [latest_storage_id, *max_storage_ids]), default=None)
 
@@ -612,7 +611,7 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         child_asset_partitions_with_updated_parents = set()
 
-        for parent_asset_key in self.asset_graph.get(child_asset_key).parent_keys:
+        for parent_asset_key in child_asset.parent_keys:
             # ignore non-existent parents
             if not self.asset_graph.has(parent_asset_key):
                 continue

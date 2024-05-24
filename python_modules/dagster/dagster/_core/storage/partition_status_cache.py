@@ -448,6 +448,8 @@ def get_and_update_asset_status_cache_value(
             dynamic_partitions_store=dynamic_partitions_store
         )
     )
+    # if use_cached_value and stored_cache_value:
+    #    return stored_cache_value
     updated_cache_value = _build_status_cache(
         instance=instance,
         asset_key=asset_key,
@@ -457,6 +459,7 @@ def get_and_update_asset_status_cache_value(
         asset_record=asset_record,
     )
     if updated_cache_value is not None and updated_cache_value != stored_cache_value:
-        instance.update_asset_cached_status_data(asset_key, updated_cache_value)
+        # instance.update_asset_cached_status_data(asset_key, updated_cache_value)
+        pass
 
     return updated_cache_value

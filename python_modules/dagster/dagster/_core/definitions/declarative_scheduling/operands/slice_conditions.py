@@ -4,6 +4,7 @@ from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.declarative_scheduling.utils import SerializableTimeDelta
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
@@ -34,6 +35,15 @@ class MissingSchedulingCondition(SliceSchedulingCondition):
         return "Missing"
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        previous_cursor = context.previous_evaluation_max_storage_id
+        if (
+            previous_cursor
+            and context.previous_true_slice
+            and context.inner_legacy_context.instance_queryer.get_latest_materialization_or_observation_record(
+                AssetKeyPartitionKey(context.asset_key), after_cursor=previous_cursor
+            )
+        ):
+            return context.previous_true_slice
         return context.asset_graph_view.compute_missing_subslice(
             context.asset_key, from_slice=context.candidate_slice
         )

@@ -31,7 +31,7 @@ class SinceCondition(SchedulingCondition):
             child_condition,
             child_index=child_index,
             # must evaluate child condition over the entire slice to avoid missing state transitions
-            candidate_slice=context.asset_graph_view.get_asset_slice(context.asset_key),
+            candidate_slice=context.asset_graph_view.get_asset_slice(asset_key=context.asset_key),
         )
         child_result = child_condition.evaluate(child_context)
 
