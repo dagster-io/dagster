@@ -1631,7 +1631,7 @@ def test_direct_instantiation_invalid_partition_mapping():
     with pytest.raises(CheckError, match="received a partition mapping"):
         AssetsDefinition(
             keys_by_input_name={},
-            keys_by_output_name={"my_output": AssetKey("foo")},
+            keys_by_output_name={"result": AssetKey("foo")},
             node_def=my_op,
             partition_mappings={AssetKey("nonexistent_asset"): IdentityPartitionMapping()},
         )

@@ -4,7 +4,10 @@ import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.partition_mapping import (
+    PartitionMapping,
+    warn_if_partition_mapping_not_builtin,
+)
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
@@ -79,6 +82,9 @@ class AssetDep(
             )
 
         asset_key = _get_asset_key(asset)
+
+        if partition_mapping:
+            warn_if_partition_mapping_not_builtin(partition_mapping)
 
         return super().__new__(
             cls,

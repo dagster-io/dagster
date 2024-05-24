@@ -59,7 +59,7 @@ from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.warnings import disable_dagster_warnings
+from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
 from .asset_spec import AssetSpec
 from .dependency import NodeHandle
@@ -69,8 +69,8 @@ from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
 from .partition_mapping import (
     PartitionMapping,
-    get_builtin_partition_mapping_types,
     infer_partition_mapping,
+    warn_if_partition_mapping_not_builtin,
 )
 from .resource_definition import ResourceDefinition
 from .source_asset import SourceAsset
@@ -174,12 +174,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         all_asset_keys = set(keys_by_output_name.values())
 
         self._partitions_def = partitions_def
-        self._partition_mappings = partition_mappings or {}
-        _validate_partition_mappings(
-            partition_mappings=self._partition_mappings,
-            input_asset_keys=set(keys_by_input_name.values()),
-            all_asset_keys=all_asset_keys,
-        )
+        if partition_mappings:
+            _validate_partition_mappings(
+                partition_mappings=partition_mappings,
+                input_asset_keys=set(keys_by_input_name.values()),
+                all_asset_keys=all_asset_keys,
+            )
 
         if asset_deps:
             check.invariant(
@@ -224,20 +224,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 "Non partitioned asset can only have single run backfill policy",
             )
 
-        _validate_self_deps(
-            input_keys=[
-                key
-                # filter out the special inputs which are used for cases when a multi-asset is
-                # subsetted, as these are not the same as self-dependencies and are never loaded
-                # in the same step that their corresponding output is produced
-                for input_name, key in self._keys_by_input_name.items()
-                if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
-            ],
-            output_keys=self._selected_asset_keys,
-            partition_mappings=self._partition_mappings,
-            partitions_def=self._partitions_def,
-        )
-
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
         if specs is not None:
@@ -248,6 +234,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check.invariant(auto_materialize_policies_by_key is None)
             check.invariant(descriptions_by_key is None)
             check.invariant(owners_by_key is None)
+            check.invariant(partition_mappings is None)
+            check.invariant(asset_deps is None)
             resolved_specs = specs
 
         else:
@@ -301,6 +289,24 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 )
             )
 
+        self._partition_mappings = get_partition_mappings_from_deps(
+            {}, [dep for spec in normalized_specs for dep in spec.deps], node_def.name
+        )
+
+        _validate_self_deps(
+            input_keys=[
+                key
+                # filter out the special inputs which are used for cases when a multi-asset is
+                # subsetted, as these are not the same as self-dependencies and are never loaded
+                # in the same step that their corresponding output is produced
+                for input_name, key in self._keys_by_input_name.items()
+                if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
+            ],
+            output_keys=self._selected_asset_keys,
+            partition_mappings=self._partition_mappings,
+            partitions_def=self._partitions_def,
+        )
+
         self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
     def dagster_internal_init(
@@ -309,8 +315,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         keys_by_output_name: Mapping[str, AssetKey],
         node_def: NodeDefinition,
         partitions_def: Optional[PartitionsDefinition],
-        partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]],
-        asset_deps: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
         selected_asset_keys: Optional[AbstractSet[AssetKey]],
         can_subset: bool,
         resource_defs: Optional[Mapping[str, object]],
@@ -320,22 +324,22 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         is_subset: bool,
         specs: Optional[Sequence[AssetSpec]],
     ) -> "AssetsDefinition":
-        return AssetsDefinition(
-            keys_by_input_name=keys_by_input_name,
-            keys_by_output_name=keys_by_output_name,
-            node_def=node_def,
-            partitions_def=partitions_def,
-            partition_mappings=partition_mappings,
-            asset_deps=asset_deps,
-            selected_asset_keys=selected_asset_keys,
-            can_subset=can_subset,
-            resource_defs=resource_defs,
-            backfill_policy=backfill_policy,
-            check_specs_by_output_name=check_specs_by_output_name,
-            selected_asset_check_keys=selected_asset_check_keys,
-            is_subset=is_subset,
-            specs=specs,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            return AssetsDefinition(
+                keys_by_input_name=keys_by_input_name,
+                keys_by_output_name=keys_by_output_name,
+                node_def=node_def,
+                partitions_def=partitions_def,
+                selected_asset_keys=selected_asset_keys,
+                can_subset=can_subset,
+                resource_defs=resource_defs,
+                backfill_policy=backfill_policy,
+                check_specs_by_output_name=check_specs_by_output_name,
+                selected_asset_check_keys=selected_asset_check_keys,
+                is_subset=is_subset,
+                specs=specs,
+            )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
         from .composition import is_in_composition
@@ -658,6 +662,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         specs = _asset_specs_from_attr_key_params(
             all_asset_keys=set(keys_by_output_name_with_prefix.values()),
+            keys_by_input_name=keys_by_input_name,
+            deps_by_asset_key=transformed_internal_asset_deps or None,
+            partition_mappings=(
+                {
+                    keys_by_input_name[input_name]: partition_mapping
+                    for input_name, partition_mapping in partition_mappings.items()
+                }
+                if partition_mappings
+                else None
+            ),
             tags_by_key=_output_dict_to_asset_dict(tags_by_output_name),
             owners_by_key=_output_dict_to_asset_dict(owners_by_output_name),
             group_names_by_key=group_names_by_key,
@@ -673,21 +687,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name_with_prefix,
             node_def=node_def,
-            asset_deps=transformed_internal_asset_deps or None,
             partitions_def=check.opt_inst_param(
                 partitions_def,
                 "partitions_def",
                 PartitionsDefinition,
             ),
             resource_defs=resource_defs,
-            partition_mappings=(
-                {
-                    keys_by_input_name[input_name]: partition_mapping
-                    for input_name, partition_mapping in partition_mappings.items()
-                }
-                if partition_mappings
-                else None
-            ),
             backfill_policy=check.opt_inst_param(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
@@ -1132,7 +1137,21 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if key in output_asset_key_replacements:
                 replace_dict["key"] = output_asset_key_replacements[key]
 
-            replaced_specs.append(self._specs_by_key[key]._replace(**replace_dict))
+            if input_asset_key_replacements or output_asset_key_replacements:
+                new_deps = []
+                for dep in spec.deps:
+                    replacement_key = input_asset_key_replacements.get(
+                        dep.asset_key,
+                        output_asset_key_replacements.get(dep.asset_key),
+                    )
+                    if replacement_key is not None:
+                        new_deps.append(dep._replace(asset_key=replacement_key))
+                    else:
+                        new_deps.append(dep)
+
+                replace_dict["deps"] = new_deps
+
+            replaced_specs.append(spec._replace(**replace_dict))
 
         for attr_name, conflicting_asset_keys in conflicts_by_attr_name.items():
             raise DagsterInvalidDefinitionError(
@@ -1148,21 +1167,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             keys_by_output_name={
                 output_name: output_asset_key_replacements.get(key, key)
                 for output_name, key in self._keys_by_output_name.items()
-            },
-            partition_mappings={
-                input_asset_key_replacements.get(key, key): partition_mapping
-                for key, partition_mapping in self._partition_mappings.items()
-            },
-            asset_deps={
-                # replace both the keys and the values in this mapping
-                output_asset_key_replacements.get(key, key): {
-                    input_asset_key_replacements.get(
-                        upstream_key,
-                        output_asset_key_replacements.get(upstream_key, upstream_key),
-                    )
-                    for upstream_key in value
-                }
-                for key, value in self.asset_deps.items()
             },
             selected_asset_keys={
                 output_asset_key_replacements.get(key, key) for key in self._selected_asset_keys
@@ -1261,6 +1265,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 for key, value in self.node_keys_by_output_name.items()
                 if key in subsetted_output_names
             }
+            selected_node_asset_keys = set(subsetted_keys_by_output_name.values())
 
             # An op within the graph-backed asset that yields multiple assets will be run
             # any time any of its output assets are selected. Thus, if an op yields multiple assets
@@ -1271,21 +1276,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             # keys_by_output_name and asset_deps so that the webserver can populate an warning when
             # this occurs. This is the same behavior as multi-asset subsetting.
 
-            subsetted_asset_deps = {
-                out_asset_key: set(self._keys_by_input_name.values())
-                for out_asset_key in subsetted_keys_by_output_name.values()
-            }
             replaced_attributes = dict(
                 keys_by_input_name=subsetted_keys_by_input_name,
                 keys_by_output_name=subsetted_keys_by_output_name,
                 node_def=subsetted_node,
-                asset_deps=subsetted_asset_deps,
                 selected_asset_keys=selected_asset_keys & self.keys,
                 selected_asset_check_keys=asset_check_subselection,
+                specs=[spec for spec in self.specs if spec.key in selected_node_asset_keys],
                 is_subset=True,
             )
 
-            return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
+            return self.__class__.dagster_internal_init(
+                **merge_dicts(self.get_attributes_dict(), replaced_attributes)
+            )
         else:
             # multi_asset subsetting
             replaced_attributes = {
@@ -1293,7 +1296,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 "selected_asset_check_keys": asset_check_subselection,
                 "is_subset": True,
             }
-            return self.__class__(**merge_dicts(self.get_attributes_dict(), replaced_attributes))
+            return self.__class__.dagster_internal_init(
+                **merge_dicts(self.get_attributes_dict(), replaced_attributes)
+            )
 
     @property
     def is_subset(self) -> bool:
@@ -1413,7 +1418,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             resource_defs_to_merge_in=resource_defs,
             requires_resources=self,
         )
-        return self.__class__(**attributes_dict)
+        return self.__class__.dagster_internal_init(**attributes_dict)
 
     def get_attributes_dict(self) -> Dict[str, Any]:
         return dict(
@@ -1421,8 +1426,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             keys_by_output_name=self._keys_by_output_name,
             node_def=self._node_def,
             partitions_def=self._partitions_def,
-            partition_mappings=self._partition_mappings,
-            asset_deps=self.asset_deps,
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=self._resource_defs,
@@ -1573,20 +1576,8 @@ def _validate_partition_mappings(
     input_asset_keys: AbstractSet[AssetKey],
     all_asset_keys: AbstractSet[AssetKey],
 ) -> None:
-    builtin_partition_mappings = get_builtin_partition_mapping_types()
     for asset_key, partition_mapping in partition_mappings.items():
-        if not isinstance(partition_mapping, builtin_partition_mappings):
-            warnings.warn(
-                f"Non-built-in PartitionMappings, such as {type(partition_mapping).__name__} "
-                "are deprecated and will not work with asset reconciliation. The built-in "
-                "partition mappings are "
-                + ", ".join(
-                    builtin_partition_mapping.__name__
-                    for builtin_partition_mapping in builtin_partition_mappings
-                )
-                + ".",
-                category=DeprecationWarning,
-            )
+        warn_if_partition_mapping_not_builtin(partition_mapping)
 
         if asset_key not in input_asset_keys:
             check.failed(
@@ -1737,3 +1728,25 @@ def validate_asset_owner(owner: str, key: AssetKey) -> None:
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
+
+
+def get_partition_mappings_from_deps(
+    partition_mappings: Dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
+) -> Mapping[AssetKey, PartitionMapping]:
+    # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
+    for dep in deps:
+        if dep.partition_mapping is None:
+            continue
+        if partition_mappings.get(dep.asset_key, None) is None:
+            partition_mappings[dep.asset_key] = dep.partition_mapping
+            continue
+        if partition_mappings[dep.asset_key] == dep.partition_mapping:
+            continue
+        else:
+            raise DagsterInvalidDefinitionError(
+                f"Two different PartitionMappings for {dep.asset_key} provided for"
+                f" asset {asset_name}. Please use the same PartitionMapping for"
+                f" {dep.asset_key}."
+            )
+
+    return partition_mappings

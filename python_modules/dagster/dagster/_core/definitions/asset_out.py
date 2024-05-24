@@ -2,6 +2,7 @@ from typing import Any, Mapping, NamedTuple, Optional, Sequence, Type, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
@@ -138,7 +139,7 @@ class AssetOut(
             code_version=self.code_version,
         )
 
-    def to_spec(self, key: AssetKey) -> AssetSpec:
+    def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
         with disable_dagster_warnings():
             return AssetSpec(
                 key=key,
@@ -151,4 +152,5 @@ class AssetOut(
                 auto_materialize_policy=self.auto_materialize_policy,
                 owners=self.owners,
                 tags=self.tags,
+                deps=deps,
             )
