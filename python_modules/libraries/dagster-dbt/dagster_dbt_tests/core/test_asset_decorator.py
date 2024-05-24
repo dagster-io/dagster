@@ -21,6 +21,7 @@ from dagster import (
     asset,
     materialize,
 )
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.types.dagster_type import DagsterType
@@ -510,6 +511,26 @@ def test_with_tag_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> Non
         assert metadata["customized"] == "tag"
 
 
+def test_with_storage_kind_tag_override(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
+        def get_tags(self, _: Mapping[str, Any]) -> Mapping[str, str]:
+            return {**StorageKindTagSet(storage_kind="my_custom_storage_kind")}
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest)
+    def my_dbt_assets_no_override(): ...
+
+    for metadata in my_dbt_assets_no_override.tags_by_key.values():
+        assert metadata["dagster/storage_kind"] == "duckdb"
+
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest, dagster_dbt_translator=CustomDagsterDbtTranslator()
+    )
+    def my_dbt_assets(): ...
+
+    for metadata in my_dbt_assets.tags_by_key.values():
+        assert metadata["dagster/storage_kind"] == "my_custom_storage_kind"
+
+
 def test_with_owner_replacements(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     expected_owners = ["custom@custom.com"]
 
@@ -642,9 +663,13 @@ def test_dbt_config_tags(test_meta_config_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_meta_config_manifest)
     def my_dbt_assets(): ...
 
-    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {"foo": "", "bar-baz": ""}
+    assert my_dbt_assets.tags_by_key[AssetKey("customers")] == {
+        "foo": "",
+        "bar-baz": "",
+        **StorageKindTagSet(storage_kind="duckdb"),
+    }
     for asset_key in my_dbt_assets.keys - {AssetKey("customers")}:
-        assert my_dbt_assets.tags_by_key[asset_key] == {}
+        assert my_dbt_assets.tags_by_key[asset_key] == {**StorageKindTagSet(storage_kind="duckdb")}
 
 
 def test_dbt_meta_owners(test_meta_config_manifest: Dict[str, Any]) -> None:
