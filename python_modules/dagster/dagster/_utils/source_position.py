@@ -96,8 +96,10 @@ def populate_source_position_and_key_paths(
         )
 
         if source_position_tree is not None:
-            obj._source_position_and_key_path = SourcePositionAndKeyPath(  # noqa: SLF001
-                key_path, source_position_tree.position
+            object.__setattr__(
+                obj,
+                "_source_position_and_key_path",
+                SourcePositionAndKeyPath(key_path, source_position_tree.position),
             )
 
     if source_position_tree is None:
