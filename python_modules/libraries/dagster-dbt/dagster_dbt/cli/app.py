@@ -13,10 +13,10 @@ from rich.console import Console
 from rich.syntax import Syntax
 from typing_extensions import Annotated
 
+from ..dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from ..dbt_project import DbtProject
 from ..include import STARTER_PROJECT_PATH
 from ..version import (
-    DBT_CORE_VERSION_UPPER_BOUND,
     __version__ as dagster_dbt_version,
 )
 
