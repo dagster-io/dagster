@@ -522,7 +522,7 @@ def multi_asset(
     deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,

@@ -1,9 +1,10 @@
 from abc import abstractmethod
-from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence
+from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
-from dagster import MaterializeResult, asset
+from dagster import MaterializeResult, asset, multi_asset
 from dagster._core.blueprints.blueprint import Blueprint, BlueprintDefinitions
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.models import DagsterModel
 
 
 class BaseAssetBlueprint(Blueprint):
@@ -18,9 +19,6 @@ class BaseAssetBlueprint(Blueprint):
     code_version: Optional[str] = None
     owners: Sequence[str] = []
     tags: Mapping[str, str] = {}
-
-    task: Dict[str, Any]
-    submit_args: Optional[Mapping[str, str]] = None
 
     def build_defs(self) -> BlueprintDefinitions:
         @asset(
@@ -46,4 +44,40 @@ class BaseAssetBlueprint(Blueprint):
 
     @abstractmethod
     def materialize(self, context: AssetExecutionContext) -> MaterializeResult:
+        raise NotImplementedError()
+
+
+class AssetSpecModel(DagsterModel):
+    asset_key: str
+    deps: Sequence[str] = []
+    description: Optional[str] = None
+    metadata: Mapping[str, Any] = {}
+    group_name: Optional[str] = None
+    skippable: bool = False
+    code_version: Optional[str] = None
+    owners: Sequence[str] = []
+    tags: Mapping[str, str] = {}
+
+
+class BaseMultiAssetBlueprint(Blueprint):
+    """A blueprint for a multi-asset definition whose materialization function is a databricks task."""
+
+    asset_specs: Sequence[AssetSpecModel]
+
+    def build_defs(self) -> BlueprintDefinitions:
+        @multi_asset(
+            specs=[spec_model.to_asset_spec() for spec_model in self.asset_specs],
+            required_resource_keys=self.get_required_resource_keys(),
+        )
+        def _assets(context: AssetExecutionContext):
+            return self.materialize(context=context)
+
+        return BlueprintDefinitions(assets=[_assets])
+
+    @staticmethod
+    def get_required_resource_keys() -> AbstractSet[str]:
+        return set()
+
+    @abstractmethod
+    def materialize(self, context: AssetExecutionContext):
         raise NotImplementedError()

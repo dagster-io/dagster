@@ -1,7 +1,10 @@
-from typing import AbstractSet, Any, Dict, Mapping, Optional
+from typing import AbstractSet, Any, Dict, Literal, Mapping, Optional
 
 from dagster import AssetExecutionContext, MaterializeResult
-from dagster._core.blueprints.base_asset_blueprint import BaseAssetBlueprint
+from dagster._core.blueprints.base_asset_blueprint import (
+    BaseAssetBlueprint,
+    BaseMultiAssetBlueprint,
+)
 from databricks.sdk.service.jobs import SubmitTask
 
 
@@ -21,6 +24,7 @@ class DatabricksTaskAssetBlueprint(BaseAssetBlueprint):
             forwarded as-is to `WorkspaceClient.jobs.submit`.
     """
 
+    type: Literal["databricks_task_asset"] = "databricks_task_asset"
     task: Dict[str, Any]
     submit_args: Optional[Mapping[str, str]] = None
 
@@ -32,3 +36,33 @@ class DatabricksTaskAssetBlueprint(BaseAssetBlueprint):
         return context.resources.pipes_databricks_client.run(
             context=context, task=SubmitTask.from_dict(self.task), submit_args=self.submit_args
         ).get_materialize_result()
+
+
+class DatabricksTaskMultiAssetBlueprint(BaseMultiAssetBlueprint):
+    """A blueprint for an asset definition whose materialization function is a databricks task.
+
+    Requires the code location to include a "pipes_databricks_client" resource with type
+    dagster_databricks.PipesDatabricksClient.
+
+    Attributes:
+        task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
+            task to run. Environment variables used by dagster-pipes will be set under the
+            `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
+            here, the EXT environment variables will be merged in). Everything else will be
+            passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
+        submit_args (Optional[Mapping[str, str]]): Additional keyword arguments that will be
+            forwarded as-is to `WorkspaceClient.jobs.submit`.
+    """
+
+    type: Literal["databricks_task_multi_asset"] = "databricks_task_multi_asset"
+    task: Dict[str, Any]
+    submit_args: Optional[Mapping[str, str]] = None
+
+    @staticmethod
+    def get_required_resource_keys() -> AbstractSet[str]:
+        return {"pipes_databricks_client"}
+
+    def materialize(self, context: AssetExecutionContext):
+        return context.resources.pipes_databricks_client.run(
+            context=context, task=SubmitTask.from_dict(self.task), submit_args=self.submit_args
+        ).get_results()
