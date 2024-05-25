@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import TypedDict
 
 import dagster._check as check
+from dagster._code.definitions.dependency import NodeHandle
 from dagster._core.definitions import (
     AssetCheckEvaluation,
     AssetCheckSeverity,
@@ -27,8 +28,8 @@ from dagster._core.definitions import (
     TypeCheck,
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -105,16 +106,20 @@ def _process_user_event(
     step_context: StepExecutionContext, user_event: OpOutputUnion
 ) -> Iterator[OpOutputUnion]:
     if isinstance(user_event, AssetResult):
-        assets_def = _get_assets_def_for_step(step_context, user_event)
-        asset_key = _resolve_asset_result_asset_key(user_event, assets_def)
-        output_name = assets_def.get_output_name_for_asset_key(asset_key)
+        asset_graph = step_context.job_def.asset_graph
+        asset_key = _resolve_asset_result_asset_key(
+            user_event, asset_graph, step_context.node_handle
+        )
+        output_name = asset_graph.get_step_output_name_for_asset_key(asset_key)
 
         for check_result in user_event.check_results or []:
             yield from _process_user_event(step_context, check_result)
 
         # If a MaterializeResult was returned from an asset with no type annotation, the type will be
         # interpreted as Any and the I/O manager will be invoked. Raise a warning to alert the user.
-        type_annotation = assets_def.op.output_dict[output_name].dagster_type
+        type_annotation = (
+            asset_graph.get_op_for_asset_key(asset_key).output_dict[output_name].dagster_type
+        )
         if not type_annotation.is_nothing:
             step_context.log.warning(
                 f"The MaterializeResult returned from {asset_key} will be stored by the I/O manager."
@@ -131,14 +136,14 @@ def _process_user_event(
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
         spec = check.not_none(
-            step_context.job_def.asset_layer.get_spec_for_asset_check(
+            step_context.job_def.asset_graph.get_spec_for_asset_check(
                 step_context.node_handle.root, asset_check_evaluation.asset_check_key
             ),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",
         )
 
-        output_name = step_context.job_def.asset_layer.get_output_name_for_asset_check(
+        output_name = step_context.job_def.asset_graph.get_output_name_for_asset_check(
             asset_check_evaluation.asset_check_key
         )
         output = Output(value=None, output_name=output_name)
@@ -159,30 +164,19 @@ def _process_user_event(
         yield user_event
 
 
-def _get_assets_def_for_step(
-    step_context: StepExecutionContext, user_event: OpOutputUnion
-) -> AssetsDefinition:
-    assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
-    if not assets_def:
-        raise DagsterInvariantViolationError(
-            f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
-            " AssetsDefinition found."
-        )
-    return assets_def
-
-
 def _resolve_asset_result_asset_key(
-    asset_result: AssetResult, assets_def: AssetsDefinition
+    asset_result: AssetResult, asset_graph: AssetGraph, node_handle: NodeHandle
 ) -> AssetKey:
     if asset_result.asset_key:
         return asset_result.asset_key
     else:
-        if len(assets_def.keys) != 1:
+        step_keys = asset_graph.get_asset_keys_for_node_handle(node_handle)
+        if len(step_keys) != 1:
             raise DagsterInvariantViolationError(
                 f"{asset_result.__class__.__name__} did not include asset_key and it can not be inferred."
-                f" Specify which asset_key, options are: {assets_def.keys}."
+                f" Specify which asset_key, options are: {step_keys}."
             )
-        return assets_def.key
+        return next(iter(step_keys))
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -240,30 +234,24 @@ def _step_output_error_checked_user_event_sequence(
             # dependencies will actually be computed within the step. If A depends on B, it is
             # possible that a cached version of B will be used and B will never be yielded. In
             # contrast, if both A and B are yielded, A should never precede B.
-            asset_layer = step_context.job_def.asset_layer
+            asset_graph = step_context.job_def.asset_graph
             node_handle = step_context.node_handle
-            asset_info = asset_layer.asset_info_for_output(node_handle, output_def.name)
-            if (
-                asset_info is not None
-                and asset_info.is_required
-                and asset_layer.has(asset_info.key)
-            ):
-                if asset_layer.has(asset_info.key):
-                    assets_def = asset_layer.get(asset_info.key).assets_def
-                    all_dependent_keys = asset_layer.get(asset_info.key).child_keys
-                    step_local_asset_keys = step_context.get_output_asset_keys()
-                    step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
-                    for dependent_key in step_local_dependent_keys:
-                        output_name = assets_def.get_output_name_for_asset_key(dependent_key)
-                        # Need to skip self-dependent assets (possible with partitions)
-                        self_dep = dependent_key in asset_layer.get(asset_info.key).parent_keys
-                        if not self_dep and step_context.has_seen_output(output_name):
-                            raise DagsterInvariantViolationError(
-                                f'Asset "{dependent_key.to_user_string()}" was yielded before its'
-                                f' dependency "{asset_info.key.to_user_string()}".Multiassets'
-                                " yielding multiple asset outputs must yield them in topological"
-                                " order."
-                            )
+            asset_node = asset_graph.get_for_node_output(node_handle, output_def.name)
+            if asset_node is not None and not asset_node.skippable:
+                all_dependent_keys = asset_node.child_keys
+                step_local_asset_keys = step_context.get_output_asset_keys()
+                step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
+                for dependent_key in step_local_dependent_keys:
+                    output_name = asset_graph.get_output_name_for_asset_key(dependent_key)
+                    # Need to skip self-dependent assets (possible with partitions)
+                    self_dep = dependent_key in asset_node.parent_keys
+                    if not self_dep and step_context.has_seen_output(output_name):
+                        raise DagsterInvariantViolationError(
+                            f'Asset "{dependent_key.to_user_string()}" was yielded before its'
+                            f' dependency "{asset_node.key.to_user_string()}".Multiassets'
+                            " yielding multiple asset outputs must yield them in topological"
+                            " order."
+                        )
 
             step_context.observe_output(output.output_name)
 
@@ -306,12 +294,12 @@ def _step_output_error_checked_user_event_sequence(
     for step_output in step.step_outputs:
         step_output_def = step_context.op_def.output_def_named(step_output.name)
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
-            asset_layer = step_context.job_def.asset_layer
-            asset_key = asset_layer.asset_key_for_output(
+            asset_graph = step_context.job_def.asset_graph
+            asset_node = asset_graph.get_for_node_output(
                 step_context.node_handle, step_output_def.name
             )
             # We require explicitly returned/yielded for asset observations
-            is_observable_asset = asset_key is not None and asset_layer.get(asset_key).is_observable
+            is_observable_asset = asset_node is not None and asset_node.is_observable
 
             if step_output_def.dagster_type.is_nothing and not is_observable_asset:
                 step_context.log.info(
@@ -624,7 +612,7 @@ def _get_output_asset_events(
     if (
         execution_type == AssetExecutionType.MATERIALIZATION
         and step_context.is_external_input_asset_version_info_loaded
-        and asset_key in step_context.job_def.asset_layer.executable_asset_keys
+        and asset_key in step_context.job_def.asset_graph.executable_asset_keys
     ):
         assert isinstance(output, Output)
         code_version = _get_code_version(asset_key, step_context)
@@ -696,7 +684,7 @@ def _get_output_asset_events(
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
     return (
-        step_context.job_def.asset_layer.get(asset_key).code_version
+        step_context.job_def.asset_graph.get(asset_key).code_version
         or step_context.dagster_run.run_id
     )
 
@@ -710,7 +698,7 @@ def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
     input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
-    deps = step_context.job_def.asset_layer.get(asset_key).parent_keys
+    deps = step_context.job_def.asset_graph.get(asset_key).parent_keys
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
         # to step execution. For inputs internal to this step, it may trigger a query to retrieve
@@ -898,10 +886,10 @@ def _log_materialization_or_observation_events_for_asset(
 
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
-        asset_layer = step_context.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        if assets_def is not None:
-            execution_type = assets_def.execution_type
+        asset_graph = step_context.job_def.asset_graph
+        asset_node = asset_graph.get_for_node_output(step_context.node_handle, output_def.name)
+        if asset_node is not None:
+            execution_type = asset_node.execution_type
         else:
             # This is a situation that shouldn't really ever occur, but appears to be able to happen
             # when multiple output names point to the same asset key, which also shouldn't occur,

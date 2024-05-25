@@ -585,14 +585,14 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_graph.assets_def_for_node(self.node_handle)
         return assets_def is not None
 
     @public
     @property
     def assets_def(self) -> AssetsDefinition:
         """The backing AssetsDefinition for what is currently executing, errors if not available."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_graph.assets_def_for_node(self.node_handle)
         if assets_def is None:
             raise DagsterInvalidPropertyError(
                 f"Op '{self.op.name}' does not have an assets definition."
@@ -629,8 +629,8 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
         selected_asset_keys = self.selected_asset_keys
         selected_outputs: Set[str] = set()
         for output_name in self.op.output_dict.keys():
-            asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.node_handle, output_name
+            asset_node = self.job_def.asset_graph.get_for_node_output(
+                NodeOutputHandle(self.node_handle, output_name)
             )
             if any(  #  For graph-backed assets, check if a downstream asset is selected
                 [
@@ -639,7 +639,7 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
                         self.node_handle, output_name
                     )
                 ]
-            ) or (asset_info and asset_info.key in selected_asset_keys):
+            ) or (asset_node and asset_node.key in selected_asset_keys):
                 selected_outputs.add(output_name)
 
         return selected_outputs
@@ -647,13 +647,13 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     def asset_key_for_output(self, output_name: str = "result") -> AssetKey:
         """Return the AssetKey for the corresponding output."""
-        asset_output_info = self.job_def.asset_layer.asset_info_for_output(
-            node_handle=self.op_handle, output_name=output_name
+        asset_node = self.job_def.asset_graph.get_for_node_output(
+            NodeOutputHandle(self.op_handle, output_name=output_name)
         )
-        if asset_output_info is None:
+        if asset_node is None:
             check.failed(f"Output '{output_name}' has no asset")
         else:
-            return asset_output_info.key
+            return asset_node.key
 
     @public
     def output_for_asset_key(self, asset_key: AssetKey) -> str:

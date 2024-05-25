@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
 
-    from .asset_layer import AssetLayer
+    from .asset_graph import AssetGraph
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
     from .executor_definition import ExecutorDefinition
@@ -299,13 +299,13 @@ class GraphDefinition(NodeDefinition):
         return [self.node_named(node_name) for node_name in order]
 
     def get_inputs_must_be_resolved_top_level(
-        self, asset_layer: "AssetLayer", handle: Optional[NodeHandle] = None
+        self, asset_graph: "AssetGraph", handle: Optional[NodeHandle] = None
     ) -> Sequence[InputDefinition]:
         unresolveable_input_defs: List[InputDefinition] = []
         for node in self.node_dict.values():
             cur_handle = NodeHandle(node.name, handle)
             for input_def in node.definition.get_inputs_must_be_resolved_top_level(
-                asset_layer, cur_handle
+                asset_graph, cur_handle
             ):
                 if self.dependency_structure.has_deps(NodeInput(node, input_def)):
                     continue
@@ -606,7 +606,7 @@ class GraphDefinition(NodeDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         op_selection: Optional[Sequence[str]] = None,
         partitions_def: Optional["PartitionsDefinition"] = None,
-        asset_layer: Optional["AssetLayer"] = None,
+        asset_graph: Optional["AssetGraph"] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _asset_selection_data: Optional[AssetSelectionData] = None,
     ) -> "JobDefinition":
@@ -660,7 +660,7 @@ class GraphDefinition(NodeDefinition):
             partitions_def (Optional[PartitionsDefinition]): Defines a discrete set of partition
                 keys that can parameterize the job. If this argument is supplied, the config
                 argument can't also be supplied.
-            asset_layer (Optional[AssetLayer]): Top level information about the assets this job
+            asset_graph (Optional[AssetGraph]): Top level information about the assets this job
                 will produce. Generally should not be set manually.
             input_values (Optional[Mapping[str, Any]]):
                 A dictionary that maps python objects to the top-level inputs of a job.
@@ -688,7 +688,7 @@ class GraphDefinition(NodeDefinition):
             hook_defs=hooks,
             version_strategy=version_strategy,
             op_retry_policy=op_retry_policy,
-            asset_layer=asset_layer,
+            asset_graph=asset_graph,
             input_values=input_values,
             _subset_selection_data=_asset_selection_data,
             _was_explicitly_provided_resources=None,  # None means this is determined by whether resource_defs contains any explicitly provided resources
@@ -781,10 +781,10 @@ class GraphDefinition(NodeDefinition):
         return False
 
     def get_resource_requirements(
-        self, asset_layer: Optional["AssetLayer"] = None
+        self, asset_graph: Optional["AssetGraph"] = None
     ) -> Iterator[ResourceRequirement]:
         for node in self.node_dict.values():
-            yield from node.get_resource_requirements(outer_container=self, asset_layer=asset_layer)
+            yield from node.get_resource_requirements(outer_container=self, asset_graph=asset_graph)
 
         for dagster_type in self.all_dagster_types():
             yield from dagster_type.get_resource_requirements()

@@ -66,7 +66,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
     if partition:
         partitions_def = implicit_job_def.partitions_def
         if partitions_def is None or all(
-            implicit_job_def.asset_layer.get(asset_key).partitions_def is None
+            implicit_job_def.asset_graph.get(asset_key).partitions_def is None
             for asset_key in asset_keys
         ):
             check.failed("Provided '--partition' option, but none of the assets are partitioned")
@@ -74,7 +74,7 @@ def execute_materialize_command(instance: DagsterInstance, kwargs: Mapping[str, 
         tags = partitions_def.get_tags_for_partition_key(partition)
     else:
         if any(
-            implicit_job_def.asset_layer.get(asset_key).partitions_def is not None
+            implicit_job_def.asset_graph.get(asset_key).partitions_def is not None
             for asset_key in asset_keys
         ):
             check.failed("Asset has partitions, but no '--partition' option was provided")

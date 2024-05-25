@@ -40,7 +40,7 @@ from .utils import DEFAULT_OUTPUT, normalize_tags, struct_to_string
 if TYPE_CHECKING:
     from dagster._core.definitions.op_definition import OpDefinition
 
-    from .asset_layer import AssetLayer
+    from .asset_graph import AssetGraph
     from .composition import MappedInputPlaceholder
     from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
@@ -247,7 +247,7 @@ class Node(ABC):
         self,
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
-        asset_layer: Optional["AssetLayer"] = None,
+        asset_graph: Optional["AssetGraph"] = None,
     ) -> Iterator["ResourceRequirement"]: ...
 
 
@@ -272,13 +272,13 @@ class GraphNode(Node):
         self,
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
-        asset_layer: Optional["AssetLayer"] = None,
+        asset_graph: Optional["AssetGraph"] = None,
     ) -> Iterator["ResourceRequirement"]:
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
         for node in self.definition.node_dict.values():
             yield from node.get_resource_requirements(
-                asset_layer=asset_layer,
+                asset_graph=asset_graph,
                 outer_container=self.definition,
                 parent_handle=cur_node_handle,
             )
@@ -308,14 +308,14 @@ class OpNode(Node):
         self,
         outer_container: "GraphDefinition",
         parent_handle: Optional["NodeHandle"] = None,
-        asset_layer: Optional["AssetLayer"] = None,
+        asset_graph: Optional["AssetGraph"] = None,
     ) -> Iterator["ResourceRequirement"]:
         from .resource_requirement import InputManagerRequirement
 
         cur_node_handle = NodeHandle(self.name, parent_handle)
 
         for requirement in self.definition.get_resource_requirements(
-            (cur_node_handle, asset_layer)
+            (cur_node_handle, asset_graph)
         ):
             # If requirement is a root input manager requirement, but the corresponding node has an upstream output, then ignore the requirement.
             if (

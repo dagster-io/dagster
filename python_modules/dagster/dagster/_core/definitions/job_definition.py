@@ -25,6 +25,7 @@ from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.dependency import (
@@ -66,7 +67,6 @@ from dagster._core.utils import str_format_set
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 
-from .asset_layer import AssetLayer
 from .config import ConfigMapping
 from .dependency import (
     DependencyMapping,
@@ -111,7 +111,7 @@ class JobDefinition(IHasInternalInit):
     _current_level_node_defs: Sequence[NodeDefinition]
     _hook_defs: AbstractSet[HookDefinition]
     _op_retry_policy: Optional[RetryPolicy]
-    _asset_layer: AssetLayer
+    _asset_graph: AssetGraph
     _resource_requirements: Mapping[str, AbstractSet[str]]
     _all_node_defs: Mapping[str, NodeDefinition]
     _cached_run_config_schemas: Dict[str, "RunConfigSchema"]
@@ -138,7 +138,7 @@ class JobDefinition(IHasInternalInit):
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]] = None,
-        asset_layer: Optional[AssetLayer] = None,
+        asset_graph: Optional[AssetGraph] = None,
         input_values: Optional[Mapping[str, object]] = None,
         _was_explicitly_provided_resources: Optional[bool] = None,
     ):
@@ -148,12 +148,12 @@ class JobDefinition(IHasInternalInit):
         self._current_level_node_defs = self._graph_def.node_defs
         # Recursively explore all nodes in the this job
         self._all_node_defs = _build_all_node_defs(self._current_level_node_defs)
-        self._asset_layer = check.opt_inst_param(
-            asset_layer, "asset_layer", AssetLayer
-        ) or _infer_asset_layer_from_source_asset_deps(graph_def)
+        self._asset_graph = check.opt_inst_param(
+            asset_graph, "asset_graph", AssetGraph
+        ) or _infer_asset_graph_from_source_asset_deps(graph_def)
 
         # validates
-        self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_layer)
+        self._graph_def.get_inputs_must_be_resolved_top_level(self._asset_graph)
 
         self._name = check_valid_name(check.str_param(name, "name")) if name else graph_def.name
         self._executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
@@ -234,7 +234,7 @@ class JobDefinition(IHasInternalInit):
                         self.resource_defs,
                         self.executor_def,
                         self.loggers,
-                        asset_layer,
+                        asset_graph,
                         was_explicitly_provided_resources=was_provided_resources,
                     ),
                     config,
@@ -273,7 +273,7 @@ class JobDefinition(IHasInternalInit):
         op_retry_policy: Optional[RetryPolicy],
         version_strategy: Optional[VersionStrategy],
         _subset_selection_data: Optional[Union[OpSelectionData, AssetSelectionData]],
-        asset_layer: Optional[AssetLayer],
+        asset_graph: Optional[AssetGraph],
         input_values: Optional[Mapping[str, object]],
         _was_explicitly_provided_resources: Optional[bool],
     ) -> "JobDefinition":
@@ -292,7 +292,7 @@ class JobDefinition(IHasInternalInit):
             op_retry_policy=op_retry_policy,
             version_strategy=version_strategy,
             _subset_selection_data=_subset_selection_data,
-            asset_layer=asset_layer,
+            asset_graph=asset_graph,
             input_values=input_values,
             _was_explicitly_provided_resources=_was_explicitly_provided_resources,
         )
@@ -421,7 +421,7 @@ class JobDefinition(IHasInternalInit):
     def backfill_policy(self) -> Optional[BackfillPolicy]:
         from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 
-        executable_nodes = {self.asset_layer.get(k) for k in self.asset_layer.executable_asset_keys}
+        executable_nodes = {self.asset_graph.get(k) for k in self.asset_graph.executable_asset_keys}
         backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
         if not self.name.startswith(ASSET_BASE_JOB_PREFIX):
             check.invariant(
@@ -435,8 +435,8 @@ class JobDefinition(IHasInternalInit):
         return self._hook_defs
 
     @property
-    def asset_layer(self) -> AssetLayer:
-        return self._asset_layer
+    def asset_graph(self) -> AssetGraph:
+        return self._asset_graph
 
     @property
     def all_node_defs(self) -> Sequence[NodeDefinition]:
@@ -525,7 +525,7 @@ class JobDefinition(IHasInternalInit):
 
     def _get_resource_requirements(self) -> Sequence[ResourceRequirement]:
         return [
-            *self._graph_def.get_resource_requirements(self.asset_layer),
+            *self._graph_def.get_resource_requirements(self.asset_graph),
             *[
                 req
                 for hook_def in self._hook_defs
@@ -692,7 +692,7 @@ class JobDefinition(IHasInternalInit):
             tags=self.tags,
             op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
-            asset_layer=self.asset_layer,
+            asset_graph=self.asset_graph,
             input_values=input_values,
             description=self.description,
             partitions_def=self.partitions_def,
@@ -797,7 +797,7 @@ class JobDefinition(IHasInternalInit):
                 *selection_data.asset_check_selection
             )
 
-        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+        job_asset_graph = get_asset_graph_for_job(self.asset_graph, selection)
 
         return build_asset_job(
             name=self.name,
@@ -832,7 +832,7 @@ class JobDefinition(IHasInternalInit):
                 ),
                 # TODO: subset this structure.
                 # https://github.com/dagster-io/dagster/issues/7541
-                asset_layer=self.asset_layer,
+                asset_graph=self.asset_graph,
             )
         except DagsterInvalidDefinitionError as exc:
             # This handles the case when you construct a subset such that an unsatisfied
@@ -977,7 +977,7 @@ class JobDefinition(IHasInternalInit):
             op_retry_policy=self._op_retry_policy,
             version_strategy=self.version_strategy,
             _subset_selection_data=self._subset_selection_data,
-            asset_layer=self.asset_layer,
+            asset_graph=self.asset_graph,
             input_values=self.input_values,
             partitions_def=self.partitions_def,
             _was_explicitly_provided_resources=None,
@@ -1180,7 +1180,7 @@ def get_run_config_schema_for_job(
     resource_defs: Mapping[str, ResourceDefinition],
     executor_def: "ExecutorDefinition",
     logger_defs: Mapping[str, LoggerDefinition],
-    asset_layer: Optional[AssetLayer],
+    asset_graph: Optional[AssetGraph],
     was_explicitly_provided_resources: bool = False,
 ) -> ConfigType:
     return JobDefinition(
@@ -1189,14 +1189,14 @@ def get_run_config_schema_for_job(
         resource_defs=resource_defs,
         executor_def=executor_def,
         logger_defs=logger_defs,
-        asset_layer=asset_layer,
+        asset_graph=asset_graph,
         _was_explicitly_provided_resources=was_explicitly_provided_resources,
     ).run_config_schema.run_config_schema_type
 
 
-def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetLayer:
+def _infer_asset_graph_from_source_asset_deps(job_graph_def: GraphDefinition) -> AssetGraph:
     """For non-asset jobs that have some inputs that are fed from assets, constructs an
-    AssetLayer that includes these assets as loadables.
+    AssetGraph that includes these assets as loadables.
     """
     from dagster._core.definitions.asset_graph import (
         AssetGraph,
@@ -1302,7 +1302,7 @@ def _create_run_config_schema(
             ignored_nodes=ignored_nodes,
             required_resources=required_resources,
             direct_inputs=job_def.input_values,
-            asset_layer=job_def.asset_layer,
+            asset_graph=job_def.asset_graph,
         )
     )
 

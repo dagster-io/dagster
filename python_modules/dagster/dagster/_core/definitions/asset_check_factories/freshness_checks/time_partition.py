@@ -150,7 +150,7 @@ def _build_freshness_multi_check(
             current_timestamp = pendulum.now("UTC").timestamp()
 
             partitions_def = check.inst(
-                context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def,
+                context.job_def.asset_graph.get(asset_key).partitions_def,
                 TimeWindowPartitionsDefinition,
             )
             current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)

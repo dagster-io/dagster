@@ -140,8 +140,8 @@ class AssetCheckResult(
         self, step_context: "StepExecutionContext"
     ) -> AssetCheckEvaluation:
         check_names_by_asset_key = (
-            step_context.job_def.asset_layer.check_names_by_asset_key_by_node_handle.get(
-                step_context.node_handle.root
+            step_context.job_def.asset_graph.get_check_keys_by_asset_key_for_node_handle(
+                step_context.node_handle
             )
         )
 

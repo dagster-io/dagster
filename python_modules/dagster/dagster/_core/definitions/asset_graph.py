@@ -1,8 +1,20 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    DefaultDict,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster import _check as check
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
@@ -16,9 +28,17 @@ from dagster._core.definitions.base_asset_graph import (
     BaseAssetGraph,
     BaseAssetNode,
 )
+from dagster._core.definitions.dependency import (
+    NodeHandle,
+    NodeInputHandle,
+    NodeOutput,
+    NodeOutputHandle,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
@@ -144,14 +164,17 @@ class AssetNode(BaseAssetNode):
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
     _assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition]
+    _asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, AssetKey]
 
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
+        asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, AssetKey],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._assets_defs_by_check_key = assets_defs_by_check_key
+        self._asset_keys_by_node_output_handle = asset_keys_by_node_output_handle
 
     @staticmethod
     def normalize_assets(
@@ -235,10 +258,150 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
             for key in ad.keys
         }
 
+        assets_defs_by_op_node_names = cls._build_assets_defs_by_op_node_names(assets_defs)
+
+        asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
+        asset_key_by_output: Dict[NodeOutputHandle, AssetKey] = {}
+        check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
+
+        # (
+        #     dep_node_handles_by_asset_or_check_key,
+        #     dep_node_output_handles_by_asset_or_check_key,
+        # ) = asset_or_check_key_to_dep_node_handles(graph_def, assets_defs_by_outer_node_handle)
+
+        # dep_node_handles_by_asset_key = {
+        #     key: handles
+        #     for key, handles in dep_node_handles_by_asset_or_check_key.items()
+        #     if isinstance(key, AssetKey)
+        # }
+        # dep_node_output_handles_by_asset_key = {
+        #     key: handles
+        #     for key, handles in dep_node_output_handles_by_asset_or_check_key.items()
+        #     if isinstance(key, AssetKey)
+        # }
+
+        node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle] = {}
+        check_names_by_asset_key_by_node_handle: Dict[NodeHandle, Dict[AssetKey, Set[str]]] = {}
+        assets_defs_by_check_key: Dict[AssetCheckKey, "AssetsDefinition"] = {}
+
+        for op_node_name, assets_def in assets_defs_by_op_node_names.items():
+            outer_node_handle = NodeHandle(op_node_name, None)
+            for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
+                outer_input_handle = NodeInputHandle(outer_node_handle, input_name)
+                asset_key_by_input[outer_input_handle] = input_asset_key
+                # resolve graph input to list of op inputs that consume it
+                inner_input_handles = assets_def.node_def.resolve_input_to_destinations(
+                    outer_input_handle
+                )
+                for inner_input_handles in inner_input_handles:
+                    asset_key_by_input[inner_input_handles] = input_asset_key
+
+            for output_name, asset_key in assets_def.node_keys_by_output_name.items():
+                # resolve graph output to the op output it comes from
+                inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
+                    output_name, handle=outer_node_handle
+                )
+                inner_output_handle = NodeOutputHandle(
+                    check.not_none(inner_node_handle), inner_output_def.name
+                )
+
+                asset_key_by_output[inner_output_handle] = asset_key
+
+                asset_key_by_input.update(
+                    {
+                        inner_input_handle: asset_key
+                        for inner_input_handle in _resolve_output_to_destinations(
+                            output_name, assets_def.node_def, outer_node_handle
+                        )
+                    }
+                )
+
+            if len(assets_def.check_specs_by_output_name) > 0:
+                check_names_by_asset_key_by_node_handle[outer_node_handle] = defaultdict(set)
+
+                for output_name, check_spec in assets_def.check_specs_by_output_name.items():
+                    (
+                        inner_output_def,
+                        inner_node_handle,
+                    ) = assets_def.node_def.resolve_output_to_origin(
+                        output_name, handle=outer_node_handle
+                    )
+                    node_output_handle = NodeOutputHandle(
+                        check.not_none(inner_node_handle), inner_output_def.name
+                    )
+                    node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
+                    check_names_by_asset_key_by_node_handle[outer_node_handle][
+                        check_spec.asset_key
+                    ].add(check_spec.name)
+                    check_key_by_output[node_output_handle] = check_spec.key
+
+                assets_defs_by_check_key.update({k: assets_def for k in assets_def.check_keys})
+
+        # dep_asset_keys_by_node_output_handle = defaultdict(set)
+        # for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
+        #     for node_output_handle in node_output_handles:
+        #         dep_asset_keys_by_node_output_handle[node_output_handle].add(asset_key)
+
+        # assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {
+        #     # nodes for assets
+        #     **{
+        #         node_handle: asset_graph.get(asset_key).assets_def
+        #         for asset_key, node_handles in dep_node_handles_by_asset_key.items()
+        #         for node_handle in node_handles
+        #     },
+        #     # nodes for asset checks. Required for AssetsDefs that have selected checks
+        #     # but not assets
+        #     **{
+        #         node_handle: assets_def
+        #         for node_handle, assets_def in assets_defs_by_outer_node_handle.items()
+        #         if assets_def.check_keys
+        #     },
+        # }
+
+        # return AssetLayer(
+        #     asset_keys_by_node_input_handle=asset_key_by_input,
+        #     asset_info_by_node_output_handle=asset_key_by_output,
+        #     check_key_by_node_output_handle=check_key_by_output,
+        #     dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
+        #     dep_asset_keys_by_node_output_handle=dep_asset_keys_by_node_output_handle,
+        #     node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
+        #     check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
+        # )
+
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
             assets_defs_by_check_key=assets_defs_by_check_key,
+            asset_keys_by_node_output_handle=asset_key_by_output,
         )
+
+    @staticmethod
+    def _build_assets_defs_by_op_node_names(
+        assets_defs: Sequence[AssetsDefinition],
+    ) -> Mapping[str, AssetsDefinition]:
+        # sort so that nodes get a consistent name
+        assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
+
+        # if the same graph/op is used in multiple assets_definitions, their invocations must have
+        # different names. we keep track of definitions that share a name and add a suffix to their
+        # invocations to solve this issue
+        collisions: Dict[str, int] = {}
+        result: Dict[str, AssetsDefinition] = {}
+        for assets_def in (ad for ad in assets_defs if ad.is_executable):
+            node_name = assets_def.node_def.name
+            if collisions.get(node_name):
+                collisions[node_name] += 1
+                node_alias = f"{node_name}_{collisions[node_name]}"
+            else:
+                collisions[node_name] = 1
+                node_alias = node_name
+
+            # unique handle for each AssetsDefinition
+            result[node_alias] = assets_def
+
+        return result
+
+    def get_for_node_output(self, node_output_handle: NodeOutputHandle) -> AssetNode:
+        return self.get(self._asset_keys_by_node_output_handle[node_output_handle])
 
     def get_execution_set_asset_and_check_keys(
         self, asset_or_check_key: AssetKeyOrCheckKey
@@ -278,6 +441,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for ad in self.assets_defs for key in ad.check_keys}
 
+    def get_spec_for_asset_check(self, asset_check_key: AssetCheckKey) -> Optional[AssetCheckSpec]:
+        assets_def = self._assets_defs_by_check_key.get(asset_check_key)
+        return assets_def.get_spec_for_check_key(asset_check_key) if assets_def else None
+
 
 def materializable_in_same_run(
     asset_graph: BaseAssetGraph, child_key: AssetKey, parent_key: AssetKey
@@ -310,3 +477,41 @@ def materializable_in_same_run(
             == asset_graph.get_repository_handle(parent_key)
         )
     )
+
+
+def _resolve_output_to_destinations(
+    output_name: str, node_def: NodeDefinition, handle: NodeHandle
+) -> Sequence[NodeInputHandle]:
+    all_destinations: List[NodeInputHandle] = []
+    if not isinstance(node_def, GraphDefinition):
+        # must be in the op definition
+        return all_destinations
+
+    for mapping in node_def.output_mappings:
+        if mapping.graph_output_name != output_name:
+            continue
+        output_pointer = mapping.maps_from
+        output_node = node_def.node_named(output_pointer.node_name)
+
+        all_destinations.extend(
+            _resolve_output_to_destinations(
+                output_pointer.output_name,
+                output_node.definition,
+                NodeHandle(output_pointer.node_name, parent=handle),
+            )
+        )
+
+        output_def = output_node.definition.output_def_named(output_pointer.output_name)
+        downstream_input_handles = (
+            node_def.dependency_structure.output_to_downstream_inputs_for_node(
+                output_pointer.node_name
+            ).get(NodeOutput(output_node, output_def), [])
+        )
+        for input_handle in downstream_input_handles:
+            all_destinations.append(
+                NodeInputHandle(
+                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
+                )
+            )
+
+    return all_destinations
