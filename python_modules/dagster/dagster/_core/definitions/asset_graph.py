@@ -1,6 +1,16 @@
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    DefaultDict,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_spec import (
@@ -144,14 +154,17 @@ class AssetNode(BaseAssetNode):
 
 class AssetGraph(BaseAssetGraph[AssetNode]):
     _assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition]
+    _assets_defs_by_compute_node_name: Mapping[str, AssetsDefinition]
 
     def __init__(
         self,
         asset_nodes_by_key: Mapping[AssetKey, AssetNode],
         assets_defs_by_check_key: Mapping[AssetCheckKey, AssetsDefinition],
+        assets_defs_by_compute_node_name: Mapping[str, AssetsDefinition],
     ):
         self._asset_nodes_by_key = asset_nodes_by_key
         self._assets_defs_by_check_key = assets_defs_by_check_key
+        self._assets_defs_by_compute_node_name = assets_defs_by_compute_node_name
 
     @staticmethod
     def normalize_assets(
@@ -238,7 +251,40 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         return AssetGraph(
             asset_nodes_by_key=asset_nodes_by_key,
             assets_defs_by_check_key=assets_defs_by_check_key,
+            assets_defs_by_compute_node_name=cls._build_assets_defs_by_compute_node_name(
+                assets_defs
+            ),
         )
+
+    @staticmethod
+    def _build_assets_defs_by_compute_node_name(
+        assets_defs: Sequence[AssetsDefinition],
+    ) -> Mapping[str, AssetsDefinition]:
+        # sort so that nodes get a consistent name
+        assets_defs = sorted(assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
+
+        # if the same graph/op is used in multiple assets_definitions, their invocations must have
+        # different names. we keep track of definitions that share a name and add a suffix to their
+        # invocations to solve this issue
+        collisions: Dict[str, int] = {}
+        result: Dict[str, AssetsDefinition] = {}
+        for assets_def in (ad for ad in assets_defs if ad.is_executable):
+            node_name = assets_def.node_def.name
+            if collisions.get(node_name):
+                collisions[node_name] += 1
+                node_alias = f"{node_name}_{collisions[node_name]}"
+            else:
+                collisions[node_name] = 1
+                node_alias = node_name
+
+            # unique handle for each AssetsDefinition
+            result[node_alias] = assets_def
+
+        return result
+
+    @property
+    def assets_defs_by_compute_node_name(self) -> Mapping[str, AssetsDefinition]:
+        return self._assets_defs_by_compute_node_name
 
     def get_execution_set_asset_and_check_keys(
         self, asset_or_check_key: AssetKeyOrCheckKey
