@@ -10,6 +10,7 @@ from typing import (
     Sequence,
     Type,
     Union,
+    cast,
 )
 
 import dagster._check as check
@@ -19,6 +20,12 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
+)
+from dagster._core.definitions.declarative_scheduling.declarative_scheduling_job import (
+    DeclarativeSchedulingJob,
+)
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -238,6 +245,17 @@ def _attach_resources_to_jobs_and_instigator_jobs(
     return _AttachedObjects(jobs_with_resources, updated_schedules, updated_sensors)
 
 
+def make_obj_set(obj_list: Optional[Iterable[Any]]) -> Dict[int, Any]:
+    return {id(obj): obj for obj in obj_list} if obj_list else {}
+
+
+def add_to_obj_set(obj_set: Dict[int, Any], obj: object) -> Dict[int, Any]:
+    obj_id = id(obj)
+    check.invariant(obj_id not in obj_set)
+    obj_set[obj_id] = obj
+    return obj_set
+
+
 def _create_repository_using_definitions_args(
     name: str,
     assets: Optional[
@@ -247,7 +265,9 @@ def _create_repository_using_definitions_args(
         Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
     ] = None,
     sensors: Optional[Iterable[SensorDefinition]] = None,
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
+    jobs: Optional[
+        Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, DeclarativeSchedulingJob]]
+    ] = None,
     resources: Optional[Mapping[str, Any]] = None,
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -275,12 +295,37 @@ def _create_repository_using_definitions_args(
 
     resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
 
+    asset_obj_set = make_obj_set(assets)
+    sensor_obj_set = cast(
+        Dict[int, SensorDefinition],
+        check.is_dict(make_obj_set(sensors), key_type=int, value_type=SensorDefinition),
+    )
+
+    job_defs = []
+    for job in jobs or []:
+        if isinstance(job, DeclarativeSchedulingJob):
+            for target in job.targets:
+                add_to_obj_set(asset_obj_set, target)
+
+            add_to_obj_set(
+                sensor_obj_set,
+                AutoMaterializeSensorDefinition(
+                    name=job.name,
+                    asset_selection=[target for target in job.targets],
+                ),
+            )
+
+        else:
+            job_defs.append(job)
+
     # Binds top-level resources to jobs and any jobs attached to schedules or sensors
     (
         jobs_with_resources,
         schedules_with_resources,
         sensors_with_resources,
-    ) = _attach_resources_to_jobs_and_instigator_jobs(jobs, schedules, sensors, resource_defs)
+    ) = _attach_resources_to_jobs_and_instigator_jobs(
+        job_defs, schedules, sensor_obj_set.values(), resource_defs
+    )
 
     @repository(
         name=name,
@@ -289,9 +334,9 @@ def _create_repository_using_definitions_args(
         _top_level_resources=resource_defs,
         _resource_key_mapping=resource_key_mapping,
     )
-    def created_repo():
+    def created_repo() -> list:
         return [
-            *with_resources(assets or [], resource_defs),
+            *with_resources(asset_obj_set.values() or [], resource_defs),
             *with_resources(asset_checks or [], resource_defs),
             *(schedules_with_resources),
             *(sensors_with_resources),
@@ -406,7 +451,7 @@ class Definitions:
     _assets: Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     _schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
     _sensors: Iterable[SensorDefinition]
-    _jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
+    _jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, DeclarativeSchedulingJob]]
     _resources: Mapping[str, Any]
     _executor: Optional[Union[ExecutorDefinition, Executor]]
     _loggers: Mapping[str, LoggerDefinition]
@@ -421,7 +466,9 @@ class Definitions:
             Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
         ] = None,
         sensors: Optional[Iterable[SensorDefinition]] = None,
-        jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None,
+        jobs: Optional[
+            Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, DeclarativeSchedulingJob]]
+        ] = None,
         resources: Optional[Mapping[str, Any]] = None,
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
@@ -439,7 +486,7 @@ class Definitions:
         )
         self._sensors = check.opt_iterable_param(sensors, "sensors", SensorDefinition)
         self._jobs = check.opt_iterable_param(
-            jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition)
+            jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition, DeclarativeSchedulingJob)
         )
         # Thee's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
         # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
@@ -482,7 +529,9 @@ class Definitions:
         return self._sensors
 
     @property
-    def jobs(self) -> Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+    def jobs(
+        self,
+    ) -> Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, DeclarativeSchedulingJob]]:
         return self._jobs
 
     @property
