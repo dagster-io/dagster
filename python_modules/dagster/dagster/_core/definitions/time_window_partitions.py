@@ -2260,6 +2260,80 @@ class TimeWindowPartitionsSubset(
     def __repr__(self) -> str:
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self == other:
+            return self
+
+        empty_subset = self.empty_subset(self.partitions_def)
+        if other is empty_subset:
+            return other
+
+        if not isinstance(other, TimeWindowPartitionsSubset):
+            return super().__and__(other)
+
+        self_time_windows_iter = iter(
+            sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
+        )
+        other_time_windows_iter = iter(
+            sorted(other.included_time_windows, key=lambda tw: tw.start.timestamp())
+        )
+
+        result_windows = []
+        self_window = next(self_time_windows_iter, None)
+        other_window = next(other_time_windows_iter, None)
+        while self_window and other_window:
+            # find the intersection between the current two windows
+            start = max(self_window.start, other_window.start)
+            end = min(self_window.end, other_window.end)
+
+            # these windows intersect
+            if start < end:
+                result_windows.append(TimeWindow(start=start, end=end))
+
+            # advance the iterator with the earliest end time to find the next potential intersection
+            if self_window.end < other_window.end:
+                self_window = next(self_time_windows_iter, None)
+            else:
+                other_window = next(other_time_windows_iter, None)
+
+        return TimeWindowPartitionsSubset(
+            partitions_def=self.partitions_def,
+            num_partitions=None,  # lazily calculated
+            included_time_windows=result_windows,
+        )
+
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if self == other:
+            return self
+
+        empty_subset = self.empty_subset(self.partitions_def)
+        if other is empty_subset:
+            return self
+
+        if not isinstance(other, TimeWindowPartitionsSubset):
+            return super().__or__(other)
+
+        input_time_windows = sorted(
+            [*self.included_time_windows, *other.included_time_windows],
+            key=lambda tw: tw.start.timestamp(),
+        )
+        result_windows = [input_time_windows[0]]
+        for window in input_time_windows[1:]:
+            latest_window = result_windows[-1]
+            if window.start < latest_window.end:
+                # merge this window with the latest window
+                result_windows[-1] = TimeWindow(
+                    latest_window.start, max(latest_window.end, window.end)
+                )
+            else:
+                result_windows.append(window)
+
+        return TimeWindowPartitionsSubset(
+            partitions_def=self.partitions_def,
+            num_partitions=None,  # lazily calculated
+            included_time_windows=result_windows,
+        )
+
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
             return self.empty_subset(self.partitions_def)
