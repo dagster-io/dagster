@@ -23,9 +23,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.automation.automation import (
-    Automation,
-)
+from dagster._core.definitions.automation.automation import Automation
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -445,7 +443,7 @@ class Definitions:
     _assets: Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
     _schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
     _sensors: Iterable[SensorDefinition]
-    _jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, Automation]]
+    _jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
     _resources: Mapping[str, Any]
     _executor: Optional[Union[ExecutorDefinition, Executor]]
     _loggers: Mapping[str, LoggerDefinition]
@@ -479,7 +477,7 @@ class Definitions:
         )
         self._sensors = check.opt_iterable_param(sensors, "sensors", SensorDefinition)
         self._jobs = check.opt_iterable_param(
-            jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition, Automation)
+            jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition)
         )
         # Thee's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
         # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
@@ -525,7 +523,7 @@ class Definitions:
     @property
     def jobs(
         self,
-    ) -> Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition, Automation]]:
+    ) -> Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
         return self._jobs
 
     @property
