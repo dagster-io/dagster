@@ -5,7 +5,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.declarative_scheduling.automation import (
+from dagster._core.definitions.automation.automation import (
     Automation,
 )
 

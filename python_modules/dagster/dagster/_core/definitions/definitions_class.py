@@ -23,7 +23,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.declarative_scheduling.automation import (
+from dagster._core.definitions.automation.automation import (
     Automation,
 )
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
