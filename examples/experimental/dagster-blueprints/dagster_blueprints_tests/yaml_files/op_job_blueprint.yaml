@@ -1,0 +1,11 @@
+type: op_job
+name: my_op_job
+ops:
+  op1:
+    type: shell_command_op
+    command: fdskjl
+  op2:
+    type: shell_command_op
+    command: fsjkl
+    deps:
+    - op1
