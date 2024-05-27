@@ -22,9 +22,9 @@ from dagster._core.definitions.partition import (
     DefaultPartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindow,
     TimeWindowPartitionsDefinition,
+    TimeWindowPartitionsSubset,
     get_time_partitions_def,
 )
 from dagster._utils.cached_method import cached_method
@@ -192,7 +192,7 @@ class AssetSlice:
             self._time_window_partitions_def_in_context(), "Must be time windowed."
         )
 
-        if isinstance(self._compatible_subset.subset_value, BaseTimeWindowPartitionsSubset):
+        if isinstance(self._compatible_subset.subset_value, TimeWindowPartitionsSubset):
             return self._compatible_subset.subset_value.included_time_windows
         elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
             last_tw = tw_partitions_def.get_last_partition_window(
@@ -215,10 +215,8 @@ class AssetSlice:
                 tw_partition_keys.add(tm_partition_key)
 
             subset_from_tw = tw_partitions_def.subset_with_partition_keys(tw_partition_keys)
-            check.inst(
-                subset_from_tw, BaseTimeWindowPartitionsSubset, "Must be time window subset."
-            )
-            if isinstance(subset_from_tw, BaseTimeWindowPartitionsSubset):
+            check.inst(subset_from_tw, TimeWindowPartitionsSubset, "Must be time window subset.")
+            if isinstance(subset_from_tw, TimeWindowPartitionsSubset):
                 return subset_from_tw.included_time_windows
             else:
                 check.failed(

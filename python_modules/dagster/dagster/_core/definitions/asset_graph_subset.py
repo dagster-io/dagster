@@ -38,8 +38,8 @@ from .events import AssetKey, AssetKeyPartitionKey
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
     """Serializes NamedTuples with fields that are mappings containing PartitionsSubsets.
 
-    This is necessary because PartitionKeysTimeWindowPartitionsSubsets are not serializable,
-    so we convert them to TimeWindowPartitionsSubsets.
+    This is necessary because not all PartitionsSubsets are natively serializable, and so they
+    must first be converted into a serializable form.
     """
 
     def before_pack(self, value: NamedTuple) -> NamedTuple:
@@ -48,8 +48,6 @@ class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
             if isinstance(field_value, Mapping) and all(
                 isinstance(v, PartitionsSubset) for v in field_value.values()
             ):
-                # PartitionKeysTimeWindowPartitionsSubsets are not serializable, so
-                # we convert them to TimeWindowPartitionsSubsets
                 subsets_by_key = {k: v.to_serializable_subset() for k, v in field_value.items()}
 
                 # If the mapping is keyed by AssetKey wrap it in a SerializableNonScalarKeyMapping

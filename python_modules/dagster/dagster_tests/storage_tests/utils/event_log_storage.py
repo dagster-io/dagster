@@ -58,11 +58,12 @@ from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    PartitionKeysTimeWindowPartitionsSubset,
+from dagster._core.definitions.partition import (
+    AllPartitionsSubset,
+    PartitionKeyRange,
+    StaticPartitionsDefinition,
 )
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter
@@ -3292,16 +3293,11 @@ class TestEventLogStorage:
         run_id_1 = make_new_run_id()
 
         partitions_def = DailyPartitionsDefinition("2023-01-01")
-        partitions_subset = (
-            external_partitions_definition_from_def(partitions_def)
-            .get_partitions_definition()
-            .subset_with_partition_keys(
-                partitions_def.get_partition_keys_in_range(
-                    PartitionKeyRange("2023-01-05", "2023-01-10")
-                )
-            )
+        partitions_subset = AllPartitionsSubset(
+            partitions_def=partitions_def,
+            dynamic_partitions_store=instance,
+            current_time=datetime.datetime.now(),
         )
-        assert isinstance(partitions_subset, PartitionKeysTimeWindowPartitionsSubset)
 
         with create_and_delete_test_runs(instance, [run_id_1]):
             with pytest.raises(
