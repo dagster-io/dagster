@@ -7,61 +7,43 @@ from dagster._core.definitions.declarative_scheduling.scheduling_condition impor
 )
 
 """
-In declarative scheduling, everything happens within the context of a job.
+In declarative automation, everything happens within the context of an automation.
 
-Given that declarative scheduling's goal is the replace schedules, sensors, and AMP for
+Given that declarative automation's goal is the replace schedules, sensors, and AMP for
 asset-based execution, that means we are left with a single concept to control asset-based
-execution: the job.
+execution: the automation.
 
-A job performs a few important functions:
+An automation performs a few important functions:
 
 * It is a boundary in the operational domain. When a user boots up Dagster and asks the question
-"is my stuff running", they will go to a job-oriented UI, such as the runs timeline.
+"is my stuff running", they will go to an automation-oriented UI, such as the runs timeline. In the
+runs timeline there is a row per automation.
 
-* Within the context of a single job, their are targets (e.g. assets, asset checks, etc) that
-have attached scheduling conditions. Through a cooperative process, the scheduling conditions
+* Within the context of a single automation, there are targets (e.g. assets, asset checks, etc) that
+have attached automation conditions. Through a cooperative process, the automation conditions
 combined to determine the behavior of the job.
-
 
 Under the hood:
 
-* The job's scheduling decisions are driven by a scheduling loop, executed within a sensor. 
+* The automation's scheduling decisions are driven by a scheduling loop, executed within a sensor. 
 This sensor is created programmatically on the user's behalf.
-* The job applies a default scheduling condition to all of its targets (see comment below
+* The job applies a default automation condition to all of its targets (see comment below
 on the term target)
-
-
-A job is comprised of:
-
-* A scheduling policy, build upfront once or cooperatively from all of its targets.
-    * In this framework, the function behind a sensor or a schdule is a scheduling policy.
-* A set of targets, which are the assets, asset checks, etc that the job is responsible for. 
-    * In the declarative scheduling world a legacy op-based job is just another type of target.
-
-
 
 Implications:
 
-* We previous had the thesis that we could get rid of jobs, and making all of our scheduling
-and operational UIs think in terms of assets _only_. We would abandon the runs timeline, and
-instead only have asset- or asset-group-oriented operational UI. To remove all ambiguity: 
-**This PR proposes to abandon that goal**. 
-* Very deliberately, the argument ot the object is named targets, not assets. This will allow
-checks to be scheduled in addition to asset, as well as future proofs the name against future
-renames and additional features. We could also support the selection syntax if we wanted to.
-* It is possible that we can consolidate *all* execution under this model, including legacy non
-asset-based execution. If an op or op graph could be target of a declarative scheduling job.
-The scheduling condition would be used to control whether or those ops are executed. 
-* `define_asset_job` would be supplanted by this and deprecated.
-* The `job` and `jobs` arguments to sensors and schedules would be in an awkward place, since
-they would not accept these jobs. We could mitigate with very explicit error messages.
+* We previous had the thesis that we could get rid of formal groupings of assets operationally,
+and making all of our scheduling and operational UIs think in terms of assets _only_.
+We would abandon the runs timeline, and instead only have asset- or asset-group-oriented
+operational UI. To remove all ambiguity: **This PR proposes to abandon that goal**. 
+* Very deliberately, the argument to the object is named targets, not assets. This is for a few reasons:
+    * This will allow checks to be scheduled in addition to assets
+    * Future proofs the name against future renames and additional features. 
+    * We could also support the selection syntax if we wanted to. 
+    * It is possible that we can consolidate *all* execution under this model, including legacy 
+      non-asset-based execution. If an op or op graph could be target of an automation.  
 
 What about schedules and sensors:
-
-* Question: Could sensors and schedules that target assets be transformed to declarative scheduling
-* Sensors still exist, but are thought of as a lower level abstraction (think: actor).
-
-
 
 Questions:
 
