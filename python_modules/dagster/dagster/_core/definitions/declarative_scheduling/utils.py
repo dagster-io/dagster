@@ -1,7 +1,13 @@
 import datetime
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from dagster._serdes.serdes import whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
+        SchedulingCondition,
+    )
 
 
 @whitelist_for_serdes
@@ -25,3 +31,7 @@ class SerializableTimeDelta(NamedTuple):
         return datetime.timedelta(
             days=self.days, seconds=self.seconds, microseconds=self.microseconds
         )
+
+
+def as_amp(scheduling_condition: "SchedulingCondition") -> "AutoMaterializePolicy":
+    return scheduling_condition.as_auto_materialize_policy()
