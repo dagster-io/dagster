@@ -1718,3 +1718,122 @@ def test_asset_subset_subtract(subtractor, subtractee, result):
     assert subtractor_subset - subtractee_subset == TimeWindowPartitionsSubset(
         partitions_def, num_partitions=None, included_time_windows=result
     )
+
+
+@pytest.mark.parametrize(
+    "a,b,result",
+    [
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                # does nothing, is just happy to be here
+                time_window("2017-01-01", "2018-01-01"),
+                # fully intersects the first two windows and part of the third
+                time_window("2019-01-01", "2023-12-31"),
+                # also does nothing, too late
+                time_window("2025-01-01", "2026-01-01"),
+            ],
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2023-12-31"),
+            ],
+        ),
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+            ],
+            [
+                # takes a chunk out of the first window
+                time_window("2019-06-01", "2019-07-01"),
+                # also takes a chunk out of the first window
+                time_window("2019-10-01", "2019-11-01"),
+                # overlaps both the first and second window
+                time_window("2019-11-15", "2022-08-16"),
+            ],
+            [
+                time_window("2019-06-01", "2019-07-01"),
+                time_window("2019-10-01", "2019-11-01"),
+                time_window("2019-11-15", "2019-12-31"),
+                time_window("2022-06-29", "2022-08-16"),
+            ],
+        ),
+    ],
+)
+def test_asset_subset_and(a, b, result) -> None:
+    partitions_def = DailyPartitionsDefinition("2015-01-01")
+
+    a_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=a
+    )
+
+    b_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=b
+    )
+
+    assert a_subset & b_subset == TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=result
+    )
+
+
+@pytest.mark.parametrize(
+    "a,b,result",
+    [
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                # no intersection
+                time_window("2017-01-01", "2018-01-01"),
+                # fully intersects the first two windows and part of the third
+                time_window("2019-01-01", "2023-12-31"),
+                # no intersection
+                time_window("2025-01-01", "2026-01-01"),
+            ],
+            [
+                time_window("2017-01-01", "2018-01-01"),
+                time_window("2019-01-01", "2024-12-31"),
+                time_window("2025-01-01", "2026-01-01"),
+            ],
+        ),
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+            ],
+            [
+                # intersects with the first window
+                time_window("2019-06-01", "2019-07-01"),
+                # also intersects with the first window
+                time_window("2019-10-01", "2019-11-01"),
+                # overlaps both the first and second window
+                time_window("2019-11-15", "2022-08-16"),
+            ],
+            [
+                time_window("2019-02-27", "2022-12-31"),
+            ],
+        ),
+    ],
+)
+def test_asset_subset_or(a, b, result) -> None:
+    partitions_def = DailyPartitionsDefinition("2015-01-01")
+
+    a_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=a
+    )
+
+    b_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=b
+    )
+
+    assert a_subset | b_subset == TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=result
+    )
