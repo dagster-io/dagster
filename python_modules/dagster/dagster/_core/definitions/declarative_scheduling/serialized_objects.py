@@ -90,7 +90,7 @@ class AssetConditionEvaluation(DagsterModel):
 
     @staticmethod
     def from_result(result: "SchedulingResult") -> "AssetConditionEvaluation":
-        return AssetConditionEvaluation(
+        return AssetConditionEvaluation.model_construct(
             condition_snapshot=result.condition.get_snapshot(result.condition_unique_id),
             start_timestamp=result.start_timestamp,
             end_timestamp=result.end_timestamp,
