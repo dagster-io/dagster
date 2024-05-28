@@ -18,7 +18,7 @@ from dagster._core.definitions.partition import (
     PartitionsSubset,
 )
 from dagster._core.definitions.time_window_partitions import (
-    TimeWindowPartitionsSubset,
+    BaseTimeWindowPartitionsSubset,
 )
 from dagster._model import DagsterModel, InstanceOf
 from dagster._serdes.serdes import (
@@ -100,7 +100,7 @@ class AssetSubset(DagsterModel):
         if self.is_partitioned:
             # for some PartitionSubset types, we have access to the underlying partitions
             # definitions, so we can ensure those are identical
-            if isinstance(self.value, (TimeWindowPartitionsSubset, AllPartitionsSubset)):
+            if isinstance(self.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
                 return self.value.partitions_def == partitions_def
             else:
                 return partitions_def is not None
@@ -108,7 +108,7 @@ class AssetSubset(DagsterModel):
             return partitions_def is None
 
     def _is_compatible_with_subset(self, other: "AssetSubset") -> bool:
-        if isinstance(other.value, (TimeWindowPartitionsSubset, AllPartitionsSubset)):
+        if isinstance(other.value, (BaseTimeWindowPartitionsSubset, AllPartitionsSubset)):
             return self.is_compatible_with_partitions_def(other.value.partitions_def)
         else:
             return self.is_partitioned == other.is_partitioned

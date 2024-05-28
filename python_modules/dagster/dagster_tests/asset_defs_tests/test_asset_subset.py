@@ -15,7 +15,11 @@ from dagster import (
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindow, TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    PartitionKeysTimeWindowPartitionsSubset,
+    TimeWindow,
+    TimeWindowPartitionsSubset,
+)
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time
 
@@ -108,8 +112,15 @@ def test_operations(
                 ),
             ],
         ),
-        DailyPartitionsDefinition("2020-01-01").subset_with_partition_keys(
-            ["2020-01-01", "2020-01-04", "2022-01-02", "2022-01-03", "2022-01-04"]
+        PartitionKeysTimeWindowPartitionsSubset(
+            partitions_def=DailyPartitionsDefinition("2020-01-01"),
+            included_partition_keys={
+                "2020-01-01",
+                "2020-01-04",
+                "2022-01-02",
+                "2022-01-03",
+                "2022-01-04",
+            },
         ),
         DefaultPartitionsSubset(subset={"a", "b", "c", "d", "e"}),
         AllPartitionsSubset(

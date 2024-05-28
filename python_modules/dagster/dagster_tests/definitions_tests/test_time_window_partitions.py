@@ -20,7 +20,9 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
     DatetimeFieldSerializer,
+    PartitionKeysTimeWindowPartitionsSubset,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
@@ -778,6 +780,10 @@ def test_start_not_aligned():
 
 
 @pytest.mark.parametrize(
+    "partitions_subset_class",
+    [PartitionKeysTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+)
+@pytest.mark.parametrize(
     "case_str",
     [
         "+",
@@ -793,7 +799,9 @@ def test_start_not_aligned():
         "--+++---+++--",
     ],
 )
-def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
+def test_partition_subset_get_partition_keys_not_in_subset(
+    case_str: str, partitions_subset_class: BaseTimeWindowPartitionsSubset
+):
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     full_set_keys = partitions_def.get_partition_keys(
         current_time=datetime(year=2015, month=1, day=30)
@@ -807,8 +815,8 @@ def test_partition_subset_get_partition_keys_not_in_subset(case_str: str):
             expected_keys_not_in_subset.append(full_set_keys[i])
 
     subset = cast(
-        TimeWindowPartitionsSubset,
-        partitions_def.subset_with_partition_keys(subset_keys),
+        BaseTimeWindowPartitionsSubset,
+        partitions_subset_class.empty_subset(partitions_def).with_partition_keys(subset_keys),
     )
     for partition_key in subset_keys:
         assert partition_key in subset
@@ -849,6 +857,10 @@ def test_time_partitions_subset_identical_serialization():
     assert serialized1 == serialized2
 
 
+@pytest.mark.parametrize(
+    "partitions_subset_class",
+    [PartitionKeysTimeWindowPartitionsSubset, TimeWindowPartitionsSubset],
+)
 @pytest.mark.parametrize(
     "initial, added",
     [
@@ -918,7 +930,9 @@ def test_time_partitions_subset_identical_serialization():
         ),
     ],
 )
-def test_partition_subset_with_partition_keys(initial: str, added: str):
+def test_partition_subset_with_partition_keys(
+    initial: str, added: str, partitions_subset_class: BaseTimeWindowPartitionsSubset
+):
     assert len(initial) == len(added)
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     full_set_keys = partitions_def.get_partition_keys(
@@ -937,9 +951,13 @@ def test_partition_subset_with_partition_keys(initial: str, added: str):
         if initial[i] != "+" and added[i] != "+":
             expected_keys_not_in_updated_subset.append(full_set_keys[i])
 
-    subset = partitions_def.subset_with_partition_keys(initial_subset_keys)
+    subset = partitions_subset_class.empty_subset(partitions_def).with_partition_keys(
+        initial_subset_keys
+    )
     assert all(partition_key in subset for partition_key in initial_subset_keys)
-    updated_subset = cast(TimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys))
+    updated_subset = cast(
+        BaseTimeWindowPartitionsSubset, subset.with_partition_keys(added_subset_keys)
+    )
     assert all(partition_key in updated_subset for partition_key in added_subset_keys)
     assert (
         updated_subset.get_partition_keys_not_in_subset(
@@ -1517,24 +1535,18 @@ def test_cannot_pickle_time_window_partitions_def():
         pickle.loads(pickle.dumps(partitions_def))
 
 
-def test_time_window_partitions_subset_add_partition_to_front() -> None:
+def test_time_window_partitions_subset_add_partition_to_front():
     partitions_def = DailyPartitionsDefinition("2023-01-01")
-    a_subset = TimeWindowPartitionsSubset(
-        partitions_def,
-        num_partitions=None,
-        included_time_windows=[time_window("2023-01-01", "2023-01-02")],
-    )
-    b_subset = TimeWindowPartitionsSubset(
+    partition_keys_subset = PartitionKeysTimeWindowPartitionsSubset(partitions_def, {"2023-01-01"})
+    time_windows_subset = TimeWindowPartitionsSubset(
         partitions_def,
         num_partitions=1,
         included_time_windows=[time_window("2023-01-02", "2023-01-03")],
     )
 
-    combined = a_subset | b_subset
-    assert combined == TimeWindowPartitionsSubset(
-        partitions_def,
-        num_partitions=2,
-        included_time_windows=[time_window("2023-01-01", "2023-01-03")],
+    combined = time_windows_subset | partition_keys_subset
+    assert combined == PartitionKeysTimeWindowPartitionsSubset(
+        partitions_def, {"2023-01-01", "2023-01-02"}
     )
 
 
