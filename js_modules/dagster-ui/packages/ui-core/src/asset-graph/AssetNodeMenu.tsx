@@ -21,6 +21,7 @@ export type AssetNodeMenuNode = {
   assetKey: AssetKeyInput;
   definition: {
     isSource: boolean;
+    isObservable: boolean;
     isExecutable: boolean;
     hasMaterializePermission: boolean;
   };
@@ -63,7 +64,7 @@ export const useAssetNodeMenu = ({
 
   const {liveData} = useAssetBaseData(node.assetKey, 'context-menu');
 
-  const isSource = node.definition.isSource;
+  const isObservable = node.definition.isObservable;
   const lastMaterializationRunID = liveData?.lastMaterialization?.runId;
   const lastObservationID = liveData?.lastObservation?.runId;
 
@@ -82,7 +83,7 @@ export const useAssetNodeMenu = ({
             to={`/runs/${lastMaterializationRunID || lastObservationID}`}
             text={
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                View latest {isSource ? 'observation' : 'materialization'}
+                View latest {isObservable ? 'observation' : 'materialization'}
                 {liveData ? null : <Spinner purpose="caption-text" />}
               </Box>
             }

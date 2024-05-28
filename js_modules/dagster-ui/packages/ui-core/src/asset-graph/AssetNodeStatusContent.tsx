@@ -62,7 +62,7 @@ export function buildAssetNodeStatusContent({
   liveData,
   expanded,
 }: StatusContentArgs) {
-  return definition.isSource
+  return definition.isObservable
     ? _buildSourceAssetNodeStatusContent({
         assetKey,
         definition,
@@ -397,6 +397,15 @@ export function _buildAssetNodeStatusContent({
           )}
         </>
       ),
+    };
+  }
+
+  if (!lastMaterialization && definition.isSource) {
+    return {
+      case: StatusCase.SOURCE_NO_STATE as const,
+      background: Colors.backgroundLight(),
+      border: Colors.borderDefault(),
+      content: <span>–</span>,
     };
   }
 
