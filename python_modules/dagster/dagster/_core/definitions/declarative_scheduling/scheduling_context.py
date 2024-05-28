@@ -106,7 +106,7 @@ class SchedulingContext(NamedTuple):
         scheduling_condition = auto_materialize_policy.to_scheduling_condition()
 
         return SchedulingContext(
-            candidate_slice=asset_graph_view.get_asset_slice(asset_key),
+            candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
             condition=scheduling_condition,
             condition_unique_id=scheduling_condition.get_unique_id(
                 parent_unique_id=None, index=None
