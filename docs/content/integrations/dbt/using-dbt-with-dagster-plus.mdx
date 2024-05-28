@@ -141,6 +141,36 @@ my_dbt_project
 
 After the Dagster+ changes, a dbt and Dagster project will include the files required for dbt and Dagster, some files related to git, and the newly-added Dagster+ files:
 
+#### Update the cloud action files
+
+1. In your Dagster project, locate the .github/workflows directory.
+
+2. Open the deploy.yml file.
+
+3. Locate the Checkout for Python Executable Deploy step, which should be on or near line 38.
+
+4. Add
+
+```
+- name: Parse dbt project and package with Dagster project
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  run: |
+    pip install pip --upgrade
+    pip install dbt-duckdb
+    cd project-repo/analytics
+    dbt deps
+    dbt parse
+  shell: bash
+```
+
+[//]: <> "TODO: Add the steps for GitLab as well"
+
+#### Review the state of the repo
+
+When deploying a Dagster project for the first time, the workflow adds various files - a [dagster_cloud.yaml file](/dagster-plus/managing-deployments/dagster-cloud-yaml), if it is missing, and two cloud action files under `.github/workflows`, `branch_deployments.yml` and `deploy.yml`, to manage the deployments of the repository.
+
+After adding the files to the repository, a typical file structure would include the required files for dbt and Dagster, some files related to Git, like `.gitignore`, and the newly added files.
+
 ```shell
 ## dbt and Dagster project
 ## after Dagster+ deployment
