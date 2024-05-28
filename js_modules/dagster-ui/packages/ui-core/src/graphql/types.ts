@@ -16,6 +16,7 @@ export type Scalars = {
   Boolean: {input: boolean; output: boolean};
   Int: {input: number; output: number};
   Float: {input: number; output: number};
+  BigInt: {input: any; output: any};
   Cursor: {input: any; output: any};
   GenericScalar: {input: any; output: any};
   RunConfigData: {input: any; output: any};
@@ -1939,7 +1940,7 @@ export type InstigationStateRunsArgs = {
 };
 
 export type InstigationStateTickArgs = {
-  tickId: Scalars['Int']['input'];
+  tickId: Scalars['BigInt']['input'];
 };
 
 export type InstigationStateTicksArgs = {

@@ -265,7 +265,7 @@ function PartitionsTable({partitions}: {partitions: DynamicPartitionsRequestResu
 }
 
 const JOB_SELECTED_TICK_QUERY = gql`
-  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
+  query SelectedTickQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id
