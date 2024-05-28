@@ -2010,53 +2010,17 @@ class TimeWindowPartitionsSubset(
         if not isinstance(other, TimeWindowPartitionsSubset):
             return super().__sub__(other)
 
-        time_windows = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
-        other_time_windows = sorted(
-            other.included_time_windows, key=lambda tw: tw.start.timestamp()
-        )
-
-        next_time_window_index_to_process = 0
-        next_other_window_index_to_process = 0
-
-        # Slide through both sets of windows, moving to the next window once its start has passed
-        # the end of the window is it being compared to
-        while (next_time_window_index_to_process < len(time_windows)) and (
-            next_other_window_index_to_process < len(other_time_windows)
-        ):
-            time_window = time_windows[next_time_window_index_to_process]
-            other_time_window = other_time_windows[next_other_window_index_to_process]
-
-            # Perform the subtraction and splice the 0, 1, or 2 result windows
-            # back into the time_windows list
-
-            subtracted_time_windows = time_window.subtract(other_time_window)
-
-            time_windows[
-                next_time_window_index_to_process : next_time_window_index_to_process + 1
-            ] = subtracted_time_windows
-
-            if len(subtracted_time_windows) == 0:
-                # other_time_window fully consumed time_window
-                # next_time_window_index_to_process can stay the same since everything has shifted over one
-                pass
-            else:
-                updated_time_window = time_windows[next_time_window_index_to_process]
-                if updated_time_window.end <= other_time_window.start:
-                    # Current subtractor is too early to intersect, can advance
-                    next_time_window_index_to_process += 1
-                elif other_time_window.end <= updated_time_window.start:
-                    # current subtractee is too early to intersect, can advance
-                    next_other_window_index_to_process += 1
-                else:
-                    check.failed(
-                        "After subtraction, the new window should no longer intersect with the other window"
-                    )
-
-        return TimeWindowPartitionsSubset(
+        # implement __sub__ as A & ~B
+        inverse_other = TimeWindowPartitionsSubset(
             partitions_def=self.partitions_def,
             num_partitions=None,
-            included_time_windows=time_windows,
+            included_time_windows=other._get_partition_time_windows_not_in_subset(
+                # subtract a day from the maximum datetime so that it is guaranteed to be valid
+                # regardless of what timezone it is in
+                current_time=datetime.max - timedelta(days=1)
+            ),
         )
+        return self & inverse_other
 
     def __len__(self) -> int:
         return self.num_partitions
