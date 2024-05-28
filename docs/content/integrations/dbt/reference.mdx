@@ -123,6 +123,50 @@ In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your 
 
 ---
 
+## Using config with your `@dbt_assets`
+
+Like for a standard [software-defined asset], your `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema#run-configuration). This allows to provide parameters to jobs at the time they're executed.deployment
+
+In the context of dbt, this can be useful if you want to run commands or flags for specific use cases.
+
+```python dedent=4
+from dagster import asset, Config
+from dagster_dbt import dbt_assets
+
+...
+
+class MyDbtConfig(Config):
+    full_refresh: bool
+    seed: bool
+
+
+@dbt_assets(manifest=my_project.manifest_path)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig):
+
+    commands = ["build"]
+
+    if config.full_refresh:
+        commands.append("--full-refresh")
+    if config.seed:
+        dbt.cli(["seed"]).wait()
+
+    yield from dbt.cli(commands, context=context).stream()
+
+
+my_dbt_assets_schedule = build_schedule_from_dbt_selection(
+    [my_dbt_assets],
+    job_name="all_dbt_assets",
+    cron_schedule="0 0 * * *",
+    dbt_select="fqn:*",
+    config=RunConfig(
+        ops={"my_dbt_asset": MyDbtConfig(full_refresh=True, seed=True)}
+    )
+)
+```
+
+
+---
+
 ## Deploying a Dagster project with a dbt project
 
 <Note>
