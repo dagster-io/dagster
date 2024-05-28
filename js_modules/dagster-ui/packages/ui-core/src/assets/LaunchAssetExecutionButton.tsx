@@ -91,14 +91,14 @@ type Asset =
       hasMaterializePermission: boolean;
       partitionDefinition: {__typename: string} | null;
       isExecutable: boolean;
-      isSource: boolean;
+      isObservable: boolean;
     }
   | {
       assetKey: AssetKey;
       hasMaterializePermission: boolean;
       isPartitioned: boolean;
       isExecutable: boolean;
-      isSource: boolean;
+      isObservable: boolean;
     };
 
 export type AssetsInScope = {all: Asset[]; skipAllTerm?: boolean} | {selected: Asset[]};
@@ -125,7 +125,7 @@ function optionsForButton(scope: AssetsInScope): LaunchOption[] {
   // If you pass a set of selected assets, we always show just one option
   // to materialize that selection.
   if ('selected' in scope) {
-    const executable = scope.selected.filter((a) => !a.isSource && a.isExecutable);
+    const executable = scope.selected.filter((a) => !a.isObservable && a.isExecutable);
 
     return [
       {
@@ -138,7 +138,7 @@ function optionsForButton(scope: AssetsInScope): LaunchOption[] {
   }
 
   const options: LaunchOption[] = [];
-  const executable = scope.all.filter((a) => !a.isSource && a.isExecutable);
+  const executable = scope.all.filter((a) => !a.isObservable && a.isExecutable);
 
   options.push({
     assetKeys: executable.map((a) => a.assetKey),
@@ -152,15 +152,19 @@ function optionsForButton(scope: AssetsInScope): LaunchOption[] {
 }
 
 export function executionDisabledMessageForAssets(
-  assets: {isSource: boolean; isExecutable: boolean; hasMaterializePermission: boolean}[],
+  assets: {
+    isObservable: boolean;
+    isExecutable: boolean;
+    hasMaterializePermission: boolean;
+  }[],
 ) {
   if (!assets.length) {
     return null;
   }
   return assets.some((a) => !a.hasMaterializePermission)
     ? 'You do not have permission to materialize assets'
-    : assets.every((a) => a.isSource)
-    ? 'Source assets cannot be materialized'
+    : assets.every((a) => a.isObservable)
+    ? 'Observable assets cannot be materialized'
     : assets.every((a) => !a.isExecutable)
     ? 'External assets cannot be materialized'
     : null;
