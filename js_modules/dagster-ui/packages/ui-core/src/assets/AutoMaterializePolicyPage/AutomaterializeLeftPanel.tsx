@@ -65,7 +65,8 @@ export const AutomaterializeLeftList = (props: ListProps) => {
       definition?.targetingInstigators.find(
         (instigator) =>
           instigator.__typename === 'Sensor' &&
-          instigator.sensorType === SensorType.AUTO_MATERIALIZE,
+          (instigator.sensorType === SensorType.AUTO_MATERIALIZE ||
+            instigator.sensorType === SensorType.AUTOMATION),
       )?.name,
     [definition],
   );

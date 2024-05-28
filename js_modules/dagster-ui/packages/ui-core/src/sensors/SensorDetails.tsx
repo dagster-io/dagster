@@ -204,7 +204,8 @@ export const SensorDetails = ({
               </td>
             </tr>
           ) : null}
-          {sensor.sensorType !== SensorType.AUTO_MATERIALIZE ? (
+          {sensor.sensorType !== SensorType.AUTO_MATERIALIZE &&
+          sensor.sensorType !== SensorType.AUTOMATION ? (
             <tr>
               <td>
                 <Box flex={{alignItems: 'center'}} style={{height: '32px'}}>
