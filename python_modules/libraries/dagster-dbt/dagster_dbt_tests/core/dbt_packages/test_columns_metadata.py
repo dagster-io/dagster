@@ -22,6 +22,8 @@ from sqlglot import Dialect
 
 from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
+pytestmark = pytest.mark.derived_metadata
+
 
 def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
