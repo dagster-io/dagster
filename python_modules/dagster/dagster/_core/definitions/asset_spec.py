@@ -151,5 +151,5 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_tags_strict(tags),
+            tags=validate_tags_strict(tags) or {},
         )
