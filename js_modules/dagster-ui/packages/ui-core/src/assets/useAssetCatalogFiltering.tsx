@@ -6,6 +6,7 @@ import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
 import {useAssetSearch} from './useAssetSearch';
 import {CloudOSSContext} from '../app/CloudOSSContext';
+import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
@@ -18,6 +19,7 @@ import {
   useComputeKindTagFilter,
 } from '../ui/Filters/useComputeKindTagFilter';
 import {FilterObject} from '../ui/Filters/useFilter';
+import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 const EMPTY_ARRAY: any[] = [];
@@ -37,6 +39,7 @@ export function useAssetCatalogFiltering(
     setGroups,
     setOwners,
     setRepos,
+    setStorageKindTags,
   } = useAssetDefinitionFilterState();
 
   const searchPath = (search || '')
@@ -77,13 +80,29 @@ export function useAssetCatalogFiltering(
     owners: filters.owners,
     setOwners,
   });
+
+  const tags = useAssetTagsForAssets(pathMatches);
+  const storageKindTags = tags.filter(isCanonicalStorageKindTag);
+  const nonStorageKindTags = tags.filter((tag) => !isCanonicalStorageKindTag(tag));
+
   const tagsFilter = useAssetTagFilter({
-    allAssetTags: useAssetTagsForAssets(pathMatches),
+    allAssetTags: nonStorageKindTags,
     tags: filters.tags,
     setTags: setAssetTags,
   });
+  const storageKindFilter = useStorageKindFilter({
+    allAssetStorageKindTags: storageKindTags,
+    storageKindTags: filters.storageKindTags,
+    setStorageKindTags,
+  });
 
-  const uiFilters: FilterObject[] = [groupsFilter, computeKindFilter, ownersFilter, tagsFilter];
+  const uiFilters: FilterObject[] = [
+    groupsFilter,
+    computeKindFilter,
+    storageKindFilter,
+    ownersFilter,
+    tagsFilter,
+  ];
   const {isBranchDeployment} = React.useContext(CloudOSSContext);
   if (isBranchDeployment) {
     uiFilters.push(changedInBranchFilter);
