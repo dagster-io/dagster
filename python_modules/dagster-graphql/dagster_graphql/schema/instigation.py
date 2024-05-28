@@ -540,7 +540,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     runsCount = graphene.NonNull(graphene.Int)
     tick = graphene.Field(
         graphene.NonNull(GrapheneInstigationTick),
-        tickId=graphene.NonNull(graphene.Int),
+        tickId=graphene.NonNull(graphene.BigInt),
     )
     ticks = graphene.Field(
         non_null_list(GrapheneInstigationTick),

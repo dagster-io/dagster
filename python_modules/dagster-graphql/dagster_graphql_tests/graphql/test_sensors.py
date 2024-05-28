@@ -424,7 +424,7 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!, $sensorTy
 
 
 GET_TICKS_QUERY = """
-query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: Int!) {
+query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!], $tickId: BigInt!) {
   sensorOrError(sensorSelector: $sensorSelector) {
     __typename
     ... on PythonError {
