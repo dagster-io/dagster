@@ -34,48 +34,65 @@ from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndef
 from dagster._utils.typing_api import is_closed_python_optional_type
 
 
+def _create_new_default_from_subfields(
+    old_field: Field, updated_sub_fields: dict[str, Field], additional_default_values: dict
+) -> Any:
+    """Generates a replacement default value for a field based on its updated subfields.
+
+    If all required subfields have defaults, or the field is a Selector,
+    then we can construct a new default value composed of the defaults of the subfields.
+    """
+    new_default = (
+        old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
+    )
+
+    if all(
+        sub_field.default_provided or not sub_field.is_required
+        for sub_field in updated_sub_fields.values()
+    ) or (
+        old_field.config_type.kind == ConfigTypeKind.SELECTOR
+        and any(sub_field.default_provided for sub_field in updated_sub_fields.values())
+    ):
+        new_default = {
+            **additional_default_values,
+            **{k: v.default_value for k, v in updated_sub_fields.items() if v.default_provided},
+        }
+
+    return new_default
+
+
 # This is from https://github.com/dagster-io/dagster/pull/11470
 def _apply_defaults_to_schema_field(old_field: Field, additional_default_values: Any) -> Field:
     """Given a config Field and a set of default values (usually a dictionary or raw default value),
     return a new Field with the default values applied to it (and recursively to any sub-fields).
     """
-    # If the field has subfields and the default value is a dictionary, iterate
-    # over the subfields and apply the defaults to them.
-    if isinstance(old_field.config_type, _ConfigHasFields) and isinstance(
+    # Any config type which does not have subfields or which doesn't have a new default value
+    # to apply can be copied directly.
+    if not isinstance(old_field.config_type, _ConfigHasFields) or not isinstance(
         additional_default_values, dict
     ):
-        updated_sub_fields = {
-            k: _apply_defaults_to_schema_field(
-                sub_field, additional_default_values.get(k, FIELD_NO_DEFAULT_PROVIDED)
-            )
-            for k, sub_field in old_field.config_type.fields.items()
-        }
-
-        # We also apply a new default value to the field if all of its subfields have defaults
-        new_default = (
-            old_field.default_value if old_field.default_provided else FIELD_NO_DEFAULT_PROVIDED
-        )
-
-        if all(
-            sub_field.default_provided or not sub_field.is_required
-            for sub_field in updated_sub_fields.values()
-        ) or (
-            old_field.config_type.kind == ConfigTypeKind.SELECTOR
-            and any(sub_field.default_provided for sub_field in updated_sub_fields.values())
-        ):
-            new_default = {
-                **additional_default_values,
-                **{k: v.default_value for k, v in updated_sub_fields.items() if v.default_provided},
-            }
-
-        return Field(
-            config=old_field.config_type.__class__(fields=updated_sub_fields),
-            default_value=new_default,
-            is_required=new_default == FIELD_NO_DEFAULT_PROVIDED and old_field.is_required,
-            description=old_field.description,
-        )
-    else:
         return copy_with_default(old_field, additional_default_values)
+
+    # If the field has subfields and the default value is a dictionary, iterate
+    # over the subfields and apply the defaults to them.
+    updated_sub_fields = {
+        k: _apply_defaults_to_schema_field(
+            sub_field, additional_default_values.get(k, FIELD_NO_DEFAULT_PROVIDED)
+        )
+        for k, sub_field in old_field.config_type.fields.items()
+    }
+
+    # We also compute a replacement default value, if possible.
+    new_default_value = _create_new_default_from_subfields(
+        old_field, updated_sub_fields, additional_default_values
+    )
+
+    return Field(
+        config=old_field.config_type.__class__(fields=updated_sub_fields),
+        default_value=new_default_value,
+        is_required=new_default_value == FIELD_NO_DEFAULT_PROVIDED and old_field.is_required,
+        description=old_field.description,
+    )
 
 
 def copy_with_default(old_field: Field, new_config_value: Any) -> Field:
