@@ -62,7 +62,7 @@ export const SimpleStakeholderAssetStatus = ({
       />
     );
   }
-  if (liveData.lastObservation && assetNode.isSource) {
+  if (liveData.lastObservation && assetNode.isObservable) {
     return (
       <Tag intent="none">
         <Timestamp timestamp={{ms: Number(liveData.lastObservation.timestamp)}} />
@@ -72,7 +72,7 @@ export const SimpleStakeholderAssetStatus = ({
 
   return (
     <Caption color={Colors.textLighter()}>
-      {assetNode.isSource ? 'Never observed' : 'Never materialized'}
+      {assetNode.isObservable ? 'Never observed' : 'Never materialized'}
     </Caption>
   );
 };

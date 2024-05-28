@@ -93,7 +93,7 @@ export const AssetActionMenu = (props: Props) => {
 export const useExecuteAssetMenuItem = (
   path: string[],
   definition: {
-    isSource: boolean;
+    isObservable: boolean;
     isExecutable: boolean;
     hasMaterializePermission: boolean;
   } | null,
@@ -113,7 +113,7 @@ export const useExecuteAssetMenuItem = (
     return {executeItem: null, launchpadElement: null};
   }
 
-  if (definition?.isExecutable && definition.isSource && definition.hasMaterializePermission) {
+  if (definition?.isExecutable && definition.isObservable && definition.hasMaterializePermission) {
     return {
       launchpadElement: null,
       executeItem: (

@@ -116,7 +116,7 @@ export const SidebarAssetInfo = ({graphNode}: {graphNode: GraphNode}) => {
         asset={asset}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
         recentEvents={recentEvents}
-        isSourceAsset={definition.isSource}
+        isObservable={definition.isObservable}
         stepKey={stepKeyForAsset(definition)}
         liveData={liveData}
       />

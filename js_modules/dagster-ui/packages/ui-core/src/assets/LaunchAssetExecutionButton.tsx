@@ -445,10 +445,10 @@ async function stateForLaunchingAssets(
   forceLaunchpad: boolean,
   preferredJobName?: string,
 ): Promise<LaunchAssetsState> {
-  if (assets.some((x) => x.isSource)) {
+  if (assets.some((x) => x.isObservable)) {
     return {
       type: 'error',
-      error: 'One or more source assets are selected and cannot be materialized.',
+      error: 'One or more observable assets are selected and cannot be materialized.',
     };
   }
   if (assets.some((x) => !x.isExecutable)) {

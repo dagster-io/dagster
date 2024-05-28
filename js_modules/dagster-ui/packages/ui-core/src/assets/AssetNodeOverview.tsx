@@ -128,7 +128,9 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 16}}>
       <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
         <Box flex={{direction: 'column', gap: 6}}>
-          <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
+          <Subtitle2>
+            Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
+          </Subtitle2>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
               <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
