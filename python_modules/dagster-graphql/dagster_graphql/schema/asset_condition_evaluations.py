@@ -8,7 +8,7 @@ from dagster._core.definitions.declarative_scheduling.serialized_objects import 
     AssetConditionEvaluation,
 )
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -45,7 +45,7 @@ class GrapheneAssetSubsetValue(graphene.ObjectType):
         bool_value, partition_keys, partition_key_ranges = None, None, None
         if isinstance(value, bool):
             bool_value = value
-        elif isinstance(value, TimeWindowPartitionsSubset):
+        elif isinstance(value, BaseTimeWindowPartitionsSubset):
             partition_key_ranges = [
                 GraphenePartitionKeyRange(start, end)
                 for start, end in value.get_partition_key_ranges(value.partitions_def)

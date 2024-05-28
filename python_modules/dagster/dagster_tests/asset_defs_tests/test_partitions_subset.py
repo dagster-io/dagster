@@ -10,6 +10,7 @@ from dagster import (
 )
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
+    PartitionKeysTimeWindowPartitionsSubset,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
@@ -86,7 +87,7 @@ def test_get_subset_type():
 
 def test_empty_subsets():
     assert type(static_partitions.empty_subset()) is DefaultPartitionsSubset
-    assert type(time_window_partitions.empty_subset()) is TimeWindowPartitionsSubset
+    assert type(time_window_partitions.empty_subset()) is PartitionKeysTimeWindowPartitionsSubset
 
 
 @pytest.mark.parametrize(
@@ -179,15 +180,18 @@ def test_all_partitions_subset_time_window_partitions_def() -> None:
             time_window_partitions_def, Mock(), pendulum.now("UTC")
         )
 
-        subset = time_window_partitions_def.subset_with_partition_keys(
-            {"2020-01-01", "2020-01-02", "2020-01-03"}
+        subset = PartitionKeysTimeWindowPartitionsSubset(
+            time_window_partitions_def,
+            included_partition_keys={"2020-01-01", "2020-01-02", "2020-01-03"},
         )
         assert all_subset & subset == subset
         assert all_subset | subset == all_subset
-        assert all_subset - subset == time_window_partitions_def.subset_with_partition_keys(
-            {"2020-01-04", "2020-01-05"}
+        assert all_subset - subset == PartitionKeysTimeWindowPartitionsSubset(
+            time_window_partitions_def, included_partition_keys={"2020-01-04", "2020-01-05"}
         )
-        assert subset - all_subset == time_window_partitions_def.empty_subset()
+        assert subset - all_subset == PartitionKeysTimeWindowPartitionsSubset(
+            time_window_partitions_def, included_partition_keys=set()
+        )
 
         round_trip_subset = deserialize_value(serialize_value(all_subset.to_serializable_subset()))  # type: ignore
         assert isinstance(round_trip_subset, TimeWindowPartitionsSubset)
