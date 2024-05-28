@@ -1262,8 +1262,17 @@
             "path": "/_apidocs/asset-checks"
           },
           {
-            "title": "External Assets (Experimental)",
-            "path": "/_apidocs/external-assets"
+            "title": "External assets (Experimental)",
+            "children": [
+              {
+                "title": "Instance API",
+                "path": "/_apidocs/external-assets"
+              },
+              {
+                "title": "REST APIs",
+                "path": "/apidocs/external-assets-rest"
+              }
+            ]
           },
           {
             "title": "Job versioning & memoization (Deprecated)",
