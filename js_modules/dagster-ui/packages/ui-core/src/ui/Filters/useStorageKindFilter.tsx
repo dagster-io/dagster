@@ -20,7 +20,7 @@ export const useStorageKindFilter = ({
   const memoizedState = useMemo(() => storageKindTags?.map(buildDefinitionTag), [storageKindTags]);
   return useStaticSetFilter<DefinitionTag>({
     name: 'Storage kind',
-    icon: 'tag',
+    icon: 'storage_kind',
     allValues: useMemo(
       () =>
         allAssetStorageKindTags.map((value) => ({
@@ -33,7 +33,7 @@ export const useStorageKindFilter = ({
     renderLabel: ({value: tag}) => {
       return (
         <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="tag" />
+          <Icon name="storage_kind" />
           <TruncatedTextWithFullTextOnHover tooltipText={tag.value} text={tag.value} />
         </Box>
       );
