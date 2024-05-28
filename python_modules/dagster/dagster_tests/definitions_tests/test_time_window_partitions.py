@@ -1240,6 +1240,26 @@ def test_time_window_partition_len():
         partitions_def.get_partition_keys(current_time)
     )
 
+    @daily_partitioned_config(start_date="2020-01-01", timezone="US/Pacific")
+    def my_daily_dst_transition_partitioned_config(_start, _end):
+        return {}
+
+    partitions_def = cast(
+        TimeWindowPartitionsDefinition, my_daily_dst_transition_partitioned_config.partitions_def
+    )
+
+    current_time_post_transition = datetime.strptime("2024-05-22", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time_post_transition) == len(
+        partitions_def.get_partition_keys(current_time_post_transition)
+    )
+
+    current_time_pre_transition = datetime.strptime("2024-02-01", "%Y-%m-%d")
+
+    assert partitions_def.get_num_partitions(current_time_pre_transition) == len(
+        partitions_def.get_partition_keys(current_time_pre_transition)
+    )
+
 
 def test_get_first_partition_window():
     assert DailyPartitionsDefinition(
@@ -1538,3 +1558,163 @@ def test_get_partition_keys_not_in_subset_empty_subset() -> None:
     )
     with pendulum_freeze_time(create_pendulum_time(2023, 1, 1)):
         assert time_windows_subset.get_partition_keys_not_in_subset(partitions_def) == []
+
+
+@pytest.mark.parametrize(
+    "subtractor,subtractee,result",
+    [
+        (  # Subtractee earlier than subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2019-01-02", "2019-01-03"),
+            [time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee later than subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2025-05-01", "2026-01-01"),
+            [time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee <= subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2019-01-02", "2019-02-27"),
+            [time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee >= subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2025-04-01", "2026-01-01"),
+            [time_window("2019-02-27", "2025-04-01")],
+        ),
+        (  # Subtractee == subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2019-02-27", "2025-04-01"),
+            [],
+        ),
+        (  # Subtractee fully covers subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2018-02-27", "2026-04-01"),
+            [],
+        ),
+        (  # Subtractee overlaps left part of subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2019-02-27", "2024-01-01"),
+            [
+                time_window("2024-01-01", "2025-04-01"),
+            ],
+        ),
+        (  # Subtractee overlaps left part of subtractor, extends earlier
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2018-02-27", "2024-01-01"),
+            [
+                time_window("2024-01-01", "2025-04-01"),
+            ],
+        ),
+        (  # Subtractee overlaps right part of subtractor
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2021-02-27", "2025-04-01"),
+            [
+                time_window("2019-02-27", "2021-02-27"),
+            ],
+        ),
+        (  # Subtractee overlaps right part of subtractor, extends later
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2021-02-27", "2026-04-01"),
+            [
+                time_window("2019-02-27", "2021-02-27"),
+            ],
+        ),
+        (  # Subtractee breaks subtractor into two
+            time_window("2019-02-27", "2025-04-01"),
+            time_window("2021-02-27", "2023-04-01"),
+            [
+                time_window("2019-02-27", "2021-02-27"),
+                time_window("2023-04-01", "2025-04-01"),
+            ],
+        ),
+    ],
+)
+def test_time_window_subtract(subtractor, subtractee, result):
+    assert subtractor.subtract(subtractee) == result
+
+
+@pytest.mark.parametrize(
+    "subtractor,subtractee,result",
+    [
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                # does nothing, is just happy to be here
+                time_window("2017-01-01", "2018-01-01"),
+                # fully consumes the first two windows and part of the third window
+                time_window("2019-01-01", "2023-12-31"),
+                # also does nothing, too late
+                time_window("2025-01-01", "2026-01-01"),
+            ],
+            [time_window("2023-12-31", "2024-12-31")],
+        ),
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+            ],
+            [  # splits the first window in two
+                time_window("2019-06-01", "2019-07-01"),
+                # splits the newly split second window into two as well
+                time_window("2019-10-01", "2019-11-01"),
+            ],
+            [
+                time_window("2019-02-27", "2019-06-01"),
+                time_window("2019-07-01", "2019-10-01"),
+                time_window("2019-11-01", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+            ],
+        ),
+        (
+            [],  # nothing comes from nothing, nothing ever could
+            [],
+            [],
+        ),
+        (
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+            [],  # subtracting nothing leaves you with the same thing
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+        ),
+        (
+            [  # subtracting yourself from yourself leaves you with nothing
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+            [
+                time_window("2019-02-27", "2019-12-31"),
+                time_window("2022-06-29", "2022-12-31"),
+                time_window("2023-01-01", "2024-12-31"),
+            ],
+            [],
+        ),
+    ],
+)
+def test_asset_subset_subtract(subtractor, subtractee, result):
+    partitions_def = DailyPartitionsDefinition("2015-01-01")
+
+    subtractor_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=subtractor
+    )
+
+    subtractee_subset = TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=subtractee
+    )
+
+    assert subtractor_subset - subtractee_subset == TimeWindowPartitionsSubset(
+        partitions_def, num_partitions=None, included_time_windows=result
+    )

@@ -6,10 +6,15 @@ from setuptools import find_packages, setup
 
 def get_version() -> Tuple[str, str]:
     version: Dict[str, str] = {}
+    dbt_core_version: Dict[str, str] = {}
+
     with open(Path(__file__).parent / "dagster_dbt/version.py", encoding="utf8") as fp:
         exec(fp.read(), version)
 
-    return version["__version__"], version["DBT_CORE_VERSION_UPPER_BOUND"]
+    with open(Path(__file__).parent / "dagster_dbt/dbt_core_version.py", encoding="utf8") as fp:
+        exec(fp.read(), dbt_core_version)
+
+    return version["__version__"], dbt_core_version["DBT_CORE_VERSION_UPPER_BOUND"]
 
 
 dagster_dbt_version, DBT_CORE_VERSION_UPPER_BOUND = get_version()

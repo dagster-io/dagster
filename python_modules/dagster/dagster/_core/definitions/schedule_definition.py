@@ -145,12 +145,12 @@ def get_or_create_schedule_context(
 
 
 class ScheduleEvaluationContext:
-    """The context object available as the first argument various functions defined on a :py:class:`dagster.ScheduleDefinition`.
+    """The context object available as the first argument to various functions defined on a :py:class:`dagster.ScheduleDefinition`.
 
-    A `ScheduleEvaluationContext` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
+    A ``ScheduleEvaluationContext`` object is passed as the first argument to ``run_config_fn``, ``tags_fn``,
     and ``should_execute``.
 
-    Users should not instantiate this object directly. To construct a `ScheduleEvaluationContext` for testing purposes, use :py:func:`dagster.build_schedule_context`.
+    **Users should not instantiate this object directly**. To construct a ``ScheduleEvaluationContext`` for testing purposes, use :py:func:`dagster.build_schedule_context`.
 
     Example:
         .. code-block:: python
@@ -300,7 +300,7 @@ class ScheduleEvaluationContext:
     @public
     @property
     def instance(self) -> "DagsterInstance":
-        """DagsterInstance: The current DagsterInstance."""
+        """DagsterInstance: The current :py:class:`~dagster.DagsterInstance`."""
         # self._instance_ref should only ever be None when this ScheduleEvaluationContext was
         # constructed under test.
         if not self._instance_ref:
@@ -391,10 +391,10 @@ def build_schedule_context(
     """Builds schedule execution context using the provided parameters.
 
     The instance provided to ``build_schedule_context`` must be persistent;
-    DagsterInstance.ephemeral() will result in an error.
+    :py:class:`DagsterInstance.ephemeral() <DagsterInstance>` will result in an error.
 
     Args:
-        instance (Optional[DagsterInstance]): The dagster instance configured to run the schedule.
+        instance (Optional[DagsterInstance]): The Dagster instance configured to run the schedule.
         scheduled_execution_time (datetime): The time in which the execution was scheduled to
             happen. May differ slightly from both the actual execution time and the time at which
             the run config is computed.
@@ -482,47 +482,43 @@ def validate_and_get_schedule_resource_dict(
     ),
 )
 class ScheduleDefinition(IHasInternalInit):
-    """Define a schedule that targets a job.
+    """Defines a schedule that targets a job.
 
     Args:
         name (Optional[str]): The name of the schedule to create. Defaults to the job name plus
-            "_schedule".
+            ``_schedule``.
         cron_schedule (Union[str, Sequence[str]]): A valid cron string or sequence of cron strings
-            specifying when the schedule will run, e.g., ``'45 23 * * 6'`` for a schedule that runs
+            specifying when the schedule will run, e.g., ``45 23 * * 6`` for a schedule that runs
             at 11:45 PM every Saturday. If a sequence is provided, then the schedule will run for
             the union of all execution times for the provided cron strings, e.g.,
             ``['45 23 * * 6', '30 9 * * 0]`` for a schedule that runs at 11:45 PM every Saturday and
             9:30 AM every Sunday.
-        execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the
-            schedule, which is run at an interval to determine whether a run should be launched or
-            not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
+        execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the schedule, which is run at an interval to determine whether a run should be launched or not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
 
-            This function must return a generator, which must yield either a single SkipReason
-            or one or more RunRequest objects.
+            This function must return a generator, which must yield either a single :py:class:`~dagster.SkipReason`
+            or one or more :py:class:`~dagster.RunRequest` objects.
         run_config (Optional[Mapping]): The config that parameterizes this execution,
             as a dict.
         run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
-            takes a ScheduleEvaluationContext object and returns the run configuration that
-            parameterizes this execution, as a dict. You may set only one of ``run_config``,
-            ``run_config_fn``, and ``execution_fn``.
+            takes a :py:class:`~dagster.ScheduleEvaluationContext` object and returns the run configuration that
+            parameterizes this execution, as a dict. **Note**: Only one of the following may be set: You may set ``run_config``, ``run_config_fn``, or ``execution_fn``.
         tags (Optional[Mapping[str, str]]): A dictionary of tags (string key-value pairs) to attach
             to the scheduled runs.
         tags_fn (Optional[Callable[[ScheduleEvaluationContext], Optional[Mapping[str, str]]]]): A
-            function that generates tags to attach to the schedules runs. Takes a
+            function that generates tags to attach to the schedule's runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
-            key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
+            key-value pairs). **Note**: Only one of the following may be set:  ``tags``, ``tags_fn``, or ``execution_fn``.
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
             schedule should execute). Defaults to a function that always returns ``True``.
         execution_timezone (Optional[str]): Timezone in which the schedule should run.
             Supported strings for timezones are the ones provided by the
-            `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
+            `IANA time zone database <https://www.iana.org/time-zones>`_ - e.g. ``"America/Los_Angeles"``.
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
-        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
-            status can be overridden from the Dagster UI or via the GraphQL API.
+        default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
     """
 

@@ -322,7 +322,6 @@ def imap(
     executor: ThreadPoolExecutor,
     iterable: Iterator[T],
     func: Callable[[T], P],
-    block_on_enqueuing_task_completion: bool = False,
 ) -> Iterator[P]:
     """A version of `concurrent.futures.ThreadpoolExecutor.map` which tails the input iterator in
     a separate thread. This means that the map function can begin processing and yielding results from
@@ -332,40 +331,29 @@ def imap(
         executor: The ThreadPoolExecutor to use for parallel execution.
         iterable: The iterator to apply the function to.
         func: The function to apply to each element of the iterator.
-        block_on_enqueuing_task_completion: If True, the function will block until all elements of the
-            iterator have been enqueued. This is similar to the behavior of
-            `concurrent.futures.ThreadpoolExecutor.map`.
-        should_shutdown_executor: If True, the executor will be shutdown after all elements of the iterator have
-            been processed.
     """
     work_queue: deque[Future] = deque([])
-    enqueuing_task: Optional[Future] = None
 
-    if block_on_enqueuing_task_completion:
-        # collect all the work items before enqueuing them
-        items_to_enqueue = [*iterable]
-        for arg in items_to_enqueue:
+    # create a small task which waits on the iterator
+    # and enqueues work items as they become available
+    def _apply_func_to_iterator_results(iterable: Iterator[T]) -> None:
+        for arg in iterable:
             work_queue.append(executor.submit(func, arg))
-    else:
-        # create a small task which waits on the iterator
-        # and enqueues work items as they become available
-        def _apply_func_to_iterator_results(iterable: Iterator[T]) -> None:
-            for arg in iterable:
-                work_queue.append(executor.submit(func, arg))
 
-        enqueuing_task = executor.submit(
-            _apply_func_to_iterator_results,
-            iterable,
-        )
+    enqueuing_task = executor.submit(
+        _apply_func_to_iterator_results,
+        iterable,
+    )
 
     while True:
         if (not enqueuing_task or enqueuing_task.done()) and len(work_queue) == 0:
             break
 
-        current_work_item = work_queue[0]
+        if len(work_queue) > 0:
+            current_work_item = work_queue[0]
 
-        try:
-            yield current_work_item.result(timeout=0.1)
-            work_queue.popleft()
-        except TimeoutError:
-            pass
+            try:
+                yield current_work_item.result(timeout=0.1)
+                work_queue.popleft()
+            except TimeoutError:
+                pass

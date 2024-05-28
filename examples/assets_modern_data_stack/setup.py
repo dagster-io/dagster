@@ -18,5 +18,16 @@ setup(
         "dbt-postgres",
         "packaging<22.0",  # match dbt-core's requirement to workaround a resolution issue
     ],
-    extras_require={"dev": ["dagster-webserver", "pytest"]},
+    extras_require={
+        "dev": [
+            "dagster-webserver",
+            "pytest",
+        ],
+        "test": [
+            # cant build psycopg2 in buildkite
+            # something about the 1.8.0 dependency setup to avoid psycopg2-binary on linux
+            # seems to prevent that dependency from being used even if explicitly added
+            "dbt-postgres<1.8.0"
+        ],
+    },
 )

@@ -1,9 +1,11 @@
+from typing import Optional
+
 import dlt
 
 MOCK_REPOS = [
-    {"id": 1, "name": "example-repo-1"},
-    {"id": 2, "name": "example-repo-2"},
-    {"id": 3, "name": "example-repo-3"},
+    {"id": 1, "name": "example-repo-1", "last_modified_dt": "2022-09-08"},
+    {"id": 2, "name": "example-repo-2", "last_modified_dt": "2022-09-11"},
+    {"id": 3, "name": "example-repo-3", "last_modified_dt": "2022-09-16"},
 ]
 
 MOCK_ISSUES = {
@@ -24,16 +26,18 @@ MOCK_ISSUES = {
 
 
 @dlt.source
-def pipeline():
+def pipeline(month: Optional[str] = None):
     @dlt.resource(primary_key="id", write_disposition="merge")
     def repos():
         for d in MOCK_REPOS:
-            yield d
+            if d["last_modified_dt"][:-3] == month or not month:
+                yield d
 
     @dlt.transformer(
         primary_key=["repo_id", "issue_id"], write_disposition="merge", data_from=repos
     )
     def repo_issues(repo):
-        yield MOCK_ISSUES[repo["id"]]
+        if repo["last_modified_dt"][:-3] == month or not month:
+            yield MOCK_ISSUES[repo["id"]]
 
     return repos, repo_issues

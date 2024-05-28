@@ -19,6 +19,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
@@ -252,17 +253,7 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
-):
-    check.opt_iterable_param(
-        assets, "assets", (AssetsDefinition, SourceAsset, CacheableAssetsDefinition)
-    )
-    check.opt_iterable_param(
-        schedules, "schedules", (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition)
-    )
-    check.opt_iterable_param(sensors, "sensors", SensorDefinition)
-    check.opt_iterable_param(jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition))
-
-    check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
+) -> RepositoryDefinition:
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None
@@ -284,8 +275,6 @@ def _create_repository_using_definitions_args(
     )
 
     resource_defs = wrap_resources_for_execution(resources_with_key_mapping)
-
-    check.opt_mapping_param(loggers, "loggers", key_type=str, value_type=LoggerDefinition)
 
     # Binds top-level resources to jobs and any jobs attached to schedules or sensors
     (
@@ -415,6 +404,15 @@ class Definitions:
       Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
+    _assets: Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
+    _schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    _sensors: Iterable[SensorDefinition]
+    _jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
+    _resources: Mapping[str, Any]
+    _executor: Optional[Union[ExecutorDefinition, Executor]]
+    _loggers: Mapping[str, LoggerDefinition]
+    _asset_checks: Iterable[AssetChecksDefinition]
+
     def __init__(
         self,
         assets: Optional[
@@ -430,6 +428,34 @@ class Definitions:
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
+        self._assets = check.opt_iterable_param(
+            assets,
+            "assets",
+            (AssetsDefinition, SourceAsset, CacheableAssetsDefinition),
+        )
+        self._schedules = check.opt_iterable_param(
+            schedules,
+            "schedules",
+            (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition),
+        )
+        self._sensors = check.opt_iterable_param(sensors, "sensors", SensorDefinition)
+        self._jobs = check.opt_iterable_param(
+            jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition)
+        )
+        # Thee's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
+        # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
+        # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
+        self._asset_checks = check.opt_iterable_param(
+            asset_checks,
+            "asset_checks",
+            (AssetChecksDefinition, AssetsDefinition),
+        )
+        self._resources = check.opt_mapping_param(resources, "resources", key_type=str)
+        self._executor = check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
+        self._loggers = check.opt_mapping_param(
+            loggers, "loggers", key_type=str, value_type=LoggerDefinition
+        )
+
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
             assets=assets,
@@ -441,6 +467,40 @@ class Definitions:
             loggers=loggers,
             asset_checks=asset_checks,
         )
+
+    @property
+    def assets(self) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
+        return self._assets
+
+    @property
+    def schedules(
+        self,
+    ) -> Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]:
+        return self._schedules
+
+    @property
+    def sensors(self) -> Iterable[SensorDefinition]:
+        return self._sensors
+
+    @property
+    def jobs(self) -> Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
+        return self._jobs
+
+    @property
+    def resources(self) -> Mapping[str, Any]:
+        return self._resources
+
+    @property
+    def executor(self) -> Optional[Union[ExecutorDefinition, Executor]]:
+        return self._executor
+
+    @property
+    def loggers(self) -> Mapping[str, LoggerDefinition]:
+        return self._loggers
+
+    @property
+    def asset_checks(self) -> Iterable[AssetChecksDefinition]:
+        return self._asset_checks
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
@@ -573,3 +633,80 @@ class Definitions:
     def get_asset_graph(self) -> AssetGraph:
         """Get the AssetGraph for this set of definitions."""
         return self.get_repository_def().asset_graph
+
+    @staticmethod
+    def merge(*def_sets: "Definitions") -> "Definitions":
+        """Merges multiple Definitions objects into a single Definitions object.
+
+        The returned Definitions object has the union of all the definitions in the input
+        Definitions objects.
+
+        Returns:
+            Definitions: The merged definitions.
+        """
+        check.sequence_param(def_sets, "def_sets", of_type=Definitions)
+
+        assets = []
+        schedules = []
+        sensors = []
+        jobs = []
+        asset_checks = []
+
+        resources = {}
+        resource_key_indexes: Dict[str, int] = {}
+        loggers = {}
+        logger_key_indexes: Dict[str, int] = {}
+        executor = None
+        executor_index: Optional[int] = None
+
+        for i, def_set in enumerate(def_sets):
+            assets.extend(def_set.assets or [])
+            asset_checks.extend(def_set.asset_checks or [])
+            schedules.extend(def_set.schedules or [])
+            sensors.extend(def_set.sensors or [])
+            jobs.extend(def_set.jobs or [])
+
+            for resource_key, resource_value in (def_set.resources or {}).items():
+                if resource_key in resources:
+                    raise DagsterInvariantViolationError(
+                        f"Definitions objects {resource_key_indexes[resource_key]} and {i} both have a "
+                        f"resource with key '{resource_key}'"
+                    )
+                resources[resource_key] = resource_value
+                resource_key_indexes[resource_key] = i
+
+            for logger_key, logger_value in (def_set.loggers or {}).items():
+                if logger_key in loggers:
+                    raise DagsterInvariantViolationError(
+                        f"Definitions objects {logger_key_indexes[logger_key]} and {i} both have a "
+                        f"logger with key '{logger_key}'"
+                    )
+                loggers[logger_key] = logger_value
+                logger_key_indexes[logger_key] = i
+
+            if def_set.executor is not None:
+                if executor is not None and executor != def_set.executor:
+                    raise DagsterInvariantViolationError(
+                        f"Definitions objects {executor_index} and {i} both have an executor"
+                    )
+
+                executor = def_set.executor
+                executor_index = i
+
+        return Definitions(
+            assets=assets,
+            schedules=schedules,
+            sensors=sensors,
+            jobs=jobs,
+            resources=resources,
+            executor=executor,
+            loggers=loggers,
+            asset_checks=asset_checks,
+        )
+
+    @public
+    @experimental
+    def get_all_asset_specs(self) -> Sequence[AssetSpec]:
+        """Returns an AssetSpec object for every asset contained inside the Definitions object."""
+        asset_graph = self.get_asset_graph()
+        return [asset_node.to_asset_spec() for asset_node in asset_graph.asset_nodes]

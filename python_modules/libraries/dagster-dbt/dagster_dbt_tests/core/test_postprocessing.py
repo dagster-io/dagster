@@ -1,4 +1,5 @@
 import os
+from decimal import Decimal
 from typing import Any, Dict, cast
 
 import mock
@@ -8,10 +9,15 @@ from dagster import (
     _check as check,
     materialize,
 )
+from dagster._core.definitions.events import AssetMaterialization, Output
+from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
+from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import (
     DbtCliInvocation,
     DbtCliResource,
+    DbtDagsterEventType,
+    _get_dbt_resource_props_from_event,
 )
 
 from ..conftest import _create_dbt_invocation
@@ -159,3 +165,62 @@ def test_row_count_err(
 
         # assert we have warning message in logs
         assert "An error occurred while fetching row count for " in caplog.text
+
+
+def test_attach_metadata(
+    test_jaffle_shop_manifest_standalone_duckdb_dbfile: Dict[str, Any],
+) -> None:
+    def _summarize(
+        invocation: DbtCliInvocation,
+        event: DbtDagsterEventType,
+    ):
+        if not isinstance(event, (AssetMaterialization, Output)):
+            return None
+
+        dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+        table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+        assert invocation.adapter
+        with invocation.adapter.connection_named(f"row_count_{dbt_resource_props['unique_id']}"):
+            query_result = invocation.adapter.execute(
+                f"SUMMARIZE {table_str}",
+                fetch=True,
+            )
+
+        table_metadata = MetadataValue.table(
+            records=[
+                TableRecord({k: float(v) if isinstance(v, Decimal) else v for k, v in row.items()})
+                for row in query_result[1].rows
+            ]
+        )
+
+        return {"summary": table_metadata}
+
+    @dbt_assets(manifest=test_jaffle_shop_manifest_standalone_duckdb_dbfile)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()._attach_metadata(_summarize)  # noqa: SLF001
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))},
+    )
+
+    assert result.success
+
+    # Validate that we have summaries for all models
+    metadata_by_asset_key = {
+        check.not_none(event.asset_key): event.materialization.metadata
+        for event in result.get_asset_materialization_events()
+    }
+    assert all("summary" in metadata for _, metadata in metadata_by_asset_key.items()), str(
+        metadata_by_asset_key
+    )
+
+    summaries_by_asset_key = {
+        asset_key: cast(TableMetadataValue, metadata["summary"])
+        for asset_key, metadata in metadata_by_asset_key.items()
+    }
+    assert all(
+        len(summary.records) > 0 and "column_name" in summary.records[0].data
+        for summary in summaries_by_asset_key.values()
+    ), str(summaries_by_asset_key)

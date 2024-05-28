@@ -383,8 +383,8 @@ def test_with_owner_replacements() -> None:
     )
     def my_looker_assets(): ...
 
-    for owners in my_looker_assets.owners_by_key.values():
-        assert owners == expected_owners
+    for spec in my_looker_assets.specs:
+        assert spec.owners == expected_owners
 
 
 def test_with_tag_replacements() -> None:

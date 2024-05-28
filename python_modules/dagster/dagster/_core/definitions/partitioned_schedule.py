@@ -76,13 +76,13 @@ def build_schedule_from_partitioned_job(
     cron_schedule: Optional[str] = None,
     execution_timezone: Optional[str] = None,
 ) -> Union[UnresolvedPartitionedAssetScheduleDefinition, ScheduleDefinition]:
-    """Creates a schedule from a time window-partitioned job a job that targets
+    """Creates a schedule from a job that targets
     time window-partitioned or statically-partitioned assets. The job can also be
-    multipartitioned, as long as one of the partitions dimensions is time-partitioned.
+    multi-partitioned, as long as one of the partition dimensions is time-partitioned. Refer to the `Partitions API reference </_apidocs/partitions#partitioned-config>`_ for information about time-based run configuration.
 
-    The schedule executes at the cadence specified by the time partitioning of the job or assets.
+    The schedule executes at the cadence specified by the time partitioning of the job or assets. Refer to the `Partitions documentation </concepts/partitions-schedules-sensors/partitions>`_ for more information.
 
-    Examples:
+    **Example:**
         .. code-block:: python
 
             ######################################
@@ -147,6 +147,12 @@ def build_schedule_from_partitioned_job(
     )
 
     if isinstance(job, UnresolvedAssetJobDefinition) and job.partitions_def is None:
+        if cron_schedule or execution_timezone:
+            check.failed(
+                "Cannot provide cron_schedule or execution_timezone to"
+                " build_schedule_from_partitioned_job for a time-partitioned job."
+            )
+
         return UnresolvedPartitionedAssetScheduleDefinition(
             job=job,
             default_status=default_status,
@@ -250,7 +256,11 @@ def _get_schedule_evaluation_fn(
 
 def _check_valid_schedule_partitions_def(
     partitions_def: PartitionsDefinition,
-) -> Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition]:
+) -> Union[
+    TimeWindowPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
+]:
     if not has_one_dimension_time_window_partitioning(partitions_def) and not isinstance(
         partitions_def, StaticPartitionsDefinition
     ):

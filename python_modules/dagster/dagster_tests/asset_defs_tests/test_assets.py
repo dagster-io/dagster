@@ -43,6 +43,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -1631,7 +1632,7 @@ def test_direct_instantiation_invalid_partition_mapping():
     with pytest.raises(CheckError, match="received a partition mapping"):
         AssetsDefinition(
             keys_by_input_name={},
-            keys_by_output_name={"my_output": AssetKey("foo")},
+            keys_by_output_name={"result": AssetKey("foo")},
             node_def=my_op,
             partition_mappings={AssetKey("nonexistent_asset"): IdentityPartitionMapping()},
         )
@@ -2025,27 +2026,23 @@ def test_asset_owners():
     def my_asset():
         pass
 
-    owners = ["team:team1", "claire@dagsterlabs.com"]
-    assert my_asset.owners_by_key == {my_asset.key: owners}
-    assert my_asset.with_attributes().owners_by_key == {my_asset.key: owners}  # copies ok
-
-    @asset(owners=["team:team1", "claire@dagsterlabs.com"])
-    def my_asset_2():
-        pass
-
-    assert my_asset_2.owners_by_key == {my_asset_2.key: owners}
+    assert my_asset.specs_by_key[my_asset.key].owners == ["team:team1", "claire@dagsterlabs.com"]
+    assert (
+        my_asset.with_attributes().specs_by_key[my_asset.key].owners
+        == my_asset.specs_by_key[my_asset.key].owners
+    )  # copies ok
 
     @asset(owners=[])
-    def asset_3():
+    def asset2():
         pass
 
-    assert asset_3.owners_by_key == {}
+    assert asset2.specs_by_key[asset2.key].owners == []
 
     @asset(owners=None)
-    def asset_4():
+    def asset3():
         pass
 
-    assert asset_4.owners_by_key == {}
+    assert asset3.specs_by_key[asset3.key].owners == []
 
 
 def test_invalid_asset_owners():
@@ -2078,10 +2075,11 @@ def test_multi_asset_owners():
     def my_multi_asset():
         pass
 
-    assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): ["team:team1", "user@dagsterlabs.com"],
-        AssetKey("out2"): ["user2@dagsterlabs.com"],
-    }
+    assert my_multi_asset.specs_by_key[AssetKey("out1")].owners == [
+        "team:team1",
+        "user@dagsterlabs.com",
+    ]
+    assert my_multi_asset.specs_by_key[AssetKey("out2")].owners == ["user2@dagsterlabs.com"]
 
 
 def test_replace_asset_keys_for_asset_with_owners():
@@ -2094,18 +2092,16 @@ def test_replace_asset_keys_for_asset_with_owners():
     def my_multi_asset():
         pass
 
-    assert my_multi_asset.owners_by_key == {
-        AssetKey("out1"): ["user@dagsterlabs.com"],
-        AssetKey("out2"): ["user@dagsterlabs.com"],
-    }
+    assert my_multi_asset.specs_by_key[AssetKey("out1")].owners == ["user@dagsterlabs.com"]
+    assert my_multi_asset.specs_by_key[AssetKey("out2")].owners == ["user@dagsterlabs.com"]
 
     prefixed_asset = my_multi_asset.with_attributes(
         output_asset_key_replacements={AssetKey(["out1"]): AssetKey(["prefix", "out1"])}
     )
-    assert prefixed_asset.owners_by_key == {
-        AssetKey(["prefix", "out1"]): ["user@dagsterlabs.com"],
-        AssetKey("out2"): ["user@dagsterlabs.com"],
-    }
+    assert prefixed_asset.specs_by_key[AssetKey(["prefix", "out1"])].owners == [
+        "user@dagsterlabs.com"
+    ]
+    assert prefixed_asset.specs_by_key[AssetKey("out2")].owners == ["user@dagsterlabs.com"]
 
 
 def test_asset_spec_with_code_versions():
@@ -2144,6 +2140,21 @@ def test_asset_with_tags():
 
         @asset(tags={"a%": "b"})  # key has illegal character
         def asset2(): ...
+
+
+def test_asset_with_storage_kind_tag() -> None:
+    @asset(tags={**StorageKindTagSet(storage_kind="snowflake")})
+    def asset1(): ...
+
+    assert asset1.tags_by_key[asset1.key] == {"dagster/storage_kind": "snowflake"}
+
+    @asset(tags={**StorageKindTagSet(storage_kind="snowflake"), "a": "b"})
+    def asset2(): ...
+
+    assert asset2.tags_by_key[asset2.key] == {
+        "dagster/storage_kind": "snowflake",
+        "a": "b",
+    }
 
 
 def test_asset_spec_with_tags():

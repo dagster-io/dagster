@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import (
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Generic,
     Iterable,
@@ -893,6 +894,64 @@ class DbtCliInvocation:
 T = TypeVar("T", bound=DbtDagsterEventType)
 
 
+def _get_dbt_resource_props_from_event(
+    invocation: DbtCliInvocation, event: DbtDagsterEventType
+) -> Dict[str, Any]:
+    unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
+    return check.not_none(invocation.manifest["nodes"].get(unique_id))
+
+
+def _fetch_row_count_metadata(
+    invocation: DbtCliInvocation,
+    event: DbtDagsterEventType,
+) -> Optional[Dict[str, Any]]:
+    """Threaded task which fetches row counts for materialized dbt models in a dbt run
+    once they are built, and attaches the row count as metadata to the event.
+    """
+    if not isinstance(event, (AssetMaterialization, Output)):
+        return None
+
+    adapter = check.not_none(invocation.adapter)
+
+    dbt_resource_props = _get_dbt_resource_props_from_event(invocation, event)
+    is_view = dbt_resource_props["config"]["materialized"] == "view"
+
+    # Avoid counting rows for views, since they may include complex SQL queries
+    # that are costly to execute. We can revisit this in the future if there is
+    # a demand for it.
+    if is_view:
+        return None
+
+    unique_id = dbt_resource_props["unique_id"]
+    logger.debug("Fetching row count for %s", unique_id)
+    table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+    try:
+        with adapter.connection_named(f"row_count_{unique_id}"):
+            query_result = adapter.execute(
+                f"""
+                    SELECT
+                    count(*) as row_count
+                    FROM
+                    {table_str}
+                """,
+                fetch=True,
+            )
+        query_result_table = query_result[1]
+        # some adapters do not output the column names, so we need
+        # to index by position
+        row_count = query_result_table[0][0]
+        return {**TableMetadataSet(row_count=row_count)}
+
+    except Exception as e:
+        logger.exception(
+            f"An error occurred while fetching row count for {unique_id}. Row count metadata"
+            " will not be included in the event.\n\n"
+            f"Exception: {e}"
+        )
+        return None
+
+
 class DbtEventIterator(Generic[T], abc.Iterator):
     """A wrapper around an iterator of dbt events which contains additional methods for
     post-processing the events, such as fetching row counts for materialized tables.
@@ -912,65 +971,6 @@ class DbtEventIterator(Generic[T], abc.Iterator):
     def __iter__(self) -> "DbtEventIterator[T]":
         return self
 
-    def _get_dbt_resource_props_from_event(self, event: DbtDagsterEventType) -> Dict[str, Any]:
-        unique_id = cast(TextMetadataValue, event.metadata["unique_id"]).text
-        return check.not_none(self._dbt_cli_invocation.manifest["nodes"].get(unique_id))
-
-    def _fetch_and_attach_row_count_metadata(
-        self,
-        event: DbtDagsterEventType,
-    ) -> DbtDagsterEventType:
-        """Threaded task which fetches row counts for materialized dbt models in a dbt run
-        once they are built, and attaches the row count as metadata to the event.
-        """
-        if not isinstance(event, (AssetMaterialization, Output)):
-            return event
-
-        with pushd(str(self._dbt_cli_invocation.project_dir)):
-            adapter = check.not_none(self._dbt_cli_invocation.adapter)
-
-            dbt_resource_props = self._get_dbt_resource_props_from_event(event)
-            is_view = dbt_resource_props["config"]["materialized"] == "view"
-
-            # Avoid counting rows for views, since they may include complex SQL queries
-            # that are costly to execute. We can revisit this in the future if there is
-            # a demand for it.
-            if is_view:
-                return event
-
-            unique_id = dbt_resource_props["unique_id"]
-            logger.debug("Fetching row count for %s", unique_id)
-            table_str = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
-
-            try:
-                with adapter.connection_named(f"row_count_{unique_id}"):
-                    query_result = adapter.execute(
-                        f"""
-                            SELECT
-                            count(*) as row_count
-                            FROM
-                            {table_str}
-                        """,
-                        fetch=True,
-                    )
-
-                query_result_table = query_result[1]
-                # some adapters do not output the column names, so we need
-                # to index by position
-                row_count = query_result_table[0][0]
-                new_metadata = {
-                    **TableMetadataSet(row_count=row_count),
-                }
-                return event.with_metadata({**event.metadata, **new_metadata})
-
-            except Exception as e:
-                logger.exception(
-                    f"An error occurred while fetching row count for {unique_id}. Row count metadata"
-                    " will not be included in the event.\n\n"
-                    f"Exception: {e}"
-                )
-                return event
-
     @public
     @experimental
     def fetch_row_counts(
@@ -987,38 +987,62 @@ class DbtEventIterator(Generic[T], abc.Iterator):
                 A set of corresponding Dagster events for dbt models, with row counts attached,
                 yielded in the order they are emitted by dbt.
         """
+        return self._attach_metadata(_fetch_row_count_metadata)
+
+    def _attach_metadata(
+        self,
+        fn: Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]],
+    ) -> "DbtEventIterator[DbtDagsterEventType]":
+        """Runs a threaded task to attach metadata to each event in the iterator.
+
+        Args:
+            fn (Callable[[DbtCliInvocation, DbtDagsterEventType], Optional[Dict[str, Any]]]):
+                A function which takes a DbtCliInvocation and a DbtDagsterEventType and returns
+                a dictionary of metadata to attach to the event.
+
+        Returns:
+             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]:
+                A set of corresponding Dagster events for dbt models, with any metadata output
+                by the function attached, yielded in the order they are emitted by dbt.
+        """
+
+        def _map_fn(event: DbtDagsterEventType) -> DbtDagsterEventType:
+            result = fn(self._dbt_cli_invocation, event)
+            if result is None:
+                return event
+
+            return event.with_metadata({**event.metadata, **result})
+
         # If the adapter is DuckDB, we need to wait for the dbt CLI process to complete
         # so that the DuckDB lock is released. This is because DuckDB does not allow for
         # opening multiple connections to the same database when a write connection, such
         # as the one dbt uses, is open.
-        block_on_dbt_run = False
+        event_stream = self
         try:
             from dbt.adapters.duckdb import DuckDBAdapter
 
             if isinstance(self._dbt_cli_invocation.adapter, DuckDBAdapter):
-                block_on_dbt_run = True
+                event_stream = iter(list(self))
         except ImportError:
             pass
 
-        def _threadpool_fetch_and_attach_row_count_metadata() -> (
+        def _threadpool_wrap_map_fn() -> (
             Iterator[Union[Output, AssetMaterialization, AssetObservation, AssetCheckResult]]
         ):
             with ThreadPoolExecutor(
                 max_workers=self._dbt_cli_invocation.postprocessing_threadpool_num_threads,
-                thread_name_prefix="fetch_row_counts",
+                thread_name_prefix=f"dbt_attach_metadata_{fn.__name__}",
             ) as executor:
                 yield from imap(
                     executor=executor,
-                    iterable=self,
-                    func=self._fetch_and_attach_row_count_metadata,
-                    block_on_enqueuing_task_completion=block_on_dbt_run,
+                    iterable=event_stream,
+                    func=_map_fn,
                 )
 
-        with pushd(str(self._dbt_cli_invocation.project_dir)):
-            return DbtEventIterator(
-                _threadpool_fetch_and_attach_row_count_metadata(),
-                dbt_cli_invocation=self._dbt_cli_invocation,
-            )
+        return DbtEventIterator(
+            _threadpool_wrap_map_fn(),
+            dbt_cli_invocation=self._dbt_cli_invocation,
+        )
 
 
 class DbtCliResource(ConfigurableResource):
@@ -1320,6 +1344,11 @@ class DbtCliResource(ConfigurableResource):
                 if not config.credentials.config_options:
                     config.credentials.config_options = {}
                 config.credentials.config_options["access_mode"] = "READ_ONLY"
+                # convert adapter duckdb filepath to absolute path, since the Python
+                # working directory may not be the same as the dbt project directory
+                with pushd(self.project_dir):
+                    config.credentials.path = os.fspath(Path(config.credentials.path).absolute())
+
         except ImportError:
             pass
 
@@ -1644,9 +1673,6 @@ def _get_subset_selection_for_context(
     if exclude:
         default_dbt_selection += ["--exclude", exclude]
 
-    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
-    dbt_resource_props_by_test_name = get_dbt_resource_props_by_test_name(manifest)
-
     assets_def = context.assets_def
     is_asset_subset = assets_def.keys_by_output_name != assets_def.node_keys_by_output_name
     is_checks_subset = (
@@ -1667,15 +1693,15 @@ def _get_subset_selection_for_context(
         # aren't modeled as asset checks currently).
         return default_dbt_selection, None
 
-    selected_dbt_non_test_resources = []
-    for output_name in context.selected_output_names:
-        dbt_resource_props = dbt_resource_props_by_output_name[output_name]
-
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = ".".join(dbt_resource_props["fqn"])
-
-        selected_dbt_non_test_resources.append(fqn_selector)
+    # Explicitly select a dbt resource by its path. Selecting a resource by path is more terse
+    # than selecting it by its fully qualified name.
+    # https://docs.getdbt.com/reference/node-selection/methods#the-path-method
+    dbt_resource_props_by_output_name = get_dbt_resource_props_by_output_name(manifest)
+    selected_dbt_non_test_resources = get_dbt_resource_names_for_output_names(
+        output_names=context.selected_output_names,
+        dbt_resource_props_by_output_name=dbt_resource_props_by_output_name,
+        dagster_dbt_translator=dagster_dbt_translator,
+    )
 
     # if all asset checks for the subsetted assets are selected, then we can just select the
     # assets and use indirect selection for the tests. We verify that
@@ -1706,8 +1732,10 @@ def _get_subset_selection_for_context(
         # Since we're setting DBT_INDIRECT_SELECTION=empty, we won't run any singular tests.
         selected_dbt_resources = [
             *selected_dbt_non_test_resources,
-            *_get_dbt_test_names_for_asset_checks(
-                context.selected_asset_check_keys, dbt_resource_props_by_test_name
+            *get_dbt_test_names_for_asset_checks(
+                check_keys=context.selected_asset_check_keys,
+                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
+                dagster_dbt_translator=dagster_dbt_translator,
             ),
         ]
         indirect_selection_override = DBT_EMPTY_INDIRECT_SELECTION
@@ -1722,8 +1750,10 @@ def _get_subset_selection_for_context(
         # explicitly select the tests that won't be run via indirect selection
         selected_dbt_resources = [
             *selected_dbt_non_test_resources,
-            *_get_dbt_test_names_for_asset_checks(
-                checks_on_non_selected_assets, dbt_resource_props_by_test_name
+            *get_dbt_test_names_for_asset_checks(
+                check_keys=checks_on_non_selected_assets,
+                dbt_resource_props_by_test_name=get_dbt_resource_props_by_test_name(manifest),
+                dagster_dbt_translator=dagster_dbt_translator,
             ),
         ]
         indirect_selection_override = None
@@ -1765,15 +1795,40 @@ def get_dbt_resource_props_by_test_name(
     }
 
 
-def _get_dbt_test_names_for_asset_checks(
-    check_keys: Iterable[AssetCheckKey], dbt_resource_props_by_test_name
-) -> List[str]:
-    selected_dbt_tests = []
-    for key in check_keys:
-        test_resource_props = dbt_resource_props_by_test_name[key.name]
+def get_dbt_resource_names_for_output_names(
+    output_names: Iterable[str],
+    dbt_resource_props_by_output_name: Mapping[str, Any],
+    dagster_dbt_translator: DagsterDbtTranslator,
+) -> Sequence[str]:
+    # Explicitly select a dbt resource by its file name.
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-method
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        return [
+            Path(dbt_resource_props_by_output_name[output_name]["original_file_path"]).stem
+            for output_name in output_names
+        ]
 
-        # Explicitly select a dbt resource by its fully qualified name (FQN).
-        # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
-        fqn_selector = ".".join(test_resource_props["fqn"])
-        selected_dbt_tests.append(fqn_selector)
-    return selected_dbt_tests
+    # Explictly select a dbt resource by its fully qualified name (FQN).
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+    return [
+        ".".join(dbt_resource_props_by_output_name[output_name]["fqn"])
+        for output_name in output_names
+    ]
+
+
+def get_dbt_test_names_for_asset_checks(
+    check_keys: Iterable[AssetCheckKey],
+    dbt_resource_props_by_test_name: Mapping[str, Any],
+    dagster_dbt_translator: DagsterDbtTranslator,
+) -> Sequence[str]:
+    # Explicitly select a dbt test by its test name.
+    # https://docs.getdbt.com/reference/node-selection/test-selection-examples#more-complex-selection.
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        return [asset_check_key.name for asset_check_key in check_keys]
+
+    # Explictly select a dbt test by its fully qualified name (FQN).
+    # https://docs.getdbt.com/reference/node-selection/methods#the-file-or-fqn-method
+    return [
+        ".".join(dbt_resource_props_by_test_name[asset_check_key.name]["fqn"])
+        for asset_check_key in check_keys
+    ]

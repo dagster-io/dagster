@@ -191,18 +191,6 @@ class WhitelistMap(NamedTuple):
             for old_storage_name in old_storage_names:
                 self.object_deserializers[old_storage_name] = serializer
 
-    def has_object_serializer(self, name: str) -> bool:
-        return name in self.object_serializers
-
-    def has_object_deserializer(self, name: str) -> bool:
-        return name in self.object_deserializers
-
-    def get_object_serializer(self, name: str) -> "ObjectSerializer":
-        return self.object_serializers[name]
-
-    def get_object_deserializer(self, name: str) -> "ObjectSerializer":
-        return self.object_deserializers[name]
-
     def register_enum(
         self,
         name: str,
@@ -222,12 +210,6 @@ class WhitelistMap(NamedTuple):
         if old_storage_names:
             for old_storage_name in old_storage_names:
                 self.enum_serializers[old_storage_name] = serializer
-
-    def has_enum_entry(self, name: str) -> bool:
-        return name in self.enum_serializers
-
-    def get_enum_entry(self, name: str) -> "EnumSerializer":
-        return self.enum_serializers[name]
 
     @staticmethod
     def create() -> "WhitelistMap":
@@ -433,7 +415,7 @@ def is_whitelisted_for_serdes_object(
         or isinstance(val, BaseModel)
     ):
         klass_name = val.__class__.__name__
-        return whitelist_map.has_object_serializer(klass_name)
+        return klass_name in whitelist_map.object_serializers
 
     return False
 
@@ -569,7 +551,7 @@ class ObjectSerializer(Serializer, Generic[T]):
                     elif context.observed_unknown_serdes_values:
                         unpacked[loaded_name] = context.assert_no_unknown_values(value)
                     else:
-                        unpacked[loaded_name] = cast(PackableValue, value)
+                        unpacked[loaded_name] = value  # type: ignore # 2 hot 4 cast()
 
                 else:
                     context.clear_ignored_unknown_values(value)
@@ -833,7 +815,7 @@ def _transform_for_serialization(
     # this is a hot code path so we handle the common base cases without isinstance
     tval = type(val)
     if tval in (int, float, str, bool) or val is None:
-        return cast(JsonSerializableValue, val)
+        return val  # type: ignore # 2 hot 4 cast()
     if tval is list:
         return [
             _transform_for_serialization(
@@ -877,12 +859,12 @@ def _transform_for_serialization(
 
     if isinstance(val, Enum):
         klass_name = val.__class__.__name__
-        if not whitelist_map.has_enum_entry(klass_name):
+        if klass_name not in whitelist_map.enum_serializers:
             raise SerializationError(
                 "Can only serialize whitelisted Enums, received"
                 f" {klass_name}.\nDescent path: {descent_path}",
             )
-        enum_serializer = whitelist_map.get_enum_entry(klass_name)
+        enum_serializer = whitelist_map.enum_serializers[klass_name]
         return {"__enum__": enum_serializer.pack(val, whitelist_map, descent_path)}
     if (
         (isinstance(val, tuple) and hasattr(val, "_fields"))
@@ -890,7 +872,7 @@ def _transform_for_serialization(
         or (is_dataclass(val) and not isinstance(val, type))
     ):
         klass_name = val.__class__.__name__
-        if not whitelist_map.has_object_serializer(klass_name):
+        if klass_name not in whitelist_map.object_serializers:
             raise SerializationError(
                 "Can only serialize whitelisted namedtuples, received"
                 f" {val}.\nDescent path: {descent_path}",
@@ -962,7 +944,7 @@ def _pack_object(
     # the object_handler for _transform_for_serialization to produce dicts for objects
 
     klass_name = obj.__class__.__name__
-    serializer = whitelist_map.get_object_serializer(klass_name)
+    serializer = whitelist_map.object_serializers[klass_name]
     return dict(serializer.pack_items(obj, whitelist_map, _pack_object, descent_path))
 
 
@@ -994,7 +976,7 @@ class _LazySerializationWrapper(dict):
 
     def items(self) -> Iterator[Tuple[str, JsonSerializableValue]]:
         klass_name = self._obj.__class__.__name__
-        serializer = self._whitelist_map.get_object_serializer(klass_name)
+        serializer = self._whitelist_map.object_serializers[klass_name]
         yield from serializer.pack_items(
             self._obj, self._whitelist_map, _wrap_object, self._descent_path
         )
@@ -1084,8 +1066,8 @@ class UnknownSerdesValue:
 
 def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContext) -> UnpackedValue:
     if "__class__" in val:
-        klass_name = cast(str, val["__class__"])
-        if not whitelist_map.has_object_deserializer(klass_name):
+        klass_name = val["__class__"]
+        if klass_name not in whitelist_map.object_deserializers:
             return context.observe_unknown_value(
                 UnknownSerdesValue(
                     f'Attempted to deserialize class "{klass_name}" which is not in the whitelist.',
@@ -1094,13 +1076,13 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
             )
 
         val.pop("__class__")
-        deserializer = whitelist_map.get_object_deserializer(klass_name)
+        deserializer = whitelist_map.object_deserializers[klass_name]
         return deserializer.unpack(val, whitelist_map, context)
 
     if "__enum__" in val:
         enum = cast(str, val["__enum__"])
         name, member = enum.split(".")
-        if not whitelist_map.has_enum_entry(name):
+        if name not in whitelist_map.enum_serializers:
             return context.observe_unknown_value(
                 UnknownSerdesValue(
                     f"Attempted to deserialize enum {name} which was not in the whitelist.",
@@ -1108,7 +1090,7 @@ def _unpack_object(val: dict, whitelist_map: WhitelistMap, context: UnpackContex
                 )
             )
 
-        enum_serializer = whitelist_map.get_enum_entry(name)
+        enum_serializer = whitelist_map.enum_serializers[name]
         return enum_serializer.unpack(member)
 
     if "__set__" in val:

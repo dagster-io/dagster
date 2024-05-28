@@ -421,9 +421,36 @@ def test_materialize_asset_no_checks(
     assert len(result.get_asset_observation_events()) == 0
 
 
+@pytest.mark.parametrize(
+    "dagster_dbt_translator",
+    [
+        dagster_dbt_translator_with_checks,
+        DagsterDbtTranslator(
+            settings=DagsterDbtTranslatorSettings(
+                enable_asset_checks=True, enable_dbt_selection_by_name=True
+            )
+        ),
+    ],
+)
 def test_materialize_checks_no_asset(
-    test_asset_checks_manifest: Dict[str, Any], dbt_commands: List[List[str]]
+    test_asset_checks_manifest: Dict[str, Any],
+    dbt_commands: List[List[str]],
+    dagster_dbt_translator: DagsterDbtTranslator,
 ) -> None:
+    expected_dbt_selection = {
+        "test_dagster_asset_checks.not_null_customers_customer_id",
+        "test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
+        "test_dagster_asset_checks.singular_test_with_single_dependency",
+        "test_dagster_asset_checks.unique_customers_customer_id",
+    }
+    if dagster_dbt_translator.settings.enable_dbt_selection_by_name:
+        expected_dbt_selection = {
+            "not_null_customers_customer_id",
+            "singular_test_with_meta_and_multiple_dependencies",
+            "singular_test_with_single_dependency",
+            "unique_customers_customer_id",
+        }
+
     result = _materialize_dbt_assets(
         test_asset_checks_manifest,
         dbt_commands,
@@ -431,12 +458,8 @@ def test_materialize_checks_no_asset(
             AssetSelection.assets(AssetKey(["customers"]))
             - AssetSelection.assets(AssetKey(["customers"])).without_checks()
         ),
-        expected_dbt_selection={
-            "test_dagster_asset_checks.not_null_customers_customer_id",
-            "test_dagster_asset_checks.singular_test_with_meta_and_multiple_dependencies",
-            "test_dagster_asset_checks.singular_test_with_single_dependency",
-            "test_dagster_asset_checks.unique_customers_customer_id",
-        },
+        expected_dbt_selection=expected_dbt_selection,
+        dagster_dbt_translator=dagster_dbt_translator,
     )
     assert result.success
     assert len(result.get_asset_materialization_events()) == 0

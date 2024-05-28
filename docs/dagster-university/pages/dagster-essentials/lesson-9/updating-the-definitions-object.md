@@ -27,7 +27,7 @@ As with your other Dagster definitions, the final step is to add the sensor, its
 3. Add the `adhoc_request_job` to `all_jobs` :
 
    ```python
-   all_jobs = [trip_update_job, weekly_update_job**, adhoc_request_job**]
+   all_jobs = [trip_update_job, weekly_update_job, adhoc_request_job]
    ```
 
 4. Beneath `all_schedules`, create a new variable named `all_sensors` and add the `adhoc_request_sensor` to it:

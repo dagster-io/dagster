@@ -1,4 +1,3 @@
-import copy
 from typing import Sequence
 
 from dagster import AssetsDefinition, FreshnessPolicy
@@ -23,16 +22,21 @@ overlapping_freshness_inf = diamond + [
 def with_auto_materialize_policy(
     assets_defs: Sequence[AssetsDefinition], auto_materialize_policy: AutoMaterializePolicy
 ) -> Sequence[AssetsDefinition]:
-    """Note: this should be implemented in core dagster at some point, and this implementation is
-    a lazy hack.
-    """
     ret = []
     for assets_def in assets_defs:
-        new_assets_def = copy.copy(assets_def)
-        new_assets_def._auto_materialize_policies_by_key = {  # noqa: SLF001
-            asset_key: auto_materialize_policy for asset_key in new_assets_def.keys
-        }
-        ret.append(new_assets_def)
+        ret.append(
+            AssetsDefinition.dagster_internal_init(
+                **{
+                    **assets_def.get_attributes_dict(),
+                    **{
+                        "specs": [
+                            spec._replace(auto_materialize_policy=auto_materialize_policy)
+                            for spec in assets_def.specs
+                        ]
+                    },
+                }
+            )
+        )
     return ret
 
 
