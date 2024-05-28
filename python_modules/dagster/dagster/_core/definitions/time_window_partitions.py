@@ -1947,13 +1947,6 @@ class TimeWindowPartitionsSubset(
         )
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self == other:
-            return self
-
-        empty_subset = self.empty_subset(self.partitions_def)
-        if other is empty_subset:
-            return other
-
         if not isinstance(other, TimeWindowPartitionsSubset):
             return super().__and__(other)
 
@@ -1989,13 +1982,6 @@ class TimeWindowPartitionsSubset(
         )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self == other:
-            return self
-
-        empty_subset = self.empty_subset(self.partitions_def)
-        if other is empty_subset:
-            return self
-
         if not isinstance(other, TimeWindowPartitionsSubset):
             return super().__or__(other)
 
@@ -2021,18 +2007,8 @@ class TimeWindowPartitionsSubset(
         )
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self is other:
-            return self.empty_subset(self.partitions_def)
-
-        empty_subset = self.empty_subset(self.partitions_def)
-
-        if other is empty_subset:
-            return self
-
         if not isinstance(other, TimeWindowPartitionsSubset):
-            return empty_subset.with_partition_keys(
-                set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
-            )
+            return super().__sub__(other)
 
         time_windows = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
         other_time_windows = sorted(
