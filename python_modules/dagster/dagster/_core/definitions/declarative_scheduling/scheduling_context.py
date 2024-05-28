@@ -5,12 +5,10 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optiona
 import pendulum
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import (
-    AssetGraphView,
-    AssetSlice,
-)
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import AssetCondition
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
 )
@@ -19,15 +17,21 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
     SchedulingEvaluationResultNode,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    PartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionsDefinition
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+
+
+def _has_legacy_condition(condition: SchedulingCondition):
+    """Detects if the given condition has any legacy rules."""
+    if isinstance(condition, AssetCondition):
+        return True
+    else:
+        return any(_has_legacy_condition(child) for child in condition.children)
 
 
 # This class exists purely for organizational purposes so that we understand
@@ -90,7 +94,7 @@ class SchedulingContext(NamedTuple):
 
     # hack to avoid circular references during pydantic validation
     inner_legacy_context: Any
-    allow_legacy_access: bool
+    is_legacy_evaluation: bool
 
     @staticmethod
     def create(
@@ -121,7 +125,7 @@ class SchedulingContext(NamedTuple):
             non_agv_instance_interface=NonAGVInstanceInterface(
                 asset_graph_view.get_inner_queryer_for_back_compat()
             ),
-            allow_legacy_access=False,
+            is_legacy_evaluation=_has_legacy_condition(scheduling_condition),
         )
 
     def for_child_condition(
@@ -147,7 +151,7 @@ class SchedulingContext(NamedTuple):
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
             non_agv_instance_interface=self.non_agv_instance_interface,
-            allow_legacy_access=self.allow_legacy_access,
+            is_legacy_evaluation=self.is_legacy_evaluation,
         )
 
     @property
@@ -197,7 +201,7 @@ class SchedulingContext(NamedTuple):
     def legacy_context(self) -> LegacyRuleEvaluationContext:
         return (
             self.inner_legacy_context
-            if self.allow_legacy_access
+            if self.is_legacy_evaluation
             else check.failed(
                 "Legacy access only allowed in AutoMaterializeRule subclasses in auto_materialize_rules_impls.py"
             )
@@ -245,5 +249,9 @@ class SchedulingContext(NamedTuple):
 
     @property
     def new_max_storage_id(self) -> Optional[int]:
-        # TODO: pull this from the AssetGraphView instead
-        return self.inner_legacy_context.new_max_storage_id
+        if self.is_legacy_evaluation:
+            # legacy evaluations handle event log tailing in a different manner, and so need to
+            # use a different storage id cursoring scheme
+            return self.legacy_context.new_max_storage_id
+        else:
+            return self.asset_graph_view.last_event_id

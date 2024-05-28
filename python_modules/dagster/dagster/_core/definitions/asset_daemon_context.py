@@ -107,8 +107,7 @@ class AssetDaemonContext:
         self._asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
                 effective_dt=self.instance_queryer.evaluation_time,
-                # TODO: we should eventually pass in an explicit last_event_id
-                last_event_id=None,
+                last_event_id=instance.event_log_storage.get_maximum_record_id(),
             ),
             stale_resolver=stale_resolver,
         )
