@@ -1,7 +1,8 @@
 import logging
-from typing import AbstractSet, NamedTuple, Sequence
+import time
+from typing import AbstractSet, Iterator, NamedTuple, Sequence
 
-from dagster import SchedulingCondition, asset
+from dagster import SchedulingCondition, asset, deserialize_value, serialize_value
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -20,29 +21,38 @@ class SchedulingTickResult(NamedTuple):
     asset_partition_keys: AbstractSet[AssetKeyPartitionKey]
 
 
-def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
+def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult]:
     asset_graph = defs.get_asset_graph()
-    asset_graph_view = AssetGraphView.for_test(defs)
-    data_time_resolver = CachingDataTimeResolver(
-        asset_graph_view.get_inner_queryer_for_back_compat()
-    )
 
-    evaluator = SchedulingConditionEvaluator(
-        asset_graph=asset_graph,
-        asset_keys=asset_graph.all_asset_keys,
-        asset_graph_view=asset_graph_view,
-        logger=logging.getLogger(__name__),
-        data_time_resolver=data_time_resolver,
-        cursor=AssetDaemonCursor.empty(),
-        respect_materialization_data_versions=True,
-        auto_materialize_run_tags={},
-    )
-    result = evaluator.evaluate()
+    cursor = AssetDaemonCursor.empty()
+    for i in range(n):
+        asset_graph_view = AssetGraphView.for_test(defs)
+        data_time_resolver = CachingDataTimeResolver(
+            asset_graph_view.get_inner_queryer_for_back_compat()
+        )
+        evaluator = SchedulingConditionEvaluator(
+            asset_graph=asset_graph,
+            asset_keys=asset_graph.all_asset_keys,
+            asset_graph_view=asset_graph_view,
+            logger=logging.getLogger(__name__),
+            data_time_resolver=data_time_resolver,
+            cursor=cursor,
+            respect_materialization_data_versions=False,
+            auto_materialize_run_tags={},
+        )
+        result = evaluator.evaluate()
+        cursor = cursor.with_updates(
+            evaluation_id=i,
+            evaluation_timestamp=time.time(),
+            newly_observe_requested_asset_keys=[],
+            evaluation_state=result[0],
+        )
+        cursor = deserialize_value(serialize_value(cursor), AssetDaemonCursor)
+        yield SchedulingTickResult(evaluation_states=result[0], asset_partition_keys=result[1])
 
-    return SchedulingTickResult(
-        evaluation_states=result[0],
-        asset_partition_keys=result[1],
-    )
+
+def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
+    return next(execute_ds_ticks(defs, n=1))
 
 
 def test_basic_asset_scheduling_test() -> None:
