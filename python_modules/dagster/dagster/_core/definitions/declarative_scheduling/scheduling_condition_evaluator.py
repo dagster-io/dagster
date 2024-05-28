@@ -98,9 +98,34 @@ class SchedulingConditionEvaluator:
     def instance_queryer(self) -> "CachingInstanceQueryer":
         return self.asset_graph_view.get_inner_queryer_for_back_compat()
 
+    @property
+    def evaluated_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
+        return {
+            parent
+            for asset_key in self.asset_keys
+            for parent in self.asset_graph.get(asset_key).parent_keys
+        } | self.asset_keys
+
+    @property
+    def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
+        return [key for key in self.evaluated_asset_keys_and_parents if self.asset_graph.has(key)]
+
+    def prefetch(self) -> None:
+        """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
+        value is calculated using information that comes in after the set of asset partitions with
+        new parent materializations is calculated, as this can result in materializations being
+        ignored if they happen between the two calculations.
+        """
+        self.logger.info(
+            f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
+        )
+        self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
+        self.logger.info("Done prefetching asset records.")
+
     def evaluate(
         self,
     ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
+        self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
             if asset_key not in self.asset_keys:
