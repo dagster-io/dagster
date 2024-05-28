@@ -132,6 +132,7 @@ export const UNPARTITIONED_SOURCE_ASSET = buildAssetNode({
   ...UNPARTITIONED_ASSET,
   id: 'test.py.repo.["unpartitioned_source_asset"]',
   isSource: true,
+  isObservable: true,
   assetKey: buildAssetKey({path: ['unpartitioned_source_asset']}),
 });
 
