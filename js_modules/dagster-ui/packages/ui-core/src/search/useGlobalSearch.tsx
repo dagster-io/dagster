@@ -17,6 +17,7 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {buildStorageKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -31,6 +32,12 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
+
+export const linkToAssetTableWithStorageKindFilter = (storageKind: string) => {
+  return `/assets?${qs.stringify({
+    storageKindTags: JSON.stringify([buildStorageKindTag(storageKind)]),
   })}`;
 };
 
@@ -214,6 +221,15 @@ const secondaryDataToSearchResults = (
         numResults: assetCount,
       }),
     );
+    const storageKindResults: SearchResult[] = countsBySection.countsByStorageKind.map(
+      ({storageKind, assetCount}) => ({
+        label: storageKind,
+        description: '',
+        type: AssetFilterSearchResultType.StorageKind,
+        href: linkToAssetTableWithStorageKindFilter(storageKind),
+        numResults: assetCount,
+      }),
+    );
 
     const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
       label: buildTagString(tag),
@@ -262,6 +278,7 @@ const secondaryDataToSearchResults = (
     return [
       ...assets,
       ...computeKindResults,
+      ...storageKindResults,
       ...tagResults,
       ...codeLocationResults,
       ...ownerResults,

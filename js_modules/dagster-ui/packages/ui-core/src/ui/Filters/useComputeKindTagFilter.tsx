@@ -17,7 +17,7 @@ export const useComputeKindTagFilter = ({
 }) => {
   return useStaticSetFilter<string>({
     name: 'Compute kind',
-    icon: 'tag',
+    icon: 'compute_kind',
     allValues: useMemo(
       () =>
         allComputeKindTags.map((value) => ({
@@ -29,7 +29,7 @@ export const useComputeKindTagFilter = ({
     menuWidth: '300px',
     renderLabel: ({value}) => (
       <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="tag" />
+        <Icon name="compute_kind" />
         <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
       </Box>
     ),
