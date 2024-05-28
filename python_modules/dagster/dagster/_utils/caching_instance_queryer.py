@@ -602,16 +602,12 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                 AssetKeyPartitionKey(child_asset_key)
             )
         ]
-
         child_asset = self.asset_graph.get(child_asset_key)
         if not child_asset.parent_keys:
-            # return set(), latest_storage_id
             return set(), max(filter(None, [latest_storage_id, *max_storage_ids]), default=None)
 
         child_time_partitions_def = get_time_partitions_def(child_asset.partitions_def)
-
         child_asset_partitions_with_updated_parents = set()
-
         for parent_asset_key in self.asset_graph.get(child_asset_key).parent_keys:
             # ignore non-existent parents
             if not self.asset_graph.has(parent_asset_key):
