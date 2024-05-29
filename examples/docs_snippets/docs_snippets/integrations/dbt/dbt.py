@@ -377,11 +377,9 @@ def scope_config_dbt_assets():
         dbt_assets,
     )
 
-    RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my-dbt-project"
-
     my_project = DbtProject(
         project_dir=Path(__file__)
-        .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
+        .joinpath("..", "./path/to/my-dbt-project")
         .resolve(),
     )
 
