@@ -27,14 +27,19 @@ import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-const BUCKET_SIZE = 3600 * 1000;
 const BATCH_LIMIT = 500;
 
-export const useRunsForTimeline = (
-  rangeMs: readonly [number, number],
-  filter: RunsFilter | undefined = undefined,
+export const useRunsForTimeline = ({
+  rangeMs,
+  filter,
+  batchLimit = BATCH_LIMIT,
   refreshInterval = 2 * FIFTEEN_SECONDS,
-) => {
+}: {
+  rangeMs: readonly [number, number];
+  filter?: RunsFilter;
+  refreshInterval?: number;
+  batchLimit?: number;
+}) => {
   const runsFilter = useMemo(() => {
     return filter ?? {};
   }, [filter]);
@@ -101,16 +106,29 @@ export const useRunsForTimeline = (
 
   const fetchCompletedRunsQueryData = useCallback(async () => {
     return await fetchPaginatedBucketData({
-      buckets,
+      buckets: buckets.map((bucket) => {
+        let updatedAfter = bucket[0];
+        let updatedBefore = bucket[1];
+        const missingRange = completedRunsCache.getMissingIntervals(updatedAfter);
+        if (missingRange[0]) {
+          // When paginating backwards the missing range will be at the beginning of the hour
+          // When looking the current time the missing range will be at the end of the hour
+          updatedAfter = Math.max(missingRange[0][0], updatedAfter);
+          updatedBefore = Math.min(missingRange[0][1], updatedBefore);
+        }
+        return [updatedAfter, updatedBefore] as [number, number];
+      }),
       setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
         await completedRunsCache.loadCacheFromIndexedDB();
         const updatedBefore = bucket[1];
-
-        let updatedAfter = bucket[0];
+        const updatedAfter = bucket[0];
         let cacheData: RunTimelineFragment[] = [];
 
         if (completedRunsCache.isCompleteRange(updatedAfter, updatedBefore) && !cursor) {
+          // If there's a cursor then that means the current range is being paginated so
+          // it is not complete even though there is some data for the time range
+
           return {
             data: completedRunsCache.getHourData(updatedAfter),
             cursor: undefined,
@@ -118,8 +136,6 @@ export const useRunsForTimeline = (
             error: undefined,
           };
         } else {
-          const missingRange = completedRunsCache.getMissingIntervals(updatedAfter);
-          updatedAfter = Math.max(missingRange[0]![0], updatedAfter);
           cacheData = completedRunsCache.getHourData(updatedAfter);
         }
 
@@ -138,7 +154,7 @@ export const useRunsForTimeline = (
               updatedAfter,
             },
             cursor,
-            limit: BATCH_LIMIT,
+            limit: batchLimit,
           },
         });
 
@@ -153,7 +169,7 @@ export const useRunsForTimeline = (
         const runs: RunTimelineFragment[] = data.completed.results;
         completedRunsCache.addData(updatedAfter, updatedBefore, runs);
 
-        const hasMoreData = runs.length === BATCH_LIMIT;
+        const hasMoreData = runs.length === batchLimit;
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
 
         return {
@@ -164,7 +180,7 @@ export const useRunsForTimeline = (
         };
       },
     });
-  }, [buckets, client, completedRunsCache, runsFilter]);
+  }, [batchLimit, buckets, client, completedRunsCache, runsFilter]);
 
   const fetchOngoingRunsQueryData = useCallback(async () => {
     setOngoingRunsData(({data}) => ({
@@ -189,7 +205,7 @@ export const useRunsForTimeline = (
                 statuses: [RunStatus.CANCELING, RunStatus.STARTED],
               },
               cursor,
-              limit: BATCH_LIMIT,
+              limit: batchLimit,
             },
           });
 
@@ -202,7 +218,7 @@ export const useRunsForTimeline = (
             };
           }
           const runs = data.ongoing.results;
-          const hasMoreData = runs.length === BATCH_LIMIT;
+          const hasMoreData = runs.length === batchLimit;
           const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
           return {
             data: runs,
