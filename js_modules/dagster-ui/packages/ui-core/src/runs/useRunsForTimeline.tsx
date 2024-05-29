@@ -180,7 +180,7 @@ export const useRunsForTimeline = ({
         };
       },
     });
-  }, [buckets, client, completedRunsCache, runsFilter]);
+  }, [batchLimit, buckets, client, completedRunsCache, runsFilter]);
 
   const fetchOngoingRunsQueryData = useCallback(async () => {
     setOngoingRunsData(({data}) => ({

@@ -1,4 +1,4 @@
-import {MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import {ReactNode} from 'react';
@@ -20,7 +20,7 @@ import {
   buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {getMockResultFn} from '../../testing/mocking';
+import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache/HourlyDataCache';
 import {
   COMPLETED_RUN_TIMELINE_QUERY,
@@ -39,6 +39,7 @@ const mockCompletedRuns = (variables: any, result: any) => ({
 
 const mockOngoingRuns = ({
   limit = 500,
+  cursor,
   results = [
     {
       id: '2',
@@ -57,34 +58,28 @@ const mockOngoingRuns = ({
   limit?: number;
   results?: any[];
   cursor?: any;
-} = {}) => ({
-  request: {
+} = {}) =>
+  buildQueryMock({
     query: ONGOING_RUN_TIMELINE_QUERY,
     variables: {
       inProgressFilter: {statuses: ['CANCELING', 'STARTED']},
-      cursor: undefined,
+      cursor,
       limit,
     },
-  },
-  result: {
     data: {
-      ongoing: {
-        __typename: 'Runs',
+      ongoing: buildRuns({
         results,
-      },
+      }),
     },
-  },
-});
+  });
 
-const mockFutureTicks = (start: number, end: number) => ({
-  request: {
+const mockFutureTicks = (start: number, end: number) =>
+  buildQueryMock({
     query: FUTURE_TICKS_QUERY,
     variables: {
       tickCursor: start,
       ticksUntil: end,
     },
-  },
-  result: {
     data: {
       workspaceOrError: buildWorkspace({
         locationEntries: [
@@ -131,16 +126,15 @@ const mockFutureTicks = (start: number, end: number) => ({
         ],
       }),
     },
-  },
-});
+  });
 
 describe('useRunsForTimeline', () => {
   it('fetches and processes run data correctly', async () => {
     const start = 0;
-    const initialRange = [start, start + ONE_HOUR_S * 3] as const; // Example range in milliseconds
+    const initialRange = [start, start + ONE_HOUR_S * 3] as const;
     const buckets = getHourlyBuckets(initialRange[0], initialRange[1]);
     expect(buckets).toHaveLength(3);
-    const mocks = buckets.map((bucket, index) => {
+    const mocks: MockedResponse[] = buckets.map((bucket, index) => {
       const [start, end] = bucket;
       const updatedBefore = end;
       const updatedAfter = start;
@@ -156,23 +150,22 @@ describe('useRunsForTimeline', () => {
         },
         {
           data: {
-            completed: {
-              __typename: 'Runs',
+            completed: buildRuns({
               results: [
-                {
+                buildRun({
                   id: `1-${index}`,
                   pipelineName: `pipeline${index}`,
-                  repositoryOrigin: {
+                  repositoryOrigin: buildRepositoryOrigin({
                     id: `1-${index}`,
                     repositoryName: 'repo1',
                     repositoryLocationName: 'repo1',
-                  },
+                  }),
                   startTime: updatedAfter,
                   endTime: updatedBefore,
-                  status: 'SUCCESS',
-                },
+                  status: RunStatus.SUCCESS,
+                }),
               ],
-            },
+            }),
           },
         },
       );
@@ -306,7 +299,6 @@ describe('useRunsForTimeline', () => {
       ...initialMocks,
       ...extendedMocks,
       mockOngoingRuns(),
-      mockOngoingRuns(),
       mockFutureTicks(initialInterval[0], initialInterval[1]),
       mockFutureTicks(extendedInterval[0], extendedInterval[1]),
     ];
@@ -355,7 +347,7 @@ describe('useRunsForTimeline', () => {
 
   it('paginates a bucket correctly', async () => {
     const start = 0;
-    const interval = [start, start + ONE_HOUR_S] as const; // Example interval in milliseconds
+    const interval = [start, start + ONE_HOUR_S] as const;
     const buckets = getHourlyBuckets(interval[0], interval[1]);
     expect(buckets).toHaveLength(1);
 
@@ -438,6 +430,8 @@ describe('useRunsForTimeline', () => {
       mockFutureTicks(interval[0], interval[1]),
     ];
 
+    const mockCbs = mocks.map(getMockResultFn);
+
     const wrapper = ({children}: {children: ReactNode}) => (
       <MockedProvider mocks={mocks} addTypename={false}>
         {children}
@@ -473,6 +467,10 @@ describe('useRunsForTimeline', () => {
       status: 'SUCCESS',
       startTime: buckets[0]![0] * 1000,
       endTime: buckets[0]![1] * 1000,
+    });
+
+    mockCbs.forEach((mockFn) => {
+      expect(mockFn).toHaveBeenCalled();
     });
   });
 });
