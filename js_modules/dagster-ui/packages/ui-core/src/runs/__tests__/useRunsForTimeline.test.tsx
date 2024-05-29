@@ -37,37 +37,44 @@ const mockCompletedRuns = (variables: any, result: any) => ({
   result,
 });
 
-const mockOngoingRuns = {
+const mockOngoingRuns = ({
+  limit = 500,
+  results = [
+    {
+      id: '2',
+      pipelineName: 'pipeline2',
+      repositoryOrigin: {
+        id: '2',
+        repositoryName: 'repo2',
+        repositoryLocationName: 'location2',
+      },
+      startTime: 1,
+      endTime: 2,
+      status: 'STARTED',
+    },
+  ],
+}: {
+  limit?: number;
+  results?: any[];
+  cursor?: any;
+} = {}) => ({
   request: {
     query: ONGOING_RUN_TIMELINE_QUERY,
     variables: {
       inProgressFilter: {statuses: ['CANCELING', 'STARTED']},
       cursor: undefined,
-      limit: 500,
+      limit,
     },
   },
   result: {
     data: {
       ongoing: {
         __typename: 'Runs',
-        results: [
-          {
-            id: '2',
-            pipelineName: 'pipeline2',
-            repositoryOrigin: {
-              id: '2',
-              repositoryName: 'repo2',
-              repositoryLocationName: 'location2',
-            },
-            startTime: 1,
-            endTime: 2,
-            status: 'STARTED',
-          },
-        ],
+        results,
       },
     },
   },
-};
+});
 
 const mockFutureTicks = (start: number, end: number) => ({
   request: {
@@ -171,7 +178,7 @@ describe('useRunsForTimeline', () => {
       );
     });
 
-    mocks.push(mockOngoingRuns, mockFutureTicks(initialRange[0], initialRange[1]));
+    mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
 
     const wrapper = ({children}: {children: ReactNode}) => (
       <MockedProvider mocks={mocks} addTypename={false}>
@@ -180,7 +187,7 @@ describe('useRunsForTimeline', () => {
     );
 
     const {result} = renderHook(
-      () => useRunsForTimeline([initialRange[0] * 1000, initialRange[1] * 1000]),
+      () => useRunsForTimeline({rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000]}),
       {
         wrapper,
       },
@@ -298,7 +305,8 @@ describe('useRunsForTimeline', () => {
     const mocks = [
       ...initialMocks,
       ...extendedMocks,
-      mockOngoingRuns,
+      mockOngoingRuns(),
+      mockOngoingRuns(),
       mockFutureTicks(initialInterval[0], initialInterval[1]),
       mockFutureTicks(extendedInterval[0], extendedInterval[1]),
     ];
@@ -311,7 +319,7 @@ describe('useRunsForTimeline', () => {
 
     // Render hook with initial interval to populate the cache
     const {result, rerender} = renderHook(
-      () => useRunsForTimeline([interval[0] * 1000, interval[1] * 1000]),
+      () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000]}),
       {
         wrapper,
       },
@@ -342,6 +350,129 @@ describe('useRunsForTimeline', () => {
       extendedMockResultFns.slice(1).forEach((mock) => {
         expect(mock).toHaveBeenCalled();
       });
+    });
+  });
+
+  it('paginates a bucket correctly', async () => {
+    const start = 0;
+    const interval = [start, start + ONE_HOUR_S] as const; // Example interval in milliseconds
+    const buckets = getHourlyBuckets(interval[0], interval[1]);
+    expect(buckets).toHaveLength(1);
+
+    const bucket = buckets[0]!;
+    const updatedBefore = bucket[1];
+    const updatedAfter = bucket[0];
+
+    const mockPaginatedRuns = ({cursor, result}: {cursor?: string | undefined; result: any}) => ({
+      request: {
+        query: COMPLETED_RUN_TIMELINE_QUERY,
+        variables: {
+          completedFilter: {
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            updatedBefore,
+            updatedAfter,
+          },
+          cursor,
+          limit: 1,
+        },
+      },
+      result,
+    });
+
+    const firstPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [
+            buildRun({
+              id: '1-1',
+              pipelineName: 'pipeline1',
+              repositoryOrigin: buildRepositoryOrigin({
+                id: '1-1',
+                repositoryName: 'repo1',
+                repositoryLocationName: 'repo1',
+              }),
+              startTime: updatedAfter,
+              endTime: updatedBefore,
+              status: RunStatus.SUCCESS,
+            }),
+          ],
+        }),
+      },
+    };
+
+    const secondPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [
+            buildRun({
+              id: '1-2',
+              pipelineName: 'pipeline1',
+              repositoryOrigin: buildRepositoryOrigin({
+                id: '1-1',
+                repositoryName: 'repo1',
+                repositoryLocationName: 'repo1',
+              }),
+              startTime: updatedAfter,
+              endTime: updatedBefore,
+              status: RunStatus.SUCCESS,
+            }),
+          ],
+        }),
+      },
+    };
+
+    const thirdPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [],
+        }),
+      },
+    };
+
+    const mocks = [
+      mockPaginatedRuns({result: firstPageResult}),
+      mockPaginatedRuns({cursor: '1-1', result: secondPageResult}),
+      mockPaginatedRuns({cursor: '1-2', result: thirdPageResult}),
+      mockOngoingRuns({limit: 1}),
+      mockOngoingRuns({limit: 1, results: [], cursor: '2'}),
+      mockFutureTicks(interval[0], interval[1]),
+    ];
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <MockedProvider mocks={mocks} addTypename={false}>
+        {children}
+      </MockedProvider>
+    );
+
+    const {result} = renderHook(
+      () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000], batchLimit: 1}),
+      {
+        wrapper,
+      },
+    );
+
+    // Initial state
+    expect(result.current.jobs).toEqual([]);
+    expect(result.current.initialLoading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.jobs).toHaveLength(1);
+    });
+
+    expect(result.current.jobs[0]!.runs).toHaveLength(2);
+
+    expect(result.current.jobs[0]!.runs[0]).toEqual({
+      id: '1-1',
+      status: 'SUCCESS',
+      startTime: buckets[0]![0] * 1000,
+      endTime: buckets[0]![1] * 1000,
+    });
+
+    expect(result.current.jobs[0]!.runs[1]).toEqual({
+      id: '1-2',
+      status: 'SUCCESS',
+      startTime: buckets[0]![0] * 1000,
+      endTime: buckets[0]![1] * 1000,
     });
   });
 });

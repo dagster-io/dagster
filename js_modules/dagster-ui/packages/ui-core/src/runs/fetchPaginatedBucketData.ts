@@ -7,10 +7,12 @@ export type QueryResultData<DataType> = {
 
 export async function fetchPaginatedBucketData<BucketType, DataType, CursorType, ErrorType>({
   buckets,
+  adjustBucket,
   fetchData,
   setQueryData,
 }: {
   buckets: BucketType[];
+  adjustBucket?: (bucket: BucketType) => BucketType;
   fetchData: (
     bucket: BucketType,
     cursor: CursorType | undefined,
@@ -30,11 +32,12 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
   }));
   try {
     const results = await Promise.all(
-      buckets.map((bucket) =>
-        fetchPaginatedData<DataType, CursorType, ErrorType>({
-          fetchData: (cursor) => fetchData(bucket, cursor),
-        }),
-      ),
+      buckets.map((bucket) => {
+        const adjustedBucket = adjustBucket ? adjustBucket(bucket) : bucket;
+        return fetchPaginatedData<DataType, CursorType, ErrorType>({
+          fetchData: (cursor) => fetchData(adjustedBucket, cursor),
+        });
+      }),
     );
     setQueryData({
       data: results.flat(),
