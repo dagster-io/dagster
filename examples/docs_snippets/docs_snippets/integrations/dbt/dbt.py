@@ -46,7 +46,8 @@ def scope_schedule_assets_dbt_only(manifest):
         job_name="daily_dbt_models",
         cron_schedule="@daily",
         dbt_select="tag:daily",
-        config=RunConfig(ops={"my_dbt_assets": MyDbtConfig(full_refresh=True)}),
+        # If your definition of `@dbt_assets` has Dagster Configuration, you can specify it here.
+        # config=RunConfig(ops={"my_dbt_assets": MyDbtConfig(full_refresh=True)}),
     )
     # end_schedule_assets_dbt_only
 
