@@ -127,5 +127,5 @@ class SchedulingEvaluationInfo(DagsterModel):
             temporal_context=temporal_context,
             evaluation_nodes=nodes,
             requested_slice=requested_slice,
-            cursor=SchedulingConditionCursor.from_evaluation_state(state),
+            cursor=SchedulingConditionCursor.backcompat_from_evaluation_state(state),
         )

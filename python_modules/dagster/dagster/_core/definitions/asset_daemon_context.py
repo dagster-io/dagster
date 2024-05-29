@@ -40,6 +40,7 @@ from .base_asset_graph import BaseAssetGraph
 from .declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
+    SchedulingConditionCursor,
 )
 from .partition import PartitionsDefinition, ScheduleType
 
@@ -158,7 +159,11 @@ class AssetDaemonContext:
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> Tuple[
+        Sequence[AssetConditionEvaluationState],
+        AbstractSet[AssetKeyPartitionKey],
+        Sequence[SchedulingConditionCursor],
+    ]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
@@ -195,7 +200,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluation_state, to_request = self.get_asset_condition_evaluations()
+        evaluation_states, to_request, condition_cursors = self.get_asset_condition_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -206,11 +211,22 @@ class AssetDaemonContext:
             *auto_observe_run_requests,
         ]
 
+        # only record evaluation results where something changed
+        updated_evaluations = []
+        for es in evaluation_states:
+            previous_cursor = self.cursor.get_previous_condition_cursor(es.asset_key)
+            if (
+                not es.true_subset.is_empty
+                or previous_cursor is None
+                or previous_cursor.result_hash != es.previous_evaluation.get_result_hash()
+            ):
+                updated_evaluations.append(es.previous_evaluation)
+
         return (
             run_requests,
             self.cursor.with_updates(
                 evaluation_id=self._evaluation_id,
-                evaluation_state=evaluation_state,
+                condition_cursors=condition_cursors,
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
@@ -218,14 +234,7 @@ class AssetDaemonContext:
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),
-            # only record evaluation results where something changed
-            [
-                es.previous_evaluation
-                for es in evaluation_state
-                if not es.previous_evaluation.equivalent_to_stored_evaluation(
-                    self.cursor.get_previous_evaluation(es.asset_key)
-                )
-            ],
+            updated_evaluations,
         )
 
 
