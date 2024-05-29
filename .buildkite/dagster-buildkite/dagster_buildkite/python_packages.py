@@ -1,12 +1,13 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
 
 import logging
+import os
+import subprocess
 from distutils import core as distutils_core
 from importlib import reload
 from pathlib import Path
 from typing import Dict, Optional, Set
 
-import pathspec
 from pkg_resources import Requirement, parse_requirements
 
 from dagster_buildkite.git import ChangedFiles, GitInfo
@@ -114,22 +115,16 @@ class PythonPackages:
 
         logging.info("Finding Python packages:")
 
-        git_ignore = git_info.directory / ".gitignore"
-
-        if git_ignore.exists():
-            ignored = git_ignore.read_text().splitlines()
-            git_ignore_spec = pathspec.PathSpec.from_lines("gitwildmatch", ignored)
-        else:
-            git_ignore_spec = pathspec.PathSpec([])
-
         # Consider any setup.py file to be a package
-        packages = set(
-            [
-                PythonPackage(Path(setup))
-                for setup in git_info.directory.rglob("setup.py")
-                if not git_ignore_spec.match_file(str(setup))
-            ]
-        )
+        output = subprocess.check_output(
+            ["git", "ls-files", "."],
+            cwd=str(git_info.directory),
+        ).decode("utf-8")
+        packages = [
+            PythonPackage(git_info.directory / Path(file))
+            for file in output.split("\n")
+            if os.path.basename(file) == "setup.py"
+        ]
 
         for package in sorted(packages):
             logging.info("  - " + package.name)
@@ -142,7 +137,7 @@ class PythonPackages:
             for change in ChangedFiles.all:
                 if (
                     # Our change is in this package's directory
-                    (change in package.directory.rglob("*"))
+                    change.is_relative_to(package.directory)
                     # The file can alter behavior - exclude things like README changes
                     and (change.suffix in changed_filetypes)
                     # The file is not part of a test suite. We treat this differently
