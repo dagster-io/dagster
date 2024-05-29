@@ -377,7 +377,7 @@ def scope_config_dbt_assets():
         dbt_assets,
     )
 
-    RELATIVE_PATH_TO_MY_DBT_PROJECT = "./gitlab-jaffle-shop-test"
+    RELATIVE_PATH_TO_MY_DBT_PROJECT = "./my-dbt-project"
 
     my_project = DbtProject(
         project_dir=Path(__file__)
