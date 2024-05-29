@@ -364,3 +364,73 @@ def scope_disable_asset_check_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_disable_asset_check_dagster_dbt_translator
+
+
+def scope_config_dbt_assets():
+    # start_config_dbt_assets
+    from pathlib import Path
+
+    from dagster import AssetExecutionContext, Config
+    from dagster_dbt import (
+        DbtCliResource,
+        DbtProject,
+        dbt_assets,
+    )
+
+    RELATIVE_PATH_TO_MY_DBT_PROJECT = "./gitlab-jaffle-shop-test"
+
+    my_project = DbtProject(
+        project_dir=Path(__file__)
+        .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
+        .resolve(),
+    )
+
+    class MyDbtConfig(Config):
+        full_refresh: bool
+        seed: bool
+
+    @dbt_assets(manifest=my_project.manifest_path)
+    def my_dbt_assets(
+        context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig
+    ):
+        commands = ["build"]
+
+        if config.full_refresh:
+            commands.append("--full-refresh")
+        if config.seed:
+            dbt.cli(["seed"]).wait()
+
+        yield from dbt.cli(commands, context=context).stream()
+
+    # end_config_dbt_assets
+
+    # start_config_dbt_job
+    from dagster import RunConfig, define_asset_job
+    from dagster_dbt import build_dbt_asset_selection
+
+    my_job = define_asset_job(
+        name="all_dbt_assets",
+        selection=build_dbt_asset_selection(
+            [my_dbt_assets],
+        ),
+        config=RunConfig(
+            ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
+        ),
+    )
+
+    # end_config_dbt_job
+
+    # start_config_dbt_schedule
+    from dagster import RunConfig
+    from dagster_dbt import build_schedule_from_dbt_selection
+
+    my_schedule = build_schedule_from_dbt_selection(
+        [my_dbt_assets],
+        job_name="all_dbt_assets",
+        cron_schedule="0 0 * * *",
+        config=RunConfig(
+            ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
+        ),
+    )
+
+    # end_config_dbt_schedule

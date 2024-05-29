@@ -125,24 +125,36 @@ In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your 
 
 ## Using config with your `@dbt_assets`
 
-Like for a standard [software-defined asset], your `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema#run-configuration). This allows to provide parameters to jobs at the time they're executed.deployment
+Like for a standard \[software-defined asset], your `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema#run-configuration). This allows to provide parameters to jobs at the time they're executed.
 
-In the context of dbt, this can be useful if you want to run commands or flags for specific use cases.
+In the context of dbt, this can be useful if you want to run commands or flags for specific use cases. For instance, you may want to run [dbt seed](https://docs.getdbt.com/reference/commands/seed) or add [the --full-refresh flag](https://docs.getdbt.com/reference/resource-configs/full_refresh) to your dbt commands in some cases. Using a config system, the `@dbt_assets` object can be easily modified to support this use case.
 
-```python dedent=4
-from dagster import asset, Config
-from dagster_dbt import dbt_assets
+```python startafter=start_config_dbt_assets endbefore=end_config_dbt_assets file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
 
-...
+from dagster import AssetExecutionContext, Config
+from dagster_dbt import (
+    DbtCliResource,
+    DbtProject,
+    dbt_assets,
+)
+
+RELATIVE_PATH_TO_MY_DBT_PROJECT = "./gitlab-jaffle-shop-test"
+
+my_project = DbtProject(
+    project_dir=Path(__file__)
+    .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
+    .resolve(),
+)
 
 class MyDbtConfig(Config):
     full_refresh: bool
     seed: bool
 
-
 @dbt_assets(manifest=my_project.manifest_path)
-def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig):
-
+def my_dbt_assets(
+    context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig
+):
     commands = ["build"]
 
     if config.full_refresh:
@@ -151,19 +163,42 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource, config: M
         dbt.cli(["seed"]).wait()
 
     yield from dbt.cli(commands, context=context).stream()
+```
 
+Now that the `@dbt_assets` object is updated, the run configuration can be passed to a job.
 
-my_dbt_assets_schedule = build_schedule_from_dbt_selection(
-    [my_dbt_assets],
-    job_name="all_dbt_assets",
-    cron_schedule="0 0 * * *",
-    dbt_select="fqn:*",
+```python startafter=start_config_dbt_job endbefore=end_config_dbt_job file=/integrations/dbt/dbt.py dedent=4
+from dagster import RunConfig, define_asset_job
+from dagster_dbt import build_dbt_asset_selection
+
+my_job = define_asset_job(
+    name="all_dbt_assets",
+    selection=build_dbt_asset_selection(
+        [my_dbt_assets],
+    ),
     config=RunConfig(
-        ops={"my_dbt_asset": MyDbtConfig(full_refresh=True, seed=True)}
-    )
+        ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
+    ),
 )
 ```
 
+In the example above, the job is configured to use both the `dbt seed` command and the `--full-refresh` flag with the dbt build command when materializing the assets.
+
+If this job should be run with this configuration only at specific moment, a schedule can be created instead. In the context of dbt, using the `build_schedule_from_dbt_selection` function allows to create both the schedule and job definitions at the same time.
+
+```python startafter=start_config_dbt_schedule endbefore=end_config_dbt_schedule file=/integrations/dbt/dbt.py dedent=4
+from dagster import RunConfig
+from dagster_dbt import build_schedule_from_dbt_selection
+
+my_schedule = build_schedule_from_dbt_selection(
+    [my_dbt_assets],
+    job_name="all_dbt_assets",
+    cron_schedule="0 0 * * *",
+    config=RunConfig(
+        ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
+    ),
+)
+```
 
 ---
 
