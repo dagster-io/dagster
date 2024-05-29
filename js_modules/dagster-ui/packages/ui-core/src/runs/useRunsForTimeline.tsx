@@ -106,9 +106,7 @@ export const useRunsForTimeline = ({
 
   const fetchCompletedRunsQueryData = useCallback(async () => {
     return await fetchPaginatedBucketData({
-      buckets,
-      setQueryData: setCompletedRunsData,
-      adjustBucket: (bucket) => {
+      buckets: buckets.map((bucket) => {
         let updatedAfter = bucket[0];
         let updatedBefore = bucket[1];
         const missingRange = completedRunsCache.getMissingIntervals(updatedAfter);
@@ -119,7 +117,8 @@ export const useRunsForTimeline = ({
           updatedBefore = Math.min(missingRange[0][1], updatedBefore);
         }
         return [updatedAfter, updatedBefore] as [number, number];
-      },
+      }),
+      setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
         await completedRunsCache.loadCacheFromIndexedDB();
         const updatedBefore = bucket[1];
