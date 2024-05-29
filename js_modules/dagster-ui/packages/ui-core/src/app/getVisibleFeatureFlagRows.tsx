@@ -21,10 +21,6 @@ export const getVisibleFeatureFlagRows = () => [
     flagType: FeatureFlag.flagDebugConsoleLogging,
   },
   {
-    key: 'Use new asset overview page',
-    flagType: FeatureFlag.flagUseNewOverviewPage,
-  },
-  {
     key: 'New navigation',
     label: (
       <>
