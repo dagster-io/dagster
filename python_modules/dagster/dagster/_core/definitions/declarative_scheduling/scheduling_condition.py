@@ -47,6 +47,10 @@ if TYPE_CHECKING:
 @experimental
 class SchedulingCondition(ABC, DagsterModel):
     @property
+    def store_subsets(self) -> bool:
+        return False
+
+    @property
     def children(self) -> Sequence["SchedulingCondition"]:
         return []
 

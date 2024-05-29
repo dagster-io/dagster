@@ -5,6 +5,7 @@ from typing import (
     Dict,
     FrozenSet,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Tuple,
@@ -13,12 +14,14 @@ from typing import (
     Union,
 )
 
+from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils import utc_datetime_from_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
@@ -255,3 +258,75 @@ class AssetConditionEvaluationState:
         if isinstance(extra_state, as_type):
             return extra_state
         return None
+
+
+class SchedulingConditionNodeCursor(NamedTuple):
+    true_subset: AssetSubset
+    candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+    extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]]
+
+    def get_extra_state(self, as_type: Type[T]) -> Optional[T]:
+        """Returns the extra_state value if it is of the expected type. Otherwise, returns None."""
+        if isinstance(self.extra_state, as_type):
+            return self.extra_state
+        return None
+
+
+class SchedulingConditionCursor(NamedTuple):
+    """Incremental state calculated during the evaluation of a SchedulingCondition. This may be used
+    on the subsequent evaluation to make the computation more efficient.
+
+    Attributes:
+        previous_requested_subset: The subset that was requested for this asset on the previous tick.
+        timestamp: The timestamp at which the evaluation was performed.
+        max_storage_id: The maximum storage ID over all events used in this evaluation.
+        node_cursors_by_unique_id: A mapping from the unique ID of each condition in the evaluation
+            tree to any incremental state calculated for it.
+    """
+
+    previous_requested_subset: AssetSubset
+    effective_timestamp: float
+    last_event_id: Optional[int]
+
+    node_cursors_by_unique_id: Mapping[str, SchedulingConditionNodeCursor]
+
+    @staticmethod
+    def from_evaluation_state(
+        evaluation_state: AssetConditionEvaluationState,
+    ) -> "SchedulingConditionCursor":
+        """Serves as a temporary method to convert from old representation to the new representation.
+        Will be removed in the following PR.
+        """
+
+        def _get_node_cursors(
+            evaluation: AssetConditionEvaluation,
+        ) -> Mapping[str, SchedulingConditionNodeCursor]:
+            node_cursors = {
+                evaluation.condition_snapshot.unique_id: SchedulingConditionNodeCursor(
+                    true_subset=evaluation.true_subset,
+                    candidate_subset=evaluation.candidate_subset,
+                    subsets_with_metadata=evaluation.subsets_with_metadata,
+                    extra_state=evaluation_state.extra_state_by_unique_id.get(
+                        evaluation.condition_snapshot.unique_id
+                    ),
+                )
+            }
+            for child in evaluation.child_evaluations:
+                node_cursors.update(_get_node_cursors(child))
+
+            return node_cursors
+
+        return SchedulingConditionCursor(
+            previous_requested_subset=evaluation_state.previous_evaluation.true_subset,
+            effective_timestamp=evaluation_state.previous_tick_evaluation_timestamp or 0,
+            last_event_id=evaluation_state.max_storage_id,
+            node_cursors_by_unique_id=_get_node_cursors(evaluation_state.previous_evaluation),
+        )
+
+    @property
+    def temporal_context(self) -> TemporalContext:
+        return TemporalContext(
+            effective_dt=utc_datetime_from_timestamp(self.effective_timestamp),
+            last_event_id=self.last_event_id,
+        )

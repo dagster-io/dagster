@@ -4,6 +4,10 @@ from ..scheduling_condition import SchedulingCondition
 class AssetCondition(SchedulingCondition):
     """Deprecated: Use SchedulingCondition instead."""
 
+    @property
+    def store_subsets(self) -> bool:
+        return True
+
     @staticmethod
     def parent_newer() -> "SchedulingCondition":
         """Returns an AssetCondition that is true for an asset partition when at least one parent

@@ -13,6 +13,10 @@ from dagster._serdes.serdes import whitelist_for_serdes
 @whitelist_for_serdes
 class ParentNewerCondition(SchedulingCondition):
     @property
+    def store_subsets(self) -> bool:
+        return True
+
+    @property
     def description(self) -> str:
         return "At least one parent has been updated more recently than the candidate."
 
@@ -92,9 +96,9 @@ class ParentNewerCondition(SchedulingCondition):
         slice_to_evaluate = self.compute_slice_to_evaluate(context)
         new_parent_newer_slice = self.compute_parent_newer_slice(context, slice_to_evaluate)
 
-        if context.previous_evaluation_node and context.previous_evaluation_node.true_slice:
+        if context.node_cursor and context.previous_true_slice:
             # combine new results calculated this tick with results from the previous tick
-            true_slice = context.previous_evaluation_node.true_slice.compute_difference(
+            true_slice = context.previous_true_slice.compute_difference(
                 slice_to_evaluate
             ).compute_union(new_parent_newer_slice)
         else:

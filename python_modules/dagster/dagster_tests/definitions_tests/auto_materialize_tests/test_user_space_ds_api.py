@@ -4,7 +4,7 @@ from typing import AbstractSet, Iterator, NamedTuple, Sequence
 
 import mock
 import pytest
-from dagster import SchedulingCondition, asset, deserialize_value, serialize_value
+from dagster import SchedulingCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -50,13 +50,14 @@ def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult
             auto_materialize_run_tags={},
         )
         result = evaluator.evaluate()
+
         cursor = cursor.with_updates(
             evaluation_id=i,
             evaluation_timestamp=time.time(),
             newly_observe_requested_asset_keys=[],
             evaluation_state=result[0],
         )
-        cursor = deserialize_value(serialize_value(cursor), AssetDaemonCursor)
+
         yield SchedulingTickResult(evaluation_states=result[0], asset_partition_keys=result[1])
 
 

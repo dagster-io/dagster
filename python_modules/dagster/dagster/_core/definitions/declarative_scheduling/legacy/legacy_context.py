@@ -29,9 +29,10 @@ from dagster._core.definitions.partition import PartitionsDefinition
 
 from ...asset_subset import AssetSubset, ValidAssetSubset
 from ..serialized_objects import (
-    AssetConditionEvaluation,
     AssetConditionEvaluationState,
     AssetSubsetWithMetadata,
+    SchedulingConditionCursor,
+    SchedulingConditionNodeCursor,
 )
 
 if TYPE_CHECKING:
@@ -64,8 +65,8 @@ class LegacyRuleEvaluationContext:
 
     asset_key: AssetKey
     condition: "SchedulingCondition"
-    previous_evaluation_state: Optional[AssetConditionEvaluationState]
-    previous_evaluation: Optional[AssetConditionEvaluation]
+    cursor: Optional[SchedulingConditionCursor]
+    node_cursor: Optional[SchedulingConditionNodeCursor]
     candidate_subset: ValidAssetSubset
 
     instance_queryer: "CachingInstanceQueryer"
@@ -94,7 +95,9 @@ class LegacyRuleEvaluationContext:
         return LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
             condition=condition,
-            previous_evaluation_state=previous_evaluation_state,
+            cursor=SchedulingConditionCursor.from_evaluation_state(previous_evaluation_state)
+            if previous_evaluation_state
+            else None,
             instance_queryer=instance_queryer,
             data_time_resolver=data_time_resolver,
             evaluation_state_by_key=evaluation_state_by_key,
@@ -109,7 +112,7 @@ class LegacyRuleEvaluationContext:
         *,
         asset_key: AssetKey,
         condition: "SchedulingCondition",
-        previous_evaluation_state: Optional[AssetConditionEvaluationState],
+        cursor: Optional[SchedulingConditionCursor],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
         evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
@@ -123,9 +126,11 @@ class LegacyRuleEvaluationContext:
         return LegacyRuleEvaluationContext(
             asset_key=asset_key,
             condition=condition,
-            previous_evaluation_state=previous_evaluation_state,
-            previous_evaluation=previous_evaluation_state.previous_evaluation
-            if previous_evaluation_state
+            cursor=cursor,
+            node_cursor=cursor.node_cursors_by_unique_id.get(
+                condition.get_unique_id(parent_unique_id=None, index=0)
+            )
+            if cursor
             else None,
             candidate_subset=AssetSubset.all(
                 asset_key,
@@ -152,8 +157,8 @@ class LegacyRuleEvaluationContext:
         return dataclasses.replace(
             self,
             condition=child_condition,
-            previous_evaluation=self.previous_evaluation.for_child(child_unique_id)
-            if self.previous_evaluation
+            node_cursor=self.cursor.node_cursors_by_unique_id.get(child_unique_id)
+            if self.cursor
             else None,
             candidate_subset=candidate_subset,
             root_ref=self.root_context,
@@ -180,31 +185,23 @@ class LegacyRuleEvaluationContext:
 
     @property
     def previous_max_storage_id(self) -> Optional[int]:
-        return (
-            self.previous_evaluation_state.max_storage_id
-            if self.previous_evaluation_state
-            else None
-        )
+        return self.cursor.temporal_context.last_event_id if self.cursor else None
 
     @property
     def previous_evaluation_timestamp(self) -> Optional[float]:
-        return (
-            self.previous_evaluation_state.previous_tick_evaluation_timestamp
-            if self.previous_evaluation_state
-            else None
-        )
+        return self.cursor.effective_timestamp if self.cursor else None
 
     @property
     def previous_true_subset(self) -> AssetSubset:
-        if self.previous_evaluation is None:
+        if self.node_cursor is None:
             return self.empty_subset()
-        return self.previous_evaluation.true_subset
+        return self.node_cursor.true_subset
 
     @property
     def previous_candidate_subset(self) -> AssetSubset:
-        if self.previous_evaluation is None:
+        if self.node_cursor is None:
             return self.empty_subset()
-        candidate_subset = self.previous_evaluation.candidate_subset
+        candidate_subset = self.node_cursor.candidate_subset
         if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
             return AssetSubset.all(
                 self.asset_key, self.partitions_def, self.instance_queryer, self.evaluation_time
@@ -214,9 +211,9 @@ class LegacyRuleEvaluationContext:
 
     @property
     def previous_subsets_with_metadata(self) -> Sequence[AssetSubsetWithMetadata]:
-        if self.previous_evaluation is None:
+        if self.node_cursor is None:
             return []
-        return self.previous_evaluation.subsets_with_metadata
+        return self.node_cursor.subsets_with_metadata
 
     @functools.cached_property
     @root_property
@@ -252,16 +249,48 @@ class LegacyRuleEvaluationContext:
 
     @property
     @root_property
+    def _previous_tick_discarded_subset(self) -> Optional[AssetSubset]:
+        """Fetches the unique id corresponding to the DiscardOnMaxMaterializationsExceededRule, if
+        that rule is part of the broader condition.
+        """
+        from ...auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
+        from ..operators import NotAssetCondition
+        from .rule_condition import RuleCondition
+
+        if len(self.condition.children) != 3:
+            return None
+        unique_id = self.condition.get_unique_id(parent_unique_id=None, index=None)
+
+        not_discard_condition = self.condition.children[2]
+        unique_id = not_discard_condition.get_unique_id(parent_unique_id=unique_id, index=2)
+        if not isinstance(not_discard_condition, NotAssetCondition):
+            return None
+
+        discard_condition = not_discard_condition.children[0]
+        unique_id = discard_condition.get_unique_id(parent_unique_id=unique_id, index=0)
+        if not isinstance(discard_condition, RuleCondition) or not isinstance(
+            discard_condition.rule, DiscardOnMaxMaterializationsExceededRule
+        ):
+            return None
+
+        discard_cursor = (
+            self.cursor.node_cursors_by_unique_id.get(unique_id) if self.cursor else None
+        )
+        return discard_cursor.true_subset if discard_cursor else None
+
+    @property
+    @root_property
     def previous_tick_requested_subset(self) -> AssetSubset:
         """The set of asset partitions that were requested (or discarded) on the previous tick."""
-        if (
-            self.previous_evaluation_state is None
-            or self.previous_evaluation_state.previous_evaluation is None
-        ):
+        if self.cursor is None:
             return self.empty_subset()
 
+        discarded_subset = self._previous_tick_discarded_subset
+        requested_subset = self.cursor.previous_requested_subset
         return (
-            self.previous_evaluation_state.previous_evaluation.get_requested_or_discarded_subset()
+            requested_subset.as_valid(self.partitions_def) | discarded_subset
+            if discarded_subset
+            else requested_subset
         )
 
     @property
@@ -326,16 +355,14 @@ class LegacyRuleEvaluationContext:
         """
         from ..serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
-        if not self.previous_evaluation:
+        if not self.node_cursor:
             return self.candidate_subset
         # when the candidate_subset is HistoricalAllPartitionsSubsetSentinel, this indicates that the
         # entire asset was evaluated for this condition on the previous tick, and so no candidates
         # were *not* evaluated on the previous tick
-        elif isinstance(
-            self.previous_evaluation.candidate_subset, HistoricalAllPartitionsSubsetSentinel
-        ):
+        elif isinstance(self.node_cursor.candidate_subset, HistoricalAllPartitionsSubsetSentinel):
             return self.empty_subset()
-        return self.candidate_subset - self.previous_evaluation.candidate_subset
+        return self.candidate_subset - self.node_cursor.candidate_subset
 
     def materializable_in_same_run(self, child_key: AssetKey, parent_key: AssetKey) -> bool:
         """Returns whether a child asset can be materialized in the same run as a parent asset."""
