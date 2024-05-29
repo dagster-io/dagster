@@ -1,0 +1,4 @@
+key: asset1
+foo: "{{ env_var('FOO') }}"
+bar: "{{ env_var('BAR') }}"
+baz: "{{ env_var('BAZ') }} {{ env_var('QUX') }}"

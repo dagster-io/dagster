@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Optional, Type, Union
 
@@ -103,7 +104,10 @@ def load_defs_from_yaml(
     else:
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
+    env_vars_used_by_filepath = defaultdict(lambda: set())
+
     def resolve_env_var(file_path: Path, key: str, default: Optional[str] = None) -> str:
+        env_vars_used_by_filepath[file_path].add(key)
         out = os.environ.get(key, default)
         if out is None:
             raise DagsterBuildDefinitionsFromConfigError(
@@ -125,7 +129,7 @@ def load_defs_from_yaml(
             file_path.read_text(),
             str(file_path),
             leaf_resolver=lambda value: process_jinja_string(file_path, value),
-        )
+        ).with_used_env_vars(env_vars_used_by_filepath[file_path])
         for file_path in file_paths
     ]
 
