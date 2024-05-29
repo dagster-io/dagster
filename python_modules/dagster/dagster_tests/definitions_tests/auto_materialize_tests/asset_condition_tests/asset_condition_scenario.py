@@ -75,6 +75,7 @@ class SchedulingConditionScenarioState(ScenarioState):
                         asset_key, asset_graph_view.asset_graph.get(asset_key).partitions_def, aps
                     )
                 ),
+                cursor=None,
             )
             for asset_key, aps in ap_by_key.items()
         }
