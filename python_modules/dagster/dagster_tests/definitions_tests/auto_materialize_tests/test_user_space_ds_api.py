@@ -6,11 +6,9 @@ from dagster import SchedulingCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
 from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluator import (
     SchedulingConditionEvaluator,
-)
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
-    AssetConditionEvaluationState,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -18,7 +16,7 @@ from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
 class SchedulingTickResult(NamedTuple):
-    evaluation_states: Sequence[AssetConditionEvaluationState]
+    results: Sequence[SchedulingResult]
     asset_partition_keys: AbstractSet[AssetKeyPartitionKey]
 
 
@@ -41,19 +39,19 @@ def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult
             respect_materialization_data_versions=False,
             auto_materialize_run_tags={},
         )
-        result = evaluator.evaluate()
+        results, to_request = evaluator.evaluate()
 
         cursor = cursor.with_updates(
             evaluation_id=i,
             evaluation_timestamp=time.time(),
             newly_observe_requested_asset_keys=[],
-            condition_cursors=result[2],
+            condition_cursors=[result.get_new_cursor() for result in results],
         )
 
         serialized_cursor = serialize_value(cursor)
         cursor = deserialize_value(serialized_cursor, AssetDaemonCursor)
 
-        yield SchedulingTickResult(evaluation_states=result[0], asset_partition_keys=result[1])
+        yield SchedulingTickResult(results=results, asset_partition_keys=to_request)
 
 
 def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
@@ -84,5 +82,5 @@ def test_basic_asset_scheduling_test() -> None:
         AssetKeyPartitionKey(downstream.key),
     }
     # both are true because both missing
-    assert result.evaluation_states[0].true_subset.bool_value
-    assert result.evaluation_states[1].true_subset.bool_value
+    assert result.results[0].true_subset.bool_value
+    assert result.results[1].true_subset.bool_value

@@ -1,20 +1,24 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
 
 import pendulum
 
-import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
+    SchedulingConditionCursor,
     SchedulingConditionNodeCursor,
+    get_serializable_candidate_subset,
 )
-from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._model import DagsterModel
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -350,20 +354,80 @@ class SchedulingCondition(ABC, DagsterModel):
 class SchedulingResult(DagsterModel):
     condition: SchedulingCondition
     condition_unique_id: str
+    value_hash: str
+
     start_timestamp: float
     end_timestamp: float
 
+    temporal_context: TemporalContext
+
     true_slice: AssetSlice
-    candidate_subset: AssetSubset
-    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+    candidate_slice: AssetSlice
+
+    child_results: Sequence["SchedulingResult"]
+
+    node_cursor: Optional[SchedulingConditionNodeCursor]
+    serializable_evaluation: AssetConditionEvaluation
 
     extra_state: Any
-    child_results: Sequence["SchedulingResult"]
-    node_cursor: Optional[SchedulingConditionNodeCursor]
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.true_slice.asset_key
 
     @property
     def true_subset(self) -> AssetSubset:
         return self.true_slice.convert_to_valid_asset_subset()
+
+    @staticmethod
+    def _create(
+        context: "SchedulingContext",
+        true_slice: AssetSlice,
+        subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
+        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]],
+        child_results: Sequence["SchedulingResult"],
+    ) -> "SchedulingResult":
+        start_timestamp = context.create_time.timestamp()
+        end_timestamp = pendulum.now("UTC").timestamp()
+
+        return SchedulingResult(
+            condition=context.condition,
+            condition_unique_id=context.condition_unique_id,
+            value_hash=_compute_value_hash(
+                condition_unique_id=context.condition_unique_id,
+                condition_description=context.condition.description,
+                true_slice=true_slice,
+                candidate_slice=context.candidate_slice,
+                subsets_with_metadata=subsets_with_metadata,
+                child_results=child_results,
+            ),
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+            temporal_context=context.new_temporal_context,
+            true_slice=true_slice,
+            candidate_slice=context.candidate_slice,
+            subsets_with_metadata=[],
+            child_results=child_results,
+            extra_state=None,
+            node_cursor=_create_node_cursor(
+                true_slice=true_slice,
+                candidate_slice=context.candidate_slice,
+                subsets_with_metadata=subsets_with_metadata,
+                extra_state=extra_state,
+            )
+            if context.condition.requires_cursor
+            else None,
+            serializable_evaluation=_create_serializable_evaluation(
+                context=context,
+                true_slice=true_slice,
+                candidate_slice=context.candidate_slice,
+                subsets_with_metadata=subsets_with_metadata,
+                start_timestamp=start_timestamp,
+                end_timestamp=end_timestamp,
+                child_results=child_results,
+            ),
+        )
 
     @staticmethod
     def create_from_children(
@@ -373,25 +437,12 @@ class SchedulingResult(DagsterModel):
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "SchedulingResult":
         """Returns a new AssetConditionEvaluation from the given child results."""
-        candidate_subset = context.candidate_slice.convert_to_valid_asset_subset()
-        return SchedulingResult(
-            condition=context.condition,
-            condition_unique_id=context.condition_unique_id,
-            start_timestamp=context.create_time.timestamp(),
-            end_timestamp=pendulum.now("UTC").timestamp(),
+        return SchedulingResult._create(
+            context=context,
             true_slice=true_slice,
-            candidate_subset=context.candidate_slice.convert_to_valid_asset_subset(),
             subsets_with_metadata=[],
+            extra_state=extra_state,
             child_results=child_results,
-            extra_state=None,
-            node_cursor=SchedulingConditionNodeCursor(
-                true_subset=true_slice.convert_to_valid_asset_subset(),
-                candidate_subset=candidate_subset,
-                subsets_with_metadata=[],
-                extra_state=extra_state,
-            )
-            if context.condition.requires_cursor
-            else None,
         )
 
     @staticmethod
@@ -399,39 +450,109 @@ class SchedulingResult(DagsterModel):
         context: "SchedulingContext",
         true_slice: AssetSlice,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
-        slices_with_metadata: Sequence[Tuple[AssetSlice, MetadataMapping]] = [],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "SchedulingResult":
         """Returns a new AssetConditionEvaluation from the given parameters."""
-        check.param_invariant(
-            not (bool(subsets_with_metadata) and bool(slices_with_metadata)),
-            "slices_with_metadata",
-            "Cannot provide both subsets_with_metadata and slices_with_metadata.",
-        )
-        if slices_with_metadata:
-            subsets_with_metadata = [
-                AssetSubsetWithMetadata(
-                    subset=asset_slice.convert_to_valid_asset_subset(), metadata=metadata
-                )
-                for asset_slice, metadata in slices_with_metadata
-            ]
-        candidate_subset = context.candidate_slice.convert_to_valid_asset_subset()
-        return SchedulingResult(
-            condition=context.condition,
-            condition_unique_id=context.condition_unique_id,
-            start_timestamp=context.create_time.timestamp(),
-            end_timestamp=pendulum.now("UTC").timestamp(),
+        return SchedulingResult._create(
+            context=context,
             true_slice=true_slice,
-            candidate_subset=candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
-            child_results=[],
             extra_state=extra_state,
-            node_cursor=SchedulingConditionNodeCursor(
-                true_subset=true_slice.convert_to_valid_asset_subset(),
-                candidate_subset=candidate_subset,
-                subsets_with_metadata=subsets_with_metadata,
-                extra_state=extra_state,
-            )
-            if context.condition.requires_cursor
-            else None,
+            child_results=[],
         )
+
+    def get_child_node_cursors(self) -> Mapping[str, SchedulingConditionNodeCursor]:
+        node_cursors = {self.condition_unique_id: self.node_cursor} if self.node_cursor else {}
+        for child_result in self.child_results:
+            node_cursors.update(child_result.get_child_node_cursors())
+        return node_cursors
+
+    def get_new_cursor(self) -> SchedulingConditionCursor:
+        return SchedulingConditionCursor(
+            previous_requested_subset=self.true_subset,
+            effective_timestamp=self.temporal_context.effective_dt.timestamp(),
+            last_event_id=self.temporal_context.last_event_id,
+            node_cursors_by_unique_id=self.get_child_node_cursors(),
+            result_value_hash=self.value_hash,
+        )
+
+
+def _create_node_cursor(
+    true_slice: AssetSlice,
+    candidate_slice: AssetSlice,
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
+    extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]],
+) -> SchedulingConditionNodeCursor:
+    return SchedulingConditionNodeCursor(
+        true_subset=true_slice.convert_to_valid_asset_subset(),
+        candidate_subset=get_serializable_candidate_subset(
+            candidate_slice.convert_to_valid_asset_subset()
+        ),
+        subsets_with_metadata=subsets_with_metadata,
+        extra_state=extra_state,
+    )
+
+
+def _create_serializable_evaluation(
+    context: "SchedulingContext",
+    true_slice: AssetSlice,
+    candidate_slice: AssetSlice,
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
+    start_timestamp: float,
+    end_timestamp: float,
+    child_results: Sequence[SchedulingResult],
+) -> AssetConditionEvaluation:
+    return AssetConditionEvaluation(
+        condition_snapshot=context.condition.get_snapshot(context.condition_unique_id),
+        true_subset=true_slice.convert_to_valid_asset_subset(),
+        candidate_subset=get_serializable_candidate_subset(
+            candidate_slice.convert_to_valid_asset_subset()
+        ),
+        subsets_with_metadata=subsets_with_metadata,
+        start_timestamp=start_timestamp,
+        end_timestamp=end_timestamp,
+        child_evaluations=[child_result.serializable_evaluation for child_result in child_results],
+    )
+
+
+def _compute_value_hash(
+    condition_unique_id: str,
+    condition_description: str,
+    true_slice: AssetSlice,
+    candidate_slice: AssetSlice,
+    subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
+    child_results: Sequence[SchedulingResult],
+) -> str:
+    """Computes a unique hash representing the values contained within an evaluation result. This
+    string will be identical for results which have identical values, allowing us to detect changes
+    without serializing the entire value.
+    """
+    components: Sequence[str] = [
+        condition_unique_id,
+        condition_description,
+        _compute_subset_value_str(true_slice.convert_to_valid_asset_subset()),
+        _compute_subset_value_str(candidate_slice.convert_to_valid_asset_subset()),
+        *(_compute_subset_with_metadata_value_str(swm) for swm in subsets_with_metadata),
+        *(child_result.value_hash for child_result in child_results),
+    ]
+    return non_secure_md5_hash_str("".join(components).encode("utf-8"))
+
+
+def _compute_subset_value_str(subset: AssetSubset) -> str:
+    """Computes a unique string representing a given AssetSubsets. This string will be equal for
+    equivalent AssetSubsets.
+    """
+    if isinstance(subset.value, bool):
+        return str(subset.value)
+    elif isinstance(subset.value, AllPartitionsSubset):
+        return AllPartitionsSubset.__name__
+    elif isinstance(subset.value, BaseTimeWindowPartitionsSubset):
+        return str(list(sorted(subset.value.included_time_windows)))
+    else:
+        return str(list(sorted(subset.asset_partitions)))
+
+
+def _compute_subset_with_metadata_value_str(subset_with_metadata: AssetSubsetWithMetadata):
+    return _compute_subset_value_str(subset_with_metadata.subset) + str(
+        sorted(subset_with_metadata.frozen_metadata)
+    )
