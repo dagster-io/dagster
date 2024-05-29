@@ -299,7 +299,7 @@ def _create_repository_using_definitions_args(
             *(schedules_with_resources),
             *(sensors_with_resources),
             *(jobs_with_resources),
-            *blueprints,
+            *(blueprints or []),
         ]
 
     return created_repo
