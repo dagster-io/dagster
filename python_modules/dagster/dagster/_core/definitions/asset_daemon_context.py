@@ -24,6 +24,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -39,8 +40,6 @@ from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
 from .declarative_scheduling.serialized_objects import (
     AssetConditionEvaluation,
-    AssetConditionEvaluationState,
-    SchedulingConditionCursor,
 )
 from .partition import PartitionsDefinition, ScheduleType
 
@@ -159,11 +158,7 @@ class AssetDaemonContext:
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[
-        Sequence[AssetConditionEvaluationState],
-        AbstractSet[AssetKeyPartitionKey],
-        Sequence[SchedulingConditionCursor],
-    ]:
+    ) -> Tuple[Sequence[SchedulingResult], AbstractSet[AssetKeyPartitionKey]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
@@ -200,7 +195,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluation_states, to_request, condition_cursors = self.get_asset_condition_evaluations()
+        results, to_request = self.get_asset_condition_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -213,20 +208,20 @@ class AssetDaemonContext:
 
         # only record evaluation results where something changed
         updated_evaluations = []
-        for es in evaluation_states:
-            previous_cursor = self.cursor.get_previous_condition_cursor(es.asset_key)
+        for result in results:
+            previous_cursor = self.cursor.get_previous_condition_cursor(result.asset_key)
             if (
-                not es.true_subset.is_empty
-                or previous_cursor is None
-                or previous_cursor.result_hash != es.previous_evaluation.get_result_hash()
+                previous_cursor is None
+                or previous_cursor.result_value_hash != result.value_hash
+                or not result.true_slice.is_empty
             ):
-                updated_evaluations.append(es.previous_evaluation)
+                updated_evaluations.append(result.serializable_evaluation)
 
         return (
             run_requests,
             self.cursor.with_updates(
                 evaluation_id=self._evaluation_id,
-                condition_cursors=condition_cursors,
+                condition_cursors=[result.get_new_cursor() for result in results],
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests

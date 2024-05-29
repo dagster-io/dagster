@@ -77,13 +77,13 @@ class WillBeRequestedCondition(SliceSchedulingCondition):
         )
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
-        current_info = context.current_tick_evaluation_info_by_key.get(context.asset_key)
+        current_result = context.current_tick_results_by_key.get(context.asset_key)
         if (
-            current_info
-            and current_info.requested_slice
+            current_result
+            and current_result.true_slice
             and self._executable_with_root_context_key(context)
         ):
-            return current_info.requested_slice
+            return current_result.true_slice
         else:
             return context.asset_graph_view.create_empty_slice(context.asset_key)
 
