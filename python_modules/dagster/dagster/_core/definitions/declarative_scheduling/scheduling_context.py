@@ -14,7 +14,11 @@ from dagster._core.definitions.declarative_scheduling.scheduling_condition impor
 )
 from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
     SchedulingEvaluationInfo,
-    SchedulingEvaluationResultNode,
+)
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    HistoricalAllPartitionsSubsetSentinel,
+    SchedulingConditionCursor,
+    SchedulingConditionNodeCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -83,9 +87,8 @@ class SchedulingContext(NamedTuple):
     create_time: datetime.datetime
     logger: logging.Logger
 
-    # a SchedulingEvaluationInfo object representing information about the full evaluation tree
-    # from the previous tick, if this asset was evaluated on the previous tick
-    previous_evaluation_info: Optional[SchedulingEvaluationInfo]
+    # a cursor containing information about this asset calculated on the previous tick
+    cursor: Optional[SchedulingConditionCursor]
     # a mapping of information computed on the current tick for assets which are upstream of this
     # asset
     current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo]
@@ -119,7 +122,7 @@ class SchedulingContext(NamedTuple):
             parent_context=None,
             create_time=pendulum.now("UTC"),
             logger=logger,
-            previous_evaluation_info=previous_evaluation_info,
+            cursor=previous_evaluation_info.cursor if previous_evaluation_info else None,
             current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
             inner_legacy_context=legacy_context,
             non_agv_instance_interface=NonAGVInstanceInterface(
@@ -141,7 +144,7 @@ class SchedulingContext(NamedTuple):
             parent_context=self,
             create_time=pendulum.now("UTC"),
             logger=self.logger,
-            previous_evaluation_info=self.previous_evaluation_info,
+            cursor=self.cursor,
             current_tick_evaluation_info_by_key=self.current_tick_evaluation_info_by_key,
             inner_legacy_context=self.inner_legacy_context.for_child(
                 child_condition,
@@ -174,24 +177,24 @@ class SchedulingContext(NamedTuple):
         return self.parent_context.root_context if self.parent_context is not None else self
 
     @property
-    def previous_evaluation_node(self) -> Optional[SchedulingEvaluationResultNode]:
+    def node_cursor(self) -> Optional[SchedulingConditionNodeCursor]:
         """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
-        if self.previous_evaluation_info is None:
+        if self.cursor is None:
             return None
         else:
-            return self.previous_evaluation_info.get_evaluation_node(self.condition_unique_id)
+            return self.cursor.node_cursors_by_unique_id.get(self.condition_unique_id)
 
     @property
     def previous_true_slice(self) -> Optional[AssetSlice]:
         """Returns the true slice for this node from the previous evaluation, if this node was
         evaluated on the previous tick.
         """
-        if self.previous_evaluation_node is None:
+        if self.node_cursor is None:
             return None
         else:
-            return self.previous_evaluation_node.true_slice
+            return self.asset_graph_view.get_asset_slice_from_subset(self.node_cursor.true_subset)
 
     @property
     def effective_dt(self) -> datetime.datetime:
@@ -213,7 +216,9 @@ class SchedulingContext(NamedTuple):
         evaluated, returns None.
         """
         return (
-            self.previous_evaluation_info.requested_slice if self.previous_evaluation_info else None
+            self.asset_graph_view.get_asset_slice_from_subset(self.cursor.previous_requested_subset)
+            if self.cursor
+            else None
         )
 
     @property
@@ -221,9 +226,15 @@ class SchedulingContext(NamedTuple):
         """Returns the candidate slice for the previous evaluation. If this node has never been
         evaluated, returns None.
         """
-        return (
-            self.previous_evaluation_node.candidate_slice if self.previous_evaluation_node else None
-        )
+        candidate_subset = self.node_cursor.candidate_subset if self.node_cursor else None
+        if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
+            return self.asset_graph_view.get_asset_slice(asset_key=self.asset_key)
+        else:
+            return (
+                self.asset_graph_view.get_asset_slice_from_subset(candidate_subset)
+                if candidate_subset
+                else None
+            )
 
     @property
     def previous_evaluation_max_storage_id(self) -> Optional[int]:
@@ -231,9 +242,7 @@ class SchedulingContext(NamedTuple):
         node has never been evaluated, returns None.
         """
         return (
-            self.previous_evaluation_info.temporal_context.last_event_id
-            if self.previous_evaluation_info and self.previous_evaluation_node
-            else None
+            self.cursor.temporal_context.last_event_id if self.cursor and self.node_cursor else None
         )
 
     @property
@@ -242,9 +251,7 @@ class SchedulingContext(NamedTuple):
         never been evaluated, returns None.
         """
         return (
-            self.previous_evaluation_info.temporal_context.effective_dt
-            if self.previous_evaluation_info and self.previous_evaluation_node
-            else None
+            self.cursor.temporal_context.effective_dt if self.cursor and self.node_cursor else None
         )
 
     @property

@@ -35,6 +35,7 @@ from .legacy.legacy_context import (
 )
 from .serialized_objects import (
     AssetConditionEvaluationState,
+    SchedulingConditionCursor,
 )
 
 if TYPE_CHECKING:
@@ -230,7 +231,9 @@ class SchedulingConditionEvaluator:
 
         legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
-            previous_evaluation_state=previous_evaluation_state,
+            cursor=SchedulingConditionCursor.from_evaluation_state(previous_evaluation_state)
+            if previous_evaluation_state
+            else None,
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
@@ -259,4 +262,4 @@ class SchedulingConditionEvaluator:
         expected_data_time = get_expected_data_time_for_asset_key(
             legacy_context, will_materialize=result.true_subset.size > 0
         )
-        return AssetConditionEvaluationState.create(context, result), expected_data_time
+        return (AssetConditionEvaluationState.create(context, result), expected_data_time)

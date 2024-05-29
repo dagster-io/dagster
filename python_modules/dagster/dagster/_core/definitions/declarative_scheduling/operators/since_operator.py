@@ -12,6 +12,10 @@ class SinceCondition(SchedulingCondition):
     reset_condition: SchedulingCondition
 
     @property
+    def store_subsets(self) -> bool:
+        return True
+
+    @property
     def description(self) -> str:
         return (
             "Trigger condition has become true since the last time the reset condition became true."

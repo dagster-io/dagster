@@ -12,6 +12,7 @@ from dagster._core.definitions.declarative_scheduling.serialized_objects import 
     AssetConditionEvaluation,
     AssetConditionEvaluationState,
     AssetSubsetWithMetadata,
+    SchedulingConditionCursor,
 )
 from dagster._core.definitions.metadata import MetadataMapping
 from dagster._model import DagsterModel
@@ -102,6 +103,7 @@ class SchedulingEvaluationInfo(DagsterModel):
     temporal_context: TemporalContext
     evaluation_nodes: Sequence[SchedulingEvaluationResultNode]
     requested_slice: Optional[AssetSlice]
+    cursor: Optional[SchedulingConditionCursor]
 
     def get_evaluation_node(self, unique_id: str) -> Optional[SchedulingEvaluationResultNode]:
         for node in self.evaluation_nodes:
@@ -125,4 +127,5 @@ class SchedulingEvaluationInfo(DagsterModel):
             temporal_context=temporal_context,
             evaluation_nodes=nodes,
             requested_slice=requested_slice,
+            cursor=SchedulingConditionCursor.from_evaluation_state(state),
         )
