@@ -114,6 +114,7 @@ def dbt_assets(
         project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
 
     Examples:
         Running ``dbt build`` for a dbt project:
