@@ -71,14 +71,14 @@ class AssetSpec(
             ("key", PublicAttr[AssetKey]),
             ("deps", PublicAttr[Iterable["AssetDep"]]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("metadata", PublicAttr[Mapping[str, Any]]),
             ("group_name", PublicAttr[Optional[str]]),
             ("skippable", PublicAttr[bool]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
-            ("owners", PublicAttr[Optional[Sequence[str]]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("owners", PublicAttr[Sequence[str]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
