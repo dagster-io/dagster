@@ -15,6 +15,11 @@ from dagster_buildkite.git import ChangedFiles, GitInfo
 changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini", ".jinja"]
 
 
+def _path_is_relative_to(p: Path, u: Path) -> bool:
+    # see https://docs.python.org/3/library/pathlib.html#pathlib.PurePath.is_relative_to
+    return u == p or u in p.parents
+
+
 class PythonPackage:
     def __init__(self, setup_py_path: Path):
         self.directory = setup_py_path.parent
@@ -137,7 +142,7 @@ class PythonPackages:
             for change in ChangedFiles.all:
                 if (
                     # Our change is in this package's directory
-                    change.is_relative_to(package.directory)
+                    _path_is_relative_to(change, package.directory)
                     # The file can alter behavior - exclude things like README changes
                     and (change.suffix in changed_filetypes)
                     # The file is not part of a test suite. We treat this differently
