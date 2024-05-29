@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Type, Union
 
@@ -113,7 +114,10 @@ def load_defs_from_yaml(
 
     templates = {file_path: jinja2.Template(file_path.read_text()) for file_path in file_paths}
 
+    env_vars_used_by_filepath = defaultdict(lambda: set())
+
     def resolve_env_var(filepath: Path, key: str, default: Optional[str] = None) -> str:
+        env_vars_used_by_filepath[filepath].add(key)
         out = os.environ.get(key, default)
         if out is None:
             raise DagsterBuildDefinitionsFromConfigError(
@@ -129,7 +133,9 @@ def load_defs_from_yaml(
     }
 
     blueprints = [
-        parse_yaml_file_to_pydantic(per_file_blueprint_type, rendered_file, str(file_path))
+        parse_yaml_file_to_pydantic(
+            per_file_blueprint_type, rendered_file, str(file_path)
+        ).with_used_env_vars(env_vars_used_by_filepath[file_path])
         for file_path, rendered_file in rendered_files.items()
     ]
 

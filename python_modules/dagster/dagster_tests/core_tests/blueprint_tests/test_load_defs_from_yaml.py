@@ -227,3 +227,28 @@ def test_basic_env_var_jinja_templating_no_env_var_default() -> None:
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("bar")}
+
+
+class SimpleAssetBlueprintTrackEnvVars(Blueprint):
+    key: str
+    foo: str
+    bar: str
+    baz: str
+
+    def build_defs(self) -> BlueprintDefinitions:
+        @asset(key=self.key, metadata={"used_env_vars": sorted(list(self._used_env_vars))})
+        def _asset(): ...
+
+        return BlueprintDefinitions(assets=[_asset])
+
+
+def test_track_env_vars() -> None:
+    with environ({"FOO": "foo", "BAR": "bar", "BAZ": "baz", "QUX": "qux"}):
+        defs = load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_many_env_var.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprintTrackEnvVars,
+        )
+        assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+        asset_metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
+        assert asset_metadata["used_env_vars"] == ["BAR", "BAZ", "FOO", "QUX"]

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import Any, Dict, Iterable, Mapping, NamedTuple, Optional, Set, Union
+
+from pydantic import PrivateAttr
 
 from dagster import _check as check
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -133,6 +135,8 @@ class Blueprint(DagsterModel, ABC, HasSourcePositionAndKeyPath):
     - A build_defs implementation that generates Dagster Definitions from field values
     """
 
+    _used_env_vars: Set[str] = PrivateAttr(set())
+
     @abstractmethod
     def build_defs(self) -> BlueprintDefinitions:
         raise NotImplementedError()
@@ -156,3 +160,6 @@ class Blueprint(DagsterModel, ABC, HasSourcePositionAndKeyPath):
             raise DagsterBuildDefinitionsFromConfigError(
                 f"Error when building definitions from config with type {cls_name} at {source_pos}"
             ) from e
+
+    def with_used_env_vars(self, env_vars: Set[str]) -> "Blueprint":
+        return self.copy(update={"_used_env_vars": env_vars})
