@@ -125,7 +125,7 @@ In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your 
 
 ## Using config with `@dbt_assets`
 
-Like for a standard \[software-defined asset], `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema#run-configuration). This allows to provide parameters to jobs at the time they're executed.
+Like for a standard \[software-defined asset], `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed.
 
 In the context of dbt, this can be useful if you want to run commands or flags for specific use cases. For instance, you may want to run [dbt seed](https://docs.getdbt.com/reference/commands/seed) or add [the --full-refresh flag](https://docs.getdbt.com/reference/resource-configs/full_refresh) to your dbt commands in some cases. Using a config system, the `@dbt_assets` object can be easily modified to support this use case.
 
@@ -139,12 +139,8 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-RELATIVE_PATH_TO_MY_DBT_PROJECT = "./gitlab-jaffle-shop-test"
-
 my_project = DbtProject(
-    project_dir=Path(__file__)
-    .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
-    .resolve(),
+    project_dir=Path(__file__).joinpath("..", "./path/to/my-dbt-project").resolve(),
 )
 
 class MyDbtConfig(Config):
