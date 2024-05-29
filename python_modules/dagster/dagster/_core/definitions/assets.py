@@ -264,6 +264,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 auto_materialize_policies_by_key=auto_materialize_policies_by_key,
                 metadata_by_key=metadata_by_key,
                 descriptions_by_key=descriptions_by_key,
+                code_versions_by_key=None,
             )
 
         normalized_specs: List[AssetSpec] = []
@@ -391,6 +392,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         can_subset: bool = False,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
+        code_versions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
     ) -> "AssetsDefinition":
         """Constructs an AssetsDefinition from a GraphDefinition.
 
@@ -471,6 +473,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             can_subset=can_subset,
             check_specs=check_specs,
             owners_by_output_name=owners_by_output_name,
+            code_versions_by_output_name=code_versions_by_output_name,
         )
 
     @public
@@ -584,6 +587,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         metadata_by_output_name: Optional[Mapping[str, Optional[ArbitraryMetadataMapping]]] = None,
         tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
+        code_versions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         auto_materialize_policies_by_output_name: Optional[
             Mapping[str, Optional[AutoMaterializePolicy]]
         ] = None,
@@ -694,6 +698,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             ),
             metadata_by_key=_output_dict_to_asset_dict(metadata_by_output_name),
             descriptions_by_key=_output_dict_to_asset_dict(descriptions_by_output_name),
+            code_versions_by_key=_output_dict_to_asset_dict(code_versions_by_output_name),
         )
 
         return AssetsDefinition.dagster_internal_init(
@@ -1604,15 +1609,16 @@ def _validate_partition_mappings(
 def _asset_specs_from_attr_key_params(
     all_asset_keys: AbstractSet[AssetKey],
     keys_by_input_name: Mapping[str, AssetKey],
-    deps_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]] = None,
-    partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
-    group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-    metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]] = None,
-    tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
-    freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]] = None,
-    auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]] = None,
-    descriptions_by_key: Optional[Mapping[AssetKey, str]] = None,
-    owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
+    deps_by_asset_key: Optional[Mapping[AssetKey, AbstractSet[AssetKey]]],
+    partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]],
+    group_names_by_key: Optional[Mapping[AssetKey, str]],
+    metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
+    tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]],
+    freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]],
+    auto_materialize_policies_by_key: Optional[Mapping[AssetKey, AutoMaterializePolicy]],
+    code_versions_by_key: Optional[Mapping[AssetKey, str]],
+    descriptions_by_key: Optional[Mapping[AssetKey, str]],
+    owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
 ) -> Sequence[AssetSpec]:
     validated_group_names_by_key = check.opt_mapping_param(
         group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
@@ -1628,6 +1634,10 @@ def _asset_specs_from_attr_key_params(
 
     validated_descriptions_by_key = check.opt_mapping_param(
         descriptions_by_key, "descriptions_by_key", key_type=AssetKey, value_type=str
+    )
+
+    validated_code_versions_by_key = check.opt_mapping_param(
+        code_versions_by_key, "code_versions_by_key", key_type=AssetKey, value_type=str
     )
 
     validated_freshness_policies_by_key = check.opt_mapping_param(
@@ -1675,6 +1685,7 @@ def _asset_specs_from_attr_key_params(
                     auto_materialize_policy=validated_auto_materialize_policies_by_key.get(key),
                     owners=validated_owners_by_key.get(key),
                     group_name=validated_group_names_by_key.get(key),
+                    code_version=validated_code_versions_by_key.get(key),
                     deps=dep_objs,
                 )
             )
