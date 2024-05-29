@@ -105,7 +105,7 @@ class SchedulingContext(NamedTuple):
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
         current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo],
-        previous_evaluation_info: Optional[SchedulingEvaluationInfo],
+        condition_cursor: Optional[SchedulingConditionCursor],
         legacy_context: "LegacyRuleEvaluationContext",
     ) -> "SchedulingContext":
         asset_graph = asset_graph_view.asset_graph
@@ -122,7 +122,7 @@ class SchedulingContext(NamedTuple):
             parent_context=None,
             create_time=pendulum.now("UTC"),
             logger=logger,
-            cursor=previous_evaluation_info.cursor if previous_evaluation_info else None,
+            cursor=condition_cursor,
             current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
             inner_legacy_context=legacy_context,
             non_agv_instance_interface=NonAGVInstanceInterface(
@@ -238,21 +238,13 @@ class SchedulingContext(NamedTuple):
 
     @property
     def previous_evaluation_max_storage_id(self) -> Optional[int]:
-        """Returns the maximum storage ID for the previous time this node was evaluated. If this
-        node has never been evaluated, returns None.
-        """
-        return (
-            self.cursor.temporal_context.last_event_id if self.cursor and self.node_cursor else None
-        )
+        """Returns the maximum storage ID for the previous time this asset was evaluated."""
+        return self.cursor.temporal_context.last_event_id if self.cursor else None
 
     @property
     def previous_evaluation_effective_dt(self) -> Optional[datetime.datetime]:
-        """Returns the datetime for the previous time this node was evaluated. If this node has
-        never been evaluated, returns None.
-        """
-        return (
-            self.cursor.temporal_context.effective_dt if self.cursor and self.node_cursor else None
-        )
+        """Returns the datetime for the previous time this asset was evaluated."""
+        return self.cursor.temporal_context.effective_dt if self.cursor else None
 
     @property
     def new_max_storage_id(self) -> Optional[int]:

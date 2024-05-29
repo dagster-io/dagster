@@ -29,6 +29,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info
 )
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionEvaluationState,
+    SchedulingConditionCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
@@ -54,7 +55,7 @@ class FalseAssetCondition(SchedulingCondition):
 @dataclass(frozen=True)
 class SchedulingConditionScenarioState(ScenarioState):
     scheduling_condition: Optional[SchedulingCondition] = None
-    previous_evaluation_state: Optional[AssetConditionEvaluationState] = None
+    condition_cursor: Optional[SchedulingConditionCursor] = None
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
     ensure_empty_result: bool = True
 
@@ -118,7 +119,7 @@ class SchedulingConditionScenarioState(ScenarioState):
             legacy_context = LegacyRuleEvaluationContext.create_within_asset_daemon(
                 asset_key=asset_key,
                 condition=asset_condition,
-                previous_evaluation_state=self.previous_evaluation_state,
+                previous_condition_cursor=self.condition_cursor,
                 instance_queryer=instance_queryer,
                 data_time_resolver=CachingDataTimeResolver(instance_queryer),
                 evaluation_state_by_key={},
@@ -132,30 +133,24 @@ class SchedulingConditionScenarioState(ScenarioState):
                 current_tick_evaluation_info_by_key=self._get_current_evaluation_state_by_key(
                     daemon_context.asset_graph_view
                 ),
-                previous_evaluation_info=SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
-                    daemon_context.asset_graph_view, self.previous_evaluation_state
-                )
-                if self.previous_evaluation_state
-                else None,
+                condition_cursor=self.condition_cursor,
                 legacy_context=legacy_context,
             )
 
             full_result = asset_condition.evaluate(context)
-            new_state = dataclasses.replace(
-                self,
-                previous_evaluation_state=AssetConditionEvaluationState.create(
-                    context, full_result
-                ),
-            )
+            evaluation_state = AssetConditionEvaluationState.create(context, full_result)
+            result_hash = evaluation_state.previous_evaluation.get_result_hash()
+            new_cursor = SchedulingConditionCursor.from_result(context, full_result, result_hash)
+            new_state = dataclasses.replace(self, condition_cursor=new_cursor)
             result = full_result.child_results[0] if self.ensure_empty_result else full_result
 
         return new_state, result
 
-    def without_previous_evaluation_state(self) -> "SchedulingConditionScenarioState":
+    def without_cursor(self) -> "SchedulingConditionScenarioState":
         """Removes the previous evaluation state from the state. This is useful for testing
         re-evaluating this data "from scratch" after much computation has occurred.
         """
-        return dataclasses.replace(self, previous_evaluation_state=None)
+        return dataclasses.replace(self, condition_cursor=None)
 
     def with_requested_asset_partitions(
         self, requested_asset_partitions: Sequence[AssetKeyPartitionKey]

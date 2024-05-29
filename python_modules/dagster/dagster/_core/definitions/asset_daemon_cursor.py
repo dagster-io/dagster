@@ -2,13 +2,7 @@ import dataclasses
 import json
 from dataclasses import dataclass
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-)
+from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
 
 from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import (
@@ -27,9 +21,9 @@ from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
     from .declarative_scheduling.serialized_objects import (
-        AssetConditionEvaluation,
         AssetConditionEvaluationState,
         AssetConditionSnapshot,
+        SchedulingConditionCursor,
     )
 
 
@@ -74,12 +68,15 @@ class AssetDaemonCursor:
 
     Attributes:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
-        previous_evaluation_state (Sequence[AssetConditionEvaluationInfo]): The evaluation info
-            recorded for each asset on the previous tick.
+        previous_evaluation_state (Sequence[AssetConditionEvaluationState]): (DEPRECATED) The
+            evaluation info recorded for each asset on the previous tick.
+        previous_cursors (Sequence[SchedulingConditionCursor]): The cursor objects for each asset
+            recorded on the previous tick.
     """
 
     evaluation_id: int
-    previous_evaluation_state: Sequence["AssetConditionEvaluationState"]
+    previous_evaluation_state: Optional[Sequence["AssetConditionEvaluationState"]]
+    previous_condition_cursors: Optional[Sequence["SchedulingConditionCursor"]]
 
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
@@ -87,49 +84,53 @@ class AssetDaemonCursor:
     def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
         return AssetDaemonCursor(
             evaluation_id=evaluation_id,
-            previous_evaluation_state=[],
+            previous_evaluation_state=None,
+            previous_condition_cursors=[],
             last_observe_request_timestamp_by_asset_key={},
         )
 
     @cached_property
-    def previous_evaluation_state_by_key(
-        self,
-    ) -> Mapping[AssetKey, "AssetConditionEvaluationState"]:
-        """Efficient lookup of previous evaluation info by asset key."""
-        return {
-            evaluation_state.asset_key: evaluation_state
-            for evaluation_state in self.previous_evaluation_state
-        }
+    def previous_condition_cursors_by_key(self) -> Mapping[AssetKey, "SchedulingConditionCursor"]:
+        """Efficient lookup of previous cursor by asset key."""
+        from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+            SchedulingConditionCursor,
+        )
 
-    def get_previous_evaluation_state(
+        if self.previous_condition_cursors is None:
+            # automatically convert AssetConditionEvaluationState objects to SchedulingConditionCursor
+            return {
+                evaluation_state.asset_key: SchedulingConditionCursor.backcompat_from_evaluation_state(
+                    evaluation_state
+                )
+                for evaluation_state in self.previous_evaluation_state or []
+            }
+        else:
+            return {cursor.asset_key: cursor for cursor in self.previous_condition_cursors}
+
+    def get_previous_condition_cursor(
         self, asset_key: AssetKey
-    ) -> Optional["AssetConditionEvaluationState"]:
-        """Returns the AssetConditionCursor associated with the given asset key. If no stored
+    ) -> Optional["SchedulingConditionCursor"]:
+        """Returns the SchedulingConditionCursor associated with the given asset key. If no stored
         cursor exists, returns an empty cursor.
         """
-        return self.previous_evaluation_state_by_key.get(asset_key)
-
-    def get_previous_evaluation(self, asset_key: AssetKey) -> Optional["AssetConditionEvaluation"]:
-        """Returns the previous AssetConditionEvaluation for a given asset key, if it exists."""
-        previous_evaluation_state = self.get_previous_evaluation_state(asset_key)
-        return previous_evaluation_state.previous_evaluation if previous_evaluation_state else None
+        return self.previous_condition_cursors_by_key.get(asset_key)
 
     def with_updates(
         self,
         evaluation_id: int,
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
-        evaluation_state: Sequence["AssetConditionEvaluationState"],
+        condition_cursors: Sequence["SchedulingConditionCursor"],
     ) -> "AssetDaemonCursor":
         # do not "forget" about values for non-evaluated assets
-        new_evaluation_state_by_key = dict(self.previous_evaluation_state_by_key)
-        for new_state in evaluation_state:
-            new_evaluation_state_by_key[new_state.asset_key] = new_state
+        new_condition_cursors = dict(self.previous_condition_cursors_by_key)
+        for cursor in condition_cursors:
+            new_condition_cursors[cursor.asset_key] = cursor
 
         return dataclasses.replace(
             self,
             evaluation_id=evaluation_id,
-            previous_evaluation_state=list(new_evaluation_state_by_key.values()),
+            previous_condition_cursors=list(new_condition_cursors.values()),
             last_observe_request_timestamp_by_asset_key={
                 **self.last_observe_request_timestamp_by_asset_key,
                 **{
@@ -165,6 +166,7 @@ def backcompat_deserialize_asset_daemon_cursor_str(
     return AssetDaemonCursor(
         evaluation_id=data.get("evaluation_id") or default_evaluation_id,
         previous_evaluation_state=[],
+        previous_condition_cursors=[],
         last_observe_request_timestamp_by_asset_key={},
     )
 

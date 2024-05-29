@@ -1,6 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple, Union
 
 import pendulum
 
@@ -12,10 +12,10 @@ from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
+    SchedulingConditionNodeCursor,
 )
 from dagster._core.definitions.metadata import MetadataMapping
 from dagster._model import DagsterModel
-from dagster._serdes.serdes import PackableValue
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
 @experimental
 class SchedulingCondition(ABC, DagsterModel):
     @property
-    def store_subsets(self) -> bool:
+    def requires_cursor(self) -> bool:
         return False
 
     @property
@@ -359,6 +359,7 @@ class SchedulingResult(DagsterModel):
 
     extra_state: Any
     child_results: Sequence["SchedulingResult"]
+    node_cursor: Optional[SchedulingConditionNodeCursor]
 
     @property
     def true_subset(self) -> AssetSubset:
@@ -369,8 +370,10 @@ class SchedulingResult(DagsterModel):
         context: "SchedulingContext",
         true_slice: AssetSlice,
         child_results: Sequence["SchedulingResult"],
+        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "SchedulingResult":
         """Returns a new AssetConditionEvaluation from the given child results."""
+        candidate_subset = context.candidate_slice.convert_to_valid_asset_subset()
         return SchedulingResult(
             condition=context.condition,
             condition_unique_id=context.condition_unique_id,
@@ -381,6 +384,14 @@ class SchedulingResult(DagsterModel):
             subsets_with_metadata=[],
             child_results=child_results,
             extra_state=None,
+            node_cursor=SchedulingConditionNodeCursor(
+                true_subset=true_slice.convert_to_valid_asset_subset(),
+                candidate_subset=candidate_subset,
+                subsets_with_metadata=[],
+                extra_state=extra_state,
+            )
+            if context.condition.requires_cursor
+            else None,
         )
 
     @staticmethod
@@ -389,7 +400,7 @@ class SchedulingResult(DagsterModel):
         true_slice: AssetSlice,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         slices_with_metadata: Sequence[Tuple[AssetSlice, MetadataMapping]] = [],
-        extra_state: PackableValue = None,
+        extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
     ) -> "SchedulingResult":
         """Returns a new AssetConditionEvaluation from the given parameters."""
         check.param_invariant(
@@ -404,14 +415,23 @@ class SchedulingResult(DagsterModel):
                 )
                 for asset_slice, metadata in slices_with_metadata
             ]
+        candidate_subset = context.candidate_slice.convert_to_valid_asset_subset()
         return SchedulingResult(
             condition=context.condition,
             condition_unique_id=context.condition_unique_id,
             start_timestamp=context.create_time.timestamp(),
             end_timestamp=pendulum.now("UTC").timestamp(),
             true_slice=true_slice,
-            candidate_subset=context.candidate_slice.convert_to_valid_asset_subset(),
+            candidate_subset=candidate_subset,
             subsets_with_metadata=subsets_with_metadata,
             child_results=[],
             extra_state=extra_state,
+            node_cursor=SchedulingConditionNodeCursor(
+                true_subset=true_slice.convert_to_valid_asset_subset(),
+                candidate_subset=candidate_subset,
+                subsets_with_metadata=subsets_with_metadata,
+                extra_state=extra_state,
+            )
+            if context.condition.requires_cursor
+            else None,
         )

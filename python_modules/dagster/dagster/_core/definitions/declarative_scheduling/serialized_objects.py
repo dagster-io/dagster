@@ -19,9 +19,13 @@ from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    BaseTimeWindowPartitionsSubset,
+)
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import utc_datetime_from_timestamp
+from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
@@ -105,6 +109,41 @@ class AssetConditionEvaluation(DagsterModel):
                 for child_result in result.child_results
             ],
         )
+
+    def get_result_hash(self) -> str:
+        """Returns a unique string identifier which remains stable across processes to determine
+        if anything has changed since the last time this has been evaluated.
+        """
+
+        def _get_unique_str(
+            subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel],
+        ) -> str:
+            # returns a unique string for a given subset value, without having to list out all
+            # partition keys in cases where this would be expensive.
+            if isinstance(subset, HistoricalAllPartitionsSubsetSentinel) or isinstance(
+                subset.value, AllPartitionsSubset
+            ):
+                return "AllPartitionsSubset"
+            elif isinstance(subset.value, BaseTimeWindowPartitionsSubset):
+                return str(list(sorted(subset.value.included_time_windows)))
+            else:
+                return str(list(sorted(subset.asset_partitions)))
+
+        # the set of components which determine if this result is meaningfully different from the
+        # previous result
+        components: Sequence[str] = [
+            self.condition_snapshot.unique_id,
+            self.condition_snapshot.description,
+            _get_unique_str(self.true_subset),
+            _get_unique_str(self.candidate_subset),
+            *(
+                _get_unique_str(subset_with_metadata.subset)
+                + str(sorted(subset_with_metadata.frozen_metadata))
+                for subset_with_metadata in self.subsets_with_metadata
+            ),
+            *(child.get_result_hash() for child in self.child_evaluations),
+        ]
+        return non_secure_md5_hash_str("".join(components).encode("utf-8"))
 
     def equivalent_to_stored_evaluation(self, other: Optional["AssetConditionEvaluation"]) -> bool:
         """Returns if this evaluation is functionally equivalent to the given stored evaluation.
@@ -260,6 +299,7 @@ class AssetConditionEvaluationState:
         return None
 
 
+@whitelist_for_serdes
 class SchedulingConditionNodeCursor(NamedTuple):
     true_subset: AssetSubset
     candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
@@ -273,16 +313,19 @@ class SchedulingConditionNodeCursor(NamedTuple):
         return None
 
 
+@whitelist_for_serdes
 class SchedulingConditionCursor(NamedTuple):
     """Incremental state calculated during the evaluation of a SchedulingCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
     Attributes:
         previous_requested_subset: The subset that was requested for this asset on the previous tick.
-        timestamp: The timestamp at which the evaluation was performed.
-        max_storage_id: The maximum storage ID over all events used in this evaluation.
+        effective_timestamp: The timestamp at which the evaluation was performed.
+        last_event_id: The maximum storage ID over all events used in this evaluation.
         node_cursors_by_unique_id: A mapping from the unique ID of each condition in the evaluation
             tree to any incremental state calculated for it.
+        result_hash: A unique hash of the result for this tick. Used to determine if anything
+            has changed since the last time this was evaluated.
     """
 
     previous_requested_subset: AssetSubset
@@ -290,14 +333,13 @@ class SchedulingConditionCursor(NamedTuple):
     last_event_id: Optional[int]
 
     node_cursors_by_unique_id: Mapping[str, SchedulingConditionNodeCursor]
+    result_hash: str
 
     @staticmethod
-    def from_evaluation_state(
+    def backcompat_from_evaluation_state(
         evaluation_state: AssetConditionEvaluationState,
     ) -> "SchedulingConditionCursor":
-        """Serves as a temporary method to convert from old representation to the new representation.
-        Will be removed in the following PR.
-        """
+        """Serves as a temporary method to convert from old representation to the new representation."""
 
         def _get_node_cursors(
             evaluation: AssetConditionEvaluation,
@@ -322,7 +364,30 @@ class SchedulingConditionCursor(NamedTuple):
             effective_timestamp=evaluation_state.previous_tick_evaluation_timestamp or 0,
             last_event_id=evaluation_state.max_storage_id,
             node_cursors_by_unique_id=_get_node_cursors(evaluation_state.previous_evaluation),
+            result_hash=evaluation_state.previous_evaluation.get_result_hash(),
         )
+
+    @staticmethod
+    def from_result(
+        context: "SchedulingContext", result: "SchedulingResult", result_hash: str
+    ) -> "SchedulingConditionCursor":
+        def _gather_node_cursors(r: "SchedulingResult"):
+            node_cursors = {r.condition_unique_id: r.node_cursor} if r.node_cursor else {}
+            for rr in r.child_results:
+                node_cursors.update(_gather_node_cursors(rr))
+            return node_cursors
+
+        return SchedulingConditionCursor(
+            previous_requested_subset=result.true_subset,
+            effective_timestamp=context.effective_dt.timestamp(),
+            last_event_id=context.new_max_storage_id,
+            node_cursors_by_unique_id=_gather_node_cursors(result),
+            result_hash=result_hash,
+        )
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self.previous_requested_subset.asset_key
 
     @property
     def temporal_context(self) -> TemporalContext:

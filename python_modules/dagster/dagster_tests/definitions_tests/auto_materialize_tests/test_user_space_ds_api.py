@@ -14,6 +14,7 @@ from dagster._core.definitions.declarative_scheduling.serialized_objects import 
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._serdes.serdes import deserialize_value, serialize_value
 
 
 class SchedulingTickResult(NamedTuple):
@@ -46,8 +47,11 @@ def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult
             evaluation_id=i,
             evaluation_timestamp=time.time(),
             newly_observe_requested_asset_keys=[],
-            evaluation_state=result[0],
+            condition_cursors=result[2],
         )
+
+        serialized_cursor = serialize_value(cursor)
+        cursor = deserialize_value(serialized_cursor, AssetDaemonCursor)
 
         yield SchedulingTickResult(evaluation_states=result[0], asset_partition_keys=result[1])
 

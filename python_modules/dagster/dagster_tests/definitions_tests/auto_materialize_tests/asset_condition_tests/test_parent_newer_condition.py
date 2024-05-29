@@ -35,7 +35,7 @@ def test_parent_newer_unpartitioned() -> None:
     assert result.true_subset.size == 1
 
     # recalculate from scratch, B is still newer
-    state = state.without_previous_evaluation_state()
+    state = state.without_cursor()
     state, result = state.evaluate("C")
     assert result.true_subset.size == 1
 
@@ -85,6 +85,6 @@ def test_parent_newer_partitioned() -> None:
     assert result.true_subset.size == 2
 
     # recalculate from scratch, both still have newer parents
-    state = state.without_previous_evaluation_state()
+    state = state.without_cursor()
     state, result = state.evaluate("C")
     assert result.true_subset.size == 2
