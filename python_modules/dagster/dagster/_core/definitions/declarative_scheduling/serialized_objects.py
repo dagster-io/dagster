@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Dict,
     FrozenSet,
     Mapping,
     NamedTuple,
@@ -15,17 +14,13 @@ from typing import (
 )
 
 from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
-)
 from dagster._model import DagsterModel
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
@@ -95,77 +90,6 @@ class AssetConditionEvaluation(DagsterModel):
     def asset_key(self) -> AssetKey:
         return self.true_subset.asset_key
 
-    @staticmethod
-    def from_result(result: "SchedulingResult") -> "AssetConditionEvaluation":
-        return AssetConditionEvaluation.model_construct(
-            condition_snapshot=result.condition.get_snapshot(result.condition_unique_id),
-            start_timestamp=result.start_timestamp,
-            end_timestamp=result.end_timestamp,
-            true_subset=result.true_subset,
-            candidate_subset=get_serializable_candidate_subset(result.candidate_subset),
-            subsets_with_metadata=result.subsets_with_metadata,
-            child_evaluations=[
-                AssetConditionEvaluation.from_result(child_result)
-                for child_result in result.child_results
-            ],
-        )
-
-    def get_result_hash(self) -> str:
-        """Returns a unique string identifier which remains stable across processes to determine
-        if anything has changed since the last time this has been evaluated.
-        """
-
-        def _get_unique_str(
-            subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel],
-        ) -> str:
-            # returns a unique string for a given subset value, without having to list out all
-            # partition keys in cases where this would be expensive.
-            if isinstance(subset, HistoricalAllPartitionsSubsetSentinel) or isinstance(
-                subset.value, AllPartitionsSubset
-            ):
-                return "AllPartitionsSubset"
-            elif isinstance(subset.value, BaseTimeWindowPartitionsSubset):
-                return str(list(sorted(subset.value.included_time_windows)))
-            else:
-                return str(list(sorted(subset.asset_partitions)))
-
-        # the set of components which determine if this result is meaningfully different from the
-        # previous result
-        components: Sequence[str] = [
-            self.condition_snapshot.unique_id,
-            self.condition_snapshot.description,
-            _get_unique_str(self.true_subset),
-            _get_unique_str(self.candidate_subset),
-            *(
-                _get_unique_str(subset_with_metadata.subset)
-                + str(sorted(subset_with_metadata.frozen_metadata))
-                for subset_with_metadata in self.subsets_with_metadata
-            ),
-            *(child.get_result_hash() for child in self.child_evaluations),
-        ]
-        return non_secure_md5_hash_str("".join(components).encode("utf-8"))
-
-    def equivalent_to_stored_evaluation(self, other: Optional["AssetConditionEvaluation"]) -> bool:
-        """Returns if this evaluation is functionally equivalent to the given stored evaluation.
-        This is used to determine if it is necessary to store this new evaluation in the database.
-        Noteably, the timestamps on successive evaluations will always be different, so a simple
-        equality check would be too strict.
-        """
-        return (
-            other is not None
-            and self.condition_snapshot == other.condition_snapshot
-            and self.true_subset == other.true_subset
-            # the candidate subset gets modified during serialization
-            and get_serializable_candidate_subset(self.candidate_subset)
-            == get_serializable_candidate_subset(other.candidate_subset)
-            and self.subsets_with_metadata == other.subsets_with_metadata
-            and len(self.child_evaluations) == len(other.child_evaluations)
-            and all(
-                self_child.equivalent_to_stored_evaluation(other_child)
-                for self_child, other_child in zip(self.child_evaluations, other.child_evaluations)
-            )
-        )
-
     def discarded_subset(self) -> Optional[AssetSubset]:
         """Returns the AssetSubset representing asset partitions that were discarded during this
         evaluation. Note that 'discarding' is a deprecated concept that is only used for backwards
@@ -176,18 +100,6 @@ class AssetConditionEvaluation(DagsterModel):
         not_discard_evaluation = self.child_evaluations[-1]
         discard_evaluation = not_discard_evaluation.child_evaluations[0]
         return discard_evaluation.true_subset
-
-    def get_requested_or_discarded_subset(self) -> AssetSubset:
-        discarded_subset = self.discarded_subset()
-        if discarded_subset is None:
-            return self.true_subset
-        else:
-            # the true_subset and discarded_subset were created on the same tick, so they are
-            # guaranteed to be compatible with each other
-            return (
-                ValidAssetSubset(asset_key=self.asset_key, value=self.true_subset.value)
-                | discarded_subset
-            )
 
     def for_child(self, child_unique_id: str) -> Optional["AssetConditionEvaluation"]:
         """Returns the evaluation of a given child condition by finding the child evaluation that
@@ -263,41 +175,6 @@ class AssetConditionEvaluationState:
     def true_subset(self) -> AssetSubset:
         return self.previous_evaluation.true_subset
 
-    @staticmethod
-    def create(
-        context: "SchedulingContext", root_result: "SchedulingResult"
-    ) -> "AssetConditionEvaluationState":
-        """Convenience constructor to generate an AssetConditionEvaluationState from the root result
-        and the context in which it was evaluated.
-        """
-
-        # flatten the extra state into a single dict
-        def _flatten_extra_state(
-            r: "SchedulingResult",
-        ) -> Mapping[str, Optional[Union[AssetSubset, Sequence[AssetSubset]]]]:
-            extra_state: Dict[str, Optional[Union[AssetSubset, Sequence[AssetSubset]]]] = (
-                {r.condition_unique_id: r.extra_state} if r.extra_state else {}
-            )
-            for child in r.child_results:
-                extra_state.update(_flatten_extra_state(child))
-            return extra_state
-
-        return AssetConditionEvaluationState(
-            previous_evaluation=AssetConditionEvaluation.from_result(root_result),
-            previous_tick_evaluation_timestamp=context.asset_graph_view.effective_dt.timestamp(),
-            max_storage_id=context.new_max_storage_id,
-            extra_state_by_unique_id=_flatten_extra_state(root_result),
-        )
-
-    def get_extra_state(self, unique_id: str, as_type: Type[T]) -> Optional[T]:
-        """Returns the value from the extras dict for the given condition, if it exists and is of
-        the expected type. Otherwise, returns None.
-        """
-        extra_state = self.extra_state_by_unique_id.get(unique_id)
-        if isinstance(extra_state, as_type):
-            return extra_state
-        return None
-
 
 @whitelist_for_serdes
 class SchedulingConditionNodeCursor(NamedTuple):
@@ -333,7 +210,7 @@ class SchedulingConditionCursor(NamedTuple):
     last_event_id: Optional[int]
 
     node_cursors_by_unique_id: Mapping[str, SchedulingConditionNodeCursor]
-    result_hash: str
+    result_value_hash: str
 
     @staticmethod
     def backcompat_from_evaluation_state(
@@ -364,7 +241,7 @@ class SchedulingConditionCursor(NamedTuple):
             effective_timestamp=evaluation_state.previous_tick_evaluation_timestamp or 0,
             last_event_id=evaluation_state.max_storage_id,
             node_cursors_by_unique_id=_get_node_cursors(evaluation_state.previous_evaluation),
-            result_hash=evaluation_state.previous_evaluation.get_result_hash(),
+            result_value_hash="",
         )
 
     @staticmethod
@@ -382,7 +259,7 @@ class SchedulingConditionCursor(NamedTuple):
             effective_timestamp=context.effective_dt.timestamp(),
             last_event_id=context.new_max_storage_id,
             node_cursors_by_unique_id=_gather_node_cursors(result),
-            result_hash=result_hash,
+            result_value_hash=result_hash,
         )
 
     @property

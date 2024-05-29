@@ -20,6 +20,7 @@ from typing import (
 
 import pendulum
 
+from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
@@ -29,7 +30,6 @@ from dagster._core.definitions.partition import PartitionsDefinition
 
 from ...asset_subset import AssetSubset, ValidAssetSubset
 from ..serialized_objects import (
-    AssetConditionEvaluationState,
     AssetSubsetWithMetadata,
     SchedulingConditionCursor,
     SchedulingConditionNodeCursor,
@@ -72,7 +72,7 @@ class LegacyRuleEvaluationContext:
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
 
-    evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState]
+    current_results_by_key: Mapping[AssetKey, SchedulingResult]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
@@ -89,7 +89,7 @@ class LegacyRuleEvaluationContext:
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
         daemon_context: "AssetDaemonContext",
-        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
+        current_results_by_key: Mapping[AssetKey, SchedulingResult],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> "LegacyRuleEvaluationContext":
         return LegacyRuleEvaluationContext.create(
@@ -98,7 +98,7 @@ class LegacyRuleEvaluationContext:
             cursor=previous_condition_cursor,
             instance_queryer=instance_queryer,
             data_time_resolver=data_time_resolver,
-            evaluation_state_by_key=evaluation_state_by_key,
+            current_results_by_key=current_results_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
             respect_materialization_data_versions=daemon_context.respect_materialization_data_versions,
             auto_materialize_run_tags=daemon_context.auto_materialize_run_tags,
@@ -113,7 +113,7 @@ class LegacyRuleEvaluationContext:
         cursor: Optional[SchedulingConditionCursor],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
-        evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
+        current_results_by_key: Mapping[AssetKey, SchedulingResult],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         respect_materialization_data_versions: bool,
         auto_materialize_run_tags: Mapping[str, str],
@@ -138,7 +138,7 @@ class LegacyRuleEvaluationContext:
             ),
             data_time_resolver=data_time_resolver,
             instance_queryer=instance_queryer,
-            evaluation_state_by_key=evaluation_state_by_key,
+            current_results_by_key=current_results_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
             start_timestamp=pendulum.now("UTC").timestamp(),
             respect_materialization_data_versions=respect_materialization_data_versions,
@@ -223,10 +223,10 @@ class LegacyRuleEvaluationContext:
         for parent_key in self.asset_graph.get(self.asset_key).parent_keys:
             if not self.materializable_in_same_run(self.asset_key, parent_key):
                 continue
-            parent_info = self.evaluation_state_by_key.get(parent_key)
-            if not parent_info:
+            parent_result = self.current_results_by_key.get(parent_key)
+            if not parent_result:
                 continue
-            parent_subset = parent_info.true_subset.as_valid(self.partitions_def)
+            parent_subset = parent_result.true_subset.as_valid(self.partitions_def)
             subset |= parent_subset.model_copy(update={"asset_key": self.asset_key})
         return subset
 
@@ -392,10 +392,10 @@ class LegacyRuleEvaluationContext:
         }
 
     def will_update_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> bool:
-        parent_evaluation_state = self.evaluation_state_by_key.get(asset_partition.asset_key)
-        if not parent_evaluation_state:
+        parent_result = self.current_results_by_key.get(asset_partition.asset_key)
+        if not parent_result:
             return False
-        return asset_partition in parent_evaluation_state.true_subset
+        return asset_partition in parent_result.true_subset
 
     def add_evaluation_data_from_previous_tick(
         self,
