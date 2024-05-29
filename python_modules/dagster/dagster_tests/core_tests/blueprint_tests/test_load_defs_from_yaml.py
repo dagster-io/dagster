@@ -14,6 +14,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
+from dagster._core.test_utils import environ
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from pydantic import ValidationError
 
@@ -186,3 +187,43 @@ def test_single_file_union_of_blueprints_discriminated_union() -> None:
         per_file_blueprint_type=Union[SameFieldsAssetBlueprint1, SameFieldsAssetBlueprint2],
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+
+def test_basic_env_var_jinja_templating() -> None:
+    with environ({"ASSET_NAME": "my_asset"}):
+        defs = load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_env_var.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprint,
+        )
+        assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("my_asset")}
+
+
+def test_basic_env_var_jinja_templating_err() -> None:
+    if "ASSET_NAME" in os.environ:
+        del os.environ["ASSET_NAME"]
+
+    with pytest.raises(
+        DagsterBuildDefinitionsFromConfigError, match="Environment variable ASSET_NAME"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_env_var.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprint,
+        )
+
+
+def test_basic_env_var_jinja_templating_no_env_var_default() -> None:
+    with environ({"ASSET_NAME": "foo"}):
+        defs = load_defs_from_yaml(
+            path=Path(__file__).parent
+            / "yaml_files"
+            / "single_blueprint_with_env_var_default.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprint,
+        )
+        assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("foo")}
+
+    # Should use default value of "bar" if ASSET_NAME is not set
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_env_var_default.yaml",
+        per_file_blueprint_type=SimpleAssetBlueprint,
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("bar")}
