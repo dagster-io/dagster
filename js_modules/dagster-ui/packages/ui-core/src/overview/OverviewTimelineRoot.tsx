@@ -80,7 +80,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     [hourWindow, now, offsetMsec],
   );
 
-  const runsForTimelineRet = useRunsForTimeline(range);
+  const runsForTimelineRet = useRunsForTimeline({rangeMs: range});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
