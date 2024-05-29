@@ -57,7 +57,7 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
   }
 };
 
-const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
+export const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
   switch (type) {
     case AssetFilterSearchResultType.CodeLocation:
       return 'Code location';
