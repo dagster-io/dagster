@@ -5,7 +5,7 @@ class AssetCondition(SchedulingCondition):
     """Deprecated: Use SchedulingCondition instead."""
 
     @property
-    def store_subsets(self) -> bool:
+    def requires_cursor(self) -> bool:
         return True
 
     @staticmethod

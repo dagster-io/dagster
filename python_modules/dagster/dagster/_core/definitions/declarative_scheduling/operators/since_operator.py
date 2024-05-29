@@ -12,7 +12,7 @@ class SinceCondition(SchedulingCondition):
     reset_condition: SchedulingCondition
 
     @property
-    def store_subsets(self) -> bool:
+    def requires_cursor(self) -> bool:
         return True
 
     @property
