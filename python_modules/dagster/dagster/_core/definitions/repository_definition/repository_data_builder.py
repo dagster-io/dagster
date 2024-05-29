@@ -22,6 +22,7 @@ from dagster._config.pythonic_config import (
     ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
 )
+from dagster._core.blueprints.blueprint import Blueprint
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import (
@@ -166,6 +167,7 @@ def build_caching_repository_data_from_list(
     asset_check_keys: Set["AssetCheckKey"] = set()
     source_assets: List[SourceAsset] = []
     asset_checks_defs: List[AssetChecksDefinition] = []
+    blueprints: List[Blueprint] = []
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
@@ -239,6 +241,8 @@ def build_caching_repository_data_from_list(
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
             asset_keys.add(definition.key)
+        elif isinstance(definition, Blueprint):
+            blueprints.append(definition)
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
@@ -331,6 +335,7 @@ def build_caching_repository_data_from_list(
         utilized_env_vars=utilized_env_vars,
         resource_key_mapping=resource_key_mapping or {},
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
+        blueprints={blueprint.id: blueprint for blueprint in blueprints},
     )
 
 
@@ -394,6 +399,7 @@ def build_caching_repository_data_from_dict(
         utilized_env_vars={},
         resource_key_mapping={},
         unresolved_partitioned_asset_schedules={},
+        blueprints={},
     )
 
 

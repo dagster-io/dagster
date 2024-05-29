@@ -31,6 +31,7 @@ from .caching_index import CacheingDefinitionIndex
 from .valid_definitions import RepositoryListDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.blueprints.blueprint import Blueprint
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.partitioned_schedule import (
@@ -60,6 +61,9 @@ class RepositoryData(ABC):
         Returns:
             List[ResourceDefinition]: All top-level resources in the repository.
         """
+
+    @abstractmethod
+    def get_blueprints(self) -> Mapping[str, "Blueprint"]: ...
 
     @abstractmethod
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
@@ -229,6 +233,7 @@ class CachingRepositoryData(RepositoryData):
         unresolved_partitioned_asset_schedules: Mapping[
             str, "UnresolvedPartitionedAssetScheduleDefinition"
         ],
+        blueprints: Mapping[str, "Blueprint"],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -323,6 +328,7 @@ class CachingRepositoryData(RepositoryData):
         self._top_level_resources = top_level_resources
         self._utilized_env_vars = utilized_env_vars
         self._resource_key_mapping = resource_key_mapping
+        self._blueprints = blueprints
 
         self._sensors = CacheingDefinitionIndex(
             SensorDefinition,
@@ -420,6 +426,9 @@ class CachingRepositoryData(RepositoryData):
 
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._top_level_resources
+
+    def get_blueprints(self) -> Mapping[str, "Blueprint"]:
+        return self._blueprints
 
     def get_all_jobs(self) -> Sequence[JobDefinition]:
         """Return all jobs in the repository as a list.

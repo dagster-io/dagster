@@ -43,6 +43,7 @@ from .valid_definitions import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.blueprints.blueprint import Blueprint
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -146,6 +147,9 @@ class RepositoryDefinition:
 
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
+
+    def get_blueprints(self) -> Mapping[str, "Blueprint"]:
+        return self._repository_data.get_blueprints()
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._repository_data.get_env_vars_by_top_level_resource()

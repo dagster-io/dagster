@@ -106,6 +106,7 @@ class _Repository:
             Callable[[], RepositoryDictSpec],
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+        from dagster._core.blueprints.blueprint import Blueprint
         from dagster._core.definitions import AssetsDefinition, SourceAsset
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
@@ -135,6 +136,7 @@ class _Repository:
                         AssetsDefinition,
                         SourceAsset,
                         UnresolvedAssetJobDefinition,
+                        Blueprint,
                     ),
                 ):
                     bad_defns.append((i, type(definition)))

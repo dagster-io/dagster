@@ -127,6 +127,7 @@ class ExternalRepositoryData(
             ("external_asset_checks", Optional[Sequence["ExternalAssetCheck"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
+            ("external_blueprint_data", Optional[Sequence["ExternalBlueprintData"]]),
         ],
     )
 ):
@@ -143,6 +144,7 @@ class ExternalRepositoryData(
         external_asset_checks: Optional[Sequence["ExternalAssetCheck"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
+        external_blueprint_data: Optional[Sequence["ExternalBlueprintData"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -184,6 +186,9 @@ class ExternalRepositoryData(
                 utilized_env_vars,
                 "utilized_env_vars",
                 key_type=str,
+            ),
+            external_blueprint_data=check.opt_nullable_sequence_param(
+                external_blueprint_data, "external_blueprint_data", of_type=ExternalBlueprintData
             ),
         )
 
@@ -1131,6 +1136,11 @@ class ResourceJobUsageEntry(NamedTuple):
 
 
 @whitelist_for_serdes
+class ExternalBlueprintData(NamedTuple):
+    id: str
+
+
+@whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
         "_ExternalResourceData",
@@ -1620,6 +1630,13 @@ def external_repository_data_from_def(
         external_asset_graph_data=asset_graph,
         external_job_datas=job_datas,
         external_job_refs=job_refs,
+        external_blueprint_data=sorted(
+            [
+                ExternalBlueprintData(id=blueprint.id)
+                for blueprint in repository_def.get_blueprints().values()
+            ],
+            key=lambda blueprint: blueprint.id,
+        ),
         external_resource_data=sorted(
             [
                 external_resource_data_from_def(

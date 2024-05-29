@@ -17,7 +17,12 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
-from .blueprint import Blueprint, BlueprintDefinitions, DagsterBuildDefinitionsFromConfigError
+from .blueprint import (
+    Blueprint,
+    BlueprintDefinitions,
+    DagsterBuildDefinitionsFromConfigError,
+    blueprint_id_from_file_path,
+)
 
 
 def _attach_code_references_to_definitions(
@@ -129,7 +134,13 @@ def load_defs_from_yaml(
             file_path.read_text(),
             str(file_path),
             leaf_resolver=lambda value: process_jinja_string(file_path, value),
-        ).with_used_env_vars(env_vars_used_by_filepath[file_path])
+        ).with_load_metadata(
+            # generate a stable ID for the blueprint based on the file path
+            # maybe this should be the relative path itself? hard to determine that right now
+            # reliably
+            id=blueprint_id_from_file_path(file_path=file_path),
+            env_vars=env_vars_used_by_filepath[file_path],
+        )
         for file_path in file_paths
     ]
 

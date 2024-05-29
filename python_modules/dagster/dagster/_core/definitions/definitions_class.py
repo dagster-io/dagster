@@ -45,6 +45,7 @@ from .sensor_definition import SensorDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.blueprints.blueprint import Blueprint
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -253,6 +254,7 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+    blueprints: Optional[Iterable["Blueprint"]] = None,
 ) -> RepositoryDefinition:
     executor_def = (
         executor
@@ -297,6 +299,7 @@ def _create_repository_using_definitions_args(
             *(schedules_with_resources),
             *(sensors_with_resources),
             *(jobs_with_resources),
+            *blueprints,
         ]
 
     return created_repo
@@ -363,6 +366,10 @@ class Definitions:
             Default loggers for jobs. Individual jobs
             can define their own loggers by setting them explictly.
 
+        blueprints (Optional[Iterable[Blueprint]]):
+            List of blueprints which were used to construct this Definitions object. This is
+            automatically populated when using :py:func:`load_defs_from_yaml <load_defs_from_yaml>`.
+
     Example usage:
 
     .. code-block:: python
@@ -412,6 +419,7 @@ class Definitions:
     _executor: Optional[Union[ExecutorDefinition, Executor]]
     _loggers: Mapping[str, LoggerDefinition]
     _asset_checks: Iterable[AssetChecksDefinition]
+    _blueprints: Iterable["Blueprint"]
 
     def __init__(
         self,
@@ -427,6 +435,7 @@ class Definitions:
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+        blueprints: Optional[Iterable["Blueprint"]] = None,
     ):
         self._assets = check.opt_iterable_param(
             assets,
@@ -466,7 +475,11 @@ class Definitions:
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            blueprints=blueprints,
         )
+        from dagster._core.blueprints.blueprint import Blueprint
+
+        self._blueprints = check.opt_iterable_param(blueprints, "blueprints", Blueprint)
 
     @property
     def assets(self) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
@@ -501,6 +514,10 @@ class Definitions:
     @property
     def asset_checks(self) -> Iterable[AssetChecksDefinition]:
         return self._asset_checks
+
+    @property
+    def blueprints(self) -> Iterable["Blueprint"]:
+        return self._blueprints
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
