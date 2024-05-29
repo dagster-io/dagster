@@ -1,4 +1,4 @@
-from typing import Type, TypeVar
+from typing import Any, Callable, Optional, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
@@ -10,7 +10,12 @@ from .yaml_utils import parse_yaml_with_source_positions
 T = TypeVar("T", bound=BaseModel)
 
 
-def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string>") -> T:
+def parse_yaml_file_to_pydantic(
+    cls: Type[T],
+    src: str,
+    filename: str = "<string>",
+    leaf_resolver: Optional[Callable[[Any], Any]] = None,
+) -> T:
     """Parse the YAML source and create a Pydantic model instance from it.
 
     Attaches source position information to the `_source_position_and_key_path` attribute of the
@@ -31,7 +36,7 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_positions(src, filename, leaf_resolver=leaf_resolver)
     try:
         model = parse_obj_as(cls, parsed.value)
     except ValidationError as e:

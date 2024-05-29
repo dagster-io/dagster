@@ -1,5 +1,8 @@
+import os
 from pathlib import Path
-from typing import Type, Union
+from typing import Any, Optional, Type, Union
+
+import jinja2
 
 from dagster import (
     Definitions,
@@ -13,7 +16,7 @@ from dagster._core.definitions.metadata.source_code import (
 )
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
-from .blueprint import Blueprint, BlueprintDefinitions
+from .blueprint import Blueprint, BlueprintDefinitions, DagsterBuildDefinitionsFromConfigError
 
 
 def _attach_code_references_to_definitions(
@@ -100,8 +103,29 @@ def load_defs_from_yaml(
     else:
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
+    def resolve_env_var(file_path: Path, key: str, default: Optional[str] = None) -> str:
+        out = os.environ.get(key, default)
+        if out is None:
+            raise DagsterBuildDefinitionsFromConfigError(
+                f"Environment variable {key} not set when processing blueprint file {file_path}"
+            )
+        return out
+
+    def process_jinja_string(file_path: Path, value: Any) -> Any:
+        if isinstance(value, str):
+            return jinja2.Template(value).render(
+                env_var=lambda *args: resolve_env_var(file_path, *args)
+            )
+        else:
+            return value
+
     blueprints = [
-        parse_yaml_file_to_pydantic(per_file_blueprint_type, file_path.read_text(), str(file_path))
+        parse_yaml_file_to_pydantic(
+            per_file_blueprint_type,
+            file_path.read_text(),
+            str(file_path),
+            leaf_resolver=lambda value: process_jinja_string(file_path, value),
+        )
         for file_path in file_paths
     ]
 
