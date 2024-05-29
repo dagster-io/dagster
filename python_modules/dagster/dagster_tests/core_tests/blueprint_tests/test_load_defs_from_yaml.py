@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal, Union
 
@@ -9,6 +10,10 @@ from dagster._core.blueprints.blueprint import (
     DagsterBuildDefinitionsFromConfigError,
 )
 from dagster._core.blueprints.load_from_yaml import load_defs_from_yaml
+from dagster._core.definitions.metadata.source_code import (
+    CodeReferencesMetadataSet,
+    LocalFileCodeReference,
+)
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from pydantic import ValidationError
 
@@ -40,6 +45,16 @@ def test_single_file_single_blueprint() -> None:
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
+    metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
+    code_references_metadata = CodeReferencesMetadataSet.extract(metadata)
+    assert code_references_metadata.code_references
+    assert len(code_references_metadata.code_references.code_references) == 1
+    reference = code_references_metadata.code_references.code_references[0]
+    assert isinstance(reference, LocalFileCodeReference)
+    assert reference.file_path == os.fspath(
+        Path(__file__).parent / "yaml_files" / "single_blueprint.yaml"
+    )
+
 
 def test_dir_of_single_blueprints() -> None:
     defs = load_defs_from_yaml(
@@ -47,6 +62,20 @@ def test_dir_of_single_blueprints() -> None:
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset2"), AssetKey("asset3")}
+
+    for asset_key, expected_filename in (
+        (AssetKey("asset2"), "single_blueprint1.yaml"),
+        (AssetKey("asset3"), "single_blueprint2.yaml"),
+    ):
+        metadata = defs.get_assets_def(asset_key).metadata_by_key[asset_key]
+        code_references_metadata = CodeReferencesMetadataSet.extract(metadata)
+        assert code_references_metadata.code_references
+        assert len(code_references_metadata.code_references.code_references) == 1
+        reference = code_references_metadata.code_references.code_references[0]
+        assert isinstance(reference, LocalFileCodeReference)
+        assert reference.file_path == os.fspath(
+            Path(__file__).parent / "yaml_files" / "dir_of_single_blueprints" / expected_filename
+        )
 
 
 def test_abstract_blueprint() -> None:
