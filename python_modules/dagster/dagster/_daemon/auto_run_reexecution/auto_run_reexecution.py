@@ -10,6 +10,7 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunR
 from dagster._core.storage.tags import (
     MAX_RETRIES_TAG,
     RETRY_NUMBER_TAG,
+    RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
     RUN_FAILURE_REASON_TAG,
 )
@@ -61,12 +62,15 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
-    retry_on_asset_or_op_failure = instance.get_settings("run_retries").get(
+    default_retry_on_asset_or_op_failure = instance.get_settings("run_retries").get(
         "retry_on_asset_or_op_failure", True
     )
 
     for run in runs:
         retry_number = get_retry_number(run)
+        retry_on_asset_or_op_failure = run.tags.get(
+            RETRY_ON_ASSET_OR_OP_FAILURE_TAG, default_retry_on_asset_or_op_failure
+        )
         if retry_number is not None:
             if (
                 run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
