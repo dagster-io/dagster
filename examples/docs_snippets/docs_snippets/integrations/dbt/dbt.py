@@ -409,18 +409,3 @@ def scope_config_dbt_assets():
     )
 
     # end_config_dbt_job
-
-    # start_config_dbt_schedule
-    from dagster import RunConfig
-    from dagster_dbt import build_schedule_from_dbt_selection
-
-    my_schedule = build_schedule_from_dbt_selection(
-        [my_dbt_assets],
-        job_name="all_dbt_assets",
-        cron_schedule="0 0 * * *",
-        config=RunConfig(
-            ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
-        ),
-    )
-
-    # end_config_dbt_schedule
