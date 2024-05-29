@@ -18,7 +18,11 @@ import {ChangedReasonsTag, MinimalNodeChangedDot} from '../assets/ChangedReasons
 import {MinimalNodeStaleDot, StaleReasonsTag, isAssetStale} from '../assets/Stale';
 import {AssetChecksStatusSummary} from '../assets/asset-checks/AssetChecksStatusSummary';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {AssetComputeKindTag} from '../graph/OpTags';
+import {
+  AssetComputeKindTag,
+  AssetStorageKindTag,
+  isCanonicalStorageKindTag,
+} from '../graph/KindTags';
 import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 interface Props {
@@ -30,6 +34,7 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
   const isSource = definition.isSource;
 
   const {liveData} = useAssetLiveData(definition.assetKey);
+  const storageKindTag = definition.tags?.find(isCanonicalStorageKindTag);
   return (
     <AssetInsetForHoverEffect>
       <Box
@@ -63,7 +68,18 @@ export const AssetNode = React.memo(({definition, selected}: Props) => {
             <AssetNodeChecksRow definition={definition} liveData={liveData} />
           )}
         </AssetNodeBox>
-        <AssetComputeKindTag definition={definition} style={{right: -2, paddingTop: 7}} />
+        <Box flex={{direction: 'row-reverse', gap: 8}}>
+          {storageKindTag && (
+            <AssetStorageKindTag
+              storageKind={storageKindTag.value}
+              style={{position: 'relative', paddingTop: 7, margin: 0}}
+            />
+          )}
+          <AssetComputeKindTag
+            definition={definition}
+            style={{position: 'relative', paddingTop: 7, margin: 0}}
+          />
+        </Box>
       </AssetNodeContainer>
     </AssetInsetForHoverEffect>
   );
@@ -250,6 +266,10 @@ export const ASSET_NODE_FRAGMENT = gql`
     assetKey {
       ...AssetNodeKey
     }
+    tags {
+      key
+      value
+    }
   }
 
   fragment AssetNodeKey on AssetKey {
@@ -387,7 +407,7 @@ const MinimalAssetNodeBox = styled.div<{
       &::after {
         inset: 0;
         position: absolute;
-        animation: pulse 0.75s infinite alternate; 
+        animation: pulse 0.75s infinite alternate;
         border-radius: 16px;
         border: 4px solid ${p.$border};
         content: '';

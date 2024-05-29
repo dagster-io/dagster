@@ -43,6 +43,7 @@ import close from '../icon-svgs/close.svg';
 import code_location from '../icon-svgs/code_location.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
+import compute_kind from '../icon-svgs/compute_kind.svg';
 import concept_book from '../icon-svgs/concept-book.svg';
 import console_icon from '../icon-svgs/console.svg';
 import content_copy from '../icon-svgs/content_copy.svg';
@@ -153,6 +154,7 @@ import star from '../icon-svgs/star.svg';
 import star_outline from '../icon-svgs/star_outline.svg';
 import status from '../icon-svgs/status.svg';
 import sticky_note from '../icon-svgs/sticky_note.svg';
+import storage_kind from '../icon-svgs/storage_kind.svg';
 import sync_alt from '../icon-svgs/sync_alt.svg';
 import sync_problem from '../icon-svgs/sync_problem.svg';
 import table_rows from '../icon-svgs/table_rows.svg';
@@ -291,6 +293,7 @@ export const Icons = {
   chevron_left,
   close,
   code_location,
+  compute_kind,
   console: console_icon,
   content_copy,
   collapse_arrows,
@@ -354,6 +357,7 @@ export const Icons = {
   star_outline,
   status,
   sticky_note,
+  storage_kind,
   sync_alt,
   sync_problem,
   table_view,
