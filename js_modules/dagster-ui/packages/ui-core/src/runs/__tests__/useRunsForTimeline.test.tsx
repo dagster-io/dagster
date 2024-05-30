@@ -3,6 +3,7 @@ import {waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import {ReactNode} from 'react';
 
+import {AppContext} from '../../app/AppContext';
 import {
   InstigationStatus,
   RepositoryLocationLoadStatus,
@@ -28,6 +29,17 @@ import {
   ONGOING_RUN_TIMELINE_QUERY,
   useRunsForTimeline,
 } from '../useRunsForTimeline';
+
+const mockedCache = {
+  has: jest.fn(),
+  get: jest.fn(),
+  set: jest.fn(),
+};
+jest.mock('idb-lru-cache', () => {
+  return {
+    cache: jest.fn(() => mockedCache),
+  };
+});
 
 const mockCompletedRuns = (variables: any, result: any) => ({
   request: {
@@ -471,6 +483,136 @@ describe('useRunsForTimeline', () => {
 
     mockCbs.forEach((mockFn) => {
       expect(mockFn).toHaveBeenCalled();
+    });
+  });
+
+  it('uses cached data from indexedb and only requests missing interval and combines the cached data with the fetched data', async () => {
+    const sixDaysAgo = Date.now() / 1000 - 6 * 24 * 60 * 60;
+    const start = Math.floor(sixDaysAgo / ONE_HOUR_S) * ONE_HOUR_S;
+    const initialRange = [start, start + ONE_HOUR_S] as const;
+    const buckets = getHourlyBuckets(initialRange[0], initialRange[1]);
+    expect(buckets).toHaveLength(1);
+
+    const cachedRange = [start, start + ONE_HOUR_S / 2] as const;
+
+    const mocks: MockedResponse[] = [
+      mockCompletedRuns(
+        {
+          completedFilter: {
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            // We only fetch the range missing from the cache
+            updatedBefore: initialRange[1],
+            updatedAfter: cachedRange[1],
+          },
+          cursor: undefined,
+          limit: 500,
+        },
+        {
+          data: {
+            completed: buildRuns({
+              results: [
+                buildRun({
+                  id: `1-0`,
+                  pipelineName: `pipeline0`,
+                  repositoryOrigin: buildRepositoryOrigin({
+                    id: `1-0`,
+                    repositoryName: 'repo1',
+                    repositoryLocationName: 'repo1',
+                  }),
+                  startTime: initialRange[0],
+                  endTime: initialRange[1],
+                  status: RunStatus.SUCCESS,
+                }),
+              ],
+            }),
+          },
+        },
+      ),
+    ];
+
+    mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <AppContext.Provider
+        value={{
+          localCacheIdPrefix: 'test',
+          basePath: '',
+          rootServerURI: '',
+          telemetryEnabled: false,
+        }}
+      >
+        <MockedProvider mocks={mocks} addTypename={false}>
+          {children}
+        </MockedProvider>
+      </AppContext.Provider>
+    );
+
+    mockedCache.has.mockResolvedValue(true);
+
+    const startHour = Math.floor(start / ONE_HOUR_S);
+    mockedCache.get.mockResolvedValue({
+      value: new Map([
+        [
+          startHour,
+          [
+            {
+              start: cachedRange[0],
+              end: cachedRange[1],
+              data: [
+                buildRun({
+                  id: 'cached-run',
+                  pipelineName: 'pipeline0',
+                  repositoryOrigin: buildRepositoryOrigin({
+                    id: '1-1',
+                    repositoryName: 'repo1',
+                    repositoryLocationName: 'repo1',
+                  }),
+                  startTime: initialRange[0],
+                  endTime: initialRange[1],
+                  status: RunStatus.SUCCESS,
+                }),
+              ],
+            },
+          ],
+        ],
+      ]),
+    });
+
+    const {result} = renderHook(
+      () => useRunsForTimeline({rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000]}),
+      {
+        wrapper,
+      },
+    );
+
+    // Initial state
+    expect(result.current.jobs).toEqual([]);
+    expect(result.current.initialLoading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.jobs).toHaveLength(1);
+    });
+
+    expect(result.current.jobs[0]).toEqual({
+      key: 'pipeline0-repo1@repo1',
+      jobName: 'pipeline0',
+      jobType: 'job',
+      repoAddress: {name: 'repo1', location: 'repo1'},
+      path: '/locations/repo1@repo1/jobs/pipeline0',
+      runs: [
+        {
+          endTime: initialRange[1] * 1000,
+          id: 'cached-run',
+          startTime: initialRange[0] * 1000,
+          status: 'SUCCESS',
+        },
+        {
+          endTime: initialRange[1] * 1000,
+          id: '1-0',
+          startTime: initialRange[0] * 1000,
+          status: 'SUCCESS',
+        },
+      ],
     });
   });
 });

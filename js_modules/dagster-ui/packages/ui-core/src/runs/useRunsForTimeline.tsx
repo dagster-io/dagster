@@ -105,6 +105,7 @@ export const useRunsForTimeline = ({
   const {data: completedRunsData, loading: loadingCompletedRunsData} = completedRunsQueryData;
 
   const fetchCompletedRunsQueryData = useCallback(async () => {
+    await completedRunsCache.loadCacheFromIndexedDB();
     return await fetchPaginatedBucketData({
       buckets: buckets.map((bucket) => {
         let updatedAfter = bucket[0];
@@ -120,7 +121,6 @@ export const useRunsForTimeline = ({
       }),
       setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
-        await completedRunsCache.loadCacheFromIndexedDB();
         const updatedBefore = bucket[1];
         const updatedAfter = bucket[0];
         let cacheData: RunTimelineFragment[] = [];
