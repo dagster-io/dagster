@@ -1,17 +1,22 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 from dagster._core.definitions.selector import (
     RepositorySelector,
 )
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.schema.errors import GrapheneDuplicateDynamicPartitionError
+from dagster_graphql.schema.errors import (
+    GrapheneDuplicateDynamicPartitionError,
+)
 
 from ..utils import UserFacingGraphQLError, assert_permission_for_location
 
 if TYPE_CHECKING:
     from ...schema.inputs import GrapheneRepositorySelector
-    from ...schema.partition_sets import GrapheneAddDynamicPartitionSuccess
+    from ...schema.partition_sets import (
+        GrapheneAddDynamicPartitionSuccess,
+        GrapheneDeleteDynamicPartitionsSuccess,
+    )
 
 
 def _repository_contains_dynamic_partitions_def(
@@ -92,3 +97,39 @@ def add_dynamic_partition(
     return GrapheneAddDynamicPartitionSuccess(
         partitionsDefName=partitions_def_name, partitionKey=partition_key
     )
+
+
+def delete_dynamic_partitions(
+    graphene_info,
+    repository_selector: "GrapheneRepositorySelector",
+    partitions_def_name: str,
+    partition_keys: Sequence[str],
+) -> "GrapheneDeleteDynamicPartitionsSuccess":
+    from dagster_graphql.schema.errors import GrapheneUnauthorizedError
+
+    from ...schema.partition_sets import GrapheneDeleteDynamicPartitionsSuccess
+
+    unpacked_repository_selector = RepositorySelector.from_graphql_input(repository_selector)
+
+    assert_permission_for_location(
+        graphene_info,
+        Permissions.EDIT_DYNAMIC_PARTITIONS,
+        unpacked_repository_selector.location_name,
+    )
+
+    if not _repository_contains_dynamic_partitions_def(
+        graphene_info, unpacked_repository_selector, partitions_def_name
+    ):
+        raise UserFacingGraphQLError(
+            GrapheneUnauthorizedError(
+                message=(
+                    "The repository does not contain a dynamic partitions definition with the given"
+                    " name."
+                )
+            )
+        )
+
+    for partition_key in partition_keys:
+        graphene_info.context.instance.delete_dynamic_partition(partitions_def_name, partition_key)
+
+    return GrapheneDeleteDynamicPartitionsSuccess(partitionsDefName=partitions_def_name)

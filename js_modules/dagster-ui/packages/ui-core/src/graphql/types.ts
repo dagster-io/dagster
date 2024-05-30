@@ -1105,6 +1105,16 @@ export type DefinitionTag = {
   value: Scalars['String']['output'];
 };
 
+export type DeleteDynamicPartitionsResult =
+  | DeleteDynamicPartitionsSuccess
+  | PythonError
+  | UnauthorizedError;
+
+export type DeleteDynamicPartitionsSuccess = {
+  __typename: 'DeleteDynamicPartitionsSuccess';
+  partitionsDefName: Scalars['String']['output'];
+};
+
 export type DeletePipelineRunResult =
   | DeletePipelineRunSuccess
   | PythonError
@@ -2585,6 +2595,7 @@ export type Mutation = {
   addDynamicPartition: AddDynamicPartitionResult;
   cancelPartitionBackfill: CancelBackfillResult;
   deleteConcurrencyLimit: Scalars['Boolean']['output'];
+  deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   deletePipelineRun: DeletePipelineRunResult;
   deleteRun: DeletePipelineRunResult;
   freeConcurrencySlots: Scalars['Boolean']['output'];
@@ -2630,6 +2641,12 @@ export type MutationCancelPartitionBackfillArgs = {
 
 export type MutationDeleteConcurrencyLimitArgs = {
   concurrencyKey: Scalars['String']['input'];
+};
+
+export type MutationDeleteDynamicPartitionsArgs = {
+  partitionKeys: Array<Scalars['String']['input']>;
+  partitionsDefName: Scalars['String']['input'];
+  repositorySelector: RepositorySelector;
 };
 
 export type MutationDeletePipelineRunArgs = {
@@ -7372,6 +7389,21 @@ export const buildDefinitionTag = (
   };
 };
 
+export const buildDeleteDynamicPartitionsSuccess = (
+  overrides?: Partial<DeleteDynamicPartitionsSuccess>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'DeleteDynamicPartitionsSuccess'} & DeleteDynamicPartitionsSuccess => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('DeleteDynamicPartitionsSuccess');
+  return {
+    __typename: 'DeleteDynamicPartitionsSuccess',
+    partitionsDefName:
+      overrides && overrides.hasOwnProperty('partitionsDefName')
+        ? overrides.partitionsDefName!
+        : 'tenetur',
+  };
+};
+
 export const buildDeletePipelineRunSuccess = (
   overrides?: Partial<DeletePipelineRunSuccess>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9943,6 +9975,12 @@ export const buildMutation = (
       overrides && overrides.hasOwnProperty('deleteConcurrencyLimit')
         ? overrides.deleteConcurrencyLimit!
         : false,
+    deleteDynamicPartitions:
+      overrides && overrides.hasOwnProperty('deleteDynamicPartitions')
+        ? overrides.deleteDynamicPartitions!
+        : relationshipsToOmit.has('DeleteDynamicPartitionsSuccess')
+        ? ({} as DeleteDynamicPartitionsSuccess)
+        : buildDeleteDynamicPartitionsSuccess({}, relationshipsToOmit),
     deletePipelineRun:
       overrides && overrides.hasOwnProperty('deletePipelineRun')
         ? overrides.deletePipelineRun!

@@ -13,7 +13,10 @@ from dagster_graphql.implementation.execution.backfill import (
     create_and_launch_partition_backfill,
     resume_partition_backfill,
 )
-from dagster_graphql.implementation.execution.dynamic_partitions import add_dynamic_partition
+from dagster_graphql.implementation.execution.dynamic_partitions import (
+    add_dynamic_partition,
+    delete_dynamic_partitions,
+)
 from dagster_graphql.implementation.execution.launch_execution import (
     launch_pipeline_execution,
     launch_pipeline_reexecution,
@@ -66,7 +69,10 @@ from ..inputs import (
     GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
 )
-from ..partition_sets import GrapheneAddDynamicPartitionResult
+from ..partition_sets import (
+    GrapheneAddDynamicPartitionResult,
+    GrapheneDeleteDynamicPartitionsResult,
+)
 from ..pipelines.pipeline import GrapheneRun
 from ..runs import (
     GrapheneLaunchRunReexecutionResult,
@@ -382,6 +388,33 @@ class GrapheneAddDynamicPartitionMutation(graphene.Mutation):
     ):
         return add_dynamic_partition(
             graphene_info, repositorySelector, partitionsDefName, partitionKey
+        )
+
+
+class GrapheneDeleteDynamicPartitionsMutation(graphene.Mutation):
+    """Deletes partitions from a dynamic partition set."""
+
+    Output = graphene.NonNull(GrapheneDeleteDynamicPartitionsResult)
+
+    class Arguments:
+        repositorySelector = graphene.NonNull(GrapheneRepositorySelector)
+        partitionsDefName = graphene.NonNull(graphene.String)
+        partitionKeys = non_null_list(graphene.String)
+
+    class Meta:
+        name = "DeleteDynamicPartitionsMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.EDIT_DYNAMIC_PARTITIONS)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        repositorySelector: GrapheneRepositorySelector,
+        partitionsDefName: str,
+        partitionKeys: Sequence[str],
+    ):
+        return delete_dynamic_partitions(
+            graphene_info, repositorySelector, partitionsDefName, partitionKeys
         )
 
 
@@ -937,6 +970,7 @@ class GrapheneMutation(graphene.ObjectType):
     logTelemetry = GrapheneLogTelemetryMutation.Field()
     setNuxSeen = GrapheneSetNuxSeenMutation.Field()
     addDynamicPartition = GrapheneAddDynamicPartitionMutation.Field()
+    deleteDynamicPartitions = GrapheneDeleteDynamicPartitionsMutation.Field()
     setAutoMaterializePaused = GrapheneSetAutoMaterializePausedMutation.Field()
     setConcurrencyLimit = GrapheneSetConcurrencyLimitMutation.Field()
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()
