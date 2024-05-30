@@ -262,11 +262,11 @@ class CapturedLogManager(ABC):
         """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
         return [run_id, "compute_logs", step_key]
 
-    @abstractmethod
     def get_log_keys_for_log_key_prefix(self, log_key_prefix: Sequence[str]) -> Sequence[str]:
         """Returns the logs keys for a given log key prefix.This is determined by looking at the
         directory defined by the log key prefix and creating a log_key for each file in the directory.
         """
+        raise NotImplementedError("Must implement get_log_keys_for_log_key_prefix")
 
     def _read_json_lines(self, start_line, num_lines, log_lines):
         records = []
