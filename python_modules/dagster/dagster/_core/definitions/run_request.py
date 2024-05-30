@@ -135,7 +135,7 @@ class RunRequest(
             only one run is created per run key across all sensor evaluations.  For schedules,
             ensures that one run is created per tick, across failure recoveries. Passing in a `None`
             value means that a run will always be launched per evaluation.
-        run_config (Optional[Mapping[str, Any]]: Configuration for the run. If the job has
+        run_config (Optional[Union[RunConfig, Mapping[str, Any]]]: Configuration for the run. If the job has
             a :py:class:`PartitionedConfig`, this value will override replace the config
             provided by it.
         tags (Optional[Dict[str, Any]]): A dictionary of tags (string key-value pairs) to attach

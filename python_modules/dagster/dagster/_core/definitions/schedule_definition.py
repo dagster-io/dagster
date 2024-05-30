@@ -27,6 +27,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
@@ -55,19 +56,19 @@ from .utils import NormalizedTags, check_valid_name, normalize_tags
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.definitions.run_config import RunConfig
 T = TypeVar("T")
 
-RunConfig: TypeAlias = Mapping[str, Any]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, RunConfig, RunRequestIterator, Sequence[RunRequest], None
+    RunRequest, SkipReason, CoercibleToRunConfig, RunRequestIterator, Sequence[RunRequest], None
 ]
 RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 
 ScheduleRunConfigFunction: TypeAlias = Union[
-    Callable[["ScheduleEvaluationContext"], RunConfig],
-    Callable[[], RunConfig],
+    Callable[["ScheduleEvaluationContext"], CoercibleToRunConfig],
+    Callable[[], CoercibleToRunConfig],
 ]
 
 ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Mapping[str, str]]
@@ -497,7 +498,7 @@ class ScheduleDefinition(IHasInternalInit):
 
             This function must return a generator, which must yield either a single :py:class:`~dagster.SkipReason`
             or one or more :py:class:`~dagster.RunRequest` objects.
-        run_config (Optional[Mapping]): The config that parameterizes this execution,
+        run_config (Optional[Union[RunConfig, Mapping]]): The config that parameterizes this execution,
             as a dict.
         run_config_fn (Optional[Callable[[ScheduleEvaluationContext], [Mapping]]]): A function that
             takes a :py:class:`~dagster.ScheduleEvaluationContext` object and returns the run configuration that
@@ -553,7 +554,7 @@ class ScheduleDefinition(IHasInternalInit):
         *,
         cron_schedule: Optional[Union[str, Sequence[str]]] = None,
         job_name: Optional[str] = None,
-        run_config: Optional[Any] = None,
+        run_config: Optional[Union["RunConfig", Mapping[str, Any]]] = None,
         run_config_fn: Optional[ScheduleRunConfigFunction] = None,
         tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
         tags_fn: Optional[ScheduleTagsFunction] = None,
@@ -566,6 +567,8 @@ class ScheduleDefinition(IHasInternalInit):
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
     ):
+        from dagster._core.definitions.run_config import convert_config_input
+
         self._cron_schedule = check.inst_param(cron_schedule, "cron_schedule", (str, Sequence))
         if not isinstance(self._cron_schedule, str):
             check.sequence_param(self._cron_schedule, "cron_schedule", of_type=str)  # type: ignore
@@ -628,8 +631,12 @@ class ScheduleDefinition(IHasInternalInit):
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
 
-            def _default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfig:
-                return check.opt_dict_param(run_config, "run_config")
+            def _default_run_config_fn(context: ScheduleEvaluationContext) -> CoercibleToRunConfig:
+                return dict(
+                    check.opt_mapping_param(
+                        convert_config_input(run_config), "run_config", key_type=str
+                    )
+                )
 
             self._run_config_fn = check.opt_callable_param(
                 run_config_fn, "run_config_fn", default=_default_run_config_fn
