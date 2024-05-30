@@ -17,8 +17,7 @@ export class HourlyDataCache<T> {
   constructor(id?: string | false) {
     if (id) {
       this.indexedDBCache = cache<'hourlyData', typeof this.cache>({
-        dbName: `HourlyDataCache:${id}`,
-        dbVersion: 2,
+        dbName: `HourlyDataCache2:${id}`,
         maxCount: 1, // We only store 1 entry
       });
       this.loadCacheFromIndexedDB();
