@@ -56,7 +56,7 @@ class ParentNewerCondition(SchedulingCondition):
                 asset_partitions_with_updated_parents
             )
             if asset_partitions_with_updated_parents
-            else context.asset_graph_view.create_empty_slice(context.asset_key)
+            else context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         )
 
     def compute_slice_to_evaluate(self, context: SchedulingContext) -> AssetSlice:

@@ -1,6 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import pendulum
 
@@ -327,7 +327,7 @@ class SchedulingCondition(ABC, DagsterModel):
         )
 
 
-class SchedulingResult(DagsterModel):
+class SchedulingResult(NamedTuple):
     condition: SchedulingCondition
     condition_unique_id: str
     value_hash: str
