@@ -166,15 +166,40 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
         )
 
 
-# Create unexecutable assets defs for each asset key in the provided assets def. This is used to
-# make a materializable assets def available only for loading in a job.
-def create_unexecutable_external_assets_from_assets_def(
+# Create an unexecutable assets def from an existing executable assets def. This is used to make a
+# materializable assets def available only for loading in a job.
+def create_unexecutable_external_asset_from_assets_def(
     assets_def: AssetsDefinition,
-) -> Sequence[AssetsDefinition]:
+) -> AssetsDefinition:
     if not assets_def.is_executable:
-        return [assets_def]
+        return assets_def
     else:
         with disable_dagster_warnings():
-            return [
-                create_external_asset_from_source_asset(sa) for sa in assets_def.to_source_assets()
-            ]
+            specs: List[AssetSpec] = []
+            # Important to iterate over assets_def.keys here instead of assets_def.specs. This is
+            # because assets_def.specs on an AssetsDefinition that is a subset will contain all the
+            # specs of its parent.
+            for key in assets_def.keys:
+                orig_spec = assets_def.get_asset_spec(key)
+                specs.append(
+                    orig_spec._replace(
+                        metadata={
+                            **(orig_spec.metadata or {}),
+                            **(
+                                {
+                                    SYSTEM_METADATA_KEY_IO_MANAGER_KEY: assets_def.get_io_manager_key_for_asset_key(
+                                        key
+                                    )
+                                }
+                                if assets_def.has_output_for_asset_key(key)
+                                else {}
+                            ),
+                        },
+                        automation_condition=None,
+                        freshness_policy=None,
+                    )
+                )
+            return AssetsDefinition(
+                specs=specs,
+                resource_defs=assets_def.resource_defs,
+            )
