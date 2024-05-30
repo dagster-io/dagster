@@ -25,17 +25,9 @@ def _attach_code_references_to_definitions(
     assets_defs = defs.assets or []
     new_assets_defs = []
 
-    source_position_and_key_path = blueprint._source_position_and_key_path  # noqa: SLF001
-    line_number = (
-        source_position_and_key_path.source_position.start.line
-        if source_position_and_key_path and source_position_and_key_path.source_position
-        else None
-    )
-    file_path = (
-        source_position_and_key_path.source_position.filename
-        if source_position_and_key_path and source_position_and_key_path.source_position
-        else None
-    )
+    source_position_and_key_path = blueprint.source_position
+    line_number = source_position_and_key_path.start.line if source_position_and_key_path else None
+    file_path = source_position_and_key_path.filename if source_position_and_key_path else None
 
     if not file_path:
         return defs
