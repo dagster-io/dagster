@@ -22,6 +22,8 @@ from sqlglot import Dialect
 
 from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
+pytestmark = pytest.mark.derived_metadata
+
 
 def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     @dbt_assets(manifest=test_jaffle_shop_manifest)
@@ -40,10 +42,25 @@ def test_no_column_schema(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     )
 
 
-def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
+@pytest.mark.parametrize(
+    "use_experimental_fetch_column_schema",
+    [True, False],
+)
+def test_column_schema(
+    test_metadata_manifest: Dict[str, Any],
+    use_experimental_fetch_column_schema: bool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
+    )
+
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream()
+        if use_experimental_fetch_column_schema:
+            cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
+        yield from cli_invocation
 
     result = materialize(
         [my_dbt_assets],
@@ -76,9 +93,19 @@ def test_column_schema(test_metadata_manifest: Dict[str, Any]) -> None:
     assert table_schema_by_asset_key == expected_table_schema_by_asset_key
 
 
+@pytest.mark.parametrize(
+    "use_experimental_fetch_column_schema",
+    [True, False],
+)
 def test_exception_column_schema(
-    mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+    mocker: MockFixture,
+    test_metadata_manifest: Dict[str, Any],
+    use_experimental_fetch_column_schema: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv(
+        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
+    )
     mocker.patch(
         "dagster_dbt.core.resources_v2.default_metadata_from_dbt_resource_props",
         side_effect=Exception("An error occurred"),
@@ -86,7 +113,10 @@ def test_exception_column_schema(
 
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream()
+        if use_experimental_fetch_column_schema:
+            cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
+        yield from cli_invocation
 
     result = materialize(
         [my_dbt_assets],
@@ -124,17 +154,30 @@ def test_no_column_lineage(test_metadata_manifest: Dict[str, Any]) -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "use_experimental_fetch_column_schema",
+    [True, False],
+)
 def test_exception_column_lineage(
-    mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+    mocker: MockFixture,
+    test_metadata_manifest: Dict[str, Any],
+    use_experimental_fetch_column_schema: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv(
+        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
+    )
     mocker.patch(
-        "dagster_dbt.core.resources_v2.DbtCliEventMessage._build_column_lineage_metadata",
+        "dagster_dbt.core.resources_v2._build_column_lineage_metadata",
         side_effect=Exception("An error occurred"),
     )
 
     @dbt_assets(manifest=test_metadata_manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream()
+        if use_experimental_fetch_column_schema:
+            cli_invocation = cli_invocation.fetch_column_metadata(with_column_lineage=False)
+        yield from cli_invocation
 
     result = materialize(
         [my_dbt_assets],
@@ -177,11 +220,20 @@ def test_exception_column_lineage(
         "trino",
     ],
 )
+@pytest.mark.parametrize(
+    "use_experimental_fetch_column_schema",
+    [True, False],
+)
 def test_column_lineage(
-    test_metadata_manifest: Dict[str, Any],
     sql_dialect: str,
+    test_metadata_manifest: Dict[str, Any],
     asset_key_selection: Optional[AssetKey],
+    use_experimental_fetch_column_schema: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setenv(
+        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
+    )
     # Simulate the parsing of the SQL into a different dialect.
     assert Dialect.get_or_raise(sql_dialect)
 
@@ -193,7 +245,10 @@ def test_column_lineage(
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        yield from dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(["build"], context=context).stream()
+        if use_experimental_fetch_column_schema:
+            cli_invocation = cli_invocation.fetch_column_metadata()
+        yield from cli_invocation
 
     result = materialize(
         [my_dbt_assets],
@@ -208,6 +263,7 @@ def test_column_lineage(
         ).column_lineage
         for event in result.get_asset_materialization_events()
     }
+
     expected_column_lineage_by_asset_key = {
         AssetKey(["raw_customers"]): None,
         AssetKey(["raw_payments"]): None,
@@ -390,7 +446,9 @@ def test_column_lineage(
             if asset_key == asset_key_selection
         }
 
-    assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key
+    assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
+        str(column_lineage_by_asset_key) + "\n\n" + str(expected_column_lineage_by_asset_key)
+    )
 
 
 @pytest.mark.parametrize(

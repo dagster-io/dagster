@@ -167,6 +167,53 @@ In your CI/CD workflows for your Dagster and dbt project:
 
 ---
 
+## Using config with `@dbt_assets`
+
+Like for a standard \[software-defined asset], `@dbt_assets` can use a config system to enable [run configuration](/concepts/configuration/config-schema). This allows to provide parameters to jobs at the time they're executed.
+
+In the context of dbt, this can be useful if you want to run commands or flags for specific use cases. For instance, you may want to add [the --full-refresh flag](https://docs.getdbt.com/reference/resource-configs/full_refresh) to your dbt commands in some cases. Using a config system, the `@dbt_assets` object can be easily modified to support this use case.
+
+```python startafter=start_config_dbt_assets endbefore=end_config_dbt_assets file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+
+from dagster import AssetExecutionContext, Config
+from dagster_dbt import DbtCliResource, dbt_assets
+
+class MyDbtConfig(Config):
+    full_refresh: bool
+
+@dbt_assets(manifest=Path("target", "manifest.json"))
+def my_dbt_assets(
+    context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig
+):
+    dbt_build_args = ["build"]
+    if config.full_refresh:
+        dbt_build_args += ["--full-refresh"]
+
+    yield from dbt.cli(dbt_build_args, context=context).stream()
+```
+
+Now that the `@dbt_assets` object is updated, the run configuration can be passed to a job.
+
+```python startafter=start_config_dbt_job endbefore=end_config_dbt_job file=/integrations/dbt/dbt.py dedent=4
+from dagster import RunConfig, define_asset_job
+from dagster_dbt import build_dbt_asset_selection
+
+my_job = define_asset_job(
+    name="all_dbt_assets",
+    selection=build_dbt_asset_selection(
+        [my_dbt_assets],
+    ),
+    config=RunConfig(
+        ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
+    ),
+)
+```
+
+In the example above, the job is configured to use the `--full-refresh` flag with the dbt build command when materializing the assets.
+
+---
+
 ## Scheduling dbt jobs
 
 Once you have your dbt assets, you can define a job to materialize a selection of these assets on a schedule.
@@ -186,6 +233,8 @@ daily_dbt_assets_schedule = build_schedule_from_dbt_selection(
     job_name="daily_dbt_models",
     cron_schedule="@daily",
     dbt_select="tag:daily",
+    # If your definition of `@dbt_assets` has Dagster Configuration, you can specify it here.
+    # config=RunConfig(ops={"my_dbt_assets": MyDbtConfig(full_refresh=True)}),
 )
 ```
 

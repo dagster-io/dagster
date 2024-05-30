@@ -212,7 +212,7 @@ const TickLogRow = ({event}: {event: TickLogEventFragment}) => {
 };
 
 const TICK_LOG_EVENTS_QUERY = gql`
-  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: Int!) {
+  query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       ... on InstigationState {
         id

@@ -23,6 +23,8 @@ from dagster_dbt.core.resources_v2 import (
 from ..conftest import _create_dbt_invocation
 from ..dbt_projects import test_jaffle_shop_path
 
+pytestmark = pytest.mark.derived_metadata
+
 
 @pytest.fixture(name="standalone_duckdb_dbfile_path")
 def standalone_duckdb_dbfile_path_fixture(request) -> None:

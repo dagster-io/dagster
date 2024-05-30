@@ -20,7 +20,7 @@ import {SidebarSection} from '../pipelines/SidebarComponents';
 interface Props {
   asset: SidebarAssetFragment;
   liveData?: LiveDataForNodeWithStaleData;
-  isSourceAsset: boolean;
+  isObservable: boolean;
   stepKey: string;
   recentEvents: RecentAssetEvents;
 
@@ -32,7 +32,7 @@ interface Props {
 export const AssetSidebarActivitySummary = ({
   asset,
   assetLastMaterializedAt,
-  isSourceAsset,
+  isObservable,
   liveData,
   stepKey,
   recentEvents,
@@ -41,7 +41,7 @@ export const AssetSidebarActivitySummary = ({
     recentEvents;
 
   const grouped = useGroupedEvents(xAxis, materializations, observations, loadedPartitionKeys);
-  const displayedEvent = isSourceAsset ? observations[0] : materializations[0];
+  const displayedEvent = isObservable ? observations[0] : materializations[0];
 
   useEffect(() => {
     refetch();
@@ -93,7 +93,7 @@ export const AssetSidebarActivitySummary = ({
 
       {loadedPartitionKeys.length > 1 ? null : (
         <>
-          <SidebarSection title={!isSourceAsset ? 'Latest materialization' : 'Latest observation'}>
+          <SidebarSection title={!isObservable ? 'Latest materialization' : 'Latest observation'}>
             {displayedEvent ? (
               <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
                 <LatestMaterializationMetadata
@@ -112,12 +112,12 @@ export const AssetSidebarActivitySummary = ({
                 margin={{horizontal: 24, vertical: 12}}
                 style={{color: Colors.textLight(), fontSize: '0.8rem'}}
               >
-                {!isSourceAsset ? `No materializations found` : `No observations found`}
+                {!isObservable ? `No materializations found` : `No observations found`}
               </Box>
             )}
           </SidebarSection>
           <SidebarSection
-            title={!isSourceAsset ? 'Materialization tags' : 'Observation tags'}
+            title={!isObservable ? 'Materialization tags' : 'Observation tags'}
             collapsedByDefault
           >
             {displayedEvent ? (
@@ -133,7 +133,7 @@ export const AssetSidebarActivitySummary = ({
                 margin={{horizontal: 24, vertical: 12}}
                 style={{color: Colors.textLight(), fontSize: '0.8rem'}}
               >
-                {!isSourceAsset ? `No materializations found` : `No observations found`}
+                {!isObservable ? `No materializations found` : `No observations found`}
               </Box>
             )}
           </SidebarSection>

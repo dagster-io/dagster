@@ -39,7 +39,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionedConfig
+from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionedConfig
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
     PartitionsByAssetSelector,
@@ -369,6 +369,16 @@ def bp_none(context: AssetExecutionContext):
     return 1
 
 
+old_dynamic_partitions_def = DynamicPartitionsDefinition(
+    partition_fn=lambda _: ["a", "b", "c", "d"]
+)
+
+
+@job(partitions_def=old_dynamic_partitions_def)
+def old_dynamic_partitions_job():
+    always_succeed()
+
+
 @repository
 def the_repo():
     return [
@@ -378,6 +388,7 @@ def the_repo():
         config_job,
         always_succeed_job,
         parallel_failure_job,
+        old_dynamic_partitions_job,
         # the lineage graph defined with these assets is such that: foo -> a1 -> bar -> b1
         # this requires ab1 to be split into two separate asset definitions using the automatic
         # subsetting capabilities. ab2 is defines similarly, so in total 4 copies of the "reusable"
@@ -1666,7 +1677,8 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
     ) in error_msg
 
 
-def _get_asset_job_backfill(external_repo: ExternalRepository, job_name: str) -> PartitionBackfill:
+# Job must have a partitions definition with a-b-c-d partitions
+def _get_abcd_job_backfill(external_repo: ExternalRepository, job_name: str) -> PartitionBackfill:
     external_partition_set = external_repo.get_external_partition_set(f"{job_name}_partition_set")
     return PartitionBackfill(
         backfill_id="simple",
@@ -1685,7 +1697,7 @@ def test_asset_job_backfill_single_run(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    backfill = _get_asset_job_backfill(external_repo, "bp_single_run_asset_job")
+    backfill = _get_abcd_job_backfill(external_repo, "bp_single_run_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -1703,7 +1715,7 @@ def test_asset_job_backfill_multi_run(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    backfill = _get_asset_job_backfill(external_repo, "bp_multi_run_asset_job")
+    backfill = _get_abcd_job_backfill(external_repo, "bp_multi_run_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -1725,7 +1737,7 @@ def test_asset_job_backfill_default(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    backfill = _get_asset_job_backfill(external_repo, "bp_none_asset_job")
+    backfill = _get_abcd_job_backfill(external_repo, "bp_none_asset_job")
     assert instance.get_runs_count() == 0
     instance.add_backfill(backfill)
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -2256,3 +2268,16 @@ def test_backfill_with_title_and_description(
     runs = instance.get_runs()
 
     assert all([run.status == DagsterRunStatus.SUCCESS] for run in runs)
+
+
+def test_old_dynamic_partitions_job_backfill(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    backfill = _get_abcd_job_backfill(external_repo, "old_dynamic_partitions_job")
+    assert instance.get_runs_count() == 0
+    instance.add_backfill(backfill)
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+
+    assert instance.get_runs_count() == 4

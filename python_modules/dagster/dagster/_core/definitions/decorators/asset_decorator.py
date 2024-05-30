@@ -1333,6 +1333,13 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.description is not None
         }
 
+        # source code versions from the AssetOuts (if any)
+        code_versions_by_output_name = {
+            output_name: out.code_version
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.code_version is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -1350,6 +1357,7 @@ def graph_multi_asset(
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            code_versions_by_output_name=code_versions_by_output_name,
         )
 
     return inner

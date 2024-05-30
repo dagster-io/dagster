@@ -181,9 +181,9 @@ def _get_partitions_chunk(
     )
     partition_names = partition_names[initial_checkpoint:]
 
-    partitions_def = partition_set.get_partitions_definition()
     backfill_policy = partition_set.backfill_policy
     if backfill_policy and backfill_policy.max_partitions_per_run != 1:
+        partitions_def = partition_set.get_partitions_definition()
         partitions_subset = partitions_def.subset_with_partition_keys(partition_names)
         partition_key_ranges = partitions_subset.get_partition_key_ranges(
             partitions_def, dynamic_partitions_store=instance

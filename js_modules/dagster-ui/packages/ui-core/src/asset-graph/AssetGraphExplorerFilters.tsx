@@ -4,6 +4,7 @@ import React, {useContext, useEffect, useState} from 'react';
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
+import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/Filters';
 import {useAssetGroupFilter, useAssetGroupsForAssets} from '../ui/Filters/useAssetGroupFilter';
@@ -16,6 +17,7 @@ import {
   useComputeKindTagFilter,
 } from '../ui/Filters/useComputeKindTagFilter';
 import {FilterObject, FilterTag, FilterTagHighlightedText} from '../ui/Filters/useFilter';
+import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 type Props = {
@@ -36,6 +38,7 @@ const defaultState: AssetFilterState = {
     repos: [],
     selectAllFilters: [],
     tags: [],
+    storageKindTags: [],
   },
   setAssetTags: () => {},
   setChangedInBranch: () => {},
@@ -46,6 +49,7 @@ const defaultState: AssetFilterState = {
   setRepos: () => {},
   setSelectAllFilters: () => {},
   filterFn: () => true,
+  setStorageKindTags: () => {},
 };
 
 export function useAssetGraphExplorerFilters({
@@ -61,7 +65,16 @@ export function useAssetGraphExplorerFilters({
   const {allRepos} = useContext(WorkspaceContext);
 
   const {
-    filters: {changedInBranch, computeKindTags, repos, owners, groups, tags, selectAllFilters},
+    filters: {
+      changedInBranch,
+      computeKindTags,
+      repos,
+      owners,
+      groups,
+      tags,
+      storageKindTags,
+      selectAllFilters,
+    },
     setAssetTags,
     setChangedInBranch,
     setComputeKindTags,
@@ -69,6 +82,7 @@ export function useAssetGraphExplorerFilters({
     setOwners,
     setRepos,
     setSelectAllFilters,
+    setStorageKindTags,
   } = assetFilterState || defaultState;
 
   const reposFilter = useCodeLocationFilter(repos ? {repos, setRepos} : undefined);
@@ -93,10 +107,21 @@ export function useAssetGraphExplorerFilters({
     setComputeKindTags,
   });
 
+  const allStorageKindTags = allAssetTags.filter(isCanonicalStorageKindTag);
+  const allNonStorageKindTags = allAssetTags.filter((tag) => !isCanonicalStorageKindTag(tag));
+
   const tagsFilter = useAssetTagFilter({
-    allAssetTags,
+    allAssetTags: allNonStorageKindTags,
     tags: selectAllFilters.includes('tags') ? allAssetTags : tags,
     setTags: setAssetTags,
+  });
+
+  const storageKindTagsFilter = useStorageKindFilter({
+    allAssetStorageKindTags: allStorageKindTags,
+    storageKindTags: selectAllFilters.includes('storageKindTags')
+      ? allStorageKindTags
+      : storageKindTags,
+    setStorageKindTags,
   });
 
   const allAssetOwners = useAssetOwnersForAssets(nodes);
@@ -177,6 +202,7 @@ export function useAssetGraphExplorerFilters({
     filters.push(changedFilter);
   }
   filters.push(kindTagsFilter);
+  filters.push(storageKindTagsFilter);
   filters.push(tagsFilter);
   filters.push(ownerFilter);
   const {button, activeFiltersJsx} = useFilters({filters});

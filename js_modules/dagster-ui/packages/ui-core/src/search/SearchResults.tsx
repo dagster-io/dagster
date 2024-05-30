@@ -47,9 +47,11 @@ const iconForType = (type: SearchResultType | AssetFilterSearchResultType): Icon
     case AssetFilterSearchResultType.AssetGroup:
       return 'asset_group';
     case AssetFilterSearchResultType.ComputeKind:
-      return 'tag';
+      return 'compute_kind';
     case AssetFilterSearchResultType.Tag:
       return 'tag';
+    case AssetFilterSearchResultType.StorageKind:
+      return 'storage_kind';
     default:
       return 'source';
   }
@@ -67,6 +69,8 @@ const assetFilterPrefixString = (type: AssetFilterSearchResultType): string => {
       return 'Owner';
     case AssetFilterSearchResultType.AssetGroup:
       return 'Group';
+    case AssetFilterSearchResultType.StorageKind:
+      return 'Storage kind';
     default:
       return '';
   }

@@ -72,15 +72,15 @@
         "title": "Assets",
         "children": [
           {
-            "title": "Software-defined Assets",
+            "title": "Asset definitions",
             "path": "/concepts/assets/software-defined-assets"
           },
           {
-            "title": "Graph-backed Assets",
+            "title": "Graph-backed asset definitions",
             "path": "/concepts/assets/graph-backed-assets"
           },
           {
-            "title": "Multi-assets",
+            "title": "Multi-asset definitions",
             "path": "/concepts/assets/multi-assets"
           },
           {
@@ -1186,7 +1186,7 @@
         "title": "Core",
         "children": [
           {
-            "title": "Software-defined Assets",
+            "title": "Assets",
             "path": "/_apidocs/assets"
           },
           {
@@ -1262,8 +1262,17 @@
             "path": "/_apidocs/asset-checks"
           },
           {
-            "title": "External Assets (Experimental)",
-            "path": "/_apidocs/external-assets"
+            "title": "External assets (Experimental)",
+            "children": [
+              {
+                "title": "Instance API",
+                "path": "/_apidocs/external-assets"
+              },
+              {
+                "title": "REST APIs",
+                "path": "/apidocs/external-assets-rest"
+              }
+            ]
           },
           {
             "title": "Job versioning & memoization (Deprecated)",

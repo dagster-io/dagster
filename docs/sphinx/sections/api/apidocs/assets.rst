@@ -1,14 +1,14 @@
 .. currentmodule:: dagster
 
-Software-defined Assets
+Assets
 =======================
 
-An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. A Software-defined Asset is a Dagster object that couples an asset to the function and upstream assets that are used to produce its contents.
+An asset is an object in persistent storage, such as a table, file, or persisted machine learning model. An asset definition is a description, in code, of an asset that should exist and how to produce and update that asset.
 
-Assets
-------
+Asset definitions
+-----------------
 
-Refer to the `Software-defined Assets </concepts/assets/software-defined-assets>`_ documentation for more information.
+Refer to the `Asset definitions </concepts/assets/software-defined-assets>`_ documentation for more information.
 
 .. autodecorator:: asset
 
@@ -20,8 +20,8 @@ Refer to the `Software-defined Assets </concepts/assets/software-defined-assets>
 
 .. autoclass:: AssetKey
 
-Graph-backed assets
--------------------
+Graph-backed asset definitions
+------------------------------
 
 Refer to the `Graph-backed asset </concepts/assets/graph-backed-assets>`_ documentation for more information.
 
@@ -29,8 +29,8 @@ Refer to the `Graph-backed asset </concepts/assets/graph-backed-assets>`_ docume
 
 .. autodecorator:: graph_multi_asset
 
-Multi-assets
-------------
+Multi-asset definitions
+-----------------------
 
 Refer to the `Multi-asset </concepts/assets/multi-assets>`_ documentation for more information.
 

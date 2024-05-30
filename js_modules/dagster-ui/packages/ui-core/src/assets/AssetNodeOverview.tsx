@@ -51,7 +51,11 @@ import {
 import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
-import {AssetComputeKindTag} from '../graph/OpTags';
+import {
+  AssetComputeKindTag,
+  AssetStorageKindTag,
+  isCanonicalStorageKindTag,
+} from '../graph/KindTags';
 import {IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
@@ -61,6 +65,7 @@ import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
 import {Description} from '../pipelines/Description';
 import {PipelineTag} from '../pipelines/PipelineReference';
+import {numberFormatter} from '../ui/formatters';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -127,7 +132,9 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 16}}>
       <Box style={{display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))'}}>
         <Box flex={{direction: 'column', gap: 6}}>
-          <Subtitle2>Latest {assetNode?.isSource ? 'observation' : 'materialization'}</Subtitle2>
+          <Subtitle2>
+            Latest {assetNode?.isObservable ? 'observation' : 'materialization'}
+          </Subtitle2>
           <Box flex={{gap: 8, alignItems: 'center'}}>
             {liveData ? (
               <SimpleStakeholderAssetStatus liveData={liveData} assetNode={assetNode} />
@@ -149,11 +156,11 @@ export const AssetNodeOverview = ({
             />
           </Box>
         ) : undefined}
-        {rowCountMeta ? (
+        {rowCountMeta?.intValue ? (
           <Box flex={{direction: 'column', gap: 6}}>
             <Subtitle2>Row count</Subtitle2>
             <Box>
-              <Tag icon="table_rows">{rowCountMeta.intValue}</Tag>
+              <Tag icon="table_rows">{numberFormatter.format(rowCountMeta.intValue)}</Tag>
             </Box>
           </Box>
         ) : undefined}
@@ -213,6 +220,9 @@ export const AssetNodeOverview = ({
     </>
   );
 
+  const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
+  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Group">
@@ -257,10 +267,19 @@ export const AssetNodeOverview = ({
           <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
         )}
       </AttributeAndValue>
+      <AttributeAndValue label="Storage kind">
+        {storageKindTag && (
+          <AssetStorageKindTag
+            style={{position: 'relative'}}
+            storageKind={storageKindTag.value}
+            reduceColor
+          />
+        )}
+      </AttributeAndValue>
       <AttributeAndValue label="Tags">
-        {assetNode.tags &&
-          assetNode.tags.length > 0 &&
-          assetNode.tags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
+        {filteredTags &&
+          filteredTags.length > 0 &&
+          filteredTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
       </AttributeAndValue>
     </Box>
   );

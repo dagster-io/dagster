@@ -15,7 +15,7 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
-const POLL_INTERVAL = 5 * 1000;
+const POLL_INTERVAL = 30 * 1000;
 
 const hourWindowToOffset = (hourWindow: HourWindow) => {
   switch (hourWindow) {

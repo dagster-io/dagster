@@ -17,6 +17,7 @@ export type AssetNodeFragment = {
   isObservable: boolean;
   isSource: boolean;
   assetKey: {__typename: 'AssetKey'; path: Array<string>};
+  tags: Array<{__typename: 'DefinitionTag'; key: string; value: string}>;
 };
 
 export type AssetNodeKeyFragment = {__typename: 'AssetKey'; path: Array<string>};

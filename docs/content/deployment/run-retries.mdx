@@ -61,4 +61,15 @@ run_retries:
   retry_on_asset_or_op_failure: false
 ```
 
+You can also apply the `dagster/retry_on_asset_or_op_failure` tag on specific jobs using tags to override the default value for runs of that job:
+
+```python
+from dagster import job
+
+
+@job(tags={"dagster/max_retries": 3, "dagster/retry_on_asset_or_op_failure": False})
+def sample_job():
+    pass
+```
+
 **Note:** Setting `retry_on_asset_or_op_failure` to `false` will only change retry behavior for runs on Dagster version 1.6.7 or greater.

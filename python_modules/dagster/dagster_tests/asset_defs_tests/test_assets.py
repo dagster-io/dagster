@@ -43,6 +43,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.decorators.asset_decorator import graph_asset
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -2139,6 +2140,21 @@ def test_asset_with_tags():
 
         @asset(tags={"a%": "b"})  # key has illegal character
         def asset2(): ...
+
+
+def test_asset_with_storage_kind_tag() -> None:
+    @asset(tags={**StorageKindTagSet(storage_kind="snowflake")})
+    def asset1(): ...
+
+    assert asset1.tags_by_key[asset1.key] == {"dagster/storage_kind": "snowflake"}
+
+    @asset(tags={**StorageKindTagSet(storage_kind="snowflake"), "a": "b"})
+    def asset2(): ...
+
+    assert asset2.tags_by_key[asset2.key] == {
+        "dagster/storage_kind": "snowflake",
+        "a": "b",
+    }
 
 
 def test_asset_spec_with_tags():

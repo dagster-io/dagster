@@ -410,7 +410,8 @@ export const useRunsForTimeline = ({
     const earliest = jobs.reduce(
       (accum, job) => {
         const startTimes = job.runs.map((job) => job.startTime);
-        return {...accum, [job.key]: Math.min(...startTimes)};
+        accum[job.key] = Math.min(...startTimes);
+        return accum;
       },
       {} as {[jobKey: string]: number},
     );
