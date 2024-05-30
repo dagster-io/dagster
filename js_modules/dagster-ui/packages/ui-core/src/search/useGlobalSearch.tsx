@@ -392,16 +392,21 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
 
-  const didInitialize = useRef(false);
-
   const initialize = useCallback(() => {
-    if (didInitialize.current) {
-      return;
+    if (!primaryData && !primaryDataLoading) {
+      fetchPrimaryData();
     }
-    didInitialize.current = true;
-    fetchPrimaryData();
-    fetchSecondaryData();
-  }, [fetchPrimaryData, fetchSecondaryData]);
+    if (!secondaryData && !secondaryDataLoading) {
+      fetchSecondaryData();
+    }
+  }, [
+    fetchPrimaryData,
+    fetchSecondaryData,
+    primaryData,
+    primaryDataLoading,
+    secondaryData,
+    secondaryDataLoading,
+  ]);
 
   const searchIndex = useCallback(
     (
