@@ -1,5 +1,44 @@
 # Changelog
 
+# 1.7.8 (core) / 0.23.8 (libraries)
+
+### New
+
+- Backfills created via GQL can have a custom title and description.
+- `Definitions` now has a `get_all_asset_specs` method, which allows iterating over properties of the defined assets
+- [ui] In filter dropdowns, it’s now possible to submit before all the suggestions have been loaded (thanks [@bmalehorn](https://github.com/bmalehorn)!)
+- [ui] Performance improvements when loading the Dagster UI for asset graphs with thousands of partition keys.
+- [dagster-dbt] Dbt asset checks now emit execution duration and the number of failing rows as metadata
+- [dagster-embedded-elt] Added support for partitioning in dlt assets (thanks [@edsoncezar16](https://github.com/edsoncezar16)!)
+- [dagster-embedded-elt] Added ability to set custom metadata on dlt assets (thanks [@edsoncezar16](https://github.com/edsoncezar16)!)
+- [dagster-graphql] Added a `terminate_runs` method to the Python GraphQL Client. (thanks [@baumann-t](https://github.com/baumann-t)!)
+- [dagster-polars] dagster-polars IO managers now emit dagster/row_count metadata (thanks [@danielgafni](https://github.com/danielgafni)!)
+- [dagster-dbt] `DbtCliInvocation` now has a `.get_error()` method that can be useful when using `dbt.cli(..., raise_on_error=False)`.
+
+### Bugfixes
+
+- Fix a bug with legacy `DynamicPartitionsDefinition` (using `partitions_fn`) that caused a crash during job backfills.
+- [ui] On the asset graph, filtering to one or more code locations via the Filter dropdown now works as expected.
+- [ui] On the asset overview page, viewing an asset with no definition in a loaded code location no longer renders a clipped empty state.
+
+### Experimental
+
+- The new `build_metadata_bounds_checks` API creates asset checks which verify that numeric metadata values on asset materializations fall within min or max values. See the [documentation](https://docs.dagster.io/_apidocs/asset-checks#dagster.build_metadata_bounds_checks) for more information.
+
+### Documentation
+
+- Added details and links to the [Schedules and Sensors API documentation](https://docs.dagster.io/_apidocs/schedules-sensors)
+- Removed leftover mention of Dagster Cloud from the [Dagster+ Hybrid architecture documentation](https://docs.dagster.io/dagster-plus/deployment/hybrid)
+
+### Dagster Plus
+
+- Fixed an incompatibility between `build_sensor_for_freshness_checks` and Dagster Plus. This API should now work when used with Dagster Plus.
+- [ui] Billing / usage charts no longer appear black-on-black in Dagster’s dark mode.
+- [ui] The asset catalog is now available for teams plans.
+- [ui] Fixed a bug where the alert policy editor would misinterpret the threshold on a long-running job alert.
+- [kubernetes] Added a `dagsterCloudAgent.additionalPodSpecConfig` to the Kubernetes agent Helm chart allowing arbitrary pod configuration to be applied to the agent pod.
+- [ECS] Fixed an issue where the ECS agent would sometimes raise a “Too many concurrent attempts to create a new revision of the specified family” exception when using agent replicas.
+
 # 1.7.7 (core) / 0.23.7 (libraries)
 
 ### New
