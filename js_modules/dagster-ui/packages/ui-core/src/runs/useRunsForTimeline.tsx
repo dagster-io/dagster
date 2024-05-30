@@ -266,7 +266,7 @@ export const useRunsForTimeline = ({
   const {workspaceOrError} = futureTicksData || {workspaceOrError: undefined};
 
   const runsByJobKey = useMemo(() => {
-    const map: {[jobKey: string]: TimelineRun[]} = {};
+    const map: {[jobKey: string]: {[id: string]: TimelineRun}} = {};
     const now = Date.now();
 
     // fetch all the runs in the given range
@@ -302,15 +302,13 @@ export const useRunsForTimeline = ({
         run.pipelineName,
       );
 
-      map[runJobKey] = [
-        ...(map[runJobKey] || []),
-        {
-          id: run.id,
-          status: run.status,
-          startTime: run.startTime * 1000,
-          endTime: run.endTime ? run.endTime * 1000 : now,
-        },
-      ];
+      map[runJobKey] = map[runJobKey] || {};
+      map[runJobKey][run.id] = {
+        id: run.id,
+        status: run.status,
+        startTime: run.startTime * 1000,
+        endTime: run.endTime ? run.endTime * 1000 : now,
+      };
     });
 
     return map;
@@ -367,7 +365,7 @@ export const useRunsForTimeline = ({
 
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
-          const jobRuns = runsByJobKey[jobKey] || [];
+          const jobRuns = Object.values(runsByJobKey[jobKey] || {});
           if (!jobTicks.length && !jobRuns.length) {
             continue;
           }
@@ -383,8 +381,6 @@ export const useRunsForTimeline = ({
             }
           }
 
-          const seenRunIds: Record<string, boolean> = {};
-
           jobs.push({
             key: jobKey,
             jobName,
@@ -396,16 +392,7 @@ export const useRunsForTimeline = ({
               pipelineName: pipeline.name,
               isJob: pipeline.isJob,
             }),
-            runs: [
-              ...jobRuns.filter((run) => {
-                if (seenRunIds[run.id]) {
-                  return false;
-                }
-                seenRunIds[run.id] = true;
-                return true;
-              }),
-              ...jobTicks,
-            ],
+            runs: [...jobRuns, ...jobTicks],
           } as TimelineJob);
         }
       }

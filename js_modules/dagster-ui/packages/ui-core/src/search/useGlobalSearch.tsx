@@ -331,6 +331,8 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
 
   const {localCacheIdPrefix} = useContext(AppContext);
 
+  console.log(localCacheIdPrefix);
+
   const {
     data: primaryData,
     fetch: fetchPrimaryData,
@@ -392,7 +394,13 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
 
+  const didInitialize = useRef(false);
+
   const initialize = useCallback(() => {
+    if (didInitialize.current) {
+      return;
+    }
+    didInitialize.current = true;
     fetchPrimaryData();
     fetchSecondaryData();
   }, [fetchPrimaryData, fetchSecondaryData]);

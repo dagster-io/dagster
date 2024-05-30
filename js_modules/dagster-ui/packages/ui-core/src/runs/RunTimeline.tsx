@@ -112,9 +112,11 @@ export const RunTimeline = (props: Props) => {
 
         flat.push({type: 'header', repoAddress, jobCount: bucket.length});
         if (expandedKeys.includes(repoKey)) {
-          bucket.forEach((job) => {
-            flat.push({type: 'job', repoAddress, job});
-          });
+          bucket
+            .sort((a, b) => COMMON_COLLATOR.compare(a.jobName, b.jobName))
+            .forEach((job) => {
+              flat.push({type: 'job', repoAddress, job});
+            });
         }
       });
 
