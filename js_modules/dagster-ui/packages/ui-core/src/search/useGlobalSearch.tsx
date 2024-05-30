@@ -331,8 +331,6 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
 
   const {localCacheIdPrefix} = useContext(AppContext);
 
-  console.log(localCacheIdPrefix);
-
   const {
     data: primaryData,
     fetch: fetchPrimaryData,
