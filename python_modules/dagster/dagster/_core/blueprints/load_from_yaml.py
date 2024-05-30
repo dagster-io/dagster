@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Type, Union
 
@@ -18,7 +17,7 @@ from .blueprint import Blueprint, BlueprintDefinitions
 
 
 def _attach_code_references_to_definitions(
-    file_path: Path, blueprint: Blueprint, defs: BlueprintDefinitions
+    blueprint: Blueprint, defs: BlueprintDefinitions
 ) -> BlueprintDefinitions:
     """Attaches code reference metadata pointing to the specified file path to all assets in the
     output blueprint definitions.
@@ -32,9 +31,17 @@ def _attach_code_references_to_definitions(
         if source_position_and_key_path and source_position_and_key_path.source_position
         else None
     )
+    file_path = (
+        source_position_and_key_path.source_position.filename
+        if source_position_and_key_path and source_position_and_key_path.source_position
+        else None
+    )
+
+    if not file_path:
+        return defs
 
     reference = LocalFileCodeReference(
-        file_path=os.fspath(file_path),
+        file_path=file_path,
         line_number=line_number,
     )
 
@@ -101,18 +108,16 @@ def load_defs_from_yaml(
     else:
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
-    blueprints = {
-        file_path: parse_yaml_file_to_pydantic(
-            per_file_blueprint_type, file_path.read_text(), str(file_path)
-        )
+    blueprints = [
+        parse_yaml_file_to_pydantic(per_file_blueprint_type, file_path.read_text(), str(file_path))
         for file_path in file_paths
-    }
+    ]
 
     def_sets_with_code_references = [
         _attach_code_references_to_definitions(
-            file_path, blueprint, blueprint.build_defs_add_context_to_errors()
+            blueprint, blueprint.build_defs_add_context_to_errors()
         )
-        for file_path, blueprint in blueprints.items()
+        for blueprint in blueprints
     ]
 
     return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
