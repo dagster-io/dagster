@@ -27,6 +27,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
@@ -58,17 +59,16 @@ if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
 T = TypeVar("T")
 
-RunConfigType: TypeAlias = Union["RunConfig", Mapping[str, Any]]
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
 
 ScheduleEvaluationFunctionReturn: TypeAlias = Union[
-    RunRequest, SkipReason, RunConfigType, RunRequestIterator, Sequence[RunRequest], None
+    RunRequest, SkipReason, CoercibleToRunConfig, RunRequestIterator, Sequence[RunRequest], None
 ]
 RawScheduleEvaluationFunction: TypeAlias = Callable[..., ScheduleEvaluationFunctionReturn]
 
 ScheduleRunConfigFunction: TypeAlias = Union[
-    Callable[["ScheduleEvaluationContext"], RunConfigType],
-    Callable[[], RunConfigType],
+    Callable[["ScheduleEvaluationContext"], CoercibleToRunConfig],
+    Callable[[], CoercibleToRunConfig],
 ]
 
 ScheduleTagsFunction: TypeAlias = Callable[["ScheduleEvaluationContext"], Mapping[str, str]]
@@ -631,9 +631,11 @@ class ScheduleDefinition(IHasInternalInit):
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
 
-            def _default_run_config_fn(context: ScheduleEvaluationContext) -> RunConfigType:
-                return check.opt_mapping_param(
-                    convert_config_input(run_config), "run_config", key_type=str
+            def _default_run_config_fn(context: ScheduleEvaluationContext) -> CoercibleToRunConfig:
+                return dict(
+                    check.opt_mapping_param(
+                        convert_config_input(run_config), "run_config", key_type=str
+                    )
                 )
 
             self._run_config_fn = check.opt_callable_param(

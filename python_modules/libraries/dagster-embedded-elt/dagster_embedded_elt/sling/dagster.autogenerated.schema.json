@@ -1,0 +1,25 @@
+{
+  "additionalProperties": true,
+  "description": "Blueprint which creates a Dagster asset for one or more Sling replication configurations.\n\nFollows the schema of the Sling replication file, see the Sling documentation for more information.\nhttps://docs.slingdata.io/sling-cli/run/configuration/replication",
+  "properties": {
+    "type": {
+      "const": "dagster_embedded_elt/sling_assets",
+      "default": "dagster_embedded_elt/sling_assets",
+      "enum": [
+        "dagster_embedded_elt/sling_assets"
+      ],
+      "title": "Type",
+      "type": "string"
+    },
+    "dagster_op_name": {
+      "description": "The name of the underlying Dagster op to create.",
+      "title": "Dagster Op Name",
+      "type": "string"
+    }
+  },
+  "required": [
+    "dagster_op_name"
+  ],
+  "title": "SlingSyncAssetsBlueprint",
+  "type": "object"
+}
