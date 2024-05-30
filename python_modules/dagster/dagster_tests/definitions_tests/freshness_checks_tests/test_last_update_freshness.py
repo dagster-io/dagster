@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false
 
 import datetime
-import hashlib
+import json
 
 import pendulum
 import pytest
@@ -13,7 +13,7 @@ from dagster._core.definitions.asset_check_factories.freshness_checks.last_updat
     build_last_update_freshness_checks,
 )
 from dagster._core.definitions.asset_check_factories.utils import (
-    unique_id_from_asset_keys,
+    unique_id_from_asset_and_check_keys,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
@@ -27,6 +27,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
 from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._utils.security import non_secure_md5_hash_str
 
 from .conftest import add_new_event, assert_check_result
 
@@ -41,7 +42,7 @@ def test_params() -> None:
     )[0]
     assert (
         check.node_def.name
-        == f"freshness_check_{hashlib.md5(str(my_asset.key).encode()).hexdigest()[:8]}"
+        == f"freshness_check_{non_secure_md5_hash_str(json.dumps([my_asset.key.to_string()]).encode())[:8]}"
     )
     check_specs = list(check.check_specs)
     assert len(check_specs) == 1
@@ -132,8 +133,10 @@ def test_params() -> None:
         lower_bound_delta=datetime.timedelta(minutes=10),
     )[0]
     assert check_multiple_assets.node_def.name == check_multiple_assets_switched_order.node_def.name
-    unique_id = unique_id_from_asset_keys([my_asset.key, other_asset.key])
-    unique_id_switched_order = unique_id_from_asset_keys([other_asset.key, my_asset.key])
+    unique_id = unique_id_from_asset_and_check_keys([my_asset.key, other_asset.key], [])
+    unique_id_switched_order = unique_id_from_asset_and_check_keys(
+        [other_asset.key, my_asset.key], []
+    )
     assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id}"
     assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id_switched_order}"
 
