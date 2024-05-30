@@ -41,4 +41,9 @@ setup(
         f"dagster-databricks{pin}",
     ],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "dagster-blueprints = dagster_blueprints.cli:main",
+        ]
+    },
 )

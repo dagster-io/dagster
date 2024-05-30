@@ -100,7 +100,7 @@ WORKSPACE_CLI_ARGS = (
 )
 
 
-def _has_pyproject_dagster_block(path: str) -> bool:
+def has_pyproject_dagster_block(path: str) -> bool:
     if not os.path.exists(path):
         return False
     with open(path, "rb") as f:
@@ -116,7 +116,7 @@ def get_workspace_load_target(kwargs: ClickArgMapping) -> WorkspaceLoadTarget:
     if are_all_keys_empty(kwargs, WORKSPACE_CLI_ARGS):
         if kwargs.get("empty_workspace"):
             return EmptyWorkspaceTarget()
-        if _has_pyproject_dagster_block("pyproject.toml"):
+        if has_pyproject_dagster_block("pyproject.toml"):
             return PyProjectFileTarget("pyproject.toml")
 
         if os.path.exists("workspace.yaml"):

@@ -1,0 +1,13 @@
+{
+  "name": "dagster-blueprint-schema",
+  "publisher": "dagster",
+  "displayName": "Dagster Blueprint Schema",
+  "description": "Provides schema validation for Dagster Blueprint YAML files",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.89.0"
+  },
+  "extensionDependencies": ["redhat.vscode-yaml"],
+  "categories": ["Programming Languages", "Data Science"],
+  "contributes": {}
+}
