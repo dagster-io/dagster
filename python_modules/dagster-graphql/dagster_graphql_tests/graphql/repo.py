@@ -1658,6 +1658,16 @@ def asset_3():
     yield Output(7)
 
 
+@asset(compute_kind="mycomputekind")
+def compute_kind_on_op_tags_asset():
+    pass
+
+
+@asset(tags={"dagster/compute_kind": "myothercomputekind"})
+def compute_kind_on_asset_tags_asset():
+    pass
+
+
 failure_assets_job = define_asset_job("failure_assets_job", [asset_1, asset_2, asset_3])
 
 
@@ -2067,6 +2077,8 @@ def define_assets():
         asset_1,
         asset_2,
         asset_3,
+        compute_kind_on_op_tags_asset,
+        compute_kind_on_asset_tags_asset,
         foo,
         bar,
         foo_bar,

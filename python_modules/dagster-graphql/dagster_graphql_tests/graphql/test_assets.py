@@ -619,6 +619,16 @@ GET_ASSET_OWNERS = """
     }
 """
 
+GET_ASSET_COMPUTE_KINDS = """
+    query AssetOwnersQuery($assetKeys: [AssetKeyInput!]) {
+        assetNodes(assetKeys: $assetKeys) {
+            assetKey {
+                path
+            }
+            computeKind
+        }
+    }
+"""
 
 GET_RUN_MATERIALIZATIONS = """
     query RunAssetsQuery {
@@ -2006,6 +2016,30 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(owners) == 2
         assert owners[0]["email"] == "user@dagsterlabs.com"
         assert owners[1]["team"] == "team1"
+
+    def test_compute_kinds(self, graphql_context: WorkspaceRequestContext):
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_COMPUTE_KINDS,
+            variables={
+                "assetKeys": [
+                    {"path": ["compute_kind_on_op_tags_asset"]},
+                    {"path": ["compute_kind_on_asset_tags_asset"]},
+                ]
+            },
+        )
+
+        assert result.data
+        assert result.data["assetNodes"]
+        assert len(result.data["assetNodes"]) == 2
+        assert result.data["assetNodes"][0]["assetKey"] == {
+            "path": ["compute_kind_on_op_tags_asset"]
+        }
+        assert result.data["assetNodes"][0]["computeKind"] == "mycomputekind"
+        assert result.data["assetNodes"][1]["assetKey"] == {
+            "path": ["compute_kind_on_asset_tags_asset"]
+        }
+        assert result.data["assetNodes"][1]["computeKind"] == "myothercomputekind"
 
     def test_typed_assets(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "typed_assets")

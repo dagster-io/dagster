@@ -1727,6 +1727,8 @@ def external_asset_nodes_from_defs(
     for key in sorted(asset_graph.all_asset_keys):
         asset_node = asset_graph.get(key)
 
+        compute_kind_from_asset_tags = asset_node.tags.get("dagster/compute_kind")
+
         # Materializable assets (which are always part of at least one job, due to asset base jobs)
         # have various fields related to their op/output/jobs etc defined. External assets have null
         # values for all these fields.
@@ -1748,7 +1750,7 @@ def external_asset_nodes_from_defs(
             op_names = sorted([str(handle) for handle in node_handles])
             op_name = graph_name or next(iter(op_names), None) or node_def.name
             job_names = sorted([jd.name for jd in job_defs_by_asset_key[key]])
-            compute_kind = node_def.tags.get("kind")
+            compute_kind = compute_kind_from_asset_tags or node_def.tags.get("kind")
             node_definition_name = node_def.name
 
             # Confusingly, the `name` field sometimes mismatches the `name` field on the
@@ -1765,7 +1767,7 @@ def external_asset_nodes_from_defs(
             op_names = []
             op_name = None
             job_names = []
-            compute_kind = None
+            compute_kind = compute_kind_from_asset_tags
             node_definition_name = None
             output_name = None
             required_top_level_resources = []
