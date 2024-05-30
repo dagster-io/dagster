@@ -32,18 +32,16 @@ class BlueprintDefinitions(NamedTuple):
     on the set of definitions. For example, it can include assets without their required resources.
     """
 
-    assets: Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]] = (
-        None
-    )
-    schedules: Optional[
-        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
-    ] = None
-    sensors: Optional[Iterable[SensorDefinition]] = None
-    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]] = None
-    resources: Optional[Mapping[str, Any]] = None
+    assets: Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]] = []
+    schedules: Iterable[
+        Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]
+    ] = []
+    sensors: Iterable[SensorDefinition] = []
+    jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]] = []
+    resources: Mapping[str, Any] = {}
     executor: Optional[Union[ExecutorDefinition, Executor]] = None
-    loggers: Optional[Mapping[str, LoggerDefinition]] = None
-    asset_checks: Optional[Iterable[AssetChecksDefinition]] = None
+    loggers: Mapping[str, LoggerDefinition] = {}
+    asset_checks: Iterable[AssetChecksDefinition] = []
 
     def to_definitions(self) -> Definitions:
         return Definitions(

@@ -522,7 +522,7 @@ def multi_asset(
     deps: Optional[Iterable[CoercibleToAssetDep]] = None,
     description: Optional[str] = None,
     config_schema: Optional[UserConfigSchema] = None,
-    required_resource_keys: Optional[Set[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
@@ -647,7 +647,7 @@ def multi_asset(
         additional_message="Only dicts are supported for asset config_schema.",
     )
 
-    bare_required_resource_keys = required_resource_keys.copy()
+    bare_required_resource_keys = set(required_resource_keys)
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
 
