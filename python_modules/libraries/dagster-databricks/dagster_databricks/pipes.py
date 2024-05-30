@@ -120,7 +120,7 @@ class PipesDatabricksClient(PipesClient, TreatAsResourceParam):
             task (databricks.sdk.service.jobs.SubmitTask): Specification of the databricks
                 task to run. Environment variables used by dagster-pipes will be set under the
                 `spark_env_vars` key of the `new_cluster` field (if there is an existing dictionary
-                here, the EXT environment variables will be merged in). Everything else will be
+                here, the Pipes environment variables will be merged in). Everything else will be
                 passed unaltered under the `tasks` arg to `WorkspaceClient.jobs.submit`.
             context (OpExecutionContext): The context from the executing op or asset.
             extras (Optional[PipesExtras]): An optional dict of extra parameters to pass to the
