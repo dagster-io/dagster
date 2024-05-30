@@ -548,7 +548,6 @@ describe('useRunsForTimeline', () => {
     );
 
     mockedCache.has.mockResolvedValue(true);
-    mockedCache.has.mockResolvedValue(true);
 
     const startHour = Math.floor(start / ONE_HOUR_S);
     mockedCache.get.mockResolvedValue({
