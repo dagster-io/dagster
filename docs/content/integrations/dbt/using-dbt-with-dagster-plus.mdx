@@ -32,14 +32,14 @@ height={1530}
 
 ### Example: import a dbt project from a GitHub repo
 
-Importing a dbt project can be done in a few steps only. Using GitHub to select the repository of a dbt project a deploy it to Dagster+ is a very common use case. Let's walk through the steps.
+Importing a dbt project can be done in a few steps only. Using GitHub to select the repository of a dbt project and deploy it to Dagster+ is a very common use case. Let's walk through the steps.
 
-After clicking on "Continue" on the main page of "Import a dbt project", you'll be offered to connect with either GitHub or GitLab. For this example, let's select GitHub.
+After clicking on "Continue" on the main page of "Import a dbt project", you'll be prompted to connect with either GitHub or GitLab. For this example, let's select GitHub.
 
 This action will redirect you to the GitHub website, where you'll be asked to authorize the Dagster+ application. Keep in mind that the profile or organization authorizing Dagster+ should have the read and write access for the repository containing the dbt project to be imported.
 
 <!--
-![Connect to GitHub to import a dbt project in Dagster+](/images/integrations/dbt/using-dbt-with-dagster-plus/import_dbt_project.png)
+![Connect to GitHub to import a dbt project in Dagster+](/images/integrations/dbt/using-dbt-with-dagster-plus/import_dbt_project_connect_to_git.png)
 -->
 
 <Image
@@ -57,7 +57,7 @@ Before continuing, make sure that the repository is a valid dbt project - the [d
 When the correct repository is selected, click "Continue". Note that this process will update your repository by opening a new pull request, which will contain the Dagster files required to deploy the dbt project to Dagster+.
 
 <!--
-![Select the repository of a dbt project in Dagster+](/images/integrations/dbt/using-dbt-with-dagster-plus/import_dbt_project.png)
+![Select the repository of a dbt project in Dagster+](/images/integrations/dbt/using-dbt-with-dagster-plus/import_dbt_project_select_repo.png)
 -->
 
 <Image
@@ -72,7 +72,7 @@ When deploying a dbt project for the first time, the workflow uses the `dagster-
 
 This process updates the file structure of the repository. let's take a look at the differences before and after the changes.
 
-Before the changes a typical dbt project would include files like dbt_project.yml, profiles.yml, dbt models in `.sql` format and sbt seeds in `.csv` format. Considering that this is a Git repository, other files may be included, like `.gitignore`, `LICENSE` and `README.md`.
+Before the changes, a typical dbt project would include files like dbt_project.yml, profiles.yml, dbt models in `.sql` format and sbt seeds in `.csv` format. Considering that this is a Git repository, other files may be included, like `.gitignore`, `LICENSE` and `README.md`.
 
 ```shell
 my_dbt_project
@@ -118,6 +118,8 @@ my_dbt_project
 
 ## Import your dbt & Dagster project to Dagster+
 
+If a Dagster project already created for your dbt project, you may want to import it directly in Dagster+. After browsing to Deployment > Code Locations > Add code location, choosing the option "Import a Dagster project" allows you to import the Git repo of your dbt & Dagster project.
+
 <Note>
   To find out more about integrating dbt in a Dagster project, begin the
   official{" "}
@@ -139,12 +141,59 @@ height={1000}
 
 ### Example: import a dbt & Dagster project from a GitHub repo
 
-[//]: <> "TODO: Add screenshot of Dagster+"
+Importing a dbt & Dagster project is quick and easy using the "Import a Dagster project" option. Let's look at how to do it using GitHub.
+
+On the main page of "Import a Dagster project", you can choose to connect to GitHub or GitLab. For this example, let's select GitHub.
+
+This action will redirect you to the GitHub website, where you'll be asked to authorize the Dagster+ application. Keep in mind that the profile or organization authorizing Dagster+ should have the read and write access for the repository containing the dbt & Dagster project to be imported.
 
 #### Select and deploy the repo
 
+Once the authorization completed, search the repositories and select the one containing the dbt & Dagster project to be imported.
+
+Before continuing, make sure that the repository contains the required files for dbt and Dagster. For dbt, the [dbt_project.yml](https://docs.getdbt.com/reference/dbt_project.yml) and [profiles.yml](https://docs.getdbt.com/docs/core/connect-data-platform/profiles.yml) files are required for the deployment process. For Dagster, your project requires a `pyproject.toml` file with the information about where to find your Dagster definitions. For more information about the `pyproject.toml` file, read our [guide about code locations](/concepts/code-locations).
+
+When the correct repository is selected, click "Continue". Note that this process will update your repository by adding directly new files to your default branch.
+
+<!--
+![Select the repository of a dbt & Dagster project in Dagster+](/images/integrations/dbt/using-dbt-with-dagster-plus/import_dagster_project_select_repo.png)
+-->
+
+<Image
+src="/images/integrations/dbt/using-dbt-with-dagster-plus/import_dagster_project_select_repo.png"
+width={2166}
+height={1120}
+/>
+
 #### Review the state of the repo
 
-When deploying a Dagster project for the first time, the workflow adds various files - a `dagster_cloud.yaml` file if it is missing and cloud action files.
+When deploying a Dagster project for the first time, the workflow adds various files - a [dagster_cloud.yaml file](/dagster-plus/managing-deployments/dagster-cloud-yaml), if it is missing, and two cloud action files under `.github/workflows`, `branch_deployments.yml` and `deploy.yml`, to manage the deployments of the repository.
 
-[//]: <> "TODO: Add examples of files"
+After adding the files to the repository, a typical file structure would include the required files for dbt and Dagster, some files related to Git, like `.gitignore`, and the newly added files.
+
+```shell
+my_dbt_and_dagster_project
+├── .github
+│   ├── workflows
+│   │   ├── branch_deployments.yml
+│   │   ├── deploy.yml
+├── dbt
+│   ├── models
+│   │   ├── my_model.sql
+│   ├── seeds
+│   │   ├── my_seeds.csv
+│   ├── dbt_project.yml
+│   ├── profiles.yml
+├── my_dbt_and_dagster_project
+│   ├── __init__.py
+│   ├── assets.py
+│   ├── definitions.py
+│   ├── project.py
+│   ├── schedules.py
+├── .gitignore
+├── LICENSE
+├── README.md
+├── dagster_cloud.yaml
+├── pyproject.toml
+└── setup.py
+```
