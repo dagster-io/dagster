@@ -32,12 +32,6 @@ class JobIndex:
             parent_job_snapshot, "parent_job_snapshot", JobSnapshot
         )
 
-        if self.job_snapshot.lineage_snapshot:
-            check.invariant(
-                self.parent_job_snapshot is not None,
-                "Can not create JobIndex for job_snapshot with lineage without parent_job_snapshot",
-            )
-
         node_def_snaps: Sequence[Union[OpDefSnap, GraphDefSnap]] = [
             *job_snapshot.node_defs_snapshot.op_def_snaps,
             *job_snapshot.node_defs_snapshot.graph_def_snaps,
