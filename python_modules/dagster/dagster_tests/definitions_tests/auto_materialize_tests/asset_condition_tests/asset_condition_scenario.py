@@ -45,7 +45,7 @@ class FalseAssetCondition(SchedulingCondition):
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         return SchedulingResult.create(
             context,
-            true_slice=context.asset_graph_view.create_empty_slice(context.asset_key),
+            true_slice=context.asset_graph_view.create_empty_slice(asset_key=context.asset_key),
         )
 
 

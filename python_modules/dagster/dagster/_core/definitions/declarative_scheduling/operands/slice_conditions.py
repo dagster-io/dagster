@@ -20,7 +20,7 @@ class SliceSchedulingCondition(SchedulingCondition):
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         # don't compute anything if there are no candidates
         if context.candidate_slice.is_empty:
-            true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
+            true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         else:
             true_slice = self.compute_slice(context)
 
@@ -85,7 +85,7 @@ class WillBeRequestedCondition(SliceSchedulingCondition):
         ):
             return current_result.true_slice
         else:
-            return context.asset_graph_view.create_empty_slice(context.asset_key)
+            return context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
 
 
 @whitelist_for_serdes
@@ -96,7 +96,7 @@ class NewlyRequestedCondition(SliceSchedulingCondition):
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
         return context.previous_requested_slice or context.asset_graph_view.create_empty_slice(
-            context.asset_key
+            asset_key=context.asset_key
         )
 
 
@@ -109,7 +109,7 @@ class NewlyUpdatedCondition(SliceSchedulingCondition):
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
         # if it's the first time evaluating, just return the empty slice
         if context.cursor is None:
-            return context.asset_graph_view.create_empty_slice(context.asset_key)
+            return context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         else:
             return context.asset_graph_view.compute_updated_since_cursor_slice(
                 asset_key=context.asset_key, cursor=context.previous_evaluation_max_storage_id
@@ -141,7 +141,7 @@ class CronTickPassedCondition(SliceSchedulingCondition):
             # cron tick was not newly passed
             or previous_cron_tick < context.previous_evaluation_effective_dt
         ):
-            return context.asset_graph_view.create_empty_slice(context.asset_key)
+            return context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         else:
             return context.candidate_slice
 

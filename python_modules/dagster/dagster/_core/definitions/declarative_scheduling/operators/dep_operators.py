@@ -77,7 +77,7 @@ class AnyDepsCondition(DepCondition):
 
     def evaluate(self, context: SchedulingContext) -> SchedulingResult:
         dep_results = []
-        true_slice = context.asset_graph_view.create_empty_slice(context.asset_key)
+        true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
 
         for i, dep_key in enumerate(
             sorted(self._get_dep_keys(context.asset_key, context.asset_graph))

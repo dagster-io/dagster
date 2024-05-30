@@ -1,8 +1,8 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
-import pendulum
+import pytz
 
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
@@ -351,7 +351,7 @@ class SchedulingCondition(ABC, DagsterModel):
         )
 
 
-class SchedulingResult(DagsterModel):
+class SchedulingResult(NamedTuple):
     condition: SchedulingCondition
     condition_unique_id: str
     value_hash: str
@@ -389,7 +389,7 @@ class SchedulingResult(DagsterModel):
         child_results: Sequence["SchedulingResult"],
     ) -> "SchedulingResult":
         start_timestamp = context.create_time.timestamp()
-        end_timestamp = pendulum.now("UTC").timestamp()
+        end_timestamp = datetime.datetime.now(pytz.utc).timestamp()
 
         return SchedulingResult(
             condition=context.condition,

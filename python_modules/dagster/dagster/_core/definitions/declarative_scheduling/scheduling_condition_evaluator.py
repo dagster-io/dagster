@@ -1,4 +1,3 @@
-import dataclasses
 import datetime
 import logging
 import time
@@ -6,7 +5,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence, Set, Tuple
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
 from dagster._core.definitions.declarative_scheduling.scheduling_context import SchedulingContext
@@ -16,7 +15,6 @@ from ..asset_daemon_cursor import AssetDaemonCursor
 from ..base_asset_graph import BaseAssetGraph
 from ..freshness_based_auto_materialize import get_expected_data_time_for_asset_key
 from .legacy.legacy_context import LegacyRuleEvaluationContext
-from .serialized_objects import AssetConditionEvaluationState
 
 if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -51,7 +49,6 @@ class SchedulingConditionEvaluator:
         self.respect_materialization_data_versions = respect_materialization_data_versions
         self.auto_materialize_run_tags = auto_materialize_run_tags
 
-        self.evaluation_state_by_key = {}
         self.current_results_by_key = {}
         self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
@@ -62,7 +59,6 @@ class SchedulingConditionEvaluator:
     asset_graph: BaseAssetGraph
     asset_keys: AbstractSet[AssetKey]
     asset_graph_view: AssetGraphView
-    evaluation_state_by_key: Dict[AssetKey, AssetConditionEvaluationState]
     current_results_by_key: Dict[AssetKey, SchedulingResult]
     expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]]
     to_request: Set[AssetKeyPartitionKey]
@@ -153,17 +149,15 @@ class SchedulingConditionEvaluator:
                     # evaluated it may have had a different requested AssetSubset. however, because
                     # all these neighbors must be executed as a unit, we need to union together
                     # the subset of all required neighbors
-                    if neighbor_key in self.evaluation_state_by_key:
-                        neighbor_evaluation_state = self.evaluation_state_by_key[neighbor_key]
-                        self.evaluation_state_by_key[neighbor_key] = dataclasses.replace(
-                            neighbor_evaluation_state,
-                            previous_evaluation=neighbor_evaluation_state.previous_evaluation.copy(
-                                update={
-                                    "true_subset": neighbor_evaluation_state.true_subset.copy(
-                                        update={"asset_key": neighbor_key}
-                                    )
-                                }
-                            ),
+                    if neighbor_key in self.current_results_by_key:
+                        neighbor_result = self.current_results_by_key[neighbor_key]
+                        self.current_results_by_key[neighbor_key] = neighbor_result._replace(
+                            true_slice=AssetSlice(
+                                result.true_slice._asset_graph_view,  # noqa
+                                result.true_slice._compatible_subset._replace(  # noqa
+                                    asset_key=neighbor_key
+                                ),
+                            )
                         )
                     self.to_request |= {
                         ap._replace(asset_key=neighbor_key)
