@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import pytest
 from dagster import AssetKey, asset
@@ -107,6 +107,78 @@ def test_definition_set_blueprint_override() -> None:
     assert asset_2_def.group_names_by_key[asset_2_key] == "default"
     assert asset_2_def.tags_by_key[asset_2_key] == {"tag3": "value3"}
     assert asset_2_def.owners_by_key[asset_2_key] == []
+
+
+def test_definition_set_nested() -> None:
+    # tags and metadata are appended and not replaced
+
+    NestedBlueprintType = BlueprintDefintionSet[
+        Union["NestedBlueprintType", AdvancedAssetBlueprint]
+    ]
+
+    defs = (
+        BlueprintDefintionSet(
+            contents=[
+                BlueprintDefintionSet(
+                    contents=[
+                        AdvancedAssetBlueprint(
+                            key="asset1",
+                        )
+                    ],
+                    metadata={"foo": "bar"},
+                    group_name="my_asset_group",
+                    code_version="v1",
+                    owners=["rex@dagsterlabs.com"],
+                    tags={"tag1": "value1", "tag2": "value2"},
+                ),
+                BlueprintDefintionSet(
+                    contents=[
+                        AdvancedAssetBlueprint(
+                            key="asset2",
+                        )
+                    ],
+                    metadata={"baz": "quux"},
+                    group_name="my_other_asset_group",
+                    code_version="v2",
+                    owners=["ben@dagsterlabs.com"],
+                    tags={"tag3": "value3"},
+                ),
+            ],
+            metadata={"lorem": "ipsum"},
+            tags={"tag4": "value4"},
+        )
+        .build_defs()
+        .to_definitions()
+    )
+
+    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1"), AssetKey("asset2")}
+
+    asset_1_key = AssetKey("asset1")
+    asset_1_def = defs.get_assets_def(asset_1_key)
+    assert asset_1_def.metadata_by_key[asset_1_key] == {
+        "foo": "bar",
+        "lorem": "ipsum",
+    }
+    assert asset_1_def.group_names_by_key[asset_1_key] == "my_asset_group"
+    assert asset_1_def.tags_by_key[asset_1_key] == {
+        "tag1": "value1",
+        "tag2": "value2",
+        "tag4": "value4",
+    }
+    assert asset_1_def.owners_by_key[asset_1_key] == ["rex@dagsterlabs.com"]
+
+    asset_2_key = AssetKey("asset2")
+    asset_2_def = defs.get_assets_def(asset_2_key)
+    assert asset_2_def.metadata_by_key[asset_2_key] == {
+        "baz": "quux",
+        "lorem": "ipsum",
+    }
+    assert asset_2_def.group_names_by_key[asset_2_key] == "my_other_asset_group"
+    assert asset_2_def.tags_by_key[asset_2_key] == {
+        "tag3": "value3",
+        "tag4": "value4",
+    }
+    assert asset_2_def.owners_by_key[asset_2_key] == ["ben@dagsterlabs.com"]
 
 
 def test_definition_set_blueprint_override_already_set() -> None:
