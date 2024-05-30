@@ -44,7 +44,7 @@ class SlingResourceBlueprint(Blueprint):
         )
 
 
-class SlingSyncAssetsBlueprint(Blueprint):
+class SlingSyncBlueprint(Blueprint):
     """Blueprint which creates a Dagster asset for one or more Sling replication configurations.
 
     Follows the schema of the Sling replication file, see the Sling documentation for more information.

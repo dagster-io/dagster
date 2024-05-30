@@ -9,7 +9,7 @@ from dagster._core.test_utils import environ
 from dagster_embedded_elt.sling import (
     SlingReplicationParam,
 )
-from dagster_embedded_elt.sling.blueprints import SlingResourceBlueprint, SlingSyncAssetsBlueprint
+from dagster_embedded_elt.sling.blueprints import SlingResourceBlueprint, SlingSyncBlueprint
 
 
 def test_load_basic_resources_and_sync(
@@ -25,7 +25,7 @@ def test_load_basic_resources_and_sync(
     ):
         defs = load_defs_from_yaml(
             path=Path(__file__).parent,
-            per_file_blueprint_type=Union[SlingSyncAssetsBlueprint, SlingResourceBlueprint],
+            per_file_blueprint_type=Union[SlingSyncBlueprint, SlingResourceBlueprint],
         )
 
         res = materialize(list(defs.assets), resources=defs.resources)  # type: ignore
