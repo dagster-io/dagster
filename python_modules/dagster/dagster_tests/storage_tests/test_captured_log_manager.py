@@ -7,7 +7,7 @@ from typing import Any, Generator, Mapping, Sequence
 import pendulum
 import pytest
 from dagster import job, op
-from dagster._core.compute_log_api import LOG_STREAM_COMPLETED_SIGIL
+from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.compute_log_manager import ComputeIOType

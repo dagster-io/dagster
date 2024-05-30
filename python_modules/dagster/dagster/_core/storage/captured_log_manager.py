@@ -1,13 +1,24 @@
 import json
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import IO, Any, Callable, Generator, Iterator, NamedTuple, Optional, Sequence, Tuple
+from typing import (
+    IO,
+    Any,
+    Callable,
+    Generator,
+    Iterator,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from typing_extensions import Final, Self
 
 import dagster._check as check
 from dagster import _seven
-from dagster._core.compute_log_api import LOG_STREAM_COMPLETED_SIGIL, JSONLogLineCursor
+from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL, LogLineCursor
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
@@ -262,18 +273,32 @@ class CapturedLogManager(ABC):
         """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
         return [run_id, "compute_logs", step_key]
 
-    def get_log_keys_for_log_key_prefix(self, log_key_prefix: Sequence[str]) -> Sequence[str]:
-        """Returns the logs keys for a given log key prefix.This is determined by looking at the
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str]
+    ) -> Sequence[Sequence[str]]:
+        """Returns the logs keys for a given log key prefix. This is determined by looking at the
         directory defined by the log key prefix and creating a log_key for each file in the directory.
         """
+        # NOTE: This method was introduced to support backfill logs, which are always stored as .err files.
+        # Thus the implementations only look for .err files when determining the log_keys. If other file extensions
+        # need to be supported, an io_type parameter will need to be added to this method
         raise NotImplementedError("Must implement get_log_keys_for_log_key_prefix")
 
-    def _read_json_lines(self, start_line, num_lines, log_lines):
+    def _read_json_lines(
+        self, start_line: int, num_lines: int, log_lines: Sequence[str]
+    ) -> Tuple[Sequence[Mapping[str, Any]], bool, int]:
+        """Attempts to convert each line in log_lines into a JSON dict until num_lines are converted, or
+        until log_lines is exhausted. Keeps track of the gross number of lines processed for cursoring, and
+        returns whether there are more lines in log_lines to process.
+        """
         records = []
         if start_line >= len(log_lines):
             return records, False, 0
 
         remaining_log_lines = log_lines[start_line:]
+        # we keep track of the total_lines_processed separately, since there are cases when we discard
+        # lines (ie if they are not valid json). But we need to know the total lines we processed so that
+        # the cursor can be updated correctly.
         total_lines_processed = 0
 
         for line in remaining_log_lines:
@@ -292,8 +317,12 @@ class CapturedLogManager(ABC):
 
         return records, has_more, total_lines_processed
 
-    def _get_log_lines_for_log_key(self, log_key):
+    def _get_log_lines_for_log_key(self, log_key: Sequence[str]) -> Sequence[str]:
+        """For a log key, gets the corresponding file, and splits the file into lines."""
         log_data = self.get_log_data(log_key)
+        # Note: This method was implemented to support backfill logs, which are always stored as .err files.
+        # If other file extensions need to be supported, this method will need to be updated to look at the
+        # correct part of log_data based on an io_type parameter
         raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
         log_lines = raw_logs.split("\n")
 
@@ -301,17 +330,16 @@ class CapturedLogManager(ABC):
 
     def read_json_log_lines_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], cursor: Optional[str], num_lines: int = 100
-    ) -> Tuple[Sequence[Any], Optional[JSONLogLineCursor]]:
+    ) -> Tuple[Sequence[Mapping[str, Any]], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
-        as if they are a single file continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
-
-        TODO - what should the number of lines per call be?
+        as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
         """
+        # find all of the log_keys to read from and sort them in the order to be read
         log_keys = sorted(self.get_log_keys_for_log_key_prefix(log_key_prefix))
         if len(log_keys) == 0:
-            return [], None  # TODO return the passed cursor instead?
+            return [], None
 
-        json_log_cursor = JSONLogLineCursor.parse(cursor) if cursor else None
+        json_log_cursor = LogLineCursor.parse(cursor) if cursor else None
         if json_log_cursor and not json_log_cursor.has_more:
             # No more logs to read for this log_key_prefix
             return [], json_log_cursor
@@ -324,6 +352,8 @@ class CapturedLogManager(ABC):
             line_cursor = json_log_cursor.line
 
         if line_cursor == -1:
+            # line_cursor for -1 means the entirety of the file has been read, but the next file
+            # didn't exist yet. So we see if a new file has been added.
             # if the next file doesn't exist yet, return
             if log_key_to_fetch_idx + 1 >= len(log_keys):
                 return [], json_log_cursor
@@ -335,7 +365,6 @@ class CapturedLogManager(ABC):
         has_more = True
 
         while len(records) < num_lines:
-            assert line_cursor >= 0
             new_records, file_has_more, total_lines_processed = self._read_json_lines(
                 start_line=line_cursor,
                 num_lines=num_lines - len(records),
@@ -356,9 +385,10 @@ class CapturedLogManager(ABC):
 
         if LOG_STREAM_COMPLETED_SIGIL in json.dumps(records[-1]):
             has_more = False
+            # remove LOG_STREAM_COMPLETED_SIGIL from the records
             records = records[:-1]
 
-        new_cursor = JSONLogLineCursor(
+        new_cursor = LogLineCursor(
             log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more=has_more
-        )  # TODO has_more computation
+        )
         return records, new_cursor

@@ -5,7 +5,7 @@ from typing import Iterable, Mapping, Optional, Sequence, cast
 
 import pendulum
 
-from dagster._core.compute_log_api import LOG_STREAM_COMPLETED_SIGIL
+from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
