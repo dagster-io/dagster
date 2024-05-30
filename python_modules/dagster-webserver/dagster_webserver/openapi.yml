@@ -1,0 +1,68 @@
+openapi: 3.1.0
+info:
+  title: Dagster Webserver API 
+  description: |-
+    OpenAPI-compliant Dagster Webserver API endpoint
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+servers:
+  - url: https://petstore3.swagger.io/api/v3
+# tags:
+#   - name: pet
+#     description: Everything about your Pets
+#   - name: store
+#     description: Access to Petstore orders
+#   - name: user
+#     description: Operations about user
+
+paths:
+  /v1/report_asset_materialization:
+    post:
+      summary: Report Asset Materialization
+      description: Report Asset Materialization
+      operationId: report_asset_materialization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportAssetMatParam'
+      responses:
+        '200':
+          description: OK
+          # content:
+          #   application/json:
+          #     schema:
+          #       $ref: '#/components/schemas/AssetMaterializationEvent'
+        '400':
+          description: Bad Request
+          # content:
+          #   application/json:
+          #     schema:
+          #       $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          # content:
+          #   application/json:
+          #     schema:
+          #       $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ReportAssetMatParam:
+      type: object
+      properties:
+        asset_key:
+          type: string
+        data_version:
+          type: string
+        partition:
+          type: string
+        description:
+          type: string
+      required:
+        - asset_key
+        - partition
+        - materialization   
+  
