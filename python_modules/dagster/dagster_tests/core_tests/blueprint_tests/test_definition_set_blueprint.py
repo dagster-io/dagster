@@ -41,6 +41,34 @@ def test_definition_set_blueprint_from_yaml() -> None:
         assert assets_def.code_versions_by_key[key] == "v1"
 
 
+def test_definition_set_blueprint_from_yaml_nested() -> None:
+    # we can define a very nested structure from the generic type
+    NestedBlueprintType = Union[SimpleAssetBlueprint, BlueprintDefintionSet[SimpleAssetBlueprint]]
+    FurtherNestedBlueprintType = Union[
+        NestedBlueprintType, BlueprintDefintionSet[NestedBlueprintType]
+    ]
+
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "definition_set_nested.yaml",
+        per_file_blueprint_type=FurtherNestedBlueprintType,
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+    }
+
+    asset_1_key = AssetKey("asset1")
+    asset_1_def = defs.get_assets_def(asset_1_key)
+    assert asset_1_def.metadata_by_key[asset_1_key]["lorem"] == "ipsum"
+    assert asset_1_def.tags_by_key[asset_1_key] == {"outer": "tag"}
+
+    asset_2_key = AssetKey("asset2")
+    asset_2_def = defs.get_assets_def(asset_2_key)
+    assert asset_2_def.metadata_by_key[asset_2_key]["foo"] == "bar"
+    assert asset_2_def.metadata_by_key[asset_2_key]["lorem"] == "ipsum"
+    assert asset_2_def.tags_by_key[asset_2_key] == {"outer": "tag", "inner": "tag"}
+
+
 class AdvancedAssetBlueprint(Blueprint):
     key: str
     metadata: Optional[Dict[str, Any]] = None
