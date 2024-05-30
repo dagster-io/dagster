@@ -15,7 +15,7 @@ from typing import (
     Union,
 )
 
-from toposort import CircularDependencyError, toposort
+from toposort import CircularDependencyError
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -27,6 +27,7 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.selector.subset_selector import AssetSelectionData
+from dagster._core.utils import toposort
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
