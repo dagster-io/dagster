@@ -897,7 +897,6 @@ def test_get_all_asset_specs():
         "asset5",
         group_name="default",
         tags={"biz": "boz"},
-        metadata={"dagster/asset_execution_type": "UNEXECUTABLE"},
     )
     assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec(
         "asset6",
