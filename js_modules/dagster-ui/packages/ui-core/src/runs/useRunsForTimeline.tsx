@@ -303,7 +303,7 @@ export const useRunsForTimeline = ({
       );
 
       map[runJobKey] = map[runJobKey] || {};
-      map[runJobKey][run.id] = {
+      map[runJobKey]![run.id] = {
         id: run.id,
         status: run.status,
         startTime: run.startTime * 1000,
