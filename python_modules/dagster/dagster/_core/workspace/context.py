@@ -191,7 +191,13 @@ class BaseWorkspaceRequestContext(IWorkspace, LoadingContext):
         return entry.load_error if entry else None
 
     def has_code_location_name(self, name: str) -> bool:
-        return bool(self.get_location_entry(name))
+        # For some WorkspaceRequestContext subclasses, the CodeLocationEntry is more expensive
+        # than the CodeLocationStatusEntry, so use the latter for a faster check.
+        for status_entry in self.get_code_location_statuses():
+            if status_entry.location_name == name:
+                return True
+
+        return False
 
     def has_code_location(self, name: str) -> bool:
         location_entry = self.get_location_entry(name)
