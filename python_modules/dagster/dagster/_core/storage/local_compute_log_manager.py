@@ -243,6 +243,22 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
     def unsubscribe(self, subscription):
         self.on_unsubscribe(subscription)
 
+    def get_log_keys_for_log_key_prefix(self, log_key_prefix: Sequence[str]) -> Sequence[str]:
+        """Returns the logs keys for a given log key prefix.This is determined by looking at the
+        directory defined by the log key prefix and creating a log_key for each file in the directory.
+        """
+        base_dir_path = Path(self._base_dir).resolve()
+        directory = base_dir_path.joinpath(*log_key_prefix)
+        objects = directory.iterdir()
+        results = []
+        list_key_prefix = list(log_key_prefix)
+
+        for obj in objects:
+            if obj.is_file() and obj.suffix == "." + IO_TYPE_EXTENSION[ComputeIOType.STDERR]:
+                results.append(list_key_prefix + [obj.stem])
+
+        return results
+
     ###############################################
     #
     # Methods for the ComputeLogManager interface

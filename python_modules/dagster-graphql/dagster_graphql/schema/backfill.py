@@ -1,9 +1,8 @@
-import json
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
-from dagster import AssetKey, _seven
+from dagster import AssetKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -17,7 +16,6 @@ from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
 from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -524,13 +522,12 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_user(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._backfill_job.user
 
-<<<<<<< HEAD
     def resolve_title(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._backfill_job.title
 
     def resolve_description(self, _graphene_info: ResolveInfo) -> Optional[str]:
         return self._backfill_job.description
-=======
+
     def resolve_logEvents(self, graphene_info: ResolveInfo, cursor: Optional[str] = None):
         from ..schema.instigation import (
             GrapheneInstigationEvent,
@@ -551,23 +548,9 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             # maybe need to return something else to indicate that a setting needs to be changed
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
-        log_keys = sorted(
-            instance.compute_log_manager.get_log_keys_for_log_key_prefix(
-                backfill_log_key_prefix, io_type=ComputeIOType.STDERR
-            )
+        records, new_cursor = instance.compute_log_manager.read_json_log_lines_for_log_key_prefix(
+            backfill_log_key_prefix, cursor
         )
-        log_key_to_fetch = cursor.split("/") if cursor else log_keys[0]
-        log_data = instance.compute_log_manager.get_log_data(log_key_to_fetch)
-        raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
-
-        records = []
-        for line in raw_logs.split("\n"):
-            if not line:
-                continue
-            try:
-                records.append(_seven.json.loads(line))
-            except json.JSONDecodeError:
-                continue
 
         events = []
         for record_dict in records:
@@ -582,22 +565,11 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
 
             events.append(event)
-        current_log_key_idx = log_keys.index(log_key_to_fetch)
-        has_more = current_log_key_idx < len(log_keys) - 1
-        if has_more:
-            next_log_key = (
-                log_keys[current_log_key_idx + 1]
-                if current_log_key_idx < len(log_keys) - 1
-                else None
-            )
-        else:
-            next_log_key = None  # TODO what should this be?
         return GrapheneInstigationEventConnection(
             events=events,
-            cursor="/".join(next_log_key),
-            hasMore=has_more,
+            cursor=new_cursor.to_string() if new_cursor else None,
+            hasMore=new_cursor.has_more if new_cursor else True,
         )
->>>>>>> a9867e6d16 (able to fetch logs together in gql)
 
 
 class GrapheneBackfillNotFoundError(graphene.ObjectType):

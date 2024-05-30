@@ -5,6 +5,7 @@ from typing import Iterable, Mapping, Optional, Sequence, cast
 
 import pendulum
 
+from dagster._core.compute_log_api import LOG_STREAM_COMPLETED_SIGIL
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -101,3 +102,12 @@ def execute_backfill_jobs(
                     backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
                 )
                 yield error_info
+
+            # refetch the backfill to add the end of log stream sigil if the backfill is in any finished state
+            backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
+            if backfill.status in [
+                BulkActionStatus.COMPLETED,
+                BulkActionStatus.FAILED,
+                BulkActionStatus.CANCELED,
+            ]:
+                backfill_logger.info(LOG_STREAM_COMPLETED_SIGIL)
