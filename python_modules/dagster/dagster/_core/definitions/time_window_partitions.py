@@ -2197,7 +2197,7 @@ class TimeWindowPartitionsSubset(
         num_partitions_ = self._asdict()["num_partitions"]
         if num_partitions_ is None:
             return sum(
-                len(self.partitions_def.get_partition_keys_in_time_window(time_window))
+                self.partitions_def.get_num_partitions_in_window(time_window)
                 for time_window in self.included_time_windows
             )
         return num_partitions_
