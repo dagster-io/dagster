@@ -52,7 +52,7 @@ def get_serializable_candidate_subset(
 
 
 @whitelist_for_serdes
-class AssetConditionSnapshot(DagsterModel):
+class AssetConditionSnapshot(NamedTuple):
     """A serializable snapshot of a node in the AutomationCondition tree."""
 
     class_name: str
@@ -61,7 +61,7 @@ class AssetConditionSnapshot(DagsterModel):
 
 
 @whitelist_for_serdes
-class AssetSubsetWithMetadata(DagsterModel):
+class AssetSubsetWithMetadata(NamedTuple):
     """An asset subset with metadata that corresponds to it."""
 
     subset: AssetSubset
@@ -73,7 +73,7 @@ class AssetSubsetWithMetadata(DagsterModel):
 
 
 @whitelist_for_serdes
-class AssetConditionEvaluation(DagsterModel):
+class AssetConditionEvaluation(NamedTuple):
     """Serializable representation of the results of evaluating a node in the evaluation tree."""
 
     condition_snapshot: AssetConditionSnapshot
@@ -130,7 +130,7 @@ class AssetConditionEvaluation(DagsterModel):
 
 
 @whitelist_for_serdes
-class AssetConditionEvaluationWithRunIds(DagsterModel):
+class AssetConditionEvaluationWithRunIds(NamedTuple):
     """A union of an AssetConditionEvaluation and the set of run IDs that have been launched in
     response to it.
     """

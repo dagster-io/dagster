@@ -389,7 +389,8 @@ class AssetGraphView:
             ),
         )
 
-    def create_empty_slice(self, asset_key: AssetKey) -> AssetSlice:
+    @cached_method
+    def create_empty_slice(self, *, asset_key: AssetKey) -> AssetSlice:
         return _slice_from_valid_subset(
             self,
             AssetSubset.empty(asset_key, self._get_partitions_def(asset_key)),
@@ -462,7 +463,7 @@ class AssetGraphView:
 
         latest_time_window = time_partitions_def.get_last_partition_window(self.effective_dt)
         if latest_time_window is None:
-            return self.create_empty_slice(asset_key)
+            return self.create_empty_slice(asset_key=asset_key)
 
         # the time window in which to look for partitions
         time_window = (
@@ -539,7 +540,7 @@ class AssetGraphView:
     def compute_parent_updated_since_cursor_slice(
         self, *, asset_key: AssetKey, cursor: Optional[int]
     ) -> AssetSlice:
-        result_slice = self.create_empty_slice(asset_key)
+        result_slice = self.create_empty_slice(asset_key=asset_key)
         for parent_key in self.asset_graph.get(asset_key).parent_keys:
             result_slice = result_slice.compute_union(
                 self.compute_updated_since_cursor_slice(

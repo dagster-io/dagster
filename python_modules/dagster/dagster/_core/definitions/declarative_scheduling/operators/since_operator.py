@@ -45,7 +45,7 @@ class SinceCondition(SchedulingCondition):
 
         # take the previous slice that this was true for
         true_slice = context.previous_true_slice or context.asset_graph_view.create_empty_slice(
-            context.asset_key
+            asset_key=context.asset_key
         )
         # add in any newly true trigger asset partitions
         true_slice = true_slice.compute_union(trigger_result.true_slice)
