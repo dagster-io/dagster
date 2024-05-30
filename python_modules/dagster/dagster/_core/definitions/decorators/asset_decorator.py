@@ -532,7 +532,7 @@ def multi_asset(
     group_name: Optional[str] = None,
     retry_policy: Optional[RetryPolicy] = None,
     code_version: Optional[str] = None,
-    specs: Optional[Sequence[AssetSpec]] = None,
+    specs: Optional[Iterable[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     # deprecated
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,

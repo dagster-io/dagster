@@ -1,6 +1,8 @@
 from typing import List, Sequence
 
 from dagster import _check as check
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
@@ -184,12 +186,44 @@ def create_external_asset_from_source_asset(source_asset: SourceAsset) -> Assets
     return _shim_assets_def
 
 
-# Create unexecutable assets defs for each asset key in the provided assets def. This is used to
-# make a materializable assets def available only for loading in a job.
-def create_unexecutable_external_assets_from_assets_def(
+# AssetsDefinition.get_io_manager_key_for_asset_key assumes an output is defined for the asset key,
+# which is not true if specs were used. Return None on the error case (no defined output).
+def _get_io_manager_key_for_unexecutable_asset(assets_def: AssetsDefinition, asset_key: AssetKey):
+    try:
+        return assets_def.get_io_manager_key_for_asset_key(asset_key)
+    except DagsterInvariantViolationError:
+        return None
+
+
+# Create an unexecutable assets def from an existing executable assets def. This is used to make a
+# materializable assets def available only for loading in a job.
+def create_unexecutable_external_asset_from_assets_def(
     assets_def: AssetsDefinition,
-) -> Sequence[AssetsDefinition]:
-    if not assets_def.is_executable:
-        return [assets_def]
-    else:
-        return [create_external_asset_from_source_asset(sa) for sa in assets_def.to_source_assets()]
+) -> AssetsDefinition:
+    with disable_dagster_warnings():
+        outs = {
+            spec.key.to_python_identifier(): AssetOut(
+                key=spec.key,
+                description=spec.description,
+                group_name=spec.group_name,
+                tags=spec.tags,
+                metadata={
+                    **(spec.metadata or {}),
+                    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
+                },
+                io_manager_key=_get_io_manager_key_for_unexecutable_asset(assets_def, spec.key),
+            )
+            for spec in assets_def.specs
+            if spec.key in assets_def.keys
+        }
+
+        @multi_asset(
+            outs=outs,
+            resource_defs=assets_def.resource_defs,
+            partitions_def=assets_def.partitions_def,
+            can_subset=assets_def.can_subset,
+        )
+        def _shim_assets_def(context: AssetExecutionContext):
+            raise NotImplementedError(f"Asset {context.selected_asset_keys} are not executable")
+
+    return _shim_assets_def
