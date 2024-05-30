@@ -69,8 +69,7 @@ def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
 
 def toposort(data: Mapping[T, AbstractSet[T]]) -> Sequence[Sequence[T]]:
-    # Workaround a bug in older versions of toposort that choke on frozenset
-    data = {k: set(v) if isinstance(v, frozenset) else v for k, v in data.items()}
+    # We fully materialize sort here to get nicer typing
     return [sorted(list(level)) for level in toposort_.toposort(data)]
 
 
