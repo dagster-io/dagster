@@ -25,7 +25,6 @@ from dagster._config import (
     Selector,
     Shape,
 )
-from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -586,6 +585,8 @@ def construct_config_type_dictionary(
 
 
 def _convert_config_classes_inner(configs: Any) -> Any:
+    from dagster._config.pythonic_config import Config
+
     if not isinstance(configs, dict):
         return configs
 
