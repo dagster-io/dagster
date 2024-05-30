@@ -8,7 +8,6 @@ from .operands import (
     MissingSchedulingCondition as MissingSchedulingCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
-    ParentNewerCondition as ParentNewerCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
 )
 from .operators import (

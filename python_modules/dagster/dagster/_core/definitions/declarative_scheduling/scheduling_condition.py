@@ -33,7 +33,6 @@ if TYPE_CHECKING:
         MissingSchedulingCondition,
         NewlyRequestedCondition,
         NewlyUpdatedCondition,
-        ParentNewerCondition,
         WillBeRequestedCondition,
     )
     from .operators import (
@@ -257,13 +256,6 @@ class SchedulingCondition(ABC, DagsterModel):
         from .operands import WillBeRequestedCondition
 
         return WillBeRequestedCondition()
-
-    @staticmethod
-    def parent_newer() -> "ParentNewerCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if at least one of its parents is newer."""
-        from .operands import ParentNewerCondition
-
-        return ParentNewerCondition()
 
     @staticmethod
     def newly_updated() -> "NewlyUpdatedCondition":
