@@ -92,6 +92,29 @@ def test_external_captured_log_manager():
         )
 
 
+def test_get_log_keys_for_log_key_prefix():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        cm = LocalComputeLogManager(tmpdir_path)
+        evaluation_time = pendulum.now()
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
+                f.write("foo")
+
+        for i in range(4):
+            write_log_file(i)
+
+        log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix)
+        assert log_keys == [
+            [*[log_key_prefix], "0"],
+            [*[log_key_prefix], "1"],
+            [*[log_key_prefix], "2"],
+            [*[log_key_prefix], "3"],
+        ]
+
+
 def test_get_json_log_lines_for_log_key_prefix():
     """Tests that we can read a sequence of files in a bucket as if they are a single file."""
     with tempfile.TemporaryDirectory() as tmpdir_path:
