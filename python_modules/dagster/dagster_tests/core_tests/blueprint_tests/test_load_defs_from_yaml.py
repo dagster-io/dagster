@@ -54,6 +54,7 @@ def test_single_file_single_blueprint() -> None:
     assert reference.file_path == os.fspath(
         Path(__file__).parent / "yaml_files" / "single_blueprint.yaml"
     )
+    assert reference.line_number == 1
 
 
 def test_dir_of_single_blueprints() -> None:
@@ -76,6 +77,7 @@ def test_dir_of_single_blueprints() -> None:
         assert reference.file_path == os.fspath(
             Path(__file__).parent / "yaml_files" / "dir_of_single_blueprints" / expected_filename
         )
+        assert reference.line_number == 1
 
 
 def test_abstract_blueprint() -> None:

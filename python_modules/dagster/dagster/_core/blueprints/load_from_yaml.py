@@ -18,13 +18,25 @@ from .blueprint import Blueprint, BlueprintDefinitions
 
 
 def _attach_code_references_to_definitions(
-    file_path: Path, blueprint: BlueprintDefinitions
+    file_path: Path, blueprint: Blueprint, defs: BlueprintDefinitions
 ) -> BlueprintDefinitions:
     """Attaches code reference metadata pointing to the specified file path to all assets in the
     output blueprint definitions.
     """
-    assets_defs = blueprint.assets or []
+    assets_defs = defs.assets or []
     new_assets_defs = []
+
+    source_position_and_key_path = blueprint._source_position_and_key_path  # noqa: SLF001
+    line_number = (
+        source_position_and_key_path.source_position.start.line
+        if source_position_and_key_path and source_position_and_key_path.source_position
+        else None
+    )
+
+    reference = LocalFileCodeReference(
+        file_path=os.fspath(file_path),
+        line_number=line_number,
+    )
 
     for assets_def in assets_defs:
         if not isinstance(assets_def, AssetsDefinition):
@@ -46,10 +58,7 @@ def _attach_code_references_to_definitions(
                 **assets_def.metadata_by_key[key],
                 **CodeReferencesMetadataSet(
                     code_references=CodeReferencesMetadataValue(
-                        code_references=[
-                            *existing_references,
-                            LocalFileCodeReference(file_path=os.fspath(file_path)),
-                        ],
+                        code_references=[*existing_references, reference],
                     )
                 ),
             }
@@ -67,7 +76,7 @@ def _attach_code_references_to_definitions(
                 }
             )
         )
-    return blueprint._replace(assets=new_assets_defs)
+    return defs._replace(assets=new_assets_defs)
 
 
 def load_defs_from_yaml(
@@ -99,13 +108,11 @@ def load_defs_from_yaml(
         for file_path in file_paths
     }
 
-    def_sets = {
-        file_path: blueprint.build_defs_add_context_to_errors()
-        for file_path, blueprint in blueprints.items()
-    }
     def_sets_with_code_references = [
-        _attach_code_references_to_definitions(file_path, def_set)
-        for file_path, def_set in def_sets.items()
+        _attach_code_references_to_definitions(
+            file_path, blueprint, blueprint.build_defs_add_context_to_errors()
+        )
+        for file_path, blueprint in blueprints.items()
     ]
 
     return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
