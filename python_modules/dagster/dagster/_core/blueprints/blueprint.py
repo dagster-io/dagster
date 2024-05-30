@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, NamedTuple, Optional, Union
 
 from dagster import _check as check
@@ -18,7 +19,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.executor.base import Executor
 from dagster._model import DagsterModel
-from dagster._utils.source_position import HasSourcePositionAndKeyPath
+from dagster._utils.source_position import HasSourcePositionAndKeyPath, SourcePosition
 
 
 class DagsterBuildDefinitionsFromConfigError(Exception):
@@ -154,3 +155,15 @@ class Blueprint(DagsterModel, ABC, HasSourcePositionAndKeyPath):
             raise DagsterBuildDefinitionsFromConfigError(
                 f"Error when building definitions from config with type {cls_name} at {source_pos}"
             ) from e
+
+    @property
+    def source_position(self) -> SourcePosition:
+        return check.not_none(check.not_none(self._source_position_and_key_path).source_position)
+
+    @property
+    def source_file(self) -> Path:
+        return Path(check.not_none(self.source_position.filename))
+
+    @property
+    def source_file_name(self) -> str:
+        return self.source_file.name

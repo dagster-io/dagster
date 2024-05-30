@@ -186,3 +186,24 @@ def test_single_file_union_of_blueprints_discriminated_union() -> None:
         per_file_blueprint_type=Union[SameFieldsAssetBlueprint1, SameFieldsAssetBlueprint2],
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+
+class SourceFileNameAssetBlueprint(Blueprint):
+    key: str
+
+    def build_defs(self) -> BlueprintDefinitions:
+        @asset(key=self.key, metadata={"source_file_name": self.source_file_name})
+        def _asset(): ...
+
+        return BlueprintDefinitions(assets=[_asset])
+
+
+def test_source_file_name() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+        per_file_blueprint_type=SourceFileNameAssetBlueprint,
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+    metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
+    assert metadata["source_file_name"] == "single_blueprint.yaml"
