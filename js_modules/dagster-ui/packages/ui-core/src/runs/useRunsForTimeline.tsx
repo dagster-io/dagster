@@ -383,6 +383,8 @@ export const useRunsForTimeline = ({
             }
           }
 
+          const seenRunIds: Record<string, boolean> = {};
+
           jobs.push({
             key: jobKey,
             jobName,
@@ -395,10 +397,12 @@ export const useRunsForTimeline = ({
               isJob: pipeline.isJob,
             }),
             runs: [
-              ...jobRuns.filter((run, idx, arr) => {
-                // Runs can show up in multiple buckets due to the way were are filtering. Lets dedupe them for now
-                // while we think of a better way to query while also caching.
-                return arr.findIndex((bRun) => bRun.id === run.id) === idx;
+              ...jobRuns.filter((run) => {
+                if (seenRunIds[run.id]) {
+                  return false;
+                }
+                seenRunIds[run.id] = true;
+                return true;
               }),
               ...jobTicks,
             ],
