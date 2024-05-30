@@ -18,9 +18,8 @@ from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._core.instance import DagsterInstance
-from dagster._utils.security import non_secure_md5_hash_str
 
-from ..assets import AssetsDefinition, SourceAsset
+from ..assets import AssetsDefinition, SourceAsset, unique_id_from_asset_and_check_keys
 from ..events import AssetKey, CoercibleToAssetKey
 
 # Constants
@@ -238,23 +237,6 @@ def seconds_in_words(delta: float) -> str:
     )
 
 
-def unique_id_from_asset_keys(asset_keys: Sequence[AssetKey]) -> str:
-    """Generate a unique ID from the provided asset keys.
-
-    This is necessary to disambiguate between different ops underlying freshness checks without
-    forcing the user to provide a name for the underlying op.
-    """
-    sorted_asset_keys = sorted(asset_keys, key=lambda asset_key: asset_key.to_string())
-    return non_secure_md5_hash_str(
-        ",".join([str(asset_key) for asset_key in sorted_asset_keys]).encode()
-    )[:8]
-
-
-def unique_id_from_check_keys(keys: Sequence[AssetCheckKey]) -> str:
-    sorted_keys = sorted(keys, key=lambda key: key.to_user_string())
-    return non_secure_md5_hash_str(",".join([str(key) for key in sorted_keys]).encode())[:8]
-
-
 def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: Sequence[AssetKey]):
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         return multi_asset_check(
@@ -268,7 +250,7 @@ def freshness_multi_asset_check(params_metadata: JsonMetadataValue, asset_keys: 
                 for asset_key in asset_keys
             ],
             can_subset=True,
-            name=f"freshness_check_{unique_id_from_asset_keys(asset_keys)}",
+            name=f"freshness_check_{unique_id_from_asset_and_check_keys(asset_keys, [])}",
         )(fn)
 
     return inner
@@ -282,7 +264,7 @@ def build_multi_asset_check(
     @multi_asset_check(
         specs=check_specs,
         can_subset=True,
-        name=f"asset_check_{unique_id_from_check_keys([spec.key for spec in check_specs])}",
+        name=f"asset_check_{unique_id_from_asset_and_check_keys([], [spec.key for spec in check_specs])}",
     )
     def _checks(context):
         for asset_check_key in context.selected_asset_check_keys:
