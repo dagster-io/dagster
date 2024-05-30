@@ -12,10 +12,13 @@ from dagster import (
     Definitions,
     DependencyDefinition,
     FreshnessPolicy,
+    Jitter,
     LastPartitionMapping,
     NodeInvocation,
+    OpDefinition,
     PartitionMapping,
     PartitionsDefinition,
+    RetryPolicy,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
@@ -303,6 +306,33 @@ def test_backfill_policy(
     def my_dbt_assets(): ...
 
     assert my_dbt_assets.backfill_policy == expected_backfill_policy
+
+
+@pytest.mark.parametrize(
+    "retry_policy",
+    [
+        None,
+        RetryPolicy(max_retries=1),
+        RetryPolicy(max_retries=2, delay=1, jitter=Jitter.FULL),
+    ],
+    ids=[
+        "no retry policy",
+        "retry policy",
+        "retry policy with jitter",
+    ],
+)
+def test_retry_policy(
+    test_jaffle_shop_manifest: Dict[str, Any],
+    retry_policy: Optional[RetryPolicy],
+) -> None:
+    @dbt_assets(
+        manifest=test_jaffle_shop_manifest,
+        retry_policy=retry_policy,
+    )
+    def my_dbt_assets(): ...
+
+    assert isinstance(my_dbt_assets.node_def, OpDefinition)
+    assert my_dbt_assets.node_def.retry_policy == retry_policy
 
 
 def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):

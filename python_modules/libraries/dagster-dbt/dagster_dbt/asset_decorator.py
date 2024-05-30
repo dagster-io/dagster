@@ -23,6 +23,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Nothing,
     PartitionsDefinition,
+    RetryPolicy,
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
@@ -78,6 +79,7 @@ def dbt_assets(
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     project: Optional[DbtProject] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -112,6 +114,7 @@ def dbt_assets(
         project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -403,6 +406,7 @@ def dbt_assets(
         op_tags=resolved_op_tags,
         check_specs=check_specs,
         backfill_policy=backfill_policy,
+        retry_policy=retry_policy,
     )
 
 
