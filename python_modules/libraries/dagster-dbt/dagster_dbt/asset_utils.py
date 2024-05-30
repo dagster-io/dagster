@@ -39,7 +39,6 @@ from dagster._core.definitions.decorators.asset_decorator import (
     _validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.definitions.metadata.metadata_set import StorageAddressMetadataSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
@@ -407,9 +406,33 @@ def default_metadata_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
     metadata: Dict[str, Any] = {}
+
+    column_schema = None
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
+        column_schema = TableSchema(
+            columns=[
+                TableColumn(
+                    name=column_name,
+                    type=column_info.get("data_type") or "?",
+                    description=column_info.get("description"),
+                )
+                for column_name, column_info in columns.items()
+            ]
+        )
+
+    # all nodes should have these props defined, but just in case
+    relation_identifier = None
+    if (
+        "database" in dbt_resource_props
+        and "schema" in dbt_resource_props
+        and "name" in dbt_resource_props
+    ):
+        relation_identifier = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+
+    if column_schema or relation_identifier:
         metadata = {
+            **metadata,
             **TableMetadataSet(
                 column_schema=TableSchema(
                     columns=[
@@ -420,18 +443,10 @@ def default_metadata_from_dbt_resource_props(
                         )
                         for column_name, column_info in columns.items()
                     ]
-                )
-            )
+                ),
+                relation_identifier=relation_identifier,
+            ),
         }
-
-    # all nodes should have these props defined
-    if (
-        "database" in dbt_resource_props
-        and "schema" in dbt_resource_props
-        and "name" in dbt_resource_props
-    ):
-        storage_address = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
-        metadata = {**metadata, **StorageAddressMetadataSet(storage_address=storage_address)}
 
     return metadata
 
