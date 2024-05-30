@@ -160,28 +160,30 @@ class TableMetadataSet(NamespacedMetadataSet):
             outputs for the table.
         row_count (Optional[int]): The number of rows in the table.
         partition_row_count (Optional[int]): The number of rows in the materialized or observed partition.
+        relation_identifier (Optional[str]): A unique identifier for the table/view, typically fully qualified.
+            For example, `my_database.my_schema.my_table`.
     """
 
     column_schema: Optional[TableSchema] = None
     column_lineage: Optional[TableColumnLineage] = None
     row_count: Optional[int] = None
     partition_row_count: Optional[int] = None
+    relation_identifier: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
         return "dagster"
 
 
-class StorageAddressMetadataSet(NamespacedMetadataSet):
-    """Metadata entries that describe where an asset is stored.
+class UriMetadataSet(NamespacedMetadataSet):
+    """Metadata entry which supplies a URI address for an asset.
+    For example, the S3 address of a file or bucket.
 
     Args:
-        storage_address (Optional[str]): A string representation of
-            the place the asset is stored. For example, a URL of an
-            S3 bucket or a fully qualified table name in a database.
+        uri (Optional[str]): The URI address for the asset.
     """
 
-    storage_address: Optional[str] = None
+    uri: Optional[str] = None
 
     @classmethod
     def namespace(cls) -> str:
