@@ -63,6 +63,4 @@ components:
           type: string
       required:
         - asset_key
-        - partition
-        - materialization   
   
