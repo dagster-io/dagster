@@ -70,7 +70,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def metadata(self) -> ArbitraryMetadataMapping:
-        return self.assets_def.metadata_by_key.get(self.key, {})
+        return self.assets_def.specs_by_key[self.key].metadata or {}
 
     @property
     def tags(self) -> Mapping[str, str]:
@@ -78,7 +78,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def owners(self) -> Sequence[str]:
-        return self.assets_def.owners_by_key.get(self.key, [])
+        return self.assets_def.specs_by_key[self.key].owners or []
 
     @property
     def is_partitioned(self) -> bool:
@@ -110,7 +110,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def code_version(self) -> Optional[str]:
-        return self.assets_def.code_versions_by_key.get(self.key)
+        return self.assets_def.specs_by_key[self.key].code_version
 
     @property
     def check_keys(self) -> AbstractSet[AssetCheckKey]:
@@ -140,6 +140,9 @@ class AssetNode(BaseAssetNode):
     @property
     def io_manager_key(self) -> str:
         return self.assets_def.get_io_manager_key_for_asset_key(self.key)
+
+    def to_asset_spec(self) -> AssetSpec:
+        return self.assets_def.specs_by_key[self.key]
 
 
 class AssetGraph(BaseAssetGraph[AssetNode]):

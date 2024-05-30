@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 from dagster_dbt.cli.app import app
+from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from dagster_dbt.errors import DagsterDbtManifestNotFoundError
-from dagster_dbt.version import DBT_CORE_VERSION_UPPER_BOUND
 from typer.testing import CliRunner
 
 from ..dbt_projects import test_jaffle_shop_path

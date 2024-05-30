@@ -1,5 +1,13 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Iterable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+)
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -63,14 +71,14 @@ class AssetSpec(
             ("key", PublicAttr[AssetKey]),
             ("deps", PublicAttr[Iterable["AssetDep"]]),
             ("description", PublicAttr[Optional[str]]),
-            ("metadata", PublicAttr[Optional[Mapping[str, Any]]]),
+            ("metadata", PublicAttr[Mapping[str, Any]]),
             ("group_name", PublicAttr[Optional[str]]),
             ("skippable", PublicAttr[bool]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
-            ("owners", PublicAttr[Optional[Sequence[str]]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("owners", PublicAttr[Sequence[str]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
@@ -143,5 +151,5 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_tags_strict(tags),
+            tags=validate_tags_strict(tags) or {},
         )

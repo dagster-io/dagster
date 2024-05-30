@@ -1033,12 +1033,19 @@ class ExternalPartitionSet:
         return self._external_partition_set_data.external_partitions_data is not None
 
     def get_partitions_definition(self) -> PartitionsDefinition:
-        return (
-            self._external_partition_set_data.external_partitions_data.get_partitions_definition()  # type: ignore
-        )
+        partitions_data = self._external_partition_set_data.external_partitions_data
+        if partitions_data is None:
+            check.failed(
+                "Partition set does not have partition data, cannot get partitions definition"
+            )
+        return partitions_data.get_partitions_definition()
 
     def get_partition_names(self, instance: DagsterInstance) -> Sequence[str]:
-        check.invariant(self.has_partition_name_data())
+        partitions_data = self._external_partition_set_data.external_partitions_data
+        if partitions_data is None:
+            check.failed(
+                "Partition set does not have partition data, cannot get partitions definition"
+            )
         return self.get_partitions_definition().get_partition_keys(
             dynamic_partitions_store=instance
         )

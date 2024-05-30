@@ -82,7 +82,7 @@ def test_descent_path():
         deserialize_value(ser, whitelist_map=blank_map)
 
 
-def test_forward_compat_serdes_new_field_with_default():
+def test_forward_compat_serdes_new_field_with_default() -> None:
     test_map = WhitelistMap.create()
 
     # Separate scope since we redefine Quux
@@ -92,8 +92,8 @@ def test_forward_compat_serdes_new_field_with_default():
             def __new__(cls, foo, bar):
                 return super(Quux, cls).__new__(cls, foo, bar)
 
-        assert test_map.has_object_serializer("Quux")
-        serializer = test_map.get_object_serializer("Quux")
+        assert "Quux" in test_map.object_serializers
+        serializer = test_map.object_serializers["Quux"]
         assert serializer.klass is Quux
         return Quux("zip", "zow")
 
@@ -107,8 +107,8 @@ def test_forward_compat_serdes_new_field_with_default():
         def __new__(cls, foo, bar, baz=None):
             return super(Quux, cls).__new__(cls, foo, bar, baz=baz)
 
-    assert test_map.has_object_serializer("Quux")
-    serializer_v2 = test_map.get_object_serializer("Quux")
+    assert "Quux" in test_map.object_serializers
+    serializer_v2 = test_map.object_serializers["Quux"]
     assert serializer_v2.klass is Quux
 
     deserialized = deserialize_value(serialized, as_type=Quux, whitelist_map=test_map)
@@ -119,7 +119,7 @@ def test_forward_compat_serdes_new_field_with_default():
     assert deserialized.baz is None
 
 
-def test_forward_compat_serdes_new_enum_field():
+def test_forward_compat_serdes_new_enum_field() -> None:
     test_map = WhitelistMap.create()
 
     # Separate scope since we redefine Corge
@@ -129,7 +129,7 @@ def test_forward_compat_serdes_new_enum_field():
             FOO = 1
             BAR = 2
 
-        assert test_map.has_enum_entry("Corge")
+        assert "Corge" in test_map.enum_serializers
         return Corge.FOO
 
     corge = get_orig_obj()
@@ -148,7 +148,7 @@ def test_forward_compat_serdes_new_enum_field():
     assert deserialized.value == corge.value
 
 
-def test_serdes_enum_backcompat():
+def test_serdes_enum_backcompat() -> None:
     test_map = WhitelistMap.create()
 
     # Separate scope since we redefine Corge
@@ -158,7 +158,7 @@ def test_serdes_enum_backcompat():
             FOO = 1
             BAR = 2
 
-        assert test_map.has_enum_entry("Corge")
+        assert "Corge" in test_map.enum_serializers
         return Corge.FOO
 
     corge = get_orig_obj()

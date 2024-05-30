@@ -111,7 +111,7 @@ describe('LaunchAssetExecutionButton', () => {
       );
     });
 
-    it('should be disabled if the entire selection is source assets', async () => {
+    it('should be disabled if the entire selection is observable assets', async () => {
       renderButton({
         scope: {selected: [UNPARTITIONED_SOURCE_ASSET]},
       });
@@ -119,7 +119,7 @@ describe('LaunchAssetExecutionButton', () => {
       expect(button).toBeDisabled();
 
       userEvent.hover(button);
-      expect(await screen.findByText('Source assets cannot be materialized')).toBeDefined();
+      expect(await screen.findByText('Observable assets cannot be materialized')).toBeDefined();
     });
   });
 

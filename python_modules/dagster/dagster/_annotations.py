@@ -161,11 +161,13 @@ def deprecated(
         )
 
         if emit_runtime_warning:
+            stack_level = _get_warning_stacklevel(__obj)
+            subject = subject or _get_subject(__obj)
             warning_fn = lambda: deprecation_warning(
-                subject or _get_subject(__obj),
+                subject,
                 breaking_version=breaking_version,
                 additional_warn_text=additional_warn_text,
-                stacklevel=_get_warning_stacklevel(__obj),
+                stacklevel=stack_level,
             )
             return apply_pre_call_decorator(__obj, warning_fn)
         else:
@@ -368,10 +370,12 @@ def experimental(
         setattr(target, _EXPERIMENTAL_ATTR_NAME, ExperimentalInfo(additional_warn_text, subject))
 
         if emit_runtime_warning:
+            stack_level = _get_warning_stacklevel(__obj)
+            subject = subject or _get_subject(__obj)
             warning_fn = lambda: experimental_warning(
-                subject or _get_subject(__obj),
+                subject,
                 additional_warn_text=additional_warn_text,
-                stacklevel=_get_warning_stacklevel(__obj),
+                stacklevel=stack_level,
             )
             return apply_pre_call_decorator(__obj, warning_fn)
         else:

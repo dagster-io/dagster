@@ -182,6 +182,11 @@ export const FilterDropdown = ({filters, setIsOpen, setPortaledElements}: Filter
       } else if (event.key === 'Enter' || event.key === ' ') {
         if (focusedItemIndex === -1) {
           // They're typing in the search bar
+          if (event.key === 'Enter' && allResultsJsx.length === 1) {
+            // "Enter" submits the current search term
+            event.preventDefault();
+            allResultsJsx[0]?.props.onClick?.();
+          }
           return;
         }
         event.preventDefault();

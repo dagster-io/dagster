@@ -4,6 +4,7 @@ from abc import abstractmethod
 from collections import OrderedDict, defaultdict
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -2118,9 +2119,15 @@ class SqlEventLogStorage(EventLogStorage):
                 )
             )
 
-    @property
+    @cached_property
     def supports_global_concurrency_limits(self) -> bool:
         return self.has_table(ConcurrencySlotsTable.name)
+
+    @cached_property
+    def has_concurrency_limits_table(self) -> bool:
+        # This table was added later, and to avoid forcing a migration
+        # we handle in the code if its been added or not.
+        return self.has_table(ConcurrencyLimitsTable.name)
 
     def _reconcile_concurrency_limits_from_slots(self) -> None:
         """Helper function that can be reconciles the concurrency limits table from the concurrency
@@ -2128,7 +2135,7 @@ class SqlEventLogStorage(EventLogStorage):
         since all of the slot configuration operations should keep them in sync.  We reconcile from
         the slots table because the initial implementation did not have the limits table.
         """
-        if not self.has_table(ConcurrencyLimitsTable.name):
+        if not self.has_concurrency_limits_table:
             return
 
         if not self._has_rows(ConcurrencySlotsTable) or self._has_rows(ConcurrencyLimitsTable):
@@ -2167,7 +2174,7 @@ class SqlEventLogStorage(EventLogStorage):
         return bool(row[0]) if row else False
 
     def initialize_concurrency_limit_to_default(self, concurrency_key: str) -> bool:
-        if not self.has_table(ConcurrencyLimitsTable.name):
+        if not self.has_concurrency_limits_table:
             return False
 
         self._reconcile_concurrency_limits_from_slots()
@@ -2196,7 +2203,7 @@ class SqlEventLogStorage(EventLogStorage):
         """Helper function that can be overridden by each implementing sql variant which obtains a
         lock on the concurrency limits row for the given key and updates it to the given value.
         """
-        if not self.has_table(ConcurrencyLimitsTable.name):
+        if not self.has_concurrency_limits_table:
             # no need to grab the lock on the concurrency limits row if the table does not exist
             return None
 
@@ -2256,7 +2263,7 @@ class SqlEventLogStorage(EventLogStorage):
         self._reconcile_concurrency_limits_from_slots()
 
         with self.index_transaction() as conn:
-            if self.has_table(ConcurrencyLimitsTable.name):
+            if self.has_concurrency_limits_table:
                 conn.execute(
                     ConcurrencyLimitsTable.delete().where(
                         ConcurrencyLimitsTable.c.concurrency_key == concurrency_key
@@ -2615,7 +2622,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         """Get the set of concurrency limited keys."""
         with self.index_connection() as conn:
-            if self.has_table(ConcurrencyLimitsTable.name):
+            if self.has_concurrency_limits_table:
                 query = db_select([ConcurrencyLimitsTable.c.concurrency_key]).select_from(
                     ConcurrencyLimitsTable
                 )

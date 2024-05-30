@@ -2,9 +2,11 @@ import re
 
 import pytest
 from dagster import (
+    AssetDep,
     AssetExecutionContext,
     AssetKey,
     AssetsDefinition,
+    AssetSpec,
     DagsterInvalidDefinitionError,
     Definitions,
     ResourceDefinition,
@@ -18,6 +20,9 @@ from dagster import (
     in_process_executor,
     materialize,
     mem_io_manager,
+    multi_asset,
+    multiprocess_executor,
+    observable_source_asset,
     op,
     repository,
     sensor,
@@ -756,3 +761,143 @@ def test_asset_cycle():
     s = SourceAsset(key="s")
     with pytest.raises(CircularDependencyError):
         Definitions(assets=[a, b, c, s]).get_all_job_defs()
+
+
+def test_merge():
+    @asset
+    def asset1(): ...
+
+    @asset
+    def asset2(): ...
+
+    @job
+    def job1(): ...
+
+    @job
+    def job2(): ...
+
+    schedule1 = ScheduleDefinition(name="schedule1", job=job1, cron_schedule="@daily")
+    schedule2 = ScheduleDefinition(name="schedule2", job=job2, cron_schedule="@daily")
+
+    @sensor(job=job1)
+    def sensor1(): ...
+
+    @sensor(job=job2)
+    def sensor2(): ...
+
+    resource1 = object()
+    resource2 = object()
+
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    @logger
+    def logger2(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(
+        assets=[asset1],
+        jobs=[job1],
+        schedules=[schedule1],
+        sensors=[sensor1],
+        resources={"resource1": resource1},
+        loggers={"logger1": logger1},
+        executor=in_process_executor,
+    )
+    defs2 = Definitions(
+        assets=[asset2],
+        jobs=[job2],
+        schedules=[schedule2],
+        sensors=[sensor2],
+        resources={"resource2": resource2},
+        loggers={"logger2": logger2},
+    )
+
+    merged = Definitions.merge(defs1, defs2)
+    assert merged.assets == [asset1, asset2]
+    assert merged.jobs == [job1, job2]
+    assert merged.schedules == [schedule1, schedule2]
+    assert merged.sensors == [sensor1, sensor2]
+    assert merged.resources == {"resource1": resource1, "resource2": resource2}
+    assert merged.loggers == {"logger1": logger1, "logger2": logger2}
+    assert merged.executor == in_process_executor
+
+
+def test_resource_conflict_on_merge():
+    defs1 = Definitions(resources={"resource1": 4})
+    defs2 = Definitions(resources={"resource1": 4})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_logger_conflict_on_merge():
+    @logger
+    def logger1(_):
+        raise Exception("not executed")
+
+    defs1 = Definitions(loggers={"logger1": logger1})
+    defs2 = Definitions(loggers={"logger1": logger1})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_executor_conflict_on_merge():
+    defs1 = Definitions(executor=in_process_executor)
+    defs2 = Definitions(executor=multiprocess_executor)
+
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Definitions objects 0 and 1 both have an executor"
+    ):
+        Definitions.merge(defs1, defs2)
+
+
+def test_get_all_asset_specs():
+    @asset(tags={"foo": "fooval"})
+    def asset1(): ...
+
+    @asset
+    def asset2(asset1): ...
+
+    @multi_asset(specs=[AssetSpec("asset3"), AssetSpec("asset4", group_name="baz")])
+    def assets3_and_4(): ...
+
+    asset5 = SourceAsset("asset5", tags={"biz": "boz"})
+
+    @observable_source_asset(group_name="blag")
+    def asset6(): ...
+
+    defs = Definitions(assets=[asset1, asset2, assets3_and_4, asset5, asset6])
+    all_asset_specs = defs.get_all_asset_specs()
+    assert len(all_asset_specs) == 6
+    asset_specs_by_key = {spec.key: spec for spec in all_asset_specs}
+    assert asset_specs_by_key.keys() == {
+        AssetKey(s) for s in ["asset1", "asset2", "asset3", "asset4", "asset5", "asset6"]
+    }
+    assert asset_specs_by_key[AssetKey("asset1")] == AssetSpec(
+        "asset1", tags={"foo": "fooval"}, group_name="default"
+    )
+    assert asset_specs_by_key[AssetKey("asset2")] == AssetSpec(
+        "asset2", group_name="default", deps=[AssetDep("asset1")]
+    )
+    assert asset_specs_by_key[AssetKey("asset3")] == AssetSpec("asset3", group_name="default")
+    assert asset_specs_by_key[AssetKey("asset4")] == AssetSpec("asset4", group_name="baz")
+    assert asset_specs_by_key[AssetKey("asset5")] == AssetSpec(
+        "asset5",
+        group_name="default",
+        tags={"biz": "boz"},
+        metadata={"dagster/asset_execution_type": "UNEXECUTABLE"},
+    )
+    assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec(
+        "asset6",
+        group_name="blag",
+        metadata={"dagster/asset_execution_type": "OBSERVATION"},
+    )

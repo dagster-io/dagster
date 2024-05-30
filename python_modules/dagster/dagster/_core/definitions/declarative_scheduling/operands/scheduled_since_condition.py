@@ -90,7 +90,7 @@ class ScheduledSinceCondition(SchedulingCondition):
                 or cast(
                     float,
                     asset_slice_with_metadata.metadata.get(
-                        _REQUEST_TIMESTAMP_METADATA_KEY, MetadataValue.float(0)
+                        _REQUEST_TIMESTAMP_METADATA_KEY, MetadataValue.float(0.0)
                     ).value,
                 )
                 < self._get_minimum_timestamp(context)

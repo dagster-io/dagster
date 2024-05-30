@@ -914,7 +914,10 @@ def test_graph_asset_with_args():
         maximum_lag_minutes=5
     )
     assert my_asset.tags_by_key[AssetKey("my_asset")] == {"foo": "bar"}
-    assert my_asset.owners_by_key[AssetKey("my_asset")] == ["team:team1", "claire@dagsterlabs.com"]
+    assert my_asset.specs_by_key[AssetKey("my_asset")].owners == [
+        "team:team1",
+        "claire@dagsterlabs.com",
+    ]
     assert (
         my_asset.auto_materialize_policies_by_key[AssetKey("my_asset")]
         == AutoMaterializePolicy.lazy()
@@ -1069,7 +1072,9 @@ def test_graph_multi_asset_decorator():
 
     @graph_multi_asset(
         outs={
-            "first_asset": AssetOut(auto_materialize_policy=AutoMaterializePolicy.eager()),
+            "first_asset": AssetOut(
+                auto_materialize_policy=AutoMaterializePolicy.eager(), code_version="abc"
+            ),
             "second_asset": AssetOut(freshness_policy=FreshnessPolicy(maximum_lag_minutes=5)),
         },
         group_name="grp",
@@ -1085,6 +1090,7 @@ def test_graph_multi_asset_decorator():
     assert two_assets.keys_by_output_name["second_asset"] == AssetKey("second_asset")
 
     assert two_assets.group_names_by_key[AssetKey("first_asset")] == "grp"
+    assert two_assets.code_versions_by_key[AssetKey("first_asset")] == "abc"
     assert two_assets.group_names_by_key[AssetKey("second_asset")] == "grp"
 
     assert two_assets.freshness_policies_by_key.get(AssetKey("first_asset")) is None

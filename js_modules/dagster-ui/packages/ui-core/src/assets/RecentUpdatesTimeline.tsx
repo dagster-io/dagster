@@ -131,7 +131,7 @@ export const RecentUpdatesTimeline = ({
     return (
       <Box flex={{direction: 'column', gap: 8}}>
         <Subtitle2>Recent updates</Subtitle2>
-        <Caption color={Colors.textLight()}>No materialization events found</Caption>
+        <Caption color={Colors.textLighter()}>No materialization events found</Caption>
       </Box>
     );
   }

@@ -23,6 +23,7 @@ from dagster import (
     DagsterInvalidDefinitionError,
     Nothing,
     PartitionsDefinition,
+    RetryPolicy,
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
@@ -31,6 +32,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._utils.warnings import (
     experimental_warning,
 )
@@ -77,6 +79,7 @@ def dbt_assets(
     op_tags: Optional[Mapping[str, Any]] = None,
     required_resource_keys: Optional[Set[str]] = None,
     project: Optional[DbtProject] = None,
+    retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute a set of dbt resources, described by a manifest.json.
     When invoking dbt commands using :py:class:`~dagster_dbt.DbtCliResource`'s
@@ -111,6 +114,7 @@ def dbt_assets(
         project (Optional[DbtProject]): A DbtProject instance which provides a pointer to the dbt
             project location and manifest. Not required, but needed to attach code references from
             model code to Dagster assets.
+        retry_policy (Optional[RetryPolicy]): The retry policy for the op that computes the asset.
 
     Examples:
         Running ``dbt build`` for a dbt project:
@@ -402,6 +406,7 @@ def dbt_assets(
         op_tags=resolved_op_tags,
         check_specs=check_specs,
         backfill_policy=backfill_policy,
+        retry_policy=retry_policy,
     )
 
 
@@ -467,6 +472,8 @@ def get_dbt_multi_asset_args(
         for dbt_group_resource_props in manifest["groups"].values()
     }
 
+    dbt_adapter_type = manifest.get("metadata", {}).get("adapter_type")
+
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
         dbt_resource_props = dbt_nodes[unique_id]
         dbt_group_resource_props = dbt_group_resource_props_by_group_name.get(
@@ -513,7 +520,10 @@ def get_dbt_multi_asset_args(
                     **({"group": dbt_group_resource_props} if dbt_group_resource_props else {}),
                 }
             ),
-            tags=dagster_dbt_translator.get_tags(dbt_resource_props),
+            tags={
+                **(StorageKindTagSet(storage_kind=dbt_adapter_type) if dbt_adapter_type else {}),
+                **dagster_dbt_translator.get_tags(dbt_resource_props),
+            },
             group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
             code_version=default_code_version_fn(dbt_resource_props),
             freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),

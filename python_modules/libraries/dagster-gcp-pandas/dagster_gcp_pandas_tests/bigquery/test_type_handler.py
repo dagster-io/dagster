@@ -183,7 +183,7 @@ def test_time_window_partitioned_asset(io_manager):
             if event.event_type_value == "ASSET_MATERIALIZATION"
         )
         meta = materialization.materialization.metadata["dagster/partition_row_count"]
-        assert cast(IntMetadataValue, meta).value_inner == 3
+        assert cast(IntMetadataValue, meta).value == 3
 
         out_df = pandas_gbq.read_gbq(
             f"SELECT * FROM {bq_table_path}", project_id=SHARED_BUILDKITE_BQ_CONFIG["project"]

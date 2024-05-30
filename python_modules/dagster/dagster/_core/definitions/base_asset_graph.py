@@ -23,8 +23,6 @@ from typing import (
     cast,
 )
 
-import toposort
-
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
@@ -40,6 +38,7 @@ from dagster._core.selector.subset_selector import (
     DependencyGraph,
     fetch_sources,
 )
+from dagster._core.utils import toposort
 from dagster._utils.cached_method import cached_method
 
 from .events import AssetKeyPartitionKey
@@ -223,7 +222,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """
         return [
             item
-            for items_in_level in toposort.toposort(self.asset_dep_graph["upstream"])
+            for items_in_level in toposort(self.asset_dep_graph["upstream"])
             for item in sorted(items_in_level)
         ]
 
@@ -232,7 +231,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         """Return topologically sorted asset keys grouped into sets containing keys of the same
         topological level.
         """
-        return [set(level) for level in toposort.toposort(self.asset_dep_graph["upstream"])]
+        return [set(level) for level in toposort(self.asset_dep_graph["upstream"])]
 
     @cached_property
     def unpartitioned_asset_keys(self) -> AbstractSet[AssetKey]:

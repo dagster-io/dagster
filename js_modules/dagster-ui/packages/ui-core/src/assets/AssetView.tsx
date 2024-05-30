@@ -10,7 +10,7 @@ import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
 import {metadataForAssetNode} from './AssetMetadata';
 import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
-import {ASSET_NODE_INSTIGATORS_FRAGMENT, AssetNodeInstigatorTag} from './AssetNodeInstigatorTag';
+import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {
   AssetNodeOverview,
@@ -22,12 +22,9 @@ import {AssetPartitions} from './AssetPartitions';
 import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';
 import {AssetAutomaterializePolicyPage} from './AutoMaterializePolicyPage/AssetAutomaterializePolicyPage';
-import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
-import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
 import {ChangedReasonsTag} from './ChangedReasons';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from './LaunchAssetObservationButton';
-import {OverdueTag} from './OverdueTag';
 import {UNDERLYING_OPS_ASSET_NODE_FRAGMENT} from './UnderlyingOpsOrGraph';
 import {AssetChecks} from './asset-checks/AssetChecks';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
@@ -39,7 +36,6 @@ import {
 } from './types/AssetView.types';
 import {healthRefreshHintFromLiveData} from './usePartitionHealthData';
 import {useReportEventsModal} from './useReportEventsModal';
-import {useFeatureFlags} from '../app/Flags';
 import {currentPageAtom} from '../app/analytics';
 import {Timestamp} from '../app/time/Timestamp';
 import {AssetLiveDataRefreshButton, useAssetLiveData} from '../asset-data/AssetLiveDataProvider';
@@ -53,15 +49,11 @@ import {
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
 import {CodeLink} from '../code-links/CodeLink';
-import {AssetComputeKindTag} from '../graph/OpTags';
 import {CodeReferencesMetadataEntry} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {isCanonicalCodeSourceEntry} from '../metadata/TableSchema';
-import {RepositoryLink} from '../nav/RepositoryLink';
 import {PageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 interface Props {
   assetKey: AssetKey;
@@ -72,7 +64,6 @@ interface Props {
 export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
-  const {flagUseNewOverviewPage} = useFeatureFlags();
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
@@ -80,11 +71,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
 
   const tabList = useTabBuilder({definition, params});
 
-  const defaultTab = flagUseNewOverviewPage
-    ? 'overview'
-    : tabList.some((t) => t.id === 'partitions')
-    ? 'partitions'
-    : 'events';
+  const defaultTab = 'overview';
   const selectedTab = params.view || defaultTab;
 
   // Load the asset graph - a large graph for the Lineage tab, a small graph for the Definition tab
@@ -540,64 +527,10 @@ const AssetViewPageHeaderTags = ({
   liveData?: LiveDataForNodeWithStaleData;
   onShowUpstream: () => void;
 }) => {
-  const automaterializeSensorsFlagState = useAutoMaterializeSensorFlag();
-  const {flagUseNewOverviewPage} = useFeatureFlags();
-  const repoAddress = definition
-    ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
-    : null;
-
   // In the new UI, all other tags are shown in the right sidebar of the overview tab.
   // When the old code below is removed, some of these components may no longer be used.
-  if (flagUseNewOverviewPage) {
-    return (
-      <>
-        {definition ? (
-          <>
-            <StaleReasonsTag
-              liveData={liveData}
-              assetKey={definition.assetKey}
-              onClick={onShowUpstream}
-            />
-            <ChangedReasonsTag
-              changedReasons={definition.changedReasons}
-              assetKey={definition.assetKey}
-            />
-          </>
-        ) : null}
-        {definition?.isSource ? (
-          <Tag>Source Asset</Tag>
-        ) : !definition?.isExecutable ? (
-          <Tag>External Asset</Tag>
-        ) : undefined}
-      </>
-    );
-  }
-
   return (
     <>
-      {definition && repoAddress ? (
-        <Tag icon="asset">
-          Asset in <RepositoryLink repoAddress={repoAddress} />
-        </Tag>
-      ) : (
-        <Tag icon="asset_non_sda">Asset</Tag>
-      )}
-      {definition && repoAddress && (
-        <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
-      )}
-      {definition && repoAddress && definition.groupName && (
-        <Tag icon="asset_group">
-          <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${definition.groupName}`)}>
-            {definition.groupName}
-          </Link>
-        </Tag>
-      )}
-      {automaterializeSensorsFlagState === 'has-global-amp' && definition?.autoMaterializePolicy ? (
-        <AutomaterializeDaemonStatusTag />
-      ) : null}
-      {definition && definition.freshnessPolicy && (
-        <OverdueTag policy={definition.freshnessPolicy} assetKey={definition.assetKey} />
-      )}
       {definition ? (
         <>
           <StaleReasonsTag
@@ -609,9 +542,13 @@ const AssetViewPageHeaderTags = ({
             changedReasons={definition.changedReasons}
             assetKey={definition.assetKey}
           />
-          <AssetComputeKindTag style={{position: 'relative'}} definition={definition} reduceColor />
         </>
       ) : null}
+      {definition?.isSource ? (
+        <Tag>Source Asset</Tag>
+      ) : !definition?.isExecutable ? (
+        <Tag>External Asset</Tag>
+      ) : undefined}
     </>
   );
 };

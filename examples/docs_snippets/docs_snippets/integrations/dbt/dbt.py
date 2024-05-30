@@ -30,6 +30,11 @@ def scope_compile_dbt_manifest(manifest):
 
 
 def scope_schedule_assets_dbt_only(manifest):
+    from dagster import Config, RunConfig
+
+    class MyDbtConfig(Config):
+        full_refresh: bool
+
     # start_schedule_assets_dbt_only
     from dagster_dbt import build_schedule_from_dbt_selection, dbt_assets
 
@@ -41,6 +46,8 @@ def scope_schedule_assets_dbt_only(manifest):
         job_name="daily_dbt_models",
         cron_schedule="@daily",
         dbt_select="tag:daily",
+        # If your definition of `@dbt_assets` has Dagster Configuration, you can specify it here.
+        # config=RunConfig(ops={"my_dbt_assets": MyDbtConfig(full_refresh=True)}),
     )
     # end_schedule_assets_dbt_only
 
@@ -364,3 +371,42 @@ def scope_disable_asset_check_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_disable_asset_check_dagster_dbt_translator
+
+
+def scope_config_dbt_assets():
+    # start_config_dbt_assets
+    from pathlib import Path
+
+    from dagster import AssetExecutionContext, Config
+    from dagster_dbt import DbtCliResource, dbt_assets
+
+    class MyDbtConfig(Config):
+        full_refresh: bool
+
+    @dbt_assets(manifest=Path("target", "manifest.json"))
+    def my_dbt_assets(
+        context: AssetExecutionContext, dbt: DbtCliResource, config: MyDbtConfig
+    ):
+        dbt_build_args = ["build"]
+        if config.full_refresh:
+            dbt_build_args += ["--full-refresh"]
+
+        yield from dbt.cli(dbt_build_args, context=context).stream()
+
+    # end_config_dbt_assets
+
+    # start_config_dbt_job
+    from dagster import RunConfig, define_asset_job
+    from dagster_dbt import build_dbt_asset_selection
+
+    my_job = define_asset_job(
+        name="all_dbt_assets",
+        selection=build_dbt_asset_selection(
+            [my_dbt_assets],
+        ),
+        config=RunConfig(
+            ops={"my_dbt_assets": MyDbtConfig(full_refresh=True, seed=True)}
+        ),
+    )
+
+    # end_config_dbt_job

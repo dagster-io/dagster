@@ -27,7 +27,6 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
-from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
@@ -41,7 +40,7 @@ from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..asset_spec import AssetSpec
-from ..assets import ASSET_SUBSET_INPUT_PREFIX, AssetsDefinition
+from ..assets import ASSET_SUBSET_INPUT_PREFIX, AssetsDefinition, get_partition_mappings_from_deps
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
 from ..decorators.op_decorator import _Op
@@ -462,50 +461,52 @@ class _Asset:
                     "Non partitioned asset can only have single run backfill policy",
                 )
 
-        keys_by_input_name = {
-            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-        }
-        partition_mappings = {
-            keys_by_input_name[input_name]: asset_in.partition_mapping
-            for input_name, asset_in in self.ins.items()
-            if asset_in.partition_mapping is not None
-        }
+            keys_by_input_name = {
+                input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+            }
+            partition_mappings = {
+                keys_by_input_name[input_name]: asset_in.partition_mapping
+                for input_name, asset_in in self.ins.items()
+                if asset_in.partition_mapping is not None
+            }
 
-        partition_mappings = _get_partition_mappings_from_deps(
-            partition_mappings=partition_mappings, deps=self.deps, asset_name=asset_name
-        )
+            partition_mappings = get_partition_mappings_from_deps(
+                partition_mappings=partition_mappings, deps=self.deps, asset_name=asset_name
+            )
+
+        deps = [
+            AssetDep(asset=key, partition_mapping=partition_mappings.get(key))
+            for key in keys_by_input_name.values()
+        ]
+
+        with disable_dagster_warnings():
+            spec = AssetSpec(
+                key=out_asset_key,
+                freshness_policy=self.freshness_policy,
+                auto_materialize_policy=self.auto_materialize_policy,
+                group_name=self.group_name,
+                metadata=self.metadata,
+                tags=self.tags,
+                owners=self.owners,
+                # see comment in @multi_asset's call to dagster_internal_init for the gory details
+                # this is best understood as an _override_ which @asset does not support
+                description=None,
+                deps=deps,
+            )
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
             node_def=op,
             partitions_def=self.partitions_def,
-            partition_mappings=partition_mappings if partition_mappings else None,
             resource_defs=wrapped_resource_defs,
-            group_names_by_key=(
-                {out_asset_key: self.group_name} if self.group_name is not None else None
-            ),
-            freshness_policies_by_key=(
-                {out_asset_key: self.freshness_policy} if self.freshness_policy else None
-            ),
-            auto_materialize_policies_by_key=(
-                {out_asset_key: self.auto_materialize_policy}
-                if self.auto_materialize_policy
-                else None
-            ),
             backfill_policy=self.backfill_policy,
-            asset_deps=None,  # no asset deps in single-asset decorator
             selected_asset_keys=None,  # no subselection in decorator
             can_subset=False,
-            metadata_by_key={out_asset_key: self.metadata} if self.metadata else None,
-            tags_by_key={out_asset_key: self.tags} if self.tags else None,
-            # see comment in @multi_asset's call to dagster_internal_init for the gory details
-            # this is best understood as an _override_ which @asset does not support
-            descriptions_by_key=None,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
-            owners_by_key={out_asset_key: self.owners} if self.owners else None,
+            specs=[spec],
         )
 
 
@@ -827,107 +828,55 @@ def multi_asset(
         }
 
         if upstream_asset_deps:
-            partition_mappings = _get_partition_mappings_from_deps(
+            partition_mappings = get_partition_mappings_from_deps(
                 partition_mappings=partition_mappings, deps=upstream_asset_deps, asset_name=op_name
             )
 
         if specs:
-            props_by_asset_key: Mapping[AssetKey, Union[AssetSpec, AssetOut]] = {
-                spec.key: spec for spec in specs
-            }
-            # Add PartitionMappings specified via AssetSpec.deps to partition_mappings dictionary. Error on duplicates
-            for spec in specs:
-                for dep in spec.deps:
-                    if dep.partition_mapping is None:
-                        continue
-                    if partition_mappings.get(dep.asset_key, None) is None:
-                        partition_mappings[dep.asset_key] = dep.partition_mapping
-                        continue
-                    if partition_mappings[dep.asset_key] == dep.partition_mapping:
-                        continue
-                    else:
-                        raise DagsterInvalidDefinitionError(
-                            f"Two different PartitionMappings for {dep.asset_key} provided for"
-                            f" multi_asset {op_name}. Please use the same PartitionMapping for"
-                            f" {dep.asset_key}."
-                        )
-
+            resolved_specs = specs
         else:
-            props_by_asset_key = {
-                keys_by_output_name[output_name]: asset_out
-                for output_name, asset_out in asset_out_map.items()
+            resolved_specs = []
+            input_deps_by_key = {
+                key: AssetDep(asset=key, partition_mapping=partition_mappings.get(key))
+                for key in keys_by_input_name.values()
             }
+            input_deps = list(input_deps_by_key.values())
+            for output_name, asset_out in asset_out_map.items():
+                key = keys_by_output_name[output_name]
+                if internal_asset_deps:
+                    deps = [
+                        input_deps_by_key.get(
+                            dep_key,
+                            AssetDep(asset=dep_key, partition_mapping=partition_mappings.get(key)),
+                        )
+                        for dep_key in internal_asset_deps.get(output_name, [])
+                    ]
+                else:
+                    deps = input_deps
 
-        # handle properties defined ons AssetSpecs or AssetOuts
-        group_names_by_key = {
-            asset_key: props.group_name
-            for asset_key, props in props_by_asset_key.items()
-            if props.group_name is not None
-        }
+                resolved_specs.append(asset_out.to_spec(key, deps=deps))
+
         if group_name:
             check.invariant(
-                not group_names_by_key,
+                all(spec.group_name is None for spec in resolved_specs),
                 "Cannot set group_name parameter on multi_asset if one or more of the"
                 " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
             )
-            group_names_by_key = {asset_key: group_name for asset_key in props_by_asset_key}
-
-        freshness_policies_by_key = {
-            asset_key: props.freshness_policy
-            for asset_key, props in props_by_asset_key.items()
-            if props.freshness_policy is not None
-        }
-        auto_materialize_policies_by_key = {
-            asset_key: props.auto_materialize_policy
-            for asset_key, props in props_by_asset_key.items()
-            if props.auto_materialize_policy is not None
-        }
-        metadata_by_key = {
-            asset_key: props.metadata
-            for asset_key, props in props_by_asset_key.items()
-            if props.metadata is not None
-        }
-        tags_by_key = {
-            asset_key: props.tags
-            for asset_key, props in props_by_asset_key.items()
-            if props.tags is not None
-        }
-        owners_by_key = {
-            asset_key: props.owners
-            for asset_key, props in props_by_asset_key.items()
-            if props.owners is not None
-        }
+            resolved_specs = [spec._replace(group_name=group_name) for spec in resolved_specs]
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
             node_def=op,
-            asset_deps=internal_deps,
             partitions_def=partitions_def,
-            partition_mappings=partition_mappings if partition_mappings else None,
             can_subset=can_subset,
             resource_defs=resource_defs,
-            group_names_by_key=group_names_by_key,
-            freshness_policies_by_key=freshness_policies_by_key,
-            auto_materialize_policies_by_key=auto_materialize_policies_by_key,
             backfill_policy=backfill_policy,
             selected_asset_keys=None,  # no subselection in decorator
-            # descriptions by key is more accurately understood as _overriding_ the descriptions
-            # by key that are in the OutputDefinitions associated with the asset key.
-            # This is a dangerous construction liable for bugs. Instead there should be a
-            # canonical source of asset descriptions in AssetsDefinintion and if we need
-            # to create a memoized cached dictionary of asset keys for perf or something we do
-            # that in the `__init__` or on demand.
-            #
-            # This is actually an override. We do not override descriptions
-            # in OutputDefinitions in @multi_asset
-            descriptions_by_key=None,
-            metadata_by_key=metadata_by_key,
-            tags_by_key=tags_by_key,
             check_specs_by_output_name=check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
-            owners_by_key=owners_by_key,
+            specs=resolved_specs,
         )
 
     return inner
@@ -1273,7 +1222,7 @@ def graph_asset_no_defaults(
         descriptions_by_output_name={"result": description} if description else None,
         resource_defs=resource_defs,
         check_specs=check_specs,
-        owners_by_key={out_asset_key: owners} if owners else None,
+        owners_by_output_name={"result": owners} if owners else None,
     )
 
 
@@ -1384,6 +1333,13 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.description is not None
         }
 
+        # source code versions from the AssetOuts (if any)
+        code_versions_by_output_name = {
+            output_name: out.code_version
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.code_version is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -1401,6 +1357,7 @@ def graph_multi_asset(
             descriptions_by_output_name=descriptions_by_output_name,
             resource_defs=resource_defs,
             check_specs=check_specs,
+            code_versions_by_output_name=code_versions_by_output_name,
         )
 
     return inner
@@ -1508,25 +1465,3 @@ def _validate_and_assign_output_names_to_check_specs(
 ) -> Mapping[str, AssetCheckSpec]:
     _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
     return _assign_output_names_to_check_specs(check_specs)
-
-
-def _get_partition_mappings_from_deps(
-    partition_mappings: Dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
-):
-    # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
-    for dep in deps:
-        if dep.partition_mapping is None:
-            continue
-        if partition_mappings.get(dep.asset_key, None) is None:
-            partition_mappings[dep.asset_key] = dep.partition_mapping
-            continue
-        if partition_mappings[dep.asset_key] == dep.partition_mapping:
-            continue
-        else:
-            raise DagsterInvalidDefinitionError(
-                f"Two different PartitionMappings for {dep.asset_key} provided for"
-                f" asset {asset_name}. Please use the same PartitionMapping for"
-                f" {dep.asset_key}."
-            )
-
-    return partition_mappings

@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import qs from 'qs';
-import {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useContext, useEffect, useRef} from 'react';
 
 import {GroupMetadata, buildAssetCountBySection} from './BuildAssetSearchResults';
 import {QueryResponse, WorkerSearchResult, createSearchWorker} from './createSearchWorker';
@@ -12,9 +12,12 @@ import {
   SearchSecondaryQueryVariables,
 } from './types/useGlobalSearch.types';
 import {useIndexedDBCachedQuery} from './useIndexedDBCachedQuery';
+import {AppContext} from '../app/AppContext';
+import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {buildStorageKindTag} from '../graph/KindTags';
 import {DefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
@@ -29,6 +32,12 @@ export const linkToAssetTableWithGroupFilter = (groupMetadata: GroupMetadata) =>
 export const linkToAssetTableWithComputeKindFilter = (computeKind: string) => {
   return `/assets?${qs.stringify({
     computeKindTags: JSON.stringify([computeKind]),
+  })}`;
+};
+
+export const linkToAssetTableWithStorageKindFilter = (storageKind: string) => {
+  return `/assets?${qs.stringify({
+    storageKindTags: JSON.stringify([buildStorageKindTag(storageKind)]),
   })}`;
 };
 
@@ -212,6 +221,15 @@ const secondaryDataToSearchResults = (
         numResults: assetCount,
       }),
     );
+    const storageKindResults: SearchResult[] = countsBySection.countsByStorageKind.map(
+      ({storageKind, assetCount}) => ({
+        label: storageKind,
+        description: '',
+        type: AssetFilterSearchResultType.StorageKind,
+        href: linkToAssetTableWithStorageKindFilter(storageKind),
+        numResults: assetCount,
+      }),
+    );
 
     const tagResults: SearchResult[] = countsBySection.countPerTag.map(({tag, assetCount}) => ({
       label: buildTagString(tag),
@@ -260,6 +278,7 @@ const secondaryDataToSearchResults = (
     return [
       ...assets,
       ...computeKindResults,
+      ...storageKindResults,
       ...tagResults,
       ...codeLocationResults,
       ...ownerResults,
@@ -307,13 +326,18 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const primarySearch = useRef<WorkerSearchResult | null>(null);
   const secondarySearch = useRef<WorkerSearchResult | null>(null);
 
+  const {useAugmentSearchResults} = useContext(CloudOSSContext);
+  const augmentSearchResults = useAugmentSearchResults();
+
+  const {localCacheIdPrefix} = useContext(AppContext);
+
   const {
     data: primaryData,
     fetch: fetchPrimaryData,
     loading: primaryDataLoading,
   } = useIndexedDBCachedQuery<SearchPrimaryQuery, SearchPrimaryQueryVariables>({
     query: SEARCH_PRIMARY_QUERY,
-    key: 'SearchPrimary',
+    key: `${localCacheIdPrefix}/SearchPrimary`,
     version: SEARCH_PRIMARY_DATA_VERSION,
   });
 
@@ -323,7 +347,7 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
     loading: secondaryDataLoading,
   } = useIndexedDBCachedQuery<SearchSecondaryQuery, SearchSecondaryQueryVariables>({
     query: SEARCH_SECONDARY_QUERY,
-    key: 'SearchSecondary',
+    key: `${localCacheIdPrefix}/SearchSecondary`,
     version: SEARCH_SECONDARY_DATA_VERSION,
   });
 
@@ -344,24 +368,26 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
       return;
     }
     const results = primaryDataToSearchResults({data: primaryData});
+    const augmentedResults = augmentSearchResults(results);
     if (!primarySearch.current) {
       primarySearch.current = createSearchWorker('primary', fuseOptions);
     }
-    primarySearch.current.update(results);
+    primarySearch.current.update(augmentedResults);
     consumeBufferEffect(primarySearchBuffer, primarySearch.current);
-  }, [consumeBufferEffect, primaryData]);
+  }, [consumeBufferEffect, primaryData, augmentSearchResults]);
 
   useEffect(() => {
     if (!secondaryData) {
       return;
     }
     const results = secondaryDataToSearchResults({data: secondaryData}, includeAssetFilters);
+    const augmentedResults = augmentSearchResults(results);
     if (!secondarySearch.current) {
       secondarySearch.current = createSearchWorker('secondary', fuseOptions);
     }
-    secondarySearch.current.update(results);
+    secondarySearch.current.update(augmentedResults);
     consumeBufferEffect(secondarySearchBuffer, secondarySearch.current);
-  }, [consumeBufferEffect, secondaryData, includeAssetFilters]);
+  }, [consumeBufferEffect, secondaryData, includeAssetFilters, augmentSearchResults]);
 
   const primarySearchBuffer = useRef<IndexBuffer | null>(null);
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);

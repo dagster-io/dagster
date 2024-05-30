@@ -107,6 +107,7 @@ Pipfile.lock
 .mypy_cache/
 
 tags
+!python_modules/dagster/dagster/_core/definitions/tags
 
 .pytest_cache
 .DS_Store

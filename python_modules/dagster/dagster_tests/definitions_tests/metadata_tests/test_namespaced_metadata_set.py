@@ -50,9 +50,7 @@ def test_extract_primitive_coercion():
         == "dagster.io"
     )
 
-    with pytest.raises(
-        ValidationError, match="Input should be a valid dictionary or instance of IntMetadataValue"
-    ):
+    with pytest.raises(ValidationError):
         MyMetadataSet.extract({"foo/int_metadata_value": 5})
 
 

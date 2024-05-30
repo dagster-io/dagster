@@ -1,7 +1,7 @@
 import {ApolloQueryResult, gql} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
 import * as React from 'react';
-import {useMemo} from 'react';
+import {useContext, useMemo} from 'react';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -192,13 +192,14 @@ export const ROOT_WORKSPACE_QUERY = gql`
  * in the workspace, and loading/error state for the relevant query.
  */
 const useWorkspaceState = (): WorkspaceState => {
+  const {localCacheIdPrefix} = useContext(AppContext);
   const {
     data,
     loading,
     fetch: refetch,
   } = useIndexedDBCachedQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>({
     query: ROOT_WORKSPACE_QUERY,
-    key: 'RootWorkspace',
+    key: `${localCacheIdPrefix}/RootWorkspace`,
     version: 1,
   });
   useMemo(() => refetch(), [refetch]);

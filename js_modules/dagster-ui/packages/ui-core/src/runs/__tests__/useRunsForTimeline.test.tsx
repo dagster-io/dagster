@@ -1,8 +1,9 @@
-import {MockedProvider} from '@apollo/client/testing';
+import {MockedProvider, MockedResponse} from '@apollo/client/testing';
 import {waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import {ReactNode} from 'react';
 
+import {AppContext} from '../../app/AppContext';
 import {
   InstigationStatus,
   RepositoryLocationLoadStatus,
@@ -20,7 +21,7 @@ import {
   buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
-import {getMockResultFn} from '../../testing/mocking';
+import {buildQueryMock, getMockResultFn} from '../../testing/mocking';
 import {ONE_HOUR_S, getHourlyBuckets} from '../HourlyDataCache/HourlyDataCache';
 import {
   COMPLETED_RUN_TIMELINE_QUERY,
@@ -28,6 +29,17 @@ import {
   ONGOING_RUN_TIMELINE_QUERY,
   useRunsForTimeline,
 } from '../useRunsForTimeline';
+
+const mockedCache = {
+  has: jest.fn(),
+  get: jest.fn(),
+  set: jest.fn(),
+};
+jest.mock('idb-lru-cache', () => {
+  return {
+    cache: jest.fn(() => mockedCache),
+  };
+});
 
 const mockCompletedRuns = (variables: any, result: any) => ({
   request: {
@@ -37,47 +49,49 @@ const mockCompletedRuns = (variables: any, result: any) => ({
   result,
 });
 
-const mockOngoingRuns = {
-  request: {
+const mockOngoingRuns = ({
+  limit = 500,
+  cursor,
+  results = [
+    {
+      id: '2',
+      pipelineName: 'pipeline2',
+      repositoryOrigin: {
+        id: '2',
+        repositoryName: 'repo2',
+        repositoryLocationName: 'location2',
+      },
+      startTime: 1,
+      endTime: 2,
+      status: 'STARTED',
+    },
+  ],
+}: {
+  limit?: number;
+  results?: any[];
+  cursor?: any;
+} = {}) =>
+  buildQueryMock({
     query: ONGOING_RUN_TIMELINE_QUERY,
     variables: {
       inProgressFilter: {statuses: ['CANCELING', 'STARTED']},
-      cursor: undefined,
-      limit: 500,
+      cursor,
+      limit,
     },
-  },
-  result: {
     data: {
-      ongoing: {
-        __typename: 'Runs',
-        results: [
-          {
-            id: '2',
-            pipelineName: 'pipeline2',
-            repositoryOrigin: {
-              id: '2',
-              repositoryName: 'repo2',
-              repositoryLocationName: 'location2',
-            },
-            startTime: 1,
-            endTime: 2,
-            status: 'STARTED',
-          },
-        ],
-      },
+      ongoing: buildRuns({
+        results,
+      }),
     },
-  },
-};
+  });
 
-const mockFutureTicks = (start: number, end: number) => ({
-  request: {
+const mockFutureTicks = (start: number, end: number) =>
+  buildQueryMock({
     query: FUTURE_TICKS_QUERY,
     variables: {
       tickCursor: start,
       ticksUntil: end,
     },
-  },
-  result: {
     data: {
       workspaceOrError: buildWorkspace({
         locationEntries: [
@@ -124,16 +138,15 @@ const mockFutureTicks = (start: number, end: number) => ({
         ],
       }),
     },
-  },
-});
+  });
 
 describe('useRunsForTimeline', () => {
   it('fetches and processes run data correctly', async () => {
     const start = 0;
-    const initialRange = [start, start + ONE_HOUR_S * 3] as const; // Example range in milliseconds
+    const initialRange = [start, start + ONE_HOUR_S * 3] as const;
     const buckets = getHourlyBuckets(initialRange[0], initialRange[1]);
     expect(buckets).toHaveLength(3);
-    const mocks = buckets.map((bucket, index) => {
+    const mocks: MockedResponse[] = buckets.map((bucket, index) => {
       const [start, end] = bucket;
       const updatedBefore = end;
       const updatedAfter = start;
@@ -149,29 +162,28 @@ describe('useRunsForTimeline', () => {
         },
         {
           data: {
-            completed: {
-              __typename: 'Runs',
+            completed: buildRuns({
               results: [
-                {
+                buildRun({
                   id: `1-${index}`,
                   pipelineName: `pipeline${index}`,
-                  repositoryOrigin: {
+                  repositoryOrigin: buildRepositoryOrigin({
                     id: `1-${index}`,
                     repositoryName: 'repo1',
                     repositoryLocationName: 'repo1',
-                  },
+                  }),
                   startTime: updatedAfter,
                   endTime: updatedBefore,
-                  status: 'SUCCESS',
-                },
+                  status: RunStatus.SUCCESS,
+                }),
               ],
-            },
+            }),
           },
         },
       );
     });
 
-    mocks.push(mockOngoingRuns, mockFutureTicks(initialRange[0], initialRange[1]));
+    mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
 
     const wrapper = ({children}: {children: ReactNode}) => (
       <MockedProvider mocks={mocks} addTypename={false}>
@@ -180,7 +192,7 @@ describe('useRunsForTimeline', () => {
     );
 
     const {result} = renderHook(
-      () => useRunsForTimeline([initialRange[0] * 1000, initialRange[1] * 1000]),
+      () => useRunsForTimeline({rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000]}),
       {
         wrapper,
       },
@@ -298,7 +310,7 @@ describe('useRunsForTimeline', () => {
     const mocks = [
       ...initialMocks,
       ...extendedMocks,
-      mockOngoingRuns,
+      mockOngoingRuns(),
       mockFutureTicks(initialInterval[0], initialInterval[1]),
       mockFutureTicks(extendedInterval[0], extendedInterval[1]),
     ];
@@ -311,7 +323,7 @@ describe('useRunsForTimeline', () => {
 
     // Render hook with initial interval to populate the cache
     const {result, rerender} = renderHook(
-      () => useRunsForTimeline([interval[0] * 1000, interval[1] * 1000]),
+      () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000]}),
       {
         wrapper,
       },
@@ -342,6 +354,265 @@ describe('useRunsForTimeline', () => {
       extendedMockResultFns.slice(1).forEach((mock) => {
         expect(mock).toHaveBeenCalled();
       });
+    });
+  });
+
+  it('paginates a bucket correctly', async () => {
+    const start = 0;
+    const interval = [start, start + ONE_HOUR_S] as const;
+    const buckets = getHourlyBuckets(interval[0], interval[1]);
+    expect(buckets).toHaveLength(1);
+
+    const bucket = buckets[0]!;
+    const updatedBefore = bucket[1];
+    const updatedAfter = bucket[0];
+
+    const mockPaginatedRuns = ({cursor, result}: {cursor?: string | undefined; result: any}) => ({
+      request: {
+        query: COMPLETED_RUN_TIMELINE_QUERY,
+        variables: {
+          completedFilter: {
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            updatedBefore,
+            updatedAfter,
+          },
+          cursor,
+          limit: 1,
+        },
+      },
+      result,
+    });
+
+    const firstPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [
+            buildRun({
+              id: '1-1',
+              pipelineName: 'pipeline1',
+              repositoryOrigin: buildRepositoryOrigin({
+                id: '1-1',
+                repositoryName: 'repo1',
+                repositoryLocationName: 'repo1',
+              }),
+              startTime: updatedAfter,
+              endTime: updatedBefore,
+              status: RunStatus.SUCCESS,
+            }),
+          ],
+        }),
+      },
+    };
+
+    const secondPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [
+            buildRun({
+              id: '1-2',
+              pipelineName: 'pipeline1',
+              repositoryOrigin: buildRepositoryOrigin({
+                id: '1-1',
+                repositoryName: 'repo1',
+                repositoryLocationName: 'repo1',
+              }),
+              startTime: updatedAfter,
+              endTime: updatedBefore,
+              status: RunStatus.SUCCESS,
+            }),
+          ],
+        }),
+      },
+    };
+
+    const thirdPageResult = {
+      data: {
+        completed: buildRuns({
+          results: [],
+        }),
+      },
+    };
+
+    const mocks = [
+      mockPaginatedRuns({result: firstPageResult}),
+      mockPaginatedRuns({cursor: '1-1', result: secondPageResult}),
+      mockPaginatedRuns({cursor: '1-2', result: thirdPageResult}),
+      mockOngoingRuns({limit: 1}),
+      mockOngoingRuns({limit: 1, results: [], cursor: '2'}),
+      mockFutureTicks(interval[0], interval[1]),
+    ];
+
+    const mockCbs = mocks.map(getMockResultFn);
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <MockedProvider mocks={mocks} addTypename={false}>
+        {children}
+      </MockedProvider>
+    );
+
+    const {result} = renderHook(
+      () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000], batchLimit: 1}),
+      {
+        wrapper,
+      },
+    );
+
+    // Initial state
+    expect(result.current.jobs).toEqual([]);
+    expect(result.current.initialLoading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.jobs).toHaveLength(1);
+    });
+
+    expect(result.current.jobs[0]!.runs).toHaveLength(2);
+
+    expect(result.current.jobs[0]!.runs[0]).toEqual({
+      id: '1-1',
+      status: 'SUCCESS',
+      startTime: buckets[0]![0] * 1000,
+      endTime: buckets[0]![1] * 1000,
+    });
+
+    expect(result.current.jobs[0]!.runs[1]).toEqual({
+      id: '1-2',
+      status: 'SUCCESS',
+      startTime: buckets[0]![0] * 1000,
+      endTime: buckets[0]![1] * 1000,
+    });
+
+    mockCbs.forEach((mockFn) => {
+      expect(mockFn).toHaveBeenCalled();
+    });
+  });
+
+  it('uses cached data from indexedb and only requests missing interval and combines the cached data with the fetched data', async () => {
+    const sixDaysAgo = Date.now() / 1000 - 6 * 24 * 60 * 60;
+    const start = Math.floor(sixDaysAgo / ONE_HOUR_S) * ONE_HOUR_S;
+    const initialRange = [start, start + ONE_HOUR_S] as const;
+    const buckets = getHourlyBuckets(initialRange[0], initialRange[1]);
+    expect(buckets).toHaveLength(1);
+
+    const cachedRange = [start, start + ONE_HOUR_S / 2] as const;
+
+    const mocks: MockedResponse[] = [
+      mockCompletedRuns(
+        {
+          completedFilter: {
+            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+            // We only fetch the range missing from the cache
+            updatedBefore: initialRange[1],
+            updatedAfter: cachedRange[1],
+          },
+          cursor: undefined,
+          limit: 500,
+        },
+        {
+          data: {
+            completed: buildRuns({
+              results: [
+                buildRun({
+                  id: `1-0`,
+                  pipelineName: `pipeline0`,
+                  repositoryOrigin: buildRepositoryOrigin({
+                    id: `1-0`,
+                    repositoryName: 'repo1',
+                    repositoryLocationName: 'repo1',
+                  }),
+                  startTime: initialRange[0],
+                  endTime: initialRange[1],
+                  status: RunStatus.SUCCESS,
+                }),
+              ],
+            }),
+          },
+        },
+      ),
+    ];
+
+    mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <AppContext.Provider
+        value={{
+          localCacheIdPrefix: 'test',
+          basePath: '',
+          rootServerURI: '',
+          telemetryEnabled: false,
+        }}
+      >
+        <MockedProvider mocks={mocks} addTypename={false}>
+          {children}
+        </MockedProvider>
+      </AppContext.Provider>
+    );
+
+    mockedCache.has.mockResolvedValue(true);
+
+    const startHour = Math.floor(start / ONE_HOUR_S);
+    mockedCache.get.mockResolvedValue({
+      value: new Map([
+        [
+          startHour,
+          [
+            {
+              start: cachedRange[0],
+              end: cachedRange[1],
+              data: [
+                buildRun({
+                  id: 'cached-run',
+                  pipelineName: 'pipeline0',
+                  repositoryOrigin: buildRepositoryOrigin({
+                    id: '1-1',
+                    repositoryName: 'repo1',
+                    repositoryLocationName: 'repo1',
+                  }),
+                  startTime: initialRange[0],
+                  endTime: initialRange[1],
+                  status: RunStatus.SUCCESS,
+                }),
+              ],
+            },
+          ],
+        ],
+      ]),
+    });
+
+    const {result} = renderHook(
+      () => useRunsForTimeline({rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000]}),
+      {
+        wrapper,
+      },
+    );
+
+    // Initial state
+    expect(result.current.jobs).toEqual([]);
+    expect(result.current.initialLoading).toBe(true);
+
+    await waitFor(() => {
+      expect(result.current.jobs).toHaveLength(1);
+    });
+
+    expect(result.current.jobs[0]).toEqual({
+      key: 'pipeline0-repo1@repo1',
+      jobName: 'pipeline0',
+      jobType: 'job',
+      repoAddress: {name: 'repo1', location: 'repo1'},
+      path: '/locations/repo1@repo1/jobs/pipeline0',
+      runs: [
+        {
+          endTime: initialRange[1] * 1000,
+          id: 'cached-run',
+          startTime: initialRange[0] * 1000,
+          status: 'SUCCESS',
+        },
+        {
+          endTime: initialRange[1] * 1000,
+          id: '1-0',
+          startTime: initialRange[0] * 1000,
+          status: 'SUCCESS',
+        },
+      ],
     });
   });
 });

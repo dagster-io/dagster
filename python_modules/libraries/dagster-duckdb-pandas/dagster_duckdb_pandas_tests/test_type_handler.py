@@ -225,7 +225,7 @@ def test_time_window_partitioned_asset(tmp_path, io_managers):
             if event.event_type_value == "ASSET_MATERIALIZATION"
         )
         meta = materialization.materialization.metadata["dagster/partition_row_count"]
-        assert cast(IntMetadataValue, meta).value_inner == 3
+        assert cast(IntMetadataValue, meta).value == 3
 
         duckdb_conn = duckdb.connect(database=os.path.join(tmp_path, "unit_test.duckdb"))
         out_df = duckdb_conn.execute("SELECT * FROM my_schema.daily_partitioned").fetch_df()
