@@ -325,15 +325,9 @@ def test_retry_policy(
     test_jaffle_shop_manifest: Dict[str, Any],
     retry_policy: Optional[RetryPolicy],
 ) -> None:
-    class CustomDagsterDbtTranslator(DagsterDbtTranslator):
-        def get_freshness_policy(self, _: Mapping[str, Any]) -> Optional[FreshnessPolicy]:
-            # Disable freshness policies when using static partitions
-            return None
-
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         retry_policy=retry_policy,
-        dagster_dbt_translator=CustomDagsterDbtTranslator(),
     )
     def my_dbt_assets(): ...
 
