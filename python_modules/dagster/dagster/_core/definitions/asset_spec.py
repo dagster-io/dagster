@@ -12,6 +12,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.internal_init import IHasInternalInit
 
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import (
@@ -80,7 +81,8 @@ class AssetSpec(
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
-    )
+    ),
+    IHasInternalInit,
 ):
     """Specifies the core attributes of an asset. This object is attached to the decorated
     function that defines how it materialized.
@@ -152,4 +154,33 @@ class AssetSpec(
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
             tags=validate_tags_strict(tags) or {},
+        )
+
+    @staticmethod
+    def dagster_internal_init(
+        *,
+        key: CoercibleToAssetKey,
+        deps: Optional[Iterable["CoercibleToAssetDep"]],
+        description: Optional[str],
+        metadata: Optional[Mapping[str, Any]],
+        skippable: bool,
+        group_name: Optional[str],
+        code_version: Optional[str],
+        freshness_policy: Optional[FreshnessPolicy],
+        auto_materialize_policy: Optional[AutoMaterializePolicy],
+        owners: Optional[Sequence[str]],
+        tags: Optional[Mapping[str, str]],
+    ) -> "AssetSpec":
+        return AssetSpec(
+            key=key,
+            deps=deps,
+            description=description,
+            metadata=metadata,
+            skippable=skippable,
+            group_name=group_name,
+            code_version=code_version,
+            freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
+            owners=owners,
+            tags=tags,
         )
