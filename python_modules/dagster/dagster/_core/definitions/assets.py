@@ -740,7 +740,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._specs_by_key
 
     @public
-    @property
+    @cached_property
     def group_names_by_key(self) -> Mapping[AssetKey, str]:
         """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
         to the group names assigned to them. If there is no assigned group name for a given AssetKey,
@@ -749,7 +749,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return {key: check.not_none(spec.group_name) for key, spec in self._specs_by_key.items()}
 
     @public
-    @property
+    @cached_property
     def descriptions_by_key(self) -> Mapping[AssetKey, str]:
         """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
         to the descriptions assigned to them. If there is no assigned description for a given AssetKey,
@@ -782,7 +782,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._node_def
 
     @public
-    @property
+    @cached_property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         """Maps assets that are produced by this definition to assets that they depend on. The
         dependencies can be either "internal", meaning that they refer to other assets that are
@@ -837,7 +837,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return len(self.check_keys) > 0
 
     @public
-    @property
+    @cached_property
     def dependency_keys(self) -> Iterable[AssetKey]:
         """Iterable[AssetKey]: The asset keys which are upstream of any asset included in this
         AssetsDefinition.
@@ -862,7 +862,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """AssetCheckSpec for each output on the underlying NodeDefinition."""
         return self._check_specs_by_output_name
 
-    @property
+    @cached_property
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return {
             name: spec
@@ -873,13 +873,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def get_spec_for_check_key(self, asset_check_key: AssetCheckKey) -> AssetCheckSpec:
         return self._check_specs_by_key[asset_check_key]
 
-    @property
+    @cached_property
     def keys_by_output_name(self) -> Mapping[str, AssetKey]:
         return {
             name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
         }
 
-    @property
+    @cached_property
     def asset_and_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
         return merge_dicts(
             self.keys_by_output_name,
@@ -893,7 +893,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def asset_and_check_keys(self) -> AbstractSet["AssetKeyOrCheckKey"]:
         return set(self.keys).union(self.check_keys)
 
-    @property
+    @cached_property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {
             *(dep_key for key in self.keys for dep_key in self.asset_deps[key]),
@@ -904,7 +904,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
 
-    @property
+    @cached_property
     def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
         return {
             key: spec.freshness_policy
@@ -912,7 +912,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if spec.freshness_policy
         }
 
-    @property
+    @cached_property
     def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
         return {
             key: spec.auto_materialize_policy
@@ -958,7 +958,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any)."""
         return self._partitions_def
 
-    @property
+    @cached_property
     def metadata_by_key(self) -> Mapping[AssetKey, ArbitraryMetadataMapping]:
         return {
             key: spec.metadata
@@ -966,11 +966,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if spec.metadata is not None
         }
 
-    @property
+    @cached_property
     def tags_by_key(self) -> Mapping[AssetKey, Mapping[str, str]]:
         return {key: spec.tags or {} for key, spec in self._specs_by_key.items()}
 
-    @property
+    @cached_property
     def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
         return {key: spec.code_version for key, spec in self._specs_by_key.items()}
 
@@ -978,7 +978,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return self._partition_mappings
 
-    @property
+    @cached_property
     def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
         return {key: spec.owners or [] for key, spec in self._specs_by_key.items()}
 
