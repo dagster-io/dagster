@@ -1,6 +1,5 @@
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     Any,
     Iterable,
     Mapping,
@@ -9,6 +8,7 @@ from typing import (
 )
 
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._model import dagster_model_with_new
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -19,9 +19,6 @@ from .events import (
 )
 from .freshness_policy import FreshnessPolicy
 from .utils import validate_tags_strict
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
@@ -95,7 +92,7 @@ class AssetSpec:
     """
 
     key: PublicAttr[AssetKey]
-    deps: PublicAttr[Iterable["AssetDep"]]
+    deps: PublicAttr[Iterable[AssetDep]]
     description: PublicAttr[Optional[str]]
     metadata: PublicAttr[Mapping[str, Any]]
     group_name: PublicAttr[Optional[str]]
