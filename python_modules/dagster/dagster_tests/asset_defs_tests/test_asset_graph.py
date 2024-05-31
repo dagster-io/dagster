@@ -491,7 +491,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
     )
 
     def exclude_asset3(asset_key, partitions_subset):
-        return asset_key is not asset3.key
+        return asset_key != asset3.key
 
     assert (
         asset_graph.bfs_filter_subsets(
@@ -504,7 +504,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
     )
 
     def exclude_asset2(asset_key, partitions_subset):
-        return asset_key is not asset2.key
+        return asset_key != asset2.key
 
     initial_asset0_subset = AssetGraphSubset(
         partitions_subsets_by_asset_key={asset0.key: initial_partitions_subset}

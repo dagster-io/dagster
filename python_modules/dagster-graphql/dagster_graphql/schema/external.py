@@ -401,7 +401,7 @@ class GrapheneRepository(graphene.ObjectType):
             GrapheneAssetGroup(
                 f"{self._repository_location.name}-{self._repository.name}-{group_name}",
                 group_name,
-                [external_node.asset_key for external_node in external_nodes],
+                [external_node.asset_key_obj for external_node in external_nodes],
             )
             for group_name, external_nodes in groups.items()
         ]
