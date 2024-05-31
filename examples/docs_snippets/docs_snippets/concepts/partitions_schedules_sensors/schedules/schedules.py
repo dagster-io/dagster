@@ -14,7 +14,8 @@ from dagster import (
 
 # start_basic_schedule
 @job
-def my_job(): ...
+def my_job():
+    ...
 
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
@@ -27,7 +28,7 @@ def my_asset():
 
 
 # start_basic_asset_schedule
-from dagster import AssetSelection, define_asset_job
+from dagster import AssetSelection, ScheduleDefinition, define_asset_job
 
 asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
 
