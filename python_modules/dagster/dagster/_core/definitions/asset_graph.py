@@ -46,11 +46,11 @@ class AssetNode(BaseAssetNode):
 
     @property
     def description(self) -> Optional[str]:
-        return self.assets_def.descriptions_by_key.get(self.key)
+        return self.assets_def.specs_by_key[self.key].description
 
     @property
     def group_name(self) -> str:
-        return self.assets_def.group_names_by_key.get(self.key, DEFAULT_GROUP_NAME)
+        return self.assets_def.specs_by_key[self.key].group_name or DEFAULT_GROUP_NAME
 
     @property
     def is_materializable(self) -> bool:
@@ -94,11 +94,11 @@ class AssetNode(BaseAssetNode):
 
     @property
     def freshness_policy(self) -> Optional[FreshnessPolicy]:
-        return self.assets_def.freshness_policies_by_key.get(self.key)
+        return self.assets_def.specs_by_key[self.key].freshness_policy
 
     @property
     def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
-        return self.assets_def.auto_materialize_policies_by_key.get(self.key)
+        return self.assets_def.specs_by_key[self.key].auto_materialize_policy
 
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:
