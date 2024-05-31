@@ -50,7 +50,7 @@ class BatchAssetRecordLoader:
     def get_latest_materialization_for_asset_key(
         self, asset_key: AssetKey
     ) -> Optional[EventLogEntry]:
-        asset_record = self.get_asset_record(from_stored_asset_key(asset_key))
+        asset_record = self.get_asset_record(asset_key)
         if not asset_record:
             return None
 

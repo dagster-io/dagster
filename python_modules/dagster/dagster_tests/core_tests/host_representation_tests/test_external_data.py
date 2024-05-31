@@ -1246,7 +1246,7 @@ def test_graph_multi_asset_description():
     assets_job = define_asset_job("assets_job", [foo])
 
     external_asset_nodes = {
-        asset_node.asset_key: asset_node
+        asset_node.asset_key_obj: asset_node
         for asset_node in _get_external_asset_nodes_from_definitions(
             Definitions(assets=[foo], jobs=[assets_job])
         )

@@ -172,7 +172,7 @@ def get_asset_node_definition_collisions(
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
-        if external_asset_node.asset_key in asset_keys:
+        if external_asset_node.asset_key_obj in asset_keys:
             is_defined = (
                 external_asset_node.node_definition_name
                 or external_asset_node.graph_name
@@ -230,7 +230,7 @@ def get_asset_nodes_by_asset_key(
         if preexisting_asset_node is None or (
             preexisting_asset_node.is_source and not preexisting_asset_node.is_observable
         ):
-            if asset_keys is None or external_asset_node.asset_key in asset_keys:
+            if asset_keys is None or external_asset_node.asset_key_obj in asset_keys:
                 asset_nodes_by_asset_key[external_asset_node.asset_key_obj] = (
                     repo_loc,
                     repo,

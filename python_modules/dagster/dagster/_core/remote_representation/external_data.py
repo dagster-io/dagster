@@ -1298,6 +1298,13 @@ class BackcompatTeamOwnerFieldDeserializer(FieldSerializer):
         return __unpacked_value
 
 
+def to_stored_asset_key(value: AssetKey) -> StoredAssetKey:
+    for part in value.path:
+        if "/" in part:
+            return value
+    return value.to_user_string()
+
+
 @whitelist_for_serdes(
     storage_field_names={
         "metadata": "metadata_entries",
@@ -1427,9 +1434,16 @@ class ExternalAssetNode(
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
 
+        check.inst_param(asset_key, "asset_key", (str, AssetKey))
+
+        # for storage purposes, canonicalize to string if keys do not contain slashes
+        asset_key_for_storage = (
+            asset_key if isinstance(asset_key, str) else to_stored_asset_key(asset_key)
+        )
+
         return super(ExternalAssetNode, cls).__new__(
             cls,
-            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            asset_key=asset_key_for_storage,
             dependencies=check.opt_sequence_param(
                 dependencies, "dependencies", of_type=ExternalAssetDependency
             ),
