@@ -122,22 +122,24 @@ def build_asset_with_blocking_check(
             },
         }
 
+    spec = asset_def.specs_by_key[asset_def.key]
+
     return graph_asset_no_defaults(
         compose_fn=blocking_asset,
         name=None,
         key_prefix=None,
         key=asset_def.key,
-        group_name=asset_def.group_names_by_key.get(asset_def.key),
+        group_name=spec.group_name,
         partitions_def=asset_def.partitions_def,
         check_specs=check_specs,
-        description=asset_def.descriptions_by_key.get(asset_def.key),
+        description=spec.description,
         ins={name: AssetIn(key) for name, key in asset_def.keys_by_input_name.items()},
         resource_defs=asset_def.resource_defs,
-        metadata=asset_def.metadata_by_key.get(asset_def.key),
+        metadata=spec.metadata,
         tags=None,
         owners=None,
-        freshness_policy=asset_def.freshness_policies_by_key.get(asset_def.key),
-        auto_materialize_policy=asset_def.auto_materialize_policies_by_key.get(asset_def.key),
+        freshness_policy=spec.freshness_policy,
+        auto_materialize_policy=spec.auto_materialize_policy,
         backfill_policy=asset_def.backfill_policy,
         config=None,  # gets config from asset_def.op
     )

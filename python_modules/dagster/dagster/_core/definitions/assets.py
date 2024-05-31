@@ -741,28 +741,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @public
     @property
-    def group_names_by_key(self) -> Mapping[AssetKey, str]:
-        """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
-        to the group names assigned to them. If there is no assigned group name for a given AssetKey,
-        it will not be present in this dictionary.
-        """
-        return {key: check.not_none(spec.group_name) for key, spec in self._specs_by_key.items()}
-
-    @public
-    @property
-    def descriptions_by_key(self) -> Mapping[AssetKey, str]:
-        """Mapping[AssetKey, str]: Returns a mapping from the asset keys in this AssetsDefinition
-        to the descriptions assigned to them. If there is no assigned description for a given AssetKey,
-        it will not be present in this dictionary.
-        """
-        return {
-            key: spec.description
-            for key, spec in self._specs_by_key.items()
-            if spec.description is not None
-        }
-
-    @public
-    @property
     def op(self) -> OpDefinition:
         """OpDefinition: Returns the OpDefinition that is used to materialize the assets in this
         AssetsDefinition.
@@ -904,22 +882,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             name: key for name, key in self.node_keys_by_input_name.items() if key in upstream_keys
         }
 
-    @property
-    def freshness_policies_by_key(self) -> Mapping[AssetKey, FreshnessPolicy]:
-        return {
-            key: spec.freshness_policy
-            for key, spec in self._specs_by_key.items()
-            if spec.freshness_policy
-        }
-
-    @property
-    def auto_materialize_policies_by_key(self) -> Mapping[AssetKey, AutoMaterializePolicy]:
-        return {
-            key: spec.auto_materialize_policy
-            for key, spec in self._specs_by_key.items()
-            if spec.auto_materialize_policy
-        }
-
     # Applies only to external observable assets. Can be removed when we fold
     # `auto_observe_interval_minutes` into auto-materialize policies.
     @property
@@ -959,28 +921,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._partitions_def
 
     @property
-    def metadata_by_key(self) -> Mapping[AssetKey, ArbitraryMetadataMapping]:
-        return {
-            key: spec.metadata
-            for key, spec in self._specs_by_key.items()
-            if spec.metadata is not None
-        }
-
-    @property
-    def tags_by_key(self) -> Mapping[AssetKey, Mapping[str, str]]:
-        return {key: spec.tags or {} for key, spec in self._specs_by_key.items()}
-
-    @property
-    def code_versions_by_key(self) -> Mapping[AssetKey, Optional[str]]:
-        return {key: spec.code_version for key, spec in self._specs_by_key.items()}
-
-    @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         return self._partition_mappings
-
-    @property
-    def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
-        return {key: spec.owners or [] for key, spec in self._specs_by_key.items()}
 
     @public
     def get_partition_mapping(self, in_asset_key: AssetKey) -> Optional[PartitionMapping]:
@@ -1377,6 +1319,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output_name, NodeHandle(self.node_def.name, parent=None)
             )[0]
             key = self._keys_by_output_name[output_name]
+            spec = self.specs_by_key[key]
 
             return SourceAsset(
                 key=key,
@@ -1385,8 +1328,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 description=output_def.description,
                 resource_defs=self.resource_defs,
                 partitions_def=self.partitions_def,
-                group_name=self.group_names_by_key[key],
-                tags=self.tags_by_key.get(key),
+                group_name=spec.group_name,
+                tags=spec.tags,
             )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
