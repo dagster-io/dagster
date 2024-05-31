@@ -1,4 +1,5 @@
 import re
+from functools import lru_cache
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
@@ -83,8 +84,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", PublicAttr[Sequence[str]])])):
 
         return "__".join(path).replace("-", "_")
 
-    @staticmethod
-    def from_user_string(asset_key_string: str) -> "AssetKey":
+    @classmethod
+    @lru_cache(maxsize=16 * 1024)
+    def from_user_string(cls, asset_key_string: str) -> "AssetKey":
         return AssetKey(asset_key_string.split(ASSET_KEY_DELIMITER))
 
     @staticmethod
