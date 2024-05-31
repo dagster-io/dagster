@@ -64,6 +64,7 @@ def test_deprecation_warnings():
         "get_output_metadata",
         "has_asset_checks_def",
         "has_partition_key",
+        "has_partition_key_range",
         "instance",
         "job_name",
         "output_for_asset_key",
