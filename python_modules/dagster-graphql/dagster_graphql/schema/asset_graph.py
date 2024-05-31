@@ -398,9 +398,9 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         super().__init__(
             id=get_unique_asset_id(
-                external_asset_node.asset_key, repository_location.name, external_repository.name
+                self._asset_key, repository_location.name, external_repository.name
             ),
-            assetKey=external_asset_node.asset_key,
+            assetKey=self._asset_key,
             description=external_asset_node.op_description,
             opName=external_asset_node.op_name,
             opVersion=external_asset_node.code_version,
