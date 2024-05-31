@@ -1,4 +1,11 @@
-import {Box, Menu, MiddleTruncate, Popover, Tooltip} from '@dagster-io/ui-components';
+import {
+  Box,
+  Menu,
+  MenuExternalLink,
+  MiddleTruncate,
+  Popover,
+  Tooltip,
+} from '@dagster-io/ui-components';
 import {Button, ExternalAnchorButton} from '@dagster-io/ui-components/src/components/Button';
 import {Icon, IconName} from '@dagster-io/ui-components/src/components/Icon';
 import * as React from 'react';
@@ -6,7 +13,6 @@ import * as React from 'react';
 import {CodeLinkProtocolContext, ProtocolData} from './CodeLinkProtocol';
 import {assertUnreachable} from '../app/Util';
 import {CodeReferencesMetadataEntry, SourceLocation} from '../graphql/types';
-import {MenuLink} from '../ui/MenuLink';
 
 const getCodeReferenceIcon = (codeReference: SourceLocation): IconName => {
   switch (codeReference.__typename) {
@@ -91,9 +97,9 @@ export const CodeLink = ({codeLinkData}: {codeLinkData: CodeReferencesMetadataEn
                   position="bottom"
                   display="block"
                 >
-                  <MenuLink
+                  <MenuExternalLink
                     text={getCodeReferenceEntryLabel(source)}
-                    to={getCodeReferenceLink(codeLinkProtocol, source)}
+                    href={getCodeReferenceLink(codeLinkProtocol, source)}
                     icon={<Icon name={getCodeReferenceIcon(source)} />}
                     style={{maxWidth: 300}}
                   />
