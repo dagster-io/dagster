@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_key import AssetKey, from_stored_asset_key
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 
@@ -50,7 +50,7 @@ class BatchAssetRecordLoader:
     def get_latest_materialization_for_asset_key(
         self, asset_key: AssetKey
     ) -> Optional[EventLogEntry]:
-        asset_record = self.get_asset_record(asset_key)
+        asset_record = self.get_asset_record(from_stored_asset_key(asset_key))
         if not asset_record:
             return None
 
@@ -62,7 +62,7 @@ class BatchAssetRecordLoader:
             "Event log storage must support fetching the last observation from asset records",
         )
 
-        asset_record = self.get_asset_record(asset_key)
+        asset_record = self.get_asset_record(from_stored_asset_key(asset_key))
         if not asset_record:
             return None
 

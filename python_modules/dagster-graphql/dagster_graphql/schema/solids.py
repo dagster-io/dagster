@@ -434,7 +434,7 @@ class ISolidDefinitionMixin:
                 if node.op_name == self.solid_def_name
             ]
             asset_checks_loader = AssetChecksLoader(
-                context=graphene_info.context, asset_keys=[node.asset_key for node in nodes]
+                context=graphene_info.context, asset_keys=[node.asset_key_obj for node in nodes]
             )
 
             base_deployment_context = graphene_info.context.get_base_deployment_context()

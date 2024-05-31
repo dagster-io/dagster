@@ -154,7 +154,7 @@ def get_additional_required_keys(
 
     # the set of all asset keys that are part of the required execution sets
     required_asset_keys = {
-        asset_node.external_asset_node.asset_key
+        asset_node.external_asset_node.asset_key_obj
         for asset_node in asset_nodes_by_key.values()
         if asset_node.external_asset_node.execution_set_identifier
         in required_execution_set_identifiers
@@ -180,7 +180,7 @@ def get_asset_node_definition_collisions(
             )
             if not is_defined:
                 continue
-            repos[external_asset_node.asset_key].append(
+            repos[external_asset_node.asset_key_obj].append(
                 GrapheneRepository(
                     workspace_context=graphene_info.context,
                     repository=repo,
@@ -223,7 +223,7 @@ def get_asset_nodes_by_asset_key(
     ] = {}
     for repo_loc, repo, external_asset_node in asset_node_iter(graphene_info):
         _, _, preexisting_asset_node = asset_nodes_by_asset_key.get(
-            external_asset_node.asset_key, (None, None, None)
+            external_asset_node.asset_key_obj, (None, None, None)
         )
         # If an asset node is already in the dict, we only overwrite it if that preexisting node is
         # not executable in some manner (i.e. it is a source asset that is not an observable)
@@ -231,7 +231,7 @@ def get_asset_nodes_by_asset_key(
             preexisting_asset_node.is_source and not preexisting_asset_node.is_observable
         ):
             if asset_keys is None or external_asset_node.asset_key in asset_keys:
-                asset_nodes_by_asset_key[external_asset_node.asset_key] = (
+                asset_nodes_by_asset_key[external_asset_node.asset_key_obj] = (
                     repo_loc,
                     repo,
                     external_asset_node,
@@ -244,7 +244,7 @@ def get_asset_nodes_by_asset_key(
     base_deployment_context = graphene_info.context.get_base_deployment_context()
 
     return {
-        external_asset_node.asset_key: GrapheneAssetNode(
+        external_asset_node.asset_key_obj: GrapheneAssetNode(
             repo_loc,
             repo,
             external_asset_node,
