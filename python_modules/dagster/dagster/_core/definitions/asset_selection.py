@@ -40,7 +40,7 @@ CoercibleToAssetSelection: TypeAlias = Union[
 ]
 
 
-class AssetSelection(ABC, DagsterModel):
+class AssetSelection(ABC):
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a code location.
 
     You can use the "|", "&", and "-" operators to create unions, intersections, and differences of selections, respectively.
@@ -392,7 +392,7 @@ class AssetSelection(ABC, DagsterModel):
 
         return AndAssetSelection(operands=operands)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         # Ensure that even if a subclass is a NamedTuple with no fields, it is still truthy
         return True
 
@@ -512,8 +512,11 @@ class AssetSelection(ABC, DagsterModel):
         return f"({self})" if self.needs_parentheses_when_operand() else str(self)
 
 
+class AssetSelectionModel(AssetSelection, DagsterModel): ...
+
+
 @whitelist_for_serdes
-class AllSelection(AssetSelection):
+class AllSelection(AssetSelectionModel):
     include_sources: Optional[bool] = None
 
     def resolve_inner(
@@ -533,7 +536,7 @@ class AllSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class AllAssetCheckSelection(AssetSelection):
+class AllAssetCheckSelection(AssetSelectionModel):
     def resolve_inner(
         self, asset_graph: BaseAssetGraph, allow_missing: bool
     ) -> AbstractSet[AssetKey]:
@@ -552,7 +555,7 @@ class AllAssetCheckSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class AssetChecksForAssetKeysSelection(AssetSelection):
+class AssetChecksForAssetKeysSelection(AssetSelectionModel):
     selected_asset_keys: Sequence[AssetKey]
 
     def resolve_inner(
@@ -579,7 +582,7 @@ class AssetChecksForAssetKeysSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class AssetCheckKeysSelection(AssetSelection):
+class AssetCheckKeysSelection(AssetSelectionModel):
     selected_asset_check_keys: Sequence[AssetCheckKey]
 
     def resolve_inner(
@@ -612,7 +615,7 @@ class AssetCheckKeysSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class AndAssetSelection(AssetSelection):
+class AndAssetSelection(AssetSelectionModel):
     operands: Sequence[AssetSelection]
 
     def resolve_inner(
@@ -655,7 +658,7 @@ class AndAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class OrAssetSelection(AssetSelection):
+class OrAssetSelection(AssetSelectionModel):
     operands: Sequence[AssetSelection]
 
     def resolve_inner(
@@ -698,7 +701,7 @@ class OrAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class SubtractAssetSelection(AssetSelection):
+class SubtractAssetSelection(AssetSelectionModel):
     left: AssetSelection
     right: AssetSelection
 
@@ -732,7 +735,7 @@ class SubtractAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class SinksAssetSelection(AssetSelection):
+class SinksAssetSelection(AssetSelectionModel):
     child: AssetSelection
 
     def resolve_inner(
@@ -748,7 +751,7 @@ class SinksAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class RequiredNeighborsAssetSelection(AssetSelection):
+class RequiredNeighborsAssetSelection(AssetSelectionModel):
     child: AssetSelection
 
     def resolve_inner(
@@ -767,7 +770,7 @@ class RequiredNeighborsAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class RootsAssetSelection(AssetSelection):
+class RootsAssetSelection(AssetSelectionModel):
     child: AssetSelection
 
     def resolve_inner(
@@ -783,7 +786,7 @@ class RootsAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class DownstreamAssetSelection(AssetSelection):
+class DownstreamAssetSelection(AssetSelectionModel):
     child: AssetSelection
     depth: Optional[int]
     include_self: bool
@@ -816,7 +819,7 @@ class DownstreamAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class GroupsAssetSelection(AssetSelection):
+class GroupsAssetSelection(AssetSelectionModel):
     selected_groups: Sequence[str]
     include_sources: bool
 
@@ -846,7 +849,7 @@ class GroupsAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class TagAssetSelection(AssetSelection):
+class TagAssetSelection(AssetSelectionModel):
     key: str
     value: str
     include_sources: bool
@@ -867,7 +870,7 @@ class TagAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class KeysAssetSelection(AssetSelection):
+class KeysAssetSelection(AssetSelectionModel):
     selected_keys: Sequence[AssetKey]
 
     def resolve_inner(
@@ -917,7 +920,7 @@ class KeysAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class KeyPrefixesAssetSelection(AssetSelection):
+class KeyPrefixesAssetSelection(AssetSelectionModel):
     selected_key_prefixes: Sequence[Sequence[str]]
     include_sources: bool
 
@@ -972,7 +975,7 @@ def _fetch_all_upstream(
 
 
 @whitelist_for_serdes
-class UpstreamAssetSelection(AssetSelection):
+class UpstreamAssetSelection(AssetSelectionModel):
     child: AssetSelection
     depth: Optional[int]
     include_self: bool
@@ -1006,7 +1009,7 @@ class UpstreamAssetSelection(AssetSelection):
 
 
 @whitelist_for_serdes
-class ParentSourcesAssetSelection(AssetSelection):
+class ParentSourcesAssetSelection(AssetSelectionModel):
     child: AssetSelection
 
     def resolve_inner(
