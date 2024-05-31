@@ -1,8 +1,19 @@
 import collections.abc
 import operator
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from functools import reduce
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from typing_extensions import TypeAlias
 
@@ -29,6 +40,7 @@ from .asset_key import (
 )
 from .assets import AssetsDefinition
 from .base_asset_graph import BaseAssetGraph
+from .config import ConfigMapping
 from .source_asset import SourceAsset
 
 CoercibleToAssetSelection: TypeAlias = Union[
@@ -39,8 +51,16 @@ CoercibleToAssetSelection: TypeAlias = Union[
     "AssetSelection",
 ]
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
+    )
 
-class AssetSelection(ABC):
+    from .partition import PartitionedConfig
+    from .run_config import RunConfig
+
+
+class AssetSelection:
     """An AssetSelection defines a query over a set of assets and asset checks, normally all that are defined in a code location.
 
     You can use the "|", "&", and "-" operators to create unions, intersections, and differences of selections, respectively.
@@ -510,6 +530,39 @@ class AssetSelection(ABC):
 
     def operand__str__(self) -> str:
         return f"({self})" if self.needs_parentheses_when_operand() else str(self)
+
+    def _ensure_unresolved_job(self) -> "UnresolvedAssetJobDefinition":
+        from dagster._core.definitions.unresolved_asset_job_definition import (
+            UnresolvedAssetJobDefinition,
+        )
+
+        return UnresolvedAssetJobDefinition("__asset_selection_job", selection=self)
+
+    def with_config(
+        self,
+        config: Optional[Union[ConfigMapping, Mapping[str, Any], "PartitionedConfig", "RunConfig"]],
+    ) -> "BoundAssetSelection":
+        return BoundAssetSelection(self, self._ensure_unresolved_job()._replace(config=config))
+
+    def inner_for_bound(self) -> "AssetSelection":
+        return self
+
+
+class BoundAssetSelection(AssetSelection):
+    def __init__(self, inner: AssetSelection, unresolved_asset_job: "UnresolvedAssetJobDefinition"):
+        self._inner = inner
+        self._unresolved_asset_job_definition = unresolved_asset_job
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        return self._inner.resolve_inner(asset_graph, allow_missing)
+
+    def _ensure_unresolved_job(self) -> "UnresolvedAssetJobDefinition":
+        return self._unresolved_asset_job_definition
+
+    def inner_for_bound(self) -> AssetSelection:
+        return self._inner
 
 
 class AssetSelectionModel(AssetSelection, DagsterModel): ...
