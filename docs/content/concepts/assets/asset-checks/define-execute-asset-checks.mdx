@@ -15,8 +15,8 @@ In this guide, we'll show you a few approaches to defining asset checks, how to 
 
 There are a few ways you can define an asset check:
 
-- **Separately from the assets the checks target** - In this approach, asset materialization and asset checks are executed in their own separate ops. If using the <PyObject object="multiprocess_executor" />, this allows you to launch runs that will use separate processes to materialize the asset and execute its check.
-- **Together with assets** - In this approach, checks execute in the same op that materializes the asset.
+- **Separately from the assets the checks target** - In this approach, asset materialization and asset checks are executed in their own separate operations. If using the <PyObject object="multiprocess_executor" />, this allows you to launch runs that will use separate processes to materialize the asset and execute its check.
+- **Together with assets** - In this approach, checks execute in the same operation that materializes the asset.
 - **Using an asset check factory** - This approach allows you to define multiple, similar asset checks at once
 - **Loading dbt tests into Dagster** - This approach allows you to model your dbt tests as asset checks
 
@@ -55,7 +55,7 @@ defs = Definitions(
 
 The <PyObject object="asset_check" decorator /> decorator decorates the `orders_id_has_no_nulls` function which returns an <PyObject object="AssetCheckResult" /> object.
 
-The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graphs/ops). That means that if you launch a run that does all of the following, the check will execute in a separate process from the process that materializes the asset:
+The `orders_id_has_no_nulls` check runs in its own [](/concepts/s-jobs-graphs/s). That means that if you launch a run that does all of the following, the check will execute in a separate process from the process that materializes the asset:
 
 1. Materializes the `orders` asset,
 2. Executes the `orders_id_has_no_nulls` check, and
@@ -63,7 +63,7 @@ The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graph
 
 #### Defining multiple checks
 
-Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in an op without an asset. This approach avoids the overhead of running a separate op for every check and may enable reusing computations across checks.
+Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in the a single eration without an asset. This approach avoids the overhead of running a separate eration for every check and may enable reusing computations across checks.
 
 ```python file=/concepts/assets/asset_checks/multi_asset_check.py
 from typing import Iterable
@@ -318,7 +318,7 @@ When `blocking` is enabled, downstream assets will wait to execute until the che
 
 This feature has the following limitations:
 
-- **`blocking` is currently only supported with <PyObject object="asset_check" decorator />.** [For checks defined in the same op as assets](#defining-checks-and-assets-together), you can explicitly raise an exception to block downstream execution.
+- **`blocking` is currently only supported with <PyObject object="asset_check" decorator />.** [For checks defined in the same  as assets](#defining-checks-and-assets-together), you can explicitly raise an exception to block downstream execution.
 - **Assets with an <PyObject object="AutoMaterializePolicy" /> currently do not respect blocking asset checks** and will execute even if a blocking check on an upstream asset failed.
 
 ---
