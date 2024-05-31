@@ -55,7 +55,7 @@ defs = Definitions(
 
 The <PyObject object="asset_check" decorator /> decorator decorates the `orders_id_has_no_nulls` function which returns an <PyObject object="AssetCheckResult" /> object.
 
-The `orders_id_has_no_nulls` check runs in its own [](/concepts/s-jobs-graphs/s). That means that if you launch a run that does all of the following, the check will execute in a separate process from the process that materializes the asset:
+The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graphs/ops). That means that if you launch a run that does all of the following, the check will execute in a separate process from the process that materializes the asset:
 
 1. Materializes the `orders` asset,
 2. Executes the `orders_id_has_no_nulls` check, and
