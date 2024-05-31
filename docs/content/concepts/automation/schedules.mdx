@@ -7,9 +7,9 @@ description: "Use schedules to run your pipelines at fixed time intervals."
 
 Schedules are Dagster's way of supporting traditional methods of [automation](/concepts/automation), which allow you to specify when a [job](/concepts/ops-jobs-graphs/jobs) should run. Using schedules, you can define a fixed time interval to run a pipeline, such as daily, hourly, or Monday at 9:00 AM.
 
-Each interval of a schedule is called a **tick**, which is an indication that a job should begin executing. Ticks kick off **runs**, which is a single instance of a job being executed.
+Each interval of a schedule is called a **tick**, which is an indication that a job should execute. Ticks kick off **runs**, which is a single instance of a job being executed.
 
-When viewing a schedule in Dagster's UI, you can see the schedule's definition, executing timezone, targeted jobs and partitions, as well as its tick and run history.
+When viewing a schedule in [Dagster's UI](/concepts/webserver/ui), you can see the schedule's definition, executing timezone, targeted jobs and partitions, as well as its tick and run history.
 
 ---
 
@@ -45,21 +45,39 @@ Schedules run jobs at fixed time intervals and have two main components:
 
   To make creating cron expressions easier, you can use an online tool like [Crontab Guru](https://crontab.guru/). This tool allows you to create and describe cron expressions in a human-readable format and test the execution dates produced by the expression. **Note**: While this tool is useful for general cron expression testing, always remember to [test your schedules](/concepts/automation/schedules/testing) in Dagster to ensure the results are as expected.
 
-Running a schedule requires the schedule to be turned on and an active [`dagster-daemon` process](/deployment/dagster-daemon). If you used [`dagster dev` to start the Dagster UI/webserver](/guides/running-dagster-locally), the daemon process will be automatically launched alongside the webserver.
+For a schedule to run, it must be turned on and an active [`dagster-daemon` process](/deployment/dagster-daemon) must be running. If you used [`dagster dev` to start the Dagster UI/webserver](/guides/running-dagster-locally), the daemon process will be automatically launched alongside the webserver.
 
-After these criteria are met, the schedule will run at the interval specified in the cron expression. Schedules will execute in UTC by default, but [you can specify a custom timezone](/concepts/automation/schedules/customizing-executing-timezones).
-
-Using schedules, you can:
-
-- Automate the [materialization of assets](/concepts/automation/schedules/automating-assets-schedules-jobs) and [execution of ops](/concepts/automation/schedules/automating-ops-schedules-jobs)
-- Construct schedules to run [partitioned jobs](/concepts/automation/schedules/partitioned-schedules)
-- Execute jobs in [specific timezones](/concepts/automation/schedules/customizing-executing-timezones)
+After these criteria are met, the schedule will run at the interval specified in the cron expression. **Schedules will execute in UTC by default**, but [you can specify a custom timezone](/concepts/automation/schedules/customizing-executing-timezones).
 
 ---
 
-## Limitations and notes
+## Getting started
+
+Check out these guides to get started with schedules:
+
+<div className="w-full inline-flex flex-col space-y-2 md:space-y-0 md:flex-row md:space-x-4">
+  <Button link="/concepts/automation/schedules/automating-assets-schedules-jobs">
+    Assets & schedules
+  </Button>
+  <Button link="/concepts/automation/schedules/automating-ops-schedules-jobs">
+    Ops & schedules
+  </Button>
+  <Button link="/concepts/automation/schedules/examples" style="secondary">
+    Examples
+  </Button>
+</div>
+
+From here, you can:
+
+- Construct schedules to run [partitioned jobs](/concepts/automation/schedules/partitioned-schedules)
+- Execute jobs in [specific timezones](/concepts/automation/schedules/customizing-executing-timezones)
+- Learn to [test your schedules](/concepts/automation/schedules/testing)
+- Identify and resolve common issues with our [troubleshooting guide](/concepts/automation/schedules/troubleshooting)
+
+### Limitations and notes
 
 - Dagster supports all [predefined cron definitions](https://en.wikipedia.org/wiki/Cron#Nonstandard_predefined_scheduling_definitions) with the exeception of `@reboot`
+- Schedules will execute in UTC [unless a timezone is specified](/concepts/automation/schedules/customizing-executing-timezones)
 - When defining a schedule's execution time, keep [Daylight Savings Time (DST) in mind](/concepts/automation/schedules/customizing-executing-timezones#execution-times-and-daylight-savings-time)
 
 ---
@@ -68,31 +86,23 @@ Using schedules, you can:
 
 <ArticleList>
   <ArticleListItem
-    title="Automating assets with schedules and jobs"
-    href="/concepts/automation/schedules/automating-assets-schedules-jobs"
+    title="Automation"
+    href="/concepts/automation"
   ></ArticleListItem>
   <ArticleListItem
-    title="Automating ops with schedules and jobs"
-    href="/concepts/automation/schedules/automating-ops-schedules-jobs"
+    title="Running Dagster locally"
+    href="/guides/running-dagster-locally"
   ></ArticleListItem>
   <ArticleListItem
-    title="Constructing schedules from partitioned jobs"
-    href="/concepts/automation/schedules/partitioned-schedules"
+    title="Wikipedia - Cron"
+    href="https://en.wikipedia.org/wiki/Cron"
   ></ArticleListItem>
   <ArticleListItem
-    title="Customizing a schedule's executing timezone"
-    href="/concepts/automation/schedules/customizing-executing-timezones"
+    title="dagster-daemon"
+    href="/deployment/dagster-daemon"
   ></ArticleListItem>
   <ArticleListItem
-    title="Testing schedules"
-    href="/concepts/automation/schedules/testing"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Troubleshooting schedules"
-    href="/concepts/automation/schedules/troubleshooting"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Schedule examples"
-    href="/concepts/automation/schedules/examples"
+    title="Crontab Guru"
+    href="https://crontab.guru/"
   ></ArticleListItem>
 </ArticleList>
