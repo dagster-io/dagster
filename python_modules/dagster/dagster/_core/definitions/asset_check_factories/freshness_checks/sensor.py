@@ -1,5 +1,5 @@
 import datetime
-from typing import Iterator, Optional, Sequence, Tuple, cast
+from typing import Iterator, Optional, Sequence, Tuple, Union, cast
 
 import pendulum
 
@@ -11,7 +11,7 @@ from ...asset_check_spec import AssetCheckKey
 from ...asset_checks import AssetChecksDefinition
 from ...asset_selection import AssetSelection
 from ...decorators import sensor
-from ...run_request import RunRequest
+from ...run_request import RunRequest, SkipReason
 from ...sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
 from ..utils import (
     FRESH_UNTIL_METADATA_KEY,
@@ -21,6 +21,13 @@ from ..utils import (
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
 MAXIMUM_RUNTIME_SECONDS = 35  # Due to GRPC communications, only allow this sensor to run for 40 seconds before pausing iteration and resuming in the next run. Leave a bit of time for run requests to be processed.
+FRESHNESS_SENSOR_DESCRIPTION = """
+    This sensor launches execution of freshness checks for the provided assets. The sensor will
+    only launch a new execution of a freshness check if the check previously passed, but enough
+    time has passed that the check could be overdue again. Once a check has failed, the sensor
+    will not launch a new execution until the asset has been updated (which should automatically 
+    execute the check). 
+    """
 
 
 @experimental
@@ -73,11 +80,11 @@ def build_sensor_for_freshness_checks(
     @sensor(
         name=name,
         minimum_interval_seconds=minimum_interval_seconds,
-        description="Evaluates the freshness of targeted assets.",
         asset_selection=AssetSelection.checks(*freshness_checks),
         default_status=default_status,
+        description=FRESHNESS_SENSOR_DESCRIPTION,
     )
-    def the_sensor(context: SensorEvaluationContext) -> Optional[RunRequest]:
+    def the_sensor(context: SensorEvaluationContext) -> Optional[Union[RunRequest, SkipReason]]:
         left_off_asset_check_key = (
             AssetCheckKey.from_user_string(context.cursor) if context.cursor else None
         )
@@ -103,6 +110,10 @@ def build_sensor_for_freshness_checks(
         context.update_cursor(new_cursor)
         if checks_to_evaluate:
             return RunRequest(asset_check_keys=checks_to_evaluate)
+        else:
+            return SkipReason(
+                "No freshness checks need to be evaluated at this time, since all checks are either currently evaluating, have failed, or are not yet overdue."
+            )
 
     return the_sensor
 

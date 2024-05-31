@@ -30,7 +30,7 @@ from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata import FloatMetadataValue
-from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.events import (
     DagsterEvent,
@@ -177,7 +177,7 @@ def test_sensor_evaluation_planned(instance: DagsterInstance) -> None:
         context = build_sensor_context(instance=instance, definitions=defs)
 
         # Upon evaluation, we shouldn't get a run request for any asset checks.
-        assert sensor(context) is None
+        assert isinstance(sensor(context), SkipReason)
         # Cursor should be None, since we made it through all assets.
         assert context.cursor is None
 
