@@ -360,7 +360,7 @@ class ExternalRepository:
         matching = [
             asset_node
             for asset_node in self.external_repository_data.external_asset_graph_data
-            if asset_node.asset_key == asset_key
+            if asset_node.asset_key_obj == asset_key
         ]
         return matching[0] if matching else None
 

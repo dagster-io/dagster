@@ -56,7 +56,7 @@ def _get_external_asset_nodes_from_definitions(
     repo = defs.get_repository_def()
     return sorted(
         external_asset_nodes_from_defs(repo.get_all_jobs(), repo.asset_graph),
-        key=lambda n: n.asset_key,
+        key=lambda n: n.asset_key_obj,
     )
 
 
