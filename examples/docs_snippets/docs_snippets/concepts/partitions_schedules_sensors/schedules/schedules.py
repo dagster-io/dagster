@@ -27,7 +27,7 @@ def my_asset():
 
 
 # start_basic_asset_schedule
-from dagster import AssetSelection, define_asset_job
+from dagster import AssetSelection, ScheduleDefinition, define_asset_job
 
 asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
 
