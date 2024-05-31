@@ -2,10 +2,10 @@ from typing import AbstractSet, Any, Mapping, Optional
 
 from dagster import (
     AssetKey,
-    AssetSelection,
     _check as check,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelectionModel
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
 from .asset_utils import get_asset_check_key_for_test, is_non_asset_node
@@ -18,7 +18,7 @@ from .utils import (
 )
 
 
-class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):
+class DbtManifestAssetSelection(AssetSelectionModel, arbitrary_types_allowed=True):
     """Defines a selection of assets from a dbt manifest wrapper and a dbt selection string.
 
     Args:
