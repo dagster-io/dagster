@@ -14,8 +14,7 @@ from dagster import (
 
 # start_basic_schedule
 @job
-def my_job():
-    ...
+def my_job(): ...
 
 
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
