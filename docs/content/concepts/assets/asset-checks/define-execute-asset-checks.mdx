@@ -63,7 +63,7 @@ The `orders_id_has_no_nulls` check runs in its own [op](/concepts/ops-jobs-graph
 
 #### Defining multiple checks
 
-Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in the a single operation without an asset. This approach avoids the overhead of running a separate operation for every check and may enable reusing computations across checks.
+Using <PyObject object="multi_asset_check" decorator />, you can define multiple checks that execute in a single operation without an asset. This approach avoids the overhead of running a separate operation for every check and may enable reusing computations across checks.
 
 ```python file=/concepts/assets/asset_checks/multi_asset_check.py
 from typing import Iterable
