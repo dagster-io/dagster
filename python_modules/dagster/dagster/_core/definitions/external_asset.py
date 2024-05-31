@@ -104,7 +104,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
         @multi_asset(
             name=spec.key.to_python_identifier(),
             specs=[
-                AssetSpec(
+                AssetSpec.dagster_internal_init(
                     key=spec.key,
                     description=spec.description,
                     group_name=spec.group_name,
@@ -120,6 +120,9 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                     deps=spec.deps,
                     tags=spec.tags,
                     owners=spec.owners,
+                    skippable=False,
+                    code_version=None,
+                    auto_materialize_policy=None,
                 )
             ],
         )
