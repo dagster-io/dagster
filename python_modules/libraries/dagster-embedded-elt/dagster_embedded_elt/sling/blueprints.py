@@ -1,8 +1,10 @@
+import json
 from typing import Any, Dict, Literal, Optional
 
 from dagster import AssetExecutionContext
 from dagster._core.blueprints.blueprint import Blueprint, BlueprintDefinitions
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
+from dagster._utils.security import non_secure_md5_hash_str
 from pydantic import ConfigDict, Field
 
 from dagster_embedded_elt.sling.asset_decorator import sling_assets
@@ -44,6 +46,10 @@ class SlingResourceBlueprint(Blueprint):
         )
 
 
+def _op_name_from_filename(filename: str) -> str:
+    return non_secure_md5_hash_str(json.dumps(f"sling_sync_{filename}").encode("utf-8"))[:8]
+
+
 class SlingSyncBlueprint(Blueprint):
     """Blueprint which creates a Dagster asset for one or more Sling replication configurations.
 
@@ -60,9 +66,12 @@ class SlingSyncBlueprint(Blueprint):
             extra = "allow"
 
     type: Literal["dagster_embedded_elt/sling_assets"] = "dagster_embedded_elt/sling_assets"
-    dagster_op_name: str = Field(
-        ...,
-        description="The name of the underlying Dagster op to create.",
+    dagster_op_name: Optional[str] = Field(
+        None,
+        description=(
+            "The name of the underlying Dagster op to create. "
+            "If not provided, a name will be generated."
+        ),
     )
 
     def build_defs(self) -> BlueprintDefinitions:
@@ -70,8 +79,10 @@ class SlingSyncBlueprint(Blueprint):
         del replication_config["dagster_op_name"]
         del replication_config["type"]
 
-        @sling_assets(replication_config=replication_config, name=self.dagster_op_name)
-        def my_sling_assets(context: AssetExecutionContext, sling: SlingResource):
+        name = self.dagster_op_name or _op_name_from_filename(replication_config["filename"])
+
+        @sling_assets(replication_config=replication_config, name=name)
+        def _sling_assets(context: AssetExecutionContext, sling: SlingResource):
             yield from sling.replicate(context=context)
 
-        return BlueprintDefinitions(assets=[my_sling_assets])
+        return BlueprintDefinitions(assets=[_sling_assets])
