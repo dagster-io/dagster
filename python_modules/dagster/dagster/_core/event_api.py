@@ -7,7 +7,8 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import whitelist_for_serdes

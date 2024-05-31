@@ -16,9 +16,9 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster import AssetSelection
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (

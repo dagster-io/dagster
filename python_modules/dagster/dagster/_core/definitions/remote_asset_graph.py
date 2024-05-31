@@ -245,15 +245,15 @@ class RemoteAssetGraph(BaseAssetGraph[RemoteAssetNode]):
         ] = defaultdict(list)
 
         # Build the dependency graph of asset keys.
-        all_keys = {node.asset_key for _, node in repo_handle_external_asset_nodes}
+        all_keys = {node.asset_key_obj for _, node in repo_handle_external_asset_nodes}
         upstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
         downstream: Dict[AssetKey, Set[AssetKey]] = {key: set() for key in all_keys}
 
         for repo_handle, node in repo_handle_external_asset_nodes:
-            repo_node_pairs_by_key[node.asset_key].append((repo_handle, node))
+            repo_node_pairs_by_key[node.asset_key_obj].append((repo_handle, node))
             for dep in node.dependencies:
-                upstream[node.asset_key].add(dep.upstream_asset_key)
-                downstream[dep.upstream_asset_key].add(node.asset_key)
+                upstream[node.asset_key_obj].add(dep.upstream_asset_key)
+                downstream[dep.upstream_asset_key].add(node.asset_key_obj)
 
         dep_graph: DependencyGraph[AssetKey] = {"upstream": upstream, "downstream": downstream}
 
@@ -446,7 +446,7 @@ def _warn_on_duplicates_within_subset(
 ) -> None:
     repo_handles_by_asset_key: DefaultDict[AssetKey, List[RepositoryHandle]] = defaultdict(list)
     for repo_handle, node in node_pairs:
-        repo_handles_by_asset_key[node.asset_key].append(repo_handle)
+        repo_handles_by_asset_key[node.asset_key_obj].append(repo_handle)
 
     duplicates = {k: v for k, v in repo_handles_by_asset_key.items() if len(v) > 1}
     duplicate_lines = []
@@ -472,14 +472,14 @@ def _build_execution_set_index(
     execution_sets_by_id: Dict[str, Set[AssetKeyOrCheckKey]] = defaultdict(set)
     for item in all_items:
         id = item.execution_set_identifier
-        key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
+        key = item.asset_key_obj if isinstance(item, ExternalAssetNode) else item.key
         if id is not None:
             execution_sets_by_id[id].add(key)
 
     execution_sets_by_key: Dict[AssetKeyOrCheckKey, Set[AssetKeyOrCheckKey]] = {}
     for item in all_items:
         id = item.execution_set_identifier
-        key = item.asset_key if isinstance(item, ExternalAssetNode) else item.key
+        key = item.asset_key_obj if isinstance(item, ExternalAssetNode) else item.key
         execution_sets_by_key[key] = execution_sets_by_id[id] if id is not None else {key}
 
     return execution_sets_by_key

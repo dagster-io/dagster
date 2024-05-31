@@ -394,7 +394,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._external_job = None  # lazily loaded
         self._node_definition_snap = None  # lazily loaded
         # convenient
-        self._asset_key = external_asset_node.asset_key
+        self._asset_key = external_asset_node.asset_key_obj
 
         super().__init__(
             id=get_unique_asset_id(

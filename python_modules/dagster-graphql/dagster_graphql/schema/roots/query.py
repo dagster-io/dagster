@@ -896,7 +896,7 @@ class GrapheneQuery(graphene.ObjectType):
             external_asset_nodes = repo.get_external_asset_nodes()
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context,
-                asset_keys=[node.asset_key for node in external_asset_nodes],
+                asset_keys=[node.asset_key_obj for node in external_asset_nodes],
             )
             results = (
                 [
@@ -921,7 +921,7 @@ class GrapheneQuery(graphene.ObjectType):
             external_asset_nodes = repo.get_external_asset_nodes(job_name)
             asset_checks_loader = AssetChecksLoader(
                 context=graphene_info.context,
-                asset_keys=[node.asset_key for node in external_asset_nodes],
+                asset_keys=[node.asset_key_obj for node in external_asset_nodes],
             )
             results = (
                 [
@@ -1081,7 +1081,7 @@ class GrapheneQuery(graphene.ObjectType):
         # Filter down to requested asset keys
         # Build mapping of asset key to the step keys required to generate the asset
         step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            node.external_asset_node.asset_key: node.external_asset_node.op_names
+            node.external_asset_node.asset_key_obj: node.external_asset_node.op_names
             for node in results
             if node.assetKey in asset_keys
         }

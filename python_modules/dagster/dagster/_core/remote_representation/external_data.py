@@ -9,6 +9,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
+from functools import cached_property
 from typing import (
     Any,
     Dict,
@@ -29,7 +30,6 @@ import pendulum
 from typing_extensions import Final, Self
 
 from dagster import (
-    StaticPartitionsDefinition,
     _check as check,
 )
 from dagster._config.pythonic_config import (
@@ -48,6 +48,7 @@ from dagster._core.definitions import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.asset_key import AssetKey, StoredAssetKey
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
@@ -69,7 +70,6 @@ from dagster._core.definitions.dependency import (
     NodeOutputHandle,
     OpNode,
 )
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.metadata import (
@@ -81,7 +81,11 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
+from dagster._core.definitions.partition import (
+    DynamicPartitionsDefinition,
+    ScheduleType,
+    StaticPartitionsDefinition,
+)
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
@@ -1308,7 +1312,7 @@ class ExternalAssetNode(
     NamedTuple(
         "_ExternalAssetNode",
         [
-            ("asset_key", AssetKey),
+            ("asset_key", StoredAssetKey),
             ("dependencies", Sequence[ExternalAssetDependency]),
             ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("execution_type", AssetExecutionType),
@@ -1350,7 +1354,7 @@ class ExternalAssetNode(
 
     def __new__(
         cls,
-        asset_key: AssetKey,
+        asset_key: StoredAssetKey,
         dependencies: Sequence[ExternalAssetDependency],
         depended_by: Sequence[ExternalAssetDependedBy],
         execution_type: Optional[AssetExecutionType] = None,
@@ -1478,6 +1482,14 @@ class ExternalAssetNode(
             execution_type=check.inst_param(execution_type, "execution_type", AssetExecutionType),
         )
 
+    @cached_property
+    def asset_key_obj(self) -> AssetKey:
+        return (
+            AssetKey.from_user_string(self.asset_key)
+            if isinstance(self.asset_key, str)
+            else self.asset_key
+        )
+
     @property
     def is_materializable(self) -> bool:
         return self.execution_type == AssetExecutionType.MATERIALIZATION
@@ -1577,7 +1589,7 @@ def external_repository_data_from_def(
     for asset in asset_graph:
         if asset.required_top_level_resources:
             for resource_key in asset.required_top_level_resources:
-                resource_asset_usage_map[resource_key].append(asset.asset_key)
+                resource_asset_usage_map[resource_key].append(asset.asset_key_obj)
 
     resource_schedule_usage_map: Dict[str, List[str]] = defaultdict(list)
     for schedule in repository_def.schedule_defs:

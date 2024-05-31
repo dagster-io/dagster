@@ -1,6 +1,8 @@
 import re
 from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 import dagster._seven as seven
 from dagster._annotations import PublicAttr
@@ -170,3 +172,12 @@ def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence
         return key_prefix
     else:
         check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
+
+
+StoredAssetKey: TypeAlias = Union[str, AssetKey]
+
+
+def from_stored_asset_key(value: StoredAssetKey) -> AssetKey:
+    if isinstance(value, str):
+        return AssetKey.from_user_string(value)
+    return value

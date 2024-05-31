@@ -374,7 +374,7 @@ class GrapheneRepository(graphene.ObjectType):
         external_asset_nodes = self._repository.get_external_asset_nodes()
         asset_checks_loader = AssetChecksLoader(
             context=graphene_info.context,
-            asset_keys=[node.asset_key for node in external_asset_nodes],
+            asset_keys=[node.asset_key_obj for node in external_asset_nodes],
         )
         return [
             GrapheneAssetNode(

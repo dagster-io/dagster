@@ -204,11 +204,11 @@ class CrossRepoAssetDependedByLoader:
                 for asset_node in asset_nodes:
                     location_tuple = (location.name, repo_name)
                     if not asset_node.op_name:  # is source asset
-                        depended_by_assets_by_location_by_source_asset[asset_node.asset_key][
+                        depended_by_assets_by_location_by_source_asset[asset_node.asset_key_obj][
                             location_tuple
                         ].extend(asset_node.depended_by)
                     else:  # derived asset
-                        map_derived_asset_to_location[asset_node.asset_key] = location_tuple
+                        map_derived_asset_to_location[asset_node.asset_key_obj] = location_tuple
 
         sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
         external_asset_deps: Dict[
