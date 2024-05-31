@@ -118,6 +118,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                         },
                     },
                     deps=spec.deps,
+                    tags=spec.tags,
                 )
             ],
         )
