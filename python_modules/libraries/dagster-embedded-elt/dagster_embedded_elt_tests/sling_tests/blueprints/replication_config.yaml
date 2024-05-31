@@ -1,0 +1,14 @@
+type: dagster_embedded_elt/sling_assets
+
+# below is exactly the same as a Sling replication config file
+# https://docs.slingdata.io/sling-cli/run/configuration/replication
+source: file_conn
+target: sqlite_conn
+
+defaults:
+  mode: full-refresh
+  object: "{stream_table}"
+
+streams:
+  "file://{{ env_var('PATH_TO_CSV_FILE') }}":
+    object: "main.tbl"
