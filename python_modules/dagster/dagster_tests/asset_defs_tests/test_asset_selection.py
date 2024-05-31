@@ -28,6 +28,7 @@ from dagster._core.definitions.asset_selection import (
     AndAssetSelection,
     AssetCheckKeysSelection,
     AssetChecksForAssetKeysSelection,
+    AssetSelectionModel,
     DownstreamAssetSelection,
     GroupsAssetSelection,
     KeyPrefixesAssetSelection,
@@ -519,19 +520,19 @@ def test_asset_selection_type_checking():
     assert isinstance(test, ParentSourcesAssetSelection)
 
 
-def test_all_asset_selection_subclasses_serializable():
+def test_all_asset_selection_subclasses_serializable() -> None:
     from dagster._core.definitions import asset_selection as asset_selection_module
 
     asset_selection_subclasses = []
     for attr in dir(asset_selection_module):
         value = getattr(asset_selection_module, attr)
-        if isclass(value) and issubclass(value, AssetSelection):
+        if isclass(value) and issubclass(value, AssetSelectionModel):
             asset_selection_subclasses.append(value)
 
     assert len(asset_selection_subclasses) > 5
 
     for asset_selection_subclass in asset_selection_subclasses:
-        if asset_selection_subclass != AssetSelection:
+        if asset_selection_subclass != AssetSelectionModel:
             assert asset_selection_subclass.__name__ in _WHITELIST_MAP.object_serializers
 
 
