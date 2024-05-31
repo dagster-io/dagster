@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, NamedTuple, Optional, Union
 
 from dagster import _check as check
@@ -19,7 +18,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import Unresolved
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.executor.base import Executor
 from dagster._model import DagsterModel
-from dagster._utils.source_position import HasSourcePositionAndKeyPath, SourcePosition
+from dagster._utils.source_position import HasSourcePositionAndKeyPath
 
 
 class DagsterBuildDefinitionsFromConfigError(Exception):
@@ -155,20 +154,3 @@ class Blueprint(DagsterModel, ABC, HasSourcePositionAndKeyPath):
             raise DagsterBuildDefinitionsFromConfigError(
                 f"Error when building definitions from config with type {cls_name} at {source_pos}"
             ) from e
-
-    @property
-    def source_position(self) -> SourcePosition:
-        """Returns the underlying source position of the blueprint, including
-        the source file and line number.
-        """
-        return check.not_none(check.not_none(self._source_position_and_key_path).source_position)
-
-    @property
-    def source_file(self) -> Path:
-        """Path to the source file where the blueprint is defined."""
-        return Path(check.not_none(self.source_position.filename))
-
-    @property
-    def source_file_name(self) -> str:
-        """Name of the source file where the blueprint is defined."""
-        return self.source_file.name

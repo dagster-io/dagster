@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from dagster import _check as check
@@ -65,6 +66,23 @@ class SourcePositionAndKeyPath(NamedTuple):
 
 class HasSourcePositionAndKeyPath:
     _source_position_and_key_path: Optional[SourcePositionAndKeyPath] = None
+
+    @property
+    def source_position(self) -> SourcePosition:
+        """Returns the underlying source position of the blueprint, including
+        the source file and line number.
+        """
+        return check.not_none(check.not_none(self._source_position_and_key_path).source_position)
+
+    @property
+    def source_file(self) -> Path:
+        """Path to the source file where the blueprint is defined."""
+        return Path(check.not_none(self.source_position.filename))
+
+    @property
+    def source_file_name(self) -> str:
+        """Name of the source file where the blueprint is defined."""
+        return self.source_file.name
 
 
 def populate_source_position_and_key_paths(
