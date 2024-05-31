@@ -101,33 +101,40 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
             "skippable must be False since it is ignored and False is the default",
         )
 
-        @multi_asset(
-            name=spec.key.to_python_identifier(),
-            specs=[
-                AssetSpec(
-                    key=spec.key,
-                    description=spec.description,
-                    group_name=spec.group_name,
-                    freshness_policy=spec.freshness_policy,
-                    metadata={
-                        **(spec.metadata or {}),
-                        **{
-                            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
-                                AssetExecutionType.UNEXECUTABLE.value
-                            )
-                        },
-                    },
-                    deps=spec.deps,
-                )
-            ],
-        )
-        def _external_assets_def(context: AssetExecutionContext) -> None:
-            raise DagsterInvariantViolationError(
-                "You have attempted to execute an unexecutable asset"
-                f" {context.asset_key.to_user_string}."
-            )
+        with disable_dagster_warnings():
 
-        assets_defs.append(_external_assets_def)
+            @multi_asset(
+                name=spec.key.to_python_identifier(),
+                specs=[
+                    AssetSpec.dagster_internal_init(
+                        key=spec.key,
+                        description=spec.description,
+                        group_name=spec.group_name,
+                        freshness_policy=spec.freshness_policy,
+                        metadata={
+                            **(spec.metadata or {}),
+                            **{
+                                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: (
+                                    AssetExecutionType.UNEXECUTABLE.value
+                                )
+                            },
+                        },
+                        deps=spec.deps,
+                        tags=spec.tags,
+                        owners=spec.owners,
+                        skippable=False,
+                        code_version=None,
+                        auto_materialize_policy=None,
+                    )
+                ],
+            )
+            def _external_assets_def(context: AssetExecutionContext) -> None:
+                raise DagsterInvariantViolationError(
+                    "You have attempted to execute an unexecutable asset"
+                    f" {context.asset_key.to_user_string}."
+                )
+
+            assets_defs.append(_external_assets_def)
 
     return assets_defs
 

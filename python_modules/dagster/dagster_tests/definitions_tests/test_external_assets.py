@@ -54,6 +54,26 @@ def test_external_asset_basic_creation() -> None:
     assert not assets_def.is_executable
 
 
+def test_external_asset_tags_owners() -> None:
+    assets_def = next(
+        iter(
+            external_assets_from_specs(
+                specs=[
+                    AssetSpec(
+                        key="external_asset_one",
+                        tags={"foo": "bar", "baz": "qux"},
+                        owners=["ben@dagsterlabs.com"],
+                    )
+                ]
+            )
+        )
+    )
+    assert isinstance(assets_def, AssetsDefinition)
+    expected_key = AssetKey(["external_asset_one"])
+    assert assets_def.tags_by_key[expected_key] == {"foo": "bar", "baz": "qux"}
+    assert assets_def.owners_by_key[expected_key] == ["ben@dagsterlabs.com"]
+
+
 def test_external_asset_with_hyphens() -> None:
     key = AssetKey(["with-hyphen", "external_asset_one"])
     assets_def = next(
