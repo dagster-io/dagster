@@ -93,7 +93,11 @@ export const CodeLink = ({codeLinkData}: {codeLinkData: CodeReferencesMetadataEn
               {sources.map((source) => (
                 <Tooltip
                   key={getCodeReferenceKey(source)}
-                  content={getCodeReferenceLink(codeLinkProtocol, source)}
+                  content={
+                    <Box style={{maxWidth: 500, wordBreak: 'break-all'}}>
+                      {getCodeReferenceLink(codeLinkProtocol, source)}
+                    </Box>
+                  }
                   position="bottom"
                   display="block"
                 >
@@ -111,7 +115,14 @@ export const CodeLink = ({codeLinkData}: {codeLinkData: CodeReferencesMetadataEn
           <Button rightIcon={<Icon name="expand_more" />}>Open source code</Button>
         </Popover>
       ) : (
-        <Tooltip content={getCodeReferenceLink(codeLinkProtocol, firstSource)} position="bottom">
+        <Tooltip
+          content={
+            <Box style={{maxWidth: 500, wordBreak: 'break-all'}}>
+              {getCodeReferenceLink(codeLinkProtocol, firstSource)}
+            </Box>
+          }
+          position="bottom"
+        >
           <ExternalAnchorButton
             icon={<Icon name={getCodeReferenceIcon(firstSource)} />}
             href={getCodeReferenceLink(codeLinkProtocol, firstSource)}
