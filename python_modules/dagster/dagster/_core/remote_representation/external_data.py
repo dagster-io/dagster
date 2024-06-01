@@ -502,16 +502,17 @@ class ExternalScheduleExecutionErrorData(
 
 
 @whitelist_for_serdes(
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"}
+    storage_name="ExternalTargetData",
+    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
 )
-class ExternalTargetData(
+class TargetSnap(
     NamedTuple(
-        "_ExternalTargetData",
+        "_TargetSnap",
         [("job_name", str), ("mode", str), ("op_selection", Optional[Sequence[str]])],
     )
 ):
     def __new__(cls, job_name: str, mode: str, op_selection: Optional[Sequence[str]]):
-        return super(ExternalTargetData, cls).__new__(
+        return super(TargetSnap, cls).__new__(
             cls,
             job_name=check.str_param(job_name, "job_name"),
             mode=mode,
@@ -549,7 +550,7 @@ class SensorSnap(
             ("mode", Optional[str]),
             ("min_interval", Optional[int]),
             ("description", Optional[str]),
-            ("target_dict", Mapping[str, ExternalTargetData]),
+            ("target_dict", Mapping[str, TargetSnap]),
             ("metadata", Optional[ExternalSensorMetadata]),
             ("default_status", Optional[DefaultSensorStatus]),
             ("sensor_type", Optional[SensorType]),
@@ -566,7 +567,7 @@ class SensorSnap(
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
-        target_dict: Optional[Mapping[str, ExternalTargetData]] = None,
+        target_dict: Optional[Mapping[str, TargetSnap]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
         sensor_type: Optional[SensorType] = None,
@@ -577,7 +578,7 @@ class SensorSnap(
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
             # version of dagster
             target_dict = {
-                job_name: ExternalTargetData(
+                job_name: TargetSnap(
                     job_name=check.str_param(job_name, "job_name"),
                     mode=check.opt_str_param(mode, "mode", DEFAULT_MODE_NAME),
                     op_selection=check.opt_nullable_sequence_param(
@@ -603,9 +604,7 @@ class SensorSnap(
             mode=check.opt_str_param(mode, "mode"),  # keep legacy field populated
             min_interval=check.opt_int_param(min_interval, "min_interval"),
             description=check.opt_str_param(description, "description"),
-            target_dict=check.opt_mapping_param(
-                target_dict, "target_dict", str, ExternalTargetData
-            ),
+            target_dict=check.opt_mapping_param(target_dict, "target_dict", str, TargetSnap),
             metadata=check.opt_inst_param(metadata, "metadata", ExternalSensorMetadata),
             # Leave default_status as None if it's STOPPED to maintain stable back-compat IDs
             default_status=(
@@ -628,7 +627,7 @@ class SensorSnap(
 
         if sensor_def.asset_selection is not None:
             target_dict = {
-                base_asset_job_name: ExternalTargetData(
+                base_asset_job_name: TargetSnap(
                     job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
                 )
                 for base_asset_job_name in repository_def.get_implicit_asset_job_names()
@@ -641,7 +640,7 @@ class SensorSnap(
             )
         else:
             target_dict = {
-                target.job_name: ExternalTargetData(
+                target.job_name: TargetSnap(
                     job_name=target.job_name,
                     mode=DEFAULT_MODE_NAME,
                     op_selection=target.op_selection,

@@ -66,12 +66,12 @@ from .external_data import (
     ExternalResourceData,
     ExternalResourceValue,
     ExternalSensorMetadata,
-    ExternalTargetData,
     NestedResource,
     PartitionSetSnap,
     ResourceJobUsageEntry,
     ScheduleSnap,
     SensorSnap,
+    TargetSnap,
 )
 from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
 from .job_index import JobIndex
@@ -872,19 +872,19 @@ class ExternalSensor:
         target = self._get_single_target()
         return target.op_selection if target else None
 
-    def _get_single_target(self) -> Optional[ExternalTargetData]:
+    def _get_single_target(self) -> Optional[TargetSnap]:
         if self._external_sensor_data.target_dict:
             return next(iter(self._external_sensor_data.target_dict.values()))
         else:
             return None
 
-    def get_target_data(self, job_name: Optional[str] = None) -> Optional[ExternalTargetData]:
+    def get_target(self, job_name: Optional[str] = None) -> Optional[TargetSnap]:
         if job_name:
             return self._external_sensor_data.target_dict[job_name]
         else:
             return self._get_single_target()
 
-    def get_external_targets(self) -> Sequence[ExternalTargetData]:
+    def get_targets(self) -> Sequence[TargetSnap]:
         return list(self._external_sensor_data.target_dict.values())
 
     @property
