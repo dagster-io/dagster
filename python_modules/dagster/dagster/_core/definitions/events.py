@@ -164,7 +164,7 @@ class Output(Generic[T], EventWithMetadata):
         """Returns a new Output with the same value and output_name,
         but with the provided metadata.
         """
-        return Output(
+        return self.__class__(
             value=self.value,
             output_name=self.output_name,
             metadata=metadata,
