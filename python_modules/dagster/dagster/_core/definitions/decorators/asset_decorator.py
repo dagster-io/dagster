@@ -30,8 +30,10 @@ from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMeta
 from dagster._core.definitions.resource_annotation import (
     get_resource_args,
 )
+from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType
+from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.warnings import (
     disable_dagster_warnings,
 )
@@ -94,6 +96,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = ...,
     check_specs: Optional[Sequence[AssetCheckSpec]] = ...,
     owners: Optional[Sequence[str]] = ...,
+    storage_kind: Optional[str] = ...,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]: ...
 
 
@@ -136,6 +139,7 @@ def asset(
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     owners: Optional[Sequence[str]] = None,
+    storage_kind: Optional[str] = None,
 ) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
@@ -215,6 +219,7 @@ def asset(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        storage_kind (Optional[str]): A storage kind tag for the asset.
 
     Examples:
         .. code-block:: python
@@ -256,6 +261,7 @@ def asset(
             check_specs=check_specs,
             key=key,
             owners=owners,
+            storage_kind=check.opt_str_param(storage_kind, "storage_kind"),
         )
 
     if compute_fn is not None:
@@ -330,6 +336,7 @@ class _Asset:
         key: Optional[CoercibleToAssetKey] = None,
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners: Optional[Sequence[str]] = None,
+        storage_kind: Optional[str] = None,
     ):
         self.name = name
         self.key_prefix = key_prefix
@@ -359,6 +366,7 @@ class _Asset:
         self.check_specs = check_specs
         self.key = key
         self.owners = owners
+        self.storage_kind = storage_kind
 
     def __call__(self, fn: Callable[..., Any]) -> AssetsDefinition:
         from dagster._config.pythonic_config import (
@@ -494,6 +502,12 @@ class _Asset:
                 deps=deps,
             )
 
+        all_tags = {
+            **(self.tags or {}),
+            **(StorageKindTagSet(storage_kind=self.storage_kind) if self.storage_kind else {}),
+        }
+        tags_by_key = {out_asset_key: all_tags} if all_tags else None
+
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={"result": out_asset_key},
@@ -535,6 +549,7 @@ def multi_asset(
     code_version: Optional[str] = None,
     specs: Optional[Sequence[AssetSpec]] = None,
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
+    storage_kind: Optional[str] = None,
     # deprecated
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
@@ -592,6 +607,7 @@ def multi_asset(
             by this function.
         check_specs (Optional[Sequence[AssetCheckSpec]]): (Experimental) Specs for asset checks that
             execute in the decorated function after materializing the assets.
+        storage_kind (Optional[str]): A storage kind tag for the assets materialized by this function.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead.
             Set of asset keys that are upstream dependencies, but do not pass an input to the
             multi_asset.
@@ -864,6 +880,14 @@ def multi_asset(
             )
             resolved_specs = [spec._replace(group_name=group_name) for spec in resolved_specs]
 
+        if storage_kind:
+            check.invariant(
+                all(spec.storage_kind is None for spec in resolved_specs),
+                "Cannot set storage_kind parameter on multi_asset if one or more of the"
+                " AssetSpecs/AssetOuts supplied to this multi_asset have a storage_kind defined.",
+            )
+            resolved_specs = [spec._replace(storage_kind=storage_kind) for spec in resolved_specs]
+
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
@@ -893,21 +917,6 @@ def get_function_params_without_context_or_config_or_resources(
 
     resource_arg_names = {arg.name for arg in get_resource_args(fn)}
 
-    new_input_args = []
-    for input_arg in input_params:
-        if input_arg.name != "config" and input_arg.name not in resource_arg_names:
-            new_input_args.append(input_arg)
-
-    return new_input_args
-
-
-def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
-    return "_".join(asset_key.path).replace("-", "_")
-
-
-def build_asset_ins(
-    fn: Callable[..., Any],
-    asset_ins: Mapping[str, AssetIn],
     deps: Optional[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, Tuple[str, In]]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
