@@ -232,6 +232,9 @@ class DagsterProxyApiServicer(DagsterApiServicer):
     def ExternalNotebookData(self, request, context):
         return self._query("ExternalNotebookData", request, context)
 
+    def ExternalConditionEvaluation(self, request, context):
+        return self._query("ExternalConditionEvaluation", request, context)
+
     def ExternalPartitionConfig(self, request, context):
         return self._query("ExternalPartitionConfig", request, context)
 

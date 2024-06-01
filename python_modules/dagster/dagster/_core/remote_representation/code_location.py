@@ -20,6 +20,7 @@ from dagster._api.snapshot_partition import (
 from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
@@ -228,6 +229,12 @@ class CodeLocation(AbstractContextManager):
         cursor: Optional[str],
         log_key: Optional[Sequence[str]],
         last_sensor_start_time: Optional[float],
+    ) -> "SensorExecutionData":
+        pass
+
+    @abstractmethod
+    def get_external_condition_evaluation(
+        self, instance: DagsterInstance, repository_handle: RepositoryHandle, asset_key: AssetKey
     ) -> "SensorExecutionData":
         pass
 
@@ -572,6 +579,14 @@ class InProcessCodeLocation(CodeLocation):
             partition_names=partition_names,
             instance_ref=instance.get_ref(),
         )
+
+    def get_external_condition_evaluation(
+        self,
+        repository_handle: RepositoryHandle,
+        instance: DagsterInstance,
+        asset_key: AssetKey,
+    ):
+        raise
 
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
@@ -930,6 +945,19 @@ class GrpcServerCodeLocation(CodeLocation):
             cursor,
             log_key,
             last_sensor_start_time,
+        )
+
+    def get_external_condition_evaluation(
+        self,
+        instance: DagsterInstance,
+        repository_handle: RepositoryHandle,
+        asset_key: AssetKey,
+        # candidate_slice: AssetSlice,
+    ):
+        from dagster._api.snapshot_sensor import sync_get_external_condition_evaluation_result_grpc
+
+        return sync_get_external_condition_evaluation_result_grpc(
+            self.client, instance, repository_handle, asset_key
         )
 
     def get_external_partition_set_execution_param_data(

@@ -8,3 +8,4 @@ from .slice_conditions import (
     RequestedThisTickCondition as RequestedThisTickCondition,
 )
 from .updated_since_cron_condition import UpdatedSinceCronCondition as UpdatedSinceCronCondition
+from .user_code_condition import UserCodeCondition as UserCodeCondition
