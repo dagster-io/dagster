@@ -216,6 +216,7 @@ fragment evaluationFields on AssetConditionEvaluation {
     evaluationNodes {
         ... on UnpartitionedAssetConditionEvaluationNode {
             description
+            label
             startTimestamp
             endTimestamp
             status
@@ -224,6 +225,7 @@ fragment evaluationFields on AssetConditionEvaluation {
         }
         ... on PartitionedAssetConditionEvaluationNode {
             description
+            label
             startTimestamp
             endTimestamp
             numTrue
@@ -238,6 +240,7 @@ fragment evaluationFields on AssetConditionEvaluation {
         }
         ... on SpecificPartitionAssetConditionEvaluationNode {
             description
+            label
             status
             uniqueId
             childUniqueIds
@@ -510,12 +513,14 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         true_partition_keys: Sequence[str],
         candidate_partition_keys: Optional[Sequence[str]] = None,
         child_evaluations: Optional[Sequence[AssetConditionEvaluation]] = None,
+        label: Optional[str] = None,
     ) -> AssetConditionEvaluation:
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
                 class_name="...",
                 description=description,
                 unique_id=str(random.randint(0, 100000000)),
+                label=label,
             ),
             true_subset=AssetSubset(
                 asset_key=asset_key,
@@ -555,6 +560,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
             "All of",
             partitions_def,
             ["a", "b"],
+            label="Top level label",
             child_evaluations=[
                 self._get_condition_evaluation(
                     asset_key,
@@ -582,6 +588,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                             partitions_def,
                             ["c"],
                             ["a", "b", "c"],
+                            label="Inner label",
                             child_evaluations=[
                                 self._get_condition_evaluation(
                                     asset_key,
@@ -638,17 +645,20 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         assert rootNode["uniqueId"] == evaluation["rootUniqueId"]
         assert rootNode["description"] == "All of"
         assert rootNode["numTrue"] == 2
+        assert rootNode["label"] == "Top level label"
         assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
         assert len(rootNode["childUniqueIds"]) == 2
 
         notNode = self._get_node(rootNode["childUniqueIds"][1], evaluation["evaluationNodes"])
         assert notNode["description"] == "Not"
         assert notNode["numTrue"] == 2
+        assert notNode["label"] is None
         assert set(notNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b"}
 
         skipNode = self._get_node(notNode["childUniqueIds"][0], evaluation["evaluationNodes"])
         assert skipNode["description"] == "Any of"
         assert skipNode["numTrue"] == 1
+        assert skipNode["label"] == "Inner label"
         assert set(skipNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"c"}
 
         # test one of the true partitions

@@ -18,6 +18,7 @@ const AssetSubsetFragment = gql`
 const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
   fragment SpecificPartitionAssetConditionEvaluationNodeFragment on SpecificPartitionAssetConditionEvaluationNode {
     description
+    label
     status
     uniqueId
     childUniqueIds
@@ -31,6 +32,7 @@ const SpecificPartitionAssetConditionEvaluationNodeFragment = gql`
 const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment UnpartitionedAssetConditionEvaluationNodeFragment on UnpartitionedAssetConditionEvaluationNode {
     description
+    label
     startTimestamp
     endTimestamp
     status
@@ -45,6 +47,7 @@ const UnpartitionedAssetConditionEvaluationNodeFragment = gql`
 const PartitionedAssetConditionEvaluationNodeFragment = gql`
   fragment PartitionedAssetConditionEvaluationNodeFragment on PartitionedAssetConditionEvaluationNode {
     description
+    label
     startTimestamp
     endTimestamp
     numTrue

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Tuple
 
 import pendulum
+from typing_extensions import Self
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -42,6 +43,8 @@ if TYPE_CHECKING:
 
 @experimental
 class SchedulingCondition(ABC, DagsterModel):
+    label: Optional[str] = None
+
     @property
     def children(self) -> Sequence["SchedulingCondition"]:
         return []
@@ -51,12 +54,16 @@ class SchedulingCondition(ABC, DagsterModel):
     def description(self) -> str:
         raise NotImplementedError()
 
+    def with_label(self, label: Optional[str]) -> Self:
+        return self.model_copy(update={"label": label})
+
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AssetConditionSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
+            label=self.label,
         )
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
