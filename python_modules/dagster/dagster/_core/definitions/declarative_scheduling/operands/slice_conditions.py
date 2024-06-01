@@ -33,9 +33,7 @@ class MissingSchedulingCondition(SliceSchedulingCondition):
         return "Missing"
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
-        return context.asset_graph_view.compute_missing_subslice(
-            context.asset_key, from_slice=context.candidate_slice
-        )
+        return context.candidate_slice.compute_missing()
 
 
 @whitelist_for_serdes
@@ -45,7 +43,7 @@ class InProgressSchedulingCondition(SliceSchedulingCondition):
         return "Part of an in-progress run"
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
-        return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.asset_key)
+        return context.candidate_slice.compute_in_progress()
 
 
 @whitelist_for_serdes
@@ -55,7 +53,7 @@ class FailedSchedulingCondition(SliceSchedulingCondition):
         return "Latest run failed"
 
     def compute_slice(self, context: SchedulingContext) -> AssetSlice:
-        return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.asset_key)
+        return context.candidate_slice.compute_failed()
 
 
 @whitelist_for_serdes
