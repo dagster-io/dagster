@@ -269,6 +269,18 @@ class SchedulingCondition(ABC, DagsterModel):
             & ~SchedulingCondition.in_progress()
         )
 
+    def eval_child(
+        self, context: "SchedulingContext", child: "SchedulingCondition", asset_slice: AssetSlice
+    ) -> "SchedulingResult":
+        for child_index, candidate_child in enumerate(self.children):
+            if candidate_child is child:
+                child_context = context.for_child_condition(
+                    child_condition=child, child_index=child_index, candidate_slice=asset_slice
+                )
+                return child.evaluate(child_context)
+
+        check.failed(f"Child {child} not found in parent condition")
+
 
 class SchedulingResult(DagsterModel):
     condition: SchedulingCondition
