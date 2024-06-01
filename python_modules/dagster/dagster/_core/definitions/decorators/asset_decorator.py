@@ -480,7 +480,7 @@ class _Asset:
         ]
 
         with disable_dagster_warnings():
-            spec = AssetSpec(
+            spec = AssetSpec.dagster_internal_init(
                 key=out_asset_key,
                 freshness_policy=self.freshness_policy,
                 auto_materialize_policy=self.auto_materialize_policy,
@@ -492,6 +492,8 @@ class _Asset:
                 # this is best understood as an _override_ which @asset does not support
                 description=None,
                 deps=deps,
+                code_version=self.code_version,
+                skippable=not self.output_required,
             )
 
         return AssetsDefinition.dagster_internal_init(
