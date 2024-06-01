@@ -227,7 +227,7 @@ def _step_handler_context(job_def, dagster_run, instance, executor):
     log_manager = create_context_free_log_manager(instance, dagster_run)
 
     plan_context = PlanOrchestrationContext(
-        plan_data=PlanData(
+        plan_data=PlanData.create(
             job=job_def,
             dagster_run=dagster_run,
             instance=instance,

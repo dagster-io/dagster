@@ -113,7 +113,7 @@ def host_mode_execution_context_event_generator(
     try:
         executor = _get_host_mode_executor(pipeline, run_config, executor_defs, instance)
         execution_context = PlanOrchestrationContext(
-            plan_data=PlanData(
+            plan_data=PlanData.create(
                 job=pipeline,
                 dagster_run=pipeline_run,
                 instance=instance,

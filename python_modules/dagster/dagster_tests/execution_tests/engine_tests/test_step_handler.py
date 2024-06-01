@@ -1,8 +1,12 @@
-from dagster import job
+from dagster import (
+    _check as check,
+    job,
+)
 from dagster._core.definitions.reconstruct import reconstructable
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
 from dagster._core.execution.context_creation_job import create_context_free_log_manager
+from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepHandlerContext
@@ -28,7 +32,7 @@ def _get_executor(instance, pipeline, executor_config=None):
     )
 
 
-def test_step_handler_context():
+def test_step_handler_context() -> None:
     recon_job = reconstructable(foo_pipline)
     with instance_for_test() as instance:
         run = create_run_for_test(instance, job_code_origin=recon_job.get_python_origin())
@@ -39,7 +43,7 @@ def test_step_handler_context():
         executor = _get_executor(instance, recon_job)
 
         plan_context = PlanOrchestrationContext(
-            plan_data=PlanData(
+            plan_data=PlanData.create(
                 job=recon_job,
                 dagster_run=run,
                 instance=instance,
@@ -62,7 +66,7 @@ def test_step_handler_context():
         ctx = StepHandlerContext(
             instance=instance,
             plan_context=plan_context,
-            steps=execution_plan.steps,
+            steps=check.is_list(execution_plan.steps, ExecutionStep),
             execute_step_args=args,
             dagster_run=run,
         )

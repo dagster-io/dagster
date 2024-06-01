@@ -128,7 +128,7 @@ def create_context_creation_data(
 def create_plan_data(
     context_creation_data: "ContextCreationData", raise_on_error: bool, retry_mode: RetryMode
 ) -> PlanData:
-    return PlanData(
+    return PlanData.create(
         job=context_creation_data.job,
         dagster_run=context_creation_data.dagster_run,
         instance=context_creation_data.instance,
