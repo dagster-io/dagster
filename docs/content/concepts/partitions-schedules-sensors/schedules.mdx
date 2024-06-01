@@ -43,18 +43,6 @@ You define a schedule by constructing a <PyObject object="ScheduleDefinition" />
 
 Here's a simple schedule that runs a job every day, at midnight:
 
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
-@job
-def my_job(): ...
-
-
-basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
-```
-
-The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
-
-To run schedules for assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets) and construct a <PyObject object="ScheduleDefinition" />:
-
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
 from dagster import AssetSelection, ScheduleDefinition, define_asset_job
 
@@ -63,19 +51,19 @@ asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_grou
 basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 ```
 
+The `cron_schedule` argument accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and `"@monthly"` if your `croniter` dependency's version is >= 1.0.12.
+
 ### Schedules that provide custom run config and tags
 
 If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
-@op(config_schema={"scheduled_date": str})
-def configurable_op(context: OpExecutionContext):
+@asset(config_schema={"scheduled_date": str})
+def configurable_asset(context: OpExecutionContext):
     context.log.info(context.op_config["scheduled_date"])
 
 
-@job
-def configurable_job():
-    configurable_op()
+configurable_job = define_asset_job("configurable_job", [configurable_asset])
 
 
 @schedule(job=configurable_job, cron_schedule="0 0 * * *")
@@ -84,7 +72,9 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
     return RunRequest(
         run_key=None,
         run_config={
-            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+            "ops": {
+                "configurable_asset": {"config": {"scheduled_date": scheduled_date}}
+            }
         },
         tags={"date": scheduled_date},
     )
@@ -102,21 +92,6 @@ If you don't need access to the context parameter, you can omit it from the deco
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job. For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
 
 Having defined a date-partitioned job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import build_schedule_from_partitioned_job, job
-
-
-@job(config=partitioned_config)
-def partitioned_op_job(): ...
-
-
-partitioned_op_schedule = build_schedule_from_partitioned_job(
-    partitioned_op_job,
-)
-```
-
-The [Partitioning assets](/concepts/partitions-schedules-sensors/partitioning-assets) documentation includes an [example of a date-partitioned asset](/concepts/partitions-schedules-sensors/partitioning-assets#defining-partitioned-assets). You can define a schedule similarly using <PyObject object="build_schedule_from_partitioned_job"/>:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
 from dagster import (
@@ -136,14 +111,14 @@ def daily_asset(): ...
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
 
 
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
+partitioned_asset_schedule = build_schedule_from_partitioned_job(
     partitioned_asset_job,
 )
 ```
 
 Each schedule tick of a partitioned job fills in the latest partition in the partition set that exists as of the tick time. Note that this implies that when the schedule submits a run on a particular day, it will typically be for the partition whose key corresponds to the previous day. For example, the schedule will fill in the `2020-04-01` partition on `2020-04-02`. That's because each partition corresponds to a time window. The key of the partition is the start of the time window, but the partition isn't included in the list until its time window has completed. Waiting until the time window has finished before Kicking off a run means the run can process data from within that entire time window.
 
-However, you can use the `end_offset` parameter of <PyObject object="daily_partitioned_config" decorator /> to change which partition is the most recent partition that is filled in at each schedule tick. Setting `end_offset` to `1` will extend the partitions forward so that the schedule tick that runs on day `N` will fill in day `N`'s partition instead of day `N-1`, and setting `end_offset` to a negative number will cause the schedule to fill in earlier days' partitions. In general, setting `end_offset` to `X` will cause the partition that runs on day `N` to fill in the partition for day `N - 1 + X`. The same holds true for hourly, weekly, and monthly partitioned jobs, for their respective partition sizes.
+However, you can use the `end_offset` parameter of <PyObject object="DailyPartitionsDefinition" /> to change which partition is the most recent partition that is filled in at each schedule tick. Setting `end_offset` to `1` will extend the partitions forward so that the schedule tick that runs on day `N` will fill in day `N`'s partition instead of day `N-1`, and setting `end_offset` to a negative number will cause the schedule to fill in earlier days' partitions. In general, setting `end_offset` to `X` will cause the partition that runs on day `N` to fill in the partition for day `N - 1 + X`. The same holds true for hourly, weekly, and monthly partitioned jobs, for their respective partition sizes.
 
 You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
 
@@ -154,7 +129,16 @@ You can also create a schedule for a static partition. The Partitioned Jobs conc
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
 
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
-from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
+from dagster import (
+    AssetExecutionContext,
+    Config,
+    StaticPartitionsDefinition,
+    asset,
+    define_asset_job,
+    job,
+    op,
+    static_partitioned_config,
+)
 
 CONTINENTS = [
     "Africa",
@@ -167,26 +151,15 @@ CONTINENTS = [
 ]
 
 
-@static_partitioned_config(partition_keys=CONTINENTS)
-def continent_config(partition_key: str):
-    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+@asset(partitions_def=StaticPartitionsDefinition(CONTINENTS))
+def continents_info(context: AssetExecutionContext):
+    context.log.info(f"continent name: {context.partition_key}")
 
 
-class ContinentOpConfig(Config):
-    continent_name: str
-
-
-@op
-def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
-    context.log.info(config.continent_name)
-
-
-@job(config=continent_config)
-def continent_job():
-    continent_op()
+continent_job = define_asset_job("continent_job", [continents_info])
 ```
 
-We can write a schedule that will run this partition:
+We can write a schedule that will run every partition on each tick:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
 from dagster import schedule, RunRequest
@@ -195,10 +168,10 @@ from dagster import schedule, RunRequest
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        yield RunRequest(run_key=c, partition_key=c)
+        yield RunRequest(partition_key=c)
 ```
 
-Or a schedule that will run a subselection of the partition:
+Or a schedule that will run a subselection of the partitions:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
@@ -219,7 +192,7 @@ For example, the following schedule executes daily at 9AM in US/Pacific time:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
 my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+    job=asset_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
 )
 ```
 
@@ -251,6 +224,7 @@ from dagster import (
     job,
     RunRequest,
     RunConfig,
+    define_asset_job,
     Definitions,
 )
 from datetime import datetime
@@ -262,8 +236,9 @@ class DateFormatter(ConfigurableResource):
     def strftime(self, dt: datetime) -> str:
         return dt.strftime(self.format)
 
-@job
-def process_data(): ...
+process_data = define_asset_job(
+    "process_data",
+)
 
 @schedule(job=process_data, cron_schedule="* * * * *")
 def process_data_schedule(
@@ -314,7 +289,9 @@ Schedules must be started for them to run. Schedules can be started and stopped:
 
   ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
   my_running_schedule = ScheduleDefinition(
-      job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+      job=asset_job,
+      cron_schedule="0 9 * * *",
+      default_status=DefaultScheduleStatus.RUNNING,
   )
   ```
 
@@ -338,7 +315,7 @@ Once the schedule is started, the schedule will begin executing immediately if y
 Any schedule can emit log messages during its evaluation function:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
-@schedule(job=my_job, cron_schedule="* * * * *")
+@schedule(job=asset_job, cron_schedule="* * * * *")
 def logs_then_skips(context):
     context.log.info("Logging from a schedule!")
     return SkipReason("Nothing to do")

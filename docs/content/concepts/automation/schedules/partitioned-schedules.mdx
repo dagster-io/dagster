@@ -29,15 +29,6 @@ To follow this guide, you need to be familiar with:
 
 For jobs partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> to construct a schedule for the job. The schedule's interval will match the spacing of the partitions in the job. For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
 
-Refer to the following tabs for examples of asset and op-based jobs using <PyObject object="build_schedule_from_partitioned_job"/> to construct schedules:
-
-<TabGroup>
-<TabItem name="Asset jobs">
-
-#### Asset jobs
-
-Asset jobs are defined using <PyObject object="define_asset_job" />. In this example, we created an asset job named `partitioned_job` and then constructed `asset_partitioned_schedule` by using <PyObject object="build_schedule_from_partitioned_job"/>:
-
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_partitioned_asset_schedule endbefore=end_partitioned_asset_schedule
 from dagster import (
     asset,
@@ -56,33 +47,10 @@ def daily_asset(): ...
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
 
 
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
+partitioned_asset_schedule = build_schedule_from_partitioned_job(
     partitioned_asset_job,
 )
 ```
-
-</TabItem>
-<TabItem name="Op jobs">
-
-#### Op jobs
-
-Op jobs are defined using the <PyObject object="job" decorator />. In this example, we created a partitioned job named `partitioned_op_job` and then constructed `partitioned_op_schedule` using <PyObject object="build_schedule_from_partitioned_job"/>:
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import build_schedule_from_partitioned_job, job
-
-
-@job(config=partitioned_config)
-def partitioned_op_job(): ...
-
-
-partitioned_op_schedule = build_schedule_from_partitioned_job(
-    partitioned_op_job,
-)
-```
-
-</TabItem>
-</TabGroup>
 
 ### Customizing schedule timing
 
