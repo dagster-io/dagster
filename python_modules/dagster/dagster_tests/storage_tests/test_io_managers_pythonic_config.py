@@ -183,6 +183,52 @@ def test_nested_resources_runtime_config():
     assert out_txt == ["greeting: hello, world!"]
 
 
+def test_nested_resources_runtime_config_with_op_job():
+    out_txt = []
+
+    class IOConfigResource(ConfigurableResource):
+        prefix: str
+
+    class MyIOManager(ConfigurableIOManager):
+        config: IOConfigResource
+
+        def handle_output(self, context, obj):
+            out_txt.append(f"{self.config.prefix}{obj}")
+
+        def load_input(self, context):
+            assert False, "should not be called"
+
+    io_config = IOConfigResource.configure_at_launch()
+    resources = {
+        "io_config": io_config,
+        "io_manager": MyIOManager(config=io_config)
+    }
+
+    @job(resource_defs=resources)
+    def hello_world_job():
+        @op
+        def hello_world_op():
+            return "hello, world!"
+
+        hello_world_op()
+
+    assert (
+        hello_world_job
+        .execute_in_process({"resources": {"io_config": {"config": {"prefix": ""}}}})
+        .success
+    )
+    assert out_txt == ["hello, world!"]
+
+    out_txt.clear()
+
+    assert (
+        hello_world_job
+        .execute_in_process({"resources": {"io_config": {"config": {"prefix": "greeting: "}}}})
+        .success
+    )
+    assert out_txt == ["greeting: hello, world!"]
+
+
 def test_pythonic_fs_io_manager() -> None:
     with tempfile.TemporaryDirectory() as tmpdir_path:
 

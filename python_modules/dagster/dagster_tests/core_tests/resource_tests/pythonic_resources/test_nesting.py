@@ -13,6 +13,8 @@ from dagster import (
     ResourceParam,
     asset,
     resource,
+    job,
+    op
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import (
@@ -185,6 +187,61 @@ def test_nested_resources_runtime_config() -> None:
     )
     assert completed["yes"]
 
+
+def test_nested_resources_runtime_config_with_op_job() -> None:
+    class AWSCredentialsResource(ConfigurableResource):
+        username: str
+        password: str
+
+    class S3Resource(ConfigurableResource):
+        aws_credentials: AWSCredentialsResource
+        bucket_name: str
+
+    class EC2Resource(ConfigurableResource):
+        aws_credentials: AWSCredentialsResource
+
+    completed = {}
+
+
+    aws_credentials = AWSCredentialsResource.configure_at_launch()
+    resources={
+        "aws_credentials": aws_credentials,
+        "s3": S3Resource(bucket_name="my_bucket", aws_credentials=aws_credentials),
+        "ec2": EC2Resource(aws_credentials=aws_credentials),
+    }
+
+    @job(resource_defs=resources)
+    def my_job():
+        @op
+        def my_op(s3: S3Resource, ec2: EC2Resource):
+            assert s3.aws_credentials.username == "foo"
+            assert s3.aws_credentials.password == "bar"
+            assert s3.bucket_name == "my_bucket"
+
+            assert ec2.aws_credentials.username == "foo"
+            assert ec2.aws_credentials.password == "bar"
+
+            completed["yes"] = True
+
+        my_op()
+
+    assert (
+        my_job
+        .execute_in_process(
+            {
+                "resources": {
+                    "aws_credentials": {
+                        "config": {
+                            "username": "foo",
+                            "password": "bar",
+                        }
+                    }
+                }
+            }
+        )
+        .success
+    )
+    assert completed["yes"]
 
 def test_nested_resources_runtime_config_complex() -> None:
     class CredentialsResource(ConfigurableResource):
