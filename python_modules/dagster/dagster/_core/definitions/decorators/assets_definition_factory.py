@@ -33,16 +33,19 @@ class InOutMapper:
         in_mappings: Mapping[AssetKey, InMapping],
         out_mappings: Mapping[AssetKey, OutMapping],
         check_specs: Sequence[AssetCheckSpec],
+        can_subset: bool,
     ) -> None:
         self.in_mappings = in_mappings
         self.out_mappings = out_mappings
         self.check_specs = check_specs
+        self.can_subset = can_subset
 
     @staticmethod
     def from_asset_ins_and_asset_outs(
         asset_ins: Mapping[AssetKey, Tuple[str, In]],
         asset_outs: Mapping[AssetKey, Tuple[str, Out]],
         check_specs: Sequence[AssetCheckSpec],
+        can_subset: bool,
     ):
         in_mappings = {
             asset_key: InMapping(input_name, in_)
@@ -52,7 +55,7 @@ class InOutMapper:
             asset_key: OutMapping(output_name, out_)
             for asset_key, (output_name, out_) in asset_outs.items()
         }
-        return InOutMapper(in_mappings, out_mappings, check_specs)
+        return InOutMapper(in_mappings, out_mappings, check_specs, can_subset)
 
     @cached_property
     def asset_outs_by_output_name(self) -> Mapping[str, Out]:
@@ -73,6 +76,26 @@ class InOutMapper:
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return validate_and_assign_output_names_to_check_specs(
             self.check_specs, list(self.asset_keys)
+        )
+
+    @cached_property
+    def check_outs_by_output_name(self) -> Mapping[str, Out]:
+        return {
+            output_name: Out(dagster_type=None, is_required=not self.can_subset)
+            for output_name in self.check_specs_by_output_name.keys()
+        }
+
+    @cached_property
+    def combined_outs_by_output_name(self) -> Mapping[str, Out]:
+        return {
+            **self.asset_outs_by_output_name,
+            **self.check_outs_by_output_name,
+        }
+
+    @cached_property
+    def overlapping_output_names(self) -> Set[str]:
+        return set(self.asset_outs_by_output_name.keys()) & set(
+            self.check_outs_by_output_name.keys()
         )
 
 

@@ -746,6 +746,7 @@ def multi_asset(
             asset_ins=asset_ins,
             asset_outs=output_tuples_by_asset_key,
             check_specs=check_specs or [],
+            can_subset=can_subset,
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -755,21 +756,10 @@ def multi_asset(
             " arguments to the decorated function",
         )
 
-        check_outs_by_output_name: Mapping[str, Out] = {
-            output_name: Out(dagster_type=None, is_required=not can_subset)
-            for output_name in in_out_mapper.check_specs_by_output_name.keys()
-        }
-        overlapping_output_names = (
-            in_out_mapper.asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
-        )
         check.invariant(
-            len(overlapping_output_names) == 0,
-            f"Check output names overlap with asset output names: {overlapping_output_names}",
+            len(in_out_mapper.overlapping_output_names) == 0,
+            f"Check output names overlap with asset output names: {in_out_mapper.overlapping_output_names}",
         )
-        combined_outs_by_output_name: Mapping[str, Out] = {
-            **in_out_mapper.asset_outs_by_output_name,
-            **check_outs_by_output_name,
-        }
 
         if specs:
             internal_deps = {
@@ -800,7 +790,7 @@ def multi_asset(
                 name=op_name,
                 description=description,
                 ins=dict(asset_ins.values()),
-                out=combined_outs_by_output_name,
+                out=in_out_mapper.combined_outs_by_output_name,
                 required_resource_keys=op_required_resource_keys,
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
