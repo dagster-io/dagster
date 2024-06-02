@@ -38,7 +38,7 @@ DISALLOWED_NAMES = set(
     + list(keyword.kwlist)  # just disallow all python keywords
 )
 
-VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
+VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_-]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
 INVALID_TITLE_CHARACTERS_REGEX_STR = r"[\%\*\"]"
