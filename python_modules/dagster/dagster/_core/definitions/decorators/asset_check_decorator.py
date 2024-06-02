@@ -34,9 +34,11 @@ from dagster._utils.warnings import (
 
 from ..input import In
 from .asset_decorator import (
+    make_asset_deps,
+)
+from .assets_definition_factory import (
     build_asset_ins,
     get_function_params_without_context_or_config_or_resources,
-    make_asset_deps,
 )
 from .op_decorator import _Op
 
