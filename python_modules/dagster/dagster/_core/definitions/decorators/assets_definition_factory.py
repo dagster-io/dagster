@@ -190,8 +190,9 @@ class InOutMapper:
         internal_deps: Mapping[AssetKey, Set[AssetKey]],
         can_subset: bool,
         deps_directly_passed_to_multi_asset: Optional[Iterable[AssetDep]],
-        specs_directly_passed_to_multi_asset: Optional[Sequence[AssetSpec]],
+        spec_resolver: Callable[["InOutMapper"], Sequence[AssetSpec]],
         op_name: str,
+        group_name: Optional[str] = None,
     ) -> None:
         self.directly_passed_asset_ins = directly_passed_asset_ins
         self._passed_input_tuples_by_asset_key = input_tuples_by_asset_key
@@ -200,8 +201,9 @@ class InOutMapper:
         self.internal_deps = internal_deps
         self.can_subset = can_subset
         self.deps_directly_passed_to_multi_asset = deps_directly_passed_to_multi_asset
-        self.specs_directly_passed_to_multi_asset = specs_directly_passed_to_multi_asset
+        self.spec_resolver = spec_resolver
         self.op_name = op_name
+        self.group_name = group_name
 
     @staticmethod
     def from_specs(
@@ -212,6 +214,7 @@ class InOutMapper:
         ins: Mapping[str, AssetIn],
         fn: Callable[..., Any],
         op_name: str,
+        group_name: Optional[str],
     ):
         output_tuples_by_asset_key = {}
         for asset_spec in specs:
@@ -266,8 +269,9 @@ class InOutMapper:
             can_subset=can_subset,
             # when specs are used deps are never passed to multi-asset
             deps_directly_passed_to_multi_asset=None,
-            specs_directly_passed_to_multi_asset=specs,
+            spec_resolver=lambda _: specs,
             op_name=op_name,
+            group_name=group_name,
         )
 
     @staticmethod
@@ -281,6 +285,7 @@ class InOutMapper:
         check_specs: Sequence[AssetCheckSpec],
         can_subset: bool,
         op_name: str,
+        group_name: Optional[str],
     ):
         inputs_tuples_by_asset_key = build_asset_ins(
             fn,
@@ -326,6 +331,34 @@ class InOutMapper:
         keys_by_output_name = make_keys_by_output_name(output_tuples_by_asset_key)
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
+        def _spec_resolver(in_out_mapper: "InOutMapper") -> Sequence[AssetSpec]:
+            resolved_specs = []
+            input_deps_by_key = {
+                key: AssetDep(
+                    asset=key, partition_mapping=in_out_mapper.partition_mappings.get(key)
+                )
+                for key in in_out_mapper.asset_keys_by_input_names.values()
+            }
+            input_deps = list(input_deps_by_key.values())
+            for output_name, asset_out in asset_out_map.items():
+                key = in_out_mapper.asset_keys_by_output_name[output_name]
+                if asset_deps:
+                    deps = [
+                        input_deps_by_key.get(
+                            dep_key,
+                            AssetDep(
+                                asset=dep_key,
+                                partition_mapping=in_out_mapper.partition_mappings.get(key),
+                            ),
+                        )
+                        for dep_key in asset_deps.get(output_name, [])
+                    ]
+                else:
+                    deps = input_deps
+
+                resolved_specs.append(asset_out.to_spec(key, deps=deps))
+            return resolved_specs
+
         return InOutMapper(
             directly_passed_asset_ins=ins,
             input_tuples_by_asset_key=inputs_tuples_by_asset_key,
@@ -334,8 +367,9 @@ class InOutMapper:
             internal_deps=internal_deps,
             can_subset=can_subset,
             deps_directly_passed_to_multi_asset=deps_directly_passed_to_multi_asset,
-            specs_directly_passed_to_multi_asset=None,
+            spec_resolver=_spec_resolver,
             op_name=op_name,
+            group_name=group_name,
         )
 
     @cached_property
@@ -439,6 +473,20 @@ class InOutMapper:
             deps=self.deps_directly_passed_to_multi_asset,
             asset_name=self.op_name,
         )
+
+    @cached_property
+    def resolved_specs(self) -> Sequence[AssetSpec]:
+        specs = self.spec_resolver(self)
+        if not self.group_name:
+            return specs
+
+        check.invariant(
+            all(spec.group_name is None for spec in specs),
+            "Cannot set group_name parameter on multi_asset if one or more of the"
+            " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
+        )
+
+        return [spec._replace(group_name=self.group_name) for spec in specs]
 
 
 def validate_and_assign_output_names_to_check_specs(
