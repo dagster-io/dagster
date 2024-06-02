@@ -667,6 +667,7 @@ def multi_asset(
                 can_subset=can_subset,
                 ins=ins or {},
                 fn=fn,
+                op_name=op_name,
             )
         else:
             in_out_mapper = InOutMapper.from_asset_outs(
@@ -676,7 +677,7 @@ def multi_asset(
                 check_specs=check_specs or [],
                 op_name=op_name,
                 asset_deps=asset_deps,
-                upstream_asset_deps=upstream_asset_deps or [],
+                deps_directly_passed_to_multi_asset=upstream_asset_deps,
                 can_subset=can_subset,
             )
 
@@ -710,23 +711,14 @@ def multi_asset(
                 code_version=code_version,
             )(fn)
 
-        partition_mappings = {
-            in_out_mapper.asset_keys_by_input_names[input_name]: asset_in.partition_mapping
-            for input_name, asset_in in (ins or {}).items()
-            if asset_in.partition_mapping is not None
-        }
-
-        if upstream_asset_deps:
-            partition_mappings = get_partition_mappings_from_deps(
-                partition_mappings=partition_mappings, deps=upstream_asset_deps, asset_name=op_name
-            )
-
         if specs:
             resolved_specs = specs
         else:
             resolved_specs = []
             input_deps_by_key = {
-                key: AssetDep(asset=key, partition_mapping=partition_mappings.get(key))
+                key: AssetDep(
+                    asset=key, partition_mapping=in_out_mapper.partition_mappings.get(key)
+                )
                 for key in in_out_mapper.asset_keys_by_input_names.values()
             }
             input_deps = list(input_deps_by_key.values())
@@ -736,7 +728,10 @@ def multi_asset(
                     deps = [
                         input_deps_by_key.get(
                             dep_key,
-                            AssetDep(asset=dep_key, partition_mapping=partition_mappings.get(key)),
+                            AssetDep(
+                                asset=dep_key,
+                                partition_mapping=in_out_mapper.partition_mappings.get(key),
+                            ),
                         )
                         for dep_key in internal_asset_deps.get(output_name, [])
                     ]

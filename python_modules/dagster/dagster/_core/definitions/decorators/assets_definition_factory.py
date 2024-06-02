@@ -24,9 +24,13 @@ from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.assets import ASSET_SUBSET_INPUT_PREFIX
+from dagster._core.definitions.assets import (
+    ASSET_SUBSET_INPUT_PREFIX,
+    get_partition_mappings_from_deps,
+)
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType, Nothing
@@ -179,17 +183,25 @@ class InOutMapper:
     def __init__(
         self,
         *,
-        asset_ins: Mapping[AssetKey, Tuple[str, In]],
-        asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+        directly_passed_asset_ins: Mapping[str, AssetIn],
+        input_tuples_by_asset_key: Mapping[AssetKey, Tuple[str, In]],
+        output_tables_by_asset_key: Mapping[AssetKey, Tuple[str, Out]],
         check_specs: Sequence[AssetCheckSpec],
         internal_deps: Mapping[AssetKey, Set[AssetKey]],
         can_subset: bool,
+        deps_directly_passed_to_multi_asset: Optional[Iterable[AssetDep]],
+        specs_directly_passed_to_multi_asset: Optional[Sequence[AssetSpec]],
+        op_name: str,
     ) -> None:
-        self._passed_asset_ins = asset_ins
-        self.asset_outs = asset_outs
+        self.directly_passed_asset_ins = directly_passed_asset_ins
+        self._passed_input_tuples_by_asset_key = input_tuples_by_asset_key
+        self.output_tuples_by_asset_key = output_tables_by_asset_key
         self.check_specs = check_specs
         self.internal_deps = internal_deps
         self.can_subset = can_subset
+        self.deps_directly_passed_to_multi_asset = deps_directly_passed_to_multi_asset
+        self.specs_directly_passed_to_multi_asset = specs_directly_passed_to_multi_asset
+        self.op_name = op_name
 
     @staticmethod
     def from_specs(
@@ -199,6 +211,7 @@ class InOutMapper:
         can_subset: bool,
         ins: Mapping[str, AssetIn],
         fn: Callable[..., Any],
+        op_name: str,
     ):
         output_tuples_by_asset_key = {}
         for asset_spec in specs:
@@ -236,7 +249,7 @@ class InOutMapper:
                 " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
             )
         remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
-        asset_ins = build_asset_ins(fn, explicit_ins, deps=remaining_upstream_keys)
+        input_tuples_by_asset_key = build_asset_ins(fn, explicit_ins, deps=remaining_upstream_keys)
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}
@@ -245,11 +258,16 @@ class InOutMapper:
         }
 
         return InOutMapper(
-            asset_ins=asset_ins,
-            asset_outs=output_tuples_by_asset_key,
+            directly_passed_asset_ins=ins,
+            input_tuples_by_asset_key=input_tuples_by_asset_key,
+            output_tables_by_asset_key=output_tuples_by_asset_key,
             check_specs=check_specs,
             internal_deps=internal_deps,
             can_subset=can_subset,
+            # when specs are used deps are never passed to multi-asset
+            deps_directly_passed_to_multi_asset=None,
+            specs_directly_passed_to_multi_asset=specs,
+            op_name=op_name,
         )
 
     @staticmethod
@@ -257,23 +275,27 @@ class InOutMapper:
         *,
         asset_out_map: Mapping[str, AssetOut],
         asset_deps: Mapping[str, Set[AssetKey]],
-        upstream_asset_deps: Iterable[AssetDep],
+        deps_directly_passed_to_multi_asset: Optional[Iterable[AssetDep]],
         ins: Mapping[str, AssetIn],
-        op_name: str,
         fn: Callable[..., Any],
         check_specs: Sequence[AssetCheckSpec],
         can_subset: bool,
+        op_name: str,
     ):
-        asset_ins = build_asset_ins(
+        inputs_tuples_by_asset_key = build_asset_ins(
             fn,
             ins or {},
-            deps=({dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()),
+            deps=(
+                {dep.asset_key for dep in deps_directly_passed_to_multi_asset}
+                if deps_directly_passed_to_multi_asset
+                else set()
+            ),
         )
         output_tuples_by_asset_key = build_asset_outs(asset_out_map)
 
         # validate that the asset_ins are a subset of the upstream asset_deps.
         upstream_internal_asset_keys = set().union(*asset_deps.values())
-        asset_in_keys = set(asset_ins.keys())
+        asset_in_keys = set(inputs_tuples_by_asset_key.keys())
         if asset_deps and not asset_in_keys.issubset(upstream_internal_asset_keys):
             invalid_asset_in_keys = asset_in_keys - upstream_internal_asset_keys
             check.failed(
@@ -305,37 +327,43 @@ class InOutMapper:
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
         return InOutMapper(
-            asset_ins=asset_ins,
-            asset_outs=output_tuples_by_asset_key,
+            directly_passed_asset_ins=ins,
+            input_tuples_by_asset_key=inputs_tuples_by_asset_key,
+            output_tables_by_asset_key=output_tuples_by_asset_key,
             check_specs=check_specs or [],
             internal_deps=internal_deps,
             can_subset=can_subset,
+            deps_directly_passed_to_multi_asset=deps_directly_passed_to_multi_asset,
+            specs_directly_passed_to_multi_asset=None,
+            op_name=op_name,
         )
 
     @cached_property
-    def asset_ins(self) -> Mapping[AssetKey, Tuple[str, In]]:
+    def input_tuples_by_asset_key(self) -> Mapping[AssetKey, Tuple[str, In]]:
         if self.can_subset and self.internal_deps:
             return {
-                **self._passed_asset_ins,
+                **self._passed_input_tuples_by_asset_key,
                 **build_subsettable_asset_ins(
-                    self._passed_asset_ins, self.asset_outs, self.internal_deps.values()
+                    self._passed_input_tuples_by_asset_key,
+                    self.output_tuples_by_asset_key,
+                    self.internal_deps.values(),
                 ),
             }
         else:
-            return self._passed_asset_ins
+            return self._passed_input_tuples_by_asset_key
 
     @cached_property
     def in_mappings(self) -> Mapping[AssetKey, InMapping]:
         return {
             asset_key: InMapping(input_name, in_)
-            for asset_key, (input_name, in_) in self.asset_ins.items()
+            for asset_key, (input_name, in_) in self.input_tuples_by_asset_key.items()
         }
 
     @cached_property
     def out_mappings(self) -> Mapping[AssetKey, OutMapping]:
         return {
             asset_key: OutMapping(output_name, out_)
-            for asset_key, (output_name, out_) in self.asset_outs.items()
+            for asset_key, (output_name, out_) in self.output_tuples_by_asset_key.items()
         }
 
     @cached_property
@@ -396,18 +424,21 @@ class InOutMapper:
         }
 
     @cached_property
-    def input_tuples_by_asset_key(self) -> Mapping[AssetKey, Tuple[str, In]]:
-        return {
-            asset_key: (in_mapping.input_name, in_mapping.input)
-            for asset_key, in_mapping in self.in_mappings.items()
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+        partition_mappings = {
+            self.asset_keys_by_input_names[input_name]: asset_in.partition_mapping
+            for input_name, asset_in in self.directly_passed_asset_ins.items()
+            if asset_in.partition_mapping is not None
         }
 
-    @cached_property
-    def output_tuples_by_asset_key(self) -> Mapping[AssetKey, Tuple[str, Out]]:
-        return {
-            asset_key: (out_mapping.output_name, out_mapping.output)
-            for asset_key, out_mapping in self.out_mappings.items()
-        }
+        if not self.deps_directly_passed_to_multi_asset:
+            return partition_mappings
+
+        return get_partition_mappings_from_deps(
+            partition_mappings=partition_mappings,
+            deps=self.deps_directly_passed_to_multi_asset,
+            asset_name=self.op_name,
+        )
 
 
 def validate_and_assign_output_names_to_check_specs(
