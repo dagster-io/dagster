@@ -1,9 +1,20 @@
+from collections import Counter
 from functools import cached_property
-from typing import Mapping, NamedTuple, Tuple
+from typing import (
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+)
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
+from dagster._core.errors import DagsterInvalidDefinitionError
+
+from ..asset_check_spec import AssetCheckSpec
 
 
 class InMapping(NamedTuple):
@@ -21,14 +32,17 @@ class InOutMapper:
         self,
         in_mappings: Mapping[AssetKey, InMapping],
         out_mappings: Mapping[AssetKey, OutMapping],
+        check_specs: Sequence[AssetCheckSpec],
     ) -> None:
         self.in_mappings = in_mappings
         self.out_mappings = out_mappings
+        self.check_specs = check_specs
 
     @staticmethod
     def from_asset_ins_and_asset_outs(
         asset_ins: Mapping[AssetKey, Tuple[str, In]],
         asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+        check_specs: Sequence[AssetCheckSpec],
     ):
         in_mappings = {
             asset_key: InMapping(input_name, in_)
@@ -38,7 +52,7 @@ class InOutMapper:
             asset_key: OutMapping(output_name, out_)
             for asset_key, (output_name, out_) in asset_outs.items()
         }
-        return InOutMapper(in_mappings, out_mappings)
+        return InOutMapper(in_mappings, out_mappings, check_specs)
 
     @cached_property
     def asset_outs_by_output_name(self) -> Mapping[str, Out]:
@@ -50,3 +64,49 @@ class InOutMapper:
             out_mapping.output_name: asset_key
             for asset_key, out_mapping in self.out_mappings.items()
         }
+
+    @cached_property
+    def asset_keys(self) -> Set[AssetKey]:
+        return set(self.out_mappings.keys())
+
+    @cached_property
+    def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
+        return validate_and_assign_output_names_to_check_specs(
+            self.check_specs, list(self.asset_keys)
+        )
+
+
+def validate_and_assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+) -> Mapping[str, AssetCheckSpec]:
+    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
+    return _assign_output_names_to_check_specs(check_specs)
+
+
+def _assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]],
+) -> Mapping[str, AssetCheckSpec]:
+    checks_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
+    if check_specs and len(checks_by_output_name) != len(check_specs):
+        duplicates = {
+            item: count
+            for item, count in Counter(
+                [(spec.asset_key, spec.name) for spec in check_specs]
+            ).items()
+            if count > 1
+        }
+
+        raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
+
+    return checks_by_output_name
+
+
+def _validate_check_specs_target_relevant_asset_keys(
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+) -> None:
+    for spec in check_specs or []:
+        if spec.asset_key not in valid_asset_keys:
+            raise DagsterInvalidDefinitionError(
+                f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
+                f" {valid_asset_keys}"
+            )
