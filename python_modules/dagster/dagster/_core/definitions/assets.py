@@ -597,7 +597,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
-        from dagster._core.definitions.decorators.asset_decorator import (
+        from dagster._core.definitions.decorators.assets_definition_factory import (
             _assign_output_names_to_check_specs,
             _validate_check_specs_target_relevant_asset_keys,
         )
