@@ -20,7 +20,7 @@ from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.decorators.assets_definition_factory import (
-    InOutMapper,
+    AssetsDefinitionBuilder,
     validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -46,7 +46,11 @@ from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
-from .assets_definition_factory import build_asset_ins, build_asset_outs
+from .assets_definition_factory import (
+    AssetsDefinitionBuilderArgs,
+    build_asset_ins,
+    build_asset_outs,
+)
 
 
 @overload
@@ -501,23 +505,6 @@ class _Asset:
         )
 
 
-def compute_required_resource_keys(
-    required_resource_keys: Set[str],
-    resource_defs: Mapping[str, ResourceDefinition],
-    fn: Callable[..., Any],
-) -> Set[str]:
-    bare_required_resource_keys = required_resource_keys.copy()
-    resource_defs_keys = set(resource_defs.keys())
-    required_resource_keys = bare_required_resource_keys | resource_defs_keys
-    arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
-    check.param_invariant(
-        len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
-        "Cannot specify resource requirements in both @multi_asset decorator and as"
-        " arguments to the decorated function",
-    )
-    return required_resource_keys - arg_resource_keys
-
-
 @experimental_param(param="resource_defs")
 @deprecated_param(
     param="non_argument_deps", breaking_version="2.0.0", additional_warn_text="use `deps` instead."
@@ -633,107 +620,50 @@ def multi_asset(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-    specs = check.opt_list_param(specs, "specs", of_type=AssetSpec)
-
-    upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
-        deps=deps, non_argument_deps=non_argument_deps
+    args = AssetsDefinitionBuilderArgs(
+        name=name,
+        description=description,
+        specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
+        check_specs=check.opt_list_param(check_specs, "check_specs", of_type=AssetCheckSpec),
+        asset_out_map=check.opt_mapping_param(outs, "outs", key_type=str, value_type=AssetOut),
+        upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
+            deps=deps, non_argument_deps=non_argument_deps
+        ),
+        asset_deps=check.opt_mapping_param(
+            internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+        ),
+        asset_in_map=check.opt_mapping_param(ins, "ins", key_type=str, value_type=AssetIn),
+        can_subset=can_subset,
+        group_name=group_name,
+        partitions_def=partitions_def,
+        retry_policy=retry_policy,
+        code_version=code_version,
+        op_tags=op_tags,
+        config_schema=check.opt_mapping_param(
+            config_schema,  # type: ignore
+            "config_schema",
+            additional_message="Only dicts are supported for asset config_schema.",
+        ),
+        compute_kind=compute_kind,
+        required_resource_keys=check.opt_set_param(
+            required_resource_keys, "required_resource_keys", of_type=str
+        ),
+        resource_defs=wrap_resources_for_execution(
+            check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
+        ),
+        backfill_policy=backfill_policy,
     )
-
-    asset_deps = check.opt_mapping_param(
-        internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
-    )
-    required_resource_keys = check.opt_set_param(
-        required_resource_keys, "required_resource_keys", of_type=str
-    )
-    resource_defs = wrap_resources_for_execution(
-        check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
-    )
-
-    _config_schema = check.opt_mapping_param(
-        config_schema,  # type: ignore
-        "config_schema",
-        additional_message="Only dicts are supported for asset config_schema.",
-    )
-
-    asset_out_map: Mapping[str, AssetOut] = {} if outs is None else outs
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        op_name = name or fn.__name__
-
-        if asset_out_map and specs:
-            raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")
-
-        if specs:
-            if upstream_asset_deps:
-                raise DagsterInvalidDefinitionError(
-                    "Can not pass deps and specs to @multi_asset, specify deps on the AssetSpecs"
-                    " directly."
-                )
-            if internal_asset_deps:
-                raise DagsterInvalidDefinitionError(
-                    "Can not pass internal_asset_deps and specs to @multi_asset, specify deps on"
-                    " the AssetSpecs directly."
-                )
-
-            in_out_mapper = InOutMapper.from_specs(
-                specs=specs,
-                check_specs=check_specs or [],
-                can_subset=can_subset,
-                ins=ins or {},
-                fn=fn,
-                op_name=op_name,
-                group_name=group_name,
-            )
-        else:
-            in_out_mapper = InOutMapper.from_asset_outs(
-                asset_out_map=asset_out_map,
-                ins=ins or {},
-                fn=fn,
-                check_specs=check_specs or [],
-                op_name=op_name,
-                asset_deps=asset_deps,
-                deps_directly_passed_to_multi_asset=upstream_asset_deps,
-                can_subset=can_subset,
-                group_name=group_name,
-            )
+        builder = AssetsDefinitionBuilder.from_args(args=args, fn=fn)
 
         check.invariant(
-            len(in_out_mapper.overlapping_output_names) == 0,
-            f"Check output names overlap with asset output names: {in_out_mapper.overlapping_output_names}",
+            len(builder.overlapping_output_names) == 0,
+            f"Check output names overlap with asset output names: {builder.overlapping_output_names}",
         )
 
         with disable_dagster_warnings():
-            op = _Op(
-                name=op_name,
-                description=description,
-                ins=in_out_mapper.asset_ins_by_input_names,
-                out=in_out_mapper.combined_outs_by_output_name,
-                required_resource_keys=compute_required_resource_keys(
-                    set(required_resource_keys), resource_defs, fn
-                ),
-                tags={
-                    **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
-                    **(op_tags or {}),
-                },
-                config_schema=_config_schema,
-                retry_policy=retry_policy,
-                code_version=code_version,
-            )(fn)
-
-        return AssetsDefinition.dagster_internal_init(
-            keys_by_input_name=in_out_mapper.asset_keys_by_input_names,
-            keys_by_output_name=in_out_mapper.asset_keys_by_output_name,
-            node_def=op,
-            partitions_def=partitions_def,
-            can_subset=can_subset,
-            resource_defs=resource_defs,
-            backfill_policy=backfill_policy,
-            selected_asset_keys=None,  # no subselection in decorator
-            check_specs_by_output_name=in_out_mapper.check_specs_by_output_name,
-            selected_asset_check_keys=None,  # no subselection in decorator
-            is_subset=False,
-            specs=in_out_mapper.resolved_specs,
-        )
+            return builder.create_assets_definition()
 
     return inner
 

@@ -18,6 +18,7 @@ from typing import (
 )
 
 import dagster._check as check
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
@@ -26,16 +27,23 @@ from dagster._core.definitions.asset_out import AssetOut
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import (
     ASSET_SUBSET_INPUT_PREFIX,
+    AssetsDefinition,
     get_partition_mappings_from_deps,
 )
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.input import In
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType, Nothing
 
 from ..asset_check_spec import AssetCheckSpec
+from ..decorators.op_decorator import _Op
 from ..utils import NoValueSentinel
 
 
@@ -179,51 +187,104 @@ def make_keys_by_output_name(
     return {output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()}
 
 
-class InOutMapper:
+def compute_required_resource_keys(
+    required_resource_keys: Set[str],
+    resource_defs: Mapping[str, ResourceDefinition],
+    fn: Callable[..., Any],
+    decorator_name: str,
+) -> Set[str]:
+    bare_required_resource_keys = required_resource_keys.copy()
+    resource_defs_keys = set(resource_defs.keys())
+    required_resource_keys = bare_required_resource_keys | resource_defs_keys
+    arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+    check.param_invariant(
+        len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+        f"Cannot specify resource requirements in both {decorator_name} decorator and as"
+        " arguments to the decorated function",
+    )
+    return required_resource_keys - arg_resource_keys
+
+
+class AssetsDefinitionBuilderArgs(NamedTuple):
+    name: Optional[str]
+    description: Optional[str]
+    specs: Sequence[AssetSpec]
+    check_specs: Sequence[AssetCheckSpec]
+    asset_out_map: Mapping[str, AssetOut]
+    upstream_asset_deps: Optional[Iterable[AssetDep]]
+    asset_deps: Mapping[str, Set[AssetKey]]
+    asset_in_map: Mapping[str, AssetIn]
+    can_subset: bool
+    group_name: Optional[str]
+    partitions_def: Optional[PartitionsDefinition]
+    retry_policy: Optional[RetryPolicy]
+    code_version: Optional[str]
+    op_tags: Optional[Mapping[str, Any]]
+    config_schema: Optional[UserConfigSchema]
+    retry_policy: Optional[RetryPolicy]
+    compute_kind: Optional[str]
+    required_resource_keys: Set[str]
+    resource_defs: Mapping[str, ResourceDefinition]
+    backfill_policy: Optional[BackfillPolicy]
+
+
+class AssetsDefinitionBuilder:
     def __init__(
         self,
         *,
-        directly_passed_asset_ins: Mapping[str, AssetIn],
         input_tuples_by_asset_key: Mapping[AssetKey, Tuple[str, In]],
         output_tables_by_asset_key: Mapping[AssetKey, Tuple[str, Out]],
-        check_specs: Sequence[AssetCheckSpec],
         internal_deps: Mapping[AssetKey, Set[AssetKey]],
-        can_subset: bool,
-        deps_directly_passed_to_multi_asset: Optional[Iterable[AssetDep]],
-        spec_resolver: Callable[["InOutMapper"], Sequence[AssetSpec]],
         op_name: str,
-        group_name: Optional[str] = None,
+        multi_asset_args: AssetsDefinitionBuilderArgs,
+        fn: Callable[..., Any],
     ) -> None:
-        self.directly_passed_asset_ins = directly_passed_asset_ins
         self._passed_input_tuples_by_asset_key = input_tuples_by_asset_key
         self.output_tuples_by_asset_key = output_tables_by_asset_key
-        self.check_specs = check_specs
         self.internal_deps = internal_deps
-        self.can_subset = can_subset
-        self.deps_directly_passed_to_multi_asset = deps_directly_passed_to_multi_asset
-        self.spec_resolver = spec_resolver
         self.op_name = op_name
-        self.group_name = group_name
+        self.args = multi_asset_args
+        self.fn = fn
+
+    @staticmethod
+    def from_args(*, fn: Callable[..., Any], args: AssetsDefinitionBuilderArgs):
+        op_name = args.name or fn.__name__
+
+        if args.asset_out_map and args.specs:
+            raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")
+
+        if args.specs:
+            if args.upstream_asset_deps:
+                raise DagsterInvalidDefinitionError(
+                    "Can not pass deps and specs to @multi_asset, specify deps on the AssetSpecs"
+                    " directly."
+                )
+            if args.asset_deps:
+                raise DagsterInvalidDefinitionError(
+                    "Can not pass internal_asset_deps and specs to @multi_asset, specify deps on"
+                    " the AssetSpecs directly."
+                )
+            return AssetsDefinitionBuilder.from_specs(fn=fn, op_name=op_name, args=args)
+
+        return AssetsDefinitionBuilder.from_asset_outs(fn=fn, op_name=op_name, args=args)
 
     @staticmethod
     def from_specs(
         *,
-        specs: Sequence[AssetSpec],
-        check_specs: Sequence[AssetCheckSpec],
-        can_subset: bool,
-        ins: Mapping[str, AssetIn],
         fn: Callable[..., Any],
         op_name: str,
-        group_name: Optional[str],
+        args: AssetsDefinitionBuilderArgs,
     ):
+        check.param_invariant(args.specs, "args", "Must use specs in this codepath")
+
         output_tuples_by_asset_key = {}
-        for asset_spec in specs:
+        for asset_spec in args.specs:
             output_name = asset_spec.key.to_python_identifier()
             output_tuples_by_asset_key[asset_spec.key] = (
                 output_name,
                 Out(
                     Nothing,
-                    is_required=not (can_subset or asset_spec.skippable),
+                    is_required=not (args.can_subset or asset_spec.skippable),
                     description=asset_spec.description,
                     code_version=asset_spec.code_version,
                     metadata=asset_spec.metadata,
@@ -231,7 +292,7 @@ class InOutMapper:
             )
 
         upstream_keys = set()
-        for spec in specs:
+        for spec in args.specs:
             for dep in spec.deps:
                 if dep.asset_key not in output_tuples_by_asset_key:
                     upstream_keys.add(dep.asset_key)
@@ -242,7 +303,7 @@ class InOutMapper:
                     # self-dependent asset also needs to be considered an upstream_key
                     upstream_keys.add(dep.asset_key)
 
-        explicit_ins = ins or {}
+        explicit_ins = args.asset_in_map
         # get which asset keys have inputs set
         loaded_upstreams = build_asset_ins(fn, explicit_ins, deps=set())
         unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
@@ -256,47 +317,40 @@ class InOutMapper:
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}
-            for spec in specs
+            for spec in args.specs
             if spec.deps is not None
         }
 
-        return InOutMapper(
-            directly_passed_asset_ins=ins,
+        return AssetsDefinitionBuilder(
             input_tuples_by_asset_key=input_tuples_by_asset_key,
             output_tables_by_asset_key=output_tuples_by_asset_key,
-            check_specs=check_specs,
             internal_deps=internal_deps,
-            can_subset=can_subset,
-            # when specs are used deps are never passed to multi-asset
-            deps_directly_passed_to_multi_asset=None,
-            spec_resolver=lambda _: specs,
             op_name=op_name,
-            group_name=group_name,
+            multi_asset_args=args,
+            fn=fn,
         )
 
     @staticmethod
     def from_asset_outs(
         *,
-        asset_out_map: Mapping[str, AssetOut],
-        asset_deps: Mapping[str, Set[AssetKey]],
-        deps_directly_passed_to_multi_asset: Optional[Iterable[AssetDep]],
-        ins: Mapping[str, AssetIn],
         fn: Callable[..., Any],
-        check_specs: Sequence[AssetCheckSpec],
-        can_subset: bool,
         op_name: str,
-        group_name: Optional[str],
+        args: AssetsDefinitionBuilderArgs,
     ):
+        check.param_invariant(not args.specs, "args", "This codepath for non-spec based create")
+        asset_out_map = args.asset_out_map
         inputs_tuples_by_asset_key = build_asset_ins(
             fn,
-            ins or {},
+            args.asset_in_map,
             deps=(
-                {dep.asset_key for dep in deps_directly_passed_to_multi_asset}
-                if deps_directly_passed_to_multi_asset
+                {dep.asset_key for dep in args.upstream_asset_deps}
+                if args.upstream_asset_deps
                 else set()
             ),
         )
         output_tuples_by_asset_key = build_asset_outs(asset_out_map)
+
+        asset_deps = args.asset_deps
 
         # validate that the asset_ins are a subset of the upstream asset_deps.
         upstream_internal_asset_keys = set().union(*asset_deps.values())
@@ -331,50 +385,22 @@ class InOutMapper:
         keys_by_output_name = make_keys_by_output_name(output_tuples_by_asset_key)
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
-        def _spec_resolver(in_out_mapper: "InOutMapper") -> Sequence[AssetSpec]:
-            resolved_specs = []
-            input_deps_by_key = {
-                key: AssetDep(
-                    asset=key, partition_mapping=in_out_mapper.partition_mappings.get(key)
-                )
-                for key in in_out_mapper.asset_keys_by_input_names.values()
-            }
-            input_deps = list(input_deps_by_key.values())
-            for output_name, asset_out in asset_out_map.items():
-                key = in_out_mapper.asset_keys_by_output_name[output_name]
-                if asset_deps:
-                    deps = [
-                        input_deps_by_key.get(
-                            dep_key,
-                            AssetDep(
-                                asset=dep_key,
-                                partition_mapping=in_out_mapper.partition_mappings.get(key),
-                            ),
-                        )
-                        for dep_key in asset_deps.get(output_name, [])
-                    ]
-                else:
-                    deps = input_deps
-
-                resolved_specs.append(asset_out.to_spec(key, deps=deps))
-            return resolved_specs
-
-        return InOutMapper(
-            directly_passed_asset_ins=ins,
+        return AssetsDefinitionBuilder(
             input_tuples_by_asset_key=inputs_tuples_by_asset_key,
             output_tables_by_asset_key=output_tuples_by_asset_key,
-            check_specs=check_specs or [],
             internal_deps=internal_deps,
-            can_subset=can_subset,
-            deps_directly_passed_to_multi_asset=deps_directly_passed_to_multi_asset,
-            spec_resolver=_spec_resolver,
             op_name=op_name,
-            group_name=group_name,
+            multi_asset_args=args,
+            fn=fn,
         )
+
+    @property
+    def group_name(self) -> Optional[str]:
+        return self.args.group_name
 
     @cached_property
     def input_tuples_by_asset_key(self) -> Mapping[AssetKey, Tuple[str, In]]:
-        if self.can_subset and self.internal_deps:
+        if self.args.can_subset and self.internal_deps:
             return {
                 **self._passed_input_tuples_by_asset_key,
                 **build_subsettable_asset_ins(
@@ -424,13 +450,13 @@ class InOutMapper:
     @cached_property
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return validate_and_assign_output_names_to_check_specs(
-            self.check_specs, list(self.asset_keys)
+            self.args.check_specs, list(self.asset_keys)
         )
 
     @cached_property
     def check_outs_by_output_name(self) -> Mapping[str, Out]:
         return {
-            output_name: Out(dagster_type=None, is_required=not self.can_subset)
+            output_name: Out(dagster_type=None, is_required=not self.args.can_subset)
             for output_name in self.check_specs_by_output_name.keys()
         }
 
@@ -461,22 +487,60 @@ class InOutMapper:
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
         partition_mappings = {
             self.asset_keys_by_input_names[input_name]: asset_in.partition_mapping
-            for input_name, asset_in in self.directly_passed_asset_ins.items()
+            for input_name, asset_in in self.args.asset_in_map.items()
             if asset_in.partition_mapping is not None
         }
 
-        if not self.deps_directly_passed_to_multi_asset:
+        if not self.args.upstream_asset_deps:
             return partition_mappings
 
         return get_partition_mappings_from_deps(
             partition_mappings=partition_mappings,
-            deps=self.deps_directly_passed_to_multi_asset,
+            deps=self.args.upstream_asset_deps,
             asset_name=self.op_name,
         )
 
+    def _create_op_definition(self) -> OpDefinition:
+        return _Op(
+            name=self.op_name,
+            description=self.args.description,
+            ins=self.asset_ins_by_input_names,
+            out=self.combined_outs_by_output_name,
+            required_resource_keys=compute_required_resource_keys(
+                required_resource_keys=self.args.required_resource_keys,
+                resource_defs=self.args.resource_defs,
+                fn=self.fn,
+                decorator_name="@multi_asset",
+            ),
+            tags={
+                **({"kind": self.args.compute_kind} if self.args.compute_kind else {}),
+                **(self.args.op_tags or {}),
+            },
+            config_schema=self.args.config_schema,
+            retry_policy=self.args.retry_policy,
+            code_version=self.args.code_version,
+        )(self.fn)
+
+    def create_assets_definition(self) -> AssetsDefinition:
+        return AssetsDefinition.dagster_internal_init(
+            keys_by_input_name=self.asset_keys_by_input_names,
+            keys_by_output_name=self.asset_keys_by_output_name,
+            node_def=self._create_op_definition(),
+            partitions_def=self.args.partitions_def,
+            can_subset=self.args.can_subset,
+            resource_defs=self.args.resource_defs,
+            backfill_policy=self.args.backfill_policy,
+            check_specs_by_output_name=self.check_specs_by_output_name,
+            specs=self.specs,
+            is_subset=False,
+            selected_asset_keys=None,  # not a subset so this is None
+            selected_asset_check_keys=None,  # not a subset so this is none
+        )
+
     @cached_property
-    def resolved_specs(self) -> Sequence[AssetSpec]:
-        specs = self.spec_resolver(self)
+    def specs(self) -> Sequence[AssetSpec]:
+        specs = self.args.specs if self.args.specs else self._synthesize_specs()
+
         if not self.group_name:
             return specs
 
@@ -487,6 +551,34 @@ class InOutMapper:
         )
 
         return [spec._replace(group_name=self.group_name) for spec in specs]
+
+    def _synthesize_specs(self) -> Sequence[AssetSpec]:
+        resolved_specs = []
+        input_deps_by_key = {
+            key: AssetDep(asset=key, partition_mapping=self.partition_mappings.get(key))
+            for key in self.asset_keys_by_input_names.values()
+        }
+        input_deps = list(input_deps_by_key.values())
+        for output_name, asset_out in self.args.asset_out_map.items():
+            key = self.asset_keys_by_output_name[output_name]
+            if self.args.asset_deps:
+                deps = [
+                    input_deps_by_key.get(
+                        dep_key,
+                        AssetDep(
+                            asset=dep_key,
+                            partition_mapping=self.partition_mappings.get(key),
+                        ),
+                    )
+                    for dep_key in self.args.asset_deps.get(output_name, [])
+                ]
+            else:
+                deps = input_deps
+
+            resolved_specs.append(asset_out.to_spec(key, deps=deps))
+
+        specs = resolved_specs
+        return specs
 
 
 def validate_and_assign_output_names_to_check_specs(
