@@ -426,16 +426,7 @@ def default_metadata_from_dbt_resource_props(
     if column_schema or relation_identifier:
         metadata = {
             **TableMetadataSet(
-                column_schema=TableSchema(
-                    columns=[
-                        TableColumn(
-                            name=column_name,
-                            type=column_info.get("data_type") or "?",
-                            description=column_info.get("description"),
-                        )
-                        for column_name, column_info in columns.items()
-                    ]
-                ),
+                column_schema=column_schema,
                 relation_identifier=relation_identifier,
             ),
         }
