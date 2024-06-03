@@ -498,9 +498,30 @@ class AssetGraphView:
         # materializations and observations through the parittion status cache. at that point, the
         # definition will slightly change to search for materializations and observations regardless
         # of the materializability of the asset
-        if self.asset_graph.get(asset_key).is_materializable:
-            # cheap call which takes advantage of the partition status cache
-            materialized_subset = self._queryer.get_materialized_asset_subset(asset_key=asset_key)
+        asset_node = self.asset_graph.get(asset_key)
+        if asset_node.is_materializable:
+            asset_record = self._queryer.get_asset_record(asset_key)
+
+            # bit of nasty code to ensure that we don't rebuild the entire cache value if it's up to
+            # date with respect to materializations
+            if (
+                asset_record
+                and asset_record.asset_entry.cached_status
+                and asset_record.asset_entry.cached_status.latest_storage_id
+                >= (asset_record.asset_entry.last_materialization_storage_id or 0)
+                and asset_node.partitions_def
+            ):
+                materialized_partitions_subset = asset_record.asset_entry.cached_status.deserialize_materialized_partition_subsets(
+                    asset_node.partitions_def
+                )
+                materialized_subset = ValidAssetSubset(
+                    asset_key=asset_key, value=materialized_partitions_subset
+                )
+            else:
+                # go through the partition status cache call which takes advantage of the partition status cache
+                materialized_subset = self._queryer.get_materialized_asset_subset(
+                    asset_key=asset_key
+                )
             materialized_slice = self.get_asset_slice_from_valid_subset(materialized_subset)
             return from_slice.compute_difference(materialized_slice)
         else:
