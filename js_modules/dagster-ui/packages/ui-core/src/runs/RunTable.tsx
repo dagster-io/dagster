@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import {
   Box,
   Checkbox,
+  Colors,
   Icon,
   NonIdealState,
   ProductTour,
@@ -25,6 +26,7 @@ interface RunTableProps {
   runs: RunTableRunFragment[];
   filter?: RunsFilter;
   onAddTag?: (token: RunFilterToken) => void;
+  actionBarSticky?: boolean;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
   additionalColumnHeaders?: React.ReactNode[];
@@ -41,6 +43,7 @@ export const RunTable = (props: RunTableProps) => {
     filter,
     onAddTag,
     highlightedIds,
+    actionBarSticky,
     actionBarComponents,
     belowActionBarComponents,
     hideCreatedBy,
@@ -150,6 +153,7 @@ export const RunTable = (props: RunTableProps) => {
   return (
     <>
       <ActionBar
+        sticky={actionBarSticky}
         top={
           <Box
             flex={{
@@ -224,9 +228,25 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
   ${RUN_TAGS_FRAGMENT}
 `;
 
-function ActionBar({top, bottom}: {top: React.ReactNode; bottom?: React.ReactNode}) {
+function ActionBar({
+  top,
+  bottom,
+  sticky,
+}: {
+  top: React.ReactNode;
+  bottom?: React.ReactNode;
+  sticky?: boolean;
+}) {
   return (
-    <Box flex={{direction: 'column'}} padding={{vertical: 12}}>
+    <Box
+      flex={{direction: 'column'}}
+      padding={{vertical: 12}}
+      style={
+        sticky
+          ? {position: 'sticky', top: 0, background: Colors.backgroundDefault(), zIndex: 2}
+          : {}
+      }
+    >
       <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 12}}>
         {top}
       </Box>

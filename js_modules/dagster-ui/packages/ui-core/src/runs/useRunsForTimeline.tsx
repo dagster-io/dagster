@@ -34,11 +34,13 @@ export const useRunsForTimeline = ({
   filter,
   batchLimit = BATCH_LIMIT,
   refreshInterval = 2 * FIFTEEN_SECONDS,
+  showTicks = true,
 }: {
   rangeMs: readonly [number, number];
   filter?: RunsFilter;
   refreshInterval?: number;
   batchLimit?: number;
+  showTicks?: boolean;
 }) => {
   const runsFilter = useMemo(() => {
     return filter ?? {};
@@ -60,9 +62,9 @@ export const useRunsForTimeline = ({
     () =>
       new HourlyDataCache<RunTimelineFragment>(
         localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
+        JSON.stringify(filter),
       ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [runsFilter],
+    [filter, localCacheIdPrefix],
   );
   const [runsNotCapturedByUpdateBuckets, setRunsNotCapturedByUpdateBuckets] = useState<
     RunTimelineFragment[]
@@ -242,7 +244,7 @@ export const useRunsForTimeline = ({
         error: e,
       }));
     }
-  }, [client, runsFilter]);
+  }, [client, runsFilter, batchLimit]);
 
   const [futureTicksQueryData, setFutureTicksQueryData] = useState<
     Pick<QueryResult<FutureTicksQuery>, 'data' | 'error' | 'called' | 'loading'>
@@ -251,11 +253,13 @@ export const useRunsForTimeline = ({
   const fetchFutureTicks = useCallback(async () => {
     const queryData = await client.query<FutureTicksQuery, FutureTicksQueryVariables>({
       query: FUTURE_TICKS_QUERY,
-      variables: {tickCursor: startSec, ticksUntil: _end / 1000.0},
+      variables: showTicks
+        ? {tickCursor: startSec, ticksUntil: _end / 1000.0}
+        : {tickCursor: startSec, ticksUntil: startSec},
       fetchPolicy: 'no-cache',
     });
     setFutureTicksQueryData({...queryData, called: true});
-  }, [startSec, _end, client]);
+  }, [startSec, _end, client, showTicks]);
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
   useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
@@ -443,7 +447,7 @@ export const useRunsForTimeline = ({
 
   const initialLoading =
     (loadingOngoingRunsData && !ongoingRunsData) ||
-    (loadingCompletedRunsData && !completedRunsQueryData) ||
+    (loadingCompletedRunsData && !completedRunsData) ||
     (loadingFutureTicksData && !futureTicksData) ||
     !workspaceOrError;
 
