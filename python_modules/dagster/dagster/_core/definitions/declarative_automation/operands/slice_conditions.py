@@ -3,69 +3,69 @@ from abc import abstractmethod
 from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
-from dagster._core.definitions.declarative_scheduling.utils import SerializableTimeDelta
+from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
-from ..scheduling_condition import SchedulingCondition, SchedulingResult
-from ..scheduling_context import SchedulingContext
+from ..automation_condition import AutomationCondition, AutomationResult
+from ..automation_context import AutomationContext
 
 
-class SliceSchedulingCondition(SchedulingCondition):
+class SliceAutomationCondition(AutomationCondition):
     """Base class for simple conditions which compute a simple slice of the asset graph."""
 
     @abstractmethod
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice: ...
+    def compute_slice(self, context: AutomationContext) -> AssetSlice: ...
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         # don't compute anything if there are no candidates
         if context.candidate_slice.is_empty:
             true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         else:
             true_slice = self.compute_slice(context)
 
-        return SchedulingResult.create(context, true_slice)
+        return AutomationResult.create(context, true_slice)
 
 
 @whitelist_for_serdes
-class MissingSchedulingCondition(SliceSchedulingCondition):
+class MissingAutomationCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Missing"
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_missing_subslice(
             context.asset_key, from_slice=context.candidate_slice
         )
 
 
 @whitelist_for_serdes
-class InProgressSchedulingCondition(SliceSchedulingCondition):
+class InProgressAutomationCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Part of an in-progress run"
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.asset_key)
 
 
 @whitelist_for_serdes
-class FailedSchedulingCondition(SliceSchedulingCondition):
+class FailedAutomationCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Latest run failed"
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.asset_key)
 
 
 @whitelist_for_serdes
-class WillBeRequestedCondition(SliceSchedulingCondition):
+class WillBeRequestedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Will be requested this tick"
 
-    def _executable_with_root_context_key(self, context: SchedulingContext) -> bool:
+    def _executable_with_root_context_key(self, context: AutomationContext) -> bool:
         # TODO: once we can launch backfills via the asset daemon, this can be removed
         from dagster._core.definitions.asset_graph import materializable_in_same_run
 
@@ -76,7 +76,7 @@ class WillBeRequestedCondition(SliceSchedulingCondition):
             parent_key=context.asset_key,
         )
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         current_result = context.current_tick_results_by_key.get(context.asset_key)
         if (
             current_result
@@ -89,24 +89,24 @@ class WillBeRequestedCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
-class NewlyRequestedCondition(SliceSchedulingCondition):
+class NewlyRequestedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Was requested on the previous tick"
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.previous_requested_slice or context.asset_graph_view.create_empty_slice(
             asset_key=context.asset_key
         )
 
 
 @whitelist_for_serdes
-class NewlyUpdatedCondition(SliceSchedulingCondition):
+class NewlyUpdatedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Updated since previous tick"
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         # if it's the first time evaluating, just return the empty slice
         if context.cursor is None:
             return context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
@@ -117,7 +117,7 @@ class NewlyUpdatedCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
-class CronTickPassedCondition(SliceSchedulingCondition):
+class CronTickPassedCondition(SliceAutomationCondition):
     cron_schedule: str
     cron_timezone: str
 
@@ -133,7 +133,7 @@ class CronTickPassedCondition(SliceSchedulingCondition):
         )
         return next(previous_ticks)
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         previous_cron_tick = self._get_previous_cron_tick(context.effective_dt)
         if (
             # no previous evaluation
@@ -147,7 +147,7 @@ class CronTickPassedCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
-class InLatestTimeWindowCondition(SliceSchedulingCondition):
+class InLatestTimeWindowCondition(SliceAutomationCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 
     @staticmethod
@@ -176,7 +176,7 @@ class InLatestTimeWindowCondition(SliceSchedulingCondition):
             else "Within latest time window"
         )
 
-    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+    def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_latest_time_window_slice(
             context.asset_key, lookback_delta=self.lookback_timedelta
         )

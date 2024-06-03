@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, Definitions, SchedulingCondition, asset
+from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -10,12 +10,12 @@ from ..scenario_specs import (
     one_asset,
     time_partitions_start_datetime,
 )
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = SchedulingConditionScenarioState(
-        one_asset, scheduling_condition=SchedulingCondition.missing()
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.missing()
     )
 
     state, result = state.evaluate("A")
@@ -39,8 +39,8 @@ def test_missing_unpartitioned() -> None:
 
 def test_missing_time_partitioned() -> None:
     state = (
-        SchedulingConditionScenarioState(
-            one_asset, scheduling_condition=SchedulingCondition.missing()
+        AutomationConditionScenarioState(
+            one_asset, automation_condition=AutomationCondition.missing()
         )
         .with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_datetime)
@@ -68,8 +68,8 @@ def test_missing_time_partitioned() -> None:
 
 def test_serialize_definitions_with_asset_condition() -> None:
     amp = AutoMaterializePolicy.from_asset_condition(
-        SchedulingCondition.eager()
-        & ~SchedulingCondition.newly_updated().since_last_cron_tick(
+        AutomationCondition.eager()
+        & ~AutomationCondition.newly_updated().since_last_cron_tick(
             cron_schedule="0 * * * *", cron_timezone="UTC"
         )
     )

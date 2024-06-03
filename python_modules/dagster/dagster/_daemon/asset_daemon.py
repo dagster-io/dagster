@@ -19,7 +19,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey
@@ -1077,12 +1077,6 @@ def invoke_sensor_for_evaluation(
         result.cursor,
         asset_graph,
     )
-    # only record evaluation results where something changed
-    evaluations = [
-        es.previous_evaluation
-        for es in new_cursor.previous_evaluation_state  # does this work ???
-        if not es.previous_evaluation.equivalent_to_stored_evaluation(
-            stored_cursor.get_previous_evaluation(es.asset_key)
-        )
-    ]
+    # TODO: evaluations no longer exist on the cursor object
+    evaluations = []
     return (run_requests, new_cursor, evaluations)

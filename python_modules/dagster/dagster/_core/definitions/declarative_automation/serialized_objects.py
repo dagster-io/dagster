@@ -23,11 +23,11 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import utc_datetime_from_timestamp
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-        SchedulingResult,
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationResult,
     )
-    from dagster._core.definitions.declarative_scheduling.scheduling_context import (
-        SchedulingContext,
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
     )
 
 T = TypeVar("T")
@@ -177,7 +177,7 @@ class AssetConditionEvaluationState:
 
 
 @whitelist_for_serdes
-class SchedulingConditionNodeCursor(NamedTuple):
+class AutomationConditionNodeCursor(NamedTuple):
     true_subset: AssetSubset
     candidate_subset: Union[AssetSubset, HistoricalAllPartitionsSubsetSentinel]
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata]
@@ -191,8 +191,8 @@ class SchedulingConditionNodeCursor(NamedTuple):
 
 
 @whitelist_for_serdes
-class SchedulingConditionCursor(NamedTuple):
-    """Incremental state calculated during the evaluation of a SchedulingCondition. This may be used
+class AutomationConditionCursor(NamedTuple):
+    """Incremental state calculated during the evaluation of a AutomationCondition. This may be used
     on the subsequent evaluation to make the computation more efficient.
 
     Attributes:
@@ -209,20 +209,20 @@ class SchedulingConditionCursor(NamedTuple):
     effective_timestamp: float
     last_event_id: Optional[int]
 
-    node_cursors_by_unique_id: Mapping[str, SchedulingConditionNodeCursor]
+    node_cursors_by_unique_id: Mapping[str, AutomationConditionNodeCursor]
     result_value_hash: str
 
     @staticmethod
     def backcompat_from_evaluation_state(
         evaluation_state: AssetConditionEvaluationState,
-    ) -> "SchedulingConditionCursor":
+    ) -> "AutomationConditionCursor":
         """Serves as a temporary method to convert from old representation to the new representation."""
 
         def _get_node_cursors(
             evaluation: AssetConditionEvaluation,
-        ) -> Mapping[str, SchedulingConditionNodeCursor]:
+        ) -> Mapping[str, AutomationConditionNodeCursor]:
             node_cursors = {
-                evaluation.condition_snapshot.unique_id: SchedulingConditionNodeCursor(
+                evaluation.condition_snapshot.unique_id: AutomationConditionNodeCursor(
                     true_subset=evaluation.true_subset,
                     candidate_subset=evaluation.candidate_subset,
                     subsets_with_metadata=evaluation.subsets_with_metadata,
@@ -236,7 +236,7 @@ class SchedulingConditionCursor(NamedTuple):
 
             return node_cursors
 
-        return SchedulingConditionCursor(
+        return AutomationConditionCursor(
             previous_requested_subset=evaluation_state.previous_evaluation.true_subset,
             effective_timestamp=evaluation_state.previous_tick_evaluation_timestamp or 0,
             last_event_id=evaluation_state.max_storage_id,
@@ -246,15 +246,15 @@ class SchedulingConditionCursor(NamedTuple):
 
     @staticmethod
     def from_result(
-        context: "SchedulingContext", result: "SchedulingResult", result_hash: str
-    ) -> "SchedulingConditionCursor":
-        def _gather_node_cursors(r: "SchedulingResult"):
+        context: "AutomationContext", result: "AutomationResult", result_hash: str
+    ) -> "AutomationConditionCursor":
+        def _gather_node_cursors(r: "AutomationResult"):
             node_cursors = {r.condition_unique_id: r.node_cursor} if r.node_cursor else {}
             for rr in r.child_results:
                 node_cursors.update(_gather_node_cursors(rr))
             return node_cursors
 
-        return SchedulingConditionCursor(
+        return AutomationConditionCursor(
             previous_requested_subset=result.true_subset,
             effective_timestamp=context.effective_dt.timestamp(),
             last_event_id=context.new_max_storage_id,

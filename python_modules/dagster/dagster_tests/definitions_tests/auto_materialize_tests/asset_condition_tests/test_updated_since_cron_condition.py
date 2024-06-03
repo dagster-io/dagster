@@ -1,15 +1,15 @@
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_updated_since_cron_unpartitioned() -> None:
-    state = SchedulingConditionScenarioState(
+    state = AutomationConditionScenarioState(
         one_asset,
-        scheduling_condition=SchedulingCondition.newly_updated().since_last_cron_tick(
+        automation_condition=AutomationCondition.newly_updated().since_last_cron_tick(
             cron_schedule="0 * * * *", cron_timezone="UTC"
         ),
     ).with_current_time("2020-02-02T00:55:00")
@@ -38,9 +38,9 @@ def test_updated_since_cron_unpartitioned() -> None:
 
 def test_updated_since_cron_partitioned() -> None:
     state = (
-        SchedulingConditionScenarioState(
+        AutomationConditionScenarioState(
             one_asset,
-            scheduling_condition=SchedulingCondition.newly_updated().since_last_cron_tick(
+            automation_condition=AutomationCondition.newly_updated().since_last_cron_tick(
                 cron_schedule="0 * * * *", cron_timezone="UTC"
             ),
         )

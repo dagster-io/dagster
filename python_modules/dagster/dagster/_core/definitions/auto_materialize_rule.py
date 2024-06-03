@@ -26,14 +26,14 @@ if TYPE_CHECKING:
         SkipOnRequiredButNonexistentParentsRule,
         SkipOnRunInProgressRule,
     )
-    from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationResult,
+    )
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
+    )
+    from dagster._core.definitions.declarative_automation.legacy.asset_condition import (
         AssetCondition,
-    )
-    from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-        SchedulingResult,
-    )
-    from dagster._core.definitions.declarative_scheduling.scheduling_context import (
-        SchedulingContext,
     )
 
 
@@ -65,12 +65,12 @@ class AutoMaterializeRule(ABC):
 
     def to_asset_condition(self) -> "AssetCondition":
         """Converts this AutoMaterializeRule into an AssetCondition."""
-        from .declarative_scheduling.legacy.rule_condition import RuleCondition
+        from .declarative_automation.legacy.rule_condition import RuleCondition
 
         return RuleCondition(rule=self)
 
     @abstractmethod
-    def evaluate_for_asset(self, context: "SchedulingContext") -> "SchedulingResult":
+    def evaluate_for_asset(self, context: "AutomationContext") -> "AutomationResult":
         """The core evaluation function for the rule. This function takes in a context object and
         returns a mapping from evaluated rules to the set of asset partitions that the rule applies
         to.

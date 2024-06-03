@@ -1,13 +1,13 @@
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_newly_updated_condition() -> None:
-    state = SchedulingConditionScenarioState(
-        one_asset, scheduling_condition=SchedulingCondition.newly_updated()
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.newly_updated()
     )
 
     # not updated

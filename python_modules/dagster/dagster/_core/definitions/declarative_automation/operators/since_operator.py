@@ -2,14 +2,14 @@ from typing import Sequence
 
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..scheduling_condition import SchedulingCondition, SchedulingResult
-from ..scheduling_context import SchedulingContext
+from ..automation_condition import AutomationCondition, AutomationResult
+from ..automation_context import AutomationContext
 
 
 @whitelist_for_serdes
-class SinceCondition(SchedulingCondition):
-    trigger_condition: SchedulingCondition
-    reset_condition: SchedulingCondition
+class SinceCondition(AutomationCondition):
+    trigger_condition: AutomationCondition
+    reset_condition: AutomationCondition
 
     @property
     def requires_cursor(self) -> bool:
@@ -22,10 +22,10 @@ class SinceCondition(SchedulingCondition):
         )
 
     @property
-    def children(self) -> Sequence[SchedulingCondition]:
+    def children(self) -> Sequence[AutomationCondition]:
         return [self.trigger_condition, self.reset_condition]
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         # must evaluate child condition over the entire slice to avoid missing state transitions
         child_candidate_slice = context.asset_graph_view.get_asset_slice(
             asset_key=context.asset_key
@@ -52,6 +52,6 @@ class SinceCondition(SchedulingCondition):
         # remove any newly true reset asset partitions
         true_slice = true_slice.compute_difference(reset_result.true_slice)
 
-        return SchedulingResult.create_from_children(
+        return AutomationResult.create_from_children(
             context=context, true_slice=true_slice, child_results=[trigger_result, reset_result]
         )

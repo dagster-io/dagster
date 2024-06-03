@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
 )
 from dagster._core.definitions.metadata import MetadataMapping

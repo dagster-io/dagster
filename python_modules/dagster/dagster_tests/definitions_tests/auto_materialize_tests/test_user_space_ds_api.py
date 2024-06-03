@@ -4,13 +4,13 @@ from typing import AbstractSet, Iterator, NamedTuple, Sequence
 
 import mock
 import pytest
-from dagster import SchedulingCondition, asset
+from dagster import AutomationCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
-from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluator import (
-    SchedulingConditionEvaluator,
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+    AutomationConditionEvaluator,
 )
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -24,12 +24,12 @@ from dagster._utils import file_relative_path
 from .user_space_ds_defs import amp_sensor, downstream, upstream
 
 
-class SchedulingTickResult(NamedTuple):
-    results: Sequence[SchedulingResult]
+class AutomationTickResult(NamedTuple):
+    results: Sequence[AutomationResult]
     asset_partition_keys: AbstractSet[AssetKeyPartitionKey]
 
 
-def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult]:
+def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[AutomationTickResult]:
     asset_graph = defs.get_asset_graph()
 
     cursor = AssetDaemonCursor.empty()
@@ -38,7 +38,7 @@ def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult
         data_time_resolver = CachingDataTimeResolver(
             asset_graph_view.get_inner_queryer_for_back_compat()
         )
-        evaluator = SchedulingConditionEvaluator(
+        evaluator = AutomationConditionEvaluator(
             asset_graph=asset_graph,
             asset_keys=asset_graph.all_asset_keys,
             asset_graph_view=asset_graph_view,
@@ -60,15 +60,15 @@ def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[SchedulingTickResult
         serialized_cursor = serialize_value(cursor)
         cursor = deserialize_value(serialized_cursor, AssetDaemonCursor)
 
-        yield SchedulingTickResult(results=results, asset_partition_keys=to_request)
+        yield AutomationTickResult(results=results, asset_partition_keys=to_request)
 
 
-def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
+def execute_ds_tick(defs: Definitions) -> AutomationTickResult:
     return next(execute_ds_ticks(defs, n=1))
 
 
 def test_basic_asset_scheduling_test() -> None:
-    eager_policy = SchedulingCondition.eager().as_auto_materialize_policy()
+    eager_policy = AutomationCondition.eager().as_auto_materialize_policy()
 
     @asset(auto_materialize_policy=eager_policy)
     def upstream() -> None: ...

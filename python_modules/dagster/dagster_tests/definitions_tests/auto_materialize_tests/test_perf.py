@@ -1,10 +1,10 @@
 import time
 
 from dagster import (
+    AutomationCondition,
     DailyPartitionsDefinition,
     Definitions,
     HourlyPartitionsDefinition,
-    SchedulingCondition,
 )
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets
 
@@ -26,7 +26,7 @@ def test_eager_perf() -> None:
             AssetLayerConfig(200, 2, daily_partitions_def),
             AssetLayerConfig(100, 2, daily_partitions_def),
         ],
-        auto_materialize_policy=SchedulingCondition.eager().as_auto_materialize_policy(),
+        auto_materialize_policy=AutomationCondition.eager().as_auto_materialize_policy(),
     )
 
     start = time.time()

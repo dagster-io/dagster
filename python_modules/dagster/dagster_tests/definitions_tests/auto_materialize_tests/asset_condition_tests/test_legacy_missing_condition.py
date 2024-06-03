@@ -1,7 +1,7 @@
 import datetime
 
 from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import (
+from dagster._core.definitions.declarative_automation.legacy.asset_condition import (
     AssetCondition,
 )
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
@@ -14,12 +14,12 @@ from ..scenario_specs import (
     one_asset,
     time_partitions_start_datetime,
 )
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = SchedulingConditionScenarioState(
-        one_asset, scheduling_condition=AssetCondition.missing()
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AssetCondition.missing()
     )
 
     state, result = state.evaluate("A")
@@ -43,7 +43,7 @@ def test_missing_unpartitioned() -> None:
 
 def test_missing_time_partitioned() -> None:
     state = (
-        SchedulingConditionScenarioState(one_asset, scheduling_condition=AssetCondition.missing())
+        AutomationConditionScenarioState(one_asset, automation_condition=AssetCondition.missing())
         .with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_datetime)
         .with_current_time_advanced(days=6, minutes=1)
