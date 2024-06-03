@@ -31,12 +31,15 @@ from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dbt.version import __version__ as dbt_version
+from packaging import version
 
 from ..dbt_projects import (
     test_dbt_alias_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
+    test_dbt_unit_tests_path,
     test_meta_config_path,
 )
 
@@ -884,6 +887,22 @@ def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: Dict[str, A
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_semantic_models_path))},
+    )
+    assert result.success
+
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.8.0"),
+    reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
+)
+def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_unit_tests_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_unit_tests_path))},
     )
     assert result.success
 

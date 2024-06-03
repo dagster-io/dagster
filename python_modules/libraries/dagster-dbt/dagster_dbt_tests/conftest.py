@@ -14,6 +14,7 @@ from .dbt_projects import (
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
     test_dbt_source_freshness_path,
+    test_dbt_unit_tests_path,
     test_duplicate_source_asset_key_path,
     test_jaffle_shop_path,
     test_meta_config_path,
@@ -126,6 +127,11 @@ def test_dbt_semantic_models_manifest_fixture() -> Dict[str, Any]:
 @pytest.fixture(name="test_dbt_source_freshness_manifest", scope="session")
 def test_dbt_source_freshness_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_dbt_source_freshness_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dbt_unit_tests_manifest", scope="session")
+def test_dbt_unit_tests_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_unit_tests_path).get_artifact("manifest.json")
 
 
 @pytest.fixture(name="test_duplicate_source_asset_key_manifest", scope="session")
