@@ -49,13 +49,12 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.utils import normalize_group_name
+from dagster._core.definitions.utils import normalize_group_name, validate_asset_owner
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -1747,14 +1746,6 @@ def get_self_dep_time_window_partition_mapping(
 
         return time_partition_mapping.partition_mapping
     return None
-
-
-def validate_asset_owner(owner: str, key: AssetKey) -> None:
-    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
-            "name prefixed with 'team:'."
-        )
 
 
 def get_partition_mappings_from_deps(
