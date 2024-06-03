@@ -197,11 +197,23 @@ Which is pretty neat.
 Which is also pretty neat.
 
 ## Images
-We've got a tag that handles making sure images are pretty, optimized, and accessible.
+Images now have a variety of options available to work with them.
 
-`{% image src="/images/some-image.png" width=300 height=200 alt="Text for screenreaders. Usually you want to describe things here." /%}`
+The default one is easy and has a little bit of magic going in the background to make sure the images are optimized and accessible while also providing a great author experience.
 
-<!-- {% image src="/images/concepts/assets/asset-activity-observation.png" width=300 height=200 alt="Text for screenreaders. Usually you want to describe things here." /%} -->
+To that end, we've extended the markdown image node to automatically determine the height and width of the image during the transform step and use that to instantiate the image using the `Next/Image` component. Doing this handles a lot of optimization things.
+
+So, the default way to use images is like this:
+
+`![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png)`
+
+and outputs like this:
+
+![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png)
+
+{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}
+
+`{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}`
 
 {% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}
 
