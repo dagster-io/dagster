@@ -299,7 +299,9 @@ class CapturedLogManager(ABC):
         as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
         """
         # find all of the log_keys to read from and sort them in the order to be read
-        log_keys = sorted(list(self.get_log_keys_for_log_key_prefix(log_key_prefix)))
+        log_keys = sorted(
+            self.get_log_keys_for_log_key_prefix(log_key_prefix), key=lambda x: "/".join(x)
+        )
         if len(log_keys) == 0:
             return [], None
 
