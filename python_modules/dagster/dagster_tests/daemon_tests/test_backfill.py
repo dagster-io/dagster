@@ -37,6 +37,7 @@ from dagster import (
 )
 from dagster._core.definitions import StaticPartitionsDefinition
 from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL
+
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -2348,5 +2349,3 @@ def test_asset_backfill_logs(
     assert not cursor.has_more
     for log_line in logs:
         assert log_line.get("msg")
-
-    assert LOG_STREAM_COMPLETED_SIGIL not in json.dumps(logs[-1])

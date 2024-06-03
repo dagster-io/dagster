@@ -8,7 +8,6 @@ from typing import Any, Generator, Mapping, Sequence
 import pendulum
 import pytest
 from dagster import job, op
-from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.compute_log_manager import ComputeIOType
@@ -125,7 +124,7 @@ def test_read_log_lines_for_log_key_prefix():
 
         all_logs = []
 
-        def write_log_file(file_id: int, last_log_file=False):
+        def write_log_file(file_id: int):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
                 for j in range(10):
@@ -134,10 +133,6 @@ def test_read_log_lines_for_log_key_prefix():
                     if j > 0:
                         f.write("\n")
                     json.dump(json_msg, f)
-
-                if last_log_file:
-                    f.write("\n")
-                    json.dump({"msg": LOG_STREAM_COMPLETED_SIGIL}, f)
 
         for i in range(4):
             write_log_file(i)
@@ -187,16 +182,16 @@ def test_read_log_lines_for_log_key_prefix():
             cursor=cursor.to_string(),
         )
         assert len(log_lines) == 15
-        assert cursor.has_more
+        assert not cursor.has_more
         assert cursor.log_key == [*log_key_prefix, "3"]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
         assert cursor.line == -1
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
-        # write the final log file
+        # write a final log file
 
-        write_log_file(4, last_log_file=True)
+        write_log_file(4)
 
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "15"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
