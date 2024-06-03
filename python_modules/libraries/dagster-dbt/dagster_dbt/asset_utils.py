@@ -35,7 +35,7 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
-from dagster._core.definitions.decorators.assets_definition_factory import (
+from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.metadata import TableMetadataSet

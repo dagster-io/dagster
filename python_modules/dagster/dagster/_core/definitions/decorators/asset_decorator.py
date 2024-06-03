@@ -20,8 +20,8 @@ from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.decorators.assets_definition_factory import (
-    AssetsDefinitionBuilder,
+from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
+    DecoratorAssetsDefinitionBuilder,
     validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -44,8 +44,8 @@ from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
-from .assets_definition_factory import (
-    AssetsDefinitionBuilderArgs,
+from .decorator_assets_definition_builder import (
+    DecoratorAssetsDefinitionBuilderArgs,
     build_asset_ins,
     build_asset_outs,
 )
@@ -271,12 +271,12 @@ def resolve_asset_key_and_name_for_decorator(
     key: Optional[CoercibleToAssetKey],
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
     name: Optional[str],
-    decorator: str,
+    decorator_name: str,
     fn: Callable[..., Any],
 ) -> Tuple[AssetKey, str]:
     if (name or key_prefix) and key:
         raise DagsterInvalidDefinitionError(
-            f"Cannot specify a name or key prefix for {decorator} when the key"
+            f"Cannot specify a name or key prefix for {decorator_name} when the key"
             " argument is provided."
         )
     key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
@@ -379,7 +379,7 @@ def create_assets_def_from_fn_and_decorator_args(
         key_prefix=args.key_prefix,
         name=args.name,
         fn=fn,
-        decorator="@asset",
+        decorator_name="@asset",
     )
 
     resource_related_state = ResourceRelatedState(
@@ -403,7 +403,7 @@ def create_assets_def_from_fn_and_decorator_args(
             )
 
     with disable_dagster_warnings():
-        builder_args = AssetsDefinitionBuilderArgs(
+        builder_args = DecoratorAssetsDefinitionBuilderArgs(
             name=args.name,
             description=args.description,
             check_specs=check.opt_list_param(
@@ -448,7 +448,7 @@ def create_assets_def_from_fn_and_decorator_args(
             can_subset=False,
             decorator_name="@asset",
         )
-        builder = AssetsDefinitionBuilder.from_asset_outs(
+        builder = DecoratorAssetsDefinitionBuilder.from_asset_outs(
             args=builder_args, fn=fn, op_name=out_asset_key.to_python_identifier()
         )
     return builder.create_assets_definition()
@@ -569,7 +569,7 @@ def multi_asset(
     """
     from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-    args = AssetsDefinitionBuilderArgs(
+    args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
         description=description,
         specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
@@ -608,7 +608,7 @@ def multi_asset(
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        builder = AssetsDefinitionBuilder.from_args(args=args, fn=fn)
+        builder = DecoratorAssetsDefinitionBuilder.from_args(args=args, fn=fn)
 
         check.invariant(
             len(builder.overlapping_output_names) == 0,
@@ -802,7 +802,7 @@ def graph_asset_no_defaults(
         key=key,
         key_prefix=key_prefix,
         name=name,
-        decorator="@graph_asset",
+        decorator_name="@graph_asset",
         fn=compose_fn,
     )
 

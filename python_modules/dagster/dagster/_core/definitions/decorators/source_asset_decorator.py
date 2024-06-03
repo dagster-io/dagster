@@ -175,7 +175,7 @@ class _ObservableSourceAsset:
             key_prefix=self.key_prefix,
             name=self.name,
             fn=observe_fn,
-            decorator="@observable_source_asset",
+            decorator_name="@observable_source_asset",
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(observe_fn)}
