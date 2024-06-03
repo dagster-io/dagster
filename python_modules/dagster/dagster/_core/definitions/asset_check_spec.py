@@ -31,6 +31,9 @@ class AssetCheckSeverity(Enum):
     ERROR = "ERROR"
 
 
+from dagster import _seven as seven
+
+
 @whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
 class AssetCheckKey(NamedTuple):
     """Check names are expected to be unique per-asset. Thus, this combination of asset key and
@@ -49,6 +52,9 @@ class AssetCheckKey(NamedTuple):
 
     def with_asset_key_prefix(self, prefix: CoercibleToAssetKeyPrefix) -> "AssetCheckKey":
         return self._replace(asset_key=self.asset_key.with_prefix(prefix))
+
+    def to_string(self) -> str:
+        return seven.json.dumps({"name": self.name, "asset_key": self.asset_key.to_string()})
 
     def to_user_string(self) -> str:
         return f"{self.asset_key.to_user_string()}:{self.name}"
