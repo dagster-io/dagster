@@ -370,8 +370,6 @@ class _Asset:
 
         validate_resource_annotated_function(fn)
 
-        # asset_ins = build_asset_ins(fn, self.ins or {}, {dep.asset_key for dep in self.deps})
-
         out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
             key=self.key,
             key_prefix=self.key_prefix,
@@ -389,8 +387,8 @@ class _Asset:
             resource_defs_keys = set(resource_defs_dict.keys())
             decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
 
-            # TODO: rename op_resource_defs and asset_resource_defs to explain bizarre behavior
-            # more explicitly
+            # TODO: rename op_resource_defs and asset_resource_defs and document
+            # the strange logic -- schrockn 2024-06-03
             op_resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
             io_manager_key = self.io_manager_key
@@ -468,13 +466,13 @@ class _Asset:
                         tags=self.tags,
                     )
                 },
-                # Not totally sure mode
                 upstream_asset_deps=self.deps,
                 # upstream_asset_deps=None,
                 asset_in_map=self.ins,
                 # We will not be using specs to construct here
-                # because they are assumption about output names. Non-spec
-                # construction path assumptions apply here
+                # and will use the "non-spec" code paths. Since
+                # that has more similar assumptions to this
+                # code path.
                 specs=[],
                 # no internal asset deps
                 asset_deps={},

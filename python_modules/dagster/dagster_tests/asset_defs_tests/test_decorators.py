@@ -800,15 +800,11 @@ def test_invalid_self_dep(partitions_def, partition_mapping):
     ):
 
         @asset(
-            name="bbb",
             partitions_def=partitions_def,
-            ins={
-                "b": AssetIn(key="bbb", partition_mapping=partition_mapping, dagster_type=Nothing)
-            },
+            ins={"b": AssetIn(partition_mapping=partition_mapping)},
         )
-        def _the_asset() -> None:
-            pass
-            # del b
+        def b(b):
+            del b
 
 
 @ignore_warning("Class `MultiPartitionMapping` is experimental")

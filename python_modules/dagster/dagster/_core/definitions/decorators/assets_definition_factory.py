@@ -320,8 +320,6 @@ class AssetsDefinitionBuilder:
                     upstream_keys.add(dep.asset_key)
                 if (
                     dep.asset_key in output_tuples_by_asset_key
-                    # commented out in order to get test_invalid_self_dep to pass
-                    # however it causes test_multi_asset_no_out to fail
                     and dep.partition_mapping is not None
                 ):
                     # self-dependent asset also needs to be considered an upstream_key
@@ -332,7 +330,6 @@ class AssetsDefinitionBuilder:
         loaded_upstreams = build_asset_ins(fn, explicit_ins, deps=set())
         unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
         if unexpected_upstreams:
-            # import code; code.interact(local=locals())
             raise DagsterInvalidDefinitionError(
                 f"Asset inputs {unexpected_upstreams} do not have dependencies on the passed"
                 " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
