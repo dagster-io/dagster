@@ -21,7 +21,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
+from dagster._core.definitions.events import AssetPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
@@ -88,7 +88,7 @@ class AssetRuleEvaluationSpec(NamedTuple):
             asset_key,
             asset_graph.get(asset_key).partitions_def,
             {
-                AssetKeyPartitionKey(asset_key, partition_key)
+                AssetPartitionKey(asset_key, partition_key)
                 for partition_key in self.partitions or [None]
             },
         )
@@ -307,7 +307,7 @@ class AssetDaemonScenarioState(ScenarioState):
         )[-1]
 
         expected_requested_asset_partitions = {
-            AssetKeyPartitionKey(asset_key=ak, partition_key=rr.partition_key)
+            AssetPartitionKey(asset_key=ak, partition_key=rr.partition_key)
             for rr in expected_run_requests
             for ak in (rr.asset_selection or set())
         }

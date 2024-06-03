@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
@@ -66,7 +66,7 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
     assert result.true_subset.size == 0
 
     # one parent true, still one false
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetPartitionKey(AssetKey("A")))
     state, result = state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 1
@@ -74,7 +74,7 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
         assert result.true_subset.size == 0
 
     # both parents true
-    true_set.add(AssetKeyPartitionKey(AssetKey("B")))
+    true_set.add(AssetPartitionKey(AssetKey("B")))
     state, result = state.evaluate("C")
     assert result.true_subset.size == 1
 
@@ -95,7 +95,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
     state, result = state.evaluate("C")
     assert result.true_subset.size == 0
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("A"), "1"))
+    true_set.add(AssetPartitionKey(AssetKey("A"), "1"))
     state, result = state.evaluate("C")
     if is_any:
         # one parent is true for partition 1
@@ -104,7 +104,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         # neither 1 nor 2 have all parents true
         assert result.true_subset.size == 0
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("A"), "2"))
+    true_set.add(AssetPartitionKey(AssetKey("A"), "2"))
     state, result = state.evaluate("C")
     if is_any:
         # both partitions 1 and 2 have at least one true parent
@@ -113,7 +113,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         # neither 1 nor 2 have all parents true
         assert result.true_subset.size == 0
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("B"), "1"))
+    true_set.add(AssetPartitionKey(AssetKey("B"), "1"))
     state, result = state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 2
@@ -121,7 +121,7 @@ def test_dep_missing_partitioned(is_any: bool) -> None:
         # now partition 1 has all parents true
         assert result.true_subset.size == 1
 
-    true_set.add(AssetKeyPartitionKey(AssetKey("B"), "2"))
+    true_set.add(AssetPartitionKey(AssetKey("B"), "2"))
     state, result = state.evaluate("C")
     if is_any:
         assert result.true_subset.size == 2

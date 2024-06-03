@@ -23,9 +23,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._core.definitions.events import (
         AssetKey,
-        AssetKeyPartitionKey,
         AssetMaterialization,
         AssetObservation,
+        AssetPartitionKey,
     )
     from dagster._core.event_api import EventLogRecord
     from dagster._core.events.log import EventLogEntry
@@ -296,30 +296,30 @@ class StaleCause(
     NamedTuple(
         "_StaleCause",
         [
-            ("key", "AssetKeyPartitionKey"),
+            ("key", "AssetPartitionKey"),
             ("category", StaleCauseCategory),
             ("reason", str),
-            ("dependency", Optional["AssetKeyPartitionKey"]),
+            ("dependency", Optional["AssetPartitionKey"]),
             ("children", Optional[Sequence["StaleCause"]]),
         ],
     )
 ):
     def __new__(
         cls,
-        key: Union["AssetKey", "AssetKeyPartitionKey"],
+        key: Union["AssetKey", "AssetPartitionKey"],
         category: StaleCauseCategory,
         reason: str,
-        dependency: Optional[Union["AssetKey", "AssetKeyPartitionKey"]] = None,
+        dependency: Optional[Union["AssetKey", "AssetPartitionKey"]] = None,
         children: Optional[Sequence["StaleCause"]] = None,
     ):
-        from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+        from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 
         return super().__new__(
             cls,
-            AssetKeyPartitionKey(key) if isinstance(key, AssetKey) else key,
+            AssetPartitionKey(key) if isinstance(key, AssetKey) else key,
             category,
             reason,
-            AssetKeyPartitionKey(dependency) if isinstance(dependency, AssetKey) else dependency,
+            AssetPartitionKey(dependency) if isinstance(dependency, AssetKey) else dependency,
             children,
         )
 
@@ -395,33 +395,33 @@ class CachingStaleStatusResolver:
             self._asset_graph_load_fn = asset_graph
 
     def get_status(self, key: "AssetKey", partition_key: Optional[str] = None) -> StaleStatus:
-        from dagster._core.definitions.events import AssetKeyPartitionKey
+        from dagster._core.definitions.events import AssetPartitionKey
 
-        return self._get_status(key=AssetKeyPartitionKey(key, partition_key))
+        return self._get_status(key=AssetPartitionKey(key, partition_key))
 
     def get_stale_causes(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> Sequence[StaleCause]:
-        from dagster._core.definitions.events import AssetKeyPartitionKey
+        from dagster._core.definitions.events import AssetPartitionKey
 
-        return self._get_stale_causes(key=AssetKeyPartitionKey(key, partition_key))
+        return self._get_stale_causes(key=AssetPartitionKey(key, partition_key))
 
     def get_stale_root_causes(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> Sequence[StaleCause]:
-        from dagster._core.definitions.events import AssetKeyPartitionKey
+        from dagster._core.definitions.events import AssetPartitionKey
 
-        return self._get_stale_root_causes(key=AssetKeyPartitionKey(key, partition_key))
+        return self._get_stale_root_causes(key=AssetPartitionKey(key, partition_key))
 
     def get_current_data_version(
         self, key: "AssetKey", partition_key: Optional[str] = None
     ) -> DataVersion:
-        from dagster._core.definitions.events import AssetKeyPartitionKey
+        from dagster._core.definitions.events import AssetPartitionKey
 
-        return self._get_current_data_version(key=AssetKeyPartitionKey(key, partition_key))
+        return self._get_current_data_version(key=AssetPartitionKey(key, partition_key))
 
     @cached_method
-    def _get_status(self, key: "AssetKeyPartitionKey") -> StaleStatus:
+    def _get_status(self, key: "AssetPartitionKey") -> StaleStatus:
         # The status loader does not support querying for the stale status of a
         # partitioned asset without specifying a partition, so we return here.
         asset = self.asset_graph.get(key.asset_key)
@@ -438,7 +438,7 @@ class CachingStaleStatusResolver:
                 return StaleStatus.FRESH if len(causes) == 0 else StaleStatus.STALE
 
     @cached_method
-    def _get_stale_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
+    def _get_stale_causes(self, key: "AssetPartitionKey") -> Sequence[StaleCause]:
         # Querying for the stale status of a partitioned asset without specifying a partition key
         # is strictly speaking undefined, but we return an empty list here (from which FRESH status
         # is inferred) for backcompat.
@@ -456,7 +456,7 @@ class CachingStaleStatusResolver:
                     self._get_stale_causes_materialized(key=key), key=lambda cause: cause.sort_key
                 )
 
-    def _is_dep_updated(self, provenance: DataProvenance, dep_key: "AssetKeyPartitionKey") -> bool:
+    def _is_dep_updated(self, provenance: DataProvenance, dep_key: "AssetPartitionKey") -> bool:
         dep_asset = self.asset_graph.get(dep_key.asset_key)
         if dep_key.partition_key is None:
             current_data_version = self._get_current_data_version(key=dep_key)
@@ -486,8 +486,8 @@ class CachingStaleStatusResolver:
             else:
                 return False
 
-    def _get_stale_causes_materialized(self, key: "AssetKeyPartitionKey") -> Iterator[StaleCause]:
-        from dagster._core.definitions.events import AssetKeyPartitionKey
+    def _get_stale_causes_materialized(self, key: "AssetPartitionKey") -> Iterator[StaleCause]:
+        from dagster._core.definitions.events import AssetPartitionKey
 
         code_version = self.asset_graph.get(key.asset_key).code_version
         provenance = self._get_current_data_provenance(key=key)
@@ -508,7 +508,7 @@ class CachingStaleStatusResolver:
                     key,
                     StaleCauseCategory.DEPENDENCIES,
                     f"removed dependency on {dep_key.to_user_string()}",
-                    AssetKeyPartitionKey(dep_key, None),
+                    AssetPartitionKey(dep_key, None),
                 )
 
         # If a partition has greater than or equal to SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD of
@@ -591,7 +591,7 @@ class CachingStaleStatusResolver:
                     )
 
     @cached_method
-    def _get_stale_root_causes(self, key: "AssetKeyPartitionKey") -> Sequence[StaleCause]:
+    def _get_stale_root_causes(self, key: "AssetPartitionKey") -> Sequence[StaleCause]:
         candidates = self._get_stale_causes(key=key)
         visited = set()
         root_causes = []
@@ -625,7 +625,7 @@ class CachingStaleStatusResolver:
         return self._instance_queryer
 
     @cached_method
-    def _get_current_data_version(self, *, key: "AssetKeyPartitionKey") -> DataVersion:
+    def _get_current_data_version(self, *, key: "AssetPartitionKey") -> DataVersion:
         # Currently we can only use asset records, which are fetched in one shot, for non-source
         # assets. This is because the most recent AssetObservation is not stored on the AssetRecord.
         record = self._get_latest_data_version_record(key=key)
@@ -638,7 +638,7 @@ class CachingStaleStatusResolver:
             return data_version or DEFAULT_DATA_VERSION
 
     @cached_method
-    def _is_current_data_version_user_provided(self, *, key: "AssetKeyPartitionKey") -> bool:
+    def _is_current_data_version_user_provided(self, *, key: "AssetPartitionKey") -> bool:
         if self.asset_graph.get(key.asset_key).is_external:
             return True
         else:
@@ -646,9 +646,7 @@ class CachingStaleStatusResolver:
             return provenance is not None and provenance.is_user_provided
 
     @cached_method
-    def _get_current_data_provenance(
-        self, *, key: "AssetKeyPartitionKey"
-    ) -> Optional[DataProvenance]:
+    def _get_current_data_provenance(self, *, key: "AssetPartitionKey") -> Optional[DataProvenance]:
         record = self._get_latest_data_version_record(key=key)
         if record is None:
             return None
@@ -670,7 +668,7 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_latest_data_version_event(
-        self, *, key: "AssetKeyPartitionKey"
+        self, *, key: "AssetPartitionKey"
     ) -> Optional[Union["AssetMaterialization", "AssetObservation"]]:
         record = self._get_latest_data_version_record(key=key)
         if record:
@@ -681,7 +679,7 @@ class CachingStaleStatusResolver:
 
     @cached_method
     def _get_latest_data_version_record(
-        self, key: "AssetKeyPartitionKey"
+        self, key: "AssetPartitionKey"
     ) -> Optional["EventLogRecord"]:
         # If an asset record is cached, all of its ancestors have already been cached.
         if (
@@ -706,10 +704,10 @@ class CachingStaleStatusResolver:
     # the current logic will recurse to the first partition, potentially throwing a recursion error.
     @cached_method
     def _get_partition_dependencies(
-        self, *, key: "AssetKeyPartitionKey"
-    ) -> Sequence["AssetKeyPartitionKey"]:
+        self, *, key: "AssetPartitionKey"
+    ) -> Sequence["AssetPartitionKey"]:
         from dagster import AllPartitionMapping
-        from dagster._core.definitions.events import AssetKeyPartitionKey
+        from dagster._core.definitions.events import AssetPartitionKey
         from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 
         asset_deps = self.asset_graph.get(key.asset_key).parent_keys
@@ -718,7 +716,7 @@ class CachingStaleStatusResolver:
         for dep_asset_key in asset_deps:
             dep_asset = self.asset_graph.get(dep_asset_key)
             if not dep_asset.is_partitioned:
-                deps.append(AssetKeyPartitionKey(dep_asset_key, None))
+                deps.append(AssetPartitionKey(dep_asset_key, None))
             elif key.asset_key == dep_asset_key and self._exceeds_self_partition_limit(
                 key.asset_key
             ):
@@ -743,7 +741,7 @@ class CachingStaleStatusResolver:
                 if len(upstream_partition_keys) < SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD:
                     deps.extend(
                         [
-                            AssetKeyPartitionKey(dep_asset_key, partition_key)
+                            AssetPartitionKey(dep_asset_key, partition_key)
                             for partition_key in upstream_partition_keys
                         ]
                     )

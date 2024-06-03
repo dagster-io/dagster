@@ -36,7 +36,7 @@ from dagster import (
 from dagster._core.definitions import StaticPartitionsDefinition
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionedConfig
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
@@ -1834,7 +1834,7 @@ def test_asset_backfill_with_multi_run_backfill_policy(
             updated_backfill.asset_backfill_data
         ).requested_subset.iterate_asset_partitions()
     ) == [
-        AssetKeyPartitionKey(asset_with_multi_run_backfill_policy.key, partition)
+        AssetPartitionKey(asset_with_multi_run_backfill_policy.key, partition)
         for partition in partitions
     ]
 

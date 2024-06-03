@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext
 
 
-class AssetKeyPartitionKey(NamedTuple):
+class AssetPartitionKey(NamedTuple):
     """An AssetKey with an (optional) partition key. Refers either to a non-partitioned asset or a
     partition of a partitioned asset.
     """

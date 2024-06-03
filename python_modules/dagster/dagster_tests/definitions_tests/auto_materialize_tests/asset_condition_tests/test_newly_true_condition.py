@@ -1,6 +1,6 @@
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation import NewlyTrueCondition
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 
 from ..scenario_specs import one_asset
 from .asset_condition_scenario import AutomationConditionScenarioState
@@ -18,7 +18,7 @@ def test_newly_true_condition() -> None:
     assert result.true_subset.size == 0
 
     # becomes true
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 
@@ -35,7 +35,7 @@ def test_newly_true_condition() -> None:
     assert result.true_subset.size == 0
 
     # now condition becomes false, result still false
-    true_set.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.remove(AssetPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
     assert result.true_subset.size == 0
 
@@ -44,7 +44,7 @@ def test_newly_true_condition() -> None:
     assert result.true_subset.size == 0
 
     # becomes true again
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 

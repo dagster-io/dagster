@@ -1,6 +1,6 @@
 from dagster._core.definitions.declarative_automation import NewlyRequestedCondition
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 
 from ..scenario_specs import one_asset
 from .asset_condition_scenario import AutomationConditionScenarioState
@@ -31,11 +31,11 @@ def test_requested_previous_tick() -> None:
     assert get_result(result).true_subset.size == 0
 
     # now we ensure that the asset does get requested this tick
-    true_set.add(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.add(AssetPartitionKey(AssetKey("A")))
     state, result = state.evaluate("A")
     # requested this tick, not the previous tick
     assert get_result(result).true_subset.size == 0
-    true_set.remove(AssetKeyPartitionKey(AssetKey("A")))
+    true_set.remove(AssetPartitionKey(AssetKey("A")))
 
     # requested on the previous tick
     state, result = state.evaluate("A")

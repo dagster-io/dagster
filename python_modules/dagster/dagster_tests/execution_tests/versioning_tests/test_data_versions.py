@@ -31,7 +31,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey, Output
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import AllPartitionMapping
@@ -630,8 +630,8 @@ def test_stale_status_many_to_one_partitions() -> None:
     def asset3(asset2):
         return 1
 
-    a1_foo_key = AssetKeyPartitionKey(asset1.key, "alpha")
-    a1_bar_key = AssetKeyPartitionKey(asset1.key, "beta")
+    a1_foo_key = AssetPartitionKey(asset1.key, "alpha")
+    a1_bar_key = AssetPartitionKey(asset1.key, "beta")
 
     all_assets = [asset1, asset2, asset3]
     with instance_for_test() as instance:

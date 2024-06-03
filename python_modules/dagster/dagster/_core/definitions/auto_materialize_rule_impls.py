@@ -22,7 +22,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 from dagster._core.definitions.freshness_based_auto_materialize import (
     freshness_evaluation_results_for_asset_key,
 )
@@ -123,18 +123,18 @@ class MaterializeOnCronRule(
         self,
         context: "AutomationContext",
         missed_ticks: Sequence[datetime.datetime],
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> AbstractSet[AssetPartitionKey]:
         if not missed_ticks:
             return set()
 
         partitions_def = context.legacy_context.partitions_def
         if partitions_def is None:
-            return {AssetKeyPartitionKey(context.legacy_context.asset_key)}
+            return {AssetPartitionKey(context.legacy_context.asset_key)}
 
         # if all_partitions is set, then just return all partitions if any ticks have been missed
         if self.all_partitions:
             return {
-                AssetKeyPartitionKey(context.legacy_context.asset_key, partition_key)
+                AssetPartitionKey(context.legacy_context.asset_key, partition_key)
                 for partition_key in partitions_def.get_partition_keys(
                     current_time=context.legacy_context.evaluation_time,
                     dynamic_partitions_store=context.legacy_context.instance_queryer,
@@ -146,7 +146,7 @@ class MaterializeOnCronRule(
         time_partitions_def = get_time_partitions_def(partitions_def)
         if time_partitions_def is None:
             return {
-                AssetKeyPartitionKey(
+                AssetPartitionKey(
                     context.legacy_context.asset_key,
                     partitions_def.get_last_partition_key(
                         dynamic_partitions_store=context.legacy_context.instance_queryer
@@ -168,7 +168,7 @@ class MaterializeOnCronRule(
         # cron schedule tick
         if isinstance(partitions_def, MultiPartitionsDefinition):
             return {
-                AssetKeyPartitionKey(context.legacy_context.asset_key, partition_key)
+                AssetPartitionKey(context.legacy_context.asset_key, partition_key)
                 for time_partition_key in missed_time_partition_keys
                 for partition_key in partitions_def.get_multipartition_keys_with_dimension_value(
                     partitions_def.time_window_dimension.name,
@@ -178,7 +178,7 @@ class MaterializeOnCronRule(
             }
         else:
             return {
-                AssetKeyPartitionKey(context.legacy_context.asset_key, time_partition_key)
+                AssetPartitionKey(context.legacy_context.asset_key, time_partition_key)
                 for time_partition_key in missed_time_partition_keys
             }
 
@@ -240,12 +240,12 @@ class AutoMaterializeAssetPartitionsFilter(
     def passes(
         self,
         context: "AutomationContext",
-        asset_partitions: Iterable[AssetKeyPartitionKey],
-    ) -> Iterable[AssetKeyPartitionKey]:
+        asset_partitions: Iterable[AssetPartitionKey],
+    ) -> Iterable[AssetPartitionKey]:
         if self.latest_run_required_tags is None:
             return asset_partitions
 
-        will_update_asset_partitions: Set[AssetKeyPartitionKey] = set()
+        will_update_asset_partitions: Set[AssetPartitionKey] = set()
         storage_ids_to_fetch_by_key: Dict[AssetKey, List[int]] = defaultdict(list)
 
         for asset_partition in asset_partitions:
@@ -258,7 +258,7 @@ class AutoMaterializeAssetPartitionsFilter(
                 if latest_storage_id is not None:
                     storage_ids_to_fetch_by_key[asset_partition.asset_key].append(latest_storage_id)
 
-        asset_partitions_by_latest_run_id: Dict[str, Set[AssetKeyPartitionKey]] = defaultdict(set)
+        asset_partitions_by_latest_run_id: Dict[str, Set[AssetPartitionKey]] = defaultdict(set)
 
         step = int(os.getenv("DAGSTER_ASSET_DAEMON_RUN_TAGS_EVENT_FETCH_LIMIT", "1000"))
 
@@ -278,7 +278,7 @@ class AutoMaterializeAssetPartitionsFilter(
                     limit=step,
                 ).records:
                     asset_partitions_by_latest_run_id[record.run_id].add(
-                        AssetKeyPartitionKey(asset_key, record.partition_key)
+                        AssetPartitionKey(asset_key, record.partition_key)
                     )
 
         if len(asset_partitions_by_latest_run_id) > 0:
@@ -344,11 +344,11 @@ class MaterializeOnParentUpdatedRule(
         """
         from .declarative_automation.automation_condition import AutomationResult
 
-        asset_partitions_by_updated_parents: Mapping[
-            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
-        ] = defaultdict(set)
+        asset_partitions_by_updated_parents: Mapping[AssetPartitionKey, Set[AssetPartitionKey]] = (
+            defaultdict(set)
+        )
         asset_partitions_by_will_update_parents: Mapping[
-            AssetKeyPartitionKey, Set[AssetKeyPartitionKey]
+            AssetPartitionKey, Set[AssetPartitionKey]
         ] = defaultdict(set)
 
         subset_to_evaluate = context.legacy_context.parent_has_or_will_update_subset
@@ -388,10 +388,10 @@ class MaterializeOnParentUpdatedRule(
             else updated_and_will_update_parents
         )
 
-        updated_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+        updated_parent_assets_by_asset_partition: Dict[AssetPartitionKey, Set[AssetKey]] = (
             defaultdict(set)
         )
-        will_update_parent_assets_by_asset_partition: Dict[AssetKeyPartitionKey, Set[AssetKey]] = (
+        will_update_parent_assets_by_asset_partition: Dict[AssetPartitionKey, Set[AssetKey]] = (
             defaultdict(set)
         )
 
@@ -513,7 +513,7 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
                 )
                 if last_partition_key != previous_last_partition_key:
                     asset_partitions_to_evaluate |= {
-                        AssetKeyPartitionKey(context.legacy_context.asset_key, last_partition_key)
+                        AssetPartitionKey(context.legacy_context.asset_key, last_partition_key)
                     }
 
             handled_subset = None
@@ -852,7 +852,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         context: "AutomationContext",
         passed_time_window: TimeWindow,
         parent_asset_key: AssetKey,
-        child_asset_partition: AssetKeyPartitionKey,
+        child_asset_partition: AssetPartitionKey,
         updated_parent_subset: ValidAssetSubset,
     ) -> bool:
         """Returns if, for a given child asset partition, the given parent asset been updated with
@@ -871,7 +871,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
 
             # for time window partitions definitions, we simply assert that all time partitions that
             return all(
-                AssetKeyPartitionKey(parent_asset_key, partition_key)
+                AssetPartitionKey(parent_asset_key, partition_key)
                 in context.legacy_context.instance_queryer.get_materialized_asset_subset(
                     asset_key=parent_asset_key
                 )

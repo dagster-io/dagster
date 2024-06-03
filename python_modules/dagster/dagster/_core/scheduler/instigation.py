@@ -12,7 +12,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
 
 # re-export
@@ -442,7 +442,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         asset_partitions = set()
         for run_request in self.tick_data.run_requests or []:
             for asset_key in run_request.asset_selection or []:
-                asset_partitions.add(AssetKeyPartitionKey(asset_key, run_request.partition_key))
+                asset_partitions.add(AssetPartitionKey(asset_key, run_request.partition_key))
         return len(asset_partitions)
 
     @property

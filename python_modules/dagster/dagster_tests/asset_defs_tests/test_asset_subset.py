@@ -13,7 +13,7 @@ from dagster import (
     StaticPartitionsDefinition,
 )
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
@@ -45,7 +45,7 @@ def test_empty_subset_subset(partitions_def: Optional[PartitionsDefinition]) -> 
 
     partition_keys = {None} if partitions_def is None else partitions_def.get_partition_keys()
     for pk in partition_keys:
-        assert AssetKeyPartitionKey(key, pk) not in empty_subset
+        assert AssetPartitionKey(key, pk) not in empty_subset
 
     assert empty_subset.asset_partitions == set()
 
@@ -59,9 +59,9 @@ def test_all_subset(partitions_def: Optional[PartitionsDefinition]) -> None:
     partition_keys = {None} if partitions_def is None else partitions_def.get_partition_keys()
     assert all_subset.size == len(partition_keys)
     for pk in partition_keys:
-        assert AssetKeyPartitionKey(key, pk) in all_subset
+        assert AssetPartitionKey(key, pk) in all_subset
 
-    assert all_subset.asset_partitions == {AssetKeyPartitionKey(key, pk) for pk in partition_keys}
+    assert all_subset.asset_partitions == {AssetPartitionKey(key, pk) for pk in partition_keys}
 
 
 @pytest.mark.parametrize("partitions_def", partitions_defs)

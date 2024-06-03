@@ -27,7 +27,7 @@ from dagster._serdes.serdes import (
 
 from .asset_subset import AssetSubset
 from .base_asset_graph import BaseAssetGraph
-from .events import AssetKey, AssetKeyPartitionKey
+from .events import AssetKey, AssetPartitionKey
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):
@@ -105,19 +105,19 @@ class AssetGraphSubset(NamedTuple):
         else:
             return self.partitions_subsets_by_asset_key[asset_key]
 
-    def iterate_asset_partitions(self) -> Iterable[AssetKeyPartitionKey]:
+    def iterate_asset_partitions(self) -> Iterable[AssetPartitionKey]:
         for (
             asset_key,
             partitions_subset,
         ) in self.partitions_subsets_by_asset_key.items():
             for partition_key in partitions_subset.get_partition_keys():
-                yield AssetKeyPartitionKey(asset_key, partition_key)
+                yield AssetPartitionKey(asset_key, partition_key)
 
         for asset_key in self.non_partitioned_asset_keys:
-            yield AssetKeyPartitionKey(asset_key, None)
+            yield AssetPartitionKey(asset_key, None)
 
-    def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
-        """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
+    def __contains__(self, asset: Union[AssetKey, AssetPartitionKey]) -> bool:
+        """If asset is an AssetPartitionKey, check if the given AssetPartitionKey is in the
         subset. If asset is an AssetKey, check if any of partitions of the given AssetKey are in
         the subset.
         """
@@ -236,7 +236,7 @@ class AssetGraphSubset(NamedTuple):
     @classmethod
     def from_asset_partition_set(
         cls,
-        asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
+        asset_partitions_set: AbstractSet[AssetPartitionKey],
         asset_graph: BaseAssetGraph,
     ) -> "AssetGraphSubset":
         partitions_by_asset_key = defaultdict(set)

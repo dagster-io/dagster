@@ -30,7 +30,7 @@ from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
@@ -113,8 +113,8 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
         asset_graph = asset_graph_from_assets([parent, child])
 
         expected_asset_partitions = {
-            AssetKeyPartitionKey(child.key, "a"),
-            AssetKeyPartitionKey(child.key, "b"),
+            AssetPartitionKey(child.key, "a"),
+            AssetPartitionKey(child.key, "b"),
         }
         assert (
             asset_graph.get_children_partitions(instance, current_time, parent.key)
@@ -145,8 +145,8 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
 
         asset_graph = asset_graph_from_assets([parent, child])
         expected_asset_partitions = {
-            AssetKeyPartitionKey(parent.key, "a"),
-            AssetKeyPartitionKey(parent.key, "b"),
+            AssetPartitionKey(parent.key, "a"),
+            AssetPartitionKey(parent.key, "b"),
         }
         assert (
             asset_graph.get_parents_partitions(instance, current_time, child.key).parent_partitions
@@ -176,10 +176,10 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
         current_time = pendulum.now("UTC")
 
         expected_asset_partitions = {
-            AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
+            AssetPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
             for hour in range(24)
         }
-        parent_asset_partition = AssetKeyPartitionKey(parent.key, "2022-01-03")
+        parent_asset_partition = AssetPartitionKey(parent.key, "2022-01-03")
 
         assert (
             asset_graph.get_children_partitions(instance, current_time, parent.key, "2022-01-03")
@@ -213,10 +213,10 @@ def test_get_parent_partitions_fan_in(
         current_time = pendulum.now("UTC")
 
         expected_asset_partitions = {
-            AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
+            AssetPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
             for hour in range(24)
         }
-        child_asset_partition = AssetKeyPartitionKey(child.key, "2022-01-03")
+        child_asset_partition = AssetPartitionKey(child.key, "2022-01-03")
 
         assert (
             asset_graph.get_parents_partitions(
@@ -252,7 +252,7 @@ def test_get_parent_partitions_non_default_partition_mapping(
         with instance_for_test() as instance:
             current_time = pendulum.now("UTC")
 
-            expected_asset_partitions = {AssetKeyPartitionKey(parent.key, "2022-01-02")}
+            expected_asset_partitions = {AssetPartitionKey(parent.key, "2022-01-02")}
             mapped_partitions_result = asset_graph.get_parents_partitions(
                 instance, current_time, child.key
             )
@@ -333,14 +333,14 @@ def test_custom_unsupported_partition_mapping():
         assert internal_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2"
         ).parent_partitions == {
-            AssetKeyPartitionKey(parent.key, "1"),
-            AssetKeyPartitionKey(parent.key, "2"),
+            AssetPartitionKey(parent.key, "1"),
+            AssetPartitionKey(parent.key, "2"),
         }
 
         # external falls back to default PartitionMapping
         assert external_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2"
-        ).parent_partitions == {AssetKeyPartitionKey(parent.key, "2")}
+        ).parent_partitions == {AssetPartitionKey(parent.key, "2")}
 
 
 def test_required_multi_asset_sets_non_subsettable_multi_asset(
@@ -602,14 +602,14 @@ def test_asset_graph_subset_contains(
     )
 
     assert unpartitioned1.key in asset_graph_subset
-    assert AssetKeyPartitionKey(unpartitioned1.key) in asset_graph_subset
+    assert AssetPartitionKey(unpartitioned1.key) in asset_graph_subset
     assert partitioned1.key in asset_graph_subset
-    assert AssetKeyPartitionKey(partitioned1.key, "2022-01-01") in asset_graph_subset
-    assert AssetKeyPartitionKey(partitioned1.key, "2022-01-02") not in asset_graph_subset
+    assert AssetPartitionKey(partitioned1.key, "2022-01-01") in asset_graph_subset
+    assert AssetPartitionKey(partitioned1.key, "2022-01-02") not in asset_graph_subset
     assert unpartitioned2.key not in asset_graph_subset
-    assert AssetKeyPartitionKey(unpartitioned2.key) not in asset_graph_subset
+    assert AssetPartitionKey(unpartitioned2.key) not in asset_graph_subset
     assert partitioned2.key not in asset_graph_subset
-    assert AssetKeyPartitionKey(partitioned2.key, "2022-01-01") not in asset_graph_subset
+    assert AssetPartitionKey(partitioned2.key, "2022-01-01") not in asset_graph_subset
 
 
 def test_asset_graph_difference(asset_graph_from_assets: Callable[..., BaseAssetGraph]):
