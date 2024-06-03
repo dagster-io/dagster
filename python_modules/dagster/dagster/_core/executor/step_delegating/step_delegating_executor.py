@@ -73,6 +73,13 @@ class StepDelegatingExecutor(Executor):
         self._event_cursor: Optional[str] = None
         self._pop_events_offset = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_OFFSET", "0"))
 
+        if self._pop_events_offset:
+            # ensure that the offset can never result in looping over the same events over and
+            # over again if every event is from this run
+            self._pop_events_limit = self._pop_events_offset + 1
+        else:
+            self._pop_events_limit = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_LIMIT", "1000"))
+
     @property
     def retries(self):
         return self._retries
@@ -96,6 +103,7 @@ class StepDelegatingExecutor(Executor):
             run_id,
             adjusted_cursor,
             of_type=set(DagsterEventType),
+            limit=self._pop_events_limit,
         )
         self._event_cursor = conn.cursor
 
