@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 import pytest
 from dagster import AssetKey, asset, job
@@ -21,9 +21,10 @@ from pydantic import ValidationError
 
 class SimpleAssetBlueprint(Blueprint):
     key: str
+    description: Optional[str] = None
 
     def build_defs(self) -> BlueprintDefinitions:
-        @asset(key=self.key)
+        @asset(key=self.key, description=self.description)
         def _asset(): ...
 
         return BlueprintDefinitions(assets=[_asset])
@@ -248,3 +249,14 @@ def test_basic_env_var_jinja_templating_no_env_var_default() -> None:
         per_file_blueprint_type=SimpleAssetBlueprint,
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("bar")}
+
+
+def test_basic_env_var_jinja_escaping() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_escaped_jinja.yaml",
+        per_file_blueprint_type=SimpleAssetBlueprint,
+    )
+    assert (
+        defs.get_assets_def("asset1").descriptions_by_key[AssetKey("asset1")]
+        == "{{ env_var('ASSET_NAME') }}"
+    )
