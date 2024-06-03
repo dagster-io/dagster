@@ -509,21 +509,25 @@ class _Asset:
         )
 
 
-def compute_required_resource_keys(
-    required_resource_keys: Set[str],
-    resource_defs: Mapping[str, ResourceDefinition],
+def compute_required_resource_keys_for_underlying_op(
+    explicitly_passed_required_resource_keys: Set[str],
+    resource_defs_bound_to_asset: Mapping[str, ResourceDefinition],
     fn: Callable[..., Any],
 ) -> Set[str]:
-    bare_required_resource_keys = required_resource_keys.copy()
-    resource_defs_keys = set(resource_defs.keys())
-    required_resource_keys = bare_required_resource_keys | resource_defs_keys
     arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
     check.param_invariant(
-        len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
+        len(explicitly_passed_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
         "Cannot specify resource requirements in both @multi_asset decorator and as"
         " arguments to the decorated function",
     )
-    return required_resource_keys - arg_resource_keys
+    if arg_resource_keys:
+        check.invariant(
+            len(explicitly_passed_required_resource_keys) == 0,
+            "Cannot pass resource keys and decorate the function with resources",
+        )
+        return set(resource_defs_bound_to_asset.keys()) - arg_resource_keys
+    else:
+        return explicitly_passed_required_resource_keys | set(resource_defs_bound_to_asset.keys())
 
 
 @experimental_param(param="resource_defs")
@@ -716,7 +720,7 @@ def multi_asset(
                 description=description,
                 ins=in_out_mapper.asset_ins_by_input_names,
                 out=in_out_mapper.combined_outs_by_output_name,
-                required_resource_keys=compute_required_resource_keys(
+                required_resource_keys=compute_required_resource_keys_for_underlying_op(
                     required_resource_keys, resource_defs, fn
                 ),
                 tags={
