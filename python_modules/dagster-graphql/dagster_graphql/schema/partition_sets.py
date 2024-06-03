@@ -62,6 +62,23 @@ class GrapheneAddDynamicPartitionResult(graphene.Union):
         name = "AddDynamicPartitionResult"
 
 
+class GrapheneDeleteDynamicPartitionsSuccess(graphene.ObjectType):
+    partitionsDefName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "DeleteDynamicPartitionsSuccess"
+
+
+class GrapheneDeleteDynamicPartitionsResult(graphene.Union):
+    class Meta:
+        types = (
+            GrapheneDeleteDynamicPartitionsSuccess,
+            GrapheneUnauthorizedError,
+            GraphenePythonError,
+        )
+        name = "DeleteDynamicPartitionsResult"
+
+
 class GraphenePartitionTags(graphene.ObjectType):
     results = non_null_list(GraphenePipelineTag)
 
