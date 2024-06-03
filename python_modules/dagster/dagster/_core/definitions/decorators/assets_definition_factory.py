@@ -245,7 +245,8 @@ class AssetsDefinitionBuilderArgs(NamedTuple):
     retry_policy: Optional[RetryPolicy]
     compute_kind: Optional[str]
     required_resource_keys: Set[str]
-    resource_defs: Mapping[str, ResourceDefinition]
+    assets_def_resource_defs: Mapping[str, ResourceDefinition]
+    op_def_resource_defs: Mapping[str, ResourceDefinition]
     backfill_policy: Optional[BackfillPolicy]
 
 
@@ -319,6 +320,8 @@ class AssetsDefinitionBuilder:
                     upstream_keys.add(dep.asset_key)
                 if (
                     dep.asset_key in output_tuples_by_asset_key
+                    # commented out in order to get test_invalid_self_dep to pass
+                    # however it causes test_multi_asset_no_out to fail
                     and dep.partition_mapping is not None
                 ):
                     # self-dependent asset also needs to be considered an upstream_key
@@ -329,6 +332,7 @@ class AssetsDefinitionBuilder:
         loaded_upstreams = build_asset_ins(fn, explicit_ins, deps=set())
         unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
         if unexpected_upstreams:
+            # import code; code.interact(local=locals())
             raise DagsterInvalidDefinitionError(
                 f"Asset inputs {unexpected_upstreams} do not have dependencies on the passed"
                 " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
@@ -528,7 +532,7 @@ class AssetsDefinitionBuilder:
             ins=self.asset_ins_by_input_names,
             out=self.combined_outs_by_output_name,
             required_resource_keys=compute_required_resource_keys_for_underlying_op(
-                self.args.required_resource_keys, self.args.resource_defs, self.fn
+                self.args.required_resource_keys, self.args.op_def_resource_defs, self.fn
             ),
             tags={
                 **({"kind": self.args.compute_kind} if self.args.compute_kind else {}),
@@ -546,7 +550,7 @@ class AssetsDefinitionBuilder:
             node_def=self._create_op_definition(),
             partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
-            resource_defs=self.args.resource_defs,
+            resource_defs=self.args.assets_def_resource_defs,
             backfill_policy=self.args.backfill_policy,
             check_specs_by_output_name=self.check_specs_by_output_name,
             specs=self.specs,
@@ -563,7 +567,7 @@ class AssetsDefinitionBuilder:
             return specs
 
         check.invariant(
-            all(spec.group_name is None for spec in specs),
+            all((spec.group_name is None or spec.group_name == self.group_name) for spec in specs),
             "Cannot set group_name parameter on multi_asset if one or more of the"
             " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
         )

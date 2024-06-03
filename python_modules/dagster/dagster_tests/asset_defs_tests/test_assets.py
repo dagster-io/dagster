@@ -81,6 +81,10 @@ def test_with_replaced_asset_keys():
 
     assert replaced.keys_by_input_name["input2"] == AssetKey(["apple", "banana"])
 
+    # import code
+
+    # code.interact(local=locals())
+
     assert replaced.keys_by_output_name["result"] == AssetKey(["prefix1", "asset1_changed"])
 
 

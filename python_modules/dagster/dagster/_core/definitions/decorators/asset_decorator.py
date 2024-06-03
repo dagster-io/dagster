@@ -38,13 +38,12 @@ from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..asset_spec import AssetSpec
-from ..assets import AssetsDefinition, get_partition_mappings_from_deps
+from ..assets import AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
-from ..decorators.op_decorator import _Op
 from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from ..input import GraphIn
-from ..output import GraphOut, Out
+from ..output import GraphOut
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
@@ -371,7 +370,7 @@ class _Asset:
 
         validate_resource_annotated_function(fn)
 
-        asset_ins = build_asset_ins(fn, self.ins or {}, {dep.asset_key for dep in self.deps})
+        # asset_ins = build_asset_ins(fn, self.ins or {}, {dep.asset_key for dep in self.deps})
 
         out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
             key=self.key,
@@ -390,6 +389,10 @@ class _Asset:
             resource_defs_keys = set(resource_defs_dict.keys())
             decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
 
+            # TODO: rename op_resource_defs and asset_resource_defs to explain bizarre behavior
+            # more explicitly
+            op_resource_defs = wrap_resources_for_execution(resource_defs_dict)
+
             io_manager_key = self.io_manager_key
             if self.io_manager_def:
                 if not io_manager_key:
@@ -406,7 +409,7 @@ class _Asset:
 
                 resource_defs_dict[io_manager_key] = self.io_manager_def
 
-            wrapped_resource_defs = wrap_resources_for_execution(resource_defs_dict)
+            asset_resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
             check.param_invariant(
                 len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
@@ -416,41 +419,7 @@ class _Asset:
 
             io_manager_key = cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
 
-            out = Out(
-                metadata=self.metadata or {},
-                io_manager_key=io_manager_key,
-                dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
-                description=self.description,
-                is_required=self.output_required,
-                code_version=self.code_version,
-            )
-
-            check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
-                self.check_specs, [out_asset_key]
-            )
-            check_outs: Mapping[str, Out] = {
-                output_name: Out(dagster_type=None)
-                for output_name in check_specs_by_output_name.keys()
-            }
-
             op_required_resource_keys = decorator_resource_keys - arg_resource_keys
-
-            op = _Op(
-                name=out_asset_key.to_python_identifier(),
-                description=self.description,
-                ins=dict(asset_ins.values()),
-                out={DEFAULT_OUTPUT: out, **check_outs},
-                # Any resource requirements specified as arguments will be identified as
-                # part of the Op definition instantiation
-                required_resource_keys=op_required_resource_keys,
-                tags={
-                    **({"kind": self.compute_kind} if self.compute_kind else {}),
-                    **(self.op_tags or {}),
-                },
-                config_schema=self.config_schema,
-                retry_policy=self.retry_policy,
-                code_version=self.code_version,
-            )(fn)
 
             # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
             if self.partitions_def is None:
@@ -464,53 +433,57 @@ class _Asset:
                     "Non partitioned asset can only have single run backfill policy",
                 )
 
-            keys_by_input_name = {
-                input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
-            }
-            partition_mappings = {
-                keys_by_input_name[input_name]: asset_in.partition_mapping
-                for input_name, asset_in in self.ins.items()
-                if asset_in.partition_mapping is not None
-            }
-
-            partition_mappings = get_partition_mappings_from_deps(
-                partition_mappings=partition_mappings, deps=self.deps, asset_name=asset_name
-            )
-
-        deps = [
-            AssetDep(asset=key, partition_mapping=partition_mappings.get(key))
-            for key in keys_by_input_name.values()
-        ]
-
         with disable_dagster_warnings():
-            spec = AssetSpec(
-                key=out_asset_key,
-                freshness_policy=self.freshness_policy,
-                auto_materialize_policy=self.auto_materialize_policy,
+            args = AssetsDefinitionBuilderArgs(
+                name=self.name,
+                description=self.description,
+                check_specs=check.opt_list_param(
+                    self.check_specs, "check_specs", of_type=AssetCheckSpec
+                ),
                 group_name=self.group_name,
-                metadata=self.metadata,
-                tags=self.tags,
-                owners=self.owners,
-                # see comment in @multi_asset's call to dagster_internal_init for the gory details
-                # this is best understood as an _override_ which @asset does not support
-                description=None,
-                deps=deps,
+                partitions_def=self.partitions_def,
+                retry_policy=self.retry_policy,
+                code_version=self.code_version,
+                op_tags=self.op_tags,
+                config_schema=self.config_schema,
+                compute_kind=self.compute_kind,
+                required_resource_keys=op_required_resource_keys,
+                op_def_resource_defs=op_resource_defs,
+                assets_def_resource_defs=asset_resource_defs,
+                backfill_policy=self.backfill_policy,
+                asset_out_map={
+                    DEFAULT_OUTPUT: AssetOut(
+                        key=out_asset_key,
+                        metadata=self.metadata,
+                        description=self.description,
+                        is_required=self.output_required,
+                        io_manager_key=io_manager_key,
+                        dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
+                        group_name=self.group_name,
+                        code_version=self.code_version,
+                        freshness_policy=self.freshness_policy,
+                        auto_materialize_policy=self.auto_materialize_policy,
+                        backfill_policy=self.backfill_policy,
+                        owners=self.owners,
+                        tags=self.tags,
+                    )
+                },
+                # Not totally sure mode
+                upstream_asset_deps=self.deps,
+                # upstream_asset_deps=None,
+                asset_in_map=self.ins,
+                # We will not be using specs to construct here
+                # because they are assumption about output names. Non-spec
+                # construction path assumptions apply here
+                specs=[],
+                # no internal asset deps
+                asset_deps={},
+                can_subset=False,
             )
-
-        return AssetsDefinition.dagster_internal_init(
-            keys_by_input_name=keys_by_input_name,
-            keys_by_output_name={"result": out_asset_key},
-            node_def=op,
-            partitions_def=self.partitions_def,
-            resource_defs=wrapped_resource_defs,
-            backfill_policy=self.backfill_policy,
-            selected_asset_keys=None,  # no subselection in decorator
-            can_subset=False,
-            check_specs_by_output_name=check_specs_by_output_name,
-            selected_asset_check_keys=None,  # no subselection in decorator
-            is_subset=False,
-            specs=[spec],
-        )
+            builder = AssetsDefinitionBuilder.from_non_spec_args(
+                args=args, fn=fn, op_name=out_asset_key.to_python_identifier()
+            )
+        return builder.create_assets_definition()
 
 
 @experimental_param(param="resource_defs")
@@ -656,7 +629,10 @@ def multi_asset(
         required_resource_keys=check.opt_set_param(
             required_resource_keys, "required_resource_keys", of_type=str
         ),
-        resource_defs=wrap_resources_for_execution(
+        op_def_resource_defs=wrap_resources_for_execution(
+            check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
+        ),
+        assets_def_resource_defs=wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs", key_type=str)
         ),
         backfill_policy=backfill_policy,
