@@ -58,6 +58,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
+from dagster._utils.subclasses_must_specify_all_args import ISubclassesMustSpecifyAllArgs
 from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import (
@@ -115,7 +116,7 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
     breaking_version="2.0",
     additional_warn_text="Use `last_tick_completion_time` instead.",
 )
-class SensorEvaluationContext:
+class SensorEvaluationContext(ISubclassesMustSpecifyAllArgs):
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
     Users should not instantiate this object directly. To construct a

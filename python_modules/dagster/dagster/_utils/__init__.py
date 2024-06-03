@@ -53,6 +53,9 @@ import dagster._check as check
 import dagster._seven as seven
 
 from .internal_init import IHasInternalInit as IHasInternalInit
+from .subclasses_must_specify_all_args import (
+    ISubclassesMustSpecifyAllArgs as ISubclassesMustSpecifyAllArgs,
+)
 
 if sys.version_info > (3,):
     from pathlib import Path
