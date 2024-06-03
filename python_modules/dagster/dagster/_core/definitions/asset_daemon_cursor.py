@@ -20,10 +20,10 @@ from dagster._serdes.serdes import (
 from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
-    from .declarative_scheduling.serialized_objects import (
+    from .declarative_automation.serialized_objects import (
         AssetConditionEvaluationState,
         AssetConditionSnapshot,
-        SchedulingConditionCursor,
+        AutomationConditionCursor,
     )
 
 
@@ -70,7 +70,7 @@ class AssetDaemonCursor:
         evaluation_id (int): The ID of the evaluation that produced this cursor.
         previous_evaluation_state (Sequence[AssetConditionEvaluationState]): (DEPRECATED) The
             evaluation info recorded for each asset on the previous tick.
-        previous_cursors (Sequence[SchedulingConditionCursor]): The cursor objects for each asset
+        previous_cursors (Sequence[AutomationConditionCursor]): The cursor objects for each asset
             recorded on the previous tick.
     """
 
@@ -78,7 +78,7 @@ class AssetDaemonCursor:
     last_observe_request_timestamp_by_asset_key: Mapping[AssetKey, float]
 
     previous_evaluation_state: Optional[Sequence["AssetConditionEvaluationState"]]
-    previous_condition_cursors: Optional[Sequence["SchedulingConditionCursor"]] = None
+    previous_condition_cursors: Optional[Sequence["AutomationConditionCursor"]] = None
 
     @staticmethod
     def empty(evaluation_id: int = 0) -> "AssetDaemonCursor":
@@ -90,16 +90,16 @@ class AssetDaemonCursor:
         )
 
     @cached_property
-    def previous_condition_cursors_by_key(self) -> Mapping[AssetKey, "SchedulingConditionCursor"]:
+    def previous_condition_cursors_by_key(self) -> Mapping[AssetKey, "AutomationConditionCursor"]:
         """Efficient lookup of previous cursor by asset key."""
-        from dagster._core.definitions.declarative_scheduling.serialized_objects import (
-            SchedulingConditionCursor,
+        from dagster._core.definitions.declarative_automation.serialized_objects import (
+            AutomationConditionCursor,
         )
 
         if self.previous_condition_cursors is None:
-            # automatically convert AssetConditionEvaluationState objects to SchedulingConditionCursor
+            # automatically convert AssetConditionEvaluationState objects to AutomationConditionCursor
             return {
-                evaluation_state.asset_key: SchedulingConditionCursor.backcompat_from_evaluation_state(
+                evaluation_state.asset_key: AutomationConditionCursor.backcompat_from_evaluation_state(
                     evaluation_state
                 )
                 for evaluation_state in self.previous_evaluation_state or []
@@ -109,8 +109,8 @@ class AssetDaemonCursor:
 
     def get_previous_condition_cursor(
         self, asset_key: AssetKey
-    ) -> Optional["SchedulingConditionCursor"]:
-        """Returns the SchedulingConditionCursor associated with the given asset key. If no stored
+    ) -> Optional["AutomationConditionCursor"]:
+        """Returns the AutomationConditionCursor associated with the given asset key. If no stored
         cursor exists, returns an empty cursor.
         """
         return self.previous_condition_cursors_by_key.get(asset_key)
@@ -120,7 +120,7 @@ class AssetDaemonCursor:
         evaluation_id: int,
         evaluation_timestamp: float,
         newly_observe_requested_asset_keys: Sequence[AssetKey],
-        condition_cursors: Sequence["SchedulingConditionCursor"],
+        condition_cursors: Sequence["AutomationConditionCursor"],
     ) -> "AssetDaemonCursor":
         # do not "forget" about values for non-evaluated assets
         new_condition_cursors = dict(self.previous_condition_cursors_by_key)

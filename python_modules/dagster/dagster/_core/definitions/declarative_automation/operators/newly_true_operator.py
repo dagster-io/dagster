@@ -4,13 +4,13 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..scheduling_condition import SchedulingCondition, SchedulingResult
-from ..scheduling_context import SchedulingContext
+from ..automation_condition import AutomationCondition, AutomationResult
+from ..automation_context import AutomationContext
 
 
 @whitelist_for_serdes
-class NewlyTrueCondition(SchedulingCondition):
-    operand: SchedulingCondition
+class NewlyTrueCondition(AutomationCondition):
+    operand: AutomationCondition
 
     @property
     def requires_cursor(self) -> bool:
@@ -21,10 +21,10 @@ class NewlyTrueCondition(SchedulingCondition):
         return "Condition newly became true."
 
     @property
-    def children(self) -> Sequence[SchedulingCondition]:
+    def children(self) -> Sequence[AutomationCondition]:
         return [self.operand]
 
-    def _get_previous_child_true_slice(self, context: SchedulingContext) -> Optional[AssetSlice]:
+    def _get_previous_child_true_slice(self, context: AutomationContext) -> Optional[AssetSlice]:
         """Returns the true slice of the child from the previous tick, which is stored in the
         extra state field of the cursor.
         """
@@ -35,7 +35,7 @@ class NewlyTrueCondition(SchedulingCondition):
             return None
         return context.asset_graph_view.get_asset_slice_from_subset(true_subset)
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         # evaluate child condition
         child_context = context.for_child_condition(
             self.operand,
@@ -51,7 +51,7 @@ class NewlyTrueCondition(SchedulingCondition):
             or context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
         )
 
-        return SchedulingResult.create_from_children(
+        return AutomationResult.create_from_children(
             context=context,
             true_slice=context.candidate_slice.compute_intersection(newly_true_child_slice),
             child_results=[child_result],

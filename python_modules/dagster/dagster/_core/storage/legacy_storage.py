@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey

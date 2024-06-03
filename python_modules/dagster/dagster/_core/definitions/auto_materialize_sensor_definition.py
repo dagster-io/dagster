@@ -8,8 +8,8 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.declarative_scheduling.scheduling_condition_evaluator import (
-    SchedulingConditionEvaluator,
+from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
+    AutomationConditionEvaluator,
 )
 from dagster._core.definitions.run_request import SensorResult
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
@@ -60,7 +60,7 @@ def evaluate_scheduling_conditions(context: SensorEvaluationContext):
         asset_graph,
     )
 
-    evaluator = SchedulingConditionEvaluator(
+    evaluator = AutomationConditionEvaluator(
         asset_graph=asset_graph,
         asset_keys=asset_graph.all_asset_keys,
         asset_graph_view=asset_graph_view,
@@ -70,12 +70,12 @@ def evaluate_scheduling_conditions(context: SensorEvaluationContext):
         respect_materialization_data_versions=True,
         auto_materialize_run_tags={},
     )
-    evaluation_state, to_request = evaluator.evaluate()
+    results, to_request = evaluator.evaluate()
     new_cursor = cursor.with_updates(
         evaluation_id=cursor.evaluation_id,
-        evaluation_state=evaluation_state,
         evaluation_timestamp=instance_queryer.evaluation_time.timestamp(),
         newly_observe_requested_asset_keys=[],  # skip for now, hopefully forever
+        condition_cursors=[result.get_new_cursor() for result in results],
     )
     run_requests = build_run_requests(
         asset_partitions=to_request,

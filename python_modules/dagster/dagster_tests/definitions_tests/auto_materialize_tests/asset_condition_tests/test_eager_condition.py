@@ -1,15 +1,15 @@
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_eager_unpartitioned() -> None:
-    state = SchedulingConditionScenarioState(
+    state = AutomationConditionScenarioState(
         two_assets_in_sequence,
-        scheduling_condition=SchedulingCondition.eager(),
+        automation_condition=AutomationCondition.eager(),
         ensure_empty_result=False,
     )
 
@@ -51,9 +51,9 @@ def test_eager_unpartitioned() -> None:
 
 def test_eager_hourly_partitioned() -> None:
     state = (
-        SchedulingConditionScenarioState(
+        AutomationConditionScenarioState(
             two_assets_in_sequence,
-            scheduling_condition=SchedulingCondition.eager(),
+            automation_condition=AutomationCondition.eager(),
             ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)

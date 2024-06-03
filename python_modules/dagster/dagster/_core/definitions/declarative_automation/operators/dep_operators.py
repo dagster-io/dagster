@@ -6,24 +6,24 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..scheduling_condition import SchedulingCondition, SchedulingResult
-from ..scheduling_context import SchedulingContext
+from ..automation_condition import AutomationCondition, AutomationResult
+from ..automation_context import AutomationContext
 
 
-class DepConditionWrapperCondition(SchedulingCondition):
+class DepConditionWrapperCondition(AutomationCondition):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
     True.
     """
 
     dep_key: AssetKey
-    operand: SchedulingCondition
+    operand: AutomationCondition
 
     @property
     def description(self) -> str:
         return f"{self.dep_key.to_user_string()}"
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         # only evaluate parents of the current candidates
         dep_candidate_slice = context.candidate_slice.compute_parent_slice(self.dep_key)
         dep_context = context.for_child_condition(
@@ -35,13 +35,13 @@ class DepConditionWrapperCondition(SchedulingCondition):
 
         # find all children of the true dep slice
         true_slice = dep_result.true_slice.compute_child_slice(context.asset_key)
-        return SchedulingResult.create_from_children(
+        return AutomationResult.create_from_children(
             context=context, true_slice=true_slice, child_results=[dep_result]
         )
 
 
-class DepCondition(SchedulingCondition):
-    operand: SchedulingCondition
+class DepCondition(AutomationCondition):
+    operand: AutomationCondition
     allow_selection: Optional[AssetSelection] = None
     ignore_selection: Optional[AssetSelection] = None
 
@@ -93,7 +93,7 @@ class AnyDepsCondition(DepCondition):
     def base_description(self) -> str:
         return "Any"
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         dep_results = []
         true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
 
@@ -112,7 +112,7 @@ class AnyDepsCondition(DepCondition):
             true_slice = true_slice.compute_union(dep_result.true_slice)
 
         true_slice = context.candidate_slice.compute_intersection(true_slice)
-        return SchedulingResult.create_from_children(
+        return AutomationResult.create_from_children(
             context, true_slice=true_slice, child_results=dep_results
         )
 
@@ -123,7 +123,7 @@ class AllDepsCondition(DepCondition):
     def base_description(self) -> str:
         return "All"
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         dep_results = []
         true_slice = context.candidate_slice
 
@@ -141,6 +141,6 @@ class AllDepsCondition(DepCondition):
             dep_results.append(dep_result)
             true_slice = true_slice.compute_intersection(dep_result.true_slice)
 
-        return SchedulingResult.create_from_children(
+        return AutomationResult.create_from_children(
             context, true_slice=true_slice, child_results=dep_results
         )

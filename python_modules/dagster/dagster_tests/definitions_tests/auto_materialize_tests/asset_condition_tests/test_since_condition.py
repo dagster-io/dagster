@@ -1,9 +1,9 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.declarative_scheduling import SinceCondition
+from dagster._core.definitions.declarative_automation import SinceCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 from .test_dep_condition import get_hardcoded_condition
 
 
@@ -14,7 +14,7 @@ def test_since_condition_unpartitioned() -> None:
     condition = SinceCondition(
         trigger_condition=primary_condition, reset_condition=reference_condition
     )
-    state = SchedulingConditionScenarioState(one_asset, scheduling_condition=condition)
+    state = AutomationConditionScenarioState(one_asset, automation_condition=condition)
 
     # nothing true
     state, result = state.evaluate("A")

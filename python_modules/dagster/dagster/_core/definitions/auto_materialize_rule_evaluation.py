@@ -29,7 +29,7 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .declarative_scheduling.serialized_objects import (
+from .declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
     AssetConditionEvaluationWithRunIds,
     AssetConditionSnapshot,
@@ -144,7 +144,7 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
     objects into the new AssetConditionEvaluationWithRunIds objects.
     """
-    from .declarative_scheduling.serialized_objects import (
+    from .declarative_automation.serialized_objects import (
         AssetConditionEvaluationWithRunIds,
     )
 
@@ -211,8 +211,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .declarative_scheduling.legacy.rule_condition import RuleCondition
-        from .declarative_scheduling.serialized_objects import AssetConditionSnapshot
+        from .declarative_automation.legacy.rule_condition import RuleCondition
+        from .declarative_automation.serialized_objects import AssetConditionSnapshot
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -232,7 +232,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
     ) -> "AssetConditionEvaluation":
-        from .declarative_scheduling.serialized_objects import (
+        from .declarative_automation.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
@@ -275,11 +275,11 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .declarative_scheduling.operators.boolean_operators import (
+        from .declarative_automation.operators.boolean_operators import (
             NotAssetCondition,
             OrAssetCondition,
         )
-        from .declarative_scheduling.serialized_objects import (
+        from .declarative_automation.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
@@ -368,8 +368,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .declarative_scheduling.operators.boolean_operators import AndAssetCondition
-        from .declarative_scheduling.serialized_objects import (
+        from .declarative_automation.operators.boolean_operators import AndAssetCondition
+        from .declarative_automation.serialized_objects import (
             HistoricalAllPartitionsSubsetSentinel,
         )
 
