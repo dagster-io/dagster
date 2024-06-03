@@ -40,6 +40,7 @@ from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import DagsterType, Nothing
 
 from ..asset_check_spec import AssetCheckSpec
@@ -224,8 +225,10 @@ class AssetsDefinitionBuilderArgs(NamedTuple):
     retry_policy: Optional[RetryPolicy]
     compute_kind: Optional[str]
     required_resource_keys: Set[str]
-    resource_defs: Mapping[str, ResourceDefinition]
+    assets_def_resource_defs: Mapping[str, ResourceDefinition]
+    op_def_resource_defs: Mapping[str, ResourceDefinition]
     backfill_policy: Optional[BackfillPolicy]
+    decorator_name: str
 
 
 class AssetsDefinitionBuilder:
@@ -254,6 +257,9 @@ class AssetsDefinitionBuilder:
             raise DagsterInvalidDefinitionError("Must specify only outs or specs but not both.")
 
         if args.specs:
+            check.invariant(
+                args.decorator_name == "@multi_asset", "Only hit this code path in multi_asset."
+            )
             if args.upstream_asset_deps:
                 raise DagsterInvalidDefinitionError(
                     "Can not pass deps and specs to @multi_asset, specify deps on the AssetSpecs"
@@ -508,12 +514,12 @@ class AssetsDefinitionBuilder:
             out=self.combined_outs_by_output_name,
             required_resource_keys=compute_required_resource_keys(
                 required_resource_keys=self.args.required_resource_keys,
-                resource_defs=self.args.resource_defs,
+                resource_defs=self.args.op_def_resource_defs,
                 fn=self.fn,
-                decorator_name="@multi_asset",
+                decorator_name=self.args.decorator_name,
             ),
             tags={
-                **({"kind": self.args.compute_kind} if self.args.compute_kind else {}),
+                **({COMPUTE_KIND_TAG: self.args.compute_kind} if self.args.compute_kind else {}),
                 **(self.args.op_tags or {}),
             },
             config_schema=self.args.config_schema,
@@ -528,7 +534,7 @@ class AssetsDefinitionBuilder:
             node_def=self._create_op_definition(),
             partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
-            resource_defs=self.args.resource_defs,
+            resource_defs=self.args.assets_def_resource_defs,
             backfill_policy=self.args.backfill_policy,
             check_specs_by_output_name=self.check_specs_by_output_name,
             specs=self.specs,
@@ -545,7 +551,7 @@ class AssetsDefinitionBuilder:
             return specs
 
         check.invariant(
-            all(spec.group_name is None for spec in specs),
+            all((spec.group_name is None or spec.group_name == self.group_name) for spec in specs),
             "Cannot set group_name parameter on multi_asset if one or more of the"
             " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
         )
