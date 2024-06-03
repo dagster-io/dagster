@@ -1,8 +1,9 @@
+import json
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
 import graphene
-from dagster import AssetKey
+from dagster import AssetKey, _seven
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -548,12 +549,19 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             # maybe need to return something else to indicate that a setting needs to be changed
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
-        records, new_cursor = instance.compute_log_manager.read_json_log_lines_for_log_key_prefix(
+        records, new_cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
             backfill_log_key_prefix, cursor
         )
 
         events = []
-        for record_dict in records:
+        for line in records:
+            if not line:
+                continue
+            try:
+                record_dict = _seven.json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
             exc_info = record_dict.get("exc_info")
             message = record_dict.get("msg")
             if exc_info:

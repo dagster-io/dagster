@@ -25,6 +25,7 @@ from dagster import (
     Nothing,
     Out,
     StaticPartitionMapping,
+    _seven,
     asset,
     daily_partitioned_config,
     define_asset_job,
@@ -2317,12 +2318,18 @@ def test_asset_backfill_logs(
     assert instance.get_runs_count() == 3
     wait_for_all_runs_to_finish(instance, timeout=30)
 
-    logs, cursor = instance.compute_log_manager.read_json_log_lines_for_log_key_prefix(
+    logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id], cursor=None, num_lines=15
     )
     assert logs
     for log_line in logs:
-        assert log_line.get("msg")
+        if not log_line:
+            continue
+        try:
+            record_dict = _seven.json.loads(log_line)
+        except json.JSONDecodeError:
+            continue
+        assert record_dict.get("msg")
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     backfill = instance.get_backfill("backfill_with_asset_selection")
@@ -2330,7 +2337,7 @@ def test_asset_backfill_logs(
     assert backfill.status == BulkActionStatus.COMPLETED
 
     # set num_lines hihg so we know we get all of the remaining logs
-    logs, cursor = instance.compute_log_manager.read_json_log_lines_for_log_key_prefix(
+    logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id], cursor=cursor.to_string(), num_lines=100
     )
 

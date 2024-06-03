@@ -115,7 +115,7 @@ def test_get_log_keys_for_log_key_prefix():
         ]
 
 
-def test_get_json_log_lines_for_log_key_prefix():
+def test_read_log_lines_for_log_key_prefix():
     """Tests that we can read a sequence of files in a bucket as if they are a single file."""
     with tempfile.TemporaryDirectory() as tmpdir_path:
         cm = LocalComputeLogManager(tmpdir_path)
@@ -130,7 +130,8 @@ def test_get_json_log_lines_for_log_key_prefix():
                 for j in range(10):
                     json_msg = {"file": file_id, "message_idx": j}
                     all_logs.append(json_msg)
-                    f.write("\n")
+                    if j > 0:
+                        f.write("\n")
                     json.dump(json_msg, f)
 
                 if last_log_file:
@@ -142,7 +143,7 @@ def test_get_json_log_lines_for_log_key_prefix():
 
         all_logs_iter = iter(all_logs)
         # read the entirety of the first file
-        log_lines, cursor = cm.read_json_log_lines_for_log_key_prefix(
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix, cursor=None, num_lines=10
         )
         assert len(log_lines) == 10
@@ -153,7 +154,7 @@ def test_get_json_log_lines_for_log_key_prefix():
             assert ll == next(all_logs_iter)
 
         # read half of the next log file
-        log_lines, cursor = cm.read_json_log_lines_for_log_key_prefix(
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix, cursor=cursor.to_string(), num_lines=5
         )
         assert len(log_lines) == 5
@@ -165,7 +166,7 @@ def test_get_json_log_lines_for_log_key_prefix():
             assert ll == next(all_logs_iter)
 
         # read the next ten lines, five will be in the second file, five will be in the third
-        log_lines, cursor = cm.read_json_log_lines_for_log_key_prefix(
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix, cursor=cursor.to_string(), num_lines=10
         )
         assert len(log_lines) == 10
@@ -177,7 +178,7 @@ def test_get_json_log_lines_for_log_key_prefix():
             assert ll == next(all_logs_iter)
 
         # read the remaining 15 lines, but request 20
-        log_lines, cursor = cm.read_json_log_lines_for_log_key_prefix(
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix, cursor=cursor.to_string(), num_lines=20
         )
         assert len(log_lines) == 15
@@ -192,7 +193,7 @@ def test_get_json_log_lines_for_log_key_prefix():
 
         write_log_file(4, last_log_file=True)
 
-        log_lines, cursor = cm.read_json_log_lines_for_log_key_prefix(
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix, cursor=cursor.to_string(), num_lines=15
         )
         assert len(log_lines) == 10

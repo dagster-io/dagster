@@ -17,7 +17,6 @@ from typing import (
 from typing_extensions import Final, Self
 
 import dagster._check as check
-from dagster import _seven
 from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL, LogLineCursor
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
@@ -284,39 +283,6 @@ class CapturedLogManager(ABC):
         # need to be supported, an io_type parameter will need to be added to this method
         raise NotImplementedError("Must implement get_log_keys_for_log_key_prefix")
 
-    def _read_json_lines(
-        self, start_line: int, num_lines: int, log_lines: Sequence[str]
-    ) -> Tuple[Sequence[Mapping[str, Any]], bool, int]:
-        """Attempts to convert each line in log_lines into a JSON dict until num_lines are converted, or
-        until log_lines is exhausted. Keeps track of the gross number of lines processed for cursoring, and
-        returns whether there are more lines in log_lines to process.
-        """
-        records = []
-        if start_line >= len(log_lines):
-            return records, False, 0
-
-        remaining_log_lines = log_lines[start_line:]
-        # we keep track of the total_lines_processed separately, since there are cases when we discard
-        # lines (ie if they are not valid json). But we need to know the total lines we processed so that
-        # the cursor can be updated correctly.
-        total_lines_processed = 0
-
-        for line in remaining_log_lines:
-            if len(records) >= num_lines:
-                # got the requested number of lines, end early
-                break
-            total_lines_processed += 1
-            if not line:
-                continue
-            try:
-                records.append(_seven.json.loads(line))
-            except json.JSONDecodeError:
-                continue
-
-        has_more = len(remaining_log_lines) > total_lines_processed
-
-        return records, has_more, total_lines_processed
-
     def _get_log_lines_for_log_key(self, log_key: Sequence[str]) -> Sequence[str]:
         """For a log key, gets the corresponding file, and splits the file into lines."""
         log_data = self.get_log_data(log_key)
@@ -328,7 +294,7 @@ class CapturedLogManager(ABC):
 
         return log_lines
 
-    def read_json_log_lines_for_log_key_prefix(
+    def read_log_lines_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], cursor: Optional[str], num_lines: int = 100
     ) -> Tuple[Sequence[Mapping[str, Any]], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
@@ -339,24 +305,24 @@ class CapturedLogManager(ABC):
         if len(log_keys) == 0:
             return [], None
 
-        json_log_cursor = LogLineCursor.parse(cursor) if cursor else None
-        if json_log_cursor and not json_log_cursor.has_more:
+        log_cursor = LogLineCursor.parse(cursor) if cursor else None
+        if log_cursor and not log_cursor.has_more:
             # No more logs to read for this log_key_prefix
-            return [], json_log_cursor
+            return [], log_cursor
 
-        if json_log_cursor is None:
+        if log_cursor is None:
             log_key_to_fetch_idx = 0
             line_cursor = 0
         else:
-            log_key_to_fetch_idx = log_keys.index(json_log_cursor.log_key)
-            line_cursor = json_log_cursor.line
+            log_key_to_fetch_idx = log_keys.index(log_cursor.log_key)
+            line_cursor = log_cursor.line
 
         if line_cursor == -1:
             # line_cursor for -1 means the entirety of the file has been read, but the next file
             # didn't exist yet. So we see if a new file has been added.
             # if the next file doesn't exist yet, return
             if log_key_to_fetch_idx + 1 >= len(log_keys):
-                return [], json_log_cursor
+                return [], log_cursor
             log_key_to_fetch_idx += 1
             line_cursor = 0
 
@@ -365,23 +331,23 @@ class CapturedLogManager(ABC):
         has_more = True
 
         while len(records) < num_lines:
-            new_records, file_has_more, total_lines_processed = self._read_json_lines(
-                start_line=line_cursor,
-                num_lines=num_lines - len(records),
-                log_lines=log_lines,
-            )
-            records.extend(new_records)
-            line_cursor += total_lines_processed
-            if not file_has_more:
+            remaining_log_lines = log_lines[line_cursor:]
+            remaining_lines_to_fetch = num_lines - len(records)
+            if remaining_lines_to_fetch < len(remaining_log_lines):
+                records.extend(remaining_log_lines[:remaining_lines_to_fetch])
+                line_cursor += remaining_lines_to_fetch
+            else:
+                records.extend(remaining_log_lines)
+                line_cursor = -1
+
+            if len(records) < num_lines and line_cursor == -1:
+                # we've read the entirety of the file, but we still need more records
                 if log_key_to_fetch_idx + 1 >= len(log_keys):
-                    # no more files to process, set line_cursor to -1 to indicate file is completed
-                    line_cursor = -1
+                    # no more files to process
                     break
                 log_key_to_fetch_idx += 1
                 line_cursor = 0
-                if len(records) < num_lines:
-                    # only fetch the next file if we still need records
-                    log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
+                log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
 
         if LOG_STREAM_COMPLETED_SIGIL in json.dumps(records[-1]):
             has_more = False
