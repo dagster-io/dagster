@@ -143,7 +143,12 @@ def test_execute():
 def test_execute_with_tailer_offset():
     TestStepHandler.reset()
     with instance_for_test() as instance:
-        with environ({"DAGSTER_EXECUTOR_POP_EVENTS_OFFSET": "100000"}):
+        with environ(
+            {
+                "DAGSTER_EXECUTOR_POP_EVENTS_OFFSET": "100000",
+                "DAGSTER_EXECUTOR_POP_EVENTS_LIMIT": "2",  # limit env var is ignored since it is lower than the offset - if it was not ignored, the run would never finish
+            }
+        ):
             result = execute_job(
                 reconstructable(foo_job),
                 instance=instance,
