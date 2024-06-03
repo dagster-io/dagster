@@ -21,9 +21,7 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {PipelineSelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
@@ -81,10 +79,6 @@ export const ROOT_WORKSPACE_QUERY = gql`
       ...WorkspaceDisplayMetadata
     }
     updatedTimestamp
-    featureFlags {
-      name
-      enabled
-    }
     locationOrLoadError {
       ... on RepositoryLocation {
         id
@@ -155,11 +149,6 @@ export const ROOT_WORKSPACE_QUERY = gql`
     mode
     name
     pipelineName
-    scheduleState {
-      id
-      selectorId
-      status
-    }
   }
 
   fragment WorkspaceSensor on Sensor {
@@ -170,20 +159,11 @@ export const ROOT_WORKSPACE_QUERY = gql`
       mode
       pipelineName
     }
-    sensorState {
-      id
-      selectorId
-      status
-      ...BasicInstigationStateFragment
-    }
     sensorType
-    ...SensorSwitchFragment
   }
 
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
-  ${BASIC_INSTIGATION_STATE_FRAGMENT}
 `;
 
 /**
@@ -390,27 +370,6 @@ export const useActivePipelineForName = (pipelineName: string, snapshotId?: stri
     return match.repository.pipelines.find((pipeline) => pipeline.name === pipelineName) || null;
   }
   return null;
-};
-
-export const getFeatureFlagForCodeLocation = (
-  locationEntries: WorkspaceLocationNodeFragment[],
-  locationName: string,
-  flagName: string,
-) => {
-  const matchingLocation = locationEntries.find(({id}) => id === locationName);
-  if (matchingLocation) {
-    const {featureFlags} = matchingLocation;
-    const matchingFlag = featureFlags.find(({name}) => name === flagName);
-    if (matchingFlag) {
-      return matchingFlag.enabled;
-    }
-  }
-  return false;
-};
-
-export const useFeatureFlagForCodeLocation = (locationName: string, flagName: string) => {
-  const {locationEntries} = useWorkspaceState();
-  return getFeatureFlagForCodeLocation(locationEntries, locationName, flagName);
 };
 
 export const isThisThingAJob = (repo: DagsterRepoOption | null, pipelineOrJobName: string) => {
