@@ -1170,7 +1170,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     monitored_assets=monitored_assets,
                     instance=context.instance,
                     resource_defs=context.resource_defs,
-                    sensor_name=context.sensor_name,
+                    sensor_name=context._sensor_name,  # noqa: SLF001
                     last_completion_time=context.last_completion_time,
                     code_location_origin=context.code_location_origin,
                     log_key=context.log_key,
