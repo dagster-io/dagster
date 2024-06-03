@@ -267,9 +267,94 @@ When deploying a dbt & Dagster project through "Import a Dagster project", the c
 
 ## Understanding the cloud action files
 
-The cloud action files added to your repository when importing a project are essential - they manage the deployments to Dagster+. While the files added through the "Import a dbt project" workflow are ready to use, those added through the "Import a Dagster project" workflow requires some attention when importing a dbt & Dagster project. Let's take a closer look at the differences between the files and the required steps for a dbt project.
+The cloud action files added to your repository when importing a project are essential - they manage the deployments in Dagster+. While the files added through the "Import a dbt project" workflow are ready to use as-is, those added through the "Import a Dagster project" workflow requires some attention when importing a dbt & Dagster project. Let's take a closer look at the differences between the files and the required steps for when using dbt in a Dagster project.
 
-### With GitHub
+For this exercise, let's consider the `deploy.yml` file added when importing a project from a GitHub repository. This guide will focus on the steps using the fast deployment with Python EXecutable (PEX). For more details about this approach, visit our [serverless deployment guide](/dagster-plus/deployment/serverless#customizing-the-runtime-environment).
+
+The content of the `deploy.yml` file varies according to the import workflow that was selected - the [one added via "Import a dbt project"](https://github.com/dagster-io/dagster-cloud-action/blob/v0.1.40/github/serverless/dbt/deploy.yml) contains steps that are specific to dbt, while [the one added via "Import a Dagster project"](https://github.com/dagster-io/dagster-cloud-action/blob/v0.1.40/github/serverless/deploy.yml) is missing the required steps for dbt since it is the basic template for all Dagster projects. This being said, the latter can easily be updated to work with a project using dbt.
+
+### Shared steps
+
+The `deploy.yml` file includes steps that are required to deploy a project in Dagster+, whether the project is using dbt or not. These steps include running checks before the run, checking out the directory where the content of the project repository is, and deploying the project using PEX.
+
+The first two steps are straightforward and self-explanatory. After the prerun checks are completed, the project repository is checked out before any other actions are taken.
+
+```
+- name: Prerun Checks
+  id: prerun
+  uses: dagster-io/dagster-cloud-action/actions/utils/prerun@v0.1
+
+- name: Checkout
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  uses: actions/checkout@v3
+  with:
+    ref: ${{ github.head_ref }}
+    path: project-repo
+```
+
+Once these steps are done, the following step will build and deploy the content of the project, according to the provided configurations.
+
+```
+- name: Python Executable Deploy
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  uses: dagster-io/dagster-cloud-action/actions/build_deploy_python_executable@v0.1
+  with:
+    dagster_cloud_file: "$GITHUB_WORKSPACE/project-repo/$DAGSTER_CLOUD_FILE"
+    build_output_dir: "$GITHUB_WORKSPACE/build"
+    python_version: "${{ env.PYTHON_VERSION }}"
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Steps specific to dbt
+
+<Note>
+  <strong>Note</strong>: This guide uses the command <code>dagster-dbt project prepare-for-deployment</code>,
+  which uses the experimental class <code>DbtProject</code>. Visit the{" "}
+  <a href="/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject">
+    dagster-dbt library API reference
+  </a>{" "}
+  for more info.
+</Note>
+
+When it comes to Dagster projects using dbt, more steps are required to deploying successfully to Dagster+.
+
+The first two steps are more straightforward then the third one - one validates the configuration and the other initializes the CI.
+
+```
+- name: Validate configuration
+  id: ci-validate
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  uses: dagster-io/dagster-cloud-action/actions/utils/dagster-cloud-cli@v0.1
+  with:
+    command: "ci check --project-dir project-repo --dagster-cloud-yaml-path ${{ env.DAGSTER_CLOUD_FILE }}"
+
+- name: Initialize build session
+  id: ci-init
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  uses: dagster-io/dagster-cloud-action/actions/utils/ci-init@v0.1
+  with:
+    project_dir: project-repo
+    dagster_cloud_yaml_path: ${{ env.DAGSTER_CLOUD_FILE }}
+    deployment: 'prod'
+```
+
+Once theses steps are completed, it is time to prepare the dbt project for deployment. This step uses the `dagster-dbt project prepare-for-deployment` command, which will find the `DbtProject` objects in your project and run each `manifest_preparer`. This ensures that `manifest.json` exists and can be found at the expected path when the dbt assets are created. For more information about `DbtProject` and its manifest_preparer`, visit the [dagster-dbt library API reference](/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject).
+
+```
+- name: Prepare DBT project for deployment
+  if: steps.prerun.outputs.result == 'pex-deploy'
+  # --upgrade-strategy eager picks up newer packages that are required for things to work
+  run: |
+    pip install pip --upgrade
+    cd project-repo/${{ env.DAGSTER_PROJECT_NAME }}
+    pip install . --upgrade --upgrade-strategy eager
+    dagster-dbt project prepare-for-deployment --file ${{ env.DAGSTER_PROJECT_NAME }}/project.py
+    # The cli command below can be used to manage syncing the prod manifest to branches if state_path is set on the DbtProject
+    # dagster-cloud ci dagster-dbt project manage-state --file ${{ env.DAGSTER_PROJECT_NAME }}/project.py
+  shell: bash
+```
+
 
 ## What's next
 
