@@ -215,6 +215,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             If needed by the sensor, top-level resource definitions will be pulled from these
             definitions. You can provide either this or `repository_def`.
         last_sensor_start_time (Optional[float]): The last time the sensor was started.
+        log_key (Optional[List[str]]): The log key to use for this sensor tick.
+        sensor_name (Optional[str]): The name of the sensor, used for logging and error messages.
+        code_location_origin (Optional[CodeLocationOrigin]): The code location that the sensor is in.
 
     Example:
         .. code-block:: python
@@ -300,7 +303,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             last_sensor_start_time=last_sensor_start_time,
             sensor_name=sensor_name,
             definitions=definitions,
-            last_completion_time=last_completion_time,
+            last_completion_time=None,
             code_location_origin=code_location_origin,
             log_key=log_key,
         )
@@ -1171,9 +1174,10 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     instance=context.instance,
                     resource_defs=context.resource_defs,
                     sensor_name=context._sensor_name,  # noqa: SLF001
-                    last_completion_time=context.last_completion_time,
                     code_location_origin=context.code_location_origin,
                     log_key=context.log_key,
+                    # deprecated
+                    last_completion_time=None,
                 ) as multi_asset_sensor_context:
                     context_param_name = get_context_param_name(materialization_fn)
                     context_param = (
