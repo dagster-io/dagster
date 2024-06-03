@@ -405,8 +405,6 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
 def default_metadata_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
-    metadata: Dict[str, Any] = {}
-
     column_schema = None
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
@@ -423,16 +421,12 @@ def default_metadata_from_dbt_resource_props(
 
     # all nodes should have these props defined, but just in case
     relation_identifier = None
-    if (
-        "database" in dbt_resource_props
-        and "schema" in dbt_resource_props
-        and "name" in dbt_resource_props
-    ):
-        relation_identifier = f"{dbt_resource_props['database']}.{dbt_resource_props['schema']}.{dbt_resource_props['name']}"
+    if "relation_name" in dbt_resource_props:
+        relation_identifier = dbt_resource_props["relation_name"]
 
+    metadata: Dict[str, Any] = {}
     if column_schema or relation_identifier:
         metadata = {
-            **metadata,
             **TableMetadataSet(
                 column_schema=TableSchema(
                     columns=[
