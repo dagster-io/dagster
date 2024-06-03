@@ -117,13 +117,12 @@ def test_op_name_collisions() -> None:
     single_asset_blueprint2 = ShellCommandBlueprint(
         assets=[AssetSpecModel(key="asset2")], command=["echo", '"hello"']
     )
-    resources = {"pipes_subprocess_client": PipesSubprocessClient()}
     blueprint_defs = BlueprintDefinitions.merge(
-        single_asset_blueprint1.build_defs(),
-        single_asset_blueprint2.build_defs(),
-        BlueprintDefinitions(resources=resources),
+        single_asset_blueprint1.build_defs(), single_asset_blueprint2.build_defs()
     )
-    blueprint_defs.to_definitions()
+
+    resources = {"pipes_subprocess_client": PipesSubprocessClient()}
+    blueprint_defs.to_definitions(additional_resources=resources)
 
     materialize(
         [cast(AssetsDefinition, asset) for asset in blueprint_defs.assets], resources=resources

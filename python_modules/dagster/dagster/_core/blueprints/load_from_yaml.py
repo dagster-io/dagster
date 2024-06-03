@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Type, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from dagster import (
     Definitions,
@@ -79,7 +79,10 @@ def _attach_code_references_to_definitions(
 
 
 def load_defs_from_yaml(
-    *, path: Union[Path, str], per_file_blueprint_type: Type[Blueprint]
+    *,
+    path: Union[Path, str],
+    per_file_blueprint_type: Type[Blueprint],
+    resources: Optional[Dict[str, Any]] = None,
 ) -> Definitions:
     """Load Dagster definitions from a YAML file of blueprints.
 
@@ -88,6 +91,8 @@ def load_defs_from_yaml(
             blueprints for Dagster definitions.
         per_file_blueprint_type (type[Blueprint]): The type of blueprint that each of the YAML
             files are expected to conform to.
+        resources (Dict[str, Any], optional): A dictionary of resources to be bound to the
+            definitions. Defaults to None.
 
     Returns:
         Definitions: The loaded Dagster Definitions object.
@@ -112,4 +117,6 @@ def load_defs_from_yaml(
         for blueprint in blueprints
     ]
 
-    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
+    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions(
+        additional_resources=resources or {}
+    )

@@ -43,12 +43,12 @@ class BlueprintDefinitions(NamedTuple):
     loggers: Mapping[str, LoggerDefinition] = {}
     asset_checks: Iterable[AssetChecksDefinition] = []
 
-    def to_definitions(self) -> Definitions:
+    def to_definitions(self, additional_resources: Dict[str, Any]) -> Definitions:
         return Definitions(
             assets=self.assets,
             sensors=self.sensors,
             jobs=self.jobs,
-            resources=self.resources,
+            resources={**self.resources, **additional_resources},
             executor=self.executor,
             loggers=self.loggers,
             asset_checks=self.asset_checks,
