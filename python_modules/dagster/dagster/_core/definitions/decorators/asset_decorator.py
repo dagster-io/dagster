@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from functools import cached_property
 from typing import (
     AbstractSet,
     Any,
@@ -56,7 +58,6 @@ from .assets_definition_factory import (
     AssetsDefinitionBuilderArgs,
     build_asset_ins,
     build_asset_outs,
-    compute_required_resource_keys_for_underlying_op,
 )
 
 
@@ -333,11 +334,58 @@ class AssetArgs(NamedTuple):
     owners: Optional[Sequence[str]]
 
 
+@dataclass
+class ResourceRelatedState:
+    asset_args: AssetArgs
+    out_asset_key: AssetKey
+
+    @cached_property
+    def op_resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+        return wrap_resources_for_execution(self.asset_args.resource_defs)
+
+    @cached_property
+    def possible_synthesized_io_manager_key(self) -> str:
+        check.not_none(self.asset_args.io_manager_def)
+        if self.asset_args.io_manager_key:
+            return self.asset_args.io_manager_key
+        return self.out_asset_key.to_python_identifier("io_manager")
+
+    @cached_property
+    def final_io_manager_key(self) -> str:
+        io_manager_key = (
+            self.possible_synthesized_io_manager_key
+            if self.asset_args.io_manager_def
+            else self.asset_args.io_manager_key
+        )
+        return cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
+
+    @cached_property
+    def asset_resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
+
+        # If these was no io_manager def directly passed in we can just wrap
+        # the explicitly provided resource defs
+        if not self.asset_args.io_manager_def:
+            return wrap_resources_for_execution(self.asset_args.resource_defs)
+
+        io_manager_key = self.possible_synthesized_io_manager_key
+        resource_defs = self.asset_args.resource_defs
+        io_manager_def = self.asset_args.io_manager_def
+        if io_manager_key in resource_defs and resource_defs[io_manager_key] != io_manager_def:
+            raise DagsterInvalidDefinitionError(
+                f"Provided conflicting definitions for io manager key '{io_manager_key}'."
+                " Please provide only one definition per key."
+            )
+
+        return wrap_resources_for_execution({**resource_defs, **{io_manager_key: io_manager_def}})
+
+
 def invoke(args: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
     from dagster._config.pythonic_config import (
         validate_resource_annotated_function,
     )
-    from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     validate_resource_annotated_function(fn)
 
@@ -349,39 +397,9 @@ def invoke(args: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
         decorator="@asset",
     )
 
+    resource_related_state = ResourceRelatedState(asset_args=args, out_asset_key=out_asset_key)
+
     with disable_dagster_warnings():
-        resource_defs_dict = args.resource_defs
-
-        # TODO: rename op_resource_defs and asset_resource_defs and document
-        # the strange logic -- schrockn 2024-06-03
-        op_resource_defs = wrap_resources_for_execution(resource_defs_dict)
-
-        op_required_resource_keys = compute_required_resource_keys_for_underlying_op(
-            explicitly_passed_required_resource_keys=args.required_resource_keys,
-            resource_defs_bound_to_asset=op_resource_defs,
-            fn=fn,
-        )
-
-        io_manager_key = args.io_manager_key
-        if args.io_manager_def:
-            if not io_manager_key:
-                io_manager_key = out_asset_key.to_python_identifier("io_manager")
-
-            if (
-                io_manager_key in args.resource_defs
-                and args.resource_defs[io_manager_key] != args.io_manager_def
-            ):
-                raise DagsterInvalidDefinitionError(
-                    f"Provided conflicting definitions for io manager key '{io_manager_key}'."
-                    " Please provide only one definition per key."
-                )
-
-            resource_defs_dict[io_manager_key] = args.io_manager_def
-
-        asset_resource_defs = wrap_resources_for_execution(resource_defs_dict)
-
-        io_manager_key = cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
-
         # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
         if args.partitions_def is None:
             check.param_invariant(
@@ -408,9 +426,9 @@ def invoke(args: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
             op_tags=args.op_tags,
             config_schema=args.config_schema,
             compute_kind=args.compute_kind,
-            required_resource_keys=op_required_resource_keys,
-            op_def_resource_defs=op_resource_defs,
-            assets_def_resource_defs=asset_resource_defs,
+            required_resource_keys=args.required_resource_keys,
+            op_def_resource_defs=resource_related_state.op_resource_defs,
+            assets_def_resource_defs=resource_related_state.asset_resource_defs,
             backfill_policy=args.backfill_policy,
             asset_out_map={
                 DEFAULT_OUTPUT: AssetOut(
@@ -418,7 +436,7 @@ def invoke(args: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
                     metadata=args.metadata,
                     description=args.description,
                     is_required=args.output_required,
-                    io_manager_key=io_manager_key,
+                    io_manager_key=resource_related_state.final_io_manager_key,
                     dagster_type=args.dagster_type if args.dagster_type else NoValueSentinel,
                     group_name=args.group_name,
                     code_version=args.code_version,
