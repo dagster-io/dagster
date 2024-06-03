@@ -346,10 +346,6 @@ class InOutMapper:
     def asset_outs_by_output_name(self) -> Mapping[str, Out]:
         return dict(self.out_mappings.values())
 
-    # @cached_property
-    # def asset_ins_by_input_names(self) -> Mapping[str, In]:
-    #     return dict(self.in_mappings.values())
-
     @cached_property
     def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
         return {
