@@ -369,6 +369,12 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
 
     @public
     @property
+    def has_partition_key_range(self) -> bool:
+        """Whether the current run is a partitioned run."""
+        return self._step_execution_context.has_partition_key_range
+
+    @public
+    @property
     def partition_key_range(self) -> PartitionKeyRange:
         """The range of partition keys for the current run.
 
