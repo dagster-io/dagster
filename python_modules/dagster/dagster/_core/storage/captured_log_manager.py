@@ -3,11 +3,9 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import (
     IO,
-    Any,
     Callable,
     Generator,
     Iterator,
-    Mapping,
     NamedTuple,
     Optional,
     Sequence,
@@ -296,7 +294,7 @@ class CapturedLogManager(ABC):
 
     def read_log_lines_for_log_key_prefix(
         self, log_key_prefix: Sequence[str], cursor: Optional[str], num_lines: int = 100
-    ) -> Tuple[Sequence[Mapping[str, Any]], Optional[LogLineCursor]]:
+    ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
         as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
         """
