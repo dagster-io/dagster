@@ -143,9 +143,13 @@ After the Dagster+ changes, a dbt and Dagster project will include the files req
 
 #### Update the cloud action files
 
-1. In your Dagster project, locate the .github/workflows directory.
+When importing a project in Dagster+ using the "Import a Dagster Project" feature, various files are added to the repository containing the project, including the cloud action files. These files are optimized for general use in Dagster projects, but require some attention when the Dagster project includes a dbt component. Once these files are updated, the dbt & Dagster project will be successfully deployed to Dagster+.
 
-2. Open the deploy.yml file.
+Follow these steps to update the cloud action files. Note that in this example, the dbt project directory in the repository is called `dbt` and the [adapter used by dbt](https://docs.getdbt.com/docs/connect-adapters) is DuckDB. Depending on your dbt & Dagster project, you might need to update the code.
+
+1. In your Dagster project, locate the `.github/workflows` directory.
+
+2. Open the `deploy.yml` file.
 
 3. Locate the Checkout for Python Executable Deploy step, which should be on or near line 38.
 
@@ -157,13 +161,13 @@ After the Dagster+ changes, a dbt and Dagster project will include the files req
   run: |
     pip install pip --upgrade
     pip install dbt-duckdb
-    cd project-repo/analytics
+    cd project-repo/dbt
     dbt deps
     dbt parse
   shell: bash
 ```
 
-[//]: <> "TODO: Add the steps for GitLab as well"
+5. Open the `branch_deployments.yml` file, then repeat steps 3 and 4.
 
 #### Review the state of the repo
 
@@ -263,8 +267,10 @@ When deploying a dbt & Dagster project through "Import a Dagster project", the c
 
 ## Understanding the cloud action files
 
+The cloud action files added to your repository when importing a project are essential - they manage the deployments to Dagster+. While the files added through the "Import a dbt project" workflow are ready to use, those added through the "Import a Dagster project" workflow requires some attention when importing a dbt & Dagster project. Let's take a closer look at the differences between the files and the required steps for a dbt project.
+
 ### With GitHub
 
-## Ready to get started?
+## What's next
 
-[//]: <> "TODO: Include reference to dbt course in Dagster University"
+For an end-to-end example, from the project creation to the deployment to Dagster+, checkout out the Dagster & dbt course in [Dagster University](https://courses.dagster.io).
