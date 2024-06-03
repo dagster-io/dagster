@@ -27,10 +27,6 @@ from dagster_graphql.test.utils import (
 )
 
 ensure_dagster_tests_import()
-from dagster_tests.daemon_tests.test_backfill import (
-    wait_for_all_runs_to_finish,
-    wait_for_all_runs_to_start,
-)
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
     root_assets_different_partitions_same_downstream,
 )
@@ -100,7 +96,7 @@ ASSET_BACKFILL_DATA_QUERY = """
 """
 
 ASSET_BACKFILL_LOGS_QUERY = """
-  query BackfillStatusesByAsset($backfillId: String!) {
+  query BackfillLogsByAsset($backfillId: String!) {
     partitionBackfillOrError(backfillId: $backfillId) {
       ... on PartitionBackfill {
         logEvents {
@@ -994,10 +990,18 @@ def test_backfill_logs():
             )
             assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
 
-            list(execute_backfill_iteration(context, get_default_daemon_logger("BackfillDaemon")))
-            assert instance.get_runs_count() == 3
-            wait_for_all_runs_to_start(instance, timeout=15)
-            assert instance.get_runs_count() == 3
-            wait_for_all_runs_to_finish(instance, timeout=15)
+            list(
+                execute_backfill_iteration(
+                    context.process_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
 
-            # copy code from test_backfill that runs the backfill daemon, then runt he GQL query to get the logs
+            backfill_logs = execute_dagster_graphql(
+                context,
+                ASSET_BACKFILL_LOGS_QUERY,
+                variables={
+                    "backfillId": backfill_id,
+                },
+            )
+
+            assert len(backfill_logs.data["partitionBackfillOrError"]["logEvents"]["events"]) > 0
