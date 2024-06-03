@@ -351,16 +351,27 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> Sequence[AssetKey]:
         # base implementation of get_asset_keys, using the existing `all_asset_keys` and doing the
         # filtering in-memory
-        asset_keys = sorted(self.all_asset_keys(), key=str)
+        asset_keys = sorted(self.all_asset_keys(), key=lambda k: k.to_string())
         if prefix:
             asset_keys = [
                 asset_key for asset_key in asset_keys if asset_key.path[: len(prefix)] == prefix
             ]
         if cursor:
             cursor_asset = AssetKey.from_db_string(cursor)
-            if cursor_asset and cursor_asset in asset_keys:
-                idx = asset_keys.index(cursor_asset)
-                asset_keys = asset_keys[idx + 1 :]
+
+            if not cursor_asset:
+                raise Exception(f"Invalid cursor string {cursor}")
+
+            cursor_asset_str = cursor_asset.to_string()
+
+            idx = len(asset_keys)
+            for i in range(len(asset_keys)):
+                if asset_keys[i].to_string() > cursor_asset_str:
+                    idx = i
+                    break
+
+            asset_keys = asset_keys[idx:]
+
         if limit:
             asset_keys = asset_keys[:limit]
         return asset_keys
