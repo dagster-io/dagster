@@ -2536,6 +2536,11 @@ class TestEventLogStorage:
             assert len(asset_keys) == 1
             assert asset_keys[0].to_string() == '["b", "z"]'
 
+            # pagination still works even if the key is not in the list
+            asset_keys = storage.get_asset_keys(cursor='["b", "w"]', limit=1)
+            assert len(asset_keys) == 1
+            assert asset_keys[0].to_string() == '["b", "x"]'
+
             # prefix filter
             asset_keys = storage.get_asset_keys(prefix=["b"])
             assert len(asset_keys) == 3
