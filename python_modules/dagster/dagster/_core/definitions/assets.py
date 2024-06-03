@@ -283,6 +283,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
             description = spec.description or output_def.description or node_def.description
             code_version = spec.code_version or output_def.code_version
+            skippable = not output_def.is_required
 
             check.invariant(
                 not (
@@ -300,6 +301,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     code_version=code_version,
                     metadata=metadata,
                     description=description,
+                    skippable=skippable,
                 )
             )
 
@@ -1673,7 +1675,7 @@ def _asset_specs_from_attr_key_params(
 
         with disable_dagster_warnings():
             result.append(
-                AssetSpec(
+                AssetSpec.dagster_internal_init(
                     key=key,
                     description=validated_descriptions_by_key.get(key),
                     metadata=validated_metadata_by_key.get(key),
@@ -1684,6 +1686,9 @@ def _asset_specs_from_attr_key_params(
                     group_name=validated_group_names_by_key.get(key),
                     code_version=validated_code_versions_by_key.get(key),
                     deps=dep_objs,
+                    # Value here is irrelevant, because it will be replaced by value from
+                    # NodeDefinition
+                    skippable=False,
                 )
             )
 

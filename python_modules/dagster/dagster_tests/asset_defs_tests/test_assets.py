@@ -2179,3 +2179,14 @@ def test_asset_out_with_tags():
 
         @multi_asset(outs={"asset1": AssetOut(tags={"a%": "b"})})  # key has illegal character
         def assets(): ...
+
+
+def test_asset_spec_skippable():
+    @op(out=Out(is_required=False))
+    def op1():
+        pass
+
+    assets_def = AssetsDefinition(
+        node_def=op1, keys_by_output_name={"result": AssetKey("asset1")}, keys_by_input_name={}
+    )
+    assert next(iter(assets_def.specs)).skippable
