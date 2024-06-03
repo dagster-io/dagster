@@ -335,7 +335,7 @@ class AssetArgs(NamedTuple):
     owners: Optional[Sequence[str]]
 
 
-def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
+def invoke(args: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
     from dagster._config.pythonic_config import (
         validate_resource_annotated_function,
     )
@@ -344,9 +344,9 @@ def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
     validate_resource_annotated_function(fn)
 
     out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
-        key=self.key,
-        key_prefix=self.key_prefix,
-        name=self.name,
+        key=args.key,
+        key_prefix=args.key_prefix,
+        name=args.name,
         fn=fn,
         decorator="@asset",
     )
@@ -354,9 +354,9 @@ def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
     with disable_dagster_warnings():
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
 
-        bare_required_resource_keys = set(self.required_resource_keys)
+        bare_required_resource_keys = set(args.required_resource_keys)
 
-        resource_defs_dict = self.resource_defs
+        resource_defs_dict = args.resource_defs
         resource_defs_keys = set(resource_defs_dict.keys())
         decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
 
@@ -364,21 +364,21 @@ def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
         # the strange logic -- schrockn 2024-06-03
         op_resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
-        io_manager_key = self.io_manager_key
-        if self.io_manager_def:
+        io_manager_key = args.io_manager_key
+        if args.io_manager_def:
             if not io_manager_key:
                 io_manager_key = out_asset_key.to_python_identifier("io_manager")
 
             if (
-                io_manager_key in self.resource_defs
-                and self.resource_defs[io_manager_key] != self.io_manager_def
+                io_manager_key in args.resource_defs
+                and args.resource_defs[io_manager_key] != args.io_manager_def
             ):
                 raise DagsterInvalidDefinitionError(
                     f"Provided conflicting definitions for io manager key '{io_manager_key}'."
                     " Please provide only one definition per key."
                 )
 
-            resource_defs_dict[io_manager_key] = self.io_manager_def
+            resource_defs_dict[io_manager_key] = args.io_manager_def
 
         asset_resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
@@ -393,11 +393,11 @@ def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
         op_required_resource_keys = decorator_resource_keys - arg_resource_keys
 
         # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
-        if self.partitions_def is None:
+        if args.partitions_def is None:
             check.param_invariant(
                 (
-                    self.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
-                    if self.backfill_policy
+                    args.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
+                    if args.backfill_policy
                     else True
                 ),
                 "backfill_policy",
@@ -405,42 +405,42 @@ def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
             )
 
     with disable_dagster_warnings():
-        args = AssetsDefinitionBuilderArgs(
-            name=self.name,
-            description=self.description,
+        builder_args = AssetsDefinitionBuilderArgs(
+            name=args.name,
+            description=args.description,
             check_specs=check.opt_list_param(
-                self.check_specs, "check_specs", of_type=AssetCheckSpec
+                args.check_specs, "check_specs", of_type=AssetCheckSpec
             ),
-            group_name=self.group_name,
-            partitions_def=self.partitions_def,
-            retry_policy=self.retry_policy,
-            code_version=self.code_version,
-            op_tags=self.op_tags,
-            config_schema=self.config_schema,
-            compute_kind=self.compute_kind,
+            group_name=args.group_name,
+            partitions_def=args.partitions_def,
+            retry_policy=args.retry_policy,
+            code_version=args.code_version,
+            op_tags=args.op_tags,
+            config_schema=args.config_schema,
+            compute_kind=args.compute_kind,
             required_resource_keys=op_required_resource_keys,
             op_def_resource_defs=op_resource_defs,
             assets_def_resource_defs=asset_resource_defs,
-            backfill_policy=self.backfill_policy,
+            backfill_policy=args.backfill_policy,
             asset_out_map={
                 DEFAULT_OUTPUT: AssetOut(
                     key=out_asset_key,
-                    metadata=self.metadata,
-                    description=self.description,
-                    is_required=self.output_required,
+                    metadata=args.metadata,
+                    description=args.description,
+                    is_required=args.output_required,
                     io_manager_key=io_manager_key,
-                    dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
-                    group_name=self.group_name,
-                    code_version=self.code_version,
-                    freshness_policy=self.freshness_policy,
-                    auto_materialize_policy=self.auto_materialize_policy,
-                    backfill_policy=self.backfill_policy,
-                    owners=self.owners,
-                    tags=validate_tags_strict(self.tags),
+                    dagster_type=args.dagster_type if args.dagster_type else NoValueSentinel,
+                    group_name=args.group_name,
+                    code_version=args.code_version,
+                    freshness_policy=args.freshness_policy,
+                    auto_materialize_policy=args.auto_materialize_policy,
+                    backfill_policy=args.backfill_policy,
+                    owners=args.owners,
+                    tags=validate_tags_strict(args.tags),
                 )
             },
-            upstream_asset_deps=self.deps,
-            asset_in_map=self.ins,
+            upstream_asset_deps=args.deps,
+            asset_in_map=args.ins,
             # We will not be using specs to construct here
             # because they are assumption about output names. Non-spec
             # construction path assumptions apply here
@@ -450,7 +450,7 @@ def invoke(self: AssetArgs, fn: Callable[..., Any]) -> AssetsDefinition:
             can_subset=False,
         )
         builder = AssetsDefinitionBuilder.from_non_spec_args(
-            args=args, fn=fn, op_name=out_asset_key.to_python_identifier()
+            args=builder_args, fn=fn, op_name=out_asset_key.to_python_identifier()
         )
     return builder.create_assets_definition()
 
