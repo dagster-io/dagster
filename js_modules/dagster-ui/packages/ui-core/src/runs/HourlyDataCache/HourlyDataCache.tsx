@@ -20,13 +20,13 @@ export class HourlyDataCache<T> {
    * @param id A unique ID for the hourly data cache in this deployment
    * @param [keyPrefix=''] A unique key identifying the timeline view [incorporating filters, etc.]
    */
-  constructor(id?: string | false, keyPrefix = '') {
+  constructor(id?: string | false, keyPrefix = '', keyMaxCount = 1) {
     this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
 
     if (id) {
       this.indexedDBCache = cache<string, typeof this.cache>({
         dbName: `HourlyDataCache:${id}`,
-        maxCount: 3, // >1 because we have both the overview timeline and backfill timelines
+        maxCount: keyMaxCount,
       });
       this.loadCacheFromIndexedDB();
       this.clearOldEntries();

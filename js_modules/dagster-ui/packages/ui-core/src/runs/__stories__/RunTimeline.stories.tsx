@@ -35,7 +35,7 @@ export const OneRow = () => {
     ];
   }, [sixHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[sixHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[sixHoursAgo, now]} />;
 };
 
 export const RowWithOverlappingRuns = () => {
@@ -58,7 +58,7 @@ export const RowWithOverlappingRuns = () => {
     ];
   }, [sixHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[sixHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[sixHoursAgo, now]} />;
 };
 
 export const OverlapWithRunning = () => {
@@ -99,7 +99,7 @@ export const OverlapWithRunning = () => {
     ];
   }, [twoHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now + 60 * 6000]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[twoHoursAgo, now + 60 * 6000]} />;
 };
 
 export const ManyRows = () => {
@@ -123,7 +123,7 @@ export const ManyRows = () => {
     }, []);
   }, [sixHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[sixHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[sixHoursAgo, now]} />;
 };
 
 export const VeryLongRunning = () => {
@@ -170,7 +170,7 @@ export const VeryLongRunning = () => {
     ];
   }, [twoDaysAgo, sixHoursAgo]);
 
-  return <RunTimeline jobs={jobs} range={[fourHoursAgo, future]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[fourHoursAgo, future]} />;
 };
 
 export const MultipleStatusesBatched = () => {
@@ -223,7 +223,7 @@ export const MultipleStatusesBatched = () => {
     ];
   }, [twoHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[twoHoursAgo, now]} />;
 };
 
 export const BatchThresholdTesting = () => {
@@ -288,5 +288,5 @@ export const BatchThresholdTesting = () => {
     ];
   }, [threeHoursAgo, now]);
 
-  return <RunTimeline jobs={jobs} range={[threeHoursAgo, now + 60 * 60 * 1000]} />;
+  return <RunTimeline jobs={jobs} rangeMs={[threeHoursAgo, now + 60 * 60 * 1000]} />;
 };

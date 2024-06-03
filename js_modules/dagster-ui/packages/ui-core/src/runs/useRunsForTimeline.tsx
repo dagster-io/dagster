@@ -58,14 +58,18 @@ export const useRunsForTimeline = ({
   const client = useApolloClient();
 
   const {localCacheIdPrefix} = useContext(AppContext);
-  const completedRunsCache = useMemo(
-    () =>
-      new HourlyDataCache<RunTimelineFragment>(
-        localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
+  const completedRunsCache = useMemo(() => {
+    if (filter) {
+      return new HourlyDataCache<RunTimelineFragment>(
+        localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline-filtered` : false,
         JSON.stringify(filter),
-      ),
-    [filter, localCacheIdPrefix],
-  );
+        3,
+      );
+    }
+    return new HourlyDataCache<RunTimelineFragment>(
+      localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
+    );
+  }, [filter, localCacheIdPrefix]);
   const [runsNotCapturedByUpdateBuckets, setRunsNotCapturedByUpdateBuckets] = useState<
     RunTimelineFragment[]
   >([]);
