@@ -244,7 +244,7 @@ class AssetsDefinitionBuilderArgs(NamedTuple):
     config_schema: Optional[UserConfigSchema]
     retry_policy: Optional[RetryPolicy]
     compute_kind: Optional[str]
-    required_resource_keys: Set[str]
+    required_resource_keys: AbstractSet[str]
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
     op_def_resource_defs: Mapping[str, ResourceDefinition]
     backfill_policy: Optional[BackfillPolicy]
