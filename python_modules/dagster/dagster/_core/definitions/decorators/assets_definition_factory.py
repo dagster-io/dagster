@@ -206,10 +206,10 @@ def make_keys_by_output_name(
 
 
 def compute_required_resource_keys_for_underlying_op(
-    explicitly_passed_required_resource_keys: Set[str],
+    explicitly_passed_required_resource_keys: AbstractSet[str],
     resource_defs_bound_to_asset: Mapping[str, ResourceDefinition],
     fn: Callable[..., Any],
-) -> Set[str]:
+) -> AbstractSet[str]:
     arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
     check.param_invariant(
         len(explicitly_passed_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
