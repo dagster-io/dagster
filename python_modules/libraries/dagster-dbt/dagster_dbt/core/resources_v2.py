@@ -168,7 +168,7 @@ class DbtCliEventMessage:
     def is_result_event(raw_event: Dict[str, Any]) -> bool:
         return raw_event["info"]["name"] in set(
             ["LogSeedResult", "LogModelResult", "LogSnapshotResult", "LogTestResult"]
-        )
+        ) and not raw_event["data"]["node_info"]["unique_id"].startswith("unit_test")
 
     def _yield_observation_events_for_test(
         self,
