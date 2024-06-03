@@ -293,6 +293,12 @@ class InstigatorState(
             instigator_data=instigator_data,
         )
 
+    @property
+    def sensor_instigator_data(self) -> Optional["SensorInstigatorData"]:
+        if isinstance(self.instigator_data, SensorInstigatorData):
+            return self.instigator_data
+        return None
+
 
 @whitelist_for_serdes(old_storage_names={"JobTickStatus"})
 class TickStatus(Enum):

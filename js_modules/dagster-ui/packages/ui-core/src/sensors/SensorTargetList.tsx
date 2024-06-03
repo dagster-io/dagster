@@ -119,7 +119,7 @@ const AssetSelectionLink = ({
         canEscapeKeyClose
       >
         <Box flex={{direction: 'column'}}>
-          {sensorType === SensorType.AUTO_MATERIALIZE ? (
+          {sensorType === SensorType.AUTO_MATERIALIZE || sensorType === SensorType.AUTOMATION ? (
             <>
               <Section
                 title="Assets with a materialization policy"

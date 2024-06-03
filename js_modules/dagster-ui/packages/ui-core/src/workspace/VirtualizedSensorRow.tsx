@@ -288,6 +288,11 @@ export const SENSOR_TYPE_META: Record<
     description:
       'Auto-materialize sensors trigger runs based on auto-materialize policies defined on assets.',
   },
+  [SensorType.AUTOMATION]: {
+    name: 'Automation',
+    icon: 'materialization',
+    description: 'Automation sensors trigger runs based on conditions defined on assets.',
+  },
   [SensorType.FRESHNESS_POLICY]: {
     name: 'Freshness policy',
     icon: 'hourglass',

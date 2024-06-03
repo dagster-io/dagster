@@ -19,6 +19,9 @@ from dagster._core.definitions.asset_daemon_cursor import (
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+    AssetConditionEvaluation,
+)
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
@@ -352,18 +355,20 @@ class AssetDaemon(DagsterDaemon):
         # Find the largest stored evaluation ID across all auto-materialize cursor
         # to initialize the thread-safe evaluation ID counter
         with self._evaluation_id_lock:
-            all_auto_materialize_states = check.not_none(
-                instance.schedule_storage
-            ).all_instigator_state(instigator_type=InstigatorType.SENSOR)
+            sensor_states = check.not_none(instance.schedule_storage).all_instigator_state(
+                instigator_type=InstigatorType.SENSOR
+            )
 
             self._next_evaluation_id = 0
-            for auto_materialize_state in all_auto_materialize_states:
-                if not auto_materialize_state.instigator_data:
+            for sensor_state in sensor_states:
+                if not (
+                    sensor_state.sensor_instigator_data
+                    and sensor_state.sensor_instigator_data.sensor_type
+                    and sensor_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
+                ):
                     continue
-                instigator_data = cast(SensorInstigatorData, auto_materialize_state.instigator_data)
-                if instigator_data.sensor_type != SensorType.AUTO_MATERIALIZE:
-                    continue
-                compressed_cursor = instigator_data.cursor
+
+                compressed_cursor = sensor_state.sensor_instigator_data.cursor
                 if compressed_cursor:
                     stored_evaluation_id = asset_daemon_cursor_from_instigator_serialized_cursor(
                         compressed_cursor, None
@@ -472,7 +477,7 @@ class AssetDaemon(DagsterDaemon):
                 if code_location:
                     for repo in code_location.get_repositories().values():
                         for sensor in repo.get_external_sensors():
-                            if sensor.sensor_type == SensorType.AUTO_MATERIALIZE:
+                            if sensor.sensor_type.is_handled_by_asset_daemon:
                                 eligible_sensors_and_repos.append((sensor, repo))
 
             if not eligible_sensors_and_repos:
@@ -484,9 +489,9 @@ class AssetDaemon(DagsterDaemon):
                     instigator_type=InstigatorType.SENSOR
                 )
                 if (
-                    sensor_state.instigator_data
-                    and cast(SensorInstigatorData, sensor_state.instigator_data).sensor_type
-                    == SensorType.AUTO_MATERIALIZE
+                    sensor_state.sensor_instigator_data
+                    and sensor_state.sensor_instigator_data.sensor_type
+                    and sensor_state.sensor_instigator_data.sensor_type.is_handled_by_asset_daemon
                 )
             }
 
@@ -559,7 +564,7 @@ class AssetDaemon(DagsterDaemon):
                         min_interval=sensor.min_interval_seconds,
                         cursor=None,
                         last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                        sensor_type=SensorType.AUTO_MATERIALIZE,
+                        sensor_type=sensor.sensor_type,
                     ),
                 )
                 instance.add_instigator_state(auto_materialize_state)
@@ -616,7 +621,7 @@ class AssetDaemon(DagsterDaemon):
                     min_interval=sensor.min_interval_seconds,
                     cursor=asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor),
                     last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
-                    sensor_type=SensorType.AUTO_MATERIALIZE,
+                    sensor_type=sensor.sensor_type,
                 ),
             )
 
@@ -828,6 +833,7 @@ class AssetDaemon(DagsterDaemon):
                     auto_observe_asset_keys,
                     debug_crash_flags,
                     is_retry=(retry_tick is not None),
+                    instigator_state=auto_materialize_instigator_state,
                 )
         except Exception:
             error_info = DaemonErrorCapture.on_exception(
@@ -850,6 +856,7 @@ class AssetDaemon(DagsterDaemon):
         auto_observe_asset_keys: Set[AssetKey],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,
         is_retry: bool,
+        instigator_state: Optional[InstigatorState],
     ):
         evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
 
@@ -880,24 +887,38 @@ class AssetDaemon(DagsterDaemon):
         else:
             sensor_tags = {SENSOR_NAME_TAG: sensor.name, **sensor.run_tags} if sensor else {}
 
-            run_requests, new_cursor, evaluations = AssetDaemonContext(
-                evaluation_id=evaluation_id,
-                asset_graph=asset_graph,
-                auto_materialize_asset_keys=auto_materialize_asset_keys,
-                instance=instance,
-                cursor=stored_cursor,
-                materialize_run_tags={
-                    **instance.auto_materialize_run_tags,
-                    **DagsterRun.tags_for_tick_id(
-                        str(tick.tick_id),
+            # experimental code path for evaluating scheduling in user space
+            if sensor and sensor.sensor_type == SensorType.AUTOMATION:
+                run_requests, new_cursor, evaluations = invoke_sensor_for_evaluation(
+                    sensor=sensor,
+                    workspace_process_context=workspace_process_context,
+                    instigator_data=check.inst(
+                        check.not_none(instigator_state).instigator_data, SensorInstigatorData
                     ),
-                    **sensor_tags,
-                },
-                observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
-                auto_observe_asset_keys=auto_observe_asset_keys,
-                respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
-                logger=self._logger,
-            ).evaluate()
+                    evaluation_id=evaluation_id,
+                    stored_cursor=stored_cursor,
+                    tick=tick,
+                    asset_graph=asset_graph,
+                )
+            else:
+                run_requests, new_cursor, evaluations = AssetDaemonContext(
+                    evaluation_id=evaluation_id,
+                    asset_graph=asset_graph,
+                    auto_materialize_asset_keys=auto_materialize_asset_keys,
+                    instance=instance,
+                    cursor=stored_cursor,
+                    materialize_run_tags={
+                        **instance.auto_materialize_run_tags,
+                        **DagsterRun.tags_for_tick_id(
+                            str(tick.tick_id),
+                        ),
+                        **sensor_tags,
+                    },
+                    observe_run_tags={AUTO_OBSERVE_TAG: "true", **sensor_tags},
+                    auto_observe_asset_keys=auto_observe_asset_keys,
+                    respect_materialization_data_versions=instance.auto_materialize_respect_materialization_data_versions,
+                    logger=self._logger,
+                ).evaluate()
 
             check.invariant(new_cursor.evaluation_id == evaluation_id)
 
@@ -937,7 +958,7 @@ class AssetDaemon(DagsterDaemon):
                             last_tick_timestamp=tick.timestamp,
                             min_interval=sensor.min_interval_seconds,
                             cursor=asset_daemon_cursor_to_instigator_serialized_cursor(new_cursor),
-                            sensor_type=SensorType.AUTO_MATERIALIZE,
+                            sensor_type=sensor.sensor_type,
                         )
                     )
                 )
@@ -1016,3 +1037,52 @@ class AssetDaemon(DagsterDaemon):
             )
 
         self._logger.info(f"Finished auto-materialization tick{print_group_name}")
+
+
+def invoke_sensor_for_evaluation(
+    sensor: ExternalSensor,
+    workspace_process_context: IWorkspaceProcessContext,
+    instigator_data: SensorInstigatorData,
+    evaluation_id: int,
+    stored_cursor: AssetDaemonCursor,
+    tick: InstigatorTick,
+    asset_graph: RemoteAssetGraph,
+) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+    sensor_origin = sensor.get_external_origin()
+    request_ctx = workspace_process_context.create_request_context()
+    code_loc = request_ctx.get_code_location(sensor_origin.location_name)
+
+    sensor_cursor = AssetDaemonCursor(
+        evaluation_id=evaluation_id,  # bump this before sending it over
+        previous_evaluation_state=stored_cursor.previous_evaluation_state,
+        last_observe_request_timestamp_by_asset_key=stored_cursor.last_observe_request_timestamp_by_asset_key,
+    )
+    sensor_cursor_str = asset_daemon_cursor_to_instigator_serialized_cursor(sensor_cursor)
+    result = code_loc.get_external_sensor_execution_data(
+        instance=workspace_process_context.instance,
+        repository_handle=sensor.handle.repository_handle,
+        name=sensor.name,
+        last_tick_completion_time=instigator_data.last_tick_timestamp,
+        last_run_key=instigator_data.last_run_key,
+        cursor=sensor_cursor_str,
+        log_key=[
+            sensor.handle.repository_handle.repository_name,
+            sensor.name,
+            str(tick.tick_id),
+        ],
+        last_sensor_start_time=instigator_data.last_sensor_start_timestamp,
+    )
+    run_requests = result.run_requests or []
+    new_cursor = asset_daemon_cursor_from_instigator_serialized_cursor(
+        result.cursor,
+        asset_graph,
+    )
+    # only record evaluation results where something changed
+    evaluations = [
+        es.previous_evaluation
+        for es in new_cursor.previous_evaluation_state  # does this work ???
+        if not es.previous_evaluation.equivalent_to_stored_evaluation(
+            stored_cursor.get_previous_evaluation(es.asset_key)
+        )
+    ]
+    return (run_requests, new_cursor, evaluations)

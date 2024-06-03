@@ -516,6 +516,10 @@ class RemoteInstigatorOrigin(
     def get_id(self) -> str:
         return create_snapshot_id(self)
 
+    @property
+    def location_name(self) -> str:
+        return self.repository_origin.code_location_origin.location_name
+
 
 @whitelist_for_serdes(
     storage_name="ExternalPartitionSetOrigin",
