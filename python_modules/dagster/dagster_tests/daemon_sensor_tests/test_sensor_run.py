@@ -51,6 +51,9 @@ from dagster._core.definitions.decorators import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.definitions.multi_asset_sensor_definition import (
+    MultiAssetSensorEvaluationContext,
+)
 from dagster._core.definitions.run_request import InstigatorType, SensorResult
 from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster._core.definitions.sensor_definition import (
@@ -603,6 +606,31 @@ def logging_sensor(context):
                 self.message = "error"
 
     handler = Handler()
+
+    context.log.addHandler(handler)
+    context.log.info("hello %s", "hello")
+    context.log.info(handler.message)
+
+    try:
+        raise Exception("hi hi")
+    except Exception:
+        context.log.exception("goodbye goodbye")
+
+    context.log.removeHandler(handler)
+
+    return SkipReason()
+
+
+@multi_asset_sensor(monitored_assets=[AssetKey("asset_a"), AssetKey("asset_b")], job=the_job)
+def multi_asset_logging_sensor(context: MultiAssetSensorEvaluationContext) -> SkipReason:
+    class Handler(logging.Handler):
+        def handle(self, record):
+            try:
+                self.message = record.getMessage()
+            except TypeError:
+                self.message = "error"
+
+    handler = Handler()
     context.log.addHandler(handler)
     context.log.info("hello %s", "hello")
     context.log.info(handler.message)
@@ -815,6 +843,7 @@ def the_repo():
         targets_asset_selection_sensor,
         multi_asset_sensor_targets_asset_selection,
         logging_sensor,
+        multi_asset_logging_sensor,
         logging_fail_tick_sensor,
         logging_status_sensor,
         add_delete_dynamic_partitions_and_yield_run_requests_sensor,
@@ -3042,8 +3071,9 @@ def test_settings():
         assert thread_inst.get_settings("sensors") == settings
 
 
-def test_sensor_logging(executor, instance, workspace_context, external_repo):
-    external_sensor = external_repo.get_external_sensor("logging_sensor")
+@pytest.mark.parametrize("sensor_name", ["logging_sensor", "multi_asset_logging_sensor"])
+def test_sensor_logging(executor, instance, workspace_context, external_repo, sensor_name) -> None:
+    external_sensor = external_repo.get_external_sensor(sensor_name)
     instance.add_instigator_state(
         InstigatorState(
             external_sensor.get_external_origin(),

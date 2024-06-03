@@ -115,7 +115,7 @@ DEFAULT_SENSOR_DAEMON_INTERVAL = 30
     breaking_version="2.0",
     additional_warn_text="Use `last_tick_completion_time` instead.",
 )
-class SensorEvaluationContext:
+class SensorEvaluationContext(IHasInternalInit):
     """The context object available as the argument to the evaluation function of a :py:class:`dagster.SensorDefinition`.
 
     Users should not instantiate this object directly. To construct a
@@ -154,6 +154,41 @@ class SensorEvaluationContext:
                 ...
 
     """
+
+    @staticmethod
+    def dagster_internal_init(
+        instance_ref: Optional[InstanceRef],
+        last_tick_completion_time: Optional[float],
+        last_run_key: Optional[str],
+        cursor: Optional[str],
+        log_key: Optional[Sequence[str]],
+        repository_name: Optional[str],
+        repository_def: Optional["RepositoryDefinition"],
+        instance: Optional[DagsterInstance],
+        sensor_name: Optional[str],
+        resources: Optional[Mapping[str, "ResourceDefinition"]],
+        definitions: Optional["Definitions"],
+        last_sensor_start_time: Optional[float],
+        code_location_origin: Optional["CodeLocationOrigin"],
+        # deprecated param
+        last_completion_time: Optional[float],
+    ):
+        return SensorEvaluationContext(
+            instance_ref=instance_ref,
+            last_tick_completion_time=last_tick_completion_time,
+            last_run_key=last_run_key,
+            cursor=cursor,
+            log_key=log_key,
+            repository_name=repository_name,
+            repository_def=repository_def,
+            instance=instance,
+            sensor_name=sensor_name,
+            resources=resources,
+            definitions=definitions,
+            last_sensor_start_time=last_sensor_start_time,
+            code_location_origin=code_location_origin,
+            last_completion_time=last_completion_time,
+        )
 
     def __init__(
         self,

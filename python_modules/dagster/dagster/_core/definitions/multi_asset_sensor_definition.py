@@ -3,6 +3,7 @@ import json
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     Iterable,
@@ -52,6 +53,7 @@ from .utils import check_valid_name
 if TYPE_CHECKING:
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.remote_representation.origin import CodeLocationOrigin
     from dagster._core.storage.event_log.base import EventLogRecord
 
 MAX_NUM_UNCONSUMED_EVENTS = 25
@@ -238,6 +240,9 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         definitions: Optional["Definitions"] = None,
         last_sensor_start_time: Optional[float] = None,
+        log_key: Optional[Sequence[str]] = None,
+        sensor_name: Optional[str] = None,
+        code_location_origin: Optional["CodeLocationOrigin"] = None,
         # deprecated param
         last_completion_time: Optional[float] = None,
     ):
@@ -294,6 +299,11 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
             repository_def=repository_def,
             resources=resource_defs,
             last_sensor_start_time=last_sensor_start_time,
+            sensor_name=sensor_name,
+            definitions=definitions,
+            last_completion_time=last_completion_time,
+            code_location_origin=code_location_origin,
+            log_key=log_key,
         )
 
     def _cache_initial_unconsumed_events(self) -> None:
@@ -1139,7 +1149,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         )
 
         def _wrap_asset_fn(materialization_fn):
-            def _fn(context):
+            def _fn(context: SensorEvaluationContext) -> Iterator[Any]:
                 def _check_cursor_not_set(sensor_result: SensorResult):
                     if sensor_result.cursor:
                         raise DagsterInvariantViolationError(
@@ -1156,11 +1166,15 @@ class MultiAssetSensorDefinition(SensorDefinition):
                     last_tick_completion_time=context.last_tick_completion_time,
                     last_run_key=context.last_run_key,
                     cursor=context.cursor,
-                    repository_name=context.repository_def.name,
+                    repository_name=check.not_none(context.repository_def).name,
                     repository_def=context.repository_def,
                     monitored_assets=monitored_assets,
                     instance=context.instance,
                     resource_defs=context.resource_defs,
+                    sensor_name=context.sensor_name,
+                    last_completion_time=context.last_completion_time,
+                    code_location_origin=context.code_location_origin,
+                    log_key=context.log_key,
                 ) as multi_asset_sensor_context:
                     context_param_name = get_context_param_name(materialization_fn)
                     context_param = (
