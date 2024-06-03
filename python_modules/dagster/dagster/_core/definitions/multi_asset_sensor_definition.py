@@ -1148,7 +1148,7 @@ class MultiAssetSensorDefinition(SensorDefinition):
         )
 
         def _wrap_asset_fn(materialization_fn):
-            def _fn(context: SensorEvaluationContext):
+            def _fn(context):
                 def _check_cursor_not_set(sensor_result: SensorResult):
                     if sensor_result.cursor:
                         raise DagsterInvariantViolationError(
