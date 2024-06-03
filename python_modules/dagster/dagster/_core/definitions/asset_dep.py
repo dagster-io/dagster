@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Iterable, NamedTuple, Optional, Sequence, Unio
 import dagster._check as check
 from dagster._annotations import PublicAttr
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     warn_if_partition_mapping_not_builtin,
@@ -17,11 +16,12 @@ from .events import (
 )
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_spec import AssetSpec
     from dagster._core.definitions.assets import AssetsDefinition
 
 
 CoercibleToAssetDep = Union[
-    CoercibleToAssetKey, AssetSpec, "AssetsDefinition", SourceAsset, "AssetDep"
+    CoercibleToAssetKey, "AssetSpec", "AssetsDefinition", SourceAsset, "AssetDep"
 ]
 
 
@@ -60,10 +60,11 @@ class AssetDep(
 
     def __new__(
         cls,
-        asset: Union[CoercibleToAssetKey, AssetSpec, "AssetsDefinition", SourceAsset],
+        asset: Union[CoercibleToAssetKey, "AssetSpec", "AssetsDefinition", SourceAsset],
         *,
         partition_mapping: Optional[PartitionMapping] = None,
     ):
+        from dagster._core.definitions.asset_spec import AssetSpec
         from dagster._core.definitions.assets import AssetsDefinition
 
         if isinstance(asset, list):
@@ -103,6 +104,7 @@ class AssetDep(
 
 
 def _get_asset_key(arg: "CoercibleToAssetDep") -> AssetKey:
+    from dagster._core.definitions.asset_spec import AssetSpec
     from dagster._core.definitions.assets import AssetsDefinition
 
     if isinstance(arg, (AssetsDefinition, SourceAsset, AssetSpec)):

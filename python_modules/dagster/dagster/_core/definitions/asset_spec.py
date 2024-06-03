@@ -1,16 +1,15 @@
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     Any,
     Iterable,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
 )
 
-import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._model import dagster_model_with_new
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from .auto_materialize_policy import AutoMaterializePolicy
@@ -20,9 +19,6 @@ from .events import (
 )
 from .freshness_policy import FreshnessPolicy
 from .utils import validate_tags_strict
-
-if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
@@ -64,24 +60,8 @@ class AssetExecutionType(Enum):
 
 @experimental_param(param="owners")
 @experimental_param(param="tags")
-class AssetSpec(
-    NamedTuple(
-        "_AssetSpec",
-        [
-            ("key", PublicAttr[AssetKey]),
-            ("deps", PublicAttr[Iterable["AssetDep"]]),
-            ("description", PublicAttr[Optional[str]]),
-            ("metadata", PublicAttr[Mapping[str, Any]]),
-            ("group_name", PublicAttr[Optional[str]]),
-            ("skippable", PublicAttr[bool]),
-            ("code_version", PublicAttr[Optional[str]]),
-            ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
-            ("owners", PublicAttr[Sequence[str]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-        ],
-    )
-):
+@dagster_model_with_new
+class AssetSpec:
     """Specifies the core attributes of an asset. This object is attached to the decorated
     function that defines how it materialized.
 
@@ -111,6 +91,18 @@ class AssetSpec(
             attached to runs of the asset.
     """
 
+    key: PublicAttr[AssetKey]
+    deps: PublicAttr[Iterable[AssetDep]]
+    description: PublicAttr[Optional[str]]
+    metadata: PublicAttr[Mapping[str, Any]]
+    group_name: PublicAttr[Optional[str]]
+    skippable: PublicAttr[bool]
+    code_version: PublicAttr[Optional[str]]
+    freshness_policy: PublicAttr[Optional[FreshnessPolicy]]
+    auto_materialize_policy: PublicAttr[Optional[AutoMaterializePolicy]]
+    owners: PublicAttr[Sequence[str]]
+    tags: PublicAttr[Mapping[str, str]]
+
     def __new__(
         cls,
         key: CoercibleToAssetKey,
@@ -135,21 +127,13 @@ class AssetSpec(
             cls,
             key=key,
             deps=asset_deps,
-            description=check.opt_str_param(description, "description"),
-            metadata=check.opt_mapping_param(metadata, "metadata", key_type=str),
-            skippable=check.bool_param(skippable, "skippable"),
-            group_name=check.opt_str_param(group_name, "group_name"),
-            code_version=check.opt_str_param(code_version, "code_version"),
-            freshness_policy=check.opt_inst_param(
-                freshness_policy,
-                "freshness_policy",
-                FreshnessPolicy,
-            ),
-            auto_materialize_policy=check.opt_inst_param(
-                auto_materialize_policy,
-                "auto_materialize_policy",
-                AutoMaterializePolicy,
-            ),
-            owners=check.opt_sequence_param(owners, "owners", of_type=str),
+            description=description or {},
+            metadata=metadata or {},
+            skippable=skippable,
+            group_name=group_name,
+            code_version=code_version,
+            freshness_policy=freshness_policy,
+            auto_materialize_policy=auto_materialize_policy,
+            owners=owners or [],
             tags=validate_tags_strict(tags) or {},
         )
