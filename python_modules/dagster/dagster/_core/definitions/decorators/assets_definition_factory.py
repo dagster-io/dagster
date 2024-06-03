@@ -189,12 +189,12 @@ def make_keys_by_output_name(
 
 
 def compute_required_resource_keys(
-    required_resource_keys: Set[str],
+    required_resource_keys: AbstractSet[str],
     resource_defs: Mapping[str, ResourceDefinition],
     fn: Callable[..., Any],
     decorator_name: str,
-) -> Set[str]:
-    bare_required_resource_keys = required_resource_keys.copy()
+) -> AbstractSet[str]:
+    bare_required_resource_keys = set(required_resource_keys)
     resource_defs_keys = set(resource_defs.keys())
     required_resource_keys = bare_required_resource_keys | resource_defs_keys
     arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -224,7 +224,7 @@ class AssetsDefinitionBuilderArgs(NamedTuple):
     config_schema: Optional[UserConfigSchema]
     retry_policy: Optional[RetryPolicy]
     compute_kind: Optional[str]
-    required_resource_keys: Set[str]
+    required_resource_keys: AbstractSet[str]
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
     op_def_resource_defs: Mapping[str, ResourceDefinition]
     backfill_policy: Optional[BackfillPolicy]
