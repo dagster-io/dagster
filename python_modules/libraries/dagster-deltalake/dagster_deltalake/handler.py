@@ -260,6 +260,6 @@ def _table_reader(table_slice: TableSlice, connection: TableConnection) -> ds.Da
 
     dataset = table.to_pyarrow_dataset()
     if partition_expr is not None:
-        dataset = dataset.filter(expression=partition_expr)
+        dataset = dataset.filter(partition_expr)
 
     return dataset
