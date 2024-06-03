@@ -1,4 +1,4 @@
-import json
+import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import (
@@ -15,7 +15,7 @@ from typing import (
 from typing_extensions import Final, Self
 
 import dagster._check as check
-from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL, LogLineCursor
+from dagster._core.captured_log_api import LogLineCursor
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
@@ -297,7 +297,11 @@ class CapturedLogManager(ABC):
     ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
         as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
+
+        Note that the has_more attribute of the cursor indicates if there are more logs that can be read immediately. The process
+        producing logs could still be running and dump more logs into the directory at a later time.
         """
+        num_lines = int(os.getenv("DAGSTER_CAPTURED_LOG_CHUNK_SIZE", "1000"))
         # find all of the log_keys to read from and sort them in the order to be read
         log_keys = sorted(
             self.get_log_keys_for_log_key_prefix(log_key_prefix), key=lambda x: "/".join(x)
@@ -344,15 +348,11 @@ class CapturedLogManager(ABC):
                 # we've read the entirety of the file, but we still need more records
                 if log_key_to_fetch_idx + 1 >= len(log_keys):
                     # no more files to process
+                    has_more = False
                     break
                 log_key_to_fetch_idx += 1
                 line_cursor = 0
                 log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
-
-        if LOG_STREAM_COMPLETED_SIGIL in json.dumps(records[-1]):
-            has_more = False
-            # remove LOG_STREAM_COMPLETED_SIGIL from the records
-            records = records[:-1]
 
         new_cursor = LogLineCursor(
             log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more=has_more

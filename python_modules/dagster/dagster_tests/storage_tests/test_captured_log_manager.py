@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import tempfile
 from contextlib import contextmanager
@@ -142,10 +143,9 @@ def test_read_log_lines_for_log_key_prefix():
             write_log_file(i)
 
         all_logs_iter = iter(all_logs)
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         # read the entirety of the first file
-        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=None, num_lines=10
-        )
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(log_key_prefix, cursor=None)
         assert len(log_lines) == 10
         assert cursor.has_more
         assert cursor.log_key == [*log_key_prefix, "1"]
@@ -154,8 +154,10 @@ def test_read_log_lines_for_log_key_prefix():
             assert ll == next(all_logs_iter)
 
         # read half of the next log file
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "6"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), num_lines=5
+            log_key_prefix,
+            cursor=cursor.to_string(),
         )
         assert len(log_lines) == 5
         assert cursor.has_more
@@ -166,8 +168,9 @@ def test_read_log_lines_for_log_key_prefix():
             assert ll == next(all_logs_iter)
 
         # read the next ten lines, five will be in the second file, five will be in the third
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), num_lines=10
+            log_key_prefix, cursor=cursor.to_string()
         )
         assert len(log_lines) == 10
         assert cursor.has_more
@@ -178,8 +181,10 @@ def test_read_log_lines_for_log_key_prefix():
             assert ll == next(all_logs_iter)
 
         # read the remaining 15 lines, but request 20
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), num_lines=20
+            log_key_prefix,
+            cursor=cursor.to_string(),
         )
         assert len(log_lines) == 15
         assert cursor.has_more
@@ -193,8 +198,10 @@ def test_read_log_lines_for_log_key_prefix():
 
         write_log_file(4, last_log_file=True)
 
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "15"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string(), num_lines=15
+            log_key_prefix,
+            cursor=cursor.to_string(),
         )
         assert len(log_lines) == 10
         assert not cursor.has_more

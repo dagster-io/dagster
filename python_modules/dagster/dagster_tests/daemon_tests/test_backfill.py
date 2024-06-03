@@ -2314,12 +2314,14 @@ def test_asset_backfill_logs(
 
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
     assert instance.get_runs_count() == 3
-    wait_for_all_runs_to_start(instance, timeout=30)
+    wait_for_all_runs_to_start(instance, timeout=15)
     assert instance.get_runs_count() == 3
-    wait_for_all_runs_to_finish(instance, timeout=30)
+    wait_for_all_runs_to_finish(instance, timeout=15)
+
+    os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
 
     logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
-        ["backfill", backfill.backfill_id], cursor=None, num_lines=15
+        ["backfill", backfill.backfill_id], cursor=None
     )
     assert logs
     for log_line in logs:
@@ -2336,9 +2338,11 @@ def test_asset_backfill_logs(
     assert backfill
     assert backfill.status == BulkActionStatus.COMPLETED
 
-    # set num_lines hihg so we know we get all of the remaining logs
+    # set num_lines high so we know we get all of the remaining logs
+    os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
     logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
-        ["backfill", backfill.backfill_id], cursor=cursor.to_string(), num_lines=100
+        ["backfill", backfill.backfill_id],
+        cursor=cursor.to_string(),
     )
 
     assert not cursor.has_more

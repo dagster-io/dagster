@@ -3,10 +3,6 @@ from typing import NamedTuple, Sequence
 
 from dagster._seven import json
 
-# This should be emitted as a log message to indicate that no more logs will be emitted for that process
-# this lets the log reader know that it can stop polling for more logs
-LOG_STREAM_COMPLETED_SIGIL = "LOGS COMPLETED"
-
 
 class LogLineCursor(NamedTuple):
     """Representation of a log line cursor, to keep track of the place in the logs.

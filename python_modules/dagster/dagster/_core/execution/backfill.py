@@ -162,6 +162,10 @@ class PartitionBackfill(
         return self.partition_set_origin.partition_set_name
 
     @property
+    def log_storage_prefix(self) -> Sequence[str]:
+        return ["backfill", self.backfill_id]
+
+    @property
     def user(self) -> Optional[str]:
         if self.tags:
             return self.tags.get(USER_TAG)

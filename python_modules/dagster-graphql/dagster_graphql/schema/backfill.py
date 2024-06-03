@@ -536,9 +536,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         )
         from ..schema.logs.log_level import GrapheneLogLevel
 
-        backfill_id = self._backfill_job.backfill_id
-        # TODO find a better way to keep the log key prefix in sync. maybe store as part of the asset backfill data?
-        backfill_log_key_prefix = ["backfill", backfill_id]
+        backfill_log_key_prefix = self._backfill_job.log_storage_prefix
 
         instance = graphene_info.context.instance
 
@@ -546,7 +544,6 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         if not instance.backfill_log_storage_enabled():
-            # maybe need to return something else to indicate that a setting needs to be changed
             return GrapheneInstigationEventConnection(events=[], cursor="", hasMore=False)
 
         records, new_cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
@@ -573,10 +570,24 @@ class GraphenePartitionBackfill(graphene.ObjectType):
             )
 
             events.append(event)
+
+        if (
+            new_cursor
+            and not new_cursor.has_more
+            and self.status
+            in [
+                GrapheneBulkActionStatus.COMPLETED,
+                GrapheneBulkActionStatus.FAILED,
+                GrapheneBulkActionStatus.CANCELED,
+            ]
+        ):
+            has_more = False
+        else:
+            has_more = True
         return GrapheneInstigationEventConnection(
             events=events,
             cursor=new_cursor.to_string() if new_cursor else None,
-            hasMore=new_cursor.has_more if new_cursor else True,
+            hasMore=has_more,
         )
 
 
