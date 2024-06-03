@@ -8,6 +8,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -905,11 +906,16 @@ def stringify_asset_key_to_input_name(asset_key: AssetKey) -> str:
     return "_".join(asset_key.path).replace("-", "_")
 
 
+class InMapping(NamedTuple):
+    input_name: str
+    input: In
+
+
 def build_asset_ins(
     fn: Callable[..., Any],
     asset_ins: Mapping[str, AssetIn],
     deps: Optional[AbstractSet[AssetKey]],
-) -> Mapping[AssetKey, Tuple[str, In]]:
+) -> Mapping[AssetKey, InMapping]:
     """Creates a mapping from AssetKey to (name of input, In object)."""
     deps = check.opt_set_param(deps, "deps", AssetKey)
 
@@ -933,7 +939,7 @@ def build_asset_ins(
                     "of the arguments to the decorated function"
                 )
 
-    ins_by_asset_key: Dict[AssetKey, Tuple[str, In]] = {}
+    ins_by_asset_key: Dict[AssetKey, InMapping] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -951,7 +957,7 @@ def build_asset_ins(
 
         asset_key = asset_key or AssetKey(list(filter(None, [*(key_prefix or []), input_name])))
 
-        ins_by_asset_key[asset_key] = (
+        ins_by_asset_key[asset_key] = InMapping(
             input_name.replace("-", "_"),
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
@@ -962,7 +968,7 @@ def build_asset_ins(
                 f"deps value {asset_key} also declared as input/AssetIn"
             )
             # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_key] = (
+        ins_by_asset_key[asset_key] = InMapping(
             stringify_asset_key_to_input_name(asset_key),
             In(cast(type, Nothing)),
         )
