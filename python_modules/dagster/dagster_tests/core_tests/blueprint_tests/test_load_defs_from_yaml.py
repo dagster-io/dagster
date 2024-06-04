@@ -14,6 +14,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from pydantic import ValidationError
 
@@ -207,3 +208,32 @@ def test_source_file_name() -> None:
 
     metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
     assert metadata["source_file_name"] == "single_blueprint.yaml"
+
+
+class SimpleAssetBlueprintNeedsResource(Blueprint):
+    key: str
+
+    def build_defs(self) -> BlueprintDefinitions:
+        @asset(key=self.key, required_resource_keys={"some_resource"})
+        def _asset(): ...
+
+        return BlueprintDefinitions(assets=[_asset])
+
+
+def test_additional_resources() -> None:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'some_resource' required by op 'asset1' was not provided",
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+        )
+
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+        per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+        resources={"some_resource": "some_value"},
+    )
+
+    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
