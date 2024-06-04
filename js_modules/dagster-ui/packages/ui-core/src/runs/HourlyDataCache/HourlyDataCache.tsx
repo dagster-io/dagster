@@ -9,16 +9,24 @@ type Subscription<T> = (data: T[]) => void;
 export const defaultOptions = {
   expiry: new Date('3000-01-01'), // never expire,
 };
+
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
   private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
-  private indexedDBCache?: ReturnType<typeof cache<'hourlyData', typeof this.cache>>;
+  private indexedDBCache?: ReturnType<typeof cache<string, typeof this.cache>>;
+  private indexedDBKey: string;
 
-  constructor(id?: string | false) {
+  /**
+   * @param id A unique ID for the hourly data cache in this deployment
+   * @param [keyPrefix=''] A unique key identifying the timeline view [incorporating filters, etc.]
+   */
+  constructor(id?: string | false, keyPrefix = '', keyMaxCount = 1) {
+    this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
+
     if (id) {
-      this.indexedDBCache = cache<'hourlyData', typeof this.cache>({
+      this.indexedDBCache = cache<string, typeof this.cache>({
         dbName: `HourlyDataCache:${id}`,
-        maxCount: 1, // We only store 1 entry
+        maxCount: keyMaxCount,
       });
       this.loadCacheFromIndexedDB();
       this.clearOldEntries();
@@ -38,11 +46,11 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      if (!(await this.indexedDBCache.has('hourlyData'))) {
+      if (!(await this.indexedDBCache.has(this.indexedDBKey))) {
         res();
         return;
       }
-      const cachedData = await this.indexedDBCache.get('hourlyData');
+      const cachedData = await this.indexedDBCache.get(this.indexedDBKey);
       if (cachedData) {
         this.cache = new Map(cachedData.value);
       }
@@ -55,7 +63,7 @@ export class HourlyDataCache<T> {
     if (!this.indexedDBCache) {
       return;
     }
-    await this.indexedDBCache.set('hourlyData', this.cache, defaultOptions);
+    await this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
   }
 
   public async clearOldEntries() {
