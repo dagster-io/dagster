@@ -197,11 +197,11 @@ Which is pretty neat.
 Which is also pretty neat.
 
 ## Images
-Images now have a variety of options available to work with them.
+In the old MDX way of doing things, images were a bit of a pain. You had to either manually specify the height and width of the image or run a script (`make MDX-format`) to do it for you.
 
-The default one is easy and has a little bit of magic going in the background to make sure the images are optimized and accessible while also providing a great author experience.
+Document preprocessors like this have a number of issues such as being slow, error-prone, and making edits to the docs more difficult. 
 
-To that end, we've extended the markdown image node to automatically determine the height and width of the image during the transform step and use that to instantiate the image using the `Next/Image` component. Doing this handles a lot of optimization things.
+To that end, I've opted to extended the default markdoc image node to automatically determine the height and width of the image during the transform step and use that to instantiate the image using the `Next/Image` component. Doing this allows us to retain the benefits of our current make script approach while also preserving the easy authoring experience of vanilla markdown.
 
 So, the default way to use images is like this:
 
