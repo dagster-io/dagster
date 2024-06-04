@@ -1,42 +1,31 @@
-import getImageDimensions from 'util/getImageDimensions';
+// import getImageDimensions from 'util/getImageDimensions';
 
 import NextImage from 'next/image';
+import {useEffect, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 
-// const getImageDimensions = (src) => {
-//   console.log("getImageDimensions src works?", src);
-//   return new Promise((resolve, reject) => {
-//     const img = new Image();
-//     console.log('inside getImageDimensions Img', img);
-//     img.onload = () => {
-//       resolve({ width: img.naturalWidth, height: img.naturalHeight });
-//     };
-//     img.onerror = (err) => {
-//       reject(err);
-//     };
-//     img.src = src;
-//   });
-// };
-
-export async function getStaticProps() {
-  const dimensions = await getImageDimensions('/images/nextjs.png');
-  return {
-    props: {
-      dimensions,
-    },
-  };
-}
-
 export const MyImage = ({children, ...props}) => {
-  console.log('Image', props);
+  // Manually set dimensions for internal images will be on props.width and props.height
+  // images without manual ddimensions will use the dimensions state and
+  // automatically set width and height as an effect in the client.
+
+  const [dimensions, setDimensions] = useState({width: 0, height: 0});
   /* Only version images when all conditions meet:
    * - use <Image> component in mdx
    * - on non-master version
    * - in public/images/ dir
    */
   const {src} = props;
-  console.log('src', src);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => {
+      setDimensions({width: img.width, height: img.height});
+    };
+  }, [src]);
+
   // Handle External Images
   if (!src.startsWith('/images/')) {
     return (
@@ -47,8 +36,15 @@ export const MyImage = ({children, ...props}) => {
   }
   // Handle Internal Images
   return (
-    <span className="block mx-auto">
-      <NextImage src={src} width={props.width} height={props.height} alt={props.alt} />
-    </span>
+    <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+      <span className="block mx-auto">
+        <NextImage
+          src={src}
+          width={props.width || dimensions.width}
+          height={props.height || dimensions.height}
+          alt={props.alt}
+        />
+      </span>
+    </Zoom>
   );
 };
