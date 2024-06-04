@@ -3,10 +3,7 @@ from pathlib import Path
 import pytest
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster_k8s.pipes import _DEV_NULL_MESSAGE_WRITER, _detect_current_namespace, build_pod_body
-from dagster_pipes import (
-    DAGSTER_PIPES_CONTEXT_ENV_VAR,
-    DAGSTER_PIPES_MESSAGES_ENV_VAR,
-)
+from dagster_pipes import DAGSTER_PIPES_CONTEXT_ENV_VAR, DAGSTER_PIPES_MESSAGES_ENV_VAR
 
 
 @pytest.fixture

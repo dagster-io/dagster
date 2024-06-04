@@ -20,10 +20,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from ..dbt_projects import (
-    test_asset_checks_path,
-    test_dbt_alias_path,
-)
+from ..dbt_projects import test_asset_checks_path, test_dbt_alias_path
 
 pytest.importorskip("dbt.version", "1.6")
 

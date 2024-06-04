@@ -98,9 +98,7 @@ In the `dagster_migration.py` file you created in [Step 1](#step-1-prepare-your-
 ```python file=/integrations/airflow/migrate_repo.py
 import os
 
-from dagster_airflow import (
-    make_dagster_definitions_from_airflow_dags_path,
-)
+from dagster_airflow import make_dagster_definitions_from_airflow_dags_path
 
 migrated_airflow_definitions = make_dagster_definitions_from_airflow_dags_path(
     os.path.abspath("./dags/"),

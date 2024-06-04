@@ -1,10 +1,7 @@
 import datetime
 from typing import Optional
 
-from dagster import (
-    DailyPartitionsDefinition,
-    PartitionKeyRange,
-)
+from dagster import DailyPartitionsDefinition, PartitionKeyRange
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition

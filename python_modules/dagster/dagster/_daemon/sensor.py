@@ -31,9 +31,7 @@ from dagster._core.definitions.run_request import (
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-)
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
 from dagster._core.instance import DagsterInstance

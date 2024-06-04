@@ -4,13 +4,8 @@ import sys
 import pendulum
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
-from dagster._core.remote_representation import (
-    InProcessCodeLocationOrigin,
-    RemoteRepositoryOrigin,
-)
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,

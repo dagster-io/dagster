@@ -12,10 +12,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterCodeLocationNotFoundError,
-)
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterCodeLocationNotFoundError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (
@@ -27,9 +24,7 @@ from dagster._core.remote_representation import (
     GrpcServerCodeLocation,
     RepositoryHandle,
 )
-from dagster._core.remote_representation.grpc_server_registry import (
-    GrpcServerRegistry,
-)
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,

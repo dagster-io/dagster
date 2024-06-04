@@ -3,10 +3,7 @@ import argparse
 from random import randint
 from typing import Sequence, Union
 
-from dagster import (
-    StaticPartitionsDefinition,
-    asset,
-)
+from dagster import StaticPartitionsDefinition, asset
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -21,9 +18,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._utils.test.data_versions import (
-    materialize_asset,
-)
+from dagster._utils.test.data_versions import materialize_asset
 
 from dagster_test.utils.benchmark import ProfilingSession
 

@@ -106,9 +106,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.event_log import (
-            PostgresEventLogStorage,
-        )
+        from dagster_postgres.event_log import PostgresEventLogStorage
 
         storage = PostgresEventLogStorage.create_clean_storage(
             conn_string, should_autocreate_tables=should_autocreate_tables
@@ -122,9 +120,7 @@ class TestPostgresInstance:
             TestPostgresInstance.dagster_postgres_installed(),
             "dagster_postgres must be installed to test with postgres",
         )
-        from dagster_postgres.schedule_storage.schedule_storage import (
-            PostgresScheduleStorage,
-        )
+        from dagster_postgres.schedule_storage.schedule_storage import PostgresScheduleStorage
 
         storage = PostgresScheduleStorage.create_clean_storage(
             conn_string, should_autocreate_tables=should_autocreate_tables

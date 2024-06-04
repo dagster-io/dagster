@@ -3,11 +3,7 @@ from unittest.mock import Mock
 
 import pendulum
 import pytest
-from dagster import (
-    DailyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,

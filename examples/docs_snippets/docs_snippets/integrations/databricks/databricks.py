@@ -21,12 +21,7 @@ def scope_define_databricks_custom_asset():
     # start_define_databricks_custom_asset
     from databricks_cli.sdk import JobsService
 
-    from dagster import (
-        AssetExecutionContext,
-        AssetSelection,
-        asset,
-        define_asset_job,
-    )
+    from dagster import AssetExecutionContext, AssetSelection, asset, define_asset_job
 
     @asset(required_resource_keys={"databricks"})
     def my_databricks_table(context: AssetExecutionContext) -> None:
@@ -49,11 +44,7 @@ def scope_define_databricks_custom_op():
     # start_define_databricks_custom_op
     from databricks_cli.sdk import DbfsService
 
-    from dagster import (
-        AssetExecutionContext,
-        job,
-        op,
-    )
+    from dagster import AssetExecutionContext, job, op
 
     @op(required_resource_keys={"databricks"})
     def my_databricks_op(context: AssetExecutionContext) -> None:
@@ -104,11 +95,7 @@ def scope_schedule_databricks():
     def my_databricks_job(): ...
 
     # start_schedule_databricks
-    from dagster import (
-        AssetSelection,
-        Definitions,
-        ScheduleDefinition,
-    )
+    from dagster import AssetSelection, Definitions, ScheduleDefinition
 
     defs = Definitions(
         assets=[my_databricks_table],

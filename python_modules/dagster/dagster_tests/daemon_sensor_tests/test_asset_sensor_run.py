@@ -2,14 +2,8 @@ from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 
-from .test_run_status_sensors import (
-    instance_with_single_code_location_multiple_repos_with_sensors,
-)
-from .test_sensor_run import (
-    a_source_asset,
-    evaluate_sensors,
-    validate_tick,
-)
+from .test_run_status_sensors import instance_with_single_code_location_multiple_repos_with_sensors
+from .test_sensor_run import a_source_asset, evaluate_sensors, validate_tick
 
 
 def test_monitor_source_asset_sensor(executor):

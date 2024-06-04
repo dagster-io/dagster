@@ -1,12 +1,4 @@
-from dagster import (
-    In,
-    String,
-    dagster_type_loader,
-    job,
-    op,
-    resource,
-    usable_as_dagster_type,
-)
+from dagster import In, String, dagster_type_loader, job, op, resource, usable_as_dagster_type
 
 
 class UserError(Exception):

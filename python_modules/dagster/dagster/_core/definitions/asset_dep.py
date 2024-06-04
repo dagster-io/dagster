@@ -11,10 +11,7 @@ from dagster._core.definitions.partition_mapping import (
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
-from .events import (
-    AssetKey,
-    CoercibleToAssetKey,
-)
+from .events import AssetKey, CoercibleToAssetKey
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition

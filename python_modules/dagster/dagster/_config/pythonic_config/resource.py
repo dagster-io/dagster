@@ -20,14 +20,10 @@ from typing import (
 
 from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
-from dagster import (
-    Field as DagsterField,
-)
+from dagster import Field as DagsterField
 from dagster._annotations import deprecated
 from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.pythonic_config.typing_utils import (
-    TypecheckAllowPartialResourceInitParams,
-)
+from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
 from dagster._config.validate import validate_config
 from dagster._core.definitions.definition_config_schema import (
     ConfiguredDefinitionConfigSchema,
@@ -35,9 +31,7 @@ from dagster._core.definitions.definition_config_schema import (
 )
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
-from dagster._model.pydantic_compat_layer import (
-    model_fields,
-)
+from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.cached_method import cached_method
 from dagster._utils.typing_api import is_closed_python_optional_type
 
@@ -69,10 +63,7 @@ from dagster._core.definitions.resource_definition import (
 from dagster._core.storage.io_manager import IOManagerDefinition
 
 from .config import Config, MakeConfigCacheable, infer_schema_from_config_class
-from .conversion_utils import (
-    TResValue,
-    _curry_config_schema,
-)
+from .conversion_utils import TResValue, _curry_config_schema
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
 
 T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")

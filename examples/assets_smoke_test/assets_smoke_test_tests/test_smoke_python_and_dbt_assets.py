@@ -6,10 +6,7 @@ from dagster_dbt import DbtCliResource
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
 from assets_smoke_test import python_and_dbt_assets
-from assets_smoke_test.python_and_dbt_assets import (
-    DBT_PROJECT_DIR,
-    raw_country_populations,
-)
+from assets_smoke_test.python_and_dbt_assets import DBT_PROJECT_DIR, raw_country_populations
 
 
 def smoke_all_test():

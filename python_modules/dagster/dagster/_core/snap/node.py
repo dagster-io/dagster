@@ -18,10 +18,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._serdes import whitelist_for_serdes
 
-from .dep_snapshot import (
-    DependencyStructureSnapshot,
-    build_dep_structure_snapshot_from_graph_def,
-)
+from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
 
 
 @whitelist_for_serdes(

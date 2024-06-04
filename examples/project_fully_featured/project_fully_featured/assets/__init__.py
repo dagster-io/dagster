@@ -2,11 +2,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from dagster import AssetExecutionContext, AssetKey, load_assets_from_package_module
-from dagster_dbt import (
-    DagsterDbtTranslator,
-    DbtCliResource,
-    dbt_assets,
-)
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
 
 from . import activity_analytics, core, recommender
 

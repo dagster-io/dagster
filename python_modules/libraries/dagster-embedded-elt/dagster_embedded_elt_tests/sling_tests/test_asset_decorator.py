@@ -13,10 +13,7 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.definitions.materialize import materialize
-from dagster_embedded_elt.sling import (
-    SlingReplicationParam,
-    sling_assets,
-)
+from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
 

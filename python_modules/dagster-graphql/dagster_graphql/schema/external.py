@@ -8,9 +8,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import (
     CodeLocation,
     ExternalRepository,
@@ -23,21 +21,12 @@ from dagster._core.remote_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster._core.workspace.context import (
-    BaseWorkspaceRequestContext,
-    WorkspaceProcessContext,
-)
-from dagster._core.workspace.workspace import (
-    CodeLocationEntry,
-    CodeLocationLoadStatus,
-)
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, WorkspaceProcessContext
+from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import (
-    RepositoryScopedBatchLoader,
-    StaleStatusLoader,
-)
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader, StaleStatusLoader
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError

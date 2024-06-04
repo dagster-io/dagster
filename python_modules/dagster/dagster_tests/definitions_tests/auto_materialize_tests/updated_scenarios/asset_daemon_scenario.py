@@ -2,27 +2,11 @@ import dataclasses
 import itertools
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    cast,
-)
+from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, cast
 
 import dagster._check as check
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    RunRequest,
-    RunsFilter,
-)
-from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonContext,
-)
+from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,

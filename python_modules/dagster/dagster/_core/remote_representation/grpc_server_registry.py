@@ -2,16 +2,7 @@ import sys
 import threading
 import uuid
 from contextlib import AbstractContextManager
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    NamedTuple,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 from typing_extensions import TypeGuard

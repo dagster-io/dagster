@@ -17,9 +17,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.events import DagsterEventType
@@ -69,14 +67,8 @@ from ..implementation.fetch_assets import (
     get_freshness_info,
     get_partition_subsets,
 )
-from ..implementation.loader import (
-    CrossRepoAssetDependedByLoader,
-    StaleStatusLoader,
-)
-from ..schema.asset_checks import (
-    AssetChecksOrErrorUnion,
-    GrapheneAssetChecksOrError,
-)
+from ..implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from ..schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
 from . import external
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializePolicy

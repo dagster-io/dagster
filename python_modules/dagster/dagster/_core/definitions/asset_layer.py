@@ -18,9 +18,7 @@ from typing import (
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 
-from ..errors import (
-    DagsterInvariantViolationError,
-)
+from ..errors import DagsterInvariantViolationError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
 from .events import AssetKey
 from .graph_definition import GraphDefinition

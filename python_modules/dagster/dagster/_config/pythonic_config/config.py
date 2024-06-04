@@ -1,15 +1,6 @@
 import re
 from enum import Enum
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Set,
-    Type,
-    cast,
-)
+from typing import Any, Dict, List, Mapping, Optional, Set, Type, cast
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
@@ -19,14 +10,8 @@ from dagster import (
     Field as DagsterField,
     Shape,
 )
-from dagster._config.field_utils import (
-    EnvVar,
-    IntEnvVar,
-    Permissive,
-)
-from dagster._core.definitions.definition_config_schema import (
-    DefinitionConfigSchema,
-)
+from dagster._config.field_utils import EnvVar, IntEnvVar, Permissive
+from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidDefinitionError,

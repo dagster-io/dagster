@@ -2,15 +2,7 @@ import threading
 import time
 
 import pytest
-from dagster import (
-    Failure,
-    RetryPolicy,
-    graph,
-    in_process_executor,
-    job,
-    op,
-    repository,
-)
+from dagster import Failure, RetryPolicy, graph, in_process_executor, job, op, repository
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.reconstruct import reconstructable

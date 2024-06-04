@@ -1,9 +1,4 @@
-from dagster import (
-    AutoMaterializePolicy,
-    Definitions,
-    asset,
-    load_assets_from_current_module,
-)
+from dagster import AutoMaterializePolicy, Definitions, asset, load_assets_from_current_module
 
 
 @asset

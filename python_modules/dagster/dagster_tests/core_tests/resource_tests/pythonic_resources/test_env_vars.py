@@ -3,16 +3,8 @@ import os
 from typing import List, Mapping
 
 import pytest
-from dagster import (
-    Config,
-    ConfigurableResource,
-    Definitions,
-    EnvVar,
-    asset,
-)
-from dagster._core.errors import (
-    DagsterInvalidConfigError,
-)
+from dagster import Config, ConfigurableResource, Definitions, EnvVar, asset
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
 
 

@@ -1,15 +1,5 @@
 from argparse import Namespace
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import AbstractSet, Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union
 
 import dateutil
 from dagster import (

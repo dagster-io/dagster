@@ -8,9 +8,7 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-)
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,

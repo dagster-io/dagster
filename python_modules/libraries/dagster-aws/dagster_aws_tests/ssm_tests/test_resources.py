@@ -1,10 +1,6 @@
 import os
 
-from dagster import (
-    asset,
-    build_init_resource_context,
-    materialize,
-)
+from dagster import asset, build_init_resource_context, materialize
 from dagster._core.test_utils import environ
 from dagster_aws.ssm import ParameterStoreResource, ParameterStoreTag, parameter_store_resource
 

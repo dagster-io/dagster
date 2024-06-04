@@ -6,10 +6,7 @@ from dagster._annotations import deprecated
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
-from dagster._utils.schedules import (
-    is_valid_cron_schedule,
-    reverse_cron_string_iterator,
-)
+from dagster._utils.schedules import is_valid_cron_schedule, reverse_cron_string_iterator
 
 from .events import AssetKey
 

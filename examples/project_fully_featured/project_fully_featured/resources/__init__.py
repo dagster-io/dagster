@@ -8,10 +8,7 @@ from dagster_pyspark import pyspark_resource
 
 from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
-from .parquet_io_manager import (
-    LocalPartitionedParquetIOManager,
-    S3PartitionedParquetIOManager,
-)
+from .parquet_io_manager import LocalPartitionedParquetIOManager, S3PartitionedParquetIOManager
 from .snowflake_io_manager import SnowflakeIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")

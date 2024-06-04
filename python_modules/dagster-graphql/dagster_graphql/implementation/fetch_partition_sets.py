@@ -4,10 +4,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Union
 import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import (
-    ExternalPartitionSet,
-    RepositoryHandle,
-)
+from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (
     ExternalPartitionExecutionErrorData,
     ExternalPartitionNamesData,

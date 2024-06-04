@@ -2,12 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Optional
 
-from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    FreshnessPolicy,
-    MetadataValue,
-)
+from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
 
 

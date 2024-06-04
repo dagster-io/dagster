@@ -13,9 +13,7 @@ from dagster import (
 )
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance

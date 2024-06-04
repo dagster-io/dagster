@@ -4,9 +4,7 @@ import dagster._check as check
 import graphene
 from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus

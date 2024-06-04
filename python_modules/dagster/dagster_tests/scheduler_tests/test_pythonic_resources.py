@@ -19,13 +19,8 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
 from dagster._core.definitions.schedule_definition import RunRequest
-from dagster._core.scheduler.instigation import (
-    InstigatorTick,
-    TickStatus,
-)
-from dagster._core.test_utils import (
-    create_test_daemon_workspace_context,
-)
+from dagster._core.scheduler.instigation import InstigatorTick, TickStatus
+from dagster._core.test_utils import create_test_daemon_workspace_context
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget

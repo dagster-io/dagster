@@ -1,13 +1,7 @@
 from typing import cast
 from unittest.mock import MagicMock
 
-from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    MaterializeResult,
-    PipesClient,
-    materialize,
-)
+from dagster import AssetKey, AssetsDefinition, MaterializeResult, PipesClient, materialize
 from dagster._core.blueprints.blueprint import BlueprintDefinitions
 from dagster._core.blueprints.blueprint_assets_definition import AssetSpecModel
 from dagster._core.pipes.client import PipesClientCompletedInvocation

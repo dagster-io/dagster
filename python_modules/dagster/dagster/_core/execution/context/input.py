@@ -1,28 +1,13 @@
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
-from dagster._core.definitions.metadata import (
-    ArbitraryMetadataMapping,
-    MetadataValue,
-)
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataValue
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-)
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._utils.warnings import normalize_renamed_param

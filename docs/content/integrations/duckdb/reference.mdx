@@ -426,15 +426,8 @@ The `DuckDBPySparkIOManager` requires an active `SparkSession`. You can either c
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import AssetExecutionContext, Definitions, asset
 
@@ -477,16 +470,8 @@ defs = Definitions(
 ```python file=/integrations/duckdb/reference/pyspark_with_spark_session.py startafter=start endbefore=end
 from dagster_duckdb_pyspark import DuckDBPySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import Definitions, asset
 

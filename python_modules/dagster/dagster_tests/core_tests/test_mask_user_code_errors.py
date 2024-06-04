@@ -54,9 +54,7 @@ ERROR_ID_REGEX = r"Error occurred during user code execution, error ID ([a-z0-9\
 
 
 def test_masking_sensor_execution(instance, enable_masking_user_code_errors, capsys) -> None:
-    from dagster._api.snapshot_sensor import (
-        sync_get_external_sensor_execution_data_ephemeral_grpc,
-    )
+    from dagster._api.snapshot_sensor import sync_get_external_sensor_execution_data_ephemeral_grpc
 
     with get_bar_repo_handle(instance) as repository_handle:
         try:

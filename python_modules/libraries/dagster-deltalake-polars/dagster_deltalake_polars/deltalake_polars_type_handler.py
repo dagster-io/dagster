@@ -4,10 +4,7 @@ import polars as pl
 import pyarrow as pa
 import pyarrow.dataset as ds
 from dagster import InputContext
-from dagster._core.storage.db_io_manager import (
-    DbTypeHandler,
-    TableSlice,
-)
+from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
 from dagster_deltalake.handler import (
     DeltalakeBaseArrowTypeHandler,
     DeltaLakePyArrowTypeHandler,

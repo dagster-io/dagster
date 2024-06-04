@@ -26,10 +26,7 @@ from dagster import (
 )
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
-from dagster._core.pipes.client import (
-    PipesContextInjector,
-    PipesMessageReader,
-)
+from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
 from dagster._core.pipes.context import (
     PipesMessageHandler,
     PipesSession,

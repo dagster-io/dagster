@@ -36,13 +36,8 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.event_api import AssetRecordsFilter
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
-from dagster._serdes.serdes import (
-    whitelist_for_serdes,
-)
-from dagster._utils.schedules import (
-    cron_string_iterator,
-    reverse_cron_string_iterator,
-)
+from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
 
 from .base_asset_graph import sort_key_for_asset_partition
 
@@ -51,9 +46,7 @@ if TYPE_CHECKING:
         AutomationResult,
     )
 
-    from .declarative_automation.automation_context import (
-        AutomationContext,
-    )
+    from .declarative_automation.automation_context import AutomationContext
 
 
 @deprecated(

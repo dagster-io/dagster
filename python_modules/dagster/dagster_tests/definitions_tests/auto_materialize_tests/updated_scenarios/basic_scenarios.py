@@ -14,10 +14,7 @@ from ..scenario_specs import (
     two_assets_in_sequence,
 )
 from ..scenario_state import ScenarioSpec
-from .asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-)
+from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 basic_scenarios = [
     AssetDaemonScenario(

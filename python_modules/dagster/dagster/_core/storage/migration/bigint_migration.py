@@ -3,10 +3,7 @@ from typing import Any, Callable
 import sqlalchemy as db
 
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.event_log import (
-    SqlEventLogStorage,
-    SqliteEventLogStorage,
-)
+from dagster._core.storage.event_log import SqlEventLogStorage, SqliteEventLogStorage
 from dagster._core.storage.event_log.schema import (
     AssetKeyTable,
     DynamicPartitionsTable,
@@ -21,10 +18,7 @@ from dagster._core.storage.runs.schema import (
     SecondaryIndexMigrationTable as RunSecondaryIndexTable,
     SnapshotsTable,
 )
-from dagster._core.storage.schedules import (
-    SqliteScheduleStorage,
-    SqlScheduleStorage,
-)
+from dagster._core.storage.schedules import SqliteScheduleStorage, SqlScheduleStorage
 from dagster._core.storage.schedules.schema import (
     InstigatorsTable,
     JobTable,

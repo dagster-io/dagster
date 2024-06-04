@@ -41,9 +41,7 @@ from dagster._core.execution.context.compute import AssetExecutionContext, OpExe
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.pipes.subprocess import (
-    PipesSubprocessClient,
-)
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
     PipesTempFileContextInjector,
@@ -72,9 +70,7 @@ def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
 def external_script() -> Iterator[str]:
     # This is called in an external process and so cannot access outer scope
     def script_fn():
-        from dagster_pipes import (
-            open_dagster_pipes,
-        )
+        from dagster_pipes import open_dagster_pipes
 
         with open_dagster_pipes() as context:
             context.log.info("hello world")
@@ -351,11 +347,7 @@ PATH_WITH_NONEXISTENT_DIR = "/tmp/does-not-exist/foo"
 
 def test_pipes_no_orchestration():
     def script_fn():
-        from dagster_pipes import (
-            PipesContext,
-            PipesEnvVarParamsLoader,
-            open_dagster_pipes,
-        )
+        from dagster_pipes import PipesContext, PipesEnvVarParamsLoader, open_dagster_pipes
 
         loader = PipesEnvVarParamsLoader()
         assert not loader.is_dagster_pipes_process()

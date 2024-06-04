@@ -71,9 +71,7 @@ from dagster._core.remote_representation import (
     RemoteRepositoryOrigin,
 )
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.origin import (
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-)
+from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,

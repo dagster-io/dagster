@@ -1,10 +1,7 @@
 import math
 import tempfile
 from collections import defaultdict
-from typing import (
-    List,
-    Set,
-)
+from typing import List, Set
 
 import pytest
 from dagster import job, op

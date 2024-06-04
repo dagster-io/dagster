@@ -1,12 +1,7 @@
 from typing import Any, Mapping
 
 from dagster import AssetExecutionContext, AssetKey, file_relative_path
-from dagster_dbt import (
-    DagsterDbtTranslator,
-    DbtCliResource,
-    dbt_assets,
-    get_asset_key_for_model,
-)
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets, get_asset_key_for_model
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../../dbt_project")
 

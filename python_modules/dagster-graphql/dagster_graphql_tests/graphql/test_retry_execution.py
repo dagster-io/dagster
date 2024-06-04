@@ -4,10 +4,7 @@ from time import sleep
 from dagster._core.events import RunFailureReason
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import (
-    RESUME_RETRY_TAG,
-    RUN_FAILURE_REASON_TAG,
-)
+from dagster._core.storage.tags import RESUME_RETRY_TAG, RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._seven.temp_dir import get_system_temp_directory

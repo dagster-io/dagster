@@ -91,9 +91,7 @@ from dagster._core.remote_representation.origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecordStatus,
-)
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (

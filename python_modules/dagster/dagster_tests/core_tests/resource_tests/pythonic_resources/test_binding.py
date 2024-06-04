@@ -21,9 +21,7 @@ from dagster import (
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_bind_resource_to_job_at_defn_time_err() -> None:

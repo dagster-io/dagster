@@ -7,13 +7,9 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.scheduler.instigation import (
-    TickStatus,
-)
+from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import (
-    cleanup_test_instance,
-)
+from dagster._core.test_utils import cleanup_test_instance
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,

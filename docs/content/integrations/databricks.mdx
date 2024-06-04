@@ -82,11 +82,7 @@ def my_databricks_job():
 ```python startafter=start_define_databricks_custom_op endbefore=end_define_databricks_custom_op file=/integrations/databricks/databricks.py dedent=4
 from databricks_cli.sdk import DbfsService
 
-from dagster import (
-    AssetExecutionContext,
-    job,
-    op,
-)
+from dagster import AssetExecutionContext, job, op
 
 @op(required_resource_keys={"databricks"})
 def my_databricks_op(context: AssetExecutionContext) -> None:
@@ -107,12 +103,7 @@ def my_databricks_job():
 ```python startafter=start_define_databricks_custom_asset endbefore=end_define_databricks_custom_asset file=/integrations/databricks/databricks.py dedent=4
 from databricks_cli.sdk import JobsService
 
-from dagster import (
-    AssetExecutionContext,
-    AssetSelection,
-    asset,
-    define_asset_job,
-)
+from dagster import AssetExecutionContext, AssetSelection, asset, define_asset_job
 
 @asset(required_resource_keys={"databricks"})
 def my_databricks_table(context: AssetExecutionContext) -> None:
@@ -140,11 +131,7 @@ Now that your Databricks API calls are modeled within Dagster, you can [schedule
 In the example below, we schedule the `materialize_databricks_table` and `my_databricks_job` jobs to run daily:
 
 ```python startafter=start_schedule_databricks endbefore=end_schedule_databricks file=/integrations/databricks/databricks.py dedent=4
-from dagster import (
-    AssetSelection,
-    Definitions,
-    ScheduleDefinition,
-)
+from dagster import AssetSelection, Definitions, ScheduleDefinition
 
 defs = Definitions(
     assets=[my_databricks_table],

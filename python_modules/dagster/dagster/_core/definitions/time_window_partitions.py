@@ -30,9 +30,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._serdes import (
-    whitelist_for_serdes,
-)
+from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
     FieldSerializer,
     NamedTupleSerializer,
@@ -57,10 +55,7 @@ from dagster._utils.schedules import (
     reverse_cron_string_iterator,
 )
 
-from ..errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidDeserializationVersionError,
-)
+from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
 from .partition import (
     DEFAULT_DATE_FORMAT,
     AllPartitionsSubset,

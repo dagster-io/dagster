@@ -241,9 +241,7 @@ class ScheduleEvaluationContext:
         """Mapping of resource key to resource definition to be made available
         during schedule execution.
         """
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
+        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
         from dagster._core.execution.build_resources import build_resources
 
         if not self._resources:

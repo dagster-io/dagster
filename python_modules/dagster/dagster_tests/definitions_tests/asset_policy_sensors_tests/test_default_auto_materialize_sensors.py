@@ -14,9 +14,7 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._core.remote_representation.handle import RepositoryHandle

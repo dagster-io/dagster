@@ -68,9 +68,7 @@ from dagster._core.test_utils import (
     raise_exception_on_warnings,
 )
 from dagster._utils import safe_tempfile_path
-from dagster._utils.warnings import (
-    disable_dagster_warnings,
-)
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 @pytest.fixture(autouse=True)
