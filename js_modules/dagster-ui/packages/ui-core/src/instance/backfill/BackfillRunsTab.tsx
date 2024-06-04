@@ -133,18 +133,20 @@ const ExecutionRunTable = ({
   }
 
   return (
-    <StickyTableContainer $top={56}>
-      <RunTable
-        runs={pipelineRunsOrError.results}
-        actionBarComponents={actionBarComponents}
-        actionBarSticky
-      />
-      {pipelineRunsOrError.results.length > 0 ? (
-        <div style={{marginTop: '16px'}}>
-          <CursorHistoryControls {...paginationProps} />
-        </div>
-      ) : null}
-    </StickyTableContainer>
+    <Box style={{flex: 1, overflowY: 'auto'}}>
+      <StickyTableContainer $top={56}>
+        <RunTable
+          runs={pipelineRunsOrError.results}
+          actionBarComponents={actionBarComponents}
+          actionBarSticky
+        />
+        {pipelineRunsOrError.results.length > 0 ? (
+          <Box margin={{vertical: 16}}>
+            <CursorHistoryControls {...paginationProps} />
+          </Box>
+        ) : null}
+      </StickyTableContainer>
+    </Box>
   );
 };
 

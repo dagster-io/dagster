@@ -5,7 +5,6 @@ import {
   Colors,
   Heading,
   NonIdealState,
-  Page,
   PageHeader,
   Spinner,
   Tab,
@@ -146,7 +145,7 @@ export const BackfillPage = () => {
   }
 
   return (
-    <Page>
+    <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <PageHeader
         title={
           <Heading>
@@ -171,7 +170,7 @@ export const BackfillPage = () => {
         }
       />
       {content()}
-    </Page>
+    </Box>
   );
 };
 
