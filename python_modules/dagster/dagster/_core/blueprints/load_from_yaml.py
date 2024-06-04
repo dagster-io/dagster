@@ -160,7 +160,7 @@ class YamlBlueprintsLoader(NamedTuple):
     """
 
     path: Path
-    per_file_blueprint_type: Type[Blueprint]
+    per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]]
 
     def load_defs(self) -> Definitions:
         return load_defs_from_yaml(

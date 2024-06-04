@@ -254,13 +254,28 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     # Pydantic 1 JSON schema has the blueprint as a definition rather than a top-level object
     # Pydantic 2 JSON schema has the blueprint as a top-level object
     if model_schema["title"] == "ParsingModel[SimpleAssetBlueprint]":
-        assert model_schema["#ref"] == "#/definitions/SimpleAssetBlueprint"
+        assert model_schema["$ref"] == "#/definitions/SimpleAssetBlueprint"
         model_schema = model_schema["definitions"]["SimpleAssetBlueprint"]
 
     assert model_schema["title"] == "SimpleAssetBlueprint"
     assert model_schema["type"] == "object"
     model_keys = model_schema["properties"].keys()
     assert set(model_keys) == {"key"}
+
+
+@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
+    class SimpleAssetBlueprint(Blueprint):
+        key: str
+
+    loader = YamlBlueprintsLoader(
+        path=Path(__file__), per_file_blueprint_type=Sequence[SimpleAssetBlueprint]
+    )
+
+    model_schema = loader.model_json_schema()
+    snapshot.assert_match(model_schema)
+
+    assert model_schema["type"] == "array"
 
 
 @pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
