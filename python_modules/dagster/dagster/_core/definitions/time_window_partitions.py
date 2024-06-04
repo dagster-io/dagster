@@ -1910,10 +1910,17 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     def __len__(self) -> int:
         return self.num_partitions
 
-    def __contains__(self, partition_key: str) -> bool:
-        time_window = cast(
-            TimeWindowPartitionsDefinition, self.partitions_def
-        ).time_window_for_partition_key(partition_key)
+    def __contains__(self, partition_key: Optional[str]) -> bool:
+        if partition_key is None:
+            return False
+
+        try:
+            time_window = cast(
+                TimeWindowPartitionsDefinition, self.partitions_def
+            ).time_window_for_partition_key(partition_key)
+        except ValueError:
+            # invalid partition key
+            return False
 
         time_window_start_timestamp = time_window.start.timestamp()
 
