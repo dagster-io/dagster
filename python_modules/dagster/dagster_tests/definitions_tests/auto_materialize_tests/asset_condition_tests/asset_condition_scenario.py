@@ -12,21 +12,21 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_scheduling.legacy.legacy_context import (
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
+)
+from dagster._core.definitions.declarative_automation.automation_context import (
+    AutomationContext,
+)
+from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )
-from dagster._core.definitions.declarative_scheduling.operators.boolean_operators import (
+from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAssetCondition,
 )
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-    SchedulingCondition,
-    SchedulingResult,
-)
-from dagster._core.definitions.declarative_scheduling.scheduling_context import (
-    SchedulingContext,
-)
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
-    SchedulingConditionCursor,
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
@@ -35,30 +35,30 @@ from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from ..scenario_state import ScenarioState
 
 
-class FalseAssetCondition(SchedulingCondition):
+class FalseAssetCondition(AutomationCondition):
     """Always returns the empty subset."""
 
     @property
     def description(self) -> str:
         return ""
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
-        return SchedulingResult.create(
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
+        return AutomationResult.create(
             context,
             true_slice=context.asset_graph_view.create_empty_slice(asset_key=context.asset_key),
         )
 
 
 @dataclass(frozen=True)
-class SchedulingConditionScenarioState(ScenarioState):
-    scheduling_condition: Optional[SchedulingCondition] = None
-    condition_cursor: Optional[SchedulingConditionCursor] = None
+class AutomationConditionScenarioState(ScenarioState):
+    automation_condition: Optional[AutomationCondition] = None
+    condition_cursor: Optional[AutomationConditionCursor] = None
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
     ensure_empty_result: bool = True
 
     def _get_current_results_by_key(
         self, asset_graph_view: AssetGraphView
-    ) -> Mapping[AssetKey, SchedulingResult]:
+    ) -> Mapping[AssetKey, AutomationResult]:
         if self.requested_asset_partitions is None:
             return {}
         ap_by_key = defaultdict(set)
@@ -78,16 +78,16 @@ class SchedulingConditionScenarioState(ScenarioState):
 
     def evaluate(
         self, asset: CoercibleToAssetKey
-    ) -> Tuple["SchedulingConditionScenarioState", SchedulingResult]:
+    ) -> Tuple["AutomationConditionScenarioState", AutomationResult]:
         asset_key = AssetKey.from_coercible(asset)
         # ensure that the top level condition never returns any asset partitions, as otherwise the
         # next evaluation will assume that those asset partitions were requested by the machinery
         asset_condition = (
             AndAssetCondition(
-                operands=[check.not_none(self.scheduling_condition), FalseAssetCondition()]
+                operands=[check.not_none(self.automation_condition), FalseAssetCondition()]
             )
             if self.ensure_empty_result
-            else check.not_none(self.scheduling_condition)
+            else check.not_none(self.automation_condition)
         )
         asset_graph = self.scenario_spec.with_asset_properties(
             keys=[asset],
@@ -121,7 +121,7 @@ class SchedulingConditionScenarioState(ScenarioState):
                 expected_data_time_mapping={},
                 daemon_context=daemon_context,
             )
-            context = SchedulingContext.create(
+            context = AutomationContext.create(
                 asset_key=asset_key,
                 asset_graph_view=daemon_context.asset_graph_view,
                 logger=self.logger,
@@ -138,7 +138,7 @@ class SchedulingConditionScenarioState(ScenarioState):
 
         return new_state, result
 
-    def without_cursor(self) -> "SchedulingConditionScenarioState":
+    def without_cursor(self) -> "AutomationConditionScenarioState":
         """Removes the previous evaluation state from the state. This is useful for testing
         re-evaluating this data "from scratch" after much computation has occurred.
         """
@@ -146,5 +146,5 @@ class SchedulingConditionScenarioState(ScenarioState):
 
     def with_requested_asset_partitions(
         self, requested_asset_partitions: Sequence[AssetKeyPartitionKey]
-    ) -> "SchedulingConditionScenarioState":
+    ) -> "AutomationConditionScenarioState":
         return dataclasses.replace(self, requested_asset_partitions=requested_asset_partitions)

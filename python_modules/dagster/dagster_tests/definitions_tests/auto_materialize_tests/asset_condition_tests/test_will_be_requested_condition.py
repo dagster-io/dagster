@@ -1,13 +1,13 @@
-from dagster import AssetKey, SchedulingCondition
+from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import two_assets_in_sequence, two_partitions_def
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_will_be_requested_unpartitioned() -> None:
-    condition = SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
-    state = SchedulingConditionScenarioState(two_assets_in_sequence, scheduling_condition=condition)
+    condition = AutomationCondition.any_deps_match(AutomationCondition.will_be_requested())
+    state = AutomationConditionScenarioState(two_assets_in_sequence, automation_condition=condition)
 
     # no requested parents
     state, result = state.evaluate("B")
@@ -20,9 +20,9 @@ def test_will_be_requested_unpartitioned() -> None:
 
 
 def test_will_be_requested_static_partitioned() -> None:
-    condition = SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
-    state = SchedulingConditionScenarioState(
-        two_assets_in_sequence, scheduling_condition=condition
+    condition = AutomationCondition.any_deps_match(AutomationCondition.will_be_requested())
+    state = AutomationConditionScenarioState(
+        two_assets_in_sequence, automation_condition=condition
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no requested parents
@@ -44,9 +44,9 @@ def test_will_be_requested_static_partitioned() -> None:
 
 
 def test_will_be_requested_different_partitions() -> None:
-    condition = SchedulingCondition.any_deps_match(SchedulingCondition.will_be_requested())
-    state = SchedulingConditionScenarioState(
-        two_assets_in_sequence, scheduling_condition=condition
+    condition = AutomationCondition.any_deps_match(AutomationCondition.will_be_requested())
+    state = AutomationConditionScenarioState(
+        two_assets_in_sequence, automation_condition=condition
     ).with_asset_properties("A", partitions_def=two_partitions_def)
 
     # no requested parents

@@ -24,7 +24,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import (
@@ -38,7 +38,7 @@ from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
-from .declarative_scheduling.serialized_objects import (
+from .declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
 )
 from .partition import PartitionsDefinition, ScheduleType
@@ -158,16 +158,16 @@ class AssetDaemonContext:
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[Sequence[SchedulingResult], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        from .declarative_scheduling.scheduling_condition_evaluator import (
-            SchedulingConditionEvaluator,
+        from .declarative_automation.automation_condition_evaluator import (
+            AutomationConditionEvaluator,
         )
 
-        evaluator = SchedulingConditionEvaluator(
+        evaluator = AutomationConditionEvaluator(
             asset_graph=self.asset_graph,
             asset_keys=self.auto_materialize_asset_keys,
             asset_graph_view=self.asset_graph_view,

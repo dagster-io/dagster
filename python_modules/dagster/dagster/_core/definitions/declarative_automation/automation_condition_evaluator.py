@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, Mapping, Optional, Sequence
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
-from dagster._core.definitions.declarative_scheduling.scheduling_context import SchedulingContext
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
 from ..asset_daemon_cursor import AssetDaemonCursor
@@ -23,7 +23,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class SchedulingConditionEvaluator:
+class AutomationConditionEvaluator:
     def __init__(
         self,
         *,
@@ -59,7 +59,7 @@ class SchedulingConditionEvaluator:
     asset_graph: BaseAssetGraph
     asset_keys: AbstractSet[AssetKey]
     asset_graph_view: AssetGraphView
-    current_results_by_key: Dict[AssetKey, SchedulingResult]
+    current_results_by_key: Dict[AssetKey, AutomationResult]
     expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]]
     to_request: Set[AssetKeyPartitionKey]
     num_checked_assets: int
@@ -98,7 +98,7 @@ class SchedulingConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> Tuple[Sequence[SchedulingResult], AbstractSet[AssetKeyPartitionKey]]:
+    def evaluate(self) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
         self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
@@ -167,13 +167,13 @@ class SchedulingConditionEvaluator:
         self,
         asset_key: AssetKey,
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
-        current_results_by_key: Mapping[AssetKey, SchedulingResult],
-    ) -> Tuple[SchedulingResult, Optional[datetime.datetime]]:
+        current_results_by_key: Mapping[AssetKey, AutomationResult],
+    ) -> Tuple[AutomationResult, Optional[datetime.datetime]]:
         """Evaluates the auto materialize policy of a given asset key."""
         # convert the legacy AutoMaterializePolicy to an Evaluator
         asset_condition = check.not_none(
             self.asset_graph.get(asset_key).auto_materialize_policy
-        ).to_scheduling_condition()
+        ).to_automation_condition()
 
         legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
@@ -188,7 +188,7 @@ class SchedulingConditionEvaluator:
             logger=self.logger,
         )
 
-        context = SchedulingContext.create(
+        context = AutomationContext.create(
             asset_key=asset_key,
             asset_graph_view=self.asset_graph_view,
             logger=self.logger,

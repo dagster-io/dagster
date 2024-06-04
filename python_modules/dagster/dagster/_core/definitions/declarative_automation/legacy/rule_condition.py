@@ -5,8 +5,8 @@ from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
-from ..scheduling_condition import SchedulingResult
-from ..scheduling_context import SchedulingContext
+from ..automation_condition import AutomationResult
+from ..automation_context import AutomationContext
 from .asset_condition import AssetCondition
 
 
@@ -27,7 +27,7 @@ class RuleCondition(AssetCondition):
     def description(self) -> str:
         return self.rule.description
 
-    def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+    def evaluate(self, context: AutomationContext) -> AutomationResult:
         context.logger.debug(f"Evaluating rule: {self.rule.to_snapshot()}")
         # Allow for access to legacy context in legacy rule evaluation
         evaluation_result = self.rule.evaluate_for_asset(context)

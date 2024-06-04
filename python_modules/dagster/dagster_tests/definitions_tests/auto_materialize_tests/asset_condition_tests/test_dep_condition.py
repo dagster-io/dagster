@@ -2,14 +2,14 @@ from typing import Sequence
 
 import dagster._check as check
 import pytest
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
-from dagster._core.definitions.declarative_scheduling.scheduling_context import (
-    SchedulingContext,
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.automation_context import (
+    AutomationContext,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
@@ -17,18 +17,18 @@ from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state impor
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset_depends_on_two, two_partitions_def
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def get_hardcoded_condition():
     true_set = set()
 
-    class HardcodedCondition(SchedulingCondition):
+    class HardcodedCondition(AutomationCondition):
         @property
         def description(self) -> str:
             return "..."
 
-        def evaluate(self, context: SchedulingContext) -> SchedulingResult:
+        def evaluate(self, context: AutomationContext) -> AutomationResult:
             true_candidates = {
                 candidate
                 for candidate in context.candidate_slice.convert_to_valid_asset_subset().asset_partitions
@@ -37,7 +37,7 @@ def get_hardcoded_condition():
             partitions_def = context.asset_graph_view.asset_graph.get(
                 context.asset_key
             ).partitions_def
-            return SchedulingResult.create(
+            return AutomationResult.create(
                 context,
                 true_slice=check.not_none(
                     context.asset_graph_view.get_asset_slice_from_subset(
@@ -55,12 +55,12 @@ def get_hardcoded_condition():
 def test_dep_missing_unpartitioned(is_any: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
-        SchedulingCondition.any_deps_match(inner_condition)
+        AutomationCondition.any_deps_match(inner_condition)
         if is_any
-        else SchedulingCondition.all_deps_match(inner_condition)
+        else AutomationCondition.all_deps_match(inner_condition)
     )
-    state = SchedulingConditionScenarioState(
-        one_asset_depends_on_two, scheduling_condition=condition
+    state = AutomationConditionScenarioState(
+        one_asset_depends_on_two, automation_condition=condition
     )
 
     # neither parent is true
@@ -85,12 +85,12 @@ def test_dep_missing_unpartitioned(is_any: bool) -> None:
 def test_dep_missing_partitioned(is_any: bool) -> None:
     inner_condition, true_set = get_hardcoded_condition()
     condition = (
-        SchedulingCondition.any_deps_match(inner_condition)
+        AutomationCondition.any_deps_match(inner_condition)
         if is_any
-        else SchedulingCondition.all_deps_match(inner_condition)
+        else AutomationCondition.all_deps_match(inner_condition)
     )
-    state = SchedulingConditionScenarioState(
-        one_asset_depends_on_two, scheduling_condition=condition
+    state = AutomationConditionScenarioState(
+        one_asset_depends_on_two, automation_condition=condition
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     # no parents true
@@ -155,16 +155,17 @@ def test_dep_missing_partitioned_selections(
     # NOTE: because all selections resolve to a single parent asset, ANY and ALL return the same
     # results
     if is_any:
-        condition = SchedulingCondition.any_deps_match(SchedulingCondition.missing())
+        condition = AutomationCondition.any_deps_match(AutomationCondition.missing())
     else:
-        condition = SchedulingCondition.all_deps_match(SchedulingCondition.missing())
+        condition = AutomationCondition.all_deps_match(AutomationCondition.missing())
 
     if is_include:
         condition = condition.allow(AssetSelection.keys("A"))
     else:
         condition = condition.ignore(AssetSelection.keys("B"))
-    state = SchedulingConditionScenarioState(
-        one_asset_depends_on_two, scheduling_condition=condition
+
+    state = AutomationConditionScenarioState(
+        one_asset_depends_on_two, automation_condition=condition
     ).with_asset_properties(partitions_def=two_partitions_def)
     # all parents are missing
     state, result = state.evaluate("C")
@@ -188,10 +189,10 @@ complex_scenario_spec = ScenarioSpec(
 
 def test_dep_missing_complex_include() -> None:
     # true if any dependencies within the "bar" group are missing, or "A" is missing
-    condition = SchedulingCondition.any_deps_match(
-        SchedulingCondition.missing(),
+    condition = AutomationCondition.any_deps_match(
+        AutomationCondition.missing(),
     ).allow(AssetSelection.keys("A") | AssetSelection.groups("bar"))
-    state = SchedulingConditionScenarioState(complex_scenario_spec, scheduling_condition=condition)
+    state = AutomationConditionScenarioState(complex_scenario_spec, automation_condition=condition)
 
     # all start off as missing
     state, result = state.evaluate("downstream")
@@ -210,10 +211,10 @@ def test_dep_missing_complex_include() -> None:
 
 def test_dep_missing_complex_exclude() -> None:
     # true if any dependencies are missing, ignoring A and anything in the "bar" group
-    condition = SchedulingCondition.any_deps_match(
-        SchedulingCondition.missing(),
+    condition = AutomationCondition.any_deps_match(
+        AutomationCondition.missing(),
     ).ignore(AssetSelection.keys("A") | AssetSelection.groups("bar"))
-    state = SchedulingConditionScenarioState(complex_scenario_spec, scheduling_condition=condition)
+    state = AutomationConditionScenarioState(complex_scenario_spec, automation_condition=condition)
 
     # all start off as missing
     state, result = state.evaluate("downstream")

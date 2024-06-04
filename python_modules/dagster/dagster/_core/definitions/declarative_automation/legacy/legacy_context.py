@@ -20,8 +20,8 @@ from typing import (
 
 import pendulum
 
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import SchedulingResult
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
@@ -31,8 +31,8 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from ...asset_subset import AssetSubset, ValidAssetSubset
 from ..serialized_objects import (
     AssetSubsetWithMetadata,
-    SchedulingConditionCursor,
-    SchedulingConditionNodeCursor,
+    AutomationConditionCursor,
+    AutomationConditionNodeCursor,
 )
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
     from ...asset_daemon_context import AssetDaemonContext
     from ...base_asset_graph import BaseAssetGraph
-    from ..scheduling_condition import SchedulingCondition
+    from ..automation_condition import AutomationCondition
 
 T = TypeVar("T")
 
@@ -64,15 +64,15 @@ class LegacyRuleEvaluationContext:
     """
 
     asset_key: AssetKey
-    condition: "SchedulingCondition"
-    cursor: Optional[SchedulingConditionCursor]
-    node_cursor: Optional[SchedulingConditionNodeCursor]
+    condition: "AutomationCondition"
+    cursor: Optional[AutomationConditionCursor]
+    node_cursor: Optional[AutomationConditionNodeCursor]
     candidate_subset: ValidAssetSubset
 
     instance_queryer: "CachingInstanceQueryer"
     data_time_resolver: "CachingDataTimeResolver"
 
-    current_results_by_key: Mapping[AssetKey, SchedulingResult]
+    current_results_by_key: Mapping[AssetKey, AutomationResult]
     expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]]
 
     start_timestamp: float
@@ -84,12 +84,12 @@ class LegacyRuleEvaluationContext:
     @staticmethod
     def create_within_asset_daemon(
         asset_key: AssetKey,
-        condition: "SchedulingCondition",
-        previous_condition_cursor: Optional[SchedulingConditionCursor],
+        condition: "AutomationCondition",
+        previous_condition_cursor: Optional[AutomationConditionCursor],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
         daemon_context: "AssetDaemonContext",
-        current_results_by_key: Mapping[AssetKey, SchedulingResult],
+        current_results_by_key: Mapping[AssetKey, AutomationResult],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
     ) -> "LegacyRuleEvaluationContext":
         return LegacyRuleEvaluationContext.create(
@@ -109,11 +109,11 @@ class LegacyRuleEvaluationContext:
     def create(
         *,
         asset_key: AssetKey,
-        condition: "SchedulingCondition",
-        cursor: Optional[SchedulingConditionCursor],
+        condition: "AutomationCondition",
+        cursor: Optional[AutomationConditionCursor],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
-        current_results_by_key: Mapping[AssetKey, SchedulingResult],
+        current_results_by_key: Mapping[AssetKey, AutomationResult],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         respect_materialization_data_versions: bool,
         auto_materialize_run_tags: Mapping[str, str],
@@ -148,7 +148,7 @@ class LegacyRuleEvaluationContext:
 
     def for_child(
         self,
-        child_condition: "SchedulingCondition",
+        child_condition: "AutomationCondition",
         child_unique_id: str,
         candidate_subset: AssetSubset,
     ) -> "LegacyRuleEvaluationContext":

@@ -9,12 +9,12 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, Temporal
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
-    SchedulingConditionCursor,
-    SchedulingConditionNodeCursor,
+    AutomationConditionCursor,
+    AutomationConditionNodeCursor,
     get_serializable_candidate_subset,
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
@@ -25,12 +25,13 @@ from dagster._utils.security import non_secure_md5_hash_str
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
+    from .automation_context import AutomationContext
     from .operands import (
         CronTickPassedCondition,
-        FailedSchedulingCondition,
+        FailedAutomationCondition,
         InLatestTimeWindowCondition,
-        InProgressSchedulingCondition,
-        MissingSchedulingCondition,
+        InProgressAutomationCondition,
+        MissingAutomationCondition,
         NewlyRequestedCondition,
         NewlyUpdatedCondition,
         WillBeRequestedCondition,
@@ -44,17 +45,16 @@ if TYPE_CHECKING:
         OrAssetCondition,
         SinceCondition,
     )
-    from .scheduling_context import SchedulingContext
 
 
 @experimental
-class SchedulingCondition(ABC, DagsterModel):
+class AutomationCondition(ABC, DagsterModel):
     @property
     def requires_cursor(self) -> bool:
         return False
 
     @property
-    def children(self) -> Sequence["SchedulingCondition"]:
+    def children(self) -> Sequence["AutomationCondition"]:
         return []
 
     @property
@@ -79,13 +79,13 @@ class SchedulingCondition(ABC, DagsterModel):
         """Returns an AutoMaterializePolicy which contains this condition."""
         from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-        return AutoMaterializePolicy.from_scheduling_condition(self)
+        return AutoMaterializePolicy.from_automation_condition(self)
 
     @abstractmethod
-    def evaluate(self, context: "SchedulingContext") -> "SchedulingResult":
+    def evaluate(self, context: "AutomationContext") -> "AutomationResult":
         raise NotImplementedError()
 
-    def __and__(self, other: "SchedulingCondition") -> "AndAssetCondition":
+    def __and__(self, other: "AutomationCondition") -> "AndAssetCondition":
         from .operators import AndAssetCondition
 
         # group AndAssetConditions together
@@ -93,7 +93,7 @@ class SchedulingCondition(ABC, DagsterModel):
             return AndAssetCondition(operands=[*self.operands, other])
         return AndAssetCondition(operands=[self, other])
 
-    def __or__(self, other: "SchedulingCondition") -> "OrAssetCondition":
+    def __or__(self, other: "AutomationCondition") -> "OrAssetCondition":
         from .operators import OrAssetCondition
 
         # group OrAssetConditions together
@@ -106,8 +106,8 @@ class SchedulingCondition(ABC, DagsterModel):
 
         return NotAssetCondition(operand=self)
 
-    def since(self, reset_condition: "SchedulingCondition") -> "SinceCondition":
-        """Returns a SchedulingCondition that is true if this condition has become true since the
+    def since(self, reset_condition: "AutomationCondition") -> "SinceCondition":
+        """Returns a AutomationCondition that is true if this condition has become true since the
         last time the reference condition became true.
         """
         from .operators import SinceCondition
@@ -115,7 +115,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return SinceCondition(trigger_condition=self, reset_condition=reset_condition)
 
     def since_last_updated(self) -> "SinceCondition":
-        """Returns a SchedulingCondition that is true if this condition has become true since the
+        """Returns a AutomationCondition that is true if this condition has become true since the
         last time this asset was updated.
         """
         from .operands import NewlyUpdatedCondition
@@ -124,7 +124,7 @@ class SchedulingCondition(ABC, DagsterModel):
         return SinceCondition(trigger_condition=self, reset_condition=NewlyUpdatedCondition())
 
     def since_last_requested(self) -> "SinceCondition":
-        """Returns a SchedulingCondition that is true if this condition has become true since the
+        """Returns a AutomationCondition that is true if this condition has become true since the
         last time this asset was updated.
         """
         from .operands import NewlyRequestedCondition
@@ -135,7 +135,7 @@ class SchedulingCondition(ABC, DagsterModel):
     def since_last_cron_tick(
         self, cron_schedule: str, cron_timezone: str = "UTC"
     ) -> "SinceCondition":
-        """Returns a SchedulingCondition that is true if this condition has become true since the
+        """Returns a AutomationCondition that is true if this condition has become true since the
         latest tick of the given cron schedule.
         """
         from .operands import CronTickPassedCondition
@@ -149,7 +149,7 @@ class SchedulingCondition(ABC, DagsterModel):
         )
 
     def newly_true(self) -> "NewlyTrueCondition":
-        """Returns a SchedulingCondition that is true only on the tick that this condition goes
+        """Returns a AutomationCondition that is true only on the tick that this condition goes
         from false to true for a given asset partition.
         """
         from .operators import NewlyTrueCondition
@@ -157,12 +157,12 @@ class SchedulingCondition(ABC, DagsterModel):
         return NewlyTrueCondition(operand=self)
 
     @staticmethod
-    def any_deps_match(condition: "SchedulingCondition") -> "AnyDepsCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if at least one partition
+    def any_deps_match(condition: "AutomationCondition") -> "AnyDepsCondition":
+        """Returns a AutomationCondition that is true for an asset partition if at least one partition
         of any of its dependencies evaluate to True for the given condition.
 
         Args:
-            condition (SchedulingCondition): The SchedulingCondition that will be evaluated against
+            condition (AutomationCondition): The AutomationCondition that will be evaluated against
                 this asset's dependencies.
         """
         from .operators import AnyDepsCondition
@@ -171,15 +171,15 @@ class SchedulingCondition(ABC, DagsterModel):
 
     @staticmethod
     def all_deps_match(
-        condition: "SchedulingCondition",
+        condition: "AutomationCondition",
         include_selection: Optional[AssetSelection] = None,
         exclude_selection: Optional[AssetSelection] = None,
     ) -> "AllDepsCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if at least one partition
+        """Returns a AutomationCondition that is true for an asset partition if at least one partition
         of all of its dependencies evaluate to True for the given condition.
 
         Args:
-            condition (SchedulingCondition): The SchedulingCondition that will be evaluated against
+            condition (AutomationCondition): The AutomationCondition that will be evaluated against
                 this asset's dependencies.
         """
         from .operators import AllDepsCondition
@@ -187,33 +187,33 @@ class SchedulingCondition(ABC, DagsterModel):
         return AllDepsCondition(operand=condition)
 
     @staticmethod
-    def missing() -> "MissingSchedulingCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it has never been
+    def missing() -> "MissingAutomationCondition":
+        """Returns a AutomationCondition that is true for an asset partition if it has never been
         materialized or observed.
         """
-        from .operands import MissingSchedulingCondition
+        from .operands import MissingAutomationCondition
 
-        return MissingSchedulingCondition()
-
-    @staticmethod
-    def in_progress() -> "InProgressSchedulingCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it is part of an in-progress run."""
-        from .operands import InProgressSchedulingCondition
-
-        return InProgressSchedulingCondition()
+        return MissingAutomationCondition()
 
     @staticmethod
-    def failed() -> "FailedSchedulingCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if its latest run failed."""
-        from .operands import FailedSchedulingCondition
+    def in_progress() -> "InProgressAutomationCondition":
+        """Returns a AutomationCondition that is true for an asset partition if it is part of an in-progress run."""
+        from .operands import InProgressAutomationCondition
 
-        return FailedSchedulingCondition()
+        return InProgressAutomationCondition()
+
+    @staticmethod
+    def failed() -> "FailedAutomationCondition":
+        """Returns a AutomationCondition that is true for an asset partition if its latest run failed."""
+        from .operands import FailedAutomationCondition
+
+        return FailedAutomationCondition()
 
     @staticmethod
     def in_latest_time_window(
         lookback_delta: Optional[datetime.timedelta] = None,
     ) -> "InLatestTimeWindowCondition":
-        """Returns a SchedulingCondition that is true for an asset partition when it is within the latest
+        """Returns a AutomationCondition that is true for an asset partition when it is within the latest
         time window.
 
         Args:
@@ -228,21 +228,21 @@ class SchedulingCondition(ABC, DagsterModel):
 
     @staticmethod
     def will_be_requested() -> "WillBeRequestedCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it will be requested this tick."""
+        """Returns a AutomationCondition that is true for an asset partition if it will be requested this tick."""
         from .operands import WillBeRequestedCondition
 
         return WillBeRequestedCondition()
 
     @staticmethod
     def newly_updated() -> "NewlyUpdatedCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it has been updated since the previous tick."""
+        """Returns a AutomationCondition that is true for an asset partition if it has been updated since the previous tick."""
         from .operands import NewlyUpdatedCondition
 
         return NewlyUpdatedCondition()
 
     @staticmethod
     def newly_requested() -> "NewlyRequestedCondition":
-        """Returns a SchedulingCondition that is true for an asset partition if it was requested on the previous tick."""
+        """Returns a AutomationCondition that is true for an asset partition if it was requested on the previous tick."""
         from .operands import NewlyRequestedCondition
 
         return NewlyRequestedCondition()
@@ -251,18 +251,18 @@ class SchedulingCondition(ABC, DagsterModel):
     def cron_tick_passed(
         cron_schedule: str, cron_timezone: str = "UTC"
     ) -> "CronTickPassedCondition":
-        """Returns a SchedulingCondition that is true for all asset partitions whenever a cron tick of the provided schedule is passed."""
+        """Returns a AutomationCondition that is true for all asset partitions whenever a cron tick of the provided schedule is passed."""
         from .operands import CronTickPassedCondition
 
         return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
     @staticmethod
-    def eager() -> "SchedulingCondition":
+    def eager() -> "AutomationCondition":
         """Returns a condition which will "eagerly" fill in missing partitions as they are created,
         and ensures unpartitioned assets are updated whenever their dependencies are updated (either
         via scheduled execution or ad-hoc runs).
 
-        Specifically, this is a composite SchedulingCondition which is true for an asset partition
+        Specifically, this is a composite AutomationCondition which is true for an asset partition
         if all of the following are true:
 
         - The asset partition is within the latest time window
@@ -272,33 +272,33 @@ class SchedulingCondition(ABC, DagsterModel):
         - None of its parent partitions are currently part of an in-progress run
         """
         became_missing_or_any_deps_updated = (
-            SchedulingCondition.missing().newly_true()
-            | SchedulingCondition.any_deps_match(
-                SchedulingCondition.newly_updated() | SchedulingCondition.will_be_requested()
+            AutomationCondition.missing().newly_true()
+            | AutomationCondition.any_deps_match(
+                AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
             )
         )
 
-        any_parent_missing = SchedulingCondition.any_deps_match(
-            SchedulingCondition.missing() & ~SchedulingCondition.will_be_requested()
+        any_parent_missing = AutomationCondition.any_deps_match(
+            AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
         )
-        any_parent_in_progress = SchedulingCondition.any_deps_match(
-            SchedulingCondition.in_progress()
+        any_parent_in_progress = AutomationCondition.any_deps_match(
+            AutomationCondition.in_progress()
         )
         return (
-            SchedulingCondition.in_latest_time_window()
+            AutomationCondition.in_latest_time_window()
             & became_missing_or_any_deps_updated.since_last_requested()
             & ~any_parent_missing
             & ~any_parent_in_progress
         )
 
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "SchedulingCondition":
+    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
         """Returns a condition which will materialize asset partitions within the latest time window
         on a given cron schedule, after their parents have been updated. For example, if the
         cron_schedule is set to "0 0 * * *" (every day at midnight), then this rule will not become
         true on a given day until all of its parents have been updated during that same day.
 
-        Specifically, this is a composite SchedulingCondition which is true for an asset partition
+        Specifically, this is a composite AutomationCondition which is true for an asset partition
         if all of the following are true:
 
         - The asset partition is within the latest time window
@@ -306,21 +306,21 @@ class SchedulingCondition(ABC, DagsterModel):
             schedule, or will be requested this tick
         - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
-        all_deps_updated_since_cron = SchedulingCondition.all_deps_match(
-            SchedulingCondition.newly_updated().since_last_cron_tick(cron_schedule, cron_timezone)
-            | SchedulingCondition.will_be_requested()
+        all_deps_updated_since_cron = AutomationCondition.all_deps_match(
+            AutomationCondition.newly_updated().since_last_cron_tick(cron_schedule, cron_timezone)
+            | AutomationCondition.will_be_requested()
         )
         return (
-            SchedulingCondition.in_latest_time_window()
-            & SchedulingCondition.cron_tick_passed(
+            AutomationCondition.in_latest_time_window()
+            & AutomationCondition.cron_tick_passed(
                 cron_schedule, cron_timezone
             ).since_last_requested()
             & all_deps_updated_since_cron
         )
 
 
-class SchedulingResult(NamedTuple):
-    condition: SchedulingCondition
+class AutomationResult(NamedTuple):
+    condition: AutomationCondition
     condition_unique_id: str
     value_hash: str
 
@@ -332,9 +332,9 @@ class SchedulingResult(NamedTuple):
     true_slice: AssetSlice
     candidate_slice: AssetSlice
 
-    child_results: Sequence["SchedulingResult"]
+    child_results: Sequence["AutomationResult"]
 
-    node_cursor: Optional[SchedulingConditionNodeCursor]
+    node_cursor: Optional[AutomationConditionNodeCursor]
     serializable_evaluation: AssetConditionEvaluation
 
     extra_state: Any
@@ -350,16 +350,16 @@ class SchedulingResult(NamedTuple):
 
     @staticmethod
     def _create(
-        context: "SchedulingContext",
+        context: "AutomationContext",
         true_slice: AssetSlice,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]],
-        child_results: Sequence["SchedulingResult"],
-    ) -> "SchedulingResult":
+        child_results: Sequence["AutomationResult"],
+    ) -> "AutomationResult":
         start_timestamp = context.create_time.timestamp()
         end_timestamp = pendulum.now("UTC").timestamp()
 
-        return SchedulingResult(
+        return AutomationResult(
             condition=context.condition,
             condition_unique_id=context.condition_unique_id,
             value_hash=_compute_value_hash(
@@ -399,13 +399,13 @@ class SchedulingResult(NamedTuple):
 
     @staticmethod
     def create_from_children(
-        context: "SchedulingContext",
+        context: "AutomationContext",
         true_slice: AssetSlice,
-        child_results: Sequence["SchedulingResult"],
+        child_results: Sequence["AutomationResult"],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
-    ) -> "SchedulingResult":
+    ) -> "AutomationResult":
         """Returns a new AssetConditionEvaluation from the given child results."""
-        return SchedulingResult._create(
+        return AutomationResult._create(
             context=context,
             true_slice=true_slice,
             subsets_with_metadata=[],
@@ -415,13 +415,13 @@ class SchedulingResult(NamedTuple):
 
     @staticmethod
     def create(
-        context: "SchedulingContext",
+        context: "AutomationContext",
         true_slice: AssetSlice,
         subsets_with_metadata: Sequence[AssetSubsetWithMetadata] = [],
         extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]] = None,
-    ) -> "SchedulingResult":
+    ) -> "AutomationResult":
         """Returns a new AssetConditionEvaluation from the given parameters."""
-        return SchedulingResult._create(
+        return AutomationResult._create(
             context=context,
             true_slice=true_slice,
             subsets_with_metadata=subsets_with_metadata,
@@ -429,14 +429,14 @@ class SchedulingResult(NamedTuple):
             child_results=[],
         )
 
-    def get_child_node_cursors(self) -> Mapping[str, SchedulingConditionNodeCursor]:
+    def get_child_node_cursors(self) -> Mapping[str, AutomationConditionNodeCursor]:
         node_cursors = {self.condition_unique_id: self.node_cursor} if self.node_cursor else {}
         for child_result in self.child_results:
             node_cursors.update(child_result.get_child_node_cursors())
         return node_cursors
 
-    def get_new_cursor(self) -> SchedulingConditionCursor:
-        return SchedulingConditionCursor(
+    def get_new_cursor(self) -> AutomationConditionCursor:
+        return AutomationConditionCursor(
             previous_requested_subset=self.true_subset,
             effective_timestamp=self.temporal_context.effective_dt.timestamp(),
             last_event_id=self.temporal_context.last_event_id,
@@ -450,8 +450,8 @@ def _create_node_cursor(
     candidate_slice: AssetSlice,
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
     extra_state: Optional[Union[AssetSubset, Sequence[AssetSubset]]],
-) -> SchedulingConditionNodeCursor:
-    return SchedulingConditionNodeCursor(
+) -> AutomationConditionNodeCursor:
+    return AutomationConditionNodeCursor(
         true_subset=true_slice.convert_to_valid_asset_subset(),
         candidate_subset=get_serializable_candidate_subset(
             candidate_slice.convert_to_valid_asset_subset()
@@ -462,13 +462,13 @@ def _create_node_cursor(
 
 
 def _create_serializable_evaluation(
-    context: "SchedulingContext",
+    context: "AutomationContext",
     true_slice: AssetSlice,
     candidate_slice: AssetSlice,
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
     start_timestamp: float,
     end_timestamp: float,
-    child_results: Sequence[SchedulingResult],
+    child_results: Sequence[AutomationResult],
 ) -> AssetConditionEvaluation:
     return AssetConditionEvaluation(
         condition_snapshot=context.condition.get_snapshot(context.condition_unique_id),
@@ -489,7 +489,7 @@ def _compute_value_hash(
     true_slice: AssetSlice,
     candidate_slice: AssetSlice,
     subsets_with_metadata: Sequence[AssetSubsetWithMetadata],
-    child_results: Sequence[SchedulingResult],
+    child_results: Sequence[AutomationResult],
 ) -> str:
     """Computes a unique hash representing the values contained within an evaluation result. This
     string will be identical for results which have identical values, allowing us to detect changes
@@ -515,7 +515,12 @@ def _compute_subset_value_str(subset: AssetSubset) -> str:
     elif isinstance(subset.value, AllPartitionsSubset):
         return AllPartitionsSubset.__name__
     elif isinstance(subset.value, BaseTimeWindowPartitionsSubset):
-        return str(list(sorted(subset.value.included_time_windows)))
+        return str(
+            [
+                (tw.start.timestamp(), tw.end.timestamp())
+                for tw in sorted(subset.value.included_time_windows)
+            ]
+        )
     else:
         return str(list(sorted(subset.asset_partitions)))
 

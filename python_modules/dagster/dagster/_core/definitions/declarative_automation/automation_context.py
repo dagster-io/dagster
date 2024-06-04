@@ -12,15 +12,15 @@ from dagster._core.asset_graph_view.asset_graph_view import (
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import AssetCondition
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-    SchedulingCondition,
-    SchedulingResult,
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
 )
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionCursor,
+    AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
-    SchedulingConditionCursor,
-    SchedulingConditionNodeCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
-def _has_legacy_condition(condition: SchedulingCondition):
+def _has_legacy_condition(condition: AutomationCondition):
     """Detects if the given condition has any legacy rules."""
     if isinstance(condition, AssetCondition):
         return True
@@ -41,10 +41,10 @@ def _has_legacy_condition(condition: SchedulingCondition):
 
 
 # This class exists purely for organizational purposes so that we understand
-# the interface between scheduling conditions and the instance much more
+# the interface between automation conditions and the instance much more
 # explicitly. This captures all interactions that do not go through AssetGraphView
 # so that we do not access the legacy context or the instance queryer directly
-# in scheduling conditions.
+# in automation conditions.
 class NonAGVInstanceInterface:
     def __init__(self, queryer: "CachingInstanceQueryer"):
         self._queryer = queryer
@@ -71,29 +71,29 @@ class NonAGVInstanceInterface:
         )
 
 
-class SchedulingContext(NamedTuple):
+class AutomationContext(NamedTuple):
     # the slice over which the condition is being evaluated
     candidate_slice: AssetSlice
 
     # the condition being evaluated
-    condition: SchedulingCondition
+    condition: AutomationCondition
     # a unique identifier for the condition within the broader tree
     condition_unique_id: str
 
     asset_graph_view: AssetGraphView
 
     # the context object for the parent condition
-    parent_context: Optional["SchedulingContext"]
+    parent_context: Optional["AutomationContext"]
 
     # the time at which this context object was created
     create_time: datetime.datetime
     logger: logging.Logger
 
     # a cursor containing information about this asset calculated on the previous tick
-    cursor: Optional[SchedulingConditionCursor]
+    cursor: Optional[AutomationConditionCursor]
     # a mapping of information computed on the current tick for assets which are upstream of this
     # asset
-    current_tick_results_by_key: Mapping[AssetKey, SchedulingResult]
+    current_tick_results_by_key: Mapping[AssetKey, AutomationResult]
 
     non_agv_instance_interface: NonAGVInstanceInterface
 
@@ -106,18 +106,18 @@ class SchedulingContext(NamedTuple):
         asset_key: AssetKey,
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
-        current_tick_results_by_key: Mapping[AssetKey, SchedulingResult],
-        condition_cursor: Optional[SchedulingConditionCursor],
+        current_tick_results_by_key: Mapping[AssetKey, AutomationResult],
+        condition_cursor: Optional[AutomationConditionCursor],
         legacy_context: "LegacyRuleEvaluationContext",
-    ) -> "SchedulingContext":
+    ) -> "AutomationContext":
         asset_graph = asset_graph_view.asset_graph
         auto_materialize_policy = check.not_none(asset_graph.get(asset_key).auto_materialize_policy)
-        scheduling_condition = auto_materialize_policy.to_scheduling_condition()
+        automation_condition = auto_materialize_policy.to_automation_condition()
 
-        return SchedulingContext(
+        return AutomationContext(
             candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
-            condition=scheduling_condition,
-            condition_unique_id=scheduling_condition.get_unique_id(
+            condition=automation_condition,
+            condition_unique_id=automation_condition.get_unique_id(
                 parent_unique_id=None, index=None
             ),
             asset_graph_view=asset_graph_view,
@@ -130,13 +130,13 @@ class SchedulingContext(NamedTuple):
             non_agv_instance_interface=NonAGVInstanceInterface(
                 asset_graph_view.get_inner_queryer_for_back_compat()
             ),
-            is_legacy_evaluation=_has_legacy_condition(scheduling_condition),
+            is_legacy_evaluation=_has_legacy_condition(automation_condition),
         )
 
     def for_child_condition(
-        self, child_condition: SchedulingCondition, child_index: int, candidate_slice: AssetSlice
-    ) -> "SchedulingContext":
-        return SchedulingContext(
+        self, child_condition: AutomationCondition, child_index: int, candidate_slice: AssetSlice
+    ) -> "AutomationContext":
+        return AutomationContext(
             candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(
@@ -174,12 +174,12 @@ class SchedulingContext(NamedTuple):
         return self.asset_graph.get(self.asset_key).partitions_def
 
     @property
-    def root_context(self) -> "SchedulingContext":
+    def root_context(self) -> "AutomationContext":
         """Returns the context object at the root of the condition evaluation tree."""
         return self.parent_context.root_context if self.parent_context is not None else self
 
     @property
-    def node_cursor(self) -> Optional[SchedulingConditionNodeCursor]:
+    def node_cursor(self) -> Optional[AutomationConditionNodeCursor]:
         """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """

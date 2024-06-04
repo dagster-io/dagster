@@ -1,11 +1,12 @@
+from .automation_condition import AutomationCondition as AutomationCondition
 from .legacy import RuleCondition as RuleCondition
 from .legacy.asset_condition import AssetCondition as AssetCondition
 from .operands import (
     CronTickPassedCondition as CronTickPassedCondition,
-    FailedSchedulingCondition as FailedSchedulingCondition,
+    FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
-    InProgressSchedulingCondition as InProgressSchedulingCondition,
-    MissingSchedulingCondition as MissingSchedulingCondition,
+    InProgressAutomationCondition as InProgressAutomationCondition,
+    MissingAutomationCondition as MissingAutomationCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
@@ -19,7 +20,6 @@ from .operators import (
     OrAssetCondition as OrAssetCondition,
     SinceCondition as SinceCondition,
 )
-from .scheduling_condition import SchedulingCondition as SchedulingCondition
 from .serialized_objects import (
     AssetConditionEvaluationState as AssetConditionEvaluationState,
     AssetConditionSnapshot as AssetConditionSnapshot,

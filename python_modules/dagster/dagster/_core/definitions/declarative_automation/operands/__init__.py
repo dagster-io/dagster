@@ -1,9 +1,9 @@
 from .slice_conditions import (
     CronTickPassedCondition as CronTickPassedCondition,
-    FailedSchedulingCondition as FailedSchedulingCondition,
+    FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
-    InProgressSchedulingCondition as InProgressSchedulingCondition,
-    MissingSchedulingCondition as MissingSchedulingCondition,
+    InProgressAutomationCondition as InProgressAutomationCondition,
+    MissingAutomationCondition as MissingAutomationCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
     NewlyUpdatedCondition as NewlyUpdatedCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,

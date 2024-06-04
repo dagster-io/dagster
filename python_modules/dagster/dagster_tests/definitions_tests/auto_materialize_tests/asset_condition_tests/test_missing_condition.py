@@ -1,13 +1,13 @@
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import SchedulingConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = SchedulingConditionScenarioState(
-        one_asset, scheduling_condition=SchedulingCondition.missing()
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.missing()
     )
 
     state, result = state.evaluate("A")
@@ -19,8 +19,8 @@ def test_missing_unpartitioned() -> None:
 
 
 def test_missing_partitioned() -> None:
-    state = SchedulingConditionScenarioState(
-        one_asset, scheduling_condition=SchedulingCondition.missing()
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.missing()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     state, result = state.evaluate("A")
