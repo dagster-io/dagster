@@ -346,7 +346,7 @@ class AutomationResult(NamedTuple):
 
     @property
     def true_subset(self) -> AssetSubset:
-        return self.serializable_evaluation.true_subset
+        return self.true_slice.convert_to_valid_asset_subset()
 
     @staticmethod
     def _create(
@@ -437,7 +437,7 @@ class AutomationResult(NamedTuple):
 
     def get_new_cursor(self) -> AutomationConditionCursor:
         return AutomationConditionCursor(
-            previous_requested_subset=self.true_subset,
+            previous_requested_subset=self.serializable_evaluation.true_subset,
             effective_timestamp=self.temporal_context.effective_dt.timestamp(),
             last_event_id=self.temporal_context.last_event_id,
             node_cursors_by_unique_id=self.get_child_node_cursors(),
