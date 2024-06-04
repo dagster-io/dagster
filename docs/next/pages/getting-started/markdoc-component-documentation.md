@@ -209,14 +209,23 @@ So, the default way to use images is like this:
 
 and outputs like this:
 
-<!-- ![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png) -->
+![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png)
 
-<!-- {% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%} -->
+The default markdown syntax is effectively the same as using this tag manually: `{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}`
 
-`{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}`
+Which yields this:
+
+{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}
+
+You can also specify the width and height of the image like this:
+
+`{% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}`
+
+Which yields this:
 
 {% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}
 
+The cool part about all of this is that it removes the need to run `make MDX-format` for images as it handles assigning a size to the image as part of page rendering rather than as a batch text-preprocess that gets performed on the docs.
 
 ## Badges : Inline
 
