@@ -289,8 +289,9 @@ class AssetGraphView:
         from dagster._core.definitions.data_version import CachingStaleStatusResolver
         from dagster._core.instance import DagsterInstance
 
+        instance = instance or DagsterInstance.ephemeral()
         stale_resolver = CachingStaleStatusResolver(
-            instance=instance or DagsterInstance.ephemeral(),
+            instance=instance,
             asset_graph=defs.get_asset_graph(),
         )
         check.invariant(stale_resolver.instance_queryer, "Ensure instance queryer is constructed")
@@ -298,7 +299,7 @@ class AssetGraphView:
             stale_resolver=stale_resolver,
             temporal_context=TemporalContext(
                 effective_dt=effective_dt or pendulum.now(),
-                last_event_id=last_event_id,
+                last_event_id=last_event_id or instance.event_log_storage.get_maximum_record_id(),
             ),
         )
 
