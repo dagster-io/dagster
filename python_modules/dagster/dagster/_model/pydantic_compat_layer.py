@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Type, Union
 
 import pydantic
 from pydantic import BaseModel, ValidationError
@@ -154,7 +154,7 @@ def build_validation_error(
         )
 
 
-def json_schema_from_type(model_type: Type[BaseModel]):
+def json_schema_from_type(model_type: Union[Type[BaseModel], Type[Sequence[BaseModel]]]):
     """Pydantic version stable way to get the JSON schema for a Pydantic model."""
     # This nicely handles the case where the per_file_blueprint_type is actually
     # a union type etc.

@@ -1,9 +1,11 @@
 import os
+import sys
 from pathlib import Path
-from typing import Literal, Union
+from typing import List, Literal, Sequence, Union
 
 import pytest
 from dagster import AssetKey, asset, job
+from dagster._check import CheckError
 from dagster._core.blueprints.blueprint import (
     Blueprint,
     BlueprintDefinitions,
@@ -14,7 +16,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from pydantic import ValidationError
 
@@ -252,13 +254,28 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     # Pydantic 1 JSON schema has the blueprint as a definition rather than a top-level object
     # Pydantic 2 JSON schema has the blueprint as a top-level object
     if model_schema["title"] == "ParsingModel[SimpleAssetBlueprint]":
-        assert model_schema["#ref"] == "#/definitions/SimpleAssetBlueprint"
+        assert model_schema["$ref"] == "#/definitions/SimpleAssetBlueprint"
         model_schema = model_schema["definitions"]["SimpleAssetBlueprint"]
 
     assert model_schema["title"] == "SimpleAssetBlueprint"
     assert model_schema["type"] == "object"
     model_keys = model_schema["properties"].keys()
     assert set(model_keys) == {"key"}
+
+
+@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
+    class SimpleAssetBlueprint(Blueprint):
+        key: str
+
+    loader = YamlBlueprintsLoader(
+        path=Path(__file__), per_file_blueprint_type=Sequence[SimpleAssetBlueprint]
+    )
+
+    model_schema = loader.model_json_schema()
+    snapshot.assert_match(model_schema)
+
+    assert model_schema["type"] == "array"
 
 
 @pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
@@ -285,3 +302,80 @@ def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
         item.get("#ref", item.get("$ref")).split("/")[-1] for item in model_schema["anyOf"]
     ]
     assert set(any_of_refs) == {"FooAssetBlueprint", "BarAssetBlueprint"}
+
+
+def test_single_file_many_blueprints() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+        per_file_blueprint_type=List[SimpleAssetBlueprint],
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
+
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+        per_file_blueprint_type=Sequence[SimpleAssetBlueprint],
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
+
+
+# Disabled for Python versions <3.9 as builtin types do not support generics
+# until Python 3.9, https://peps.python.org/pep-0585/
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9")
+def test_single_file_many_blueprints_builtin_list() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+        per_file_blueprint_type=list[SimpleAssetBlueprint],  # type: ignore
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
+
+
+def test_single_file_no_bp_type() -> None:
+    with pytest.raises(
+        CheckError, match="Sequence type annotation must have a single Blueprint type argument"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+            per_file_blueprint_type=List,
+        )
+    with pytest.raises(
+        CheckError, match="Sequence type annotation must have a single Blueprint type argument"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+            per_file_blueprint_type=Sequence,
+        )
+
+
+def test_expect_list_no_list() -> None:
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Expected a list of objects at document root, but got"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+            per_file_blueprint_type=List[SimpleAssetBlueprint],
+        )
+
+
+def test_dir_of_many_blueprints() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "dir_of_lists_of_blueprints",
+        per_file_blueprint_type=List[SimpleAssetBlueprint],
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+        AssetKey("asset4"),
+    }

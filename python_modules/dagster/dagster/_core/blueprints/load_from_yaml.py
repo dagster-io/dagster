@@ -1,10 +1,13 @@
 from pathlib import Path
-from typing import Any, Dict, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, NamedTuple, Optional, Sequence, Type, Union, cast
+
+from typing_extensions import get_args, get_origin
 
 from dagster import (
     Definitions,
     _check as check,
 )
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
@@ -12,7 +15,10 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._model.pydantic_compat_layer import json_schema_from_type
-from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
+from dagster._utils.pydantic_yaml import (
+    parse_yaml_file_to_pydantic,
+    parse_yaml_file_to_pydantic_sequence,
+)
 
 from .blueprint import Blueprint, BlueprintDefinitions
 
@@ -82,7 +88,7 @@ def _attach_code_references_to_definitions(
 def load_defs_from_yaml(
     *,
     path: Union[Path, str],
-    per_file_blueprint_type: Type[Blueprint],
+    per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]],
     resources: Optional[Dict[str, Any]] = None,
 ) -> Definitions:
     """Load Dagster definitions from a YAML file of blueprints.
@@ -90,8 +96,10 @@ def load_defs_from_yaml(
     Args:
         path (Path | str): The path to the YAML file or directory of YAML files containing the
             blueprints for Dagster definitions.
-        per_file_blueprint_type (type[Blueprint]): The type of blueprint that each of the YAML
-            files are expected to conform to.
+        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type
+            of blueprint that each of the YAML files are expected to conform to. If a sequence
+            type is provided, the function will expect each YAML file to contain a list of
+            blueprints.
         resources (Dict[str, Any], optional): A dictionary of resources to be bound to the
             definitions. Defaults to None.
 
@@ -106,10 +114,32 @@ def load_defs_from_yaml(
     else:
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
-    blueprints = [
-        parse_yaml_file_to_pydantic(per_file_blueprint_type, file_path.read_text(), str(file_path))
-        for file_path in file_paths
-    ]
+    origin = get_origin(per_file_blueprint_type)
+    if safe_is_subclass(origin, Sequence):
+        args = get_args(per_file_blueprint_type)
+        check.invariant(
+            args and len(args) == 1,
+            "Sequence type annotation must have a single Blueprint type argument",
+        )
+
+        # flatten the list of blueprints from all files
+        blueprints = [
+            blueprint
+            for file_path in file_paths
+            for blueprint in parse_yaml_file_to_pydantic_sequence(
+                args[0], file_path.read_text(), str(file_path)
+            )
+        ]
+
+    else:
+        blueprints = [
+            parse_yaml_file_to_pydantic(
+                cast(Type[Blueprint], per_file_blueprint_type),
+                file_path.read_text(),
+                str(file_path),
+            )
+            for file_path in file_paths
+        ]
 
     def_sets_with_code_references = [
         _attach_code_references_to_definitions(
@@ -130,7 +160,7 @@ class YamlBlueprintsLoader(NamedTuple):
     """
 
     path: Path
-    per_file_blueprint_type: Type[Blueprint]
+    per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]]
 
     def load_defs(self) -> Definitions:
         return load_defs_from_yaml(
