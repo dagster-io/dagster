@@ -5,15 +5,17 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optiona
 import pendulum
 
 import dagster._check as check
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
+from dagster._core.asset_graph_view.asset_graph_view import (
+    AssetGraphView,
+    AssetSlice,
+    TemporalContext,
+)
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.declarative_scheduling.legacy.asset_condition import AssetCondition
 from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
     SchedulingCondition,
-)
-from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
-    SchedulingEvaluationInfo,
+    SchedulingResult,
 )
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
@@ -91,7 +93,7 @@ class SchedulingContext(NamedTuple):
     cursor: Optional[SchedulingConditionCursor]
     # a mapping of information computed on the current tick for assets which are upstream of this
     # asset
-    current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo]
+    current_tick_results_by_key: Mapping[AssetKey, SchedulingResult]
 
     non_agv_instance_interface: NonAGVInstanceInterface
 
@@ -104,7 +106,7 @@ class SchedulingContext(NamedTuple):
         asset_key: AssetKey,
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
-        current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo],
+        current_tick_results_by_key: Mapping[AssetKey, SchedulingResult],
         condition_cursor: Optional[SchedulingConditionCursor],
         legacy_context: "LegacyRuleEvaluationContext",
     ) -> "SchedulingContext":
@@ -123,7 +125,7 @@ class SchedulingContext(NamedTuple):
             create_time=pendulum.now("UTC"),
             logger=logger,
             cursor=condition_cursor,
-            current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
+            current_tick_results_by_key=current_tick_results_by_key,
             inner_legacy_context=legacy_context,
             non_agv_instance_interface=NonAGVInstanceInterface(
                 asset_graph_view.get_inner_queryer_for_back_compat()
@@ -145,7 +147,7 @@ class SchedulingContext(NamedTuple):
             create_time=pendulum.now("UTC"),
             logger=self.logger,
             cursor=self.cursor,
-            current_tick_evaluation_info_by_key=self.current_tick_evaluation_info_by_key,
+            current_tick_results_by_key=self.current_tick_results_by_key,
             inner_legacy_context=self.inner_legacy_context.for_child(
                 child_condition,
                 child_condition.get_unique_id(
@@ -254,3 +256,9 @@ class SchedulingContext(NamedTuple):
             return self.legacy_context.new_max_storage_id
         else:
             return self.asset_graph_view.last_event_id
+
+    @property
+    def new_temporal_context(self) -> TemporalContext:
+        return TemporalContext(
+            effective_dt=self.effective_dt, last_event_id=self.new_max_storage_id
+        )

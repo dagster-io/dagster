@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Mapping, Optional, Sequence, Tuple
 
 import dagster._check as check
+import mock
 from dagster import AssetKey
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -24,11 +25,7 @@ from dagster._core.definitions.declarative_scheduling.scheduling_condition impor
 from dagster._core.definitions.declarative_scheduling.scheduling_context import (
     SchedulingContext,
 )
-from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
-    SchedulingEvaluationInfo,
-)
 from dagster._core.definitions.declarative_scheduling.serialized_objects import (
-    AssetConditionEvaluationState,
     SchedulingConditionCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
@@ -59,19 +56,17 @@ class SchedulingConditionScenarioState(ScenarioState):
     requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
     ensure_empty_result: bool = True
 
-    def _get_current_evaluation_state_by_key(
+    def _get_current_results_by_key(
         self, asset_graph_view: AssetGraphView
-    ) -> Mapping[AssetKey, SchedulingEvaluationInfo]:
+    ) -> Mapping[AssetKey, SchedulingResult]:
         if self.requested_asset_partitions is None:
             return {}
         ap_by_key = defaultdict(set)
         for ap in self.requested_asset_partitions:
             ap_by_key[ap.asset_key].add(ap)
         return {
-            asset_key: SchedulingEvaluationInfo(
-                temporal_context=TemporalContext(self.current_time, None),
-                evaluation_nodes=[],
-                requested_slice=asset_graph_view.get_asset_slice_from_subset(
+            asset_key: mock.MagicMock(
+                true_slice=asset_graph_view.get_asset_slice_from_subset(
                     AssetSubset.from_asset_partitions_set(
                         asset_key, asset_graph_view.asset_graph.get(asset_key).partitions_def, aps
                     )
@@ -122,7 +117,7 @@ class SchedulingConditionScenarioState(ScenarioState):
                 previous_condition_cursor=self.condition_cursor,
                 instance_queryer=instance_queryer,
                 data_time_resolver=CachingDataTimeResolver(instance_queryer),
-                evaluation_state_by_key={},
+                current_results_by_key={},
                 expected_data_time_mapping={},
                 daemon_context=daemon_context,
             )
@@ -130,7 +125,7 @@ class SchedulingConditionScenarioState(ScenarioState):
                 asset_key=asset_key,
                 asset_graph_view=daemon_context.asset_graph_view,
                 logger=self.logger,
-                current_tick_evaluation_info_by_key=self._get_current_evaluation_state_by_key(
+                current_tick_results_by_key=self._get_current_results_by_key(
                     daemon_context.asset_graph_view
                 ),
                 condition_cursor=self.condition_cursor,
@@ -138,10 +133,7 @@ class SchedulingConditionScenarioState(ScenarioState):
             )
 
             full_result = asset_condition.evaluate(context)
-            evaluation_state = AssetConditionEvaluationState.create(context, full_result)
-            result_hash = evaluation_state.previous_evaluation.get_result_hash()
-            new_cursor = SchedulingConditionCursor.from_result(context, full_result, result_hash)
-            new_state = dataclasses.replace(self, condition_cursor=new_cursor)
+            new_state = dataclasses.replace(self, condition_cursor=full_result.get_new_cursor())
             result = full_result.child_results[0] if self.ensure_empty_result else full_result
 
         return new_state, result
