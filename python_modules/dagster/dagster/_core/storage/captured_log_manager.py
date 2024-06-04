@@ -1,16 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import (
-    IO,
-    Callable,
-    Generator,
-    Iterator,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 from typing_extensions import Final, Self
 

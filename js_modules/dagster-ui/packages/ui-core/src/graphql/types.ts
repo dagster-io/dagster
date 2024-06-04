@@ -3084,6 +3084,10 @@ export type PartitionBackfill = {
   user: Maybe<Scalars['String']['output']>;
 };
 
+export type PartitionBackfillLogEventsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type PartitionBackfillPartitionsTargetedForAssetKeyArgs = {
   assetKey?: InputMaybe<AssetKeyInput>;
 };
