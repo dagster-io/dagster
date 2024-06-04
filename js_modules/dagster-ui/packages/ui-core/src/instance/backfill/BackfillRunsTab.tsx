@@ -158,7 +158,7 @@ const ExecutionRunTimeline = ({
 }: {
   rangeMs: [number, number];
   annotations: {label: string; ms: number}[];
-  filter: RunsFilter;
+  filter: RunsFilter; // note: must be memoized
   actionBarComponents: React.ReactNode;
 }) => {
   const runsForTimelineRet = useRunsForTimeline({
