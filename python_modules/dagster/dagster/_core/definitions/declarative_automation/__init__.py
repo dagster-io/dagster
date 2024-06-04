@@ -1,4 +1,5 @@
 from .automation_condition import AutomationCondition as AutomationCondition
+from .automation_condition_tester import AutomationConditionTester as AutomationConditionTester
 from .legacy import RuleCondition as RuleCondition
 from .legacy.asset_condition import AssetCondition as AssetCondition
 from .operands import (
