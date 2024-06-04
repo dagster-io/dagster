@@ -2327,6 +2327,7 @@ def test_asset_backfill_logs(
     logs, cursor = cm.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id], cursor=None
     )
+    assert cursor is not None
     assert logs
     for log_line in logs:
         if not log_line:
@@ -2349,6 +2350,7 @@ def test_asset_backfill_logs(
         cursor=cursor.to_string(),
     )
 
+    assert cursor is not None
     assert not cursor.has_more_now
     for log_line in logs:
         if not log_line:
