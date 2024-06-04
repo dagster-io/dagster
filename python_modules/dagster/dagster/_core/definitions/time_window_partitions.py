@@ -1935,36 +1935,6 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             and self.included_time_windows == other.included_time_windows
         )
 
-    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self is other:
-            return self
-        return self.with_partition_keys(other.get_partition_keys())
-
-    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self is other:
-            return self.empty_subset(self.partitions_def)
-
-        empty_subset = self.empty_subset(self.partitions_def)
-
-        if other is empty_subset:
-            return self
-
-        return empty_subset.with_partition_keys(
-            set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
-        )
-
-    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self is other:
-            return self
-
-        empty_subset = self.empty_subset(self.partitions_def)
-        if other is empty_subset:
-            return empty_subset
-
-        return empty_subset.with_partition_keys(
-            set(self.get_partition_keys()) & set(other.get_partition_keys())
-        )
-
 
 class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
     """A PartitionsSubset for a TimeWindowPartitionsDefinition, which internally represents the
@@ -2110,6 +2080,33 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
             ).get_partitions_definition()
         return TimeWindowPartitionsSubset(
             partitions_def, self.num_partitions, self.included_time_windows
+        )
+
+    def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if isinstance(other, PartitionKeysTimeWindowPartitionsSubset):
+            return self.partitions_def.subset_with_partition_keys(
+                set(self.get_partition_keys()) | set(other.get_partition_keys())
+            )
+        return _attempt_coerce_to_time_window_subset(self) | _attempt_coerce_to_time_window_subset(
+            other
+        )
+
+    def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if isinstance(other, PartitionKeysTimeWindowPartitionsSubset):
+            return self.partitions_def.subset_with_partition_keys(
+                set(self.get_partition_keys()) - set(other.get_partition_keys())
+            )
+        return _attempt_coerce_to_time_window_subset(self) - _attempt_coerce_to_time_window_subset(
+            other
+        )
+
+    def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        if isinstance(other, PartitionKeysTimeWindowPartitionsSubset):
+            return self.partitions_def.subset_with_partition_keys(
+                set(self.get_partition_keys()) & set(other.get_partition_keys())
+            )
+        return _attempt_coerce_to_time_window_subset(self) & _attempt_coerce_to_time_window_subset(
+            other
         )
 
 
@@ -2275,13 +2272,7 @@ class TimeWindowPartitionsSubset(
         return f"TimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self == other:
-            return self
-
-        empty_subset = self.empty_subset(self.partitions_def)
-        if other is empty_subset:
-            return other
-
+        other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
             return super().__and__(other)
 
@@ -2317,13 +2308,7 @@ class TimeWindowPartitionsSubset(
         )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self == other:
-            return self
-
-        empty_subset = self.empty_subset(self.partitions_def)
-        if other is empty_subset:
-            return self
-
+        other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
             return super().__or__(other)
 
@@ -2331,7 +2316,7 @@ class TimeWindowPartitionsSubset(
             [*self.included_time_windows, *other.included_time_windows],
             key=lambda tw: tw.start.timestamp(),
         )
-        result_windows = [input_time_windows[0]]
+        result_windows = [input_time_windows[0]] if len(input_time_windows) > 0 else []
         for window in input_time_windows[1:]:
             latest_window = result_windows[-1]
             if window.start <= latest_window.end:
@@ -2349,18 +2334,9 @@ class TimeWindowPartitionsSubset(
         )
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self is other:
-            return self.empty_subset(self.partitions_def)
-
-        empty_subset = self.empty_subset(self.partitions_def)
-
-        if other is empty_subset:
-            return self
-
+        other = _attempt_coerce_to_time_window_subset(other)
         if not isinstance(other, TimeWindowPartitionsSubset):
-            return empty_subset.with_partition_keys(
-                set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
-            )
+            return super().__sub__(other)
 
         time_windows = sorted(self.included_time_windows, key=lambda tw: tw.start.timestamp())
         other_time_windows = sorted(
@@ -2620,3 +2596,19 @@ def get_time_partition_key(
         ]
     else:
         check.failed(f"Cannot get time partition from non-time partitions def {partitions_def}")
+
+
+def _attempt_coerce_to_time_window_subset(subset: "PartitionsSubset") -> "PartitionsSubset":
+    """Attempts to convert the input subset into a TimeWindowPartitionsSubset."""
+    if isinstance(subset, TimeWindowPartitionsSubset):
+        return subset
+    elif isinstance(subset, BaseTimeWindowPartitionsSubset):
+        return TimeWindowPartitionsSubset(
+            partitions_def=subset.partitions_def,
+            num_partitions=subset.num_partitions,
+            included_time_windows=subset.included_time_windows,
+        )
+    elif isinstance(subset, AllPartitionsSubset):
+        return TimeWindowPartitionsSubset.from_all_partitions_subset(subset)
+    else:
+        return subset
