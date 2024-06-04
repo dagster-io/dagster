@@ -11,3 +11,10 @@ export const BATCHING_INTERVAL = 250;
 
 export const SUBSCRIPTION_IDLE_POLL_RATE = 30 * 1000;
 export const SUBSCRIPTION_MAX_POLL_RATE = 2 * 1000;
+
+export const threadIDToLimits = {
+  ['AssetHealth' as string]: {
+    batchSize: 250,
+    parallelThreads: 4,
+  },
+};
