@@ -1,12 +1,10 @@
-// import getImageDimensions from 'util/getImageDimensions';
-
 import NextImage from 'next/image';
 import {useEffect, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
 export const MyImage = ({children, ...props}) => {
-  // Manually set dimensions for internal images will be on props.width and props.height
-  // images without manual ddimensions will use the dimensions state and
+  // Manually set dimensions for images will be on props.width and props.height.
+  // Images without manual ddimensions will use the dimensions state and
   // automatically set width and height as an effect in the client.
 
   const [dimensions, setDimensions] = useState({width: 0, height: 0});
