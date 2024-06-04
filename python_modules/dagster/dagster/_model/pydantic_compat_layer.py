@@ -158,11 +158,12 @@ def json_schema_from_type(model_type: Type[BaseModel]):
     """Pydantic version stable way to get the JSON schema for a Pydantic model."""
     # This nicely handles the case where the per_file_blueprint_type is actually
     # a union type etc.
-    if USING_PYDANTIC_2:
-        from pydantic import TypeAdapter
-
-        return TypeAdapter(model_type).json_schema()
-    else:
+    if USING_PYDANTIC_1:
         from pydantic.tools import schema_json_of
 
         return json.loads(schema_json_of(model_type))
+
+    else:
+        from pydantic import TypeAdapter  # type: ignore
+
+        return TypeAdapter(model_type).json_schema()
