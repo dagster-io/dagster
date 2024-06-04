@@ -300,7 +300,7 @@ def test_single_file_many_blueprints() -> None:
 
 
 def test_expect_list_no_list() -> None:
-    with pytest.raises(ValueError, match="Expected a list of objects, but got"):
+    with pytest.raises(ValueError, match="Expected a list of objects at document root, but got"):
         load_defs_from_yaml(
             path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
             per_file_blueprint_type=List[SimpleAssetBlueprint],
