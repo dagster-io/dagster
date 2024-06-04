@@ -24,9 +24,10 @@ export class LiveDataThread<T> {
     manager: LiveDataThreadManager<T>,
     queryKeys: (keys: string[]) => Promise<Record<string, T>>,
   ) {
-    if (threadIDToLimits[id]) {
-      this._batchSize = threadIDToLimits[id].batchSize;
-      this._parallelFetches = threadIDToLimits[id].parallelThreads;
+    const limits = threadIDToLimits[id];
+    if (limits) {
+      this._batchSize = limits.batchSize;
+      this._parallelFetches = limits.parallelThreads;
     }
     this.queryKeys = queryKeys;
     this.listenersCount = {};
