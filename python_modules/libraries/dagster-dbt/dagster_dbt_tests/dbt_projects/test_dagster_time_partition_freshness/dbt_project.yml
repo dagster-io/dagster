@@ -1,4 +1,4 @@
-name: "jaffle_shop"
+name: "test_dagster_time_partition_freshness"
 
 config-version: 2
 version: "0.1"
@@ -20,7 +20,7 @@ clean-targets:
 require-dbt-version: [">=1.0.0", "<2.0.0"]
 
 models:
-  jaffle_shop:
+  test_dagster_time_partition_freshness:
     materialized: table
     staging:
       materialized: view

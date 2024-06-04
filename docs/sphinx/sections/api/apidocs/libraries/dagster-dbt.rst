@@ -50,6 +50,11 @@ Assets (dbt Core)
 
 .. autoclass:: DbtProject
 
+Asset Checks (dbt Core)
+=======================
+
+.. autofunction:: build_freshness_checks_from_dbt_assets
+
 Resources (dbt Core)
 ====================
 

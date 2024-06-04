@@ -29,6 +29,13 @@ models:
       - name: total_order_amount
         description: Total value (AUD) of a customer's orders
     
+    meta:
+      dagster:
+        freshness_check:
+          deadline_cron: "0 0 * * *"
+          lower_bound_delta_seconds: 86400
+          severity: "ERROR"
+
   - name: orders
     description: This table has basic information about orders, as well as some derived facts based on payments
 
