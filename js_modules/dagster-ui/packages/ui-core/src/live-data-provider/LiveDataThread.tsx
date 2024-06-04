@@ -80,7 +80,7 @@ export class LiveDataThread<T> {
   }
 
   private async _batchedQueryKeys() {
-    if (this.activeFetches >= BATCH_PARALLEL_FETCHES) {
+    if (this.activeFetches >= this._parallelFetches) {
       return;
     }
     const keys = this.manager.determineKeysToFetch(this.getObservedKeys(), this._batchSize);
