@@ -2320,9 +2320,11 @@ def test_asset_backfill_logs(
 
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
 
-    assert isinstance(instance.compute_log_manager, CapturedLogManager)
+    cm = instance.compute_log_manager
 
-    logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
+    assert isinstance(cm, CapturedLogManager)
+
+    logs, cursor = cm.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id], cursor=None
     )
     assert logs
@@ -2342,11 +2344,17 @@ def test_asset_backfill_logs(
 
     # set num_lines high so we know we get all of the remaining logs
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
-    logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
+    logs, cursor = cm.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id],
         cursor=cursor.to_string(),
     )
 
-    assert not cursor.has_more
+    assert not cursor.has_more_now
     for log_line in logs:
-        assert log_line.get("msg")
+        if not log_line:
+            continue
+        try:
+            record_dict = _seven.json.loads(log_line)
+        except json.JSONDecodeError:
+            continue
+        assert record_dict.get("msg")
