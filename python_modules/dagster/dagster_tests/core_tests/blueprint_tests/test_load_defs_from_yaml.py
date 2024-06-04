@@ -9,13 +9,13 @@ from dagster._core.blueprints.blueprint import (
     BlueprintDefinitions,
     DagsterBuildDefinitionsFromConfigError,
 )
-from dagster._core.blueprints.load_from_yaml import load_defs_from_yaml
+from dagster._core.blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from pydantic import ValidationError
 
 
@@ -237,3 +237,51 @@ def test_additional_resources() -> None:
     )
 
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+
+@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+def test_loader_schema(snapshot, pydantic_version: int) -> None:
+    class SimpleAssetBlueprint(Blueprint):
+        key: str
+
+    loader = YamlBlueprintsLoader(path=Path(__file__), per_file_blueprint_type=SimpleAssetBlueprint)
+
+    model_schema = loader.model_json_schema()
+    snapshot.assert_match(model_schema)
+
+    # Pydantic 1 JSON schema has the blueprint as a definition rather than a top-level object
+    # Pydantic 2 JSON schema has the blueprint as a top-level object
+    if model_schema["title"] == "ParsingModel[SimpleAssetBlueprint]":
+        assert model_schema["#ref"] == "#/definitions/SimpleAssetBlueprint"
+        model_schema = model_schema["definitions"]["SimpleAssetBlueprint"]
+
+    assert model_schema["title"] == "SimpleAssetBlueprint"
+    assert model_schema["type"] == "object"
+    model_keys = model_schema["properties"].keys()
+    assert set(model_keys) == {"key"}
+
+
+@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
+    class FooAssetBlueprint(Blueprint):
+        type: Literal["foo"] = "foo"
+        number: int
+
+    class BarAssetBlueprint(Blueprint):
+        type: Literal["bar"] = "bar"
+        string: str
+
+    loader = YamlBlueprintsLoader(
+        path=Path(__file__), per_file_blueprint_type=Union[FooAssetBlueprint, BarAssetBlueprint]
+    )
+
+    model_schema = loader.model_json_schema()
+    snapshot.assert_match(model_schema)
+
+    # Pydantic 1 uses $ref, Pydantic 2 uses #ref
+    # Just make sure the top-level union object points to both blueprints
+    assert len(model_schema["anyOf"]) == 2
+    any_of_refs = [
+        item.get("#ref", item.get("$ref")).split("/")[-1] for item in model_schema["anyOf"]
+    ]
+    assert set(any_of_refs) == {"FooAssetBlueprint", "BarAssetBlueprint"}

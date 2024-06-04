@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, NamedTuple, Optional, Type, Union
 
 from dagster import (
     Definitions,
@@ -11,6 +11,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._model.pydantic_compat_layer import json_schema_from_type
 from dagster._utils.pydantic_yaml import parse_yaml_file_to_pydantic
 
 from .blueprint import Blueprint, BlueprintDefinitions
@@ -120,3 +121,22 @@ def load_defs_from_yaml(
     return BlueprintDefinitions.merge(
         *def_sets_with_code_references, BlueprintDefinitions(resources=resources or {})
     ).to_definitions()
+    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions()
+
+
+class YamlBlueprintsLoader(NamedTuple):
+    """A loader is responsible for loading a set of Dagster definitions from one or more YAML
+    files based on a set of supplied blueprints.
+    """
+
+    path: Path
+    per_file_blueprint_type: Type[Blueprint]
+
+    def load_defs(self) -> Definitions:
+        return load_defs_from_yaml(
+            path=self.path, per_file_blueprint_type=self.per_file_blueprint_type
+        )
+
+    def model_json_schema(self) -> Dict[str, Any]:
+        """Returns a JSON schema for the model or models that the loader is responsible for loading."""
+        return json_schema_from_type(self.per_file_blueprint_type)
