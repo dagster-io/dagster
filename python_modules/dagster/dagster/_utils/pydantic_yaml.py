@@ -2,6 +2,7 @@ from typing import List, Optional, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 
 from .source_position import (
@@ -113,7 +114,7 @@ def parse_yaml_file_to_pydantic_list(cls: Type[T], src: str, filename: str = "<s
     parsed = parse_yaml_with_source_positions(src, filename)
 
     if not isinstance(parsed.value, list):
-        raise ValueError(
+        raise DagsterInvariantViolationError(
             f"Error parsing YAML file {filename}: Expected a list of objects at document root, but got {type(parsed.value)}"
         )
 
