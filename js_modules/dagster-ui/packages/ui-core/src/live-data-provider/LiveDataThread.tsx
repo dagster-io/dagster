@@ -9,8 +9,8 @@ export class LiveDataThread<T> {
   private intervals: ReturnType<typeof setTimeout>[];
   private manager: LiveDataThreadManager<any>;
 
-  private _batchSize: number = BATCH_SIZE;
-  private _parallelFetches: number = BATCH_PARALLEL_FETCHES;
+  private batchSize: number = BATCH_SIZE;
+  private parallelFetches: number = BATCH_PARALLEL_FETCHES;
   public pollRate: number = 30000;
 
   protected static _threads: {[key: string]: LiveDataThread<any>} = {};
@@ -26,8 +26,8 @@ export class LiveDataThread<T> {
   ) {
     const limits = threadIDToLimits[id];
     if (limits) {
-      this._batchSize = limits.batchSize;
-      this._parallelFetches = limits.parallelThreads;
+      this.batchSize = limits.batchSize;
+      this.parallelFetches = limits.parallelThreads;
     }
     this.queryKeys = queryKeys;
     this.listenersCount = {};
@@ -63,7 +63,7 @@ export class LiveDataThread<T> {
   }
 
   public startFetchLoop() {
-    if (this.intervals.length === this._parallelFetches) {
+    if (this.intervals.length === this.parallelFetches) {
       return;
     }
     const fetch = () => {
@@ -81,10 +81,10 @@ export class LiveDataThread<T> {
   }
 
   private async _batchedQueryKeys() {
-    if (this.activeFetches >= this._parallelFetches) {
+    if (this.activeFetches >= this.parallelFetches) {
       return;
     }
-    const keys = this.manager.determineKeysToFetch(this.getObservedKeys(), this._batchSize);
+    const keys = this.manager.determineKeysToFetch(this.getObservedKeys(), this.batchSize);
     if (!keys.length) {
       return;
     }
