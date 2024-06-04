@@ -21,7 +21,6 @@ from dagster._serdes.serdes import (
     _WHITELIST_MAP,
     NamedTupleSerializer,
     PackableValue,
-    PydanticModelSerializer,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
@@ -184,7 +183,7 @@ def deserialize_serialized_partitions_subset_to_asset_subset(
     return AssetSubset(asset_key=asset_key, value=serialized.deserialize(partitions_def))
 
 
-class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer):
+class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
     AssetConditionEvaluationWithRunIds objects.
     """
@@ -346,8 +345,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             # since the evaluation was stored. Instead, we just use an empty subset.
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
         else:
-            true_subset = evaluation.true_subset.copy(
-                update={"value": not evaluation.true_subset.bool_value}
+            true_subset = evaluation.true_subset._replace(
+                value=not evaluation.true_subset.bool_value
             )
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
