@@ -117,6 +117,6 @@ def load_defs_from_yaml(
         for blueprint in blueprints
     ]
 
-    return BlueprintDefinitions.merge(*def_sets_with_code_references).to_definitions(
-        additional_resources=resources or {}
-    )
+    return BlueprintDefinitions.merge(
+        *def_sets_with_code_references, BlueprintDefinitions(resources=resources or {})
+    ).to_definitions()
