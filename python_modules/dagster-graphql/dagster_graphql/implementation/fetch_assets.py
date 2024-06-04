@@ -138,6 +138,15 @@ def asset_node_iter(
             yield location, repository, external_asset_node
 
 
+def get_external_asset_node(
+    graphene_info: "ResolveInfo", asset_key: AssetKey
+) -> Optional[ExternalAssetNode]:
+    for _, _, external_asset_node in asset_node_iter(graphene_info):
+        if external_asset_node.asset_key == asset_key:
+            return external_asset_node
+    return None
+
+
 def get_additional_required_keys(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> List["AssetKey"]:

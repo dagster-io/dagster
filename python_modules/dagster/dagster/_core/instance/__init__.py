@@ -41,6 +41,7 @@ from dagster._core.definitions.asset_check_evaluation import (
 )
 from dagster._core.definitions.data_version import extract_data_provenance_from_entry
 from dagster._core.definitions.events import AssetKey, AssetObservation
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidInvocationError,
@@ -1361,7 +1362,6 @@ class DagsterInstance(DynamicPartitionsStore):
         job_partitions_def: Optional["PartitionsDefinition"],
     ) -> None:
         from dagster._core.definitions.partition import DynamicPartitionsDefinition
-        from dagster._core.definitions.partition_key_range import PartitionKeyRange
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
@@ -2240,6 +2240,13 @@ class DagsterInstance(DynamicPartitionsStore):
         check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
         for asset_key in asset_keys:
             self._event_storage.wipe_asset(asset_key)
+
+    def wipe_asset_partitions(
+        self,
+        asset_key: AssetKey,
+        partition_keys: Sequence[str],
+    ) -> None:
+        self._event_storage.wipe_asset_partitions(asset_key, partition_keys)
 
     @traced
     def get_materialized_partitions(
