@@ -3,6 +3,7 @@ from typing import AbstractSet, NamedTuple, Sequence
 
 import mock
 import pytest
+from dagster import SchedulingCondition, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.data_time import CachingDataTimeResolver
@@ -20,7 +21,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon.asset_daemon import AssetDaemon
 from dagster._utils import file_relative_path
 
-from .user_space_ds_defs import amp_sensor, defs, downstream, upstream
+from .user_space_ds_defs import amp_sensor, downstream, upstream
 
 
 class SchedulingTickResult(NamedTuple):
@@ -54,6 +55,22 @@ def execute_ds_tick(defs: Definitions) -> SchedulingTickResult:
 
 
 def test_basic_asset_scheduling_test() -> None:
+    eager_policy = SchedulingCondition.eager().as_auto_materialize_policy()
+
+    @asset(auto_materialize_policy=eager_policy)
+    def upstream() -> None: ...
+
+    @asset(
+        deps=[upstream],
+        auto_materialize_policy=eager_policy,
+    )
+    def downstream() -> None: ...
+
+    assert upstream
+    assert downstream
+
+    defs = Definitions([upstream, downstream])
+
     result = execute_ds_tick(defs)
     assert result
     assert result.asset_partition_keys == {
