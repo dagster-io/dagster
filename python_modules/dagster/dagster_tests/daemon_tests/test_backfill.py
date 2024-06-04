@@ -36,8 +36,6 @@ from dagster import (
     repository,
 )
 from dagster._core.definitions import StaticPartitionsDefinition
-from dagster._core.captured_log_api import LOG_STREAM_COMPLETED_SIGIL
-
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
