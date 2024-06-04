@@ -186,7 +186,12 @@ class UnresolvedAssetJobDefinition(
         # Require that all assets in the job have the same backfill policy
         executable_nodes = {job_asset_graph.get(k) for k in job_asset_graph.executable_asset_keys}
         nodes_by_backfill_policy = dict(
-            groupby((n for n in executable_nodes if n.is_partitioned), lambda n: n.backfill_policy)
+            groupby(
+                (n for n in executable_nodes if n.is_partitioned),
+                lambda n: check.not_none(
+                    n.backfill_policy, f"Unexpected null backfill policy for {n.key}"
+                ),
+            )
         )
         backfill_policy = resolve_backfill_policy(nodes_by_backfill_policy.keys())
 

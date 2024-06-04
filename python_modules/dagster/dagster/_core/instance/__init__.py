@@ -1363,21 +1363,17 @@ class DagsterInstance(DynamicPartitionsStore):
         from dagster._core.definitions.partition_key_range import PartitionKeyRange
         from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
+        is_partitioned = check.not_none(output.properties).is_asset_partitioned
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
         partition_range_start, partition_range_end = (
             dagster_run.tags.get(ASSET_PARTITION_RANGE_START_TAG),
             dagster_run.tags.get(ASSET_PARTITION_RANGE_END_TAG),
         )
 
-        if partition_tag and (partition_range_start or partition_range_end):
-            raise DagsterInvariantViolationError(
-                f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
-                f" {ASSET_PARTITION_RANGE_END_TAG} set along with"
-                f" {PARTITION_NAME_TAG}"
-            )
-
-        partitions_subset = None
-        if partition_range_start or partition_range_end:
+        if is_partitioned and partition_tag:
+            partition = partition_tag
+            partitions_subset = None
+        elif is_partitioned and (partition_range_start or partition_range_end):
             if not partition_range_start or not partition_range_end:
                 raise DagsterInvariantViolationError(
                     f"Cannot have {ASSET_PARTITION_RANGE_START_TAG} or"
@@ -1398,17 +1394,17 @@ class DagsterInstance(DynamicPartitionsStore):
                     "Creating a run targeting a partition range is not supported for jobs partitioned with function-based dynamic partitions"
                 )
 
-            if check.not_none(output.properties).is_asset_partitioned:
-                partitions_subset = job_partitions_def.subset_with_partition_keys(
-                    job_partitions_def.get_partition_keys_in_range(
-                        PartitionKeyRange(partition_range_start, partition_range_end),
-                        dynamic_partitions_store=self,
-                    )
-                ).to_serializable_subset()
+            partition = None
+            partitions_subset = job_partitions_def.subset_with_partition_keys(
+                job_partitions_def.get_partition_keys_in_range(
+                    PartitionKeyRange(partition_range_start, partition_range_end),
+                    dynamic_partitions_store=self,
+                )
+            ).to_serializable_subset()
+        else:
+            partition = None
+            partitions_subset = None
 
-        partition = (
-            partition_tag if check.not_none(output.properties).is_asset_partitioned else None
-        )
         materialization_planned = DagsterEvent.build_asset_materialization_planned_event(
             job_name,
             step.key,

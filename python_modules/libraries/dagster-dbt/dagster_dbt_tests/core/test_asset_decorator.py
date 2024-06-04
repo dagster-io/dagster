@@ -275,7 +275,7 @@ def test_io_manager_key(
         (
             StaticPartitionsDefinition(partition_keys=["A", "B"]),
             None,
-            None,
+            BackfillPolicy.multi_run(1),
         ),
         (
             StaticPartitionsDefinition(partition_keys=["A", "B"]),

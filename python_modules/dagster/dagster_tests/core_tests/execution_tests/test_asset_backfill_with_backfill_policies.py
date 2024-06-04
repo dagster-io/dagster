@@ -15,7 +15,6 @@ from dagster import (
     asset,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
@@ -35,53 +34,6 @@ from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
     get_asset_graph,
     run_backfill_to_completion,
 )
-
-
-def test_asset_backfill_not_all_asset_have_backfill_policy():
-    @asset(backfill_policy=None)
-    def unpartitioned_upstream_of_partitioned():
-        return 1
-
-    @asset(
-        partitions_def=DailyPartitionsDefinition("2023-01-01"),
-        backfill_policy=BackfillPolicy.single_run(),
-    )
-    def upstream_daily_partitioned_asset():
-        return 1
-
-    assets_by_repo_name = {
-        "repo": [
-            unpartitioned_upstream_of_partitioned,
-            upstream_daily_partitioned_asset,
-        ]
-    }
-    asset_graph = get_asset_graph(assets_by_repo_name)
-
-    backfill_data = AssetBackfillData.from_asset_partitions(
-        partition_names=None,
-        asset_graph=asset_graph,
-        asset_selection=[
-            unpartitioned_upstream_of_partitioned.key,
-            upstream_daily_partitioned_asset.key,
-        ],
-        dynamic_partitions_store=MagicMock(),
-        all_partitions=True,
-        backfill_start_timestamp=get_current_timestamp(),
-    )
-
-    with pytest.raises(
-        DagsterBackfillFailedError,
-        match=(
-            "Either all assets must have backfill policies or none of them must have backfill"
-            " policies"
-        ),
-    ):
-        execute_asset_backfill_iteration_consume_generator(
-            backfill_id="test_backfill_id",
-            asset_backfill_data=backfill_data,
-            asset_graph=asset_graph,
-            instance=DagsterInstance.ephemeral(),
-        )
 
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():

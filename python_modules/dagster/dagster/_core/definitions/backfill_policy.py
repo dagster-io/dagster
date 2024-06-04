@@ -90,20 +90,16 @@ class BackfillPolicy(
         )
 
 
+with disable_dagster_warnings():
+    DEFAULT_BACKFILL_POLICY = BackfillPolicy.multi_run(1)
+
+
 # In situations where multiple backfill policies are specified, call this to resolve a canonical
 # policy, which is the policy with the minimum max_partitions_per_run.
 def resolve_backfill_policy(
-    backfill_policies: Iterable[Optional[BackfillPolicy]],
+    backfill_policies: Iterable[BackfillPolicy],
 ) -> BackfillPolicy:
-    policy = next(iter(sorted(backfill_policies, key=_backfill_policy_sort_key)), None)
-    with disable_dagster_warnings():
-        return policy or BackfillPolicy.multi_run(1)
-
-
-def _backfill_policy_sort_key(bp: Optional[BackfillPolicy]) -> float:
-    if bp is None:  # equivalent to max_partitions_per_run=1
-        return 1
-    elif bp.max_partitions_per_run is None:
-        return float("inf")
-    else:
-        return bp.max_partitions_per_run
+    return next(
+        iter(sorted(backfill_policies, key=lambda bp: bp.max_partitions_per_run or float("inf"))),
+        DEFAULT_BACKFILL_POLICY,
+    )

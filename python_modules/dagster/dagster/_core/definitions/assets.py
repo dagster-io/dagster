@@ -32,7 +32,7 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.backfill_policy import DEFAULT_BACKFILL_POLICY, BackfillPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
@@ -194,18 +194,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._backfill_policy = check.opt_inst_param(
             backfill_policy, "backfill_policy", BackfillPolicy
         )
-
-        if self._partitions_def is None:
-            # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
-            check.param_invariant(
-                (
-                    backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
-                    if backfill_policy
-                    else True
-                ),
-                "backfill_policy",
-                "Non partitioned asset can only have single run backfill policy",
-            )
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
@@ -952,7 +940,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
-        return self._backfill_policy
+        return self._backfill_policy or (DEFAULT_BACKFILL_POLICY if self.is_executable else None)
 
     @public
     @property
