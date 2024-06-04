@@ -46,7 +46,7 @@ def test_missing_unpartitioned() -> None:
     assert result.true_subset.size == 0
 
     # if we evaluate from scratch, it's also False
-    _, result = state.without_previous_evaluation_state().evaluate("A")
+    _, result = state.without_cursor().evaluate("A")
     assert result.true_subset.size == 0
 
 
@@ -86,7 +86,7 @@ def test_missing_time_partitioned() -> None:
     assert result.true_subset.size == 3
 
     # if we evaluate from scratch, get the same answer
-    _, result = state.without_previous_evaluation_state().evaluate("A")
+    _, result = state.without_cursor().evaluate("A")
     assert result.true_subset.size == 3
 
 

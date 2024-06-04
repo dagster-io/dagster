@@ -13,7 +13,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 @whitelist_for_serdes
 class ParentNewerCondition(SchedulingCondition):
     @property
-    def store_subsets(self) -> bool:
+    def requires_cursor(self) -> bool:
         return True
 
     @property

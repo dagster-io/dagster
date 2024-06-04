@@ -85,7 +85,7 @@ class LegacyRuleEvaluationContext:
     def create_within_asset_daemon(
         asset_key: AssetKey,
         condition: "SchedulingCondition",
-        previous_evaluation_state: Optional[AssetConditionEvaluationState],
+        previous_condition_cursor: Optional[SchedulingConditionCursor],
         instance_queryer: "CachingInstanceQueryer",
         data_time_resolver: "CachingDataTimeResolver",
         daemon_context: "AssetDaemonContext",
@@ -95,9 +95,7 @@ class LegacyRuleEvaluationContext:
         return LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
             condition=condition,
-            cursor=SchedulingConditionCursor.from_evaluation_state(previous_evaluation_state)
-            if previous_evaluation_state
-            else None,
+            cursor=previous_condition_cursor,
             instance_queryer=instance_queryer,
             data_time_resolver=data_time_resolver,
             evaluation_state_by_key=evaluation_state_by_key,
@@ -257,15 +255,19 @@ class LegacyRuleEvaluationContext:
         from ..operators import NotAssetCondition
         from .rule_condition import RuleCondition
 
+        # if you have a discard condition, it'll be part of a structure of the form
+        # Or(MaterializeCond, Not(SkipCond), Not(DiscardCond))
         if len(self.condition.children) != 3:
             return None
         unique_id = self.condition.get_unique_id(parent_unique_id=None, index=None)
 
+        # get Not(DiscardCond)
         not_discard_condition = self.condition.children[2]
         unique_id = not_discard_condition.get_unique_id(parent_unique_id=unique_id, index=2)
         if not isinstance(not_discard_condition, NotAssetCondition):
             return None
 
+        # get DiscardCond
         discard_condition = not_discard_condition.children[0]
         unique_id = discard_condition.get_unique_id(parent_unique_id=unique_id, index=0)
         if not isinstance(discard_condition, RuleCondition) or not isinstance(
@@ -273,6 +275,7 @@ class LegacyRuleEvaluationContext:
         ):
             return None
 
+        # grab the stored cursor value for the discard condition
         discard_cursor = (
             self.cursor.node_cursors_by_unique_id.get(unique_id) if self.cursor else None
         )

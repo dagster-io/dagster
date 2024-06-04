@@ -75,6 +75,7 @@ class SchedulingConditionEvaluator:
 
         self.evaluation_state_by_key = {}
         self.current_evaluation_info_by_key = {}
+        self.condition_cursors = []
         self.expected_data_time_mapping = defaultdict()
         self.to_request = set()
         self.num_checked_assets = 0
@@ -125,7 +126,11 @@ class SchedulingConditionEvaluator:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> Tuple[
+        Sequence[AssetConditionEvaluationState],
+        AbstractSet[AssetKeyPartitionKey],
+        Sequence[SchedulingConditionCursor],
+    ]:
         self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset
@@ -140,7 +145,7 @@ class SchedulingConditionEvaluator:
             )
 
             try:
-                (evaluation_state, expected_data_time) = self.evaluate_asset(
+                (evaluation_state, expected_data_time, cursor) = self.evaluate_asset(
                     asset_key,
                     self.evaluation_state_by_key,
                     self.expected_data_time_mapping,
@@ -171,6 +176,7 @@ class SchedulingConditionEvaluator:
                     self.asset_graph_view, evaluation_state
                 )
             )
+            self.condition_cursors.append(cursor)
             self.expected_data_time_mapping[asset_key] = expected_data_time
 
             # if we need to materialize any partitions of a non-subsettable multi-asset, we need to
@@ -201,7 +207,11 @@ class SchedulingConditionEvaluator:
                         for ap in evaluation_state.true_subset.asset_partitions
                     }
 
-        return (list(self.evaluation_state_by_key.values()), self.to_request)
+        return (
+            list(self.evaluation_state_by_key.values()),
+            self.to_request,
+            self.condition_cursors,
+        )
 
     def evaluate_asset(
         self,
@@ -209,7 +219,9 @@ class SchedulingConditionEvaluator:
         evaluation_state_by_key: Mapping[AssetKey, AssetConditionEvaluationState],
         expected_data_time_mapping: Mapping[AssetKey, Optional[datetime.datetime]],
         current_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo],
-    ) -> Tuple[AssetConditionEvaluationState, Optional[datetime.datetime]]:
+    ) -> Tuple[
+        AssetConditionEvaluationState, Optional[datetime.datetime], SchedulingConditionCursor
+    ]:
         """Evaluates the auto materialize policy of a given asset key.
 
         Params:
@@ -227,13 +239,9 @@ class SchedulingConditionEvaluator:
             self.asset_graph.get(asset_key).auto_materialize_policy
         ).to_scheduling_condition()
 
-        previous_evaluation_state = self.cursor.get_previous_evaluation_state(asset_key)
-
         legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
-            cursor=SchedulingConditionCursor.from_evaluation_state(previous_evaluation_state)
-            if previous_evaluation_state
-            else None,
+            cursor=self.cursor.get_previous_condition_cursor(asset_key),
             condition=asset_condition,
             instance_queryer=self.instance_queryer,
             data_time_resolver=self.data_time_resolver,
@@ -249,11 +257,7 @@ class SchedulingConditionEvaluator:
             asset_graph_view=self.asset_graph_view,
             logger=self.logger,
             current_tick_evaluation_info_by_key=current_evaluation_info_by_key,
-            previous_evaluation_info=SchedulingEvaluationInfo.from_asset_condition_evaluation_state(
-                self.asset_graph_view, previous_evaluation_state
-            )
-            if previous_evaluation_state
-            else None,
+            condition_cursor=self.cursor.get_previous_condition_cursor(asset_key),
             legacy_context=legacy_context,
         )
 
@@ -262,4 +266,11 @@ class SchedulingConditionEvaluator:
         expected_data_time = get_expected_data_time_for_asset_key(
             legacy_context, will_materialize=result.true_subset.size > 0
         )
-        return (AssetConditionEvaluationState.create(context, result), expected_data_time)
+        evaluation_state = AssetConditionEvaluationState.create(context, result)
+        return (
+            evaluation_state,
+            expected_data_time,
+            SchedulingConditionCursor.from_result(
+                context, result, evaluation_state.previous_evaluation.get_result_hash()
+            ),
+        )
