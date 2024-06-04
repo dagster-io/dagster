@@ -4,7 +4,6 @@ import NextImage from 'next/image';
 import {useEffect, useState} from 'react';
 import Zoom from 'react-medium-image-zoom';
 
-
 export const MyImage = ({children, ...props}) => {
   // Manually set dimensions for internal images will be on props.width and props.height
   // images without manual ddimensions will use the dimensions state and
@@ -26,7 +25,6 @@ export const MyImage = ({children, ...props}) => {
     };
   }, [src]);
 
-  // Handle External Images
   if (!src.startsWith('/images/')) {
     return (
       <span className="block mx-auto">
@@ -34,7 +32,6 @@ export const MyImage = ({children, ...props}) => {
       </span>
     );
   }
-  // Handle Internal Images
   return (
     <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
       <span className="block mx-auto">
