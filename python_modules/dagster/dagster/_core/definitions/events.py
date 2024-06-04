@@ -32,6 +32,10 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
 )
+from dagster._core.definitions.partition_key_range import (
+    UNIVERSAL_PARTITION_KEY_RANGE,
+    PartitionKeyRange,
+)
 from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
@@ -56,6 +60,17 @@ class AssetPartitionKey(NamedTuple):
 
     asset_key: AssetKey
     partition_key: Optional[str] = None
+
+
+class AssetPartitionRange(NamedTuple):
+    """An AssetKey with a partition range."""
+
+    asset_key: AssetKey
+    partition_range: PartitionKeyRange
+
+    @property
+    def is_universal(self) -> bool:
+        return self.partition_range == UNIVERSAL_PARTITION_KEY_RANGE
 
 
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]

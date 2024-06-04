@@ -20,3 +20,6 @@ class PartitionKeyRange(NamedTuple):
     # Inclusive on both sides
     start: PublicAttr[str]
     end: PublicAttr[str]
+
+
+UNIVERSAL_PARTITION_KEY_RANGE = PartitionKeyRange(start="", end="")
