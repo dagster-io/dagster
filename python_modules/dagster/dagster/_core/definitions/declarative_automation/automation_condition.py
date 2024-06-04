@@ -346,7 +346,7 @@ class AutomationResult(NamedTuple):
 
     @property
     def true_subset(self) -> AssetSubset:
-        return self.true_slice.convert_to_valid_asset_subset()
+        return self.serializable_evaluation.true_subset
 
     @staticmethod
     def _create(
