@@ -17,9 +17,23 @@ T = TypeVar("T", bound=BaseModel)
 def _parse_and_populate_model_with_annotated_errors(
     cls: Type[T],
     obj_parse_root: ValueAndSourcePositionTree,
-    file_root: Optional[ValueAndSourcePositionTree] = None,
-    obj_key_path_prefix: KeyPath = [],
+    file_root: Optional[ValueAndSourcePositionTree],
+    obj_key_path_prefix: KeyPath,
 ) -> T:
+    """Helper function to parse the Pydantic model from the parsed YAML object and populate source
+    position information on the model and its sub-objects.
+
+    Raises more helpful errors than Pydantic's default error messages, including the source position
+    in the YAML file where the error occurred.
+
+    Args:
+        cls (Type[T]): The Pydantic model class to use for validation.
+        obj_parse_root (ValueAndSourcePositionTree): The parsed YAML object to use for validation.
+        file_root (Optional[ValueAndSourcePositionTree]): The root of the parsed YAML file, used for
+            error reporting.
+        obj_key_path_prefix (KeyPath): The path of keys that lead to the current object, used for
+            both error reporting and populating source position information.
+    """
     try:
         model = parse_obj_as(cls, obj_parse_root.value)
     except ValidationError as e:
