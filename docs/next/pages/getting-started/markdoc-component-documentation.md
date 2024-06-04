@@ -209,9 +209,9 @@ So, the default way to use images is like this:
 
 and outputs like this:
 
-![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png)
+<!-- ![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png) -->
 
-{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}
+<!-- {% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%} -->
 
 `{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}`
 
@@ -257,7 +257,7 @@ _Italic_
 [Links](/docs/nodes)
 
 Vanilla markdown images work, but we should really be using the image tag because it optimizes the images, makes them more accessible, and handles resizing them for us.
-![Images](/images/concepts/assets/asset-activity-observation.png)
+<!-- ![Images](/images/concepts/assets/asset-activity-observation.png) -->
 
 Lists
 - Item 1

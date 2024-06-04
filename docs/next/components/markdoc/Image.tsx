@@ -1,20 +1,32 @@
+import getImageDimensions from 'util/getImageDimensions';
+
 import NextImage from 'next/image';
 import Zoom from 'react-medium-image-zoom';
 
-const getImageDimensions = (src) => {
-  console.log("getImageDimensions src works?", src);
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    console.log('inside getImageDimensions Img', img);
-    img.onload = () => {
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = (err) => {
-      reject(err);
-    };
-    img.src = src;
-  });
-};
+
+// const getImageDimensions = (src) => {
+//   console.log("getImageDimensions src works?", src);
+//   return new Promise((resolve, reject) => {
+//     const img = new Image();
+//     console.log('inside getImageDimensions Img', img);
+//     img.onload = () => {
+//       resolve({ width: img.naturalWidth, height: img.naturalHeight });
+//     };
+//     img.onerror = (err) => {
+//       reject(err);
+//     };
+//     img.src = src;
+//   });
+// };
+
+export async function getStaticProps() {
+  const dimensions = await getImageDimensions('/images/nextjs.png');
+  return {
+    props: {
+      dimensions,
+    },
+  };
+}
 
 export const MyImage = ({children, ...props}) => {
   console.log('Image', props);
