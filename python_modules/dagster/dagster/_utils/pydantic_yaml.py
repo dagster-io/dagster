@@ -1,8 +1,7 @@
-from typing import List, Optional, Type, TypeVar
+from typing import Sequence, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 
 from .source_position import (
@@ -18,7 +17,6 @@ T = TypeVar("T", bound=BaseModel)
 def _parse_and_populate_model_with_annotated_errors(
     cls: Type[T],
     obj_parse_root: ValueAndSourcePositionTree,
-    file_root: Optional[ValueAndSourcePositionTree],
     obj_key_path_prefix: KeyPath,
 ) -> T:
     """Helper function to parse the Pydantic model from the parsed YAML object and populate source
@@ -43,12 +41,14 @@ def _parse_and_populate_model_with_annotated_errors(
         else:
             line_errors = []
             for error in e.errors():
-                key_path: KeyPath = list(obj_key_path_prefix) + list(error["loc"])
-                key_path_str = ".".join(str(part) for part in key_path)
-                source_position = (file_root or obj_parse_root).source_position_tree.lookup(
-                    key_path
+                key_path_in_obj = list(error["loc"])
+                source_position = obj_parse_root.source_position_tree.lookup(key_path_in_obj)
+
+                file_key_path: KeyPath = list(obj_key_path_prefix) + key_path_in_obj
+                file_key_path_str = ".".join(str(part) for part in file_key_path)
+                line_errors.append(
+                    {**error, "loc": [file_key_path_str + " at " + str(source_position)]}
                 )
-                line_errors.append({**error, "loc": [key_path_str + " at " + str(source_position)]})
 
             raise ValidationError.from_exception_data(  # type: ignore
                 title=e.title,  # type: ignore
@@ -86,11 +86,13 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
     """
     parsed = parse_yaml_with_source_positions(src, filename)
     return _parse_and_populate_model_with_annotated_errors(
-        cls=cls, obj_parse_root=parsed, file_root=parsed, obj_key_path_prefix=[]
+        cls=cls, obj_parse_root=parsed, obj_key_path_prefix=[]
     )
 
 
-def parse_yaml_file_to_pydantic_list(cls: Type[T], src: str, filename: str = "<string>") -> List[T]:
+def parse_yaml_file_to_pydantic_sequence(
+    cls: Type[T], src: str, filename: str = "<string>"
+) -> Sequence[T]:
     """Parse the YAML source and create a list of Pydantic model instances from it.
 
     Attaches source position information to the `_source_position_and_key_path` attribute of the
@@ -114,7 +116,7 @@ def parse_yaml_file_to_pydantic_list(cls: Type[T], src: str, filename: str = "<s
     parsed = parse_yaml_with_source_positions(src, filename)
 
     if not isinstance(parsed.value, list):
-        raise DagsterInvariantViolationError(
+        raise ValueError(
             f"Error parsing YAML file {filename}: Expected a list of objects at document root, but got {type(parsed.value)}"
         )
 
@@ -126,7 +128,6 @@ def parse_yaml_file_to_pydantic_list(cls: Type[T], src: str, filename: str = "<s
                 obj_parse_root=ValueAndSourcePositionTree(
                     value=entry, source_position_tree=parsed.source_position_tree.children[i]
                 ),
-                file_root=parsed,
                 obj_key_path_prefix=[i],
             )
         )
