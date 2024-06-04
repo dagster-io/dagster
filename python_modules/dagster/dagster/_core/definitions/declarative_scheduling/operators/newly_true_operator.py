@@ -24,7 +24,7 @@ class NewlyTrueCondition(SchedulingCondition):
             self.operand,
             child_index=0,
             # must evaluate child condition over the entire slice to avoid missing state transitions
-            candidate_slice=context.asset_graph_view.get_asset_slice(context.asset_key),
+            candidate_slice=context.asset_graph_view.get_asset_slice(asset_key=context.asset_key),
         )
         child_result = self.operand.evaluate(child_context)
 
