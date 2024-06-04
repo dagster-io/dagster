@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Literal, Union
+from typing import List, Literal, Union
 
 import pytest
 from dagster import AssetKey, asset, job
@@ -285,3 +285,36 @@ def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
         item.get("#ref", item.get("$ref")).split("/")[-1] for item in model_schema["anyOf"]
     ]
     assert set(any_of_refs) == {"FooAssetBlueprint", "BarAssetBlueprint"}
+
+
+def test_single_file_many_blueprints() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+        per_file_blueprint_type=List[SimpleAssetBlueprint],
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
+
+
+def test_expect_list_no_list() -> None:
+    with pytest.raises(ValueError, match="Expected a list of objects, but got"):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+            per_file_blueprint_type=List[SimpleAssetBlueprint],
+        )
+
+
+def test_dir_of_many_blueprints() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "dir_of_lists_of_blueprints",
+        per_file_blueprint_type=List[SimpleAssetBlueprint],
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+        AssetKey("asset4"),
+    }
