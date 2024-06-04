@@ -1,9 +1,11 @@
 import os
+import sys
 from pathlib import Path
-from typing import List, Literal, Union
+from typing import List, Literal, Sequence, Union
 
 import pytest
 from dagster import AssetKey, asset, job
+from dagster._check import CheckError
 from dagster._core.blueprints.blueprint import (
     Blueprint,
     BlueprintDefinitions,
@@ -297,6 +299,48 @@ def test_single_file_many_blueprints() -> None:
         AssetKey("asset2"),
         AssetKey("asset3"),
     }
+
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+        per_file_blueprint_type=Sequence[SimpleAssetBlueprint],
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
+
+
+# Disabled for Python versions <3.9 as builtin types do not support generics
+# until Python 3.9, https://peps.python.org/pep-0585/
+@pytest.mark.skipif(sys.version_info < (3, 9), reason="requires python3.9")
+def test_single_file_many_blueprints_builtin_list() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+        per_file_blueprint_type=list[SimpleAssetBlueprint],  # type: ignore
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {
+        AssetKey("asset1"),
+        AssetKey("asset2"),
+        AssetKey("asset3"),
+    }
+
+
+def test_single_file_no_bp_type() -> None:
+    with pytest.raises(
+        CheckError, match="Sequence type annotation must have a single Blueprint type argument"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+            per_file_blueprint_type=List,
+        )
+    with pytest.raises(
+        CheckError, match="Sequence type annotation must have a single Blueprint type argument"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "list_of_blueprints.yaml",
+            per_file_blueprint_type=Sequence,
+        )
 
 
 def test_expect_list_no_list() -> None:

@@ -96,8 +96,10 @@ def load_defs_from_yaml(
     Args:
         path (Path | str): The path to the YAML file or directory of YAML files containing the
             blueprints for Dagster definitions.
-        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type of blueprint that each of the YAML
-            files are expected to conform to.
+        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type
+            of blueprint that each of the YAML files are expected to conform to. If a sequence
+            type is provided, the function will expect each YAML file to contain a list of
+            blueprints.
         resources (Dict[str, Any], optional): A dictionary of resources to be bound to the
             definitions. Defaults to None.
 
@@ -115,8 +117,10 @@ def load_defs_from_yaml(
     origin = get_origin(per_file_blueprint_type)
     if safe_is_subclass(origin, Sequence):
         args = get_args(per_file_blueprint_type)
-        if not args:
-            raise ValueError("Sequence type annotation must have a single type argument")
+        check.invariant(
+            args and len(args) == 1,
+            "Sequence type annotation must have a single Blueprint type argument",
+        )
 
         # flatten the list of blueprints from all files
         blueprints = [
