@@ -16,7 +16,7 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from pydantic import ValidationError
 
@@ -344,7 +344,9 @@ def test_single_file_no_bp_type() -> None:
 
 
 def test_expect_list_no_list() -> None:
-    with pytest.raises(ValueError, match="Expected a list of objects at document root, but got"):
+    with pytest.raises(
+        DagsterInvariantViolationError, match="Expected a list of objects at document root, but got"
+    ):
         load_defs_from_yaml(
             path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
             per_file_blueprint_type=List[SimpleAssetBlueprint],
