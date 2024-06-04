@@ -2,12 +2,12 @@ from dagster import SchedulingCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset_depends_on_two, two_partitions_def
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
 def test_parent_newer_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset_depends_on_two, asset_condition=SchedulingCondition.parent_newer()
+    state = SchedulingConditionScenarioState(
+        one_asset_depends_on_two, scheduling_condition=SchedulingCondition.parent_newer()
     )
 
     state, result = state.evaluate("C")
@@ -41,8 +41,8 @@ def test_parent_newer_unpartitioned() -> None:
 
 
 def test_parent_newer_partitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset_depends_on_two, asset_condition=SchedulingCondition.parent_newer()
+    state = SchedulingConditionScenarioState(
+        one_asset_depends_on_two, scheduling_condition=SchedulingCondition.parent_newer()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     state, result = state.evaluate("C")
