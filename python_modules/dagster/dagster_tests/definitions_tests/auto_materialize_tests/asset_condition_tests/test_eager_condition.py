@@ -1,4 +1,3 @@
-import pytest
 from dagster import SchedulingCondition
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
@@ -7,7 +6,6 @@ from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
 from .asset_condition_scenario import SchedulingConditionScenarioState
 
 
-@pytest.mark.skip("temporary")
 def test_eager_unpartitioned() -> None:
     state = SchedulingConditionScenarioState(
         two_assets_in_sequence,
@@ -23,11 +21,19 @@ def test_eager_unpartitioned() -> None:
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
+
+    # B has not yet materialized, but it has been requested, so don't request again
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # same as above
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # now B has been materialized, so really shouldn't execute again
     state = state.with_runs(
         *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
     )
-
-    # now B has been materialized, so don't execute again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
@@ -43,7 +49,6 @@ def test_eager_unpartitioned() -> None:
     assert result.true_subset.size == 0
 
 
-@pytest.mark.skip("temporary")
 def test_eager_hourly_partitioned() -> None:
     state = (
         SchedulingConditionScenarioState(
