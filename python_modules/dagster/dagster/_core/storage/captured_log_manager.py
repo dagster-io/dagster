@@ -298,8 +298,9 @@ class CapturedLogManager(ABC):
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
         as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
 
-        Note that the has_more attribute of the cursor indicates if there are more logs that can be read immediately. The process
-        producing logs could still be running and dump more logs into the directory at a later time.
+        Note that the has_more_now attribute of the cursor indicates if there are more logs that can be read immediately.
+        If has_more_now if False, the process producing logs could still be running and dump more logs into the
+        directory at a later time.
         """
         num_lines = int(os.getenv("DAGSTER_CAPTURED_LOG_CHUNK_SIZE", "1000"))
         # find all of the log_keys to read from and sort them in the order to be read
@@ -310,10 +311,6 @@ class CapturedLogManager(ABC):
             return [], None
 
         log_cursor = LogLineCursor.parse(cursor) if cursor else None
-        if log_cursor and not log_cursor.has_more:
-            # No more logs to read for this log_key_prefix
-            return [], log_cursor
-
         if log_cursor is None:
             log_key_to_fetch_idx = 0
             line_cursor = 0
@@ -344,17 +341,19 @@ class CapturedLogManager(ABC):
                 records.extend(remaining_log_lines)
                 line_cursor = -1
 
-            if len(records) < num_lines and line_cursor == -1:
-                # we've read the entirety of the file, but we still need more records
+            if line_cursor == -1:
+                # we've read the entirety of the file, update the cursor
                 if log_key_to_fetch_idx + 1 >= len(log_keys):
                     # no more files to process
                     has_more = False
                     break
                 log_key_to_fetch_idx += 1
                 line_cursor = 0
-                log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
+                if len(records) < num_lines:
+                    # we still need more records, so fetch the next file
+                    log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
 
         new_cursor = LogLineCursor(
-            log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more=has_more
+            log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more_now=has_more
         )
         return records, new_cursor

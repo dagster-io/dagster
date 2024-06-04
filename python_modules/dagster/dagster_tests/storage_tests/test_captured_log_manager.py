@@ -1,4 +1,3 @@
-import json
 import os
 import sys
 import tempfile
@@ -107,11 +106,11 @@ def test_get_log_keys_for_log_key_prefix():
             write_log_file(i)
 
         log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix)
-        assert log_keys == [
-            [*[log_key_prefix], "0"],
-            [*[log_key_prefix], "1"],
-            [*[log_key_prefix], "2"],
-            [*[log_key_prefix], "3"],
+        assert sorted(log_keys) == [
+            [*log_key_prefix, "0"],
+            [*log_key_prefix, "1"],
+            [*log_key_prefix, "2"],
+            [*log_key_prefix, "3"],
         ]
 
 
@@ -127,38 +126,39 @@ def test_read_log_lines_for_log_key_prefix():
         def write_log_file(file_id: int):
             full_log_key = [*log_key_prefix, f"{file_id}"]
             with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
-                for j in range(10):
-                    json_msg = {"file": file_id, "message_idx": j}
-                    all_logs.append(json_msg)
-                    if j > 0:
+                num_lines = 10
+                for j in range(num_lines):
+                    msg = f"file: {file_id}, line: {j}"
+                    all_logs.append(msg)
+                    f.write(msg)
+                    if j < num_lines - 1:
                         f.write("\n")
-                    json.dump(json_msg, f)
 
         for i in range(4):
             write_log_file(i)
 
         all_logs_iter = iter(all_logs)
+
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         # read the entirety of the first file
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(log_key_prefix, cursor=None)
         assert len(log_lines) == 10
-        assert cursor.has_more
+        assert cursor.has_more_now
         assert cursor.log_key == [*log_key_prefix, "1"]
         assert cursor.line == 0
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
         # read half of the next log file
-        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "6"
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "5"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
             log_key_prefix,
             cursor=cursor.to_string(),
         )
         assert len(log_lines) == 5
-        assert cursor.has_more
+        assert cursor.has_more_now
         assert cursor.log_key == [*log_key_prefix, "1"]
-        # There is an empty line at the start of the file that is processed, but not included in the results, the line offset includes this line
-        assert cursor.line == 6
+        assert cursor.line == 5
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -168,10 +168,9 @@ def test_read_log_lines_for_log_key_prefix():
             log_key_prefix, cursor=cursor.to_string()
         )
         assert len(log_lines) == 10
-        assert cursor.has_more
+        assert cursor.has_more_now
         assert cursor.log_key == [*log_key_prefix, "2"]
-        # There is an empty line at the start of the file that is processed, but not included in the results, the line offset includes this line
-        assert cursor.line == 6
+        assert cursor.line == 5
         for ll in log_lines:
             assert ll == next(all_logs_iter)
 
@@ -182,7 +181,7 @@ def test_read_log_lines_for_log_key_prefix():
             cursor=cursor.to_string(),
         )
         assert len(log_lines) == 15
-        assert not cursor.has_more
+        assert not cursor.has_more_now
         assert cursor.log_key == [*log_key_prefix, "3"]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
         assert cursor.line == -1
@@ -199,7 +198,7 @@ def test_read_log_lines_for_log_key_prefix():
             cursor=cursor.to_string(),
         )
         assert len(log_lines) == 10
-        assert not cursor.has_more
+        assert not cursor.has_more_now
         assert cursor.log_key == [*log_key_prefix, "4"]
         # processed up to the end of the file, but there is not another file to process so cursor should be -1
         assert cursor.line == -1

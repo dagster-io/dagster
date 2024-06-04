@@ -571,23 +571,10 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
             events.append(event)
 
-        if (
-            new_cursor
-            and not new_cursor.has_more
-            and self.status
-            in [
-                GrapheneBulkActionStatus.COMPLETED,
-                GrapheneBulkActionStatus.FAILED,
-                GrapheneBulkActionStatus.CANCELED,
-            ]
-        ):
-            has_more = False
-        else:
-            has_more = True
         return GrapheneInstigationEventConnection(
             events=events,
             cursor=new_cursor.to_string() if new_cursor else None,
-            hasMore=has_more,
+            hasMore=new_cursor.has_more_now if new_cursor else False,
         )
 
 
