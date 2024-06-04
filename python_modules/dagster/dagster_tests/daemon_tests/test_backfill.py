@@ -53,6 +53,7 @@ from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -2318,6 +2319,8 @@ def test_asset_backfill_logs(
     wait_for_all_runs_to_finish(instance, timeout=15)
 
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
+
+    assert isinstance(instance.compute_log_manager, CapturedLogManager)
 
     logs, cursor = instance.compute_log_manager.read_log_lines_for_log_key_prefix(
         ["backfill", backfill.backfill_id], cursor=None
