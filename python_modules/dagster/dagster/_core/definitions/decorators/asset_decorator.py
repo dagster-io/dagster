@@ -1331,6 +1331,12 @@ def graph_multi_asset(
             if isinstance(out, AssetOut) and out.code_version is not None
         }
 
+        tags_by_output_name = {
+            output_name: out.tags
+            for output_name, out in outs.items()
+            if isinstance(out, AssetOut) and out.tags is not None
+        }
+
         return AssetsDefinition.from_graph(
             op_graph,
             keys_by_input_name=keys_by_input_name,
@@ -1349,6 +1355,7 @@ def graph_multi_asset(
             resource_defs=resource_defs,
             check_specs=check_specs,
             code_versions_by_output_name=code_versions_by_output_name,
+            tags_by_output_name=tags_by_output_name,
         )
 
     return inner

@@ -1182,6 +1182,36 @@ def test_graph_asset_w_ins_and_param_args():
     assert result.output_for_node("bar", "first_asset") == 2
 
 
+@ignore_warning("Parameter `tags` of initializer `AssetOut.__init__` is experimental")
+def test_multi_asset_graph_asset_w_tags():
+    @op
+    def return_1():
+        return 1
+
+    @op
+    def plus_1(x):
+        return x + 1
+
+    @graph_multi_asset(
+        outs={
+            "first_asset": AssetOut(tags={"first": "one"}),
+            "second_asset": AssetOut(tags={"second": "two"}),
+            "no_tags": AssetOut(),
+        }
+    )
+    def the_asset():
+        one = return_1()
+        two = plus_1(one)
+        three = plus_1(two)
+        return {"first_asset": one, "second_asset": two, "no_tags": three}
+
+    result = materialize_to_memory([the_asset])
+    assert result.success
+    assert the_asset.tags_by_key[AssetKey("first_asset")] == {"first": "one"}
+    assert the_asset.tags_by_key[AssetKey("second_asset")] == {"second": "two"}
+    assert the_asset.tags_by_key[AssetKey("no_tags")] == {}
+
+
 def test_graph_asset_w_ins_and_kwargs():
     @asset
     def upstream():
