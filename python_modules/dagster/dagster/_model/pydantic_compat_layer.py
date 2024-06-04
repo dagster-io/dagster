@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Type
 
 import pydantic
@@ -151,3 +152,17 @@ def build_validation_error(
             input_type=input_type,
             hide_input=hide_input,
         )
+
+
+def json_schema_from_type(model_type: Type[BaseModel]):
+    """Pydantic version stable way to get the JSON schema for a Pydantic model."""
+    # This nicely handles the case where the per_file_blueprint_type is actually
+    # a union type etc.
+    if USING_PYDANTIC_2:
+        from pydantic import TypeAdapter
+
+        return TypeAdapter(model_type).json_schema()
+    else:
+        from pydantic.tools import schema_json_of
+
+        return json.loads(schema_json_of(model_type))
