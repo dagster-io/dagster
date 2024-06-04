@@ -154,6 +154,9 @@ class AssetDaemonScenarioState(ScenarioState):
             respect_materialization_data_versions=False,
             logger=self.logger,
         ).evaluate()
+        check.is_list(new_run_requests, of_type=RunRequest)
+        check.inst(new_cursor, AssetDaemonCursor)
+        check.is_list(new_evaluations, of_type=AssetConditionEvaluation)
 
         # make sure these run requests are available on the instance
         for request in new_run_requests:
