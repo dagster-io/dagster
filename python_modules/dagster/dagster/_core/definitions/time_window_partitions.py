@@ -63,6 +63,7 @@ from ..errors import (
 )
 from .partition import (
     DEFAULT_DATE_FORMAT,
+    AllPartitionsSubset,
     PartitionedConfig,
     PartitionsDefinition,
     PartitionsSubset,
@@ -2160,6 +2161,23 @@ class TimeWindowPartitionsSubset(
             included_time_windows=check.sequence_param(
                 included_time_windows, "included_time_windows", of_type=TimeWindow
             ),
+        )
+
+    @staticmethod
+    def from_all_partitions_subset(subset: AllPartitionsSubset) -> "TimeWindowPartitionsSubset":
+        partitions_def = check.inst(
+            subset.partitions_def,
+            TimeWindowPartitionsDefinition,
+            "Provided subset must reference a TimeWindowPartitionsDefinition",
+        )
+        first_window = partitions_def.get_first_partition_window(subset.current_time)
+        last_window = partitions_def.get_last_partition_window(subset.current_time)
+        return TimeWindowPartitionsSubset(
+            partitions_def=partitions_def,
+            included_time_windows=[TimeWindow(first_window.start, last_window.end)]
+            if first_window and last_window
+            else [],
+            num_partitions=None,
         )
 
     @property
