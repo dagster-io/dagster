@@ -5,6 +5,7 @@ from .slice_conditions import (
     InProgressSchedulingCondition as InProgressSchedulingCondition,
     MissingSchedulingCondition as MissingSchedulingCondition,
     NewlyRequestedCondition as NewlyRequestedCondition,
+    NewlyUpdatedCondition as NewlyUpdatedCondition,
     WillBeRequestedCondition as WillBeRequestedCondition,
 )
 from .updated_since_cron_condition import UpdatedSinceCronCondition as UpdatedSinceCronCondition

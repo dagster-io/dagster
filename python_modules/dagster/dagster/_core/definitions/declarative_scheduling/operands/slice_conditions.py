@@ -100,6 +100,22 @@ class NewlyRequestedCondition(SliceSchedulingCondition):
 
 
 @whitelist_for_serdes
+class NewlyUpdatedCondition(SliceSchedulingCondition):
+    @property
+    def description(self) -> str:
+        return "Updated since previous tick"
+
+    def compute_slice(self, context: SchedulingContext) -> AssetSlice:
+        # if it's the first time evaluating, just return the empty slice
+        if context.previous_evaluation_node is None:
+            return context.asset_graph_view.create_empty_slice(context.asset_key)
+        else:
+            return context.asset_graph_view.compute_updated_since_cursor_slice(
+                asset_key=context.asset_key, cursor=context.previous_evaluation_max_storage_id
+            )
+
+
+@whitelist_for_serdes
 class InLatestTimeWindowCondition(SliceSchedulingCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 
