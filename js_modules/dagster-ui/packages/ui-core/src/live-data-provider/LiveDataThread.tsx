@@ -84,6 +84,7 @@ export class LiveDataThread<T> {
       return;
     }
     const keys = this.manager.determineKeysToFetch(this.getObservedKeys(), this._batchSize);
+    console.log({keys}, this._batchSize, this._parallelFetches, this);
     if (!keys.length) {
       return;
     }

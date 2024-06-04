@@ -1,5 +1,4 @@
 import {LiveDataThread, LiveDataThreadID} from './LiveDataThread';
-import {BATCH_SIZE} from './util';
 import {isDocumentVisible} from '../hooks/useDocumentVisibility';
 
 type Listener<T> = (stringKey: string, data?: T | undefined) => void;
@@ -122,7 +121,7 @@ export class LiveDataThreadManager<T> {
     }
 
     // Prioritize fetching keys for which there is no data in the cache
-    return keysWithoutData.concat(keysToFetch).slice(0, BATCH_SIZE);
+    return keysWithoutData.concat(keysToFetch).slice(0, batchSize);
   }
 
   public areKeysRefreshing(keys: string[]) {
