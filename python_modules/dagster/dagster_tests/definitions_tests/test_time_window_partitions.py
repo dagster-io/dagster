@@ -1028,16 +1028,21 @@ def test_current_time_window_partitions_serialization():
     assert deserialized.get_partition_keys() == ["2015-01-02", "2015-01-04"]
 
 
-def test_time_window_partitions_contains():
+@pytest.mark.parametrize(
+    "subset_class", [TimeWindowPartitionsSubset, PartitionKeysTimeWindowPartitionsSubset]
+)
+def test_time_window_partitions_contains(subset_class: BaseTimeWindowPartitionsSubset) -> None:
     partitions_def = DailyPartitionsDefinition(start_date="2015-01-01")
     keys = ["2015-01-06", "2015-01-07", "2015-01-08", "2015-01-10"]
-    subset = partitions_def.empty_subset().with_partition_keys(keys)
+    subset = subset_class.empty_subset(partitions_def).with_partition_keys(keys)
     for key in keys:
         assert key in subset
 
     assert "2015-01-05" not in subset
     assert "2015-01-09" not in subset
     assert "2015-01-11" not in subset
+    assert None not in subset
+    assert "<not a time string>" not in subset
 
 
 def test_dst_transition_15_minute_partitions() -> None:
