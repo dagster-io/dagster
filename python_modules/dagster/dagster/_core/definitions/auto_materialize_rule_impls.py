@@ -104,7 +104,7 @@ class MaterializeOnCronRule(
         """Returns the cron ticks which have been missed since the previous cursor was generated."""
         # if it's the first time evaluating this rule, then just count the latest tick as missed
         if (
-            not context.legacy_context.previous_evaluation
+            not context.legacy_context.node_cursor
             or not context.legacy_context.previous_evaluation_timestamp
         ):
             previous_dt = next(
@@ -199,7 +199,7 @@ class MaterializeOnCronRule(
         # been materialized since the previous cron tick, as materializations may have happened
         # before the previous evaluation, which
         # `context.legacy_context.materialized_requested_or_discarded_since_previous_tick_subset` would not capture
-        if context.legacy_context.previous_evaluation is None:
+        if context.legacy_context.node_cursor is None:
             new_asset_partitions -= (
                 context.legacy_context.instance_queryer.get_asset_subset_updated_after_time(
                     asset_key=context.legacy_context.asset_key, after_time=missed_ticks[-1]
@@ -456,10 +456,8 @@ class MaterializeOnMissingRule(AutoMaterializeRule, NamedTuple("_MaterializeOnMi
         Accounts for cases in which the partitions definition may have changed between ticks.
         """
         previous_handled_subset = (
-            context.legacy_context.previous_evaluation_state.get_extra_state(
-                context.condition_unique_id, AssetSubset
-            )
-            if context.legacy_context.previous_evaluation_state
+            context.legacy_context.node_cursor.get_extra_state(AssetSubset)
+            if context.legacy_context.node_cursor
             else None
         )
         if (
@@ -799,7 +797,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         """
         if (
             # first tick of evaluating this condition
-            context.legacy_context.previous_evaluation_state is None
+            context.legacy_context.node_cursor is None
             or context.legacy_context.previous_evaluation_timestamp is None
             # This additional check is neccessary as it is possible for this cursor to be None
             # even if the previous state is not None in the case that this asset and none of its
@@ -818,12 +816,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             )
         else:
             # previous state still valid
-            previous_parent_subsets = (
-                context.legacy_context.previous_evaluation_state.get_extra_state(
-                    context.condition_unique_id, list
-                )
-                or []
-            )
+            previous_parent_subsets = context.legacy_context.node_cursor.get_extra_state(list) or []
             previous_parent_subset = next(
                 (s for s in previous_parent_subsets if s.asset_key == parent_asset_key),
                 context.legacy_context.empty_subset(),
