@@ -158,23 +158,19 @@ IN_PROGRESS_STATUSES = [
 
 def get_assets_latest_info(
     graphene_info: "ResolveInfo",
-    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
+    asset_keys: Sequence[AssetKey],
     asset_record_loader: "BatchAssetRecordLoader",
 ) -> Sequence["GrapheneAssetLatestInfo"]:
-    from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
-
     from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneMaterializationEvent
     from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
 
-    asset_keys = list(step_keys_by_asset.keys())
-
     if not asset_keys:
         return []
 
-    asset_nodes = get_asset_nodes_by_asset_key(graphene_info, set(asset_keys))
+    asset_key_set = set(asset_keys)
 
     asset_records = asset_record_loader.get_asset_records(asset_keys)
 
@@ -182,7 +178,7 @@ def get_assets_latest_info(
         asset_record.asset_entry.asset_key: (
             GrapheneMaterializationEvent(event=asset_record.asset_entry.last_materialization)
             if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            and asset_record.asset_entry.asset_key in asset_key_set
             else None
         )
         for asset_record in asset_records
@@ -195,7 +191,7 @@ def get_assets_latest_info(
         asset_record.asset_entry.asset_key: (
             asset_record.asset_entry.last_materialization.run_id
             if asset_record.asset_entry.last_materialization
-            and asset_record.asset_entry.asset_key in step_keys_by_asset
+            and asset_record.asset_entry.asset_key in asset_key_set
             else None
         )
         for asset_record in asset_records
@@ -229,15 +225,7 @@ def get_assets_latest_info(
 
     return [
         GrapheneAssetLatestInfo(
-            id=(
-                get_unique_asset_id(
-                    asset_key,
-                    asset_nodes[asset_key].repository_location.name,
-                    asset_nodes[asset_key].external_repository.name,
-                )
-                if asset_nodes[asset_key]
-                else get_unique_asset_id(asset_key)
-            ),
+            id=get_unique_asset_id(asset_key),
             assetKey=asset_key,
             latestMaterialization=latest_materialization_by_asset.get(asset_key),
             unstartedRunIds=list(unstarted_run_ids_by_asset.get(asset_key, [])),
@@ -251,7 +239,7 @@ def get_assets_latest_info(
                 else None
             ),
         )
-        for asset_key in step_keys_by_asset.keys()
+        for asset_key in asset_keys
     ]
 
 
