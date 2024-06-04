@@ -1,4 +1,4 @@
-# Vendored from https://gitlab.com/ericvsmith/toposort/-/blob/master/src/toposort.py?ref_type=heads
+# Vendored from https://gitlab.com/ericvsmith/toposort/-/blob/e67c242ceec5908564837ce6ac2cb661659b0cc8/src/toposort.py
 #######################################################################
 # Implements a topological sort algorithm.
 #
