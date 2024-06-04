@@ -28,11 +28,6 @@ module.exports = withMarkdoc(
     domains: ['dagster-docs-versioned-content.s3.us-west-1.amazonaws.com'],
   },
   webpack: (config, {defaultLoaders, webpack}) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-
-      fs: false,
-    };
     config.plugins.push(
       new webpack.DefinePlugin({
         __VERSIONING_DISABLED__: process.env.VERSIONING_DISABLED === 'true',
