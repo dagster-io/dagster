@@ -32,9 +32,7 @@ from dagster._core.definitions.multi_dimensional_partitions import MultiPartitio
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import (
-    infer_partition_mapping,
-)
+from dagster._core.definitions.partition_mapping import infer_partition_mapping
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition.repository_definition import (
@@ -70,9 +68,7 @@ from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.data_version import (
-        DataVersion,
-    )
+    from dagster._core.definitions.data_version import DataVersion
     from dagster._core.definitions.dependency import NodeHandle
     from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.plan.plan import ExecutionPlan

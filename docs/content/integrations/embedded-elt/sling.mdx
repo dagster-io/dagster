@@ -96,10 +96,7 @@ replication_config = {
 Next, you'll create a <PyObject module="dagster_embedded_elt.sling" object="SlingResource" /> object that contains references to the connections specified in the replication configuration:
 
 ```python file=/integrations/embedded_elt/sling_connection_resources.py
-from dagster_embedded_elt.sling.resources import (
-    SlingConnectionResource,
-    SlingResource,
-)
+from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
 
 from dagster import EnvVar
 
@@ -144,10 +141,7 @@ Next, define a Sling asset using the <PyObject module="dagster_embedded_elt.slin
 Each stream will render two assets, one for the source stream and one for the target destination. You can override how assets are named by passing in a custom <PyObject module="dagster_embedded_elt.sling" object="DagsterSlingTranslator" /> object.
 
 ```python file=/integrations/embedded_elt/sling_dagster_translator.py lines=1-16
-from dagster_embedded_elt.sling import (
-    SlingResource,
-    sling_assets,
-)
+from dagster_embedded_elt.sling import SlingResource, sling_assets
 
 from dagster import Definitions, file_relative_path
 
@@ -160,6 +154,9 @@ def my_assets(context, sling: SlingResource):
     yield from sling.replicate(context=context)
     for row in sling.stream_raw_logs():
         context.log.info(row)
+
+
+defs = Definitions(
 ```
 
 ---
@@ -169,10 +166,7 @@ def my_assets(context, sling: SlingResource):
 The last step is to include the Sling assets and resource in a <PyObject object="Definitions" /> object. This enables Dagster tools to load everything we've defined:
 
 ```python file=/integrations/embedded_elt/sling_dagster_translator.py lines=19-26
-defs = Definitions(
-    assets=[
-        my_assets,
-    ],
+],
     resources={
         "sling": sling_resource,
     },

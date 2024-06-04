@@ -44,10 +44,7 @@ from dagster._core.definitions.metadata import RawMetadataMapping, RawMetadataVa
 from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.warnings import (
-    deprecation_warning,
-    normalize_renamed_param,
-)
+from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,

@@ -2,9 +2,7 @@ import os
 import sys
 
 from dagster import AssetExecutionContext, Config, Definitions, asset
-from dagster._core.pipes.subprocess import (
-    PipesSubprocessClient,
-)
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 from pydantic import Field
 
 # Add package container to path

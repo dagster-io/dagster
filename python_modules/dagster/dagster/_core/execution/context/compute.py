@@ -1,9 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
-from inspect import (
-    _empty as EmptyAnnotation,
-)
+from inspect import _empty as EmptyAnnotation
 from typing import (
     AbstractSet,
     Any,
@@ -19,11 +17,7 @@ from typing import (
 )
 
 import dagster._check as check
-from dagster._annotations import (
-    deprecated,
-    experimental,
-    public,
-)
+from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
@@ -59,9 +53,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.forked_pdb import ForkedPdb
-from dagster._utils.warnings import (
-    deprecation_warning,
-)
+from dagster._utils.warnings import deprecation_warning
 
 from .system import StepExecutionContext
 

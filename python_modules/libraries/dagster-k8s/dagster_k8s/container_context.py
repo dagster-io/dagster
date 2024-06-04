@@ -1,16 +1,6 @@
 import copy
 import logging
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Set,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Set, cast
 
 import dagster._check as check
 import kubernetes

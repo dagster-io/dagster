@@ -1,9 +1,7 @@
 import os
 
 import kubernetes
-from dagster import (
-    Definitions,
-)
+from dagster import Definitions
 from dagster_k8s import PipesK8sClient
 
 from .external_assets import external_asset_defs

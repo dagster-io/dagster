@@ -13,9 +13,7 @@ from dagster._core.events import (
     DagsterEventType,
     EngineEventData,
 )
-from dagster._core.instance import (
-    DagsterInstance,
-)
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 from dagster._core.storage.dagster_run import CANCELABLE_RUN_STATUSES
@@ -26,9 +24,7 @@ from starlette.concurrency import (
 )
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.roots.mutation import (
-        GrapheneTerminateRunPolicy,
-    )
+    from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
 
 from ..utils import assert_permission, assert_permission_for_location
 from .backfill import (
@@ -164,9 +160,7 @@ def terminate_pipeline_execution_for_runs(
     run_ids: Sequence[str],
     terminate_policy: "GrapheneTerminateRunPolicy",
 ) -> "GrapheneTerminateRunsResult":
-    from ...schema.roots.mutation import (
-        GrapheneTerminateRunsResult,
-    )
+    from ...schema.roots.mutation import GrapheneTerminateRunsResult
 
     check.sequence_param(run_ids, "run_id", of_type=str)
 

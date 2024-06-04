@@ -3,9 +3,7 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import (
-    datetime,
-)
+from datetime import datetime
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -37,9 +35,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import (
-    normalize_renamed_param,
-)
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..errors import (
     DagsterInvalidDefinitionError,

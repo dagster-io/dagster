@@ -14,11 +14,7 @@ from dagster import (
     build_input_context,
     build_output_context,
 )
-from dagster_wandb import (
-    WandbArtifactsIOManagerError,
-    wandb_artifacts_io_manager,
-    wandb_resource,
-)
+from dagster_wandb import WandbArtifactsIOManagerError, wandb_artifacts_io_manager, wandb_resource
 from dagster_wandb.io_manager import UNIT_TEST_RUN_ID
 from wandb import Artifact
 

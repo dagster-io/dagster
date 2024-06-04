@@ -24,11 +24,7 @@ from dagster._config import (
     Noneable as ConfigNoneable,
 )
 from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
-from dagster._core.definitions.metadata import (
-    MetadataValue,
-    RawMetadataValue,
-    normalize_metadata,
-)
+from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven import is_subclass

@@ -30,9 +30,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResourceFactory
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-)
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.cached_method import cached_method
 from pydantic import (
     Field as PyField,

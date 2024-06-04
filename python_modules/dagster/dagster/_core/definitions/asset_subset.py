@@ -11,10 +11,7 @@ from dagster._core.definitions.partition import (
 )
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._model import InstanceOf
-from dagster._serdes.serdes import (
-    NamedTupleSerializer,
-    whitelist_for_serdes,
-)
+from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore

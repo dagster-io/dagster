@@ -19,11 +19,7 @@ import pyarrow.compute as pc
 import pyarrow.dataset as ds
 from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.storage.db_io_manager import (
-    DbTypeHandler,
-    TablePartitionDimension,
-    TableSlice,
-)
+from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
 from deltalake import DeltaTable, WriterProperties, write_deltalake
 from deltalake.schema import (
     Field as DeltaField,

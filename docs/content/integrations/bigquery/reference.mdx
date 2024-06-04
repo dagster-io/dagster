@@ -430,16 +430,8 @@ The `BigQueryPySparkIOManager` requires that a `SparkSession` be active and conf
 from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import AssetExecutionContext, Definitions, asset
 
@@ -486,16 +478,8 @@ defs = Definitions(
 ```python file=/integrations/bigquery/reference/pyspark_with_spark_session.py
 from dagster_gcp_pyspark import BigQueryPySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import Definitions, asset
 

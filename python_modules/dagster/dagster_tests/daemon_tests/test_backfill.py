@@ -33,9 +33,7 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions import (
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions import StaticPartitionsDefinition
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -45,9 +43,7 @@ from dagster._core.definitions.selector import (
     PartitionsByAssetSelector,
     PartitionsSelector,
 )
-from dagster._core.errors import (
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation import (
@@ -62,12 +58,7 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import (
-    environ,
-    step_did_not_run,
-    step_failed,
-    step_succeeded,
-)
+from dagster._core.test_utils import environ, step_did_not_run, step_failed, step_succeeded
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger

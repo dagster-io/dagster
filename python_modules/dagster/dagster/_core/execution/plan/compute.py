@@ -1,16 +1,6 @@
 import asyncio
 import inspect
-from typing import (
-    Any,
-    AsyncIterator,
-    Iterator,
-    List,
-    Mapping,
-    Sequence,
-    Set,
-    TypeVar,
-    Union,
-)
+from typing import Any, AsyncIterator, Iterator, List, Mapping, Sequence, Set, TypeVar, Union
 
 from typing_extensions import TypeAlias
 
@@ -30,10 +20,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.op_definition import OpComputeFunction
 from dagster._core.definitions.result import AssetResult, MaterializeResult, ObserveResult
-from dagster._core.errors import (
-    DagsterExecutionStepExecutionError,
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.compute import (
     AssetCheckExecutionContext,

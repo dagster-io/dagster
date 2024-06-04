@@ -13,9 +13,7 @@ from dagster import (
     OpExecutionContext,
 )
 from dagster._annotations import experimental, public
-from dagster._core.errors import (
-    DagsterInvariantViolationError,
-)
+from dagster._core.errors import DagsterInvariantViolationError
 from openai import Client
 from pydantic import Field, PrivateAttr
 

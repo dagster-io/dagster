@@ -8,9 +8,7 @@ from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.declarative_automation.automation_context import (
-    AutomationContext,
-)
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec

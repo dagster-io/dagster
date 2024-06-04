@@ -27,23 +27,12 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.run_request import (
-    InstigatorType,
-    RunRequest,
-)
-from dagster._core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    SensorType,
-)
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    ExternalSensor,
-)
+from dagster._core.remote_representation import ExternalSensor
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
@@ -68,10 +57,7 @@ from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import (
-    SingleInstigatorDebugCrashFlags,
-    check_for_debug_crash,
-)
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"

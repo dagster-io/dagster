@@ -49,9 +49,7 @@ from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_implicit_auto_materialize_policy,
 )
-from dagster._core.definitions.asset_daemon_cursor import (
-    AssetDaemonCursor,
-)
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -66,9 +64,7 @@ from dagster._core.definitions.data_version import DataVersionsByPartition
 from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import (
-    PartitionsSubset,
-)
+from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData

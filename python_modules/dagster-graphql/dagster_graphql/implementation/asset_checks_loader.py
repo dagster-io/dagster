@@ -1,8 +1,6 @@
 from typing import Iterable, Iterator, List, Mapping, Optional, Tuple, cast
 
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
@@ -31,9 +29,7 @@ from dagster_graphql.schema.asset_checks import (
 )
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
 
-from ..schema.asset_checks import (
-    GrapheneAssetCheckExecution,
-)
+from ..schema.asset_checks import GrapheneAssetCheckExecution
 from .fetch_asset_checks import asset_checks_iter
 
 

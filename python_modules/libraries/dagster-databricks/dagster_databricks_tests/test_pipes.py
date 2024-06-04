@@ -10,9 +10,7 @@ from dagster_databricks._test_utils import (
     temp_dbfs_script,
     upload_dagster_pipes_whl,
 )
-from dagster_databricks.pipes import (
-    PipesDatabricksClient,
-)
+from dagster_databricks.pipes import PipesDatabricksClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
@@ -22,11 +20,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 def script_fn():
     import sys
 
-    from dagster_pipes import (
-        PipesDbfsContextLoader,
-        PipesDbfsMessageWriter,
-        open_dagster_pipes,
-    )
+    from dagster_pipes import PipesDbfsContextLoader, PipesDbfsMessageWriter, open_dagster_pipes
 
     with open_dagster_pipes(
         context_loader=PipesDbfsContextLoader(),

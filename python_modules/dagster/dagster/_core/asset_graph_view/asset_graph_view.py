@@ -1,13 +1,5 @@
 from datetime import datetime, timedelta
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Mapping,
-    NamedTuple,
-    NewType,
-    Optional,
-    Sequence,
-)
+from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Optional, Sequence
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
@@ -17,10 +9,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionsDefinition,
     PartitionDimensionDefinition,
 )
-from dagster._core.definitions.partition import (
-    AllPartitionsSubset,
-    DefaultPartitionsSubset,
-)
+from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     TimeWindow,

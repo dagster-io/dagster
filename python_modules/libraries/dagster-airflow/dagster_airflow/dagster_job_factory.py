@@ -15,9 +15,7 @@ from dagster_airflow.airflow_dag_converter import get_graph_definition_args
 from dagster_airflow.resources import (
     make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
 )
-from dagster_airflow.utils import (
-    normalized_name,
-)
+from dagster_airflow.utils import normalized_name
 
 
 def make_dagster_job_from_airflow_dag(

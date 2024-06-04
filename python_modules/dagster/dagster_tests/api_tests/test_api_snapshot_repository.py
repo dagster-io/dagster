@@ -3,9 +3,7 @@ from contextlib import contextmanager
 
 import pytest
 from dagster import IntMetadataValue, TextMetadataValue, job, op, repository
-from dagster._api.snapshot_repository import (
-    sync_get_streaming_external_repositories_data_grpc,
-)
+from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import (

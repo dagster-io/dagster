@@ -16,9 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
     AutomationCondition,
     AutomationResult,
 )
-from dagster._core.definitions.declarative_automation.automation_context import (
-    AutomationContext,
-)
+from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
 from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )

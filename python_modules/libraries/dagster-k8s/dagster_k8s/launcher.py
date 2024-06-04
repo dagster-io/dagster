@@ -3,9 +3,7 @@ import sys
 from typing import Any, Mapping, Optional, Sequence
 
 import kubernetes
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._cli.api import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher

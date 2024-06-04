@@ -1,17 +1,7 @@
 from abc import ABC, abstractproperty
 from collections import defaultdict
 from enum import Enum
-from typing import (
-    AbstractSet,
-    Dict,
-    FrozenSet,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -144,9 +134,7 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
     objects into the new AssetConditionEvaluationWithRunIds objects.
     """
-    from .declarative_automation.serialized_objects import (
-        AssetConditionEvaluationWithRunIds,
-    )
+    from .declarative_automation.serialized_objects import AssetConditionEvaluationWithRunIds
 
     class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
         @property
@@ -232,9 +220,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
     ) -> "AssetConditionEvaluation":
-        from .declarative_automation.serialized_objects import (
-            HistoricalAllPartitionsSubsetSentinel,
-        )
+        from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
 
@@ -279,9 +265,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
             NotAssetCondition,
             OrAssetCondition,
         )
-        from .declarative_automation.serialized_objects import (
-            HistoricalAllPartitionsSubsetSentinel,
-        )
+        from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         partition_subsets_by_condition_by_rule_snapshot = defaultdict(list)
         for elt in partition_subsets_by_condition:
@@ -369,9 +353,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
         from .declarative_automation.operators.boolean_operators import AndAssetCondition
-        from .declarative_automation.serialized_objects import (
-            HistoricalAllPartitionsSubsetSentinel,
-        )
+        from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
         partition_subsets_by_condition = cast(

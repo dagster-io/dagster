@@ -5,9 +5,7 @@ from contextlib import ExitStack
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
 
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryLoadData

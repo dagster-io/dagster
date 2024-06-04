@@ -17,10 +17,7 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._serdes import (
-    serialize_value,
-    whitelist_for_serdes,
-)
+from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError

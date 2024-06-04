@@ -30,10 +30,7 @@ from dagster._core.definitions.cacheable_assets import (
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dagster._core.definitions.reconstruct import (
-    ReconstructableJob,
-    ReconstructableRepository,
-)
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition.valid_definitions import (
     PendingRepositoryListDefinition,
 )

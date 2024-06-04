@@ -1,13 +1,8 @@
 import datetime
 
-from dagster import (
-    AssetSelection,
-    DailyPartitionsDefinition,
-)
+from dagster import AssetSelection, DailyPartitionsDefinition
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    TextRuleEvaluationData,
-)
+from dagster._core.definitions.auto_materialize_rule_evaluation import TextRuleEvaluationData
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
 from ..base_scenario import (

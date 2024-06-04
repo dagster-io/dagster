@@ -14,14 +14,9 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
-from dagster_pipes import (
-    DagsterPipesError,
-    PipesContext,
-)
+from dagster_pipes import DagsterPipesError, PipesContext
 
-from .in_process_client import (
-    InProcessPipesClient,
-)
+from .in_process_client import InProcessPipesClient
 
 
 def execute_asset_through_def(assets_def, resources) -> ExecuteInProcessResult:

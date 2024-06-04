@@ -1,26 +1,10 @@
 from abc import abstractmethod
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    Mapping,
-    Optional,
-    Type,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Callable, Dict, Generic, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import TypeVar
 
-from dagster._core.definitions.definition_config_schema import (
-    CoercableToConfigSchema,
-)
-from dagster._core.definitions.resource_definition import (
-    ResourceDefinition,
-    ResourceFunction,
-)
+from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
+from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.cached_method import cached_method

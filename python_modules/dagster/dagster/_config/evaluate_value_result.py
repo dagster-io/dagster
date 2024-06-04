@@ -1,12 +1,5 @@
 # pylint disable is for bug: https://github.com/PyCQA/pylint/issues/3299
-from typing import (
-    Any,
-    Generator,
-    Generic,
-    Optional,
-    Sequence,
-    TypeVar,
-)
+from typing import Any, Generator, Generic, Optional, Sequence, TypeVar
 
 import dagster._check as check
 

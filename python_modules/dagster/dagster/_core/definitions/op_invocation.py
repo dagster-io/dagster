@@ -1,16 +1,5 @@
 import inspect
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Mapping,
-    NamedTuple,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Set, Tuple, TypeVar, Union, cast
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params

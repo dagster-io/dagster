@@ -69,13 +69,7 @@ The OpenAI resource can be used in assets in order to interact with the OpenAI A
 ```python startafter=start_example endbefore=end_example file=/integrations/openai/assets.py
 from dagster_openai import OpenAIResource
 
-from dagster import (
-    AssetExecutionContext,
-    Definitions,
-    EnvVar,
-    asset,
-    define_asset_job,
-)
+from dagster import AssetExecutionContext, Definitions, EnvVar, asset, define_asset_job
 
 
 @asset(compute_kind="OpenAI")
@@ -109,13 +103,7 @@ The OpenAI resource can also be used in ops. **Note**: Currently, the OpenAI res
 ```python startafter=start_example endbefore=end_example file=/integrations/openai/ops.py
 from dagster_openai import OpenAIResource
 
-from dagster import (
-    Definitions,
-    EnvVar,
-    GraphDefinition,
-    OpExecutionContext,
-    op,
-)
+from dagster import Definitions, EnvVar, GraphDefinition, OpExecutionContext, op
 
 
 @op

@@ -1,32 +1,15 @@
 import inspect
 from enum import Enum
-from typing import (
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
 from typing_extensions import Annotated, get_args, get_origin
 
-from dagster import (
-    Enum as DagsterEnum,
-)
-from dagster._config.config_type import (
-    Array,
-    ConfigType,
-    Noneable,
-)
+from dagster import Enum as DagsterEnum
+from dagster._config.config_type import Array, ConfigType, Noneable
 from dagster._config.post_process import resolve_defaults
 from dagster._config.source import BoolSource, IntSource, StringSource
 from dagster._config.validate import validate_config
-from dagster._core.definitions.definition_config_schema import (
-    DefinitionConfigSchema,
-)
+from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
     DagsterInvalidConfigDefinitionError,
     DagsterInvalidConfigError,
@@ -48,11 +31,7 @@ except ImportError:
 
 import dagster._check as check
 from dagster import Field, Selector
-from dagster._config.field_utils import (
-    FIELD_NO_DEFAULT_PROVIDED,
-    Map,
-    convert_potential_field,
-)
+from dagster._config.field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, convert_potential_field
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, PydanticUndefined, model_fields
 from dagster._utils.typing_api import is_closed_python_optional_type
 

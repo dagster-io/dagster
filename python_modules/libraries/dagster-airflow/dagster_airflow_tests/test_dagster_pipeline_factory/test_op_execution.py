@@ -8,9 +8,7 @@ from unittest import mock
 from airflow import __version__ as airflow_version
 
 if airflow_version >= "2.0.0":
-    from airflow.providers.apache.spark.operators.spark_submit import (
-        SparkSubmitOperator,
-    )
+    from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 else:
     from airflow.contrib.operators.spark_submit_operator import (  # type: ignore (airflow 1 compat)
         SparkSubmitOperator,

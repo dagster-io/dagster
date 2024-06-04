@@ -1,16 +1,12 @@
 import dagster._check as check
-from dagster._core.definitions.asset_daemon_cursor import (
-    AssetDaemonCursor,
-)
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._daemon.asset_daemon import (
-    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
-)
+from dagster._daemon.asset_daemon import _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY
 from dagster._serdes.serdes import serialize_value
 from dagster_graphql.test.utils import execute_dagster_graphql
 

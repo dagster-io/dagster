@@ -1,16 +1,10 @@
 from typing import List, Sequence, Union
 
 import dagster._check as check
-from dagster._core.definitions.data_version import (
-    CachingStaleStatusResolver,
-    StaleStatus,
-)
+from dagster._core.definitions.data_version import CachingStaleStatusResolver, StaleStatus
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.remote_representation.external import (
-    ExternalSchedule,
-    ExternalSensor,
-)
+from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
 from dagster._core.workspace.context import WorkspaceProcessContext
 
 

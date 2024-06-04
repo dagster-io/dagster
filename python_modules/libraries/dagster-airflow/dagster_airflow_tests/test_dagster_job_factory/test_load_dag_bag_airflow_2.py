@@ -12,9 +12,7 @@ from dagster_airflow import (
 
 from dagster_airflow_tests.marks import requires_local_db, requires_no_db
 
-from ..airflow_utils import (
-    test_make_from_dagbag_inputs_airflow_2,
-)
+from ..airflow_utils import test_make_from_dagbag_inputs_airflow_2
 
 
 @pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")

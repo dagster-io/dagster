@@ -4,9 +4,7 @@ from typing import Iterator, Optional, Sequence
 
 import pendulum
 import pytest
-from dagster import (
-    define_asset_job,
-)
+from dagster import define_asset_job
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetSelection

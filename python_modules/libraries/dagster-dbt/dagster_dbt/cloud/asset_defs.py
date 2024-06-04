@@ -113,10 +113,7 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
     @staticmethod
     def parse_dbt_command(dbt_command: str) -> Namespace:
-        from dbt.cli.flags import (
-            Flags,
-            args_to_context,
-        )
+        from dbt.cli.flags import Flags, args_to_context
 
         args = shlex.split(dbt_command)[1:]
 

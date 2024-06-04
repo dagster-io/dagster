@@ -7,11 +7,7 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
 from ..external import get_external_job_or_raise
-from ..utils import (
-    ExecutionMetadata,
-    ExecutionParams,
-    assert_permission_for_location,
-)
+from ..utils import ExecutionMetadata, ExecutionParams, assert_permission_for_location
 from .run_lifecycle import create_valid_pipeline_run
 
 if TYPE_CHECKING:

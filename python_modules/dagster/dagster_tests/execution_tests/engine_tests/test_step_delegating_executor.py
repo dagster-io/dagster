@@ -20,10 +20,7 @@ from dagster import (
 from dagster._config import Permissive
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.definitions.reconstruct import (
-    ReconstructableJob,
-    ReconstructableRepository,
-)
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import ReexecutionOptions, execute_job

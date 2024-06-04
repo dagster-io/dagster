@@ -209,10 +209,7 @@ class RunRequest(
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
         from dagster._core.definitions.job_definition import JobDefinition
-        from dagster._core.definitions.partition import (
-            PartitionedConfig,
-            PartitionsDefinition,
-        )
+        from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
 
         if self.partition_key is None:
             check.failed(
@@ -290,9 +287,7 @@ def _check_valid_partition_key_after_dynamic_partitions_requests(
     dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
 ):
     from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-    from dagster._core.definitions.partition import (
-        DynamicPartitionsDefinition,
-    )
+    from dagster._core.definitions.partition import DynamicPartitionsDefinition
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
         multipartition_key = partitions_def.get_partition_key_from_str(partition_key)

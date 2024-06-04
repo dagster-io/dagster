@@ -27,9 +27,7 @@ from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.time_window_partitions import (
-    get_time_partitions_def,
-)
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
@@ -38,9 +36,7 @@ from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
-from .declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-)
+from .declarative_automation.serialized_objects import AssetConditionEvaluation
 from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:

@@ -1,9 +1,7 @@
 import datetime
 
 from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.declarative_automation.legacy.asset_condition import (
-    AssetCondition,
-)
+from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._serdes import serialize_value
 

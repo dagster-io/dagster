@@ -1,11 +1,4 @@
-from dagster import (
-    AssetIn,
-    Definitions,
-    asset,
-    define_asset_job,
-    job,
-    op,
-)
+from dagster import AssetIn, Definitions, asset, define_asset_job, job, op
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 

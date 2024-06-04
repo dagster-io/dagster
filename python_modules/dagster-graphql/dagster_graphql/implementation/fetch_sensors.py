@@ -14,11 +14,7 @@ from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_d
 from dagster_graphql.schema.util import ResolveInfo
 
 from .loader import RepositoryScopedBatchLoader
-from .utils import (
-    UserFacingGraphQLError,
-    assert_permission,
-    assert_permission_for_location,
-)
+from .utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick

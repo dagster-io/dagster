@@ -15,9 +15,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     TimestampMetadataValue,
 )
-from dagster._core.execution.context.compute import (
-    AssetCheckExecutionContext,
-)
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._utils.schedules import (
     get_latest_completed_cron_tick,
     get_next_cron_tick,

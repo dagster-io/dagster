@@ -62,10 +62,7 @@ from dagster._core.storage.tags import (
     RUN_FAILURE_REASON_TAG,
 )
 from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import (
-    deserialize_value,
-    serialize_value,
-)
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven import JSONDecodeError
 from dagster._utils import PrintFn, utc_datetime_from_timestamp
 from dagster._utils.merger import merge_dicts

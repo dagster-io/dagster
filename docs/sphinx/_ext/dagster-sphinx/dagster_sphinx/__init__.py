@@ -22,9 +22,7 @@ from sphinx.ext.autodoc import (
 from sphinx.util import logging
 from typing_extensions import Literal, TypeAlias
 
-from dagster_sphinx.configurable import (
-    ConfigurableDocumenter,
-)
+from dagster_sphinx.configurable import ConfigurableDocumenter
 from dagster_sphinx.docstring_flags import (
     FlagDirective,
     depart_flag,

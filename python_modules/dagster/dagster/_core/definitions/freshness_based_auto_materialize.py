@@ -14,16 +14,12 @@ from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._seven.compat.pendulum import (
-    PendulumInterval,
-)
+from dagster._seven.compat.pendulum import PendulumInterval
 from dagster._utils.schedules import cron_string_iterator
 
 if TYPE_CHECKING:
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
-    from .declarative_automation.legacy.legacy_context import (
-        LegacyRuleEvaluationContext,
-    )
+    from .declarative_automation.legacy.legacy_context import LegacyRuleEvaluationContext
     from .declarative_automation.serialized_objects import AssetSubsetWithMetadata
 
 

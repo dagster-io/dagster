@@ -3,10 +3,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_key import (
-    AssetKey,
-    CoercibleToAssetKey,
-)
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._serdes.serdes import whitelist_for_serdes
 
