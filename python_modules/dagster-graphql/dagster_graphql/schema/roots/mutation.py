@@ -2,7 +2,11 @@ from typing import Optional, Sequence, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionRange
+from dagster._core.definitions.partition_key_range import (
+    UNIVERSAL_PARTITION_KEY_RANGE,
+    PartitionKeyRange,
+)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
@@ -45,6 +49,7 @@ from ...implementation.utils import (
 )
 from ..asset_key import GrapheneAssetKey
 from ..backfill import (
+    GrapheneAssetPartitionRange,
     GrapheneCancelBackfillResult,
     GrapheneLaunchBackfillResult,
     GrapheneResumeBackfillResult,
@@ -62,9 +67,9 @@ from ..errors import (
 )
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import (
-    GrapheneAssetKeyInput,
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
+    GraphenePartitionsByAssetSelector,
     GrapheneReexecutionParams,
     GrapheneReportRunlessAssetEventsParams,
     GrapheneRepositorySelector,
@@ -677,7 +682,7 @@ class GrapheneReloadWorkspaceMutation(graphene.Mutation):
 class GrapheneAssetWipeSuccess(graphene.ObjectType):
     """Output indicating that asset history was deleted."""
 
-    assetKeys = non_null_list(GrapheneAssetKey)
+    assetPartitionRanges = non_null_list(GrapheneAssetPartitionRange)
 
     class Meta:
         name = "AssetWipeSuccess"
@@ -702,17 +707,29 @@ class GrapheneAssetWipeMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneAssetWipeMutationResult)
 
     class Arguments:
-        assetKeys = graphene.Argument(non_null_list(GrapheneAssetKeyInput))
+        assetPartitionRanges = graphene.Argument(non_null_list(GraphenePartitionsByAssetSelector))
 
     class Meta:
         name = "AssetWipeMutation"
 
     @capture_error
     @check_permission(Permissions.WIPE_ASSETS)
-    def mutate(self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]):
-        return wipe_assets(
-            graphene_info, [AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys]
-        )
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        assetPartitionRanges: Sequence[GraphenePartitionsByAssetSelector],
+    ) -> GrapheneAssetWipeMutationResult:
+        normalized_ranges = [
+            AssetPartitionRange(
+                AssetKey.from_graphql_input(ap.assetKey),
+                PartitionKeyRange(start=ap.partitions.range.start, end=ap.partitions.range.end)
+                if ap.partitions
+                else UNIVERSAL_PARTITION_KEY_RANGE,
+            )
+            for ap in assetPartitionRanges
+        ]
+
+        return wipe_assets(graphene_info, normalized_ranges)
 
 
 class GrapheneReportRunlessAssetEventsSuccess(graphene.ObjectType):

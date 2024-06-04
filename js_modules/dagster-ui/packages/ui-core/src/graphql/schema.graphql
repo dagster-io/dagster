@@ -3626,7 +3626,7 @@ type Mutation {
   shutdownRepositoryLocation(
     repositoryLocationName: String!
   ): ShutdownRepositoryLocationMutationResult!
-  wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
+  wipeAssets(assetPartitionRanges: [PartitionsByAssetSelector!]!): AssetWipeMutationResult!
   reportRunlessAssetEvents(
     eventParams: ReportRunlessAssetEventsParams!
   ): ReportRunlessAssetEventsResult!
@@ -3684,7 +3684,17 @@ union AssetWipeMutationResult =
   | AssetWipeSuccess
 
 type AssetWipeSuccess {
-  assetKeys: [AssetKey!]!
+  assetPartitionRanges: [AssetPartitionRange!]!
+}
+
+type AssetPartitionRange {
+  assetKey: AssetKey!
+  partitionRange: PartitionRange!
+}
+
+type PartitionRange {
+  start: String!
+  end: String!
 }
 
 union ReportRunlessAssetEventsResult =

@@ -93,8 +93,8 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
 
 
 WIPE_ASSETS = """
-    mutation AssetKeyWipe($assetKeys: [AssetKeyInput!]!) {
-        wipeAssets(assetKeys: $assetKeys) {
+    mutation AssetKeyWipe($assetPartitionRanges: [PartitionsByAssetSelector!]!) {
+        wipeAssets(assetPartitionRanges: $assetPartitionRanges) {
             __typename
         }
     }
@@ -896,7 +896,9 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert AssetKey("a") in asset_keys
 
         result = execute_dagster_graphql(
-            graphql_context, WIPE_ASSETS, variables={"assetKeys": [{"path": ["a"]}]}
+            graphql_context,
+            WIPE_ASSETS,
+            variables={"assetPartitionRanges": [{"assetKey": {"path": ["a"]}}]},
         )
 
         assert result.data

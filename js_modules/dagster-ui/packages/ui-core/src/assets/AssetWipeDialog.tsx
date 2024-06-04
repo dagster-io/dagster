@@ -1,7 +1,7 @@
 import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
 import {Button, Dialog, DialogBody, DialogFooter, Group} from '@dagster-io/ui-components';
 
-import {asAssetKeyInput} from './asInput';
+import {asAssetPartitionRangeInput} from './asInput';
 import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeDialog.types';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
@@ -26,7 +26,7 @@ export const AssetWipeDialog = ({
   const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
     ASSET_WIPE_MUTATION,
     {
-      variables: {assetKeys: assetKeys.map(asAssetKeyInput)},
+      variables: {assetPartitionRanges: assetKeys.map((x) => asAssetPartitionRangeInput(x))},
       refetchQueries: requery,
     },
   );
@@ -74,11 +74,17 @@ export const AssetWipeDialog = ({
 };
 
 const ASSET_WIPE_MUTATION = gql`
-  mutation AssetWipeMutation($assetKeys: [AssetKeyInput!]!) {
-    wipeAssets(assetKeys: $assetKeys) {
+  mutation AssetWipeMutation($assetPartitionRanges: [PartitionsByAssetSelector!]!) {
+    wipeAssets(assetPartitionRanges: $assetPartitionRanges) {
       ... on AssetWipeSuccess {
-        assetKeys {
-          path
+        assetPartitionRanges {
+          assetKey {
+            path
+          }
+          partitionRange {
+            start
+            end
+          }
         }
       }
       ...PythonErrorFragment

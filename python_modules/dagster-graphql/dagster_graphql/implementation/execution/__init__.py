@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, AsyncIterator, Mapping, Optional, Sequenc
 # re-exports
 import dagster._check as check
 from dagster._annotations import deprecated
-from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionRange
 from dagster._core.events import (
     AssetMaterialization,
     AssetObservation,
@@ -22,6 +22,8 @@ from dagster._utils.error import serializable_error_info_from_exc_info
 from starlette.concurrency import (
     run_in_threadpool,  # can provide this indirectly if we dont want starlette dep in dagster-graphql
 )
+
+from dagster_graphql.schema.backfill import GrapheneAssetPartitionRange
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.roots.mutation import GrapheneTerminateRunPolicy
@@ -363,13 +365,25 @@ async def gen_captured_log_data(
 
 
 def wipe_assets(
-    graphene_info: "ResolveInfo", asset_keys: Sequence[AssetKey]
+    graphene_info: "ResolveInfo", asset_partition_ranges: Sequence[AssetPartitionRange]
 ) -> "GrapheneAssetWipeSuccess":
     from ...schema.roots.mutation import GrapheneAssetWipeSuccess
 
     instance = graphene_info.context.instance
+    for asset_partition_range in asset_partition_ranges:
+        # This will be removed when support for partition-scoped wiping is added.
+        if not asset_partition_range.is_universal:
+            check.failed(
+                f"Partitioned asset wipe is not supported yet. Found partition range: {asset_partition_range}"
+            )
+
+    asset_keys = [apr.asset_key for apr in asset_partition_ranges]
     instance.wipe_assets(asset_keys)
-    return GrapheneAssetWipeSuccess(assetKeys=asset_keys)
+    result_ranges = [
+        GrapheneAssetPartitionRange(asset_key=apr.asset_key, partition_range=apr.partition_range)
+        for apr in asset_partition_ranges
+    ]
+    return GrapheneAssetWipeSuccess(assetPartitionRanges=result_ranges)
 
 
 def create_asset_event(
