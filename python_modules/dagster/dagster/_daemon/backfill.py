@@ -1,13 +1,37 @@
 import logging
 import sys
+from contextlib import contextmanager
 from typing import Iterable, Mapping, Optional, Sequence, cast
 
+import pendulum
+
+from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._utils.error import SerializableErrorInfo
+
+
+@contextmanager
+def _get_instigation_logger_if_log_storage_enabled(
+    instance, backfill_id: str, default_logger: logging.Logger
+):
+    if instance.backfill_log_storage_enabled():
+        evaluation_time = pendulum.now("UTC")
+        log_key = ["backfill", backfill_id, evaluation_time.strftime("%Y%m%d_%H%M%S")]
+        with InstigationLogger(
+            log_key,
+            instance,
+            repository_name=None,
+            name=backfill_id,
+        ) as _logger:
+            backfill_logger = cast(logging.Logger, _logger)
+            yield backfill_logger
+
+    else:
+        yield default_logger
 
 
 def execute_backfill_iteration(
@@ -45,33 +69,35 @@ def execute_backfill_jobs(
 
         # refetch, in case the backfill was updated in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        # create a logger that will always include the backfill_id as an `extra`
-
-        backfill_logger = cast(
-            logging.Logger,
-            logging.LoggerAdapter(logger, extra={"backfill_id": backfill.backfill_id}),
-        )
-
-        try:
-            if backfill.is_asset_backfill:
-                yield from execute_asset_backfill_iteration(
-                    backfill, backfill_logger, workspace_process_context, instance
-                )
-            else:
-                yield from execute_job_backfill_iteration(
-                    backfill,
-                    backfill_logger,
-                    workspace_process_context,
-                    debug_crash_flags,
-                    instance,
-                )
-        except Exception:
-            error_info = DaemonErrorCapture.on_exception(
-                sys.exc_info(),
-                logger=backfill_logger,
-                log_message=f"Backfill failed for {backfill.backfill_id}",
+        with _get_instigation_logger_if_log_storage_enabled(
+            instance, backfill.backfill_id, logger
+        ) as _logger:
+            # create a logger that will always include the backfill_id as an `extra`
+            backfill_logger = cast(
+                logging.Logger,
+                logging.LoggerAdapter(_logger, extra={"backfill_id": backfill.backfill_id}),
             )
-            instance.update_backfill(
-                backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
-            )
-            yield error_info
+
+            try:
+                if backfill.is_asset_backfill:
+                    yield from execute_asset_backfill_iteration(
+                        backfill, backfill_logger, workspace_process_context, instance
+                    )
+                else:
+                    yield from execute_job_backfill_iteration(
+                        backfill,
+                        backfill_logger,
+                        workspace_process_context,
+                        debug_crash_flags,
+                        instance,
+                    )
+            except Exception:
+                error_info = DaemonErrorCapture.on_exception(
+                    sys.exc_info(),
+                    logger=backfill_logger,
+                    log_message=f"Backfill failed for {backfill.backfill_id}",
+                )
+                instance.update_backfill(
+                    backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
+                )
+                yield error_info
