@@ -14,6 +14,7 @@ import {
   Skeleton,
   Subtitle2,
   Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React, {useMemo, useState} from 'react';
@@ -40,7 +41,9 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {showSharedToaster} from '../app/DomUtils';
 import {COMMON_COLLATOR} from '../app/Util';
+import {useCopyToClipboard} from '../app/browser';
 import {
   LiveDataForNode,
   displayNameForAssetKey,
@@ -286,12 +289,16 @@ export const AssetNodeOverview = ({
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Relation identifier">
-        {relationIdentifierMetadata && relationIdentifierMetadata.text}
+        {relationIdentifierMetadata && (
+          <ClickToCopyValue value={relationIdentifierMetadata.text}>
+            {relationIdentifierMetadata.text}
+          </ClickToCopyValue>
+        )}
       </AttributeAndValue>
       <AttributeAndValue label="URI">
         {uriMetadata &&
           (uriMetadata.__typename === 'TextMetadataEntry' ? (
-            uriMetadata.text
+            <ClickToCopyValue value={uriMetadata.text}>{uriMetadata.text}</ClickToCopyValue>
           ) : (
             <a target="_blank" rel="noreferrer" href={uriMetadata.url}>
               {uriMetadata.url}
@@ -549,6 +556,26 @@ const AssetNodeOverviewContainer = ({
 
 const isEmptyChildren = (children: React.ReactNode) =>
   !children || (children instanceof Array && children.length === 0);
+
+const ClickToCopyValue = ({value, children}: {value: string; children: React.ReactNode}) => {
+  const copy = useCopyToClipboard();
+  const onCopy = async () => {
+    copy(value);
+    await showSharedToaster({
+      intent: 'success',
+      icon: 'copy_to_clipboard_done',
+      message: 'Copied!',
+    });
+  };
+
+  return (
+    <Tooltip content="Click to copy" placement="bottom" display="block">
+      <div onClick={onCopy} style={{cursor: 'pointer'}}>
+        {children}
+      </div>
+    </Tooltip>
+  );
+};
 
 const AttributeAndValue = ({
   label,
