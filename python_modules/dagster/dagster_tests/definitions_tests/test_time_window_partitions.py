@@ -23,6 +23,7 @@ from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     DatetimeFieldSerializer,
     PartitionKeysTimeWindowPartitionsSubset,
+    PersistedTimeWindow,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
@@ -35,8 +36,8 @@ from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 DATE_FORMAT = "%Y-%m-%d"
 
 
-def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(
+def time_window(start: str, end: str) -> PersistedTimeWindow:
+    return PersistedTimeWindow(
         cast(datetime, pendulum.parser.parse(start)),
         cast(datetime, pendulum.parser.parse(end)),
     )
@@ -1842,3 +1843,10 @@ def test_asset_subset_or(a, b, result) -> None:
     assert a_subset | b_subset == TimeWindowPartitionsSubset(
         partitions_def, num_partitions=None, included_time_windows=result
     )
+
+
+def test_timewindow_serdes():
+    serialized_time_window = '{"__class__": "TimeWindow", "end": {"__class__": "TimestampWithTimezone", "timestamp": 1717680319.16809, "timezone": "America/Chicago"}, "start": {"__class__": "TimestampWithTimezone", "timestamp": 1717593919.168011, "timezone": "America/Chicago"}}'
+    deserialized_time_window = deserialize_value(serialized_time_window, PersistedTimeWindow)
+    assert isinstance(deserialized_time_window, PersistedTimeWindow)
+    assert serialize_value(deserialized_time_window) == serialized_time_window

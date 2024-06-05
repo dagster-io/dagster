@@ -11,7 +11,7 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
-    TimeWindow,
+    PersistedTimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
@@ -199,19 +199,21 @@ class TimeWindowPartitionMapping(
             mapping_downstream_to_upstream=False,
         ).partitions_subset
 
-    def _merge_time_windows(self, time_windows: Sequence[TimeWindow]) -> Sequence[TimeWindow]:
+    def _merge_time_windows(
+        self, time_windows: Sequence[PersistedTimeWindow]
+    ) -> Sequence[PersistedTimeWindow]:
         """Takes a list of potentially-overlapping TimeWindows and merges any overlapping windows."""
         if not time_windows:
             return []
 
         sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
-        merged_time_windows: List[TimeWindow] = [sorted_time_windows[0]]
+        merged_time_windows: List[PersistedTimeWindow] = [sorted_time_windows[0]]
 
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]
             # window starts before the end of the previous one
             if window.start.timestamp() <= last_window.end.timestamp():
-                merged_time_windows[-1] = TimeWindow(
+                merged_time_windows[-1] = PersistedTimeWindow(
                     last_window.start, max(last_window.end, window.end, key=lambda d: d.timestamp())
                 )
             else:
@@ -269,7 +271,7 @@ class TimeWindowPartitionMapping(
         first_window = to_partitions_def.get_first_partition_window(current_time=current_time)
         last_window = to_partitions_def.get_last_partition_window(current_time=current_time)
         full_window = (
-            TimeWindow(first_window.start, last_window.end)
+            PersistedTimeWindow(first_window.start, last_window.end)
             if first_window is not None and last_window is not None
             else None
         )
@@ -325,7 +327,7 @@ class TimeWindowPartitionMapping(
                 )
 
             if offsetted_to_start_dt.timestamp() < offsetted_to_end_dt.timestamp():
-                time_windows.append(TimeWindow(offsetted_to_start_dt, offsetted_to_end_dt))
+                time_windows.append(PersistedTimeWindow(offsetted_to_start_dt, offsetted_to_end_dt))
 
         filtered_time_windows = []
         required_but_nonexistent_partition_keys = set()
@@ -341,7 +343,7 @@ class TimeWindowPartitionMapping(
                     time_window.start, first_window.start, key=lambda d: d.timestamp()
                 )
                 window_end = min(time_window.end, last_window.end, key=lambda d: d.timestamp())
-                filtered_time_windows.append(TimeWindow(window_start, window_end))
+                filtered_time_windows.append(PersistedTimeWindow(window_start, window_end))
 
             if self.allow_nonexistent_upstream_partitions:
                 # If allowed to have nonexistent upstream partitions, do not consider
@@ -355,12 +357,12 @@ class TimeWindowPartitionMapping(
                 ):
                     invalid_time_window = time_window
                 elif time_window.start.timestamp() < first_window.start.timestamp():
-                    invalid_time_window = TimeWindow(
+                    invalid_time_window = PersistedTimeWindow(
                         time_window.start,
                         min(time_window.end, first_window.start, key=lambda d: d.timestamp()),
                     )
                 elif time_window.end.timestamp() > last_window.end.timestamp():
-                    invalid_time_window = TimeWindow(
+                    invalid_time_window = PersistedTimeWindow(
                         max(time_window.start, last_window.end, key=lambda d: d.timestamp()),
                         time_window.end,
                     )
@@ -480,7 +482,7 @@ def _offsetted_datetime_with_bounds(
     partitions_def: TimeWindowPartitionsDefinition,
     dt: datetime,
     offset: int,
-    bounds_window: Optional[TimeWindow],
+    bounds_window: Optional[PersistedTimeWindow],
 ) -> datetime:
     offsetted_dt = _offsetted_datetime(partitions_def, dt, offset)
 
@@ -517,13 +519,13 @@ def _offsetted_datetime(
     for _ in range(abs(offset)):
         if offset < 0:
             prev_window = cast(
-                TimeWindow,
+                PersistedTimeWindow,
                 partitions_def.get_prev_partition_window(result, respect_bounds=False),
             )
             result = prev_window.start
         else:
             next_window = cast(
-                TimeWindow,
+                PersistedTimeWindow,
                 partitions_def.get_next_partition_window(result, respect_bounds=False),
             )
             result = next_window.end
