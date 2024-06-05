@@ -10,7 +10,6 @@ from typing import (
     Sequence,
     Tuple,
     Union,
-    cast,
 )
 
 from dagster import (
@@ -19,7 +18,6 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
-from dagster._core.execution.stats import RunStepKeyStatsSnapshot, StepEventStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 
@@ -212,30 +210,26 @@ def get_assets_latest_info(
     }
 
     run_records_by_run_id = {}
-    in_progress_records = []
     run_ids = list(set(latest_run_ids_by_asset.values())) if latest_run_ids_by_asset else []
     if run_ids:
         run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
         for run_record in run_records:
-            if run_record.dagster_run.status in PENDING_STATUSES:
-                in_progress_records.append(run_record)
             run_records_by_run_id[run_record.dagster_run.run_id] = run_record
 
     (
         in_progress_run_ids_by_asset,
         unstarted_run_ids_by_asset,
     ) = _get_in_progress_runs_for_assets(
-        graphene_info,
-        in_progress_records,
-        step_keys_by_asset,
+        run_records_by_run_id,
         latest_materialization_run_id_by_asset,
+        latest_run_ids_by_asset,
     )
 
     from .fetch_assets import get_unique_asset_id
 
     return [
         GrapheneAssetLatestInfo(
-            (
+            id=(
                 get_unique_asset_id(
                     asset_key,
                     asset_nodes[asset_key].repository_location.name,
@@ -244,11 +238,11 @@ def get_assets_latest_info(
                 if asset_nodes[asset_key]
                 else get_unique_asset_id(asset_key)
             ),
-            asset_key,
-            latest_materialization_by_asset.get(asset_key),
-            list(unstarted_run_ids_by_asset.get(asset_key, [])),
-            list(in_progress_run_ids_by_asset.get(asset_key, [])),
-            (
+            assetKey=asset_key,
+            latestMaterialization=latest_materialization_by_asset.get(asset_key),
+            unstartedRunIds=list(unstarted_run_ids_by_asset.get(asset_key, [])),
+            inProgressRunIds=list(in_progress_run_ids_by_asset.get(asset_key, [])),
+            latestRun=(
                 GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
                 # Dagster UI error occurs if a run is terminated at the same time that this endpoint is
                 # called so we check to make sure the run ID exists in the run records.
@@ -262,65 +256,30 @@ def get_assets_latest_info(
 
 
 def _get_in_progress_runs_for_assets(
-    graphene_info: "ResolveInfo",
-    in_progress_records: Sequence[RunRecord],
-    step_keys_by_asset: Mapping[AssetKey, Sequence[str]],
+    run_records_by_run_id: Mapping[str, RunRecord],
     latest_materialization_run_id_by_asset: Dict[AssetKey, Optional[str]],
+    latest_run_ids_by_asset: Dict[AssetKey, str],
 ) -> Tuple[Mapping[AssetKey, AbstractSet[str]], Mapping[AssetKey, AbstractSet[str]]]:
-    # Build mapping of step key to the assets it generates
-    asset_key_by_step_key = defaultdict(set)
-    for asset_key, step_keys in step_keys_by_asset.items():
-        for step_key in step_keys:
-            asset_key_by_step_key[step_key].add(asset_key)
-
     in_progress_run_ids_by_asset = defaultdict(set)
     unstarted_run_ids_by_asset = defaultdict(set)
 
-    for record in in_progress_records:
-        run = record.dagster_run
-        asset_selection = run.asset_selection
-        run_step_keys = graphene_info.context.instance.get_execution_plan_snapshot(
-            check.not_none(run.execution_plan_snapshot_id)
-        ).step_keys_to_execute
+    for asset_key, run_id in latest_run_ids_by_asset.items():
+        record = run_records_by_run_id.get(run_id)
 
-        selected_assets = (
-            set.union(*[asset_key_by_step_key[run_step_key] for run_step_key in run_step_keys])
-            if asset_selection is None
-            else cast(frozenset, asset_selection)
-        )  # only display in progress/unstarted indicators for selected assets
+        if not record:
+            continue
+
+        run = record.dagster_run
+        if (
+            run.status not in PENDING_STATUSES
+            or latest_materialization_run_id_by_asset.get(asset_key) == run.run_id
+        ):
+            continue
 
         if run.status in IN_PROGRESS_STATUSES:
-            step_stats = graphene_info.context.instance.get_run_step_stats(
-                run.run_id, run_step_keys
-            )
-            # Build mapping of asset to all the step stats that generate the asset
-            step_stats_by_asset: Dict[AssetKey, List[RunStepKeyStatsSnapshot]] = defaultdict(list)
-            for step_stat in step_stats:
-                for asset_key in asset_key_by_step_key[step_stat.step_key]:
-                    step_stats_by_asset[asset_key].append(step_stat)
-
-            for asset in selected_assets:
-                if latest_materialization_run_id_by_asset.get(asset) == run.run_id:
-                    continue
-                asset_step_stats = step_stats_by_asset.get(asset)
-                if asset_step_stats:
-                    # asset_step_stats will contain all steps that are in progress or complete
-                    if any(
-                        [
-                            step_stat.status == StepEventStatus.IN_PROGRESS
-                            for step_stat in asset_step_stats
-                        ]
-                    ):
-                        in_progress_run_ids_by_asset[asset].add(record.dagster_run.run_id)
-                    # else if step_stats exist and none are in progress, the step has completed
-                else:  # if step stats is none, then the step has not started
-                    unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
+            in_progress_run_ids_by_asset[asset_key].add(record.dagster_run.run_id)
         else:
-            # the run never began execution, all steps are unstarted
-            for asset in selected_assets:
-                if latest_materialization_run_id_by_asset.get(asset) == run.run_id:
-                    continue
-                unstarted_run_ids_by_asset[asset].add(record.dagster_run.run_id)
+            unstarted_run_ids_by_asset[asset_key].add(record.dagster_run.run_id)
 
     return in_progress_run_ids_by_asset, unstarted_run_ids_by_asset
 
