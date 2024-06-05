@@ -7,17 +7,15 @@ import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
 import {
+  CodeLocationStatusQuery,
+  CodeLocationStatusQueryVariables,
+  LocationWorkspaceQuery,
+  LocationWorkspaceQueryVariables,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
-} from './types/WorkspaceQueries.types';
-import {
-  CodeLocationStatusQuery,
-  CodeLocationStatusQueryVariables,
-  LocationWorkspaceQuery,
-  LocationWorkspaceQueryVariables,
 } from './types/WorkspaceQueries.types';
 import {AppContext} from '../app/AppContext';
 import {useRefreshAtInterval} from '../app/QueryRefresh';
