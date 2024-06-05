@@ -37,7 +37,7 @@ DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> PersistedTimeWindow:
-    return PersistedTimeWindow(
+    return PersistedTimeWindow.from_datetimes(
         cast(datetime, pendulum.parser.parse(start)),
         cast(datetime, pendulum.parser.parse(end)),
     )

@@ -117,8 +117,8 @@ def test_time_window_partitions_subset_serialization_deserialization(
     assert deserialized == subset
     assert deserialized.get_partition_keys() == ["2023-01-01"]
     assert (
-        deserialized.included_time_windows[0].start.tzinfo
-        == subset.included_time_windows[0].start.tzinfo
+        deserialized.included_time_windows[0].start_datetime.tzinfo
+        == subset.included_time_windows[0].start_datetime.tzinfo
     )
 
 

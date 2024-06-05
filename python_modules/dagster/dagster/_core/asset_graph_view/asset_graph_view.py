@@ -13,6 +13,7 @@ from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPart
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     PersistedTimeWindow,
+    TimestampWithTimezone,
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
@@ -201,7 +202,11 @@ class AssetSlice:
             last_tw = tw_partitions_def.get_last_partition_window(
                 self._asset_graph_view.effective_dt
             )
-            return [PersistedTimeWindow(datetime.min, last_tw.end)] if last_tw else []
+            return (
+                [PersistedTimeWindow(TimestampWithTimezone.min(last_tw.end.timezone), last_tw.end)]
+                if last_tw
+                else []
+            )
         elif isinstance(self._compatible_subset.subset_value, DefaultPartitionsSubset):
             check.inst(
                 self._partitions_def,
@@ -456,11 +461,11 @@ class AssetGraphView:
 
         # the time window in which to look for partitions
         time_window = (
-            PersistedTimeWindow(
+            PersistedTimeWindow.from_datetimes(
                 start=max(
                     # do not look before the start of the definition
                     time_partitions_def.start,
-                    latest_time_window.end - lookback_delta,
+                    latest_time_window.end_datetime - lookback_delta,
                 ),
                 end=latest_time_window.end,
             )

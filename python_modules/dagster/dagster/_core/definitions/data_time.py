@@ -105,7 +105,7 @@ class CachingDataTimeResolver:
             return None
 
         # if the first partition has not been filled
-        if first_available_time_window.start < first_filled_time_window.start:
+        if first_available_time_window.start_timestamp < first_filled_time_window.start_timestamp:
             return None
 
         # there are no events for this asset after the cursor
@@ -116,7 +116,7 @@ class CachingDataTimeResolver:
             and asset_record.asset_entry.last_materialization_record is not None
             and asset_record.asset_entry.last_materialization_record.storage_id <= cursor
         ):
-            return first_filled_time_window.end
+            return first_filled_time_window.end_datetime
 
         # get a per-partition count of the new materializations
         partitions = self._instance_queryer.get_materialized_partitions(asset_key)
@@ -133,7 +133,7 @@ class CachingDataTimeResolver:
 
         # there are new materializations, but they don't fill any new partitions
         if not net_new_partitions:
-            return first_filled_time_window.end
+            return first_filled_time_window.end_datetime
 
         # the oldest time window that was newly filled
         oldest_net_new_time_window = min(
@@ -142,9 +142,9 @@ class CachingDataTimeResolver:
         )
 
         # only factor in the oldest net new time window if it breaks the current first filled time window
-        return min(
-            oldest_net_new_time_window.start,
-            first_filled_time_window.end,
+        return pendulum.from_timestamp(
+            min(oldest_net_new_time_window.start, first_filled_time_window.end),
+            oldest_net_new_time_window.start.timezone,
         )
 
     def _calculate_data_time_by_key_time_partitioned(

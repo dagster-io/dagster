@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import pendulum
 from dagster import (
     Definitions,
@@ -18,9 +16,11 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     PersistedTimeWindow,
+    TimestampWithTimezone,
 )
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 def _tw(asset_slice: AssetSlice) -> PersistedTimeWindow:
@@ -61,11 +61,11 @@ def test_latest_time_slice_no_end() -> None:
 
     assert _tw(
         asset_graph_view_on_2_4.compute_latest_time_window_slice(daily.key)
-    ).start == pendulum.datetime(2020, 2, 3)
+    ).start_datetime == pendulum.datetime(2020, 2, 3)
 
     assert _tw(
         asset_graph_view_on_2_4.compute_latest_time_window_slice(daily.key)
-    ).end == pendulum.datetime(2020, 2, 4)
+    ).end_datetime == pendulum.datetime(2020, 2, 4)
 
     # effective date is 2020-2-5. Ensure one more date
 
@@ -111,8 +111,8 @@ def test_latest_time_slice_no_end() -> None:
 
     tw = _tw(asset_graph_view_on_2_2_plus_1_min.get_asset_slice(asset_key=daily.key))
 
-    assert tw.start == datetime.min
-    assert tw.end == pendulum.datetime(2020, 2, 2)
+    assert tw.start == TimestampWithTimezone.min("UTC")
+    assert tw.end_datetime == create_pendulum_time(2020, 2, 2, tz="UTC")
 
 
 def test_latest_time_slice_with_end() -> None:
@@ -226,8 +226,8 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
         multi_dimensional.key
     )
     assert last_tw_slice.compute_partition_keys() == set(jan_2_keys)
-    assert _tw(last_tw_slice).start == pendulum.datetime(2020, 1, 2)
-    assert _tw(last_tw_slice).end == pendulum.datetime(2020, 1, 3)
+    assert _tw(last_tw_slice).start_datetime == pendulum.datetime(2020, 1, 2)
+    assert _tw(last_tw_slice).end_datetime == pendulum.datetime(2020, 1, 3)
 
     asset_graph_view_in_past = AssetGraphView.for_test(
         defs, instance, effective_dt=pendulum.datetime(2019, 3, 3)
@@ -319,8 +319,8 @@ def test_dynamic_partitioning_latest_time_window() -> None:
 
     assert _tw(
         asset_graph_view.compute_latest_time_window_slice(dynamic_multi_dimensional.key)
-    ).start == pendulum.datetime(2020, 1, 2)
+    ).start_datetime == pendulum.datetime(2020, 1, 2)
 
     assert _tw(
         asset_graph_view.compute_latest_time_window_slice(dynamic_multi_dimensional.key)
-    ).end == pendulum.datetime(2020, 1, 3)
+    ).end_datetime == pendulum.datetime(2020, 1, 3)

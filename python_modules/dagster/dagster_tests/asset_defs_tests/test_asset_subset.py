@@ -104,10 +104,10 @@ def test_operations(
             DailyPartitionsDefinition("2020-01-01"),
             num_partitions=2,
             included_time_windows=[
-                PersistedTimeWindow(
+                PersistedTimeWindow.from_datetimes(
                     start=create_pendulum_time(2020, 1, 1), end=create_pendulum_time(2020, 1, 2)
                 ),
-                PersistedTimeWindow(
+                PersistedTimeWindow.from_datetimes(
                     start=create_pendulum_time(2020, 1, 4), end=create_pendulum_time(2020, 1, 5)
                 ),
             ],

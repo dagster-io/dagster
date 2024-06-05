@@ -546,8 +546,8 @@ def build_partition_statuses(
             ).get_partition_key_range_for_time_window(r.time_window)
             graphene_ranges.append(
                 GrapheneTimePartitionRangeStatus(
-                    startTime=r.time_window.start.timestamp(),
-                    endTime=r.time_window.end.timestamp(),
+                    startTime=r.time_window.start_timestamp,
+                    endTime=r.time_window.end_timestamp,
                     startKey=partition_key_range.start,
                     endKey=partition_key_range.end,
                     status=r.status,
@@ -679,8 +679,8 @@ def get_2d_run_length_encoded_partitions(
                     time_windows = cast(
                         TimeWindowPartitionsDefinition, primary_partitions_def
                     ).time_windows_for_partition_keys(frozenset([start_key, end_key]))
-                    start_time = time_windows[0].start.timestamp()
-                    end_time = time_windows[-1].end.timestamp()
+                    start_time = time_windows[0].start_timestamp
+                    end_time = time_windows[-1].end_timestamp
                 else:
                     start_time = None
                     end_time = None

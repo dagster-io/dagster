@@ -206,15 +206,15 @@ class TimeWindowPartitionMapping(
         if not time_windows:
             return []
 
-        sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start.timestamp())
+        sorted_time_windows = sorted(time_windows, key=lambda tw: tw.start_timestamp)
         merged_time_windows: List[PersistedTimeWindow] = [sorted_time_windows[0]]
 
         for window in sorted_time_windows[1:]:
             last_window = merged_time_windows[-1]
             # window starts before the end of the previous one
-            if window.start.timestamp() <= last_window.end.timestamp():
+            if window.start_timestamp <= last_window.end_timestamp:
                 merged_time_windows[-1] = PersistedTimeWindow(
-                    last_window.start, max(last_window.end, window.end, key=lambda d: d.timestamp())
+                    last_window.start, max(last_window.end, window.end)
                 )
             else:
                 merged_time_windows.append(window)
@@ -278,7 +278,10 @@ class TimeWindowPartitionMapping(
 
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
-            from_start_dt, from_end_dt = from_partition_time_window
+            from_start_dt, from_end_dt = (
+                from_partition_time_window.start_datetime,
+                from_partition_time_window.end_datetime,
+            )
 
             if mapping_downstream_to_upstream:
                 offsetted_from_start_dt = _offsetted_datetime_with_bounds(
@@ -327,7 +330,9 @@ class TimeWindowPartitionMapping(
                 )
 
             if offsetted_to_start_dt.timestamp() < offsetted_to_end_dt.timestamp():
-                time_windows.append(PersistedTimeWindow(offsetted_to_start_dt, offsetted_to_end_dt))
+                time_windows.append(
+                    PersistedTimeWindow.from_datetimes(offsetted_to_start_dt, offsetted_to_end_dt)
+                )
 
         filtered_time_windows = []
         required_but_nonexistent_partition_keys = set()
@@ -336,13 +341,11 @@ class TimeWindowPartitionMapping(
             if (
                 first_window
                 and last_window
-                and time_window.start.timestamp() <= last_window.start.timestamp()
-                and time_window.end.timestamp() >= first_window.end.timestamp()
+                and time_window.start_timestamp <= last_window.start_timestamp
+                and time_window.end_timestamp >= first_window.end_timestamp
             ):
-                window_start = max(
-                    time_window.start, first_window.start, key=lambda d: d.timestamp()
-                )
-                window_end = min(time_window.end, last_window.end, key=lambda d: d.timestamp())
+                window_start = max(time_window.start, first_window.start)
+                window_end = min(time_window.end, last_window.end)
                 filtered_time_windows.append(PersistedTimeWindow(window_start, window_end))
 
             if self.allow_nonexistent_upstream_partitions:
@@ -352,18 +355,18 @@ class TimeWindowPartitionMapping(
             else:
                 invalid_time_window = None
                 if not (first_window and last_window) or (
-                    time_window.start.timestamp() < first_window.start.timestamp()
-                    and time_window.end.timestamp() > last_window.end.timestamp()
+                    time_window.start_timestamp < first_window.start_timestamp
+                    and time_window.end_timestamp > last_window.end_timestamp
                 ):
                     invalid_time_window = time_window
-                elif time_window.start.timestamp() < first_window.start.timestamp():
+                elif time_window.start_timestamp < first_window.start_timestamp:
                     invalid_time_window = PersistedTimeWindow(
                         time_window.start,
-                        min(time_window.end, first_window.start, key=lambda d: d.timestamp()),
+                        min(time_window.end, first_window.start),
                     )
-                elif time_window.end.timestamp() > last_window.end.timestamp():
+                elif time_window.end_timestamp > last_window.end_timestamp:
                     invalid_time_window = PersistedTimeWindow(
-                        max(time_window.start, last_window.end, key=lambda d: d.timestamp()),
+                        max(time_window.start, last_window.end),
                         time_window.end,
                     )
 
@@ -443,8 +446,8 @@ class TimeWindowPartitionMapping(
             and (
                 from_last_partition_window is not None
                 and to_last_partition_window is not None
-                and from_last_partition_window.end.timestamp()
-                <= to_last_partition_window.end.timestamp()
+                and from_last_partition_window.end_timestamp
+                <= to_last_partition_window.end_timestamp
             )
         ):
             return UpstreamPartitionsResult(
@@ -490,10 +493,14 @@ def _offsetted_datetime_with_bounds(
     # PartitionsDefinition
     if bounds_window is not None:
         if offset < 0:
-            offsetted_dt = max(bounds_window.start, offsetted_dt, key=lambda d: d.timestamp())
+            offsetted_dt = max(
+                bounds_window.start_datetime, offsetted_dt, key=lambda d: d.timestamp()
+            )
 
         if offset > 0:
-            offsetted_dt = min(bounds_window.end, offsetted_dt, key=lambda d: d.timestamp())
+            offsetted_dt = min(
+                bounds_window.end_datetime, offsetted_dt, key=lambda d: d.timestamp()
+            )
 
     return offsetted_dt
 
@@ -522,12 +529,12 @@ def _offsetted_datetime(
                 PersistedTimeWindow,
                 partitions_def.get_prev_partition_window(result, respect_bounds=False),
             )
-            result = prev_window.start
+            result = prev_window.start_datetime
         else:
             next_window = cast(
                 PersistedTimeWindow,
                 partitions_def.get_next_partition_window(result, respect_bounds=False),
             )
-            result = next_window.end
+            result = next_window.end_datetime
 
     return result
