@@ -6,18 +6,18 @@ from typing import List, Literal, Sequence, Union
 import pytest
 from dagster import AssetKey, asset, job
 from dagster._check import CheckError
-from dagster._core.blueprints.blueprint import (
-    Blueprint,
-    BlueprintDefinitions,
-    DagsterBuildDefinitionsFromConfigError,
-)
-from dagster._core.blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
+from dagster_blueprints.blueprint import (
+    Blueprint,
+    BlueprintDefinitions,
+    DagsterBuildDefinitionsFromConfigError,
+)
+from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from pydantic import ValidationError
 
 

@@ -3,14 +3,14 @@ import shutil
 from typing import cast
 
 from dagster import AssetKey, AssetsDefinition, MarkdownMetadataValue, materialize
-from dagster._core.blueprints.blueprint import BlueprintDefinitions
-from dagster._core.blueprints.blueprint_assets_definition import AssetSpecModel
-from dagster._core.blueprints.shell_command_blueprint import ShellCommandBlueprint
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster_blueprints.blueprint import BlueprintDefinitions
+from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
+from dagster_blueprints.shell_command_blueprint import ShellCommandBlueprint
 from dagster_tests.execution_tests.pipes_tests.test_subprocess import temp_script
 
 

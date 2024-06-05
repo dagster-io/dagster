@@ -1,9 +1,10 @@
 from typing import AbstractSet, Any, Dict, Literal, Mapping, Optional
 
 from dagster import AssetExecutionContext
-from dagster._core.blueprints.blueprint_assets_definition import BlueprintAssetsDefinition
 from databricks.sdk.service.jobs import SubmitTask
 from pydantic import Field
+
+from dagster_blueprints.blueprint_assets_definition import BlueprintAssetsDefinition
 
 
 class DatabricksTaskBlueprint(BlueprintAssetsDefinition):

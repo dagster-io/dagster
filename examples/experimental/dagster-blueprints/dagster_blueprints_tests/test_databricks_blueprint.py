@@ -2,13 +2,12 @@ from typing import cast
 from unittest.mock import MagicMock
 
 from dagster import AssetKey, AssetsDefinition, MaterializeResult, PipesClient, materialize
-from dagster._core.blueprints.blueprint import BlueprintDefinitions
-from dagster._core.blueprints.blueprint_assets_definition import AssetSpecModel
 from dagster._core.pipes.client import PipesClientCompletedInvocation
-from dagster_databricks.blueprints import DatabricksTaskBlueprint
-from databricks.sdk.service import jobs
-
+from dagster_blueprints.blueprint import BlueprintDefinitions
+from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
+from dagster_blueprints.databricks_blueprint import DatabricksTaskBlueprint
 from dagster_databricks_tests.test_pipes import make_submit_task_dict
+from databricks.sdk.service import jobs
 
 
 class MockDatabricksClient(PipesClient):

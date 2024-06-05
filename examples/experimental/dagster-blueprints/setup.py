@@ -38,7 +38,7 @@ setup(
     packages=find_packages(exclude=["dagster_blueprints_tests*"]),
     install_requires=[
         f"dagster{pin}",
-        # TODO - fill in remaining dependencies
+        f"dagster-databricks{pin}",
     ],
     zip_safe=False,
 )

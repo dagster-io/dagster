@@ -1,8 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional, Sequence, Type, Union, cast
 
-from typing_extensions import get_args, get_origin
-
 from dagster import (
     Definitions,
     _check as check,
@@ -19,6 +17,7 @@ from dagster._utils.pydantic_yaml import (
     parse_yaml_file_to_pydantic,
     parse_yaml_file_to_pydantic_sequence,
 )
+from typing_extensions import get_args, get_origin
 
 from .blueprint import Blueprint, BlueprintDefinitions
 
