@@ -16,6 +16,8 @@ from dagster._core.definitions.repository_definition.repository_definition impor
 from dagster._core.execution.asset_backfill import AssetBackfillData
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.backfill import execute_backfill_iteration
 from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     GqlResult,
@@ -88,6 +90,23 @@ ASSET_BACKFILL_DATA_QUERY = """
             }
         }
         isAssetBackfill
+      }
+    }
+  }
+"""
+
+ASSET_BACKFILL_LOGS_QUERY = """
+  query BackfillLogsByAsset($backfillId: String!) {
+    partitionBackfillOrError(backfillId: $backfillId) {
+      ... on PartitionBackfill {
+        logEvents {
+            events {
+                message
+                timestamp
+                level
+            }
+            cursor
+        }
       }
     }
   }
@@ -939,3 +958,50 @@ def _get_error_message(launch_backfill_result: GqlResult) -> Optional[str]:
         if "message" in launch_backfill_result.data["launchPartitionBackfill"]
         else None
     )
+
+
+def test_backfill_logs():
+    repo = get_repo()
+    all_asset_keys = repo.asset_graph.materializable_asset_keys
+
+    with instance_for_test() as instance:
+        # need to override this method on the instance since it defaults ot False in OSS. When we enable this
+        # feature in OSS we can remove this override
+        def override_backfill_storage_setting(self):
+            return True
+
+        instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(
+            instance, DagsterInstance
+        )
+        with define_out_of_process_context(__file__, "get_repo", instance) as context:
+            # launchPartitionBackfill
+            launch_backfill_result = execute_dagster_graphql(
+                context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionNames": ["a", "b"],
+                        "assetSelection": [key.to_graphql_input() for key in all_asset_keys],
+                    }
+                },
+            )
+            backfill_id, asset_backfill_data = _get_backfill_data(
+                launch_backfill_result, instance, repo
+            )
+            assert asset_backfill_data.target_subset.asset_keys == all_asset_keys
+
+            list(
+                execute_backfill_iteration(
+                    context.process_context, get_default_daemon_logger("BackfillDaemon")
+                )
+            )
+
+            backfill_logs = execute_dagster_graphql(
+                context,
+                ASSET_BACKFILL_LOGS_QUERY,
+                variables={
+                    "backfillId": backfill_id,
+                },
+            )
+
+            assert len(backfill_logs.data["partitionBackfillOrError"]["logEvents"]["events"]) > 0

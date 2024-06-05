@@ -1,12 +1,15 @@
+import os
 import sys
 import tempfile
 from contextlib import contextmanager
 from typing import Any, Generator, Mapping, Sequence
 
+import pendulum
 import pytest
 from dagster import job, op
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.captured_log_manager import CapturedLogContext
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.test_utils import instance_for_test
@@ -86,3 +89,118 @@ def test_external_captured_log_manager():
         assert (
             entry.dagster_event.logs_captured_data.external_stderr_url == "https://fake.com/stderr"
         )
+
+
+def test_get_log_keys_for_log_key_prefix():
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        cm = LocalComputeLogManager(tmpdir_path)
+        evaluation_time = pendulum.now()
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
+                f.write("foo")
+
+        for i in range(4):
+            write_log_file(i)
+
+        log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix)
+        assert sorted(log_keys) == [
+            [*log_key_prefix, "0"],
+            [*log_key_prefix, "1"],
+            [*log_key_prefix, "2"],
+            [*log_key_prefix, "3"],
+        ]
+
+
+def test_read_log_lines_for_log_key_prefix():
+    """Tests that we can read a sequence of files in a bucket as if they are a single file."""
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        cm = LocalComputeLogManager(tmpdir_path)
+        evaluation_time = pendulum.now()
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        all_logs = []
+
+        def write_log_file(file_id: int):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with cm.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
+                num_lines = 10
+                for j in range(num_lines):
+                    msg = f"file: {file_id}, line: {j}"
+                    all_logs.append(msg)
+                    f.write(msg)
+                    if j < num_lines - 1:
+                        f.write("\n")
+
+        for i in range(4):
+            write_log_file(i)
+
+        all_logs_iter = iter(all_logs)
+
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
+        # read the entirety of the first file
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(log_key_prefix, cursor=None)
+        assert len(log_lines) == 10
+        assert cursor.has_more_now
+        assert cursor.log_key == [*log_key_prefix, "1"]
+        assert cursor.line == 0
+        for ll in log_lines:
+            assert ll == next(all_logs_iter)
+
+        # read half of the next log file
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "5"
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
+            log_key_prefix,
+            cursor=cursor.to_string(),
+        )
+        assert len(log_lines) == 5
+        assert cursor.has_more_now
+        assert cursor.log_key == [*log_key_prefix, "1"]
+        assert cursor.line == 5
+        for ll in log_lines:
+            assert ll == next(all_logs_iter)
+
+        # read the next ten lines, five will be in the second file, five will be in the third
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
+            log_key_prefix, cursor=cursor.to_string()
+        )
+        assert len(log_lines) == 10
+        assert cursor.has_more_now
+        assert cursor.log_key == [*log_key_prefix, "2"]
+        assert cursor.line == 5
+        for ll in log_lines:
+            assert ll == next(all_logs_iter)
+
+        # read the remaining 15 lines, but request 20
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
+            log_key_prefix,
+            cursor=cursor.to_string(),
+        )
+        assert len(log_lines) == 15
+        assert not cursor.has_more_now
+        assert cursor.log_key == [*log_key_prefix, "3"]
+        # processed up to the end of the file, but there is not another file to process so cursor should be -1
+        assert cursor.line == -1
+        for ll in log_lines:
+            assert ll == next(all_logs_iter)
+
+        # write a final log file
+
+        write_log_file(4)
+
+        os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "15"
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
+            log_key_prefix,
+            cursor=cursor.to_string(),
+        )
+        assert len(log_lines) == 10
+        assert not cursor.has_more_now
+        assert cursor.log_key == [*log_key_prefix, "4"]
+        # processed up to the end of the file, but there is not another file to process so cursor should be -1
+        assert cursor.line == -1
+        for ll in log_lines:
+            assert ll == next(all_logs_iter)

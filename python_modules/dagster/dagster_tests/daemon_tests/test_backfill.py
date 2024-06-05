@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -24,6 +25,7 @@ from dagster import (
     Nothing,
     Out,
     StaticPartitionMapping,
+    _seven,
     asset,
     daily_partitioned_config,
     define_asset_job,
@@ -51,6 +53,7 @@ from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -2272,3 +2275,88 @@ def test_old_dynamic_partitions_job_backfill(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 4
+
+
+def test_asset_backfill_logs(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    # need to override this method on the instance since it defaults ot False in OSS. When we enable this
+    # feature in OSS we can remove this override
+    def override_backfill_storage_setting(self):
+        return True
+
+    instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(
+        instance, DagsterInstance
+    )
+
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id="backfill_with_asset_selection",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("backfill_with_asset_selection")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=15)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=15)
+
+    os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
+
+    cm = instance.compute_log_manager
+
+    assert isinstance(cm, CapturedLogManager)
+
+    logs, cursor = cm.read_log_lines_for_log_key_prefix(
+        ["backfill", backfill.backfill_id], cursor=None
+    )
+    assert cursor is not None
+    assert logs
+    for log_line in logs:
+        if not log_line:
+            continue
+        try:
+            record_dict = _seven.json.loads(log_line)
+        except json.JSONDecodeError:
+            continue
+        assert record_dict.get("msg")
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill("backfill_with_asset_selection")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
+
+    # set num_lines high so we know we get all of the remaining logs
+    os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
+    logs, cursor = cm.read_log_lines_for_log_key_prefix(
+        ["backfill", backfill.backfill_id],
+        cursor=cursor.to_string(),
+    )
+
+    assert cursor is not None
+    assert not cursor.has_more_now
+    for log_line in logs:
+        if not log_line:
+            continue
+        try:
+            record_dict = _seven.json.loads(log_line)
+        except json.JSONDecodeError:
+            continue
+        assert record_dict.get("msg")
