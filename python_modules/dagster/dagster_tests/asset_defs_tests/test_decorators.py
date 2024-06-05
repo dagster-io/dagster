@@ -35,12 +35,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import Config
-from dagster._core.definitions import (
-    AssetIn,
-    AssetsDefinition,
-    asset,
-    multi_asset,
-)
+from dagster._core.definitions import AssetIn, AssetsDefinition, asset, multi_asset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy

@@ -6,10 +6,7 @@ from dagster_dbt.core.utils import _create_command_list
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import generate_materializations
 
-from .sample_results import (
-    DBT_18_RUN_RESULTS_SAMPLE,
-    DBT_CLI_V1_RUN_RESULTS_SAMPLE,
-)
+from .sample_results import DBT_18_RUN_RESULTS_SAMPLE, DBT_CLI_V1_RUN_RESULTS_SAMPLE
 
 
 @pytest.mark.parametrize(

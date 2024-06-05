@@ -1,9 +1,7 @@
 import pytest
 from dagster import AutoMaterializePolicy, AutoMaterializeRule
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.auto_materialize_rule_impls import (
-    WaitingOnAssetsRuleEvaluationData,
-)
+from dagster._core.definitions.auto_materialize_rule_impls import WaitingOnAssetsRuleEvaluationData
 
 from ..base_scenario import run_request
 from ..scenario_specs import (

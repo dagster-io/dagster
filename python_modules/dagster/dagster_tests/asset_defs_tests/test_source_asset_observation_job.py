@@ -2,10 +2,7 @@ from typing import Optional
 
 import pytest
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.data_version import (
-    DataVersion,
-    extract_data_version_from_entry,
-)
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.decorators.asset_decorator import asset
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import Definitions

@@ -29,10 +29,7 @@ from dagster._cli.run import (
 )
 from dagster._cli.workspace.cli_target import ClickArgMapping
 from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import (
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager

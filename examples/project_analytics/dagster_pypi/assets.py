@@ -1,19 +1,8 @@
 import pandas as pd
-from dagster import (
-    AssetExecutionContext,
-    DailyPartitionsDefinition,
-    MetadataValue,
-    asset,
-)
+from dagster import AssetExecutionContext, DailyPartitionsDefinition, MetadataValue, asset
 from dagster_dbt import DbtCliResource, dbt_assets, get_asset_key_for_model
 
-from .resources import (
-    ENV,
-    HEX_PROJECT_ID,
-    GithubResource,
-    PyPiResource,
-    resource_def,
-)
+from .resources import ENV, HEX_PROJECT_ID, GithubResource, PyPiResource, resource_def
 
 dbt_parse_invocation = resource_def[ENV.upper()]["dbt"].cli(["parse"]).wait()
 dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")

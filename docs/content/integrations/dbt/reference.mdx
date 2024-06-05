@@ -464,9 +464,9 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ### Customizing metadata
 
-For dbt models, seeds, and snapshots, the default Dagster metadata will be the dbt node's declared column schema.
+For dbt models, seeds, and snapshots, the default Dagster definition metadata will be the dbt node's declared column schema.
 
-To override the Dagster metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject module="dagster" object="MetadataValue"/>:
+To override the Dagster definition metadata for all dbt nodes in your dbt project, you can create a custom <PyObject module="dagster_dbt" object="DagsterDbtTranslator" /> and implement <PyObject module="dagster_dbt" object="DagsterDbtTranslator" method="get_metadata"/>. The following example defines the metadata of the dbt node as the Dagster metadata, using <PyObject module="dagster" object="MetadataValue"/>:
 
 ```python startafter=start_custom_metadata_dagster_dbt_translator endbefore=end_custom_metadata_dagster_dbt_translator file=/integrations/dbt/dbt.py dedent=4
 from pathlib import Path
@@ -491,6 +491,8 @@ class CustomDagsterDbtTranslator(DagsterDbtTranslator):
 def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 ```
+
+Dagster also supports fetching additional metadata at dbt execution time to attach to asset materializations. For more information, see the [Customizing asset materialization metadata](#customizing-asset-materialization-metadata) section.
 
 ### Customizing tags
 
@@ -658,7 +660,43 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
 
 ---
 
-## Emit column-level lineage as materialization metadata
+## Customizing asset materialization metadata
+
+Dagster supports fetching additional metadata at dbt execution time to attach as [materialization metadata](/concepts/metadata-tags/asset-metadata), which is recorded each time your models are rebuilt and displayed in the Dagster UI.
+
+### Fetching row count data
+
+<Note>
+  <strong>
+    Emitting row count data for dbt models is currently an experimental feature.
+  </strong>{" "}
+  To use this feature, you'll need to be on at least{" "}
+  <code>dagster>=0.17.6</code> and
+  <code>dagster-dbt>=0.23.6</code>.
+</Note>
+
+Dagster can automatically fetch row counts for dbt-generated tables and emit them as [materialization metadata](/concepts/metadata-tags/asset-metadata) to be displayed in the Dagster UI.
+
+Row counts are fetched in parallel to the execution of your dbt models. To enable this feature, call <PyObject object="fetch_row_counts" module="dagster_dbt.core.resources_v2.DbtEventIterator" displayText="fetch_row_counts()" /> on the <PyObject object="DbtEventIterator" module="dagster_dbt.core.resources_v2" /> returned by the `stream()` dbt CLI call:
+
+```python startafter=start_fetch_row_count endbefore=end_fetch_row_count file=/integrations/dbt/dbt.py dedent=4
+from pathlib import Path
+from dagster import AssetKey, AssetExecutionContext
+from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from typing import Any, Mapping
+
+manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+@dbt_assets(
+    manifest=manifest_path,
+)
+def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+    yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+```
+
+Once your dbt models have been materialized, you can view the row count data in the metadata table.
+
+### Fetching column-level lineage
 
 <Note>
   <strong>

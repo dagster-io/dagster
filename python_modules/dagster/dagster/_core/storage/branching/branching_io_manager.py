@@ -1,10 +1,7 @@
 from typing import Any, Optional
 
 from dagster import InputContext, OutputContext
-from dagster._config.pythonic_config import (
-    ConfigurableIOManager,
-    ResourceDependency,
-)
+from dagster._config.pythonic_config import ConfigurableIOManager, ResourceDependency
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
 from dagster._core.event_api import AssetRecordsFilter

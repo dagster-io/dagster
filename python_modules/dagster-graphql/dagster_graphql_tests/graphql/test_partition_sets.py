@@ -141,6 +141,25 @@ mutation($partitionsDefName: String!, $partitionKey: String!, $repositorySelecto
 """
 
 
+DELETE_DYNAMIC_PARTITIONS_MUTATION = """
+mutation($partitionsDefName: String!, $partitionKeys: [String!]!, $repositorySelector: RepositorySelector!) {
+    deleteDynamicPartitions(partitionsDefName: $partitionsDefName, partitionKeys: $partitionKeys, repositorySelector: $repositorySelector) {
+        __typename
+        ... on DeleteDynamicPartitionsSuccess {
+            partitionsDefName
+        }
+        ... on PythonError {
+            message
+            stack
+        }
+        ... on UnauthorizedError {
+            message
+        }
+    }
+}
+"""
+
+
 class TestPartitionSets(NonLaunchableGraphQLContextTestMatrix):
     def test_get_partition_sets_for_pipeline(self, graphql_context, snapshot):
         selector = infer_repository_selector(graphql_context)
@@ -464,6 +483,27 @@ class TestPartitionSetRuns(ExecutingGraphQLContextTestMatrix):
         )
         assert not result.errors
         assert result.data["addDynamicPartition"]["__typename"] == "DuplicateDynamicPartitionError"
+
+    def test_delete_dynamic_partitions(self, graphql_context):
+        graphql_context.instance.add_dynamic_partitions("foo", ["bar", "biz", "baz"])
+
+        repository_selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            DELETE_DYNAMIC_PARTITIONS_MUTATION,
+            variables={
+                "partitionsDefName": "foo",
+                "partitionKeys": ["bar", "biz"],
+                "repositorySelector": repository_selector,
+            },
+        )
+        assert not result.errors
+        assert (
+            result.data["deleteDynamicPartitions"]["__typename"] == "DeleteDynamicPartitionsSuccess"
+        ), str(result.data)
+        assert result.data["deleteDynamicPartitions"]["partitionsDefName"] == "foo"
+
+        assert set(graphql_context.instance.get_dynamic_partitions("foo")) == {"baz"}
 
     def test_nonexistent_dynamic_partitions_def_throws_error(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)

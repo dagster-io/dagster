@@ -3,11 +3,7 @@ import json
 import pandas as pd
 import requests
 
-from dagster import (
-    MaterializeResult,
-    MetadataValue,
-    asset,
-)
+from dagster import MaterializeResult, MetadataValue, asset
 
 from .configurations import HNStoriesConfig
 

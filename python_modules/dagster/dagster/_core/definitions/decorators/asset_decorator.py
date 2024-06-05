@@ -27,14 +27,10 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.config import ConfigMapping
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
-from dagster._core.definitions.resource_annotation import (
-    get_resource_args,
-)
+from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.warnings import (
-    disable_dagster_warnings,
-)
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
@@ -50,12 +46,7 @@ from ..output import GraphOut, Out
 from ..partition import PartitionsDefinition
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
-from ..utils import (
-    DEFAULT_IO_MANAGER_KEY,
-    DEFAULT_OUTPUT,
-    NoValueSentinel,
-    validate_tags_strict,
-)
+from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
 
 
 @overload
@@ -361,9 +352,7 @@ class _Asset:
         self.owners = owners
 
     def __call__(self, fn: Callable[..., Any]) -> AssetsDefinition:
-        from dagster._config.pythonic_config import (
-            validate_resource_annotated_function,
-        )
+        from dagster._config.pythonic_config import validate_resource_annotated_function
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         validate_resource_annotated_function(fn)

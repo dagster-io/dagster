@@ -2,9 +2,7 @@ from gzip import GzipFile
 from typing import Any, Optional
 
 import click
-from dagster import (
-    DagsterInstance,
-)
+from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
 from dagster._core.workspace.context import (
     BaseWorkspaceRequestContext,

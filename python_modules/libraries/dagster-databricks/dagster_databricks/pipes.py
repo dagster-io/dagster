@@ -25,11 +25,7 @@ from dagster._core.pipes.utils import (
     PipesLogReader,
     open_pipes_session,
 )
-from dagster_pipes import (
-    PipesContextData,
-    PipesExtras,
-    PipesParams,
-)
+from dagster_pipes import PipesContextData, PipesExtras, PipesParams
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files, jobs
 from pydantic import Field

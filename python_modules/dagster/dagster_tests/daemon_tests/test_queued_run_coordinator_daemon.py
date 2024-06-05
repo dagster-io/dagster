@@ -23,9 +23,7 @@ from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import Queued
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
 from dagster._utils import file_relative_path
 
-from dagster_tests.api_tests.utils import (
-    get_foo_job_handle,
-)
+from dagster_tests.api_tests.utils import get_foo_job_handle
 
 BAD_RUN_ID_UUID = make_new_run_id()
 BAD_USER_CODE_RUN_ID_UUID = make_new_run_id()

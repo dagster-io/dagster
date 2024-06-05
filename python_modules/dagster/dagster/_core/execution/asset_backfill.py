@@ -63,10 +63,7 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.workspace.context import (
-    BaseWorkspaceRequestContext,
-    IWorkspaceProcessContext,
-)
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import utc_datetime_from_timestamp

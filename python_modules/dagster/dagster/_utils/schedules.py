@@ -13,9 +13,7 @@ from dateutil.tz import datetime_ambiguous, datetime_exists
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
 from dagster._seven.compat.datetime import timezone_from_string
-from dagster._seven.compat.pendulum import (
-    pendulum_create_timezone,
-)
+from dagster._seven.compat.pendulum import pendulum_create_timezone
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28

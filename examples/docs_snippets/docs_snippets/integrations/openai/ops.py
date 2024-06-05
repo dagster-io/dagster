@@ -1,13 +1,7 @@
 # start_example
 from dagster_openai import OpenAIResource
 
-from dagster import (
-    Definitions,
-    EnvVar,
-    GraphDefinition,
-    OpExecutionContext,
-    op,
-)
+from dagster import Definitions, EnvVar, GraphDefinition, OpExecutionContext, op
 
 
 @op

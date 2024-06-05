@@ -1,13 +1,5 @@
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-)
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
@@ -16,10 +8,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 
 from .auto_materialize_policy import AutoMaterializePolicy
-from .events import (
-    AssetKey,
-    CoercibleToAssetKey,
-)
+from .events import AssetKey, CoercibleToAssetKey
 from .freshness_policy import FreshnessPolicy
 from .utils import validate_tags_strict
 

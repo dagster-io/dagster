@@ -1,12 +1,7 @@
 import time
 from collections import defaultdict
 from types import TracebackType
-from typing import (
-    List,
-    Optional,
-    Set,
-    Type,
-)
+from typing import List, Optional, Set, Type
 
 from typing_extensions import Self
 

@@ -27,9 +27,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._serdes.serdes import (
-    whitelist_for_serdes,
-)
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 
 from .hook_definition import HookDefinition

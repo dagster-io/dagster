@@ -10,10 +10,7 @@ from dagster._core.decorator_utils import (
     get_decorator_target,
     is_resource_def,
 )
-from dagster._utils.warnings import (
-    deprecation_warning,
-    experimental_warning,
-)
+from dagster._utils.warnings import deprecation_warning, experimental_warning
 
 # For the time being, `Annotatable` is set to `Any` even though it should be set to `Decoratable` to
 # avoid choking the type checker. Choking happens because of a niche scenario where

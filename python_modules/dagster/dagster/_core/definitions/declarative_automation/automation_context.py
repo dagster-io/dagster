@@ -8,20 +8,22 @@ import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import (
     AssetGraphView,
     AssetSlice,
+    TemporalContext,
 )
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-    SchedulingCondition,
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+    AutomationResult,
 )
-from dagster._core.definitions.declarative_scheduling.scheduling_evaluation_info import (
-    SchedulingEvaluationInfo,
-    SchedulingEvaluationResultNode,
+from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionCursor,
+    AutomationConditionNodeCursor,
+    HistoricalAllPartitionsSubsetSentinel,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    PartitionsDefinition,
-)
+from dagster._core.definitions.partition import PartitionsDefinition
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
@@ -30,11 +32,19 @@ if TYPE_CHECKING:
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
+def _has_legacy_condition(condition: AutomationCondition):
+    """Detects if the given condition has any legacy rules."""
+    if isinstance(condition, AssetCondition):
+        return True
+    else:
+        return any(_has_legacy_condition(child) for child in condition.children)
+
+
 # This class exists purely for organizational purposes so that we understand
-# the interface between scheduling conditions and the instance much more
+# the interface between automation conditions and the instance much more
 # explicitly. This captures all interactions that do not go through AssetGraphView
 # so that we do not access the legacy context or the instance queryer directly
-# in scheduling conditions.
+# in automation conditions.
 class NonAGVInstanceInterface:
     def __init__(self, queryer: "CachingInstanceQueryer"):
         self._queryer = queryer
@@ -61,73 +71,72 @@ class NonAGVInstanceInterface:
         )
 
 
-class SchedulingContext(NamedTuple):
+class AutomationContext(NamedTuple):
     # the slice over which the condition is being evaluated
     candidate_slice: AssetSlice
 
     # the condition being evaluated
-    condition: SchedulingCondition
+    condition: AutomationCondition
     # a unique identifier for the condition within the broader tree
     condition_unique_id: str
 
     asset_graph_view: AssetGraphView
 
     # the context object for the parent condition
-    parent_context: Optional["SchedulingContext"]
+    parent_context: Optional["AutomationContext"]
 
     # the time at which this context object was created
     create_time: datetime.datetime
     logger: logging.Logger
 
-    # a SchedulingEvaluationInfo object representing information about the full evaluation tree
-    # from the previous tick, if this asset was evaluated on the previous tick
-    previous_evaluation_info: Optional[SchedulingEvaluationInfo]
+    # a cursor containing information about this asset calculated on the previous tick
+    cursor: Optional[AutomationConditionCursor]
     # a mapping of information computed on the current tick for assets which are upstream of this
     # asset
-    current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo]
+    current_tick_results_by_key: Mapping[AssetKey, AutomationResult]
 
     non_agv_instance_interface: NonAGVInstanceInterface
 
     # hack to avoid circular references during pydantic validation
     inner_legacy_context: Any
-    allow_legacy_access: bool
+    is_legacy_evaluation: bool
 
     @staticmethod
     def create(
         asset_key: AssetKey,
         asset_graph_view: AssetGraphView,
         logger: logging.Logger,
-        current_tick_evaluation_info_by_key: Mapping[AssetKey, SchedulingEvaluationInfo],
-        previous_evaluation_info: Optional[SchedulingEvaluationInfo],
+        current_tick_results_by_key: Mapping[AssetKey, AutomationResult],
+        condition_cursor: Optional[AutomationConditionCursor],
         legacy_context: "LegacyRuleEvaluationContext",
-    ) -> "SchedulingContext":
+    ) -> "AutomationContext":
         asset_graph = asset_graph_view.asset_graph
         auto_materialize_policy = check.not_none(asset_graph.get(asset_key).auto_materialize_policy)
-        scheduling_condition = auto_materialize_policy.to_scheduling_condition()
+        automation_condition = auto_materialize_policy.to_automation_condition()
 
-        return SchedulingContext(
-            candidate_slice=asset_graph_view.get_asset_slice(asset_key),
-            condition=scheduling_condition,
-            condition_unique_id=scheduling_condition.get_unique_id(
+        return AutomationContext(
+            candidate_slice=asset_graph_view.get_asset_slice(asset_key=asset_key),
+            condition=automation_condition,
+            condition_unique_id=automation_condition.get_unique_id(
                 parent_unique_id=None, index=None
             ),
             asset_graph_view=asset_graph_view,
             parent_context=None,
             create_time=pendulum.now("UTC"),
             logger=logger,
-            previous_evaluation_info=previous_evaluation_info,
-            current_tick_evaluation_info_by_key=current_tick_evaluation_info_by_key,
+            cursor=condition_cursor,
+            current_tick_results_by_key=current_tick_results_by_key,
             inner_legacy_context=legacy_context,
             non_agv_instance_interface=NonAGVInstanceInterface(
                 asset_graph_view.get_inner_queryer_for_back_compat()
             ),
-            allow_legacy_access=False,
+            is_legacy_evaluation=_has_legacy_condition(automation_condition),
         )
 
     def for_child_condition(
-        self, child_condition: SchedulingCondition, child_index: int, candidate_slice: AssetSlice
-    ) -> "SchedulingContext":
-        return SchedulingContext(
+        self, child_condition: AutomationCondition, child_index: int, candidate_slice: AssetSlice
+    ) -> "AutomationContext":
+        return AutomationContext(
             candidate_slice=candidate_slice,
             condition=child_condition,
             condition_unique_id=child_condition.get_unique_id(
@@ -137,8 +146,8 @@ class SchedulingContext(NamedTuple):
             parent_context=self,
             create_time=pendulum.now("UTC"),
             logger=self.logger,
-            previous_evaluation_info=self.previous_evaluation_info,
-            current_tick_evaluation_info_by_key=self.current_tick_evaluation_info_by_key,
+            cursor=self.cursor,
+            current_tick_results_by_key=self.current_tick_results_by_key,
             inner_legacy_context=self.inner_legacy_context.for_child(
                 child_condition,
                 child_condition.get_unique_id(
@@ -147,7 +156,7 @@ class SchedulingContext(NamedTuple):
                 candidate_slice.convert_to_valid_asset_subset(),
             ),
             non_agv_instance_interface=self.non_agv_instance_interface,
-            allow_legacy_access=self.allow_legacy_access,
+            is_legacy_evaluation=self.is_legacy_evaluation,
         )
 
     @property
@@ -165,19 +174,29 @@ class SchedulingContext(NamedTuple):
         return self.asset_graph.get(self.asset_key).partitions_def
 
     @property
-    def root_context(self) -> "SchedulingContext":
+    def root_context(self) -> "AutomationContext":
         """Returns the context object at the root of the condition evaluation tree."""
         return self.parent_context.root_context if self.parent_context is not None else self
 
     @property
-    def previous_evaluation_node(self) -> Optional[SchedulingEvaluationResultNode]:
-        """Returns the evaluation node for this asset from the previous evaluation, if this node
+    def node_cursor(self) -> Optional[AutomationConditionNodeCursor]:
+        """Returns the evaluation node for this node from the previous evaluation, if this node
         was evaluated on the previous tick.
         """
-        if self.previous_evaluation_info is None:
+        if self.cursor is None:
             return None
         else:
-            return self.previous_evaluation_info.get_evaluation_node(self.condition_unique_id)
+            return self.cursor.node_cursors_by_unique_id.get(self.condition_unique_id)
+
+    @property
+    def previous_true_slice(self) -> Optional[AssetSlice]:
+        """Returns the true slice for this node from the previous evaluation, if this node was
+        evaluated on the previous tick.
+        """
+        if self.node_cursor is None:
+            return None
+        else:
+            return self.asset_graph_view.get_asset_slice_from_subset(self.node_cursor.true_subset)
 
     @property
     def effective_dt(self) -> datetime.datetime:
@@ -187,7 +206,7 @@ class SchedulingContext(NamedTuple):
     def legacy_context(self) -> LegacyRuleEvaluationContext:
         return (
             self.inner_legacy_context
-            if self.allow_legacy_access
+            if self.is_legacy_evaluation
             else check.failed(
                 "Legacy access only allowed in AutoMaterializeRule subclasses in auto_materialize_rules_impls.py"
             )
@@ -199,7 +218,9 @@ class SchedulingContext(NamedTuple):
         evaluated, returns None.
         """
         return (
-            self.previous_evaluation_info.requested_slice if self.previous_evaluation_info else None
+            self.asset_graph_view.get_asset_slice_from_subset(self.cursor.previous_requested_subset)
+            if self.cursor
+            else None
         )
 
     @property
@@ -207,22 +228,37 @@ class SchedulingContext(NamedTuple):
         """Returns the candidate slice for the previous evaluation. If this node has never been
         evaluated, returns None.
         """
-        return (
-            self.previous_evaluation_node.candidate_slice if self.previous_evaluation_node else None
-        )
+        candidate_subset = self.node_cursor.candidate_subset if self.node_cursor else None
+        if isinstance(candidate_subset, HistoricalAllPartitionsSubsetSentinel):
+            return self.asset_graph_view.get_asset_slice(asset_key=self.asset_key)
+        else:
+            return (
+                self.asset_graph_view.get_asset_slice_from_subset(candidate_subset)
+                if candidate_subset
+                else None
+            )
 
     @property
     def previous_evaluation_max_storage_id(self) -> Optional[int]:
-        """Returns the maximum storage ID for the previous time this node was evaluated. If this
-        node has never been evaluated, returns None.
-        """
-        return (
-            self.previous_evaluation_info.temporal_context.last_event_id
-            if self.previous_evaluation_info and self.previous_evaluation_node
-            else None
-        )
+        """Returns the maximum storage ID for the previous time this asset was evaluated."""
+        return self.cursor.temporal_context.last_event_id if self.cursor else None
+
+    @property
+    def previous_evaluation_effective_dt(self) -> Optional[datetime.datetime]:
+        """Returns the datetime for the previous time this asset was evaluated."""
+        return self.cursor.temporal_context.effective_dt if self.cursor else None
 
     @property
     def new_max_storage_id(self) -> Optional[int]:
-        # TODO: pull this from the AssetGraphView instead
-        return self.inner_legacy_context.new_max_storage_id
+        if self.is_legacy_evaluation:
+            # legacy evaluations handle event log tailing in a different manner, and so need to
+            # use a different storage id cursoring scheme
+            return self.legacy_context.new_max_storage_id
+        else:
+            return self.asset_graph_view.last_event_id
+
+    @property
+    def new_temporal_context(self) -> TemporalContext:
+        return TemporalContext(
+            effective_dt=self.effective_dt, last_event_id=self.new_max_storage_id
+        )

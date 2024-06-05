@@ -18,9 +18,7 @@ from dagster._cli.workspace.cli_target import WORKSPACE_TARGET_WARNING, ClickArg
 from dagster._core.instance import InstanceRef
 from dagster._core.telemetry import START_DAGSTER_WEBSERVER, log_action
 from dagster._core.telemetry_upload import uploading_logging_thread
-from dagster._core.workspace.context import (
-    IWorkspaceProcessContext,
-)
+from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._serdes import deserialize_value
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, find_free_port, is_port_in_use
 from dagster._utils.log import configure_loggers

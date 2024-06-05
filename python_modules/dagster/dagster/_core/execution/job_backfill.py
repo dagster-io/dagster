@@ -10,14 +10,8 @@ from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    CodeLocation,
-    ExternalJob,
-    ExternalPartitionSet,
-)
-from dagster._core.remote_representation.external_data import (
-    ExternalPartitionSetExecutionParamData,
-)
+from dagster._core.remote_representation import CodeLocation, ExternalJob, ExternalPartitionSet
+from dagster._core.remote_representation.external_data import ExternalPartitionSetExecutionParamData
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -30,10 +24,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster._core.utils import make_new_run_id
-from dagster._core.workspace.context import (
-    BaseWorkspaceRequestContext,
-    IWorkspaceProcessContext,
-)
+from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._utils import check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts

@@ -13,11 +13,7 @@ from ...asset_selection import AssetSelection
 from ...decorators import sensor
 from ...run_request import RunRequest, SkipReason
 from ...sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
-from ..utils import (
-    FRESH_UNTIL_METADATA_KEY,
-    ensure_no_duplicate_asset_checks,
-    seconds_in_words,
-)
+from ..utils import FRESH_UNTIL_METADATA_KEY, ensure_no_duplicate_asset_checks, seconds_in_words
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
 MAXIMUM_RUNTIME_SECONDS = 35  # Due to GRPC communications, only allow this sensor to run for 40 seconds before pausing iteration and resuming in the next run. Leave a bit of time for run requests to be processed.

@@ -68,10 +68,7 @@ from dagster._core.storage.sqlalchemy_compat import (
     db_select,
     db_subquery,
 )
-from dagster._serdes import (
-    deserialize_value,
-    serialize_value,
-)
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.errors import DeserializationError
 from dagster._utils import (
     PrintFn,

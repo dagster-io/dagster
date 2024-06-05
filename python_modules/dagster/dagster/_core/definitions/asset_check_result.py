@@ -6,10 +6,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import (
-    AssetCheckKey,
-    AssetCheckSeverity,
-)
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,

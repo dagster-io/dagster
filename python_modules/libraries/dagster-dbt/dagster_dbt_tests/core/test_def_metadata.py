@@ -2,9 +2,7 @@ import os
 from typing import Any, Dict
 
 import pytest
-from dagster import (
-    AssetExecutionContext,
-)
+from dagster import AssetExecutionContext
 from dagster._core.definitions.metadata.metadata_set import TableMetadataSet
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource

@@ -7,11 +7,7 @@ from dagster._core.definitions.events import AssetMaterialization, AssetObservat
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
-from dagster._serdes.serdes import (
-    deserialize_value,
-    serialize_value,
-    whitelist_for_serdes,
-)
+from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.log import (
     StructuredLoggerHandler,

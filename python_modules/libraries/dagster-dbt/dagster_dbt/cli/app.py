@@ -16,9 +16,7 @@ from typing_extensions import Annotated
 from ..dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 from ..dbt_project import DbtProject
 from ..include import STARTER_PROJECT_PATH
-from ..version import (
-    __version__ as dagster_dbt_version,
-)
+from ..version import __version__ as dagster_dbt_version
 
 app = typer.Typer(
     no_args_is_help=True,

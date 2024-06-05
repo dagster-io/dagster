@@ -10,11 +10,7 @@ from typing import Any, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 import dagster._check as check
 from dagster._core.errors import DagsterError
-from dagster._serdes.serdes import (
-    deserialize_value,
-    serialize_value,
-    whitelist_for_serdes,
-)
+from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,

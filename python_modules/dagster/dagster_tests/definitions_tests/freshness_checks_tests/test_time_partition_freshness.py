@@ -6,9 +6,7 @@ from typing import Iterator
 
 import pendulum
 import pytest
-from dagster import (
-    asset,
-)
+from dagster import asset
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
@@ -23,10 +21,7 @@ from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSel
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import (
-    JsonMetadataValue,
-    TimestampMetadataValue,
-)
+from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetadataValue
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import (

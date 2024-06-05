@@ -26,9 +26,7 @@ from typing_extensions import Final
 
 import dagster_databricks
 
-from .types import (
-    DatabricksRunState,
-)
+from .types import DatabricksRunState
 from .version import __version__
 
 # wait at most 24 hours by default for run execution

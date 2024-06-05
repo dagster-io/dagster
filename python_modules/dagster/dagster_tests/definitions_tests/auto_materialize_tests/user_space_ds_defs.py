@@ -1,14 +1,7 @@
-from dagster import (
-    DefaultSensorStatus,
-    Definitions,
-    SchedulingCondition,
-    asset,
-)
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutomationSensorDefinition,
-)
+from dagster import AutomationCondition, DefaultSensorStatus, Definitions, asset
+from dagster._core.definitions.auto_materialize_sensor_definition import AutomationSensorDefinition
 
-eager_policy = SchedulingCondition.eager_with_rate_limit().as_auto_materialize_policy()
+eager_policy = AutomationCondition.eager().as_auto_materialize_policy()
 
 
 @asset(auto_materialize_policy=eager_policy)

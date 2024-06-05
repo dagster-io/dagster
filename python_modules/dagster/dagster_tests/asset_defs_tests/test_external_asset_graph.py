@@ -25,10 +25,7 @@ from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import (
-    CodeLocationEntry,
-    CodeLocationLoadStatus,
-)
+from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 
 
 @asset

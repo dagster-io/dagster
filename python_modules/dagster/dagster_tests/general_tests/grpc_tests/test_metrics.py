@@ -9,23 +9,12 @@ from typing import Any
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import RemoteRepositoryOrigin
-from dagster._core.remote_representation.origin import (
-    GrpcServerCodeLocationOrigin,
-)
-from dagster._core.test_utils import (
-    instance_for_test,
-)
+from dagster._core.remote_representation.origin import GrpcServerCodeLocationOrigin
+from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import (
-    METRICS_RETRIEVAL_FUNCTIONS,
-    DagsterApiServer,
-    wait_for_grpc_server,
-)
+from dagster._grpc.server import METRICS_RETRIEVAL_FUNCTIONS, DagsterApiServer, wait_for_grpc_server
 from dagster._grpc.types import SensorExecutionArgs
-from dagster._utils import (
-    file_relative_path,
-    find_free_port,
-)
+from dagster._utils import file_relative_path, find_free_port
 
 
 def is_grpc_method(attr_name: str, obj: Any) -> bool:

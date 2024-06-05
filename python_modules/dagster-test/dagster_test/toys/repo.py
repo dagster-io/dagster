@@ -6,14 +6,7 @@ from dagster import ExperimentalWarning
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 import pendulum
-from dagster import (
-    AssetMaterialization,
-    Output,
-    graph,
-    load_assets_from_modules,
-    op,
-    repository,
-)
+from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
 from dagster_test.toys.asset_sensors import get_asset_sensors_repo
@@ -25,10 +18,7 @@ from dagster_test.toys.cross_repo_assets import (
     upstream_repo_assets,
 )
 from dagster_test.toys.dynamic import dynamic_job
-from dagster_test.toys.error_monster import (
-    error_monster_failing_job,
-    error_monster_passing_job,
-)
+from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
 from dagster_test.toys.graph_backed_assets import graph_backed_asset
 from dagster_test.toys.hammer import hammer_default_executor_job
 from dagster_test.toys.input_managers import df_stats_job
@@ -68,12 +58,8 @@ from .auto_materializing.large_graph import (
     auto_materialize_large_static_graph as auto_materialize_large_static_graph,
     auto_materialize_large_time_graph as auto_materialize_large_time_graph,
 )
-from .auto_materializing.repo_1 import (
-    auto_materialize_repo_1 as auto_materialize_repo_1,
-)
-from .auto_materializing.repo_2 import (
-    auto_materialize_repo_2 as auto_materialize_repo_2,
-)
+from .auto_materializing.repo_1 import auto_materialize_repo_1 as auto_materialize_repo_1
+from .auto_materializing.repo_2 import auto_materialize_repo_2 as auto_materialize_repo_2
 from .freshness_checks import get_freshness_defs_pile
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors

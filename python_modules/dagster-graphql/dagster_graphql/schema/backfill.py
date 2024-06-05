@@ -6,18 +6,13 @@ from dagster import AssetKey
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
-)
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
     UnpartitionedAssetBackfillStatus,
 )
-from dagster._core.execution.backfill import (
-    BulkActionStatus,
-    PartitionBackfill,
-)
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalPartitionSet
 from dagster._core.storage.dagster_run import DagsterRun, RunPartitionData, RunRecord, RunsFilter
@@ -50,13 +45,9 @@ from .pipelines.config import GrapheneRunConfigValidationInvalid
 from .util import ResolveInfo, non_null_list
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.partition_sets import (
-        GraphenePartitionStatusCounts,
-    )
+    from dagster_graphql.schema.partition_sets import GraphenePartitionStatusCounts
 
-    from ..schema.partition_sets import (
-        GraphenePartitionSet,
-    )
+    from ..schema.partition_sets import GraphenePartitionSet
     from .pipelines.pipeline import GrapheneRun
 
 pipeline_execution_error_types = (

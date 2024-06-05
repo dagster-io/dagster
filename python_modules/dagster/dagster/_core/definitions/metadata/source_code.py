@@ -1,15 +1,7 @@
 import inspect
 import os
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    List,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental

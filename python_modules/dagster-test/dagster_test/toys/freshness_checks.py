@@ -16,9 +16,7 @@ from dagster import (
     define_asset_job,
     observable_source_asset,
 )
-from dagster._core.definitions.asset_selection import (
-    KeysAssetSelection,
-)
+from dagster._core.definitions.asset_selection import KeysAssetSelection
 
 
 @observable_source_asset(group_name="freshness_checks")

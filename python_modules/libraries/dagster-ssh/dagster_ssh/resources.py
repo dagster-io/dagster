@@ -19,10 +19,7 @@ from dagster._core.execution.context.init import InitResourceContext
 from dagster._utils import mkdir_p
 from paramiko.client import SSHClient
 from paramiko.config import SSH_PORT
-from pydantic import (
-    Field,
-    PrivateAttr,
-)
+from pydantic import Field, PrivateAttr
 from sshtunnel import SSHTunnelForwarder
 
 

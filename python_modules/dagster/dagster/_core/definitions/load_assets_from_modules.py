@@ -2,18 +2,7 @@ import inspect
 import pkgutil
 from importlib import import_module
 from types import ModuleType
-from typing import (
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy

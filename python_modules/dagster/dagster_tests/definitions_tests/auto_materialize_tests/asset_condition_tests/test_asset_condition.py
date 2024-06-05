@@ -1,7 +1,4 @@
-from dagster import AutoMaterializePolicy, Definitions, SchedulingCondition, asset
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
-    AssetConditionEvaluation,
-)
+from dagster import AutoMaterializePolicy, AutomationCondition, Definitions, asset
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
@@ -13,39 +10,38 @@ from ..scenario_specs import (
     one_asset,
     time_partitions_start_datetime,
 )
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.missing()
+    )
 
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-
-    evaluation1 = deserialize_value(
-        serialize_value(AssetConditionEvaluation.from_result(result)), AssetConditionEvaluation
-    )
+    original_value_hash = result.value_hash
 
     # still true
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-
-    evaluation2 = AssetConditionEvaluation.from_result(result)
-
-    assert evaluation2.equivalent_to_stored_evaluation(evaluation1)
+    assert result.value_hash == original_value_hash
 
     # after a run of A it's now False
     state, result = state.with_runs(run_request("A")).evaluate("A")
     assert result.true_subset.size == 0
+    assert result.value_hash != original_value_hash
 
     # if we evaluate from scratch, it's also False
-    _, result = state.without_previous_evaluation_state().evaluate("A")
+    _, result = state.without_cursor().evaluate("A")
     assert result.true_subset.size == 0
 
 
 def test_missing_time_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
+        AutomationConditionScenarioState(
+            one_asset, automation_condition=AutomationCondition.missing()
+        )
         .with_asset_properties(partitions_def=daily_partitions_def)
         .with_current_time(time_partitions_start_datetime)
         .with_current_time_advanced(days=6, minutes=1)
@@ -66,13 +62,16 @@ def test_missing_time_partitioned() -> None:
     assert result.true_subset.size == 4
 
     # if we evaluate from scratch, they're still False
-    _, result = state.without_previous_evaluation_state().evaluate("A")
+    _, result = state.without_cursor().evaluate("A")
     assert result.true_subset.size == 4
 
 
 def test_serialize_definitions_with_asset_condition() -> None:
     amp = AutoMaterializePolicy.from_asset_condition(
-        SchedulingCondition.parent_newer() & ~SchedulingCondition.updated_since_cron("0 * * * *")
+        AutomationCondition.eager()
+        & ~AutomationCondition.newly_updated().since_last_cron_tick(
+            cron_schedule="0 * * * *", cron_timezone="UTC"
+        )
     )
 
     @asset(auto_materialize_policy=amp)

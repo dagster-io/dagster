@@ -7,10 +7,7 @@ import threading
 
 import dagstermill
 import pytest
-from dagster import (
-    AssetMaterialization,
-    ResourceDefinition,
-)
+from dagster import AssetMaterialization, ResourceDefinition
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.errors import DagsterInvariantViolationError

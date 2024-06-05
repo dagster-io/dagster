@@ -60,6 +60,8 @@ CLI Resource
 
 .. autoclass:: DbtCliInvocation
 
+.. autoclass:: dagster_dbt.core.resources_v2.DbtEventIterator
+
 .. autoclass:: DbtCliEventMessage
 
 Deprecated (dbt Core)

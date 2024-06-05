@@ -1,7 +1,5 @@
 import sys
-from typing import (
-    TYPE_CHECKING,
-)
+from typing import TYPE_CHECKING
 
 import dagster._check as check
 import graphene

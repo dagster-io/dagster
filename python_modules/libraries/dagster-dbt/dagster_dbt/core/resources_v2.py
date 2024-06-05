@@ -50,10 +50,7 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster._annotations import experimental, public
-from dagster._core.definitions.metadata import (
-    TableMetadataSet,
-    TextMetadataValue,
-)
+from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
 from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
@@ -68,12 +65,7 @@ from dbt.node_types import NodeType
 from dbt.version import __version__ as dbt_version
 from packaging import version
 from pydantic import Field, validator
-from sqlglot import (
-    MappingSchema,
-    exp,
-    parse_one,
-    to_table,
-)
+from sqlglot import MappingSchema, exp, parse_one, to_table
 from sqlglot.expressions import normalize_table_name
 from sqlglot.lineage import lineage
 from sqlglot.optimizer import optimize
@@ -92,16 +84,10 @@ from ..dagster_dbt_translator import (
     validate_opt_translator,
     validate_translator,
 )
-from ..dbt_manifest import (
-    DbtManifestParam,
-    validate_manifest,
-)
+from ..dbt_manifest import DbtManifestParam, validate_manifest
 from ..dbt_project import DbtProject
 from ..errors import DagsterDbtCliRuntimeError
-from ..utils import (
-    ASSET_RESOURCE_TYPES,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-)
+from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
 from .utils import imap
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")

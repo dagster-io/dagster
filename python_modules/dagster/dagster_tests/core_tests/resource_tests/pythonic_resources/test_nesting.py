@@ -15,10 +15,7 @@ from dagster import (
     resource,
 )
 from dagster._check import CheckError
-from dagster._config.pythonic_config import (
-    ConfigurableIOManager,
-    ConfigurableResourceFactory,
-)
+from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
 from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager
 

@@ -14,9 +14,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._config.pythonic_config import (
-    attach_resource_id_to_key_mapping,
-)
+from dagster._config.pythonic_config import attach_resource_id_to_key_mapping
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_spec import AssetSpec

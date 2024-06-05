@@ -5,9 +5,7 @@ import json
 
 import pendulum
 import pytest
-from dagster import (
-    asset,
-)
+from dagster import asset
 from dagster._check import CheckError
 from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks,
@@ -19,10 +17,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetChecksForAssetKeysSelection
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.metadata import (
-    JsonMetadataValue,
-    TimestampMetadataValue,
-)
+from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetadataValue
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance

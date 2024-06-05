@@ -44,9 +44,7 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import (
-    create_test_daemon_workspace_context,
-)
+from dagster._core.test_utils import create_test_daemon_workspace_context
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget

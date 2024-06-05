@@ -1,23 +1,25 @@
+from .automation_condition import AutomationCondition as AutomationCondition
 from .legacy import RuleCondition as RuleCondition
 from .legacy.asset_condition import AssetCondition as AssetCondition
 from .operands import (
-    FailedSchedulingCondition as FailedSchedulingCondition,
+    CronTickPassedCondition as CronTickPassedCondition,
+    FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
-    InProgressSchedulingCondition as InProgressSchedulingCondition,
-    MissingSchedulingCondition as MissingSchedulingCondition,
-    ParentNewerCondition as ParentNewerCondition,
-    RequestedThisTickCondition as RequestedThisTickCondition,
-    ScheduledSinceCondition as ScheduledSinceCondition,
-    UpdatedSinceCronCondition as UpdatedSinceCronCondition,
+    InProgressAutomationCondition as InProgressAutomationCondition,
+    MissingAutomationCondition as MissingAutomationCondition,
+    NewlyRequestedCondition as NewlyRequestedCondition,
+    NewlyUpdatedCondition as NewlyUpdatedCondition,
+    WillBeRequestedCondition as WillBeRequestedCondition,
 )
 from .operators import (
     AllDepsCondition as AllDepsCondition,
     AndAssetCondition as AndAssetCondition,
     AnyDepsCondition as AnyDepsCondition,
+    NewlyTrueCondition as NewlyTrueCondition,
     NotAssetCondition as NotAssetCondition,
     OrAssetCondition as OrAssetCondition,
+    SinceCondition as SinceCondition,
 )
-from .scheduling_condition import SchedulingCondition as SchedulingCondition
 from .serialized_objects import (
     AssetConditionEvaluationState as AssetConditionEvaluationState,
     AssetConditionSnapshot as AssetConditionSnapshot,

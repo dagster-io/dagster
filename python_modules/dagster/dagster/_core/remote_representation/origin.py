@@ -25,10 +25,7 @@ from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCode
 from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import (
-    create_snapshot_id,
-    whitelist_for_serdes,
-)
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
@@ -199,9 +196,7 @@ class InProcessCodeLocationOrigin(
         return {}
 
     def create_location(self, instance: "DagsterInstance") -> "InProcessCodeLocation":
-        from dagster._core.remote_representation.code_location import (
-            InProcessCodeLocation,
-        )
+        from dagster._core.remote_representation.code_location import InProcessCodeLocation
 
         return InProcessCodeLocation(self, instance=instance)
 
@@ -347,9 +342,7 @@ class GrpcServerCodeLocationOrigin(
         return {key: value for key, value in metadata.items() if value is not None}
 
     def reload_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
-        from dagster._core.remote_representation.code_location import (
-            GrpcServerCodeLocation,
-        )
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 
         try:
             self.create_client().reload_code(timeout=instance.code_server_reload_timeout)
@@ -366,9 +359,7 @@ class GrpcServerCodeLocationOrigin(
         return GrpcServerCodeLocation(self, instance=instance)
 
     def create_location(self, instance: "DagsterInstance") -> "GrpcServerCodeLocation":
-        from dagster._core.remote_representation.code_location import (
-            GrpcServerCodeLocation,
-        )
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 
         return GrpcServerCodeLocation(self, instance=instance)
 

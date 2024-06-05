@@ -19,7 +19,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     backcompat_deserialize_asset_daemon_cursor_str,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
 )
 from dagster._core.definitions.events import AssetKey
@@ -27,23 +27,12 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.run_request import (
-    InstigatorType,
-    RunRequest,
-)
-from dagster._core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    SensorType,
-)
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.submit_asset_runs import submit_asset_run
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    ExternalSensor,
-)
+from dagster._core.remote_representation import ExternalSensor
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
@@ -68,10 +57,7 @@ from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import (
-    SingleInstigatorDebugCrashFlags,
-    check_for_debug_crash,
-)
+from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
 _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR_NEW"
@@ -1012,8 +998,8 @@ class AssetDaemon(DagsterDaemon):
                 # asset keys for observation runs don't have evaluations
                 if asset_key in evaluations_by_asset_key:
                     evaluation = evaluations_by_asset_key[asset_key]
-                    evaluations_by_asset_key[asset_key] = evaluation.copy(
-                        update={"run_ids": evaluation.run_ids | {submitted_run.run_id}}
+                    evaluations_by_asset_key[asset_key] = evaluation._replace(
+                        run_ids=evaluation.run_ids | {submitted_run.run_id}
                     )
                     updated_evaluation_asset_keys.add(asset_key)
 
@@ -1077,12 +1063,6 @@ def invoke_sensor_for_evaluation(
         result.cursor,
         asset_graph,
     )
-    # only record evaluation results where something changed
-    evaluations = [
-        es.previous_evaluation
-        for es in new_cursor.previous_evaluation_state  # does this work ???
-        if not es.previous_evaluation.equivalent_to_stored_evaluation(
-            stored_cursor.get_previous_evaluation(es.asset_key)
-        )
-    ]
+    # TODO: evaluations no longer exist on the cursor object
+    evaluations = []
     return (run_requests, new_cursor, evaluations)
