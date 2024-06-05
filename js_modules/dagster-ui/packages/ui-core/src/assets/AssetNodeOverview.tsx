@@ -279,31 +279,42 @@ export const AssetNodeOverview = ({
           <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
         )}
       </AttributeAndValue>
-      <AttributeAndValue label="Storage kind">
-        {storageKindTag && (
-          <AssetStorageKindTag
-            style={{position: 'relative'}}
-            storageKind={storageKindTag.value}
-            reduceColor
-          />
+      <AttributeAndValue label="Storage">
+        {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
+          <Box flex={{direction: 'column', gap: 4}}>
+            {relationIdentifierMetadata && (
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {relationIdentifierMetadata.text}
+                <CopyButton value={relationIdentifierMetadata.text} />
+              </Box>
+            )}
+            {uriMetadata && (
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {uriMetadata.__typename === 'TextMetadataEntry' ? (
+                  uriMetadata.text
+                ) : (
+                  <a target="_blank" rel="noreferrer" href={uriMetadata.url}>
+                    {uriMetadata.url}
+                  </a>
+                )}
+                <CopyButton
+                  value={
+                    uriMetadata.__typename === 'TextMetadataEntry'
+                      ? uriMetadata?.text
+                      : uriMetadata.url
+                  }
+                />
+              </Box>
+            )}
+            {storageKindTag && (
+              <AssetStorageKindTag
+                style={{position: 'relative'}}
+                storageKind={storageKindTag.value}
+                reduceColor
+              />
+            )}
+          </Box>
         )}
-      </AttributeAndValue>
-      <AttributeAndValue label="Relation identifier">
-        {relationIdentifierMetadata && (
-          <ClickToCopyValue value={relationIdentifierMetadata.text}>
-            {relationIdentifierMetadata.text}
-          </ClickToCopyValue>
-        )}
-      </AttributeAndValue>
-      <AttributeAndValue label="URI">
-        {uriMetadata &&
-          (uriMetadata.__typename === 'TextMetadataEntry' ? (
-            <ClickToCopyValue value={uriMetadata.text}>{uriMetadata.text}</ClickToCopyValue>
-          ) : (
-            <a target="_blank" rel="noreferrer" href={uriMetadata.url}>
-              {uriMetadata.url}
-            </a>
-          ))}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
         {filteredTags &&
@@ -557,7 +568,7 @@ const AssetNodeOverviewContainer = ({
 const isEmptyChildren = (children: React.ReactNode) =>
   !children || (children instanceof Array && children.length === 0);
 
-const ClickToCopyValue = ({value, children}: {value: string; children: React.ReactNode}) => {
+const CopyButton = ({value}: {value: string}) => {
   const copy = useCopyToClipboard();
   const onCopy = async () => {
     copy(value);
@@ -569,9 +580,9 @@ const ClickToCopyValue = ({value, children}: {value: string; children: React.Rea
   };
 
   return (
-    <Tooltip content="Click to copy" placement="bottom" display="block">
+    <Tooltip content="Copy" placement="bottom" display="block">
       <div onClick={onCopy} style={{cursor: 'pointer'}}>
-        {children}
+        <Icon name="content_copy" />
       </div>
     </Tooltip>
   );
