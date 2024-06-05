@@ -186,11 +186,12 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         const copy = {...locationsData};
         locationsRemoved.forEach((loc) => {
           delete copy[loc.name];
+          indexedDB.deleteDatabase(`${localCacheIdPrefix}/${locationWorkspaceKey(loc.name)}`);
         });
         return copy;
       });
     }
-  }, [locationsRemoved]);
+  }, [localCacheIdPrefix, locationsRemoved]);
 
   const locationEntries = useMemo(
     () =>
