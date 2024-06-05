@@ -19,7 +19,7 @@ import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErro
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
 import {buildRepoAddress} from './buildRepoAddress';
 import {repoAddressAsHumanString} from './repoAddressAsString';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
+import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceQueries.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';

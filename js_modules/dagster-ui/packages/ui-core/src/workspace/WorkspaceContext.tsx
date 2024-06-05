@@ -12,7 +12,7 @@ import {
   WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
-} from './types/WorkspaceContext.types';
+} from './types/WorkspaceQueries.types';
 import {
   CodeLocationStatusQuery,
   CodeLocationStatusQueryVariables,

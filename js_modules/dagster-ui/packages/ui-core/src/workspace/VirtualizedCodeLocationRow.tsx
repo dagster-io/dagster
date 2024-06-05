@@ -12,7 +12,7 @@ import {repoAddressAsHumanString} from './repoAddressAsString';
 import {
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
-} from './types/WorkspaceContext.types';
+} from './types/WorkspaceQueries.types';
 import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';

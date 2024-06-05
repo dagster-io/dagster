@@ -7,86 +7,105 @@ export const LOCATION_WORKSPACE_QUERY = gql`
   query LocationWorkspaceQuery($name: String!) {
     workspaceLocationEntryOrError(name: $name) {
       __typename
-      ... on WorkspaceLocationEntry {
-        id
-        name
-        loadStatus
-        displayMetadata {
-          key
-          value
-        }
-        updatedTimestamp
-        featureFlags {
-          name
-          enabled
-        }
-        locationOrLoadError {
-          ... on RepositoryLocation {
-            id
-            name
-            dagsterLibraryVersions {
-              name
-              version
-            }
-            repositories {
-              ...RepositoryInfoFragment
-              id
-              name
-              pipelines {
-                id
-                name
-                isJob
-                isAssetJob
-                pipelineSnapshotId
-              }
-              schedules {
-                id
-                name
-                cronSchedule
-                executionTimezone
-                mode
-                pipelineName
-                scheduleState {
-                  id
-                  selectorId
-                  status
-                }
-              }
-              sensors {
-                id
-                name
-                jobOriginId
-                targets {
-                  mode
-                  pipelineName
-                }
-                sensorState {
-                  id
-                  selectorId
-                  status
-                }
-                sensorType
-              }
-              partitionSets {
-                id
-                mode
-                pipelineName
-              }
-              assetGroups {
-                id
-                groupName
-              }
-              allTopLevelResourceDetails {
-                id
-                name
-              }
-            }
-          }
-          ...PythonErrorFragment
-        }
-      }
+      ...WorkspaceLocationNode
     }
   }
+
+  fragment WorkspaceLocationNode on WorkspaceLocationEntry {
+    id
+    name
+    loadStatus
+    displayMetadata {
+      ...WorkspaceDisplayMetadata
+    }
+    updatedTimestamp
+    featureFlags {
+      name
+      enabled
+    }
+    locationOrLoadError {
+      ... on RepositoryLocation {
+        id
+        ...WorkspaceLocation
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  fragment WorkspaceDisplayMetadata on RepositoryMetadata {
+    key
+    value
+  }
+
+  fragment WorkspaceLocation on RepositoryLocation {
+    id
+    isReloadSupported
+    serverId
+    name
+    dagsterLibraryVersions {
+      name
+      version
+    }
+    repositories {
+      id
+      ...WorkspaceRepository
+    }
+  }
+
+  fragment WorkspaceRepository on Repository {
+    id
+    name
+    pipelines {
+      id
+      name
+      isJob
+      isAssetJob
+      pipelineSnapshotId
+    }
+    schedules {
+      id
+      ...WorkspaceSchedule
+    }
+    sensors {
+      id
+      ...WorkspaceSensor
+    }
+    partitionSets {
+      id
+      mode
+      pipelineName
+    }
+    assetGroups {
+      id
+      groupName
+    }
+    allTopLevelResourceDetails {
+      id
+      name
+    }
+    ...RepositoryInfoFragment
+  }
+
+  fragment WorkspaceSchedule on Schedule {
+    id
+    cronSchedule
+    executionTimezone
+    mode
+    name
+    pipelineName
+  }
+
+  fragment WorkspaceSensor on Sensor {
+    id
+    jobOriginId
+    name
+    targets {
+      mode
+      pipelineName
+    }
+    sensorType
+  }
+
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
 `;

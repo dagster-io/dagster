@@ -32,7 +32,6 @@ import {SENSOR_TYPE_META} from '../workspace/VirtualizedSensorRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
-import {RootWorkspaceQuery} from '../workspace/types/WorkspaceContext.types';
 
 function toSetFilterValue(type: SensorType) {
   const label = SENSOR_TYPE_META[type].name;
@@ -55,12 +54,7 @@ const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetF
 const ALL_SENSOR_TYPE_FILTERS = Object.values(SENSOR_TYPE_TO_FILTER);
 
 export const OverviewSensors = () => {
-  const {
-    allRepos,
-    visibleRepos,
-    loading: workspaceLoading,
-    data: cachedData,
-  } = useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
 
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -346,7 +340,7 @@ export const OverviewSensors = () => {
   );
 };
 
-const buildBuckets = (data?: null | OverviewSensorsQuery | RootWorkspaceQuery) => {
+const buildBuckets = (data?: null | OverviewSensorsQuery) => {
   if (data?.workspaceOrError.__typename !== 'Workspace') {
     return [];
   }
