@@ -197,3 +197,10 @@ def test_name_special_chars() -> None:
     assert len(checks) == 1
     assert len(list(checks[0].check_specs)) == 1
     assert next(iter(checks[0].check_specs)).name == "dagster_row_count_bounds_check"
+
+    checks = build_metadata_bounds_checks(
+        assets=[my_asset], metadata_key="my key with spaces", min_value=1, max_value=10
+    )
+    assert len(checks) == 1
+    assert len(list(checks[0].check_specs)) == 1
+    assert next(iter(checks[0].check_specs)).name == "my_key_with_spaces_bounds_check"
