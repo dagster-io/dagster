@@ -6,18 +6,18 @@ from typing import List, Literal, Sequence, Union
 import pytest
 from dagster import AssetKey, asset, job
 from dagster._check import CheckError
-from dagster._core.blueprints.blueprint import (
-    Blueprint,
-    BlueprintDefinitions,
-    DagsterBuildDefinitionsFromConfigError,
-)
-from dagster._core.blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataSet,
     LocalFileCodeReference,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
+from dagster_blueprints.blueprint import (
+    Blueprint,
+    BlueprintDefinitions,
+    DagsterBuildDefinitionsFromConfigError,
+)
+from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
 from pydantic import ValidationError
 
 
@@ -241,7 +241,17 @@ def test_additional_resources() -> None:
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
 
-@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+@pytest.mark.parametrize(
+    "pydantic_version",
+    [
+        pytest.param(
+            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
+        ),
+        pytest.param(
+            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
+        ),
+    ],
+)
 def test_loader_schema(snapshot, pydantic_version: int) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
@@ -263,7 +273,17 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     assert set(model_keys) == {"key"}
 
 
-@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+@pytest.mark.parametrize(
+    "pydantic_version",
+    [
+        pytest.param(
+            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
+        ),
+        pytest.param(
+            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
+        ),
+    ],
+)
 def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
@@ -278,7 +298,17 @@ def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
     assert model_schema["type"] == "array"
 
 
-@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+@pytest.mark.parametrize(
+    "pydantic_version",
+    [
+        pytest.param(
+            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
+        ),
+        pytest.param(
+            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
+        ),
+    ],
+)
 def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
     class FooAssetBlueprint(Blueprint):
         type: Literal["foo"] = "foo"

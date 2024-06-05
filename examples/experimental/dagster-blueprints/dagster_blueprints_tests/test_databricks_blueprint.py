@@ -1,14 +1,41 @@
-from typing import cast
+from typing import Dict, cast
 from unittest.mock import MagicMock
 
 from dagster import AssetKey, AssetsDefinition, MaterializeResult, PipesClient, materialize
-from dagster._core.blueprints.blueprint import BlueprintDefinitions
-from dagster._core.blueprints.blueprint_assets_definition import AssetSpecModel
 from dagster._core.pipes.client import PipesClientCompletedInvocation
-from dagster_databricks.blueprints import DatabricksTaskBlueprint
+from dagster_blueprints.blueprint import BlueprintDefinitions
+from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
+from dagster_blueprints.databricks_blueprint import DatabricksTaskBlueprint
 from databricks.sdk.service import jobs
 
-from dagster_databricks_tests.test_pipes import make_submit_task_dict
+CLUSTER_DEFAULTS = {
+    "spark_version": "12.2.x-scala2.12",
+    "node_type_id": "i3.xlarge",
+    "num_workers": 0,
+}
+
+TASK_KEY = "DAGSTER_PIPES_TASK"
+
+
+def make_submit_task_dict(
+    script_path: str, dagster_pipes_whl_path: str, forward_logs: bool
+) -> Dict[str, object]:
+    cluster_settings = CLUSTER_DEFAULTS.copy()
+    if forward_logs:
+        cluster_settings["cluster_log_conf"] = {
+            "dbfs": {"destination": "dbfs:/cluster-logs"},
+        }
+    return {
+        "new_cluster": cluster_settings,
+        "libraries": [
+            {"whl": dagster_pipes_whl_path},
+        ],
+        "task_key": TASK_KEY,
+        "spark_python_task": {
+            "python_file": f"dbfs:{script_path}",
+            "source": jobs.Source.WORKSPACE,
+        },
+    }
 
 
 class MockDatabricksClient(PipesClient):

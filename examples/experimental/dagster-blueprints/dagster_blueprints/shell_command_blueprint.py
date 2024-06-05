@@ -1,9 +1,9 @@
 from typing import AbstractSet, Literal, Mapping, Optional, Sequence, Union
 
+from dagster import AssetExecutionContext
 from pydantic import Field
 
-from dagster import AssetExecutionContext
-from dagster._core.blueprints.blueprint_assets_definition import BlueprintAssetsDefinition
+from dagster_blueprints.blueprint_assets_definition import BlueprintAssetsDefinition
 
 
 class ShellCommandBlueprint(BlueprintAssetsDefinition):

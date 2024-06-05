@@ -1,12 +1,13 @@
 from abc import abstractmethod
 from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
-from dagster._core.blueprints.blueprint import Blueprint, BlueprintDefinitions
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._model import DagsterModel
+
+from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
 
 
 class AssetSpecModel(DagsterModel):

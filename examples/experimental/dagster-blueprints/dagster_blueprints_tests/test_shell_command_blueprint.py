@@ -1,17 +1,30 @@
+import inspect
 import re
 import shutil
-from typing import cast
+import textwrap
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
+from typing import Any, Callable, Iterator, cast
 
 from dagster import AssetKey, AssetsDefinition, MarkdownMetadataValue, materialize
-from dagster._core.blueprints.blueprint import BlueprintDefinitions
-from dagster._core.blueprints.blueprint_assets_definition import AssetSpecModel
-from dagster._core.blueprints.shell_command_blueprint import ShellCommandBlueprint
 from dagster._core.definitions.data_version import (
     DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
 )
 from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster_tests.execution_tests.pipes_tests.test_subprocess import temp_script
+from dagster_blueprints.blueprint import BlueprintDefinitions
+from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
+from dagster_blueprints.shell_command_blueprint import ShellCommandBlueprint
+
+
+@contextmanager
+def temp_script(script_fn: Callable[[], Any]) -> Iterator[str]:
+    # drop the signature line
+    source = textwrap.dedent(inspect.getsource(script_fn).split("\n", 1)[1])
+    with NamedTemporaryFile() as file:
+        file.write(source.encode())
+        file.flush()
+        yield file.name
 
 
 def test_single_asset_shell_command_blueprint() -> None:
