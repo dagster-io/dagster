@@ -59,7 +59,12 @@ import {
 import {IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
-import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
+import {
+  TableSchema,
+  TableSchemaAssetContext,
+  isCanonicalRelationIdentifierEntry,
+  isCanonicalUriEntry,
+} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
@@ -222,6 +227,10 @@ export const AssetNodeOverview = ({
 
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+  const relationIdentifierMetadata = assetNode.metadataEntries?.find(
+    isCanonicalRelationIdentifierEntry,
+  );
+  const uriMetadata = assetNode.metadataEntries?.find(isCanonicalUriEntry);
 
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -275,6 +284,19 @@ export const AssetNodeOverview = ({
             reduceColor
           />
         )}
+      </AttributeAndValue>
+      <AttributeAndValue label="Relation identifier">
+        {relationIdentifierMetadata && relationIdentifierMetadata.text}
+      </AttributeAndValue>
+      <AttributeAndValue label="URI">
+        {uriMetadata &&
+          (uriMetadata.__typename === 'TextMetadataEntry' ? (
+            uriMetadata.text
+          ) : (
+            <a target="_blank" rel="noreferrer" href={uriMetadata.url}>
+              {uriMetadata.url}
+            </a>
+          ))}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
         {filteredTags &&
