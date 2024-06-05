@@ -403,6 +403,7 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
     return AssetKey(components)
 
 
+# https://stackoverflow.com/a/70059131
 RELATION_IDENTIFIER_COMPONENT = re.compile(r"(?:\"[^\"]*\"|[^.])+(?:\.+$)?")
 
 COMPONENT_NO_QUOTES = re.compile(r"^\"[a-zA-Z0-9_]+\"$")
