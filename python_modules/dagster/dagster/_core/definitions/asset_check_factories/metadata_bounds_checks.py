@@ -1,8 +1,10 @@
+import re
 from typing import Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.utils import INVALID_NAME_CHARS
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
 
@@ -98,7 +100,7 @@ def build_metadata_bounds_checks(
     return build_multi_asset_check(
         check_specs=[
             AssetCheckSpec(
-                f"{metadata_key.replace(' ','_')}_bounds_check",
+                f"{re.sub(INVALID_NAME_CHARS, '_', metadata_key)}_bounds_check",
                 asset=asset_key,
                 description=description,
             )
