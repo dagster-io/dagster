@@ -9,11 +9,11 @@ import {
   buildRepository,
   buildRepositoryLocation,
   buildRunTagKeys,
-  buildWorkspace,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
 import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
 import {DagsterTag} from '../RunTag';
 import {
   RUN_TAG_KEYS_QUERY,
@@ -24,34 +24,27 @@ import {
   useRunsFilterInput,
   useTagDataFilterValues,
 } from '../RunsFilterInput';
-import {
-  buildRunTagValuesQueryMockedResponse,
-  buildWorkspaceContextMockedResponse,
-} from '../__fixtures__/RunsFilterInput.fixtures';
+import {buildRunTagValuesQueryMockedResponse} from '../__fixtures__/RunsFilterInput.fixtures';
 import {RunTagKeysQuery} from '../types/RunsFilterInput.types';
 
-const workspaceMock = buildWorkspaceContextMockedResponse(
-  buildWorkspace({
-    locationEntries: [
-      buildWorkspaceLocationEntry({
-        name: 'some_workspace',
-        locationOrLoadError: buildRepositoryLocation({
-          name: 'some_location',
-          repositories: [
-            buildRepository({
-              name: 'some_repo',
-              pipelines: [
-                buildPipeline({
-                  name: 'some_job',
-                }),
-              ],
+const workspaceMocks = buildWorkspaceMocks([
+  buildWorkspaceLocationEntry({
+    name: 'some_workspace',
+    locationOrLoadError: buildRepositoryLocation({
+      name: 'some_location',
+      repositories: [
+        buildRepository({
+          name: 'some_repo',
+          pipelines: [
+            buildPipeline({
+              name: 'some_job',
             }),
           ],
         }),
-      }),
-    ],
+      ],
+    }),
   }),
-);
+]);
 
 const runTagKeysMock: MockedResponse<RunTagKeysQuery> = {
   request: {
@@ -168,7 +161,7 @@ function TestRunsFilterInput({
     );
   }
   return (
-    <MockedProvider mocks={mocks?.length ? [workspaceMock, ...mocks] : [workspaceMock]}>
+    <MockedProvider mocks={mocks?.length ? [...workspaceMocks, ...mocks] : workspaceMocks}>
       <WorkspaceProvider>
         <RunsFilterInput tokens={tokens} onChange={onChange} enabledFilters={enabledFilters} />
       </WorkspaceProvider>
@@ -219,7 +212,7 @@ describe('<RunFilterInput  />', () => {
         tokens={tokens}
         onChange={onChange}
         enabledFilters={['job']}
-        mocks={[workspaceMock]}
+        mocks={workspaceMocks}
       />,
     );
 

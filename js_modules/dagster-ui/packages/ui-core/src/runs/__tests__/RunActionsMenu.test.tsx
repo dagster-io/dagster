@@ -17,7 +17,7 @@ describe('RunActionsMenu', () => {
       render(
         <MockedProvider
           mocks={[
-            buildMockRootWorkspaceQuery(),
+            ...buildMockRootWorkspaceQuery(),
             buildPipelineEnvironmentQuery({hasReExecutePermission: true}),
           ]}
         >
@@ -45,7 +45,7 @@ describe('RunActionsMenu', () => {
       render(
         <MockedProvider
           mocks={[
-            buildMockRootWorkspaceQuery(),
+            ...buildMockRootWorkspaceQuery(),
             buildPipelineEnvironmentQuery({hasReExecutePermission: false}),
           ]}
         >

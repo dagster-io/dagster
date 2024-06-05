@@ -103,12 +103,7 @@ export const OverviewSensors = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data: currentData, loading} = queryResultOverview;
-  const data =
-    currentData ??
-    (cachedData?.workspaceOrError.__typename === 'Workspace'
-      ? (cachedData as Extract<typeof cachedData, {workspaceOrError: {__typename: 'Workspace'}}>)
-      : null);
+  const {data, loading} = queryResultOverview;
 
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSensorsQuery');
 
@@ -340,7 +335,7 @@ export const OverviewSensors = () => {
       ) : (
         <>
           <SensorInfo
-            daemonHealth={currentData?.instance.daemonHealth}
+            daemonHealth={data?.instance.daemonHealth}
             padding={{vertical: 16, horizontal: 24}}
             border="top"
           />

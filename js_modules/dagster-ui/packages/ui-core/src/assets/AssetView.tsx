@@ -279,7 +279,6 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   const codeSource = assetMetadata?.find((m) => isCanonicalCodeSourceEntry(m)) as
     | CodeReferencesMetadataEntry
     | undefined;
-  console.log(codeSource);
 
   return (
     <Box
