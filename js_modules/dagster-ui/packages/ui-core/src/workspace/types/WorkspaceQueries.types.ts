@@ -60,6 +60,12 @@ export type LocationWorkspaceQuery = {
                   mode: string;
                   name: string;
                   pipelineName: string;
+                  scheduleState: {
+                    __typename: 'InstigationState';
+                    id: string;
+                    selectorId: string;
+                    status: Types.InstigationStatus;
+                  };
                 }>;
                 sensors: Array<{
                   __typename: 'Sensor';
@@ -68,6 +74,18 @@ export type LocationWorkspaceQuery = {
                   name: string;
                   sensorType: Types.SensorType;
                   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+                  sensorState: {
+                    __typename: 'InstigationState';
+                    id: string;
+                    selectorId: string;
+                    status: Types.InstigationStatus;
+                    hasStartPermission: boolean;
+                    hasStopPermission: boolean;
+                    typeSpecificData:
+                      | {__typename: 'ScheduleData'}
+                      | {__typename: 'SensorData'; lastCursor: string | null}
+                      | null;
+                  };
                 }>;
                 partitionSets: Array<{
                   __typename: 'PartitionSet';
@@ -144,6 +162,12 @@ export type WorkspaceLocationNodeFragment = {
             mode: string;
             name: string;
             pipelineName: string;
+            scheduleState: {
+              __typename: 'InstigationState';
+              id: string;
+              selectorId: string;
+              status: Types.InstigationStatus;
+            };
           }>;
           sensors: Array<{
             __typename: 'Sensor';
@@ -152,6 +176,18 @@ export type WorkspaceLocationNodeFragment = {
             name: string;
             sensorType: Types.SensorType;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+            sensorState: {
+              __typename: 'InstigationState';
+              id: string;
+              selectorId: string;
+              status: Types.InstigationStatus;
+              hasStartPermission: boolean;
+              hasStopPermission: boolean;
+              typeSpecificData:
+                | {__typename: 'ScheduleData'}
+                | {__typename: 'SensorData'; lastCursor: string | null}
+                | null;
+            };
           }>;
           partitionSets: Array<{
             __typename: 'PartitionSet';
@@ -209,6 +245,12 @@ export type WorkspaceLocationFragment = {
       mode: string;
       name: string;
       pipelineName: string;
+      scheduleState: {
+        __typename: 'InstigationState';
+        id: string;
+        selectorId: string;
+        status: Types.InstigationStatus;
+      };
     }>;
     sensors: Array<{
       __typename: 'Sensor';
@@ -217,6 +259,18 @@ export type WorkspaceLocationFragment = {
       name: string;
       sensorType: Types.SensorType;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+      sensorState: {
+        __typename: 'InstigationState';
+        id: string;
+        selectorId: string;
+        status: Types.InstigationStatus;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
+        typeSpecificData:
+          | {__typename: 'ScheduleData'}
+          | {__typename: 'SensorData'; lastCursor: string | null}
+          | null;
+      };
     }>;
     partitionSets: Array<{
       __typename: 'PartitionSet';
@@ -251,6 +305,12 @@ export type WorkspaceRepositoryFragment = {
     mode: string;
     name: string;
     pipelineName: string;
+    scheduleState: {
+      __typename: 'InstigationState';
+      id: string;
+      selectorId: string;
+      status: Types.InstigationStatus;
+    };
   }>;
   sensors: Array<{
     __typename: 'Sensor';
@@ -259,6 +319,18 @@ export type WorkspaceRepositoryFragment = {
     name: string;
     sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+    sensorState: {
+      __typename: 'InstigationState';
+      id: string;
+      selectorId: string;
+      status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
+      typeSpecificData:
+        | {__typename: 'ScheduleData'}
+        | {__typename: 'SensorData'; lastCursor: string | null}
+        | null;
+    };
   }>;
   partitionSets: Array<{
     __typename: 'PartitionSet';
@@ -280,6 +352,12 @@ export type WorkspaceScheduleFragment = {
   mode: string;
   name: string;
   pipelineName: string;
+  scheduleState: {
+    __typename: 'InstigationState';
+    id: string;
+    selectorId: string;
+    status: Types.InstigationStatus;
+  };
 };
 
 export type WorkspaceSensorFragment = {
@@ -289,6 +367,18 @@ export type WorkspaceSensorFragment = {
   name: string;
   sensorType: Types.SensorType;
   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
+  sensorState: {
+    __typename: 'InstigationState';
+    id: string;
+    selectorId: string;
+    status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
+    typeSpecificData:
+      | {__typename: 'ScheduleData'}
+      | {__typename: 'SensorData'; lastCursor: string | null}
+      | null;
+  };
 };
 
 export type CodeLocationStatusQueryVariables = Types.Exact<{[key: string]: never}>;

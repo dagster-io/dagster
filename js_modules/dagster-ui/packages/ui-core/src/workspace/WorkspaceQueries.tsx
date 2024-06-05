@@ -2,11 +2,11 @@ import {gql} from '@apollo/client';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 export const LOCATION_WORKSPACE_QUERY = gql`
   query LocationWorkspaceQuery($name: String!) {
     workspaceLocationEntryOrError(name: $name) {
-      __typename
       ...WorkspaceLocationNode
     }
   }
@@ -93,6 +93,11 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     mode
     name
     pipelineName
+    scheduleState {
+      id
+      selectorId
+      status
+    }
   }
 
   fragment WorkspaceSensor on Sensor {
@@ -103,9 +108,16 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       mode
       pipelineName
     }
+    sensorState {
+      id
+      selectorId
+      status
+      ...BasicInstigationStateFragment
+    }
     sensorType
+    ...SensorSwitchFragment
   }
-
+  ${SENSOR_SWITCH_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
 `;
