@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_loader_schema[1]
+# name: test_loader_schema[pydantic1]
   dict({
     '$ref': '#/definitions/SimpleAssetBlueprint',
     'definitions': dict({
@@ -29,7 +29,7 @@
     'title': 'ParsingModel[SimpleAssetBlueprint]',
   })
 # ---
-# name: test_loader_schema[2]
+# name: test_loader_schema[pydantic2]
   dict({
     'additionalProperties': False,
     'properties': dict({
@@ -45,7 +45,7 @@
     'type': 'object',
   })
 # ---
-# name: test_loader_schema_sequence[1]
+# name: test_loader_schema_sequence[pydantic1]
   dict({
     'definitions': dict({
       'SimpleAssetBlueprint': dict({
@@ -74,11 +74,11 @@
     'items': dict({
       '$ref': '#/definitions/SimpleAssetBlueprint',
     }),
-    'title': 'ParsingModel[Sequence[test_load_defs_from_yaml.test_loader_schema_sequence.<locals>.SimpleAssetBlueprint]]',
+    'title': 'ParsingModel[Sequence[dagster_blueprints_tests.test_load_defs_from_yaml.test_loader_schema_sequence.<locals>.SimpleAssetBlueprint]]',
     'type': 'array',
   })
 # ---
-# name: test_loader_schema_sequence[2]
+# name: test_loader_schema_sequence[pydantic2]
   dict({
     '$defs': dict({
       'SimpleAssetBlueprint': dict({
@@ -102,7 +102,7 @@
     'type': 'array',
   })
 # ---
-# name: test_loader_schema_union[1]
+# name: test_loader_schema_union[pydantic1]
   dict({
     'anyOf': list([
       dict({
@@ -177,7 +177,7 @@
     'title': 'ParsingModel[Union[FooAssetBlueprint, BarAssetBlueprint]]',
   })
 # ---
-# name: test_loader_schema_union[2]
+# name: test_loader_schema_union[pydantic2]
   dict({
     '$defs': dict({
       'BarAssetBlueprint': dict({

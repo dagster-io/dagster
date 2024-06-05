@@ -241,7 +241,17 @@ def test_additional_resources() -> None:
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
 
-@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+@pytest.mark.parametrize(
+    "pydantic_version",
+    [
+        pytest.param(
+            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
+        ),
+        pytest.param(
+            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
+        ),
+    ],
+)
 def test_loader_schema(snapshot, pydantic_version: int) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
@@ -263,7 +273,17 @@ def test_loader_schema(snapshot, pydantic_version: int) -> None:
     assert set(model_keys) == {"key"}
 
 
-@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+@pytest.mark.parametrize(
+    "pydantic_version",
+    [
+        pytest.param(
+            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
+        ),
+        pytest.param(
+            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
+        ),
+    ],
+)
 def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
     class SimpleAssetBlueprint(Blueprint):
         key: str
@@ -278,7 +298,17 @@ def test_loader_schema_sequence(snapshot, pydantic_version: int) -> None:
     assert model_schema["type"] == "array"
 
 
-@pytest.mark.parametrize("pydantic_version", [2 if USING_PYDANTIC_2 else 1])
+@pytest.mark.parametrize(
+    "pydantic_version",
+    [
+        pytest.param(
+            1, id="pydantic1", marks=pytest.mark.skipif(USING_PYDANTIC_2, reason="Pydantic >= 2.0")
+        ),
+        pytest.param(
+            2, id="pydantic2", marks=pytest.mark.skipif(USING_PYDANTIC_1, reason="Pydantic < 2.0")
+        ),
+    ],
+)
 def test_loader_schema_union(snapshot, pydantic_version: int) -> None:
     class FooAssetBlueprint(Blueprint):
         type: Literal["foo"] = "foo"
