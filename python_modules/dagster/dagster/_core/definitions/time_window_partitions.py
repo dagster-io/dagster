@@ -236,7 +236,7 @@ class TimeWindow(NamedTuple):
 
     @property
     def is_empty(self) -> bool:
-        return self.start == self.end
+        return self.start.timestamp() == self.end.timestamp()
 
     @staticmethod
     def empty() -> "TimeWindow":
@@ -1813,7 +1813,9 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             else:
                 if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
                     result_windows[0] = TimeWindow(window.start, included_window.end)
-                elif result_windows and window.end == result_windows[0].start:
+                elif (
+                    result_windows and window.end.timestamp() == result_windows[0].start.timestamp()
+                ):
                     result_windows[0] = TimeWindow(window.start, included_window.end)
                 else:
                     result_windows.insert(0, window)
@@ -2321,7 +2323,7 @@ class TimeWindowPartitionsSubset(
         result_windows = [input_time_windows[0]] if len(input_time_windows) > 0 else []
         for window in input_time_windows[1:]:
             latest_window = result_windows[-1]
-            if window.start <= latest_window.end:
+            if window.start.timestamp() <= latest_window.end.timestamp():
                 # merge this window with the latest window
                 result_windows[-1] = TimeWindow(
                     latest_window.start, max(latest_window.end, window.end)
@@ -2371,10 +2373,10 @@ class TimeWindowPartitionsSubset(
                 pass
             else:
                 updated_time_window = time_windows[next_time_window_index_to_process]
-                if updated_time_window.end <= other_time_window.start:
+                if updated_time_window.end.timestamp() <= other_time_window.start.timestamp():
                     # Current subtractor is too early to intersect, can advance
                     next_time_window_index_to_process += 1
-                elif other_time_window.end <= updated_time_window.start:
+                elif other_time_window.end.timestamp() <= updated_time_window.start.timestamp():
                     # current subtractee is too early to intersect, can advance
                     next_other_window_index_to_process += 1
                 else:
