@@ -19,6 +19,7 @@ import {
   AddDynamicPartitionMutationVariables,
 } from '../../partitions/types/CreatePartitionDialog.types';
 import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
@@ -94,18 +95,20 @@ describe('launchAssetChoosePartitionsDialog', () => {
             ...workspaceMocks,
           ]}
         >
-          <LaunchAssetChoosePartitionsDialog
-            open={true}
-            setOpen={(_open: boolean) => {}}
-            repoAddress={buildRepoAddress('test', 'test')}
-            target={{
-              jobName: '__ASSET_JOB_0',
-              partitionSetName: '__ASSET_JOB_0_partition_set',
-              type: 'job',
-            }}
-            assets={[assetA, assetB]}
-            upstreamAssetKeys={[]}
-          />
+          <WorkspaceProvider>
+            <LaunchAssetChoosePartitionsDialog
+              open={true}
+              setOpen={(_open: boolean) => {}}
+              repoAddress={buildRepoAddress('test', 'test')}
+              target={{
+                jobName: '__ASSET_JOB_0',
+                partitionSetName: '__ASSET_JOB_0_partition_set',
+                type: 'job',
+              }}
+              assets={[assetA, assetB]}
+              upstreamAssetKeys={[]}
+            />
+          </WorkspaceProvider>
         </MockedProvider>
       </MemoryRouter>,
     );

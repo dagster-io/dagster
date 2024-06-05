@@ -58,7 +58,6 @@ describe('useDaemonStatus', () => {
     });
 
     it('does surface scheduler errors if there is a running schedule', async () => {
-      (window as any).__debug = true;
       const daemonHealth = [{daemonType: 'SCHEDULER', healthy: false, required: true}];
 
       const {result} = renderHook(() => useDaemonStatus(), {
@@ -82,7 +81,6 @@ describe('useDaemonStatus', () => {
         render(<div>{result.current?.content}</div>);
         expect(screen.getByText(/1 daemon not running/i)).toBeVisible();
       });
-      (window as any).__debug = false;
     });
   });
 
