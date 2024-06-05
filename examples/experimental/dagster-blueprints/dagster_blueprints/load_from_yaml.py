@@ -1,6 +1,8 @@
+import os
 from pathlib import Path
 from typing import Any, Dict, NamedTuple, Optional, Sequence, Type, Union, cast
 
+import jinja2
 from dagster import (
     Definitions,
     _check as check,
@@ -19,7 +21,7 @@ from dagster._utils.pydantic_yaml import (
 )
 from typing_extensions import get_args, get_origin
 
-from .blueprint import Blueprint, BlueprintDefinitions
+from .blueprint import Blueprint, BlueprintDefinitions, DagsterBuildDefinitionsFromConfigError
 
 
 def _attach_code_references_to_definitions(
@@ -113,6 +115,22 @@ def load_defs_from_yaml(
     else:
         file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
 
+    def resolve_env_var(file_path: Path, key: str, default: Optional[str] = None) -> str:
+        out = os.environ.get(key, default)
+        if out is None:
+            raise DagsterBuildDefinitionsFromConfigError(
+                f"Environment variable {key} not set when processing blueprint file {file_path}"
+            )
+        return out
+
+    def process_jinja_string(file_path: Path, value: Any) -> Any:
+        if isinstance(value, str):
+            return jinja2.Template(value).render(
+                env_var=lambda *args: resolve_env_var(file_path, *args)
+            )
+        else:
+            return value
+
     origin = get_origin(per_file_blueprint_type)
     if safe_is_subclass(origin, Sequence):
         args = get_args(per_file_blueprint_type)
@@ -126,7 +144,10 @@ def load_defs_from_yaml(
             blueprint
             for file_path in file_paths
             for blueprint in parse_yaml_file_to_pydantic_sequence(
-                args[0], file_path.read_text(), str(file_path)
+                args[0],
+                file_path.read_text(),
+                str(file_path),
+                leaf_resolver=lambda value: process_jinja_string(file_path, value),
             )
         ]
 
@@ -136,6 +157,7 @@ def load_defs_from_yaml(
                 cast(Type[Blueprint], per_file_blueprint_type),
                 file_path.read_text(),
                 str(file_path),
+                leaf_resolver=lambda value: process_jinja_string(file_path, value),
             )
             for file_path in file_paths
         ]

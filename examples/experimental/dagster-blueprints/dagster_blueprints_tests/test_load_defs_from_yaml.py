@@ -11,6 +11,7 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.test_utils import environ
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from dagster_blueprints.blueprint import (
     Blueprint,
@@ -409,3 +410,65 @@ def test_dir_of_many_blueprints() -> None:
         AssetKey("asset3"),
         AssetKey("asset4"),
     }
+
+
+def test_basic_env_var_jinja_templating() -> None:
+    with environ({"ASSET_NAME": "my_asset"}):
+        defs = load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_env_var.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprint,
+        )
+        assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("my_asset")}
+
+
+def test_basic_env_var_jinja_templating_err() -> None:
+    if "ASSET_NAME" in os.environ:
+        del os.environ["ASSET_NAME"]
+
+    with pytest.raises(
+        DagsterBuildDefinitionsFromConfigError, match="Environment variable ASSET_NAME"
+    ):
+        load_defs_from_yaml(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_env_var.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprint,
+        )
+
+
+def test_basic_env_var_jinja_templating_no_env_var_default() -> None:
+    with environ({"ASSET_NAME": "foo"}):
+        defs = load_defs_from_yaml(
+            path=Path(__file__).parent
+            / "yaml_files"
+            / "single_blueprint_with_env_var_default.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprint,
+        )
+        assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("foo")}
+
+    # Should use default value of "bar" if ASSET_NAME is not set
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_env_var_default.yaml",
+        per_file_blueprint_type=SimpleAssetBlueprint,
+    )
+    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("bar")}
+
+
+class SimpleAssetBlueprintWithDescription(Blueprint):
+    key: str
+    description: str
+
+    def build_defs(self) -> BlueprintDefinitions:
+        @asset(key=self.key, description=self.description)
+        def _asset(): ...
+
+        return BlueprintDefinitions(assets=[_asset])
+
+
+def test_basic_env_var_jinja_escaping() -> None:
+    defs = load_defs_from_yaml(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint_with_escaped_jinja.yaml",
+        per_file_blueprint_type=SimpleAssetBlueprintWithDescription,
+    )
+    assert (
+        defs.get_assets_def("asset1").descriptions_by_key[AssetKey("asset1")]
+        == "{{ env_var('ASSET_NAME') }}"
+    )
