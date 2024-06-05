@@ -430,15 +430,20 @@ def default_metadata_from_dbt_resource_props(
             ]
         )
 
-    # all nodes should have these props defined, but just in case
-    relation_identifier = dbt_resource_props.get("relation_name")
+    relation_name = (
+        dbt_resource_props["database"]
+        + "."
+        + dbt_resource_props["schema"]
+        + "."
+        + dbt_resource_props["alias"]
+    )
 
     metadata: Dict[str, Any] = {}
-    if column_schema or relation_identifier:
+    if column_schema or relation_name:
         metadata = {
             **TableMetadataSet(
                 column_schema=column_schema,
-                relation_identifier=relation_identifier,
+                relation_identifier=(relation_name),
             ),
         }
 
