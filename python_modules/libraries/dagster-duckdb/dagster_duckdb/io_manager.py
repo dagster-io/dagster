@@ -285,7 +285,10 @@ class DuckDbClient(DbClient):
             kwargs={
                 "database": context.resource_config["database"],
                 "read_only": False,
-                "config": context.resource_config["connection_config"],
+                "config": {
+                    "custom_user_agent": "dagster",
+                    **context.resource_config["connection_config"],
+                },
             },
             max_retries=10,
         )
