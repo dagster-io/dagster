@@ -1,4 +1,5 @@
 import hashlib
+import re
 import textwrap
 from typing import (
     TYPE_CHECKING,
@@ -402,6 +403,34 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
     return AssetKey(components)
 
 
+RELATION_IDENTIFIER_COMPONENT = re.compile(r"(?:\"[^\"]*\"|[^.])+(?:\.+$)?")
+
+COMPONENT_NO_QUOTES = re.compile(r"^\"[a-zA-Z0-9_]+\"$")
+
+
+def _cleanup_relation_identifier(relation_identifier: Optional[str]) -> Optional[str]:
+    """Utility function to clean up a dbt relation identifier.
+
+    By default, all components of a dbt relation identifier are quoted in double quotes. These
+    are needed when the component contains special characters such as periods, but in most cases
+    are unnecessary. This function removes the double quotes from the components of a relation
+    identifier which do not contain special characters.
+    """
+    if relation_identifier is None:
+        return None
+
+    components = re.findall(RELATION_IDENTIFIER_COMPONENT, relation_identifier)
+
+    cleaned_components = []
+    for component in components:
+        if re.match(COMPONENT_NO_QUOTES, component):
+            cleaned_components.append(component[1:-1])
+        else:
+            cleaned_components.append(component)
+
+    return ".".join(cleaned_components)
+
+
 def default_metadata_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
@@ -427,7 +456,7 @@ def default_metadata_from_dbt_resource_props(
         metadata = {
             **TableMetadataSet(
                 column_schema=column_schema,
-                relation_identifier=relation_identifier,
+                relation_identifier=_cleanup_relation_identifier(relation_identifier),
             ),
         }
 
