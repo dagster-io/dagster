@@ -6,6 +6,7 @@ import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 
 from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import define_asset_job
@@ -20,25 +21,25 @@ class AutomationTarget(NamedTuple):
     passed_assets_defs: Sequence[AssetsDefinition]
 
 
+def ensure_compatible_sequence(
+    potential_target: Sequence[Any],
+) -> Sequence[Union[str, AssetKey, AssetsDefinition, SourceAsset]]:
+    return check.is_list(
+        list(potential_target),
+        of_type=(str, AssetKey, AssetsDefinition, SourceAsset),
+        additional_message=(
+            "If you pass a sequence to a schedule, it must be a sequence of strings, "
+            "AssetKeys, AssetsDefinitions, or SourceAssets"
+        ),
+    )
+
+
 def is_coercible_to_asset_selection(target: Any) -> bool:
-    from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
-
-    # CoercibleToAssetSelection: TypeAlias = Union[
-    #     str,
-    #     Sequence[str],
-    #     Sequence[AssetKey],
-    #     Sequence[Union["AssetsDefinition", "SourceAsset"]],
-    #     "AssetSelection",
-    # ]
-
     if isinstance(target, (str, AssetSelection)):
         return True
 
     if isinstance(target, Sequence):
-        for item in target:
-            if not isinstance(item, (str, AssetKey, AssetsDefinition, SourceAsset)):
-                check.failed(f"Invalid list element passed to target: {item}")
+        ensure_compatible_sequence(target)
         return True
 
     return False
@@ -52,6 +53,9 @@ def resolve_automation_target(
     from dagster._core.definitions.source_asset import SourceAsset
 
     passed_assets_defs = []
+
+    if isinstance(target, Sequence):
+        ensure_compatible_sequence(target)
 
     if isinstance(target, AssetsDefinition):
         asset_selection = AssetSelection.assets(target)
