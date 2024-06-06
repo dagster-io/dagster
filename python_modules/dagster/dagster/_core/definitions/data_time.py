@@ -137,7 +137,7 @@ class CachingDataTimeResolver:
 
         # the oldest time window that was newly filled
         oldest_net_new_time_window = min(
-            partitions_def.persisted_time_window_for_partition_key(partition_key)
+            partitions_def.time_window_for_partition_key(partition_key)
             for partition_key in net_new_partitions
         )
 

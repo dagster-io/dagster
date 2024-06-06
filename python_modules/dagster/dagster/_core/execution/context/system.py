@@ -470,10 +470,8 @@ class PlanExecutionContext(IPlanContext):
                 Union[TimeWindowPartitionsDefinition, MultiPartitionsDefinition], partitions_def
             )
             return TimeWindow(
-                partitions_def.persisted_time_window_for_partition_key(
-                    partition_key_range.start
-                ).start,
-                partitions_def.persisted_time_window_for_partition_key(partition_key_range.end).end,
+                partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+                partitions_def.time_window_for_partition_key(partition_key_range.end).end,
             )
 
         else:
@@ -1143,8 +1141,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         partition_key_range = self.asset_partition_key_range_for_output(output_name)
         return TimeWindow(
             # mypy thinks partitions_def is <nothing> here because ????
-            partitions_def.persisted_time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.persisted_time_window_for_partition_key(partition_key_range.end).end,
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
     def asset_partitions_time_window_for_input(self, input_name: str) -> TimeWindow:
@@ -1182,10 +1180,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         partition_key_range = self.asset_partition_key_range_for_input(input_name)
 
         return TimeWindow(
-            upstream_asset_partitions_def.persisted_time_window_for_partition_key(
+            upstream_asset_partitions_def.time_window_for_partition_key(
                 partition_key_range.start
             ).start,
-            upstream_asset_partitions_def.persisted_time_window_for_partition_key(
+            upstream_asset_partitions_def.time_window_for_partition_key(
                 partition_key_range.end
             ).end,
         )

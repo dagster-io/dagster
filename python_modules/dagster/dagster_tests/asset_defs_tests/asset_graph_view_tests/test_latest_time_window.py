@@ -15,15 +15,12 @@ from dagster._core.definitions.partition import (
     DynamicPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    PersistedTimeWindow,
-)
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
 
 
-def _tw(asset_slice: AssetSlice) -> PersistedTimeWindow:
+def _tw(asset_slice: AssetSlice) -> TimeWindow:
     tws = asset_slice.time_windows
     check.invariant(len(tws) == 1)
     return next(iter(tws))

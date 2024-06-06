@@ -28,7 +28,7 @@ from dagster._core.definitions.freshness_based_auto_materialize import (
 )
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
-    PersistedTimeWindow,
+    TimeWindow,
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
@@ -761,7 +761,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
     def description(self) -> str:
         return f"waiting until all upstream assets have updated since the last cron schedule tick of '{self.cron_schedule}' (timezone: {self.timezone})"
 
-    def passed_time_window(self, context: "AutomationContext") -> PersistedTimeWindow:
+    def passed_time_window(self, context: "AutomationContext") -> TimeWindow:
         """Returns the window of time that has passed between the previous two cron ticks. All
         parent assets must contain all data from this time window in order for this asset to be
         materialized.
@@ -774,13 +774,13 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
         end_time = next(previous_ticks)
         start_time = next(previous_ticks)
 
-        return PersistedTimeWindow(start=start_time, end=end_time)
+        return TimeWindow(start=start_time, end=end_time)
 
     def get_parent_subset_updated_since_cron(
         self,
         context: "AutomationContext",
         parent_asset_key: AssetKey,
-        passed_time_window: PersistedTimeWindow,
+        passed_time_window: TimeWindow,
     ) -> ValidAssetSubset:
         """Returns the AssetSubset of a given parent asset that has been updated since the end of
         the previous cron tick. If a value for this parent asset was computed on the previous
@@ -825,7 +825,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             return new_parent_subset | previous_parent_subset
 
     def get_parent_subsets_updated_since_cron_by_key(
-        self, context: "AutomationContext", passed_time_window: PersistedTimeWindow
+        self, context: "AutomationContext", passed_time_window: TimeWindow
     ) -> Mapping[AssetKey, ValidAssetSubset]:
         """Returns a mapping of parent asset keys to the AssetSubset of each parent that has been
         updated since the end of the previous cron tick. Does not compute this value for time-window
@@ -850,7 +850,7 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
     def parent_updated_since_cron(
         self,
         context: "AutomationContext",
-        passed_time_window: PersistedTimeWindow,
+        passed_time_window: TimeWindow,
         parent_asset_key: AssetKey,
         child_asset_partition: AssetKeyPartitionKey,
         updated_parent_subset: ValidAssetSubset,

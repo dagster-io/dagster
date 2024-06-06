@@ -7,6 +7,7 @@ from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, Static
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
+    PersistedTimeWindow,
     TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
@@ -133,7 +134,9 @@ def test_time_window_partitions_subset_num_partitions_serialization():
         end_offset=daily_partitions_def.end_offset,
     )
 
-    tw = time_partitions_def.persisted_time_window_for_partition_key("2023-01-01")
+    tw = PersistedTimeWindow.from_public_time_window(
+        time_partitions_def.time_window_for_partition_key("2023-01-01")
+    )
 
     subset = TimeWindowPartitionsSubset(
         time_partitions_def, num_partitions=None, included_time_windows=[tw]

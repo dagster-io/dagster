@@ -12,7 +12,7 @@ from dagster._core.definitions.multi_dimensional_partitions import (
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
-    PersistedTimeWindow,
+    TimeWindow,
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
@@ -189,19 +189,22 @@ class AssetSlice:
         return self._asset_graph_view.compute_intersection_with_partition_keys(partition_keys, self)
 
     @property
-    def time_windows(self) -> Sequence[PersistedTimeWindow]:
+    def time_windows(self) -> Sequence[TimeWindow]:
         """Get the time windows for the asset slice. Only supports explicitly time-windowed partitions for now."""
         tw_partitions_def = check.not_none(
             self._time_window_partitions_def_in_context(), "Must be time windowed."
         )
 
         if isinstance(self._compatible_subset.subset_value, BaseTimeWindowPartitionsSubset):
-            return self._compatible_subset.subset_value.included_time_windows
+            return [
+                tw.to_public_time_window()
+                for tw in self._compatible_subset.subset_value.included_time_windows
+            ]
         elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
             last_tw = tw_partitions_def.get_last_partition_window(
                 self._asset_graph_view.effective_dt
             )
-            return [PersistedTimeWindow(datetime.min, last_tw.end)] if last_tw else []
+            return [TimeWindow(datetime.min, last_tw.end)] if last_tw else []
         elif isinstance(self._compatible_subset.subset_value, DefaultPartitionsSubset):
             check.inst(
                 self._partitions_def,
@@ -222,7 +225,7 @@ class AssetSlice:
                 subset_from_tw, BaseTimeWindowPartitionsSubset, "Must be time window subset."
             )
             if isinstance(subset_from_tw, BaseTimeWindowPartitionsSubset):
-                return subset_from_tw.included_time_windows
+                return [tw.to_public_time_window() for tw in subset_from_tw.included_time_windows]
             else:
                 check.failed(
                     f"Unsupported subset value in generated subset {self._compatible_subset.subset_value} created by keys {tw_partition_keys}"
@@ -456,7 +459,7 @@ class AssetGraphView:
 
         # the time window in which to look for partitions
         time_window = (
-            PersistedTimeWindow(
+            TimeWindow(
                 start=max(
                     # do not look before the start of the definition
                     time_partitions_def.start,
@@ -567,14 +570,14 @@ class AssetGraphView:
         self,
         asset_key: AssetKey,
         partitions_def: TimeWindowPartitionsDefinition,
-        time_window: PersistedTimeWindow,
+        time_window: TimeWindow,
     ) -> "AssetSlice":
         return self.get_asset_slice(asset_key=asset_key).compute_intersection_with_partition_keys(
             set(partitions_def.get_partition_keys_in_time_window(time_window))
         )
 
     def _build_multi_partition_slice(
-        self, asset_key: AssetKey, multi_dim_info: MultiDimInfo, time_window: PersistedTimeWindow
+        self, asset_key: AssetKey, multi_dim_info: MultiDimInfo, time_window: TimeWindow
     ) -> "AssetSlice":
         # Note: Potential perf improvement here. There is no way to encode a cartesian product
         # in the underlying PartitionsSet. We could add a specialized PartitionsSubset
