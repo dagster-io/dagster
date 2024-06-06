@@ -14,6 +14,7 @@ import {
   Skeleton,
   Subtitle2,
   Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
 import React, {useMemo, useState} from 'react';
@@ -40,7 +41,9 @@ import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {showSharedToaster} from '../app/DomUtils';
 import {COMMON_COLLATOR} from '../app/Util';
+import {useCopyToClipboard} from '../app/browser';
 import {
   LiveDataForNode,
   displayNameForAssetKey,
@@ -59,7 +62,12 @@ import {
 import {IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
-import {TableSchema, TableSchemaAssetContext} from '../metadata/TableSchema';
+import {
+  TableSchema,
+  TableSchemaAssetContext,
+  isCanonicalRelationIdentifierEntry,
+  isCanonicalUriEntry,
+} from '../metadata/TableSchema';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {ScheduleOrSensorTag} from '../nav/ScheduleOrSensorTag';
 import {useRepositoryLocationForAddress} from '../nav/useRepositoryLocationForAddress';
@@ -222,6 +230,10 @@ export const AssetNodeOverview = ({
 
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+  const relationIdentifierMetadata = assetNode.metadataEntries?.find(
+    isCanonicalRelationIdentifierEntry,
+  );
+  const uriMetadata = assetNode.metadataEntries?.find(isCanonicalUriEntry);
 
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
@@ -267,13 +279,41 @@ export const AssetNodeOverview = ({
           <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
         )}
       </AttributeAndValue>
-      <AttributeAndValue label="Storage kind">
-        {storageKindTag && (
-          <AssetStorageKindTag
-            style={{position: 'relative'}}
-            storageKind={storageKindTag.value}
-            reduceColor
-          />
+      <AttributeAndValue label="Storage">
+        {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
+          <Box flex={{direction: 'column', gap: 4}}>
+            {relationIdentifierMetadata && (
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {relationIdentifierMetadata.text}
+                <CopyButton value={relationIdentifierMetadata.text} />
+              </Box>
+            )}
+            {uriMetadata && (
+              <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+                {uriMetadata.__typename === 'TextMetadataEntry' ? (
+                  uriMetadata.text
+                ) : (
+                  <a target="_blank" rel="noreferrer" href={uriMetadata.url}>
+                    {uriMetadata.url}
+                  </a>
+                )}
+                <CopyButton
+                  value={
+                    uriMetadata.__typename === 'TextMetadataEntry'
+                      ? uriMetadata?.text
+                      : uriMetadata.url
+                  }
+                />
+              </Box>
+            )}
+            {storageKindTag && (
+              <AssetStorageKindTag
+                style={{position: 'relative'}}
+                storageKind={storageKindTag.value}
+                reduceColor
+              />
+            )}
+          </Box>
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Tags">
@@ -527,6 +567,26 @@ const AssetNodeOverviewContainer = ({
 
 const isEmptyChildren = (children: React.ReactNode) =>
   !children || (children instanceof Array && children.length === 0);
+
+const CopyButton = ({value}: {value: string}) => {
+  const copy = useCopyToClipboard();
+  const onCopy = async () => {
+    copy(value);
+    await showSharedToaster({
+      intent: 'success',
+      icon: 'copy_to_clipboard_done',
+      message: 'Copied!',
+    });
+  };
+
+  return (
+    <Tooltip content="Copy" placement="bottom" display="block">
+      <div onClick={onCopy} style={{cursor: 'pointer'}}>
+        <Icon name="content_copy" />
+      </div>
+    </Tooltip>
+  );
+};
 
 const AttributeAndValue = ({
   label,

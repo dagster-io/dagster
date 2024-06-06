@@ -551,15 +551,8 @@ The `SnowflakePySparkIOManager` requires that a `SparkSession` be active and con
 from dagster_pyspark import pyspark_resource
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import AssetExecutionContext, Definitions, EnvVar, asset
 
@@ -610,16 +603,8 @@ defs = Definitions(
 ```python file=/integrations/snowflake/pyspark_with_spark_session.py
 from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
-from pyspark.sql import (
-    DataFrame,
-    SparkSession,
-)
-from pyspark.sql.types import (
-    DoubleType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import DoubleType, StringType, StructField, StructType
 
 from dagster import Definitions, EnvVar, asset
 

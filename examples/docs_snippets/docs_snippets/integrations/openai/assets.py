@@ -1,13 +1,7 @@
 # start_example
 from dagster_openai import OpenAIResource
 
-from dagster import (
-    AssetExecutionContext,
-    Definitions,
-    EnvVar,
-    asset,
-    define_asset_job,
-)
+from dagster import AssetExecutionContext, Definitions, EnvVar, asset, define_asset_job
 
 
 @asset(compute_kind="OpenAI")

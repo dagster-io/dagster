@@ -24,9 +24,7 @@ from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.selector.subset_selector import (
-    generate_asset_dep_graph,
-)
+from dagster._core.selector.subset_selector import generate_asset_dep_graph
 
 
 class AssetNode(BaseAssetNode):

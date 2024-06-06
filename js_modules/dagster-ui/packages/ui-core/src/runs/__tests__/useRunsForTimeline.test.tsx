@@ -3,11 +3,12 @@ import {waitFor} from '@testing-library/react';
 import {renderHook} from '@testing-library/react-hooks';
 import {ReactNode} from 'react';
 
-import {AppContext} from '../../app/AppContext';
+import {AppContext, AppContextValue} from '../../app/AppContext';
 import {
   InstigationStatus,
   RepositoryLocationLoadStatus,
   RunStatus,
+  RunsFilter,
   buildDryRunInstigationTick,
   buildDryRunInstigationTicks,
   buildInstigationState,
@@ -34,10 +35,15 @@ const mockedCache = {
   has: jest.fn(),
   get: jest.fn(),
   set: jest.fn(),
+  constructorArgs: {},
 };
+
 jest.mock('idb-lru-cache', () => {
   return {
-    cache: jest.fn(() => mockedCache),
+    cache: (...args: any[]) => {
+      mockedCache.constructorArgs = args;
+      return mockedCache;
+    },
   };
 });
 
@@ -52,6 +58,7 @@ const mockCompletedRuns = (variables: any, result: any) => ({
 const mockOngoingRuns = ({
   limit = 500,
   cursor,
+  runsFilter,
   results = [
     {
       id: '2',
@@ -70,11 +77,15 @@ const mockOngoingRuns = ({
   limit?: number;
   results?: any[];
   cursor?: any;
+  runsFilter?: RunsFilter;
 } = {}) =>
   buildQueryMock({
     query: ONGOING_RUN_TIMELINE_QUERY,
     variables: {
-      inProgressFilter: {statuses: ['CANCELING', 'STARTED']},
+      inProgressFilter: {
+        statuses: ['CANCELING', 'STARTED'],
+        ...runsFilter,
+      },
       cursor,
       limit,
     },
@@ -140,51 +151,65 @@ const mockFutureTicks = (start: number, end: number) =>
     },
   });
 
+function buildMocks(runsFilter?: RunsFilter) {
+  const start = 0;
+  const initialRange = [start, start + ONE_HOUR_S * 3] as const;
+  const buckets = getHourlyBuckets(initialRange[0], initialRange[1]);
+  expect(buckets).toHaveLength(3);
+
+  const mocks: MockedResponse[] = buckets.map((bucket, index) => {
+    const [start, end] = bucket;
+    const updatedBefore = end;
+    const updatedAfter = start;
+    return mockCompletedRuns(
+      {
+        completedFilter: {
+          statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
+          updatedBefore,
+          updatedAfter,
+          ...runsFilter,
+        },
+        cursor: undefined,
+        limit: 500,
+      },
+      {
+        data: {
+          completed: buildRuns({
+            results: [
+              buildRun({
+                id: `1-${index}`,
+                pipelineName: `pipeline${index}`,
+                repositoryOrigin: buildRepositoryOrigin({
+                  id: `1-${index}`,
+                  repositoryName: 'repo1',
+                  repositoryLocationName: 'repo1',
+                }),
+                startTime: updatedAfter,
+                endTime: updatedBefore,
+                status: RunStatus.SUCCESS,
+              }),
+            ],
+          }),
+        },
+      },
+    );
+  });
+
+  mocks.push(mockOngoingRuns({runsFilter}), mockFutureTicks(initialRange[0], initialRange[1]));
+
+  return {mocks, buckets, initialRange};
+}
+
+const contextWithCacheId: AppContextValue = {
+  localCacheIdPrefix: 'test',
+  basePath: '',
+  rootServerURI: '',
+  telemetryEnabled: false,
+};
+
 describe('useRunsForTimeline', () => {
   it('fetches and processes run data correctly', async () => {
-    const start = 0;
-    const initialRange = [start, start + ONE_HOUR_S * 3] as const;
-    const buckets = getHourlyBuckets(initialRange[0], initialRange[1]);
-    expect(buckets).toHaveLength(3);
-    const mocks: MockedResponse[] = buckets.map((bucket, index) => {
-      const [start, end] = bucket;
-      const updatedBefore = end;
-      const updatedAfter = start;
-      return mockCompletedRuns(
-        {
-          completedFilter: {
-            statuses: ['FAILURE', 'SUCCESS', 'CANCELED'],
-            updatedBefore,
-            updatedAfter,
-          },
-          cursor: undefined,
-          limit: 500,
-        },
-        {
-          data: {
-            completed: buildRuns({
-              results: [
-                buildRun({
-                  id: `1-${index}`,
-                  pipelineName: `pipeline${index}`,
-                  repositoryOrigin: buildRepositoryOrigin({
-                    id: `1-${index}`,
-                    repositoryName: 'repo1',
-                    repositoryLocationName: 'repo1',
-                  }),
-                  startTime: updatedAfter,
-                  endTime: updatedBefore,
-                  status: RunStatus.SUCCESS,
-                }),
-              ],
-            }),
-          },
-        },
-      );
-    });
-
-    mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
-
+    const {mocks, buckets, initialRange} = buildMocks();
     const wrapper = ({children}: {children: ReactNode}) => (
       <MockedProvider mocks={mocks} addTypename={false}>
         {children}
@@ -193,9 +218,7 @@ describe('useRunsForTimeline', () => {
 
     const {result} = renderHook(
       () => useRunsForTimeline({rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000]}),
-      {
-        wrapper,
-      },
+      {wrapper},
     );
 
     // Initial state
@@ -324,9 +347,7 @@ describe('useRunsForTimeline', () => {
     // Render hook with initial interval to populate the cache
     const {result, rerender} = renderHook(
       () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000]}),
-      {
-        wrapper,
-      },
+      {wrapper},
     );
 
     // Initial state
@@ -452,9 +473,7 @@ describe('useRunsForTimeline', () => {
 
     const {result} = renderHook(
       () => useRunsForTimeline({rangeMs: [interval[0] * 1000, interval[1] * 1000], batchLimit: 1}),
-      {
-        wrapper,
-      },
+      {wrapper},
     );
 
     // Initial state
@@ -533,14 +552,7 @@ describe('useRunsForTimeline', () => {
     mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
 
     const wrapper = ({children}: {children: ReactNode}) => (
-      <AppContext.Provider
-        value={{
-          localCacheIdPrefix: 'test',
-          basePath: '',
-          rootServerURI: '',
-          telemetryEnabled: false,
-        }}
-      >
+      <AppContext.Provider value={contextWithCacheId}>
         <MockedProvider mocks={mocks} addTypename={false}>
           {children}
         </MockedProvider>
@@ -613,6 +625,57 @@ describe('useRunsForTimeline', () => {
           status: 'SUCCESS',
         },
       ],
+    });
+  });
+
+  it('uses the main cache when no filters are provided', async () => {
+    const {mocks, initialRange} = buildMocks();
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <AppContext.Provider value={contextWithCacheId}>
+        <MockedProvider mocks={mocks} addTypename={false}>
+          {children}
+        </MockedProvider>
+      </AppContext.Provider>
+    );
+
+    renderHook(
+      () => useRunsForTimeline({rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000]}),
+      {wrapper},
+    );
+
+    await waitFor(() => {
+      expect(mockedCache.constructorArgs).toEqual([
+        {dbName: 'HourlyDataCache:test-useRunsForTimeline', maxCount: 1},
+      ]);
+      expect(mockedCache.set).toHaveBeenCalled();
+    });
+  });
+
+  it('uses the filtered cache when filters are provided', async () => {
+    const {mocks, initialRange} = buildMocks({
+      tags: [{key: 'dagster/backfill_id', value: '1234'}],
+    });
+
+    const wrapper = ({children}: {children: ReactNode}) => (
+      <AppContext.Provider value={contextWithCacheId}>
+        <MockedProvider mocks={mocks} addTypename={false}>
+          {children}
+        </MockedProvider>
+      </AppContext.Provider>
+    );
+
+    const props = {
+      rangeMs: [initialRange[0] * 1000, initialRange[1] * 1000] as [number, number],
+      filter: {tags: [{key: 'dagster/backfill_id', value: '1234'}]},
+    };
+    renderHook(() => useRunsForTimeline(props), {wrapper});
+
+    await waitFor(() => {
+      expect(mockedCache.constructorArgs).toEqual([
+        {dbName: 'HourlyDataCache:test-useRunsForTimeline-filtered', maxCount: 3},
+      ]);
+      expect(mockedCache.set).toHaveBeenCalled();
     });
   });
 });

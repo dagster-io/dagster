@@ -91,9 +91,7 @@ from dagster._core.remote_representation.origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecordStatus,
-)
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
@@ -2535,6 +2533,11 @@ class TestEventLogStorage:
             asset_keys = storage.get_asset_keys(cursor='["b", "y"]', limit=1)
             assert len(asset_keys) == 1
             assert asset_keys[0].to_string() == '["b", "z"]'
+
+            # pagination still works even if the key is not in the list
+            asset_keys = storage.get_asset_keys(cursor='["b", "w"]', limit=1)
+            assert len(asset_keys) == 1
+            assert asset_keys[0].to_string() == '["b", "x"]'
 
             # prefix filter
             asset_keys = storage.get_asset_keys(prefix=["b"])

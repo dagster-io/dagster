@@ -27,12 +27,7 @@ from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.dependency import (
-    Node,
-    NodeHandle,
-    NodeInputHandle,
-    NodeInvocation,
-)
+from dagster._core.definitions.dependency import Node, NodeHandle, NodeInputHandle, NodeInvocation
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
@@ -51,10 +46,7 @@ from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster._core.selector.subset_selector import (
-    AssetSelectionData,
-    OpSelectionData,
-)
+from dagster._core.selector.subset_selector import AssetSelectionData, OpSelectionData
 from dagster._core.storage.io_manager import (
     IOManagerDefinition,
     dagster_maintained_io_manager,
@@ -68,11 +60,7 @@ from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .config import ConfigMapping
-from .dependency import (
-    DependencyMapping,
-    DependencyStructure,
-    OpNode,
-)
+from .dependency import DependencyMapping, DependencyStructure, OpNode
 from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -784,10 +772,7 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        from dagster._core.definitions.asset_job import (
-            build_asset_job,
-            get_asset_graph_for_job,
-        )
+        from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
@@ -1198,9 +1183,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """For non-asset jobs that have some inputs that are fed from assets, constructs an
     AssetLayer that includes these assets as loadables.
     """
-    from dagster._core.definitions.asset_graph import (
-        AssetGraph,
-    )
+    from dagster._core.definitions.asset_graph import AssetGraph
 
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
     all_input_assets: List[AssetsDefinition] = []

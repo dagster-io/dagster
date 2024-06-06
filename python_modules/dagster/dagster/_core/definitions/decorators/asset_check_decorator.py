@@ -28,15 +28,13 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
-from dagster._utils.warnings import (
-    disable_dagster_warnings,
-)
+from dagster._utils.warnings import disable_dagster_warnings
 
 from ..input import In
-from .asset_decorator import (
+from .asset_decorator import make_asset_deps
+from .assets_definition_factory import (
     build_asset_ins,
     get_function_params_without_context_or_config_or_resources,
-    make_asset_deps,
 )
 from .op_decorator import _Op
 

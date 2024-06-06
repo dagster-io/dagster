@@ -53,9 +53,7 @@ from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
-from dagster._core.definitions.assets import (
-    AssetsDefinition,
-)
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
@@ -101,10 +99,7 @@ from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    is_whitelisted_for_serdes_object,
-)
+from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"

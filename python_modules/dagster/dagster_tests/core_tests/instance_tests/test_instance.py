@@ -41,10 +41,7 @@ from dagster._core.snap import (
     create_job_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster._core.storage.partition_status_cache import (
-    AssetPartitionStatus,
-    AssetStatusCacheValue,
-)
+from dagster._core.storage.partition_status_cache import AssetPartitionStatus, AssetStatusCacheValue
 from dagster._core.storage.sqlite_storage import (
     _event_logs_directory,
     _runs_directory,

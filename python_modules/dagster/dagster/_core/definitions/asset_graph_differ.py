@@ -8,9 +8,7 @@ from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.events import (
-        AssetKey,
-    )
+    from dagster._core.definitions.events import AssetKey
 
 
 class ChangeReason(Enum):

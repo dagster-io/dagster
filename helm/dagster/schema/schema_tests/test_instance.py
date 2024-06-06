@@ -33,11 +33,7 @@ from schema.charts.dagster.subschema.daemon import (
 )
 from schema.charts.dagster.subschema.postgresql import PostgreSQL, Service
 from schema.charts.dagster.subschema.python_logs import PythonLogs
-from schema.charts.dagster.subschema.retention import (
-    Retention,
-    TickRetention,
-    TickRetentionByType,
-)
+from schema.charts.dagster.subschema.retention import Retention, TickRetention, TickRetentionByType
 from schema.charts.dagster.subschema.run_launcher import (
     CeleryK8sRunLauncherConfig,
     K8sRunLauncherConfig,

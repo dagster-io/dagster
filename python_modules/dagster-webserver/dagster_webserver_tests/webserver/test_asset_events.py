@@ -1,8 +1,6 @@
 import inspect
 
-from dagster import (
-    DagsterInstance,
-)
+from dagster import DagsterInstance
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.data_version import (

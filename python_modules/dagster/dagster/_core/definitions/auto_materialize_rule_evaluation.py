@@ -1,17 +1,7 @@
 from abc import ABC, abstractproperty
 from collections import defaultdict
 from enum import Enum
-from typing import (
-    AbstractSet,
-    Dict,
-    FrozenSet,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -21,7 +11,6 @@ from dagster._serdes.serdes import (
     _WHITELIST_MAP,
     NamedTupleSerializer,
     PackableValue,
-    PydanticModelSerializer,
     UnpackContext,
     UnpackedValue,
     WhitelistMap,
@@ -30,7 +19,7 @@ from dagster._serdes.serdes import (
 )
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .declarative_scheduling.serialized_objects import (
+from .declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
     AssetConditionEvaluationWithRunIds,
     AssetConditionSnapshot,
@@ -145,9 +134,7 @@ def deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_
     """Provides a backcompat layer to allow deserializing old AutoMaterializeAssetEvaluation
     objects into the new AssetConditionEvaluationWithRunIds objects.
     """
-    from .declarative_scheduling.serialized_objects import (
-        AssetConditionEvaluationWithRunIds,
-    )
+    from .declarative_automation.serialized_objects import AssetConditionEvaluationWithRunIds
 
     class BackcompatDeserializer(BackcompatAutoMaterializeAssetEvaluationSerializer):
         @property
@@ -184,7 +171,7 @@ def deserialize_serialized_partitions_subset_to_asset_subset(
     return AssetSubset(asset_key=asset_key, value=serialized.deserialize(partitions_def))
 
 
-class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer):
+class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     """This handles backcompat for the old AutoMaterializeAssetEvaluation objects, turning them into
     AssetConditionEvaluationWithRunIds objects.
     """
@@ -212,8 +199,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .declarative_scheduling.legacy.rule_condition import RuleCondition
-        from .declarative_scheduling.serialized_objects import AssetConditionSnapshot
+        from .declarative_automation.legacy.rule_condition import RuleCondition
+        from .declarative_automation.serialized_objects import AssetConditionSnapshot
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -233,9 +220,7 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         rule_snapshot: AutoMaterializeRuleSnapshot,
     ) -> "AssetConditionEvaluation":
-        from .declarative_scheduling.serialized_objects import (
-            HistoricalAllPartitionsSubsetSentinel,
-        )
+        from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         condition_snapshot = self._asset_condition_snapshot_from_rule_snapshot(rule_snapshot)
 
@@ -276,13 +261,11 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .declarative_scheduling.operators.boolean_operators import (
+        from .declarative_automation.operators.boolean_operators import (
             NotAssetCondition,
             OrAssetCondition,
         )
-        from .declarative_scheduling.serialized_objects import (
-            HistoricalAllPartitionsSubsetSentinel,
-        )
+        from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         partition_subsets_by_condition_by_rule_snapshot = defaultdict(list)
         for elt in partition_subsets_by_condition:
@@ -346,8 +329,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
             # since the evaluation was stored. Instead, we just use an empty subset.
             true_subset = AssetSubset.empty(asset_key, self.partitions_def)
         else:
-            true_subset = evaluation.true_subset.copy(
-                update={"value": not evaluation.true_subset.bool_value}
+            true_subset = evaluation.true_subset._replace(
+                value=not evaluation.true_subset.bool_value
             )
         return AssetConditionEvaluation(
             condition_snapshot=AssetConditionSnapshot(
@@ -369,10 +352,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(PydanticModelSerializer
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .declarative_scheduling.operators.boolean_operators import AndAssetCondition
-        from .declarative_scheduling.serialized_objects import (
-            HistoricalAllPartitionsSubsetSentinel,
-        )
+        from .declarative_automation.operators.boolean_operators import AndAssetCondition
+        from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
 
         asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
         partition_subsets_by_condition = cast(

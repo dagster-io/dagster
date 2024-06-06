@@ -1,10 +1,6 @@
 import datetime
 
-from dagster import (
-    Field,
-    PartitionKeyRange,
-    StringSource,
-)
+from dagster import Field, PartitionKeyRange, StringSource
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
@@ -34,9 +30,7 @@ from .asset_graphs import (
     one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
 )
 from .basic_scenarios import diamond
-from .freshness_policy_scenarios import (
-    daily_to_unpartitioned,
-)
+from .freshness_policy_scenarios import daily_to_unpartitioned
 from .partition_scenarios import (
     hourly_partitions_def,
     hourly_to_daily_partitions,

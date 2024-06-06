@@ -2,10 +2,7 @@ import warnings
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import pendulum
-from dagster._core.scheduler.instigation import (
-    InstigatorType,
-    TickStatus,
-)
+from dagster._core.scheduler.instigation import InstigatorType, TickStatus
 
 if TYPE_CHECKING:
     from ..schema.util import ResolveInfo

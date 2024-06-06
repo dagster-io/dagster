@@ -5,10 +5,7 @@ from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
 
-from .events import (
-    AssetKey,
-    CoercibleToAssetKey,
-)
+from .events import AssetKey, CoercibleToAssetKey
 from .metadata import RawMetadataMapping
 
 

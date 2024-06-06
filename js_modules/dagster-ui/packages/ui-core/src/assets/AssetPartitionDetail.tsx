@@ -210,11 +210,11 @@ export const AssetPartitionDetail = ({
     latestRunForPartition?.id !== latestEventRun?.id ? latestRunForPartition : null;
   const currentRunStatusMessage =
     currentRun?.status === RunStatus.STARTED
-      ? 'has started and is refreshing this partition.'
+      ? 'that targets this partition has started .'
       : currentRun?.status === RunStatus.STARTING
-      ? 'is starting and will refresh this partition.'
+      ? 'that targets this partition is starting.'
       : currentRun?.status === RunStatus.QUEUED
-      ? 'is queued and is refreshing this partition.'
+      ? 'that targets this partition is queued.'
       : undefined;
 
   const repositoryOrigin = latestEventRun?.repositoryOrigin;

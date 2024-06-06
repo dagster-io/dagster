@@ -1,9 +1,4 @@
-from dagster import (
-    Definitions,
-    StringSource,
-    load_assets_from_package_module,
-    make_values_resource,
-)
+from dagster import Definitions, StringSource, load_assets_from_package_module, make_values_resource
 from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
 
 from . import assets

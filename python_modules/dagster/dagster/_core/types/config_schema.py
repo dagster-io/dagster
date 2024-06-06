@@ -10,15 +10,10 @@ from dagster._config import ConfigType
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from ..definitions.resource_requirement import (
-    ResourceRequirement,
-    TypeLoaderResourceRequirement,
-)
+from ..definitions.resource_requirement import ResourceRequirement, TypeLoaderResourceRequirement
 
 if TYPE_CHECKING:
-    from dagster._core.execution.context.system import (
-        DagsterTypeLoaderContext,
-    )
+    from dagster._core.execution.context.system import DagsterTypeLoaderContext
 
 
 class DagsterTypeLoader(ABC):

@@ -12,9 +12,7 @@ import dagster._check as check
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster._core.remote_representation import ExternalJob
-from dagster._core.remote_representation.external_data import (
-    external_job_data_from_def,
-)
+from dagster._core.remote_representation.external_data import external_job_data_from_def
 
 
 def recon_job_from_origin(origin: JobPythonOrigin) -> ReconstructableJob:

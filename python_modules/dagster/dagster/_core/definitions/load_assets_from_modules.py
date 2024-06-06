@@ -2,18 +2,7 @@ import inspect
 import pkgutil
 from importlib import import_module
 from types import ModuleType
-from typing import (
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast
 
 import dagster._check as check
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -408,7 +397,10 @@ def prefix_assets(
     result_assets: List[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
-            asset_key: AssetKey([*key_prefix, *asset_key.path]) for asset_key in assets_def.keys
+            asset_key: AssetKey([*key_prefix, *asset_key.path])
+            for asset_key in (
+                assets_def.keys | {check_key.asset_key for check_key in assets_def.check_keys}
+            )
         }
         input_asset_key_replacements = {}
         for dep_asset_key in assets_def.keys_by_input_name.values():
@@ -420,21 +412,11 @@ def prefix_assets(
                 input_asset_key_replacements[dep_asset_key] = AssetKey(
                     [*source_key_prefix, *dep_asset_key.path]
                 )
-        check_specs_by_output_name = {
-            output_name: check_spec.with_asset_key_prefix(key_prefix)
-            for output_name, check_spec in assets_def.check_specs_by_output_name.items()
-        }
-
-        selected_asset_check_keys = {
-            key.with_asset_key_prefix(key_prefix) for key in assets_def.check_keys
-        }
 
         result_assets.append(
             assets_def.with_attributes(
                 output_asset_key_replacements=output_asset_key_replacements,
                 input_asset_key_replacements=input_asset_key_replacements,
-                check_specs_by_output_name=check_specs_by_output_name,
-                selected_asset_check_keys=selected_asset_check_keys,
             )
         )
 
@@ -478,7 +460,7 @@ def assets_with_attributes(
                 group_names_by_key=(
                     {asset_key: group_name for asset_key in asset.keys}
                     if group_name is not None
-                    else None
+                    else {}
                 ),
                 freshness_policy=freshness_policy,
                 auto_materialize_policy=auto_materialize_policy,

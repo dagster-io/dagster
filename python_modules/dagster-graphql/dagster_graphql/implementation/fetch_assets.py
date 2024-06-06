@@ -55,10 +55,7 @@ from dagster._core.storage.partition_status_cache import (
 )
 from dagster._core.workspace.context import WorkspaceRequestContext
 
-from dagster_graphql.implementation.loader import (
-    CrossRepoAssetDependedByLoader,
-    StaleStatusLoader,
-)
+from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
 
 if TYPE_CHECKING:
     from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision

@@ -1,12 +1,5 @@
 import inspect
-from typing import (
-    Any,
-    NamedTuple,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, NamedTuple, Optional, Type, TypeVar, Union
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param

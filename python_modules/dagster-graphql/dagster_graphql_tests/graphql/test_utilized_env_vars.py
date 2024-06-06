@@ -1,7 +1,4 @@
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-)
+from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository_selector
 
 UTILIZED_ENV_VARS_QUERY = """
 query UtilizedEnvVarsQuery($selector: RepositorySelector!) {

@@ -49,13 +49,12 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.utils import normalize_group_name
+from dagster._core.definitions.utils import normalize_group_name, validate_asset_owner
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -598,7 +597,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
-        from dagster._core.definitions.decorators.asset_decorator import (
+        from dagster._core.definitions.decorators.assets_definition_factory import (
             _assign_output_names_to_check_specs,
             _validate_check_specs_target_relevant_asset_keys,
         )
@@ -1088,10 +1087,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def with_attributes(
         self,
         *,
-        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
+        output_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
+        input_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
+        group_names_by_key: Mapping[AssetKey, str] = {},
+        tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -1099,27 +1098,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
-        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
-        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> "AssetsDefinition":
-        output_asset_key_replacements = check.opt_mapping_param(
-            output_asset_key_replacements,
-            "output_asset_key_replacements",
-            key_type=AssetKey,
-            value_type=AssetKey,
-        )
-        input_asset_key_replacements = check.opt_mapping_param(
-            input_asset_key_replacements,
-            "input_asset_key_replacements",
-            key_type=AssetKey,
-            value_type=AssetKey,
-        )
-        group_names_by_key = check.opt_mapping_param(
-            group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-
-        backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
-
         conflicts_by_attr_name: Dict[str, Set[AssetKey]] = defaultdict(set)
         replaced_specs = []
 
@@ -1179,6 +1158,24 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 f" {', '.join(asset_key.to_user_string() for asset_key in conflicting_asset_keys)}"
             )
 
+        check_specs_by_output_name = {
+            output_name: check_spec._replace(
+                asset_key=output_asset_key_replacements.get(
+                    check_spec.asset_key, check_spec.asset_key
+                )
+            )
+            for output_name, check_spec in self.node_check_specs_by_output_name.items()
+        }
+
+        selected_asset_check_keys = {
+            check_key._replace(
+                asset_key=output_asset_key_replacements.get(
+                    check_key.asset_key, check_key.asset_key
+                )
+            )
+            for check_key in self.check_keys
+        }
+
         replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -1193,12 +1190,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             },
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             is_subset=self.is_subset,
-            check_specs_by_output_name=check_specs_by_output_name
-            if check_specs_by_output_name
-            else self._check_specs_by_output_name,
-            selected_asset_check_keys=selected_asset_check_keys
-            if selected_asset_check_keys
-            else self._selected_asset_check_keys,
+            check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=selected_asset_check_keys,
             specs=replaced_specs,
         )
 
@@ -1747,14 +1740,6 @@ def get_self_dep_time_window_partition_mapping(
 
         return time_partition_mapping.partition_mapping
     return None
-
-
-def validate_asset_owner(owner: str, key: AssetKey) -> None:
-    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
-            "name prefixed with 'team:'."
-        )
 
 
 def get_partition_mappings_from_deps(

@@ -22,6 +22,8 @@ import {
   CodeReferencesMetadataEntry,
   TableColumnLineageMetadataEntry,
   TableSchemaMetadataEntry,
+  TextMetadataEntry,
+  UrlMetadataEntry,
 } from '../graphql/types';
 import {Description} from '../pipelines/Description';
 
@@ -49,6 +51,14 @@ export const isCanonicalCodeSourceEntry = (
   m: MetadataEntryLabelOnly,
 ): m is CodeReferencesMetadataEntry =>
   m && m.__typename === 'CodeReferencesMetadataEntry' && m.label === 'dagster/code_references';
+
+export const isCanonicalRelationIdentifierEntry = (
+  m: MetadataEntryLabelOnly,
+): m is TextMetadataEntry => m && m.label === 'dagster/relation_identifier';
+
+export const isCanonicalUriEntry = (
+  m: MetadataEntryLabelOnly,
+): m is TextMetadataEntry | UrlMetadataEntry => m && m.label === 'dagster/uri';
 
 export const TableSchemaAssetContext = createContext<{
   assetKey: AssetKeyInput | undefined;

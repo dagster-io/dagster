@@ -13,6 +13,7 @@ import {HourWindow, useHourWindow} from '../runs/useHourWindow';
 import {makeJobKey, useRunsForTimeline} from '../runs/useRunsForTimeline';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
+
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 const POLL_INTERVAL = 30 * 1000;
@@ -35,30 +36,36 @@ type Props = {
   TabButton: React.ComponentType<{selected: 'timeline' | 'assets'}>;
 };
 
-export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
-  useTrackPageView();
-  useDocumentTitle('Overview | Timeline');
-  const trace = usePageLoadTrace('OverviewTimelineRoot');
-
-  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
-
-  const [hourWindow, setHourWindow] = useHourWindow('12');
-  const [now, setNow] = React.useState(() => Date.now());
+export function useTimelineRange({
+  maxNowMs,
+  hourWindowStorageKey,
+  lookaheadHours = LOOKAHEAD_HOURS,
+}: {
+  maxNowMs?: number;
+  hourWindowStorageKey?: string;
+  lookaheadHours?: number;
+}) {
+  const [hourWindow, setHourWindow] = useHourWindow('12', hourWindowStorageKey);
+  const [now, setNow] = React.useState(() => maxNowMs || Date.now());
   const [offsetMsec, setOffsetMsec] = React.useState(() => 0);
-  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
-    queryKey: 'search',
-    defaults: {search: ''},
-  });
+
+  const rangeMs: [number, number] = React.useMemo(
+    () => [
+      now - Number(hourWindow) * ONE_HOUR + offsetMsec,
+      now + lookaheadHours * ONE_HOUR + offsetMsec,
+    ],
+    [hourWindow, now, lookaheadHours, offsetMsec],
+  );
 
   React.useEffect(() => {
     const timer = setInterval(() => {
-      setNow(Date.now());
+      setNow(maxNowMs ? Math.min(maxNowMs, Date.now()) : Date.now());
     }, POLL_INTERVAL);
 
     return () => {
       clearInterval(timer);
     };
-  }, [hourWindow]);
+  }, [hourWindow, maxNowMs]);
 
   const onPageEarlier = React.useCallback(() => {
     setOffsetMsec((current) => current - hourWindowToOffset(hourWindow));
@@ -72,15 +79,24 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
     setOffsetMsec(0);
   }, []);
 
-  const range: [number, number] = React.useMemo(
-    () => [
-      now - Number(hourWindow) * ONE_HOUR + offsetMsec,
-      now + LOOKAHEAD_HOURS * ONE_HOUR + offsetMsec,
-    ],
-    [hourWindow, now, offsetMsec],
-  );
+  return {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow};
+}
 
-  const runsForTimelineRet = useRunsForTimeline({rangeMs: range});
+export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
+  useTrackPageView();
+  useDocumentTitle('Overview | Timeline');
+  const trace = usePageLoadTrace('OverviewTimelineRoot');
+
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
+  const {rangeMs, hourWindow, setHourWindow, onPageEarlier, onPageLater, onPageNow} =
+    useTimelineRange({});
+
+  const [searchValue, setSearchValue] = useQueryPersistedState<string>({
+    queryKey: 'search',
+    defaults: {search: ''},
+  });
+
+  const runsForTimelineRet = useRunsForTimeline({rangeMs});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
   const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
@@ -144,7 +160,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         </Box>
       </Box>
       <ErrorBoundary region="timeline">
-        <RunTimeline loading={initialLoading} range={range} jobs={visibleJobs} />
+        <RunTimeline loading={initialLoading} rangeMs={rangeMs} jobs={visibleJobs} />
       </ErrorBoundary>
     </>
   );

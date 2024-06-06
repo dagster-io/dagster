@@ -17,10 +17,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.metadata import (
-    RawMetadataValue,
-    normalize_metadata,
-)
+from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 

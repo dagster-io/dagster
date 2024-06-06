@@ -3,10 +3,7 @@ from typing import TYPE_CHECKING, Mapping, NamedTuple
 import dagster._check as check
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.origin import RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import (
-    CodeLocationOrigin,
-    RemoteRepositoryOrigin,
-)
+from dagster._core.remote_representation.origin import CodeLocationOrigin, RemoteRepositoryOrigin
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.code_location import CodeLocation

@@ -2,27 +2,11 @@ import dataclasses
 import itertools
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    cast,
-)
+from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, cast
 
 import dagster._check as check
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    RunRequest,
-    RunsFilter,
-)
-from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonContext,
-)
+from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
@@ -33,7 +17,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )
@@ -170,6 +154,9 @@ class AssetDaemonScenarioState(ScenarioState):
             respect_materialization_data_versions=False,
             logger=self.logger,
         ).evaluate()
+        check.is_list(new_run_requests, of_type=RunRequest)
+        check.inst(new_cursor, AssetDaemonCursor)
+        check.is_list(new_evaluations, of_type=AssetConditionEvaluation)
 
         # make sure these run requests are available on the instance
         for request in new_run_requests:

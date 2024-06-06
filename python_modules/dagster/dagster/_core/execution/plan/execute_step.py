@@ -1,16 +1,6 @@
 import inspect
 import warnings
-from typing import (
-    AbstractSet,
-    Any,
-    Dict,
-    Iterator,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-    cast,
-)
+from typing import AbstractSet, Any, Dict, Iterator, Mapping, Optional, Tuple, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -42,10 +32,7 @@ from dagster._core.definitions.data_version import (
 )
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.definitions.events import DynamicOutput
-from dagster._core.definitions.metadata import (
-    MetadataValue,
-    normalize_metadata,
-)
+from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
@@ -74,14 +61,18 @@ from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
 from dagster._utils.timing import time_execution_scope
-from dagster._utils.warnings import (
-    disable_dagster_warnings,
-    experimental_warning,
-)
+from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
 
 from .compute import OpOutputUnion
 from .compute_generator import create_op_compute_wrapper
 from .utils import op_execution_error_boundary
+
+
+class AssetResultOutput(Output):
+    """This is a marker subclass that represents an Output that was produced from an AssetResult."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 def _process_asset_results_to_events(
@@ -112,22 +103,14 @@ def _process_user_event(
         for check_result in user_event.check_results or []:
             yield from _process_user_event(step_context, check_result)
 
-        # If a MaterializeResult was returned from an asset with no type annotation, the type will be
-        # interpreted as Any and the I/O manager will be invoked. Raise a warning to alert the user.
-        type_annotation = assets_def.op.output_dict[output_name].dagster_type
-        if not type_annotation.is_nothing:
-            step_context.log.warning(
-                f"The MaterializeResult returned from {asset_key} will be stored by the I/O manager."
-                f" To bypass the I/O manager, add return type annotation '-> MaterializeResult' to {asset_key}."
+        with disable_dagster_warnings():
+            yield AssetResultOutput(
+                value=None,
+                output_name=output_name,
+                metadata=user_event.metadata,
+                data_version=user_event.data_version,
+                tags=user_event.tags,
             )
-
-        yield Output(
-            value=None,
-            output_name=output_name,
-            metadata=user_event.metadata,
-            data_version=user_event.data_version,
-            tags=user_event.tags,
-        )
     elif isinstance(user_event, AssetCheckResult):
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
         spec = check.not_none(
@@ -269,15 +252,8 @@ def _step_output_error_checked_user_event_sequence(
 
             metadata = step_context.get_output_metadata(output.output_name)
             with disable_dagster_warnings():
-                output = Output(
-                    value=output.value,
-                    output_name=output.output_name,
-                    metadata={
-                        **output.metadata,
-                        **normalize_metadata(metadata or {}),
-                    },
-                    data_version=output.data_version,
-                    tags=output.tags,
+                output = output.with_metadata(
+                    metadata={**output.metadata, **normalize_metadata(metadata or {})}
                 )
         else:
             if not output_def.is_dynamic:
@@ -774,11 +750,13 @@ def _store_output(
     manager_materializations = []
     manager_metadata: Dict[str, MetadataValue] = {}
 
-    # don't store asset check outputs, asset observation outputs, or Nothing type outputs
+    # don't store asset check outputs, asset observation outputs, asset result outputs, or Nothing
+    # type outputs
     step_output = step_context.step.step_output_named(step_output_handle.output_name)
     if (
         step_output.properties.asset_check_key
         or (step_context.output_observes_source_asset(step_output_handle.output_name))
+        or isinstance(output, AssetResultOutput)
         or output_context.dagster_type.is_nothing
     ):
         yield from _log_materialization_or_observation_events_for_asset(

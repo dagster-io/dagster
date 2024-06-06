@@ -120,9 +120,7 @@ class TestMySQLInstance:
             TestMySQLInstance.dagster_mysql_installed(),
             "dagster_mysql must be installed to test with mysql",
         )
-        from dagster_mysql.schedule_storage.schedule_storage import (
-            MySQLScheduleStorage,
-        )
+        from dagster_mysql.schedule_storage.schedule_storage import MySQLScheduleStorage
 
         storage = MySQLScheduleStorage.create_clean_storage(conn_string)
         assert storage

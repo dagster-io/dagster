@@ -30,21 +30,12 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.events import (
-    AssetMaterialization,
-    AssetObservation,
-)
+from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partition import (
-    CachingDynamicPartitionsLoader,
-)
-from dagster._core.definitions.resource_annotation import (
-    get_resource_args,
-)
-from dagster._core.definitions.resource_definition import (
-    Resources,
-)
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import Resources
 from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
@@ -60,9 +51,7 @@ from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
 
-from ..decorator_utils import (
-    get_function_params,
-)
+from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, KeysAssetSelection
 from .graph_definition import GraphDefinition
 from .run_request import (
@@ -98,7 +87,13 @@ class SensorType(Enum):
     MULTI_ASSET = "MULTI_ASSET"
     FRESHNESS_POLICY = "FRESHNESS_POLICY"
     AUTO_MATERIALIZE = "AUTO_MATERIALIZE"
+    AUTOMATION = "AUTOMATION"
     UNKNOWN = "UNKNOWN"
+
+    @property
+    def is_handled_by_asset_daemon(self) -> bool:
+        # these "sensors" are currently evaluated by the asset daemon and not the sensor daemon
+        return self in (SensorType.AUTOMATION, SensorType.AUTO_MATERIALIZE)
 
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
@@ -266,9 +261,7 @@ class SensorEvaluationContext:
     @property
     def resources(self) -> Resources:
         """Resources: A mapping from resource key to instantiated resources for this sensor."""
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
+        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
         from dagster._core.execution.build_resources import build_resources
 
         if not self._resources:

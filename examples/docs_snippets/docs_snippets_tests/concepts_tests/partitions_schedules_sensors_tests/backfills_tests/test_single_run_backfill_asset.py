@@ -1,8 +1,4 @@
-from dagster import (
-    SourceAsset,
-    materialize,
-    mem_io_manager,
-)
+from dagster import SourceAsset, materialize, mem_io_manager
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,

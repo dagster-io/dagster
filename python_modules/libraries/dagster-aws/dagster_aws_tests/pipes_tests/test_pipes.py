@@ -17,14 +17,10 @@ from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import (
-    MarkdownMetadataValue,
-)
+from dagster._core.definitions.metadata import MarkdownMetadataValue
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.pipes.subprocess import (
-    PipesSubprocessClient,
-)
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 from dagster._core.pipes.utils import PipesEnvContextInjector
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster_aws.pipes import (
@@ -62,11 +58,7 @@ def external_script() -> Iterator[str]:
         import time
 
         import boto3
-        from dagster_pipes import (
-            PipesS3ContextLoader,
-            PipesS3MessageWriter,
-            open_dagster_pipes,
-        )
+        from dagster_pipes import PipesS3ContextLoader, PipesS3MessageWriter, open_dagster_pipes
 
         client = boto3.client("s3", region_name="us-east-1", endpoint_url="http://localhost:5193")
         context_loader = PipesS3ContextLoader(client=client)

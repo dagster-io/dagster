@@ -12,9 +12,7 @@ from .external import get_external_job_or_raise
 from .utils import JobSubsetSelector, UserFacingGraphQLError
 
 if TYPE_CHECKING:
-    from ..schema.pipelines.config import (
-        GraphenePipelineConfigValidationValid,
-    )
+    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
     from ..schema.run_config import GrapheneRunConfigSchema
 
 

@@ -2,10 +2,7 @@ from datetime import datetime
 from typing import cast
 
 import pendulum
-from dagster import (
-    DailyPartitionsDefinition,
-    PartitionKeyRange,
-)
+from dagster import DailyPartitionsDefinition, PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import (
     PartitionRangeStatus,
     PartitionTimeWindowStatus,

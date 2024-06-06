@@ -4,9 +4,7 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, cast
 from typing_extensions import Self
 
 import dagster._seven as seven
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.errors import (
     DagsterInvariantViolationError,
@@ -15,10 +13,7 @@ from dagster._core.errors import (
 )
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._serdes import (
-    ConfigurableClass,
-    deserialize_value,
-)
+from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
 
@@ -100,9 +95,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context: LaunchRunContext) -> None:
         # defer for perf
-        from dagster._core.remote_representation.code_location import (
-            GrpcServerCodeLocation,
-        )
+        from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 
         run = context.dagster_run
 

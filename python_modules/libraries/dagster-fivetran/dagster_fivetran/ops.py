@@ -1,14 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from dagster import (
-    AssetKey,
-    Config,
-    In,
-    Nothing,
-    Out,
-    Output,
-    op,
-)
+from dagster import AssetKey, Config, In, Nothing, Out, Output, op
 from pydantic import Field
 
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource

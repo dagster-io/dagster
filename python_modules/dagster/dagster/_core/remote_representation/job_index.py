@@ -3,11 +3,7 @@ from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
-from dagster._core.snap import (
-    DependencyStructureIndex,
-    JobSnapshot,
-    create_job_snapshot_id,
-)
+from dagster._core.snap import DependencyStructureIndex, JobSnapshot, create_job_snapshot_id
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap

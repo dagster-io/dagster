@@ -1,9 +1,4 @@
-from typing import (
-    Any,
-    Mapping,
-    Optional,
-    Sequence,
-)
+from typing import Any, Mapping, Optional, Sequence
 
 from dagster import _check as check
 from dagster._annotations import deprecated

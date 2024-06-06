@@ -12,14 +12,9 @@ from dagster._core.definitions.decorators.asset_decorator import (
     multi_asset,
     resolve_asset_key_and_name_for_decorator,
 )
-from dagster._core.definitions.events import (
-    CoercibleToAssetKey,
-    CoercibleToAssetKeyPrefix,
-)
+from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import (
-    RawMetadataMapping,
-)
+from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import ResourceDefinition

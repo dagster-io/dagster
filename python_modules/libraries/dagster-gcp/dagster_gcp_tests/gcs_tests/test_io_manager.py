@@ -29,9 +29,7 @@ from dagster._core.definitions.unresolved_asset_job_definition import define_ass
 from dagster._core.events import DagsterEventType
 from dagster._core.execution.api import create_execution_plan, execute_plan
 from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.dagster_run import (
-    DagsterRun as DagsterRun,
-)
+from dagster._core.storage.dagster_run import DagsterRun as DagsterRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utils import make_new_run_id

@@ -3,7 +3,19 @@ import os
 import re
 import warnings
 from glob import glob
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 import yaml
 
@@ -11,6 +23,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
+from dagster._core.utils import is_valid_email
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
@@ -38,12 +51,16 @@ DISALLOWED_NAMES = set(
     + list(keyword.kwlist)  # just disallow all python keywords
 )
 
+INVALID_NAME_CHARS = r"[^A-Za-z0-9_]"
 VALID_NAME_REGEX_STR = r"^[A-Za-z0-9_]+$"
 VALID_NAME_REGEX = re.compile(VALID_NAME_REGEX_STR)
 
 INVALID_TITLE_CHARACTERS_REGEX_STR = r"[\%\*\"]"
 INVALID_TITLE_CHARACTERS_REGEX = re.compile(INVALID_TITLE_CHARACTERS_REGEX_STR)
 MAX_TITLE_LENGTH = 100
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_key import AssetKey
 
 
 class NoValueSentinel:
@@ -248,6 +265,14 @@ def validate_tag_strict(key: str, value: str) -> None:
         raise DagsterInvalidDefinitionError(
             f"Invalid tag value: {value}, for key: {key}. Allowed characters: alpha-numeric, '_', '-', '.'. "
             "Must have <= 63 characters."
+        )
+
+
+def validate_asset_owner(owner: str, key: "AssetKey") -> None:
+    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
+        raise DagsterInvalidDefinitionError(
+            f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
+            "name prefixed with 'team:'."
         )
 
 

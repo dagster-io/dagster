@@ -24,11 +24,7 @@ from dagster._core.remote_representation import (
 )
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
-from dagster._core.storage.dagster_run import (
-    DagsterRun,
-    DagsterRunStatus,
-    RunsFilter,
-)
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage

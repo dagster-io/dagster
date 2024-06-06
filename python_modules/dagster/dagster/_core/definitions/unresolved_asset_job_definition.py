@@ -4,10 +4,7 @@ from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optiona
 import dagster._check as check
 from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_job import (
-    build_asset_job,
-    get_asset_graph_for_job,
-)
+from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition

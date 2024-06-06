@@ -5,13 +5,7 @@ from threading import Thread
 
 import dagster_pandas as dagster_pd
 import pytest
-from dagster import (
-    VersionStrategy,
-    file_relative_path,
-    job,
-    op,
-    reconstructable,
-)
+from dagster import VersionStrategy, file_relative_path, job, op, reconstructable
 from dagster._core.definitions.input import In
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.events import DagsterEventType

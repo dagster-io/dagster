@@ -2,12 +2,7 @@ import warnings
 from datetime import datetime
 
 import pytest
-from dagster import (
-    DagsterInvalidDefinitionError,
-    ScheduleDefinition,
-    build_schedule_context,
-    graph,
-)
+from dagster import DagsterInvalidDefinitionError, ScheduleDefinition, build_schedule_context, graph
 from dagster._core.definitions.run_config import RunConfig
 
 

@@ -26,9 +26,7 @@ from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.mem_io_manager import mem_io_manager
-from dagster._core.test_utils import (
-    instance_for_test,
-)
+from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path, segfault
 
 from .retry_jobs import (

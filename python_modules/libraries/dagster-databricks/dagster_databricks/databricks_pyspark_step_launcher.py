@@ -38,10 +38,7 @@ from databricks.sdk.core import DatabricksError
 from databricks.sdk.service import jobs
 
 from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import (
-    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
-    DatabricksJobRunner,
-)
+from dagster_databricks.databricks import DEFAULT_RUN_MAX_WAIT_TIME_SEC, DatabricksJobRunner
 
 from .configs import (
     define_azure_credentials,

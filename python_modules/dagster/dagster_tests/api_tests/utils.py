@@ -4,10 +4,7 @@ from typing import Iterator, Optional
 
 from dagster import file_relative_path
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import (
-    JobHandle,
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-)
+from dagster._core.remote_representation import JobHandle, ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.test_utils import instance_for_test

@@ -17,9 +17,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import (
-    ASSET_BASE_JOB_PREFIX,
-)
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -38,9 +36,7 @@ from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
 
 from .repository_data import CachingRepositoryData, RepositoryData
-from .valid_definitions import (
-    RepositoryListDefinition as RepositoryListDefinition,
-)
+from .valid_definitions import RepositoryListDefinition as RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition

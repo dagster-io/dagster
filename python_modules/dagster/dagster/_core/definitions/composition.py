@@ -915,10 +915,7 @@ def do_composition(
             the user has not explicitly provided the output definitions.
             This should be removed in 0.11.0.
     """
-    from .decorators.op_decorator import (
-        NoContextDecoratedOpFunction,
-        resolve_checked_op_fn_inputs,
-    )
+    from .decorators.op_decorator import NoContextDecoratedOpFunction, resolve_checked_op_fn_inputs
 
     actual_output_defs: Sequence[OutputDefinition]
     if provided_output_defs is None:

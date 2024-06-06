@@ -24,9 +24,7 @@ from dagster._core.errors import (
 from dagster._core.events import DagsterEventType, RunFailureReason
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
-from dagster._core.storage.tags import (
-    RUN_FAILURE_REASON_TAG,
-)
+from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import environ, instance_for_test
 
 

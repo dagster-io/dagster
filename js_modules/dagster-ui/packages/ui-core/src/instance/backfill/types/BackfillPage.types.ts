@@ -80,7 +80,7 @@ export type BackfillStatusesByAssetQuery = {
       };
 };
 
-export type PartitionBackfillFragment = {
+export type BackfillDetailsBackfillFragment = {
   __typename: 'PartitionBackfill';
   id: string;
   status: Types.BulkActionStatus;

@@ -1,17 +1,15 @@
-import datetime
-
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
 
 from ..scenario_specs import hourly_partitions_def, two_assets_in_sequence
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
-def test_eager_with_rate_limit_unpartitioned() -> None:
-    state = AssetConditionScenarioState(
+def test_eager_unpartitioned() -> None:
+    state = AutomationConditionScenarioState(
         two_assets_in_sequence,
-        asset_condition=SchedulingCondition.eager_with_rate_limit(),
+        automation_condition=AutomationCondition.eager(),
         ensure_empty_result=False,
     )
 
@@ -23,11 +21,19 @@ def test_eager_with_rate_limit_unpartitioned() -> None:
     state = state.with_runs(run_request("A"))
     state, result = state.evaluate("B")
     assert result.true_subset.size == 1
+
+    # B has not yet materialized, but it has been requested, so don't request again
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # same as above
+    state, result = state.evaluate("B")
+    assert result.true_subset.size == 0
+
+    # now B has been materialized, so really shouldn't execute again
     state = state.with_runs(
         *(run_request(ak, pk) for ak, pk in result.true_subset.asset_partitions)
     )
-
-    # now B has been materialized, so don't execute again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
@@ -42,19 +48,12 @@ def test_eager_with_rate_limit_unpartitioned() -> None:
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
 
-    # now it's been over an hour since B was requested, try again
-    state = state.with_current_time_advanced(hours=1, seconds=1)
-    state, result = state.evaluate("B")
-    assert result.true_subset.size == 1
 
-
-def test_eager_with_rate_limit_hourly_partitioned() -> None:
+def test_eager_hourly_partitioned() -> None:
     state = (
-        AssetConditionScenarioState(
+        AutomationConditionScenarioState(
             two_assets_in_sequence,
-            asset_condition=SchedulingCondition.eager_with_rate_limit(
-                failure_retry_delta=datetime.timedelta(minutes=10)
-            ),
+            automation_condition=AutomationCondition.eager(),
             ensure_empty_result=False,
         )
         .with_asset_properties(partitions_def=hourly_partitions_def)
@@ -97,8 +96,3 @@ def test_eager_with_rate_limit_hourly_partitioned() -> None:
     # B does not get immediately requested again
     state, result = state.evaluate("B")
     assert result.true_subset.size == 0
-
-    # now it's been over 10 minutes since B was requested, try again
-    state = state.with_current_time_advanced(minutes=10, seconds=1)
-    state, result = state.evaluate("B")
-    assert result.true_subset.size == 1

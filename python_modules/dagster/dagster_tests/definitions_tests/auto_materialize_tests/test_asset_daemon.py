@@ -5,12 +5,7 @@ from typing import Any, Generator, Mapping, Optional, Sequence, cast
 
 import pendulum
 import pytest
-from dagster import (
-    AssetSpec,
-    AutoMaterializeRule,
-    DagsterInstance,
-    instance_for_test,
-)
+from dagster import AssetSpec, AutoMaterializeRule, DagsterInstance, instance_for_test
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -46,18 +41,9 @@ from dagster._serdes.serdes import serialize_value
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
-from .base_scenario import (
-    run_request,
-)
-from .scenario_specs import (
-    one_asset,
-    two_assets_in_sequence,
-    two_partitions_def,
-)
-from .updated_scenarios.asset_daemon_scenario import (
-    AssetDaemonScenario,
-    AssetRuleEvaluationSpec,
-)
+from .base_scenario import run_request
+from .scenario_specs import one_asset, two_assets_in_sequence, two_partitions_def
+from .updated_scenarios.asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.cron_scenarios import (
     basic_hourly_cron_rule,
