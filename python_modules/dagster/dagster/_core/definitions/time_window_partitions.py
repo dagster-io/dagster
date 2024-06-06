@@ -267,14 +267,14 @@ class PersistedTimeWindow(
             ),
         )
 
-    @property
+    @cached_property
     def start(self) -> datetime:
         start_timestamp_with_timezone = self._asdict()["start"]
         return pendulum.from_timestamp(
             start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
         )
 
-    @property
+    @cached_property
     def end(self) -> datetime:
         end_timestamp_with_timezone = self._asdict()["end"]
         return pendulum.from_timestamp(
@@ -432,7 +432,7 @@ class TimeWindowPartitionsDefinition(
         )
 
     @public
-    @property
+    @cached_property
     def start(self) -> datetime:
         start_timestamp_with_timezone = self._asdict()["start"]
         return pendulum.from_timestamp(
@@ -440,7 +440,7 @@ class TimeWindowPartitionsDefinition(
         )
 
     @public
-    @property
+    @cached_property
     def end(self) -> Optional[datetime]:
         end_timestamp_with_timezone = self._asdict()["end"]
 
