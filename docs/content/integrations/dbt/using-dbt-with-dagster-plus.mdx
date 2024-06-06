@@ -141,40 +141,6 @@ my_dbt_project
 
 After the Dagster+ changes, a dbt and Dagster project will include the files required for dbt and Dagster, some files related to git, and the newly-added Dagster+ files:
 
-#### Update the cloud action files
-
-When importing a project in Dagster+ using the "Import a Dagster Project" feature, various files are added to the repository containing the project, including the cloud action files. These files are optimized for general use in Dagster projects, but require some attention when the Dagster project includes a dbt component. Once these files are updated, the dbt & Dagster project will be successfully deployed to Dagster+.
-
-Follow these steps to update the cloud action files. Note that in this example, the dbt project directory in the repository is called `dbt` and the [adapter used by dbt](https://docs.getdbt.com/docs/connect-adapters) is DuckDB. Depending on your dbt & Dagster project, you might need to update the code.
-
-1. In your Dagster project, locate the `.github/workflows` directory.
-
-2. Open the `deploy.yml` file.
-
-3. Locate the Checkout for Python Executable Deploy step, which should be on or near line 38.
-
-4. Add
-
-```
-- name: Parse dbt project and package with Dagster project
-  if: steps.prerun.outputs.result == 'pex-deploy'
-  run: |
-    pip install pip --upgrade
-    pip install dbt-duckdb
-    cd project-repo/dbt
-    dbt deps
-    dbt parse
-  shell: bash
-```
-
-5. Open the `branch_deployments.yml` file, then repeat steps 3 and 4.
-
-#### Review the state of the repo
-
-When deploying a Dagster project for the first time, the workflow adds various files - a [dagster_cloud.yaml file](/dagster-plus/managing-deployments/dagster-cloud-yaml), if it is missing, and two cloud action files under `.github/workflows`, `branch_deployments.yml` and `deploy.yml`, to manage the deployments of the repository.
-
-After adding the files to the repository, a typical file structure would include the required files for dbt and Dagster, some files related to Git, like `.gitignore`, and the newly added files.
-
 ```shell
 ## dbt and Dagster project
 ## after Dagster+ deployment
@@ -205,51 +171,19 @@ my_dbt_and_dagster_project
 └── setup.py
 ```
 
-</TabItem>
-</TabGroup>
+#### Update the cloud action files
 
----
+When importing a project in Dagster+ using the "Import a Dagster Project" feature, various files are added to the repository containing the project, including the cloud action files. These files are optimized for general use in Dagster projects, but require some attention when the Dagster project includes a dbt component. Once these files are updated, the dbt & Dagster project will be successfully deployed to Dagster+.
 
-## What's next?
+Follow these steps to update the cloud action files. Note that in this example, the dbt project directory in the repository is called `dbt` and the [adapter used by dbt](https://docs.getdbt.com/docs/connect-adapters) is DuckDB. Depending on your dbt & Dagster project, you might need to update the code.
 
-For an end-to-end example, from the project creation to the deployment to Dagster+, checkout out the Dagster & dbt course in [Dagster University](https://courses.dagster.io).
+1. In your Dagster project, locate the `.github/workflows` directory.
 
----
+2. Open the `deploy.yml` file.
 
-## Related
+3. Locate the Checkout for Python Executable Deploy step, which should be on or near line 38.
 
-<ArticleList>
-  <ArticleListItem
-    title="dbt & Dagster"
-    href="/integrations/dbt"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="dagster-dbt reference"
-    href="/integrations/dbt/reference"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Getting started with Dagster+"
-    href="/dagster-plus"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dagster+ user roles and permissions"
-    href="/dagster-plus/account/managing-users/managing-user-roles-permissions"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="dagster_cloud.yaml reference"
-    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
-  ></ArticleListItem>
-  <ArticleListItem
-    title="Dagster project files"
-    href="/guides/understanding-dagster-project-files"
-  ></ArticleListItem>
-</ArticleList>
-
-[//]: <> "TODO: Add examples of files"
-
-When deploying a dbt & Dagster project through "Import a Dagster project", the cloud action added to the project repo will require some attention - using dbt requires some additional steps.deployment
-
-[//]: <> "TODO: Add the steps as described in Dag Uni"
+4. Add
 
 ```
 - name: Parse dbt project and package with Dagster project
@@ -257,13 +191,16 @@ When deploying a dbt & Dagster project through "Import a Dagster project", the c
   run: |
     pip install pip --upgrade
     pip install dbt-duckdb
-    cd project-repo/analytics
+    cd project-repo/dbt
     dbt deps
     dbt parse
   shell: bash
 ```
 
-[//]: <> "TODO: Add the steps for GitLab as well"
+5. Open the `branch_deployments.yml` file, then repeat steps 3 and 4.
+
+</TabItem>
+</TabGroup>
 
 ## Understanding the cloud action files
 
@@ -354,3 +291,40 @@ Once theses steps are completed, it is time to prepare the dbt project for deplo
     # dagster-cloud ci dagster-dbt project manage-state --file ${{ env.DAGSTER_PROJECT_NAME }}/project.py
   shell: bash
 ```
+
+---
+
+## What's next?
+
+For an end-to-end example, from the project creation to the deployment to Dagster+, checkout out the Dagster & dbt course in [Dagster University](https://courses.dagster.io).
+
+---
+
+## Related
+
+<ArticleList>
+  <ArticleListItem
+    title="dbt & Dagster"
+    href="/integrations/dbt"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster-dbt reference"
+    href="/integrations/dbt/reference"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Getting started with Dagster+"
+    href="/dagster-plus"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster+ user roles and permissions"
+    href="/dagster-plus/account/managing-users/managing-user-roles-permissions"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="dagster_cloud.yaml reference"
+    href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster project files"
+    href="/guides/understanding-dagster-project-files"
+  ></ArticleListItem>
+</ArticleList>
