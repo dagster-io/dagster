@@ -85,6 +85,7 @@ When deploying your Dagster project to production, **we recommend generating the
 Creating the manifest at runtime in production is known to cause issues and is not recommended. This is often caused by the following code and should be avoided.
 
 ```python startafter=start_troubleshooting_dbt_manifest endbefore=end_troubleshooting_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
+"""❌ This is not recommended."""
 import os
 from pathlib import Path
 
@@ -92,15 +93,24 @@ from dagster_dbt import DbtCliResource
 
 dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
 dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
-dbt_parse_invocation = dbt.cli(["parse"], target_path=Path("target")).wait()
-dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+
+# A manifest will always be created at runtime.
+dbt_manifest_path = (
+    dbt.cli(
+        ["--quiet", "parse"],
+        target_path=Path("target"),
+    )
+    .wait()
+    .target_path.joinpath("manifest.json")
+)
 ```
 
-In this example, the command `dbt parse` is invoked at run time. To avoid any issues, it is recommended to create the manifest at build time, like in the following example.
+To avoid any issues, we recommend that the manifest is created at run time only during local development. In production, the manifest should be created at build time.
 
 In the Dagster project created by the [`dagster-dbt project scaffold`](/\_apidocs/libraries/dagster-dbt#dagster-dbt-project-scaffold) command line interface, we offer you both ways to load your dbt models:
 
 ```python startafter=start_compile_dbt_manifest endbefore=end_compile_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
+"""✅ This is recommended!"""
 import os
 from pathlib import Path
 
