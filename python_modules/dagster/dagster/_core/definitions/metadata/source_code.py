@@ -273,6 +273,20 @@ def link_to_git(
             repository and the corresponding local file path, which is extrapolated to all other local file paths.
             Alternatively, a function can be provided which takes a local file path and returns the corresponding path in
             the repository, allowing for more complex mappings.
+
+    Example:
+        .. code-block:: python
+                defs = Definitions(
+                    assets=link_to_git(
+                        with_source_code_references([my_dbt_assets]),
+                        source_control_url="https://github.com/dagster-io/dagster",
+                        source_control_branch="master",
+                        source_control_file_path_mapping=SourceControlFilePathMapping(
+                            local_file_anchor=Path(__file__),
+                            file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
+                        ),
+                    )
+                )
     """
     if "gitlab.com" in source_control_url:
         source_control_url = _build_gitlab_url(source_control_url, source_control_branch)
