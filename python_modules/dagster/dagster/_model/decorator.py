@@ -94,7 +94,7 @@ def _namedtuple_model_transform(
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
             _MODEL_MARKER_FIELD: _MODEL_MARKER_VALUE,
-            "__annotations__": cls.__annotations__,
+            "__annotations__": field_set,
             "__nt_new__": nt_new,
             "__bool__": _true,
         },
