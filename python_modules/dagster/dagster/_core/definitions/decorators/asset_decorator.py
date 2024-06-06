@@ -25,6 +25,7 @@ from dagster._core.decorator_utils import get_function_params, get_valid_name_pe
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.decorators.assets_definition_factory import InOutMapper
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -739,18 +740,16 @@ def multi_asset(
                     f" {list(valid_asset_deps)[:20]}",
                 )
 
+        in_out_mapper = InOutMapper.from_asset_ins_and_asset_outs(
+            asset_ins=asset_ins, asset_outs=output_tuples_by_asset_key
+        )
+
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
         check.param_invariant(
             len(bare_required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
             "Cannot specify resource requirements in both @multi_asset decorator and as"
             " arguments to the decorated function",
         )
-
-        asset_outs_by_output_name: Mapping[str, Out] = dict(output_tuples_by_asset_key.values())
-        keys_by_output_name = {
-            output_name: asset_key
-            for asset_key, (output_name, _) in output_tuples_by_asset_key.items()
-        }
 
         check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
             check_specs, list(output_tuples_by_asset_key.keys())
@@ -760,14 +759,14 @@ def multi_asset(
             for output_name in check_specs_by_output_name.keys()
         }
         overlapping_output_names = (
-            asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
+            in_out_mapper.asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
         )
         check.invariant(
             len(overlapping_output_names) == 0,
             f"Check output names overlap with asset output names: {overlapping_output_names}",
         )
         combined_outs_by_output_name: Mapping[str, Out] = {
-            **asset_outs_by_output_name,
+            **in_out_mapper.asset_outs_by_output_name,
             **check_outs_by_output_name,
         }
 
@@ -778,7 +777,9 @@ def multi_asset(
                 if spec.deps is not None
             }
         else:
-            internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
+            internal_deps = {
+                in_out_mapper.keys_by_output_name[name]: asset_deps[name] for name in asset_deps
+            }
 
         # when a subsettable multi-asset is defined, it is possible that it will need to be
         # broken into two separate parts, one which depends on the other. in order to represent
@@ -833,7 +834,7 @@ def multi_asset(
             }
             input_deps = list(input_deps_by_key.values())
             for output_name, asset_out in asset_out_map.items():
-                key = keys_by_output_name[output_name]
+                key = in_out_mapper.keys_by_output_name[output_name]
                 if internal_asset_deps:
                     deps = [
                         input_deps_by_key.get(
@@ -857,7 +858,7 @@ def multi_asset(
 
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=keys_by_input_name,
-            keys_by_output_name=keys_by_output_name,
+            keys_by_output_name=in_out_mapper.keys_by_output_name,
             node_def=op,
             partitions_def=partitions_def,
             can_subset=can_subset,
