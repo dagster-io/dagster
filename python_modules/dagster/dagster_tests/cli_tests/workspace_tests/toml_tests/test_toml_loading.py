@@ -22,3 +22,17 @@ def test_load_empty_toml():
 
 def test_load_toml_with_other_stuff():
     assert get_origins_from_toml(file_relative_path(__file__, "other_stuff.toml")) == []
+
+
+def test_load_multiple_modules_from_toml():
+    origins = get_origins_from_toml(
+        file_relative_path(__file__, "multiple_modules.toml")
+    )
+    assert len(origins) == 2
+
+    module_names = {origin.loadable_target_origin.module_name for origin in origins}
+    expected_module_names = {"foo", "bar"}
+
+    assert module_names == expected_module_names
+    for origin in origins:
+        assert origin.location_name in expected_module_names
