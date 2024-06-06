@@ -244,7 +244,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         self.on_unsubscribe(subscription)
 
     def get_log_keys_for_log_key_prefix(
-        self, log_key_prefix: Sequence[str]
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
     ) -> Sequence[Sequence[str]]:
         """Returns the logs keys for a given log key prefix. This is determined by looking at the
         directory defined by the log key prefix and creating a log_key for each file in the directory.
@@ -256,10 +256,7 @@ class LocalComputeLogManager(CapturedLogManager, ComputeLogManager, Configurable
         list_key_prefix = list(log_key_prefix)
 
         for obj in objects:
-            # Note: This method was implemented to support backfill logs, which are always stored as .err files.
-            # If other file extensions need to be supported, this method will need to be updated to look at the
-            # correct part of log_data based on an io_type parameter
-            if obj.is_file() and obj.suffix == "." + IO_TYPE_EXTENSION[ComputeIOType.STDERR]:
+            if obj.is_file() and obj.suffix == "." + IO_TYPE_EXTENSION[io_type]:
                 results.append(list_key_prefix + [obj.stem])
 
         return results

@@ -262,32 +262,31 @@ class CapturedLogManager(ABC):
         return [run_id, "compute_logs", step_key]
 
     def get_log_keys_for_log_key_prefix(
-        self, log_key_prefix: Sequence[str]
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
     ) -> Sequence[Sequence[str]]:
         """Returns the logs keys for a given log key prefix. This is determined by looking at the
         directory defined by the log key prefix and creating a log_key for each file in the directory.
         """
-        # NOTE: This method was introduced to support backfill logs, which are always stored as .err files.
-        # Thus the implementations only look for .err files when determining the log_keys. If other file extensions
-        # need to be supported, an io_type parameter will need to be added to this method
         raise NotImplementedError("Must implement get_log_keys_for_log_key_prefix")
 
-    def _get_log_lines_for_log_key(self, log_key: Sequence[str]) -> Sequence[str]:
+    def _get_log_lines_for_log_key(
+        self, log_key: Sequence[str], io_type: ComputeIOType
+    ) -> Sequence[str]:
         """For a log key, gets the corresponding file, and splits the file into lines."""
         log_data = self.get_log_data(log_key)
-        # Note: This method was implemented to support backfill logs, which are always stored as .err files.
-        # If other file extensions need to be supported, this method will need to be updated to look at the
-        # correct part of log_data based on an io_type parameter
-        raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
+        if io_type == ComputeIOType.STDOUT:
+            raw_logs = log_data.stdout.decode("utf-8") if log_data.stdout else ""
+        else:
+            raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
         log_lines = raw_logs.split("\n")
 
         return log_lines
 
     def read_log_lines_for_log_key_prefix(
-        self, log_key_prefix: Sequence[str], cursor: Optional[str]
+        self, log_key_prefix: Sequence[str], cursor: Optional[str], io_type: ComputeIOType
     ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
-        as if they are a single continuous file. Reads DAGSTER_CAPTURED_LOG_CHUNK_SIZE lines at a time.
+        as if they are a single continuous file. Reads env var DAGSTER_CAPTURED_LOG_CHUNK_SIZE lines at a time.
         Returns the lines read and the next cursor.
 
         Note that the has_more_now attribute of the cursor indicates if there are more logs that can be read immediately.
@@ -297,7 +296,8 @@ class CapturedLogManager(ABC):
         num_lines = int(os.getenv("DAGSTER_CAPTURED_LOG_CHUNK_SIZE", "1000"))
         # find all of the log_keys to read from and sort them in the order to be read
         log_keys = sorted(
-            self.get_log_keys_for_log_key_prefix(log_key_prefix), key=lambda x: "/".join(x)
+            self.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=io_type),
+            key=lambda x: "/".join(x),
         )
         if len(log_keys) == 0:
             return [], None
@@ -319,7 +319,7 @@ class CapturedLogManager(ABC):
             log_key_to_fetch_idx += 1
             line_cursor = 0
 
-        log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
+        log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx], io_type=io_type)
         records = []
         has_more = True
 
@@ -343,7 +343,9 @@ class CapturedLogManager(ABC):
                 line_cursor = 0
                 if len(records) < num_lines:
                     # we still need more records, so fetch the next file
-                    log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
+                    log_lines = self._get_log_lines_for_log_key(
+                        log_keys[log_key_to_fetch_idx], io_type=io_type
+                    )
 
         new_cursor = LogLineCursor(
             log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more_now=has_more
