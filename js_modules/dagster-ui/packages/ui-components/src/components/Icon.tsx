@@ -40,6 +40,7 @@ import checklist from '../icon-svgs/checklist.svg';
 import chevron_left from '../icon-svgs/chevron_left.svg';
 import chevron_right from '../icon-svgs/chevron_right.svg';
 import close from '../icon-svgs/close.svg';
+import code_block from '../icon-svgs/code_block.svg';
 import code_location from '../icon-svgs/code_location.svg';
 import collapse_arrows from '../icon-svgs/collapse_arrows.svg';
 import column_lineage from '../icon-svgs/column_lineage.svg';
@@ -292,6 +293,7 @@ export const Icons = {
   chevron_right,
   chevron_left,
   close,
+  code_block,
   code_location,
   compute_kind,
   console: console_icon,

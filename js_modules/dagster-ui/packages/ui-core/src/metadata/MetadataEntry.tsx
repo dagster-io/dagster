@@ -23,6 +23,7 @@ import {copyValue} from '../app/DomUtils';
 import {assertUnreachable} from '../app/Util';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
+import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
 import {IntMetadataEntry, MaterializationEvent, TableMetadataEntry} from '../graphql/types';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {Markdown} from '../ui/Markdown';
@@ -267,7 +268,27 @@ export const MetadataEntry = ({
         </Group>
       );
     case 'CodeReferencesMetadataEntry':
-      return <></>;
+      return (
+        <MetadataEntryModalAction
+          label={entry.label}
+          modalWidth={900}
+          content={() => (
+            <Box
+              padding={{vertical: 16, horizontal: 20}}
+              background={Colors.backgroundDefault()}
+              margin={{bottom: 12}}
+              flex={{direction: 'column', gap: 8, alignItems: 'stretch'}}
+            >
+              {entry.codeReferences &&
+                entry.codeReferences.map((ref) => (
+                  <CodeLink key={getCodeReferenceKey(ref)} sourceLocation={ref} />
+                ))}
+            </Box>
+          )}
+        >
+          [Show Code References]
+        </MetadataEntryModalAction>
+      );
     default:
       return assertUnreachable(entry);
   }
@@ -312,7 +333,7 @@ const MetadataEntryModalAction = (props: {
   label: string;
   modalWidth?: number;
   content: () => React.ReactNode;
-  copyContent: () => string;
+  copyContent?: () => string;
 }) => {
   const [open, setOpen] = React.useState(false);
   return (
@@ -327,7 +348,15 @@ const MetadataEntryModalAction = (props: {
       >
         {props.content()}
         <DialogFooter>
-          <Button onClick={(e: React.MouseEvent) => copyValue(e, props.copyContent())}>Copy</Button>
+          {props.copyContent && (
+            <Button
+              onClick={(e: React.MouseEvent) =>
+                props.copyContent && copyValue(e, props.copyContent())
+              }
+            >
+              Copy
+            </Button>
+          )}
           <Button intent="primary" autoFocus={true} onClick={() => setOpen(false)}>
             Close
           </Button>
