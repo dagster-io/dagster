@@ -19,6 +19,8 @@ Dagster supports attaching different types of table metadata to assets, includin
 
 ### For assets defined in Dagster
 
+Column schema metadata can be attached to Dagster assets either as [definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) or [materialization metadata](/concepts/metadata-tags/asset-metadata#attaching-materialization-metadata), which will then be visible in the Dagster UI. For example:
+
 <Image
 alt="Column schema for an asset in the Dagster UI"
 src="/images/concepts/metadata-tags/metadata-table-schema.png"
@@ -26,7 +28,7 @@ width={1793}
 height={652}
 />
 
-You may attach column schema metadata to Dagster assets either as [definition metadata](/concepts/metadata-tags/asset-metadata#attaching-definition-metadata) or [materialization metadata](/concepts/metadata-tags/asset-metadata#attaching-materialization-metadata). If the schema of your asset is pre-defined, you can attach it as definition metadata. If the schema is only known when an asset is materialized, you can attach it as metadata to the materialization.
+If the schema of your asset is pre-defined, you can attach it as definition metadata. If the schema is only known when an asset is materialized, you can attach it as metadata to the materialization.
 
 To attach schema metadata to an asset, you will need to:
 
@@ -90,6 +92,8 @@ Dagster's dbt integration enables automatically attaching column schema metadata
 
 ## Attaching row count
 
+Row count metadata can be attached to Dagster assets as [materialization metadata](/concepts/metadata-tags/asset-metadata#attaching-materialization-metadata) to provide additional context about the number of rows in a materialized table. This will be highlighted in the Dagster UI. For example:
+
 <Image
 alt="Row count for an asset in the Dagster UI"
 src="/images/concepts/metadata-tags/metadata-row-count.png"
@@ -97,7 +101,7 @@ width={1921}
 height={559}
 />
 
-You may attach row count metadata to Dagster assets as [materialization metadata](/concepts/metadata-tags/asset-metadata#attaching-materialization-metadata) to provide additional context about the number of rows in a materialized table. Dagster will let you track changes in the row count over time, and you can use this information to monitor data quality.
+In addition to showing the latest row count, Dagster will let you track changes in the row count over time, and you can use this information to monitor data quality.
 
 To attach row count metadata to an asset, you will need to attach a numerical value to the `dagster/row_count` key in the metadata parameter of the <PyObject object="MaterializeResult" /> object returned by the asset function. For example:
 
