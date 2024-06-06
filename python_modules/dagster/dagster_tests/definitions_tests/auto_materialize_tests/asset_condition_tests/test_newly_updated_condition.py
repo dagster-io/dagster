@@ -1,13 +1,14 @@
+import pytest
 from dagster import AutomationCondition
 
-from ..base_scenario import run_request
-from ..scenario_specs import one_asset
+from ..scenario_specs import one_asset, one_observable_asset
 from .asset_condition_scenario import AutomationConditionScenarioState
 
 
-def test_newly_updated_condition() -> None:
+@pytest.mark.parametrize("scenario", [one_asset, one_observable_asset])
+def test_newly_updated_condition(scenario) -> None:
     state = AutomationConditionScenarioState(
-        one_asset, automation_condition=AutomationCondition.newly_updated()
+        scenario, automation_condition=AutomationCondition.newly_updated()
     )
 
     # not updated
@@ -15,7 +16,7 @@ def test_newly_updated_condition() -> None:
     assert result.true_subset.size == 0
 
     # newly updated
-    state = state.with_runs(run_request("A"))
+    state = state.with_reported_materialization("A")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 
@@ -28,11 +29,11 @@ def test_newly_updated_condition() -> None:
     assert result.true_subset.size == 0
 
     # newly updated twice in a row
-    state = state.with_runs(run_request("A"))
+    state = state.with_reported_materialization("A")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 
-    state = state.with_runs(run_request("A"))
+    state = state.with_reported_materialization("A")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
 

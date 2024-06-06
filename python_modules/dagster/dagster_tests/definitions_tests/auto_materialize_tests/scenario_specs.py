@@ -3,6 +3,10 @@ import datetime
 import pendulum
 from dagster import AssetSpec, MultiPartitionKey, StaticPartitionsDefinition
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
@@ -39,6 +43,17 @@ self_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=
 # BASIC STATES
 ##############
 one_asset = ScenarioSpec(asset_specs=[AssetSpec("A")])
+
+one_observable_asset = ScenarioSpec(
+    [
+        AssetSpec(
+            "A",
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value
+            },
+        )
+    ]
+)
 
 two_assets_in_sequence = ScenarioSpec(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"])],

@@ -265,15 +265,25 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ),
             before_storage_id=before_cursor,
         )
+
+        # For observable assets, we fetch the most recent observation and materialization and return
+        # whichever is more recent. For non-observable assets, we just fetch the most recent
+        # materialization.
+        materialization_records = self.instance.fetch_materializations(
+            records_filter, ascending=False, limit=1
+        ).records
         if self.asset_graph.get(asset_partition.asset_key).is_observable:
-            records = self.instance.fetch_observations(
+            observation_records = self.instance.fetch_observations(
                 records_filter, ascending=False, limit=1
             ).records
+            all_records = sorted(
+                [*materialization_records, *observation_records],
+                key=lambda x: x.timestamp,
+                reverse=True,
+            )
         else:
-            records = self.instance.fetch_materializations(
-                records_filter, ascending=False, limit=1
-            ).records
-        return next(iter(records), None)
+            all_records = materialization_records
+        return next(iter(all_records), None)
 
     @cached_method
     def _get_latest_materialization_or_observation_storage_ids_by_asset_partition(
