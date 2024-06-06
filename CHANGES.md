@@ -5,7 +5,7 @@
 ### New
 
 - Dagster will now display a “storage kind” tag on assets in the UI, similar to the existing compute kind. To set storage kind for an asset, set its `dagster/storage_kind` tag.
-- You can now set retry policy on dbt assets, to enable coarse-grained retries with delay and jitter.  For fine-grained partial retries, we still recommend invoking `dbt retry` within a try/except block to avoid unnecessary, duplicate work.
+- You can now set retry policy on dbt assets, to enable coarse-grained retries with delay and jitter. For fine-grained partial retries, we still recommend invoking `dbt retry` within a try/except block to avoid unnecessary, duplicate work.
 - `AssetExecutionContext` now exposes a `has_partition_key_range` property.
 - The `owners`, `metadata`, `tags`, and `deps` properties on `AssetSpec` are no longer `Optional`. The `AssetSpec` constructor still accepts `None` values, which are coerced to empty collections of the relevant type.
 - The `docker_executor` and `k8s_job_executor` now consider at most 1000 events at a time when loading events from the current run to determine which steps should be launched. This value can be tuned by setting the `DAGSTER_EXECUTOR_POP_EVENTS_LIMIT` environment variable in the run process.
