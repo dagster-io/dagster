@@ -545,6 +545,7 @@ class ScheduleDefinition(IHasInternalInit):
             tags=None,
             tags_fn=None,
             should_execute=None,
+            target=None,
         )
 
     def __init__(
@@ -763,6 +764,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         default_status: DefaultScheduleStatus,
         required_resource_keys: Optional[Set[str]],
+        target: Optional[CoercibleToAutomationTarget],
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -780,6 +782,7 @@ class ScheduleDefinition(IHasInternalInit):
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:

@@ -581,6 +581,7 @@ class SensorDefinition(IHasInternalInit):
             default_status=self.default_status,
             asset_selection=self.asset_selection,
             required_resource_keys=self._raw_required_resource_keys,
+            target=None,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -728,6 +729,7 @@ class SensorDefinition(IHasInternalInit):
         default_status: DefaultSensorStatus,
         asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
+        target: Optional[CoercibleToAutomationTarget],
     ) -> "SensorDefinition":
         return SensorDefinition(
             name=name,
@@ -740,6 +742,7 @@ class SensorDefinition(IHasInternalInit):
             default_status=default_status,
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:

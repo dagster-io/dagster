@@ -3,6 +3,7 @@ from functools import update_wrapper
 from typing import Callable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
+from dagster._core.definitions.automation_target import CoercibleToAutomationTarget
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.sensor_definition import get_context_param_name
 from dagster._core.errors import (
@@ -41,6 +42,7 @@ def schedule(
     job: Optional[ExecutableDefinition] = None,
     default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     required_resource_keys: Optional[Set[str]] = None,
+    target: Optional[CoercibleToAutomationTarget] = None,
 ) -> Callable[[RawScheduleEvaluationFunction], ScheduleDefinition]:
     """Creates a schedule following the provided cron schedule and requests runs for the provided job.
 
@@ -174,6 +176,7 @@ def schedule(
             tags=None,  # cannot supply tags or tags_fn to decorator
             tags_fn=None,
             should_execute=None,  # already encompassed in evaluation_fn
+            target=target,
         )
 
         update_wrapper(schedule_def, wrapped=fn)
