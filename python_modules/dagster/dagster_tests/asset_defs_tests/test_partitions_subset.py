@@ -1,6 +1,7 @@
 from typing import cast
 from unittest.mock import Mock
 
+import freezegun
 import pendulum
 import pytest
 from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
@@ -13,7 +14,7 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._seven.compat.pendulum import create_pendulum_time
 
 
 def test_default_subset_cannot_deserialize_invalid_version():
@@ -164,7 +165,7 @@ def test_all_partitions_subset_static_partitions_def() -> None:
 
 
 def test_all_partitions_subset_time_window_partitions_def() -> None:
-    with pendulum_freeze_time(create_pendulum_time(2020, 1, 6, hour=10)):
+    with freezegun.freeze_time(create_pendulum_time(2020, 1, 6, hour=10)):
         time_window_partitions_def = DailyPartitionsDefinition(start_date="2020-01-01")
         all_subset = AllPartitionsSubset(time_window_partitions_def, Mock(), pendulum.now("UTC"))
         assert len(all_subset) == 5
