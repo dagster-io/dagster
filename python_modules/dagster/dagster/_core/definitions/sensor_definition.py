@@ -31,6 +31,7 @@ from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.automation_target import (
+    AutomationTarget,
     CoercibleToAutomationTarget,
     resolve_automation_target,
 )
@@ -232,7 +233,6 @@ class SensorEvaluationContext:
 
     def merge_resources(self, resources_dict: Mapping[str, Any]) -> "SensorEvaluationContext":
         """Merge the specified resources into this context.
-
         This method is intended to be used by the Dagster framework, and should not be called by user code.
 
         Args:
@@ -535,6 +535,11 @@ def _check_dynamic_partitions_requests(
             check.failed(f"Unexpected dynamic partition request type: {req}")
 
 
+class SensorAutomationTarget(NamedTuple):
+    direct_targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]]
+    automation_target: Optional[AutomationTarget]
+
+
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -601,15 +606,16 @@ class SensorDefinition(IHasInternalInit):
         asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
         target: Optional[CoercibleToAutomationTarget] = None,
-    ):
+    ) -> None:
         from dagster._config.pythonic_config import validate_resource_annotated_function
 
         if evaluation_fn is None:
             raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
 
-        loadable_targets = self.resolve_to_loadable_targets(
+        sensor_automation_target = self.resolve_to_loadable_targets(
             name, job_name, job, jobs, asset_selection, target
         )
+        self.automation_target = sensor_automation_target.automation_target
 
         if name:
             self._name = check_valid_name(name)
@@ -631,7 +637,11 @@ class SensorDefinition(IHasInternalInit):
         )
         self._description = check.opt_str_param(description, "description")
         self._loadable_targets: Sequence[Union[RepoRelativeTarget, DirectTarget]] = (
-            check.opt_list_param(loadable_targets, "targets", (DirectTarget, RepoRelativeTarget))
+            check.opt_list_param(
+                sensor_automation_target.direct_targets,
+                "targets",
+                (DirectTarget, RepoRelativeTarget),
+            )
         )
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
@@ -660,7 +670,7 @@ class SensorDefinition(IHasInternalInit):
         jobs: Optional[Sequence[ExecutableDefinition]],
         asset_selection: Optional[CoercibleToAssetSelection],
         target: Optional[CoercibleToAutomationTarget],
-    ) -> Optional[List[Union[RepoRelativeTarget, DirectTarget]]]:
+    ) -> SensorAutomationTarget:
         if (
             sum(
                 [
@@ -680,6 +690,7 @@ class SensorDefinition(IHasInternalInit):
 
         jobs = jobs if jobs else [job] if job else None
 
+        automation_target = None
         if target:
             automation_target = resolve_automation_target(
                 check.not_none(name, "If you provide a target you must provide a sensorname"),
@@ -688,18 +699,21 @@ class SensorDefinition(IHasInternalInit):
             jobs = [automation_target.target_executable]
 
         if job_name:
-            return [
-                RepoRelativeTarget(
-                    job_name=check.str_param(job_name, "job_name"),
-                    op_selection=None,
-                )
-            ]
+            return SensorAutomationTarget(
+                direct_targets=[
+                    RepoRelativeTarget(
+                        job_name=check.str_param(job_name, "job_name"),
+                        op_selection=None,
+                    )
+                ],
+                automation_target=automation_target,
+            )
         elif job:
-            return [DirectTarget(job)]
+            return SensorAutomationTarget([DirectTarget(job)], automation_target)
         elif jobs:
-            return [DirectTarget(job) for job in jobs]
+            return SensorAutomationTarget([DirectTarget(job) for job in jobs], automation_target)
         else:
-            return None
+            return SensorAutomationTarget(None, None)
 
     @staticmethod
     def dagster_internal_init(
