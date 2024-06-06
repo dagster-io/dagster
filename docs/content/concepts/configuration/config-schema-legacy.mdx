@@ -22,7 +22,7 @@ It's often useful to provide user-chosen values to Dagster jobs or asset definit
 
 Various Dagster entities (ops, assets, resources) can be individually configured. When launching a job that executes (ops), materializes (assets), or instantiates (resources) a configurable entity, you can provide _run configuration_ for each entity. Within the function that defines the entity, you can access the passed-in configuration off of the `context`. Typically, the provided run configuration values correspond to a _configuration schema_ attached to the op/asset/resource definition. Dagster validates the run configuration against the schema and proceeds only if validation is successful.
 
-A common use of configuration is for a [schedule](/concepts/schedules/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
+A common use of configuration is for a [schedule](/concepts/automation/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) to provide configuration to the job run it is launching. For example, a daily schedule might provide the day it's running on to one of the ops as a config value, and that op might use that config value to decide what day's data to read.
 
 ---
 
