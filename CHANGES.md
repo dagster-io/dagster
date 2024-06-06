@@ -1,5 +1,44 @@
 # Changelog
 
+# 1.7.9 (core) / 0.23.9 (libraries)
+
+### New
+
+- Dagster will now display a “storage kind” tag on assets in the UI, similar to the existing compute kind. To set storage kind for an asset, set its `dagster/storage_kind` tag.
+- You can now set retry policy on dbt assets, to enable coarse-grained retries with delay and jitter.  For fine-grained partial retries, we still recommend invoking `dbt retry` within a try/except block to avoid unnecessary, duplicate work.
+- `AssetExecutionContext` now exposes a `has_partition_key_range` property.
+- The `owners`, `metadata`, `tags`, and `deps` properties on `AssetSpec` are no longer `Optional`. The `AssetSpec` constructor still accepts `None` values, which are coerced to empty collections of the relevant type.
+- The `docker_executor` and `k8s_job_executor` now consider at most 1000 events at a time when loading events from the current run to determine which steps should be launched. This value can be tuned by setting the `DAGSTER_EXECUTOR_POP_EVENTS_LIMIT` environment variable in the run process.
+- Added a `dagster/retry_on_asset_or_op_failure` tag that can be added to jobs to override run retry behavior for runs of specific jobs. See [the docs](https://docs.dagster.io/deployment/run-retries#combining-op-and-run-retries) for more information.
+- Improved the sensor produced by `build_sensor_for_freshness_checks` to describe when/why it skips evaluating freshness checks.
+- A new “Runs” tab on the backfill details page allows you to see list and timeline views of the runs launched by the backfill.
+- [dagster-dbt] dbt will now attach relation identifier metadata to asset materializations to indicate where the built model is materialized to.
+- [dagster-graphql] The GraphQL Python client will now include the HTTP error code in the exception when a query fails. Thanks [@yuvalgimmunai](https://github.com/yuvalgimmunai)!
+
+### Bugfixes
+
+- Fixed sensor logging behavior with the `@multi_asset_sensor`.
+- `ScheduleDefinition` now properly supports being passed a `RunConfig` object.
+- When an asset function returns a `MaterializeResult`, but the function has no type annotation, previously, the IO manager would still be invoked with a `None` value. Now, the IO manager is not invoked.
+- The `AssetSpec` constructor now raises an error if an invalid owner string is passed to it.
+- When using the `graph_multi_asset` decorator, the `code_version` property on `AssetOut`s passed in used to be ignored. Now, they no longer are.
+- [dagster-deltalake] Fixed GcsConfig import error and type error for partitioned assets (Thanks [@thmswt](https://github.com/thmswt))
+- The asset graph and asset catalog now show the materialization status of External assets (when manually reported) rather than showing “Never observed”
+
+### Documentation
+
+- The External Assets REST APIs now have their own [reference page](https://docs.dagster.io/apidocs/external-assets-rest)
+- Added details, updated copy, and improved formatting to External Assets REST APIs
+
+### Dagster Plus
+
+- The ability to set a custom base deployment when creating a branch deployment has been enabled for all organizations.
+- When a code location fails to deploy, the Kubernetes agent now includes additional any warning messages from the underlying replicaset in the failure message to aid with troubleshooting.
+- Serverless deployments now support using a requirements.txt with [hashes](https://pip.pypa.io/en/stable/topics/secure-installs/#secure-installs).
+- Fixed an issue where the `dagster-cloud job launch` command did not support specifying asset keys with prefixes in the `--asset-key` argument.
+- [catalog UI] Catalog search now allows filtering by type, i.e. `group:`, `code location:`, `tag:`, `owner:`.
+- New dagster+ accounts will now start with two default alert policies; one to alert if the default free credit budget for your plan is exceeded, and one to alert if a single run goes over 24 hours. These alerts will be sent as emails to the email with which the account was initially created.
+
 # 1.7.8 (core) / 0.23.8 (libraries)
 
 ### New
