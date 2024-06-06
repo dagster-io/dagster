@@ -139,7 +139,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         filename = f"{filebase}.{extension}"
         if partial:
             filename = f"{filename}.partial"
-        paths = [self._resolve_path_for_namespace(namespace), filename]
+        paths = [*self._resolve_path_for_namespace(namespace), filename]
         return "/".join(paths)
 
     @contextmanager
