@@ -2347,8 +2347,7 @@ def test_asset_backfill_logs(
     # set num_lines high so we know we get all of the remaining logs
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
     logs, cursor = cm.read_log_lines_for_log_key_prefix(
-        ["backfill", backfill.backfill_id],
-        cursor=cursor.to_string(),
+        ["backfill", backfill.backfill_id], cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
     )
 
     assert cursor is not None
