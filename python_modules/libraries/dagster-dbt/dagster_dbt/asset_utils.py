@@ -35,8 +35,8 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
-from dagster._core.definitions.decorators.asset_decorator import (
-    _validate_and_assign_output_names_to_check_specs,
+from dagster._core.definitions.decorators.assets_definition_factory import (
+    validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.merger import merge_dicts
@@ -821,7 +821,7 @@ def get_asset_deps(
 
     check_specs_by_output_name = cast(
         Dict[str, AssetCheckSpec],
-        _validate_and_assign_output_names_to_check_specs(
+        validate_and_assign_output_names_to_check_specs(
             list(check_specs_by_key.values()), list(asset_outs.keys())
         ),
     )

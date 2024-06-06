@@ -1,4 +1,3 @@
-from collections import Counter
 from inspect import Parameter
 from typing import (
     AbstractSet,
@@ -25,7 +24,10 @@ from dagster._core.decorator_utils import get_function_params, get_valid_name_pe
 from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.decorators.assets_definition_factory import InOutMapper
+from dagster._core.definitions.decorators.assets_definition_factory import (
+    InOutMapper,
+    validate_and_assign_output_names_to_check_specs,
+)
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -412,7 +414,7 @@ class _Asset:
                 code_version=self.code_version,
             )
 
-            check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+            check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
                 self.check_specs, [out_asset_key]
             )
             check_outs: Mapping[str, Out] = {
@@ -741,7 +743,9 @@ def multi_asset(
                 )
 
         in_out_mapper = InOutMapper.from_asset_ins_and_asset_outs(
-            asset_ins=asset_ins, asset_outs=output_tuples_by_asset_key
+            asset_ins=asset_ins,
+            asset_outs=output_tuples_by_asset_key,
+            check_specs=check_specs or [],
         )
 
         arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
@@ -751,12 +755,9 @@ def multi_asset(
             " arguments to the decorated function",
         )
 
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
-            check_specs, list(output_tuples_by_asset_key.keys())
-        )
         check_outs_by_output_name: Mapping[str, Out] = {
             output_name: Out(dagster_type=None, is_required=not can_subset)
-            for output_name in check_specs_by_output_name.keys()
+            for output_name in in_out_mapper.check_specs_by_output_name.keys()
         }
         overlapping_output_names = (
             in_out_mapper.asset_outs_by_output_name.keys() & check_outs_by_output_name.keys()
@@ -865,7 +866,7 @@ def multi_asset(
             resource_defs=resource_defs,
             backfill_policy=backfill_policy,
             selected_asset_keys=None,  # no subselection in decorator
-            check_specs_by_output_name=check_specs_by_output_name,
+            check_specs_by_output_name=in_out_mapper.check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
             specs=resolved_specs,
@@ -1176,7 +1177,7 @@ def graph_asset_no_defaults(
         if asset_in.partition_mapping
     }
 
-    check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+    check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
         check_specs, [out_asset_key]
     )
     check_outs_by_output_name: Mapping[str, GraphOut] = {
@@ -1278,7 +1279,7 @@ def graph_multi_asset(
         }
         asset_outs = build_asset_outs(outs)
 
-        check_specs_by_output_name = _validate_and_assign_output_names_to_check_specs(
+        check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
             check_specs, list(asset_outs.keys())
         )
         check_outs_by_output_name: Mapping[str, GraphOut] = {
@@ -1428,39 +1429,3 @@ def make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[I
             dep_dict[asset_dep.asset_key] = asset_dep
 
     return list(dep_dict.values())
-
-
-def _assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]],
-) -> Mapping[str, AssetCheckSpec]:
-    checks_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
-    if check_specs and len(checks_by_output_name) != len(check_specs):
-        duplicates = {
-            item: count
-            for item, count in Counter(
-                [(spec.asset_key, spec.name) for spec in check_specs]
-            ).items()
-            if count > 1
-        }
-
-        raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
-
-    return checks_by_output_name
-
-
-def _validate_check_specs_target_relevant_asset_keys(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
-) -> None:
-    for spec in check_specs or []:
-        if spec.asset_key not in valid_asset_keys:
-            raise DagsterInvalidDefinitionError(
-                f"Invalid asset key {spec.asset_key} in check spec {spec.name}. Must be one of"
-                f" {valid_asset_keys}"
-            )
-
-
-def _validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
-) -> Mapping[str, AssetCheckSpec]:
-    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
-    return _assign_output_names_to_check_specs(check_specs)
