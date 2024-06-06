@@ -1,4 +1,5 @@
 import os
+from abc import ABC
 from datetime import datetime
 from typing import Any, Dict, Generic, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
@@ -88,6 +89,10 @@ T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, c
 # ########################
 
 
+class IHasSerializedMetadataRepresentation(ABC):
+    def serialized_representation(self) -> MetadataValue[Any]: ...
+
+
 def normalize_definition_metadata(metadata: Mapping[str, object]) -> Mapping[str, object]:
     def_metadata = {}
     for k, v in metadata.items():
@@ -105,7 +110,11 @@ def serialize_definition_metadata_for_snaps(
     normed_metadata = {}
     for k, v in metadata.items():
         try:
-            normalize_metadata[k] = normalize_metadata_value(v)  # type: ignore
+            normed_metadata[k] = (
+                v.serialized_representation()
+                if isinstance(v, IHasSerializedMetadataRepresentation)
+                else normalize_metadata_value(v)  # type: ignore
+            )
         except DagsterInvalidMetadata:
             ...
             # Just hide it

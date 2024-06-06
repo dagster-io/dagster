@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -13,6 +15,11 @@ from dagster import (
     op,
     usable_as_dagster_type,
     validate_run_config,
+)
+from dagster._core.definitions.metadata import IHasSerializedMetadataRepresentation
+from dagster._core.definitions.metadata.metadata_value import (
+    JsonMetadataValue,
+    MetadataValue as MetadataValue,
 )
 from dagster._core.execution.context.compute import OpExecutionContext
 
@@ -333,7 +340,9 @@ def test_job_recreation_works() -> None:
 
 
 def test_arbitrary_metadata() -> None:
-    class SomeCustomObjectForUserFramework: ...
+    class SomeCustomObjectForUserFramework(IHasSerializedMetadataRepresentation):
+        def serialized_representation(self) -> MetadataValue[Any]:
+            return MetadataValue.json({"foo": "bar"})
 
     executed = {}
 
@@ -350,3 +359,5 @@ def test_arbitrary_metadata() -> None:
 
     assert a_job.execute_in_process().success
     assert executed["yes"]
+    custom_obj_metadata = a_job.get_job_snapshot().metadata["custom_object"]
+    assert isinstance(custom_obj_metadata, JsonMetadataValue)
