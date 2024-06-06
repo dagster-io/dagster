@@ -1,4 +1,5 @@
 from dagster import AssetKey, FreshnessPolicy
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 
 def assert_assets_match_project(
@@ -11,7 +12,7 @@ def assert_assets_match_project(
 
     assert len(dbt_assets) == 1
     assets_op = dbt_assets[0].op
-    assert assets_op.tags == {"kind": "dbt"}
+    assert assets_op.tags == {COMPUTE_KIND_TAG: "dbt"}
 
     # this is the set of keys which are "true" inputs to the op, rather than placeholder inputs
     # which will not be used if this op is run without subsetting

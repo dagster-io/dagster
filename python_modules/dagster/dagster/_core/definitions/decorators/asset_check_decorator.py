@@ -28,6 +28,7 @@ from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.warnings import disable_dagster_warnings
 
 from ..input import In
@@ -235,7 +236,7 @@ def asset_check(
             # part of the Op definition instantiation
             required_resource_keys=op_required_resource_keys,
             tags={
-                **({"kind": compute_kind} if compute_kind else {}),
+                **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
                 **(op_tags or {}),
             },
             config_schema=config_schema,
@@ -348,7 +349,7 @@ def multi_asset_check(
                 out=outs,
                 required_resource_keys=op_required_resource_keys,
                 tags={
-                    **({"kind": compute_kind} if compute_kind else {}),
+                    **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
                 },
                 config_schema=config_schema,

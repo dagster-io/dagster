@@ -41,6 +41,7 @@ from dagster._core.definitions.decorators.config_mapping_decorator import config
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
 from dagster._core.types.dagster_type import resolve_dagster_type
 
@@ -121,7 +122,7 @@ def test_asset_with_compute_kind():
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.op.tags == {"kind": "sql"}
+    assert my_asset.op.tags == {COMPUTE_KIND_TAG: "sql"}
 
 
 def test_multi_asset_with_compute_kind():
@@ -129,7 +130,7 @@ def test_multi_asset_with_compute_kind():
     def my_asset(arg1):
         return arg1
 
-    assert my_asset.op.tags == {"kind": "sql"}
+    assert my_asset.op.tags == {COMPUTE_KIND_TAG: "sql"}
 
 
 def test_multi_asset_out_name_diff_from_asset_key():
