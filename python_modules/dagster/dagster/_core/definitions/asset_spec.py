@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.utils import validate_asset_owner
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
 
@@ -99,6 +100,8 @@ class AssetSpec(
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
             string can be a user's email address, or a team name prefixed with `team:`,
             e.g. `team:finops`.
+        compute_kind (Optional[str]): A string to represent the kind of computation that produces
+            the asset, e.g. "dbt" or "spark". It will be displayed in the Dagster UI as a badge on the asset.
         tags (Optional[Mapping[str, str]]): Tags for filtering and organizing. These tags are not
             attached to runs of the asset.
     """
@@ -116,6 +119,7 @@ class AssetSpec(
         freshness_policy: Optional[FreshnessPolicy] = None,
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         owners: Optional[Sequence[str]] = None,
+        compute_kind: Optional[str] = None,
         tags: Optional[Mapping[str, str]] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
@@ -147,8 +151,18 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=owners,
-            tags=validate_tags_strict(tags) or {},
+            tags=validate_tags_strict(
+                {
+                    **(tags or {}),
+                    **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
+                }
+            )
+            or {},
         )
+
+    # Compute kind gets stored in the tags. The conversion into a tag is expected to already have
+    # happened for internal callsites.
+    _dagster_internal_init_excluded_args = {"compute_kind"}
 
     @staticmethod
     def dagster_internal_init(

@@ -1,6 +1,7 @@
 from collections import Counter
 from functools import cached_property
 from inspect import Parameter
+from itertools import groupby
 from typing import (
     AbstractSet,
     Any,
@@ -298,6 +299,19 @@ class DecoratorAssetsDefinitionBuilder:
         args: DecoratorAssetsDefinitionBuilderArgs,
     ) -> "DecoratorAssetsDefinitionBuilder":
         check.param_invariant(args.specs, "args", "Must use specs in this codepath")
+
+        specs_by_compute_kind = dict(
+            groupby(args.specs, key=lambda spec: spec.tags.get(COMPUTE_KIND_TAG))
+        )
+        if len(specs_by_compute_kind) > 1:
+            asset_keys_by_compute_kind = {
+                ck: [spec.key.to_user_string() for spec in specs]
+                for ck, specs in specs_by_compute_kind.items()
+            }
+            raise DagsterInvalidDefinitionError(
+                "Cannot specify multiple compute kinds in the same multi_asset."
+                f" Found multiple compute kinds:\n\n{asset_keys_by_compute_kind}"
+            )
 
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut] = {}
         for asset_spec in args.specs:
