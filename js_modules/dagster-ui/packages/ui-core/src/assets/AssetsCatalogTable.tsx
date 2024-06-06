@@ -53,7 +53,7 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     version: 1,
   });
   // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('indexdbQueryCache:/allAssets');
+  indexedDB.deleteDatabase('indexdbQueryCache:allAssets');
 
   const {data, fetch: fetchAssets} = assetsQuery;
 
