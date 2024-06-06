@@ -5,12 +5,13 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
 from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._model import DagsterModel
+from dagster._model import as_dict, dagster_model
 
 from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
 
 
-class AssetSpecModel(DagsterModel):
+@dagster_model
+class AssetSpecModel:
     key: str
     deps: Sequence[str] = []
     description: Optional[str] = None
@@ -22,7 +23,7 @@ class AssetSpecModel(DagsterModel):
     tags: Mapping[str, str] = {}
 
     def to_asset_spec(self) -> AssetSpec:
-        return AssetSpec(**self.__dict__)
+        return AssetSpec(**as_dict(self))
 
 
 class BlueprintAssetsDefinition(Blueprint):
