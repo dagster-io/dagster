@@ -30,12 +30,13 @@ def _namedtuple_model_transform(
         * bans tuple methods that don't make sense for a model object
         * creates a run time checked __new__  (optional).
     """
-    base = NamedTuple(f"_{cls.__name__}", cls.__annotations__.items())
+    field_set = getattr(cls, "__annotations__", {})
+    base = NamedTuple(f"_{cls.__name__}", field_set.items())
 
     if checked:
         orig_new = base.__new__
         checks_builder = LazyCheckBuilder(
-            cls.__annotations__,
+            field_set,
             EvalContext.capture_from_frame(1 + decorator_frames),
             1 if with_new else 0,
         )
@@ -60,7 +61,8 @@ def _namedtuple_model_transform(
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
             _MODEL_MARKER_FIELD: _MODEL_MARKER_VALUE,
-            "__annotations__": cls.__annotations__,
+            "__annotations__": field_set,
+            "__bool__": _true,
         },
     )
 
@@ -228,3 +230,7 @@ def _banned_iter(*args, **kwargs):
 
 def _banned_idx(*args, **kwargs):
     raise Exception("Index access is not allowed on `@dagster_model`s.")
+
+
+def _true(_):
+    return True

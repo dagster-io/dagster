@@ -283,3 +283,10 @@ def test_didnt_override_new():
         @dagster_model_with_new
         class FailedAgain:
             local: Optional[str]
+
+
+def test_empty():
+    @dagster_model
+    class Empty: ...
+
+    assert Empty()
