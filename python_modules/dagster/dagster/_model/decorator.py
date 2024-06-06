@@ -63,6 +63,7 @@ def _namedtuple_model_transform(
             _MODEL_MARKER_FIELD: _MODEL_MARKER_VALUE,
             "__annotations__": field_set,
             "__bool__": _true,
+            "__model_new__": base.__new__,
         },
     )
 

@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Union
 
 import yaml
 from dagster._annotations import experimental
-from dagster._model import DagsterModel
+from dagster._model.decorator import dagster_model_with_new
 from dagster._utils import run_with_concurrent_update_guard
 
 from .errors import (
@@ -103,7 +103,8 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
 
 @experimental
-class DbtProject(DagsterModel):
+@dagster_model_with_new
+class DbtProject:
     """Representation of a dbt project and related settings that assist with managing manifest.json preparation.
 
     By default, using this helps achieve a setup where:
@@ -181,8 +182,8 @@ class DbtProject(DagsterModel):
     has_uninstalled_deps: bool
     manifest_preparer: DbtManifestPreparer
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         project_dir: Union[Path, str],
         *,
         target_path: Union[Path, str] = Path("target"),
@@ -220,7 +221,8 @@ class DbtProject(DagsterModel):
             dependencies_path.exists() or packages_path.exists()
         ) and not packages_install_path.exists()
 
-        super().__init__(
+        val = cls.__model_new__(  # type: ignore
+            cls,
             project_dir=project_dir,
             target_path=target_path,
             target=target,
@@ -231,4 +233,5 @@ class DbtProject(DagsterModel):
             manifest_preparer=manifest_preparer,
         )
         if manifest_preparer:
-            manifest_preparer.on_load(self)
+            manifest_preparer.on_load(val)
+        return val
