@@ -475,7 +475,7 @@ class ScheduleSnap(
             name=schedule_def.name,
             cron_schedule=schedule_def.cron_schedule,
             job_name=schedule_def.job_name,
-            op_selection=schedule_def._direct_target.op_selection,  # noqa: SLF001
+            op_selection=schedule_def._direct_or_repo_relative_target.op_selection,  # noqa: SLF001
             mode=DEFAULT_MODE_NAME,
             environment_vars=schedule_def.environment_vars,
             partition_set_name=None,
@@ -2001,7 +2001,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Schedul
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         job_name=schedule_def.job_name,
-        op_selection=schedule_def._direct_target.op_selection,  # noqa: SLF001
+        op_selection=schedule_def._direct_or_repo_relative_target.op_selection,  # noqa: SLF001
         mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=None,

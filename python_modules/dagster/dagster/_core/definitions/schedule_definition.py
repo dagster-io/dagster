@@ -594,15 +594,21 @@ class ScheduleDefinition(IHasInternalInit):
         self.passed_assets = []
 
         if job is not None:
-            self._direct_target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
+            self._direct_or_repo_relative_target: Union[DirectTarget, RepoRelativeTarget] = (
+                DirectTarget(job)
+            )
         elif target is not None:
             self.automation_target = resolve_automation_target(
                 target=target,
-                automation_name=check.not_none(name, "If you specify target you must specify name"),
+                automation_name=check.not_none(
+                    name, "If you specify target you must specify schedule name"
+                ),
             )
-            self._direct_target = DirectTarget(self.automation_target.target_executable)
+            self._direct_or_repo_relative_target = DirectTarget(
+                self.automation_target.target_executable
+            )
         else:
-            self._direct_target = RepoRelativeTarget(
+            self._direct_or_repo_relative_target = RepoRelativeTarget(
                 job_name=check.str_param(job_name, "job_name"),
                 op_selection=None,
             )
@@ -815,7 +821,7 @@ class ScheduleDefinition(IHasInternalInit):
     @property
     def job_name(self) -> str:
         """str: The name of the job targeted by this schedule."""
-        return self._direct_target.job_name
+        return self._direct_or_repo_relative_target.job_name
 
     @public
     @property
@@ -857,8 +863,8 @@ class ScheduleDefinition(IHasInternalInit):
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
-        if isinstance(self._direct_target, DirectTarget):
-            return self._direct_target.target
+        if isinstance(self._direct_or_repo_relative_target, DirectTarget):
+            return self._direct_or_repo_relative_target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
@@ -925,7 +931,9 @@ class ScheduleDefinition(IHasInternalInit):
                         " partitioned run requests"
                     )
 
-                scheduled_target = context.repository_def.get_job(self._direct_target.job_name)
+                scheduled_target = context.repository_def.get_job(
+                    self._direct_or_repo_relative_target.job_name
+                )
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     dynamic_partitions_requests=[],
@@ -948,7 +956,7 @@ class ScheduleDefinition(IHasInternalInit):
         )
 
     def has_loadable_target(self) -> bool:
-        return isinstance(self._direct_target, DirectTarget)
+        return isinstance(self._direct_or_repo_relative_target, DirectTarget)
 
     @property
     def targets_unresolved_asset_job(self) -> bool:
@@ -959,8 +967,8 @@ class ScheduleDefinition(IHasInternalInit):
     def load_target(
         self,
     ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        if isinstance(self._direct_target, DirectTarget):
-            return self._direct_target.load()
+        if isinstance(self._direct_or_repo_relative_target, DirectTarget):
+            return self._direct_or_repo_relative_target.load()
 
         check.failed("Target is not loadable")
 

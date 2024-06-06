@@ -61,6 +61,7 @@ def resolve_automation_target(
         return AutomationTarget(target, passed_assets_defs=[])
     else:
         check.failed(f"Invalid target passed to schedule: {target}")
+
     return AutomationTarget(
         target_executable=define_asset_job(
             name=make_synthetic_job_name(automation_name), selection=asset_selection
