@@ -16,7 +16,7 @@ from dagster import (
     usable_as_dagster_type,
     validate_run_config,
 )
-from dagster._core.definitions.metadata import IHasSerializedMetadataRepresentation
+from dagster._core.definitions.metadata import HasSerializedMetadataRepresentation
 from dagster._core.definitions.metadata.metadata_value import (
     JsonMetadataValue,
     MetadataValue as MetadataValue,
@@ -340,7 +340,7 @@ def test_job_recreation_works() -> None:
 
 
 def test_arbitrary_metadata() -> None:
-    class SomeCustomObjectForUserFramework(IHasSerializedMetadataRepresentation):
+    class SomeCustomObjectForUserFramework(HasSerializedMetadataRepresentation):
         def serialized_representation(self) -> MetadataValue[Any]:
             return MetadataValue.json({"foo": "bar"})
 

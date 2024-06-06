@@ -89,7 +89,7 @@ T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, c
 # ########################
 
 
-class IHasSerializedMetadataRepresentation(ABC):
+class HasSerializedMetadataRepresentation(ABC):
     def serialized_representation(self) -> MetadataValue[Any]: ...
 
 
@@ -112,7 +112,7 @@ def serialize_definition_metadata_for_snaps(
         try:
             normed_metadata[k] = (
                 v.serialized_representation()
-                if isinstance(v, IHasSerializedMetadataRepresentation)
+                if isinstance(v, HasSerializedMetadataRepresentation)
                 else normalize_metadata_value(v)  # type: ignore
             )
         except DagsterInvalidMetadata:
