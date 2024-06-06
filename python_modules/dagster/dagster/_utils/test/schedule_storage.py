@@ -26,7 +26,6 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._seven import get_current_datetime_in_utc
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.error import SerializableErrorInfo
 
@@ -207,7 +206,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(schedule)
 
-        now_time = get_current_datetime_in_utc().timestamp()
+        now_time = time.time()
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigatorData(

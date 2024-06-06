@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
-import pendulum
 from typing_extensions import TypeGuard
 
 from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
@@ -125,7 +124,7 @@ def builtin_print() -> str:
 
 
 def get_current_datetime_in_utc() -> Any:
-    return pendulum.now("UTC")
+    return datetime.now(tz=timezone.utc)
 
 
 def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
