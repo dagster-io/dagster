@@ -1,5 +1,7 @@
 from typing import Any, NamedTuple, Sequence, Union
 
+from typing_extensions import TypeAlias
+
 import dagster._check as check
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
@@ -7,6 +9,10 @@ from dagster._core.definitions.assets import AssetsDefinition
 
 from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import define_asset_job
+
+CoercibleToAutomationTarget: TypeAlias = Union[
+    CoercibleToAssetSelection, AssetsDefinition, ExecutableDefinition
+]
 
 
 class AutomationTarget(NamedTuple):
@@ -40,7 +46,7 @@ def is_coercible_to_asset_selection(target: Any) -> bool:
 
 def resolve_automation_target(
     automation_name: str,
-    target: Union[CoercibleToAssetSelection, AssetsDefinition, ExecutableDefinition],
+    target: CoercibleToAutomationTarget,
 ) -> AutomationTarget:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.source_asset import SourceAsset

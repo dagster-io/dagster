@@ -25,8 +25,6 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
@@ -48,7 +46,7 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
-from .automation_target import resolve_automation_target
+from .automation_target import CoercibleToAutomationTarget, resolve_automation_target
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
@@ -567,9 +565,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
-        target: Optional[
-            Union[AssetsDefinition, CoercibleToAssetSelection, ExecutableDefinition]
-        ] = None,
+        target: Optional[CoercibleToAutomationTarget] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
