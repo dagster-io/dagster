@@ -196,7 +196,10 @@ class AssetSlice:
         )
 
         if isinstance(self._compatible_subset.subset_value, BaseTimeWindowPartitionsSubset):
-            return self._compatible_subset.subset_value.included_time_windows
+            return [
+                tw.to_public_time_window()
+                for tw in self._compatible_subset.subset_value.included_time_windows
+            ]
         elif isinstance(self._compatible_subset.subset_value, AllPartitionsSubset):
             last_tw = tw_partitions_def.get_last_partition_window(
                 self._asset_graph_view.effective_dt
@@ -222,7 +225,7 @@ class AssetSlice:
                 subset_from_tw, BaseTimeWindowPartitionsSubset, "Must be time window subset."
             )
             if isinstance(subset_from_tw, BaseTimeWindowPartitionsSubset):
-                return subset_from_tw.included_time_windows
+                return [tw.to_public_time_window() for tw in subset_from_tw.included_time_windows]
             else:
                 check.failed(
                     f"Unsupported subset value in generated subset {self._compatible_subset.subset_value} created by keys {tw_partition_keys}"

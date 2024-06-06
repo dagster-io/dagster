@@ -276,7 +276,10 @@ class TimeWindowPartitionMapping(
 
         time_windows = []
         for from_partition_time_window in from_partitions_subset.included_time_windows:
-            from_start_dt, from_end_dt = from_partition_time_window
+            from_start_dt, from_end_dt = (
+                from_partition_time_window.start,
+                from_partition_time_window.end,
+            )
 
             if mapping_downstream_to_upstream:
                 offsetted_from_start_dt = _offsetted_datetime_with_bounds(

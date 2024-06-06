@@ -220,29 +220,35 @@ class DatetimeFieldSerializer(FieldSerializer):
         return None
 
 
-@whitelist_for_serdes(
-    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer}
-)
 class TimeWindow(NamedTuple):
     """An interval that is closed at the start and open at the end.
 
     Attributes:
-        start (datetime): A pendulum datetime that marks the start of the window.
-        end (datetime): A pendulum datetime that marks the end of the window.
+        start (datetime): A datetime that marks the start of the window.
+        end (datetime): A datetime that marks the end of the window.
     """
 
     start: PublicAttr[datetime]
     end: PublicAttr[datetime]
 
-    @property
-    def is_empty(self) -> bool:
-        return self.start.timestamp() == self.end.timestamp()
+
+@whitelist_for_serdes(
+    storage_name="TimeWindow",  # For back-compat with existing serdes
+    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
+)
+class PersistedTimeWindow(NamedTuple):
+    """Internal serialized representation of a time interval that is closed at the
+    start and open at the end.
+    """
+
+    start: datetime
+    end: datetime
 
     @staticmethod
-    def empty() -> "TimeWindow":
-        return TimeWindow(start=datetime.max, end=datetime.max)
+    def from_public_time_window(tw: TimeWindow):
+        return PersistedTimeWindow(tw.start, tw.end)
 
-    def subtract(self, other: "TimeWindow") -> Sequence["TimeWindow"]:
+    def subtract(self, other: "PersistedTimeWindow") -> Sequence["PersistedTimeWindow"]:
         other_start_timestamp = other.start.timestamp()
         start_timestamp = self.start.timestamp()
         other_end_timestamp = other.end.timestamp()
@@ -257,13 +263,17 @@ class TimeWindow(NamedTuple):
 
         if other_start_timestamp > start_timestamp:
             windows.append(
-                TimeWindow(start=self.start, end=other.start),
+                PersistedTimeWindow(start=self.start, end=other.start),
             )
 
         if other_end_timestamp < end_timestamp:
-            windows.append(TimeWindow(start=other.end, end=self.end))
+            windows.append(PersistedTimeWindow(start=other.end, end=self.end))
 
         return windows
+
+    def to_public_time_window(self) -> TimeWindow:
+        """Used for exposing TimeWindows over the public Dagster API."""
+        return TimeWindow(start=self.start, end=self.end)
 
 
 @whitelist_for_serdes(
@@ -771,7 +781,7 @@ class TimeWindowPartitionsDefinition(
     def get_partition_key_range_for_time_window(self, time_window: TimeWindow) -> PartitionKeyRange:
         start_partition_key = self.get_partition_key_for_timestamp(time_window.start.timestamp())
         end_partition_key = self.get_partition_key_for_timestamp(
-            cast(TimeWindow, self.get_prev_partition_window(time_window.end)).start.timestamp()
+            check.not_none(self.get_prev_partition_window(time_window.end)).start.timestamp()
         )
 
         return PartitionKeyRange(start_partition_key, end_partition_key)
@@ -1662,7 +1672,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     SERIALIZATION_VERSION = 1
 
     @abstractproperty
-    def included_time_windows(self) -> Sequence[TimeWindow]: ...
+    def included_time_windows(self) -> Sequence[PersistedTimeWindow]: ...
 
     @abstractproperty
     def num_partitions(self) -> int: ...
@@ -1673,7 +1683,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
     def _get_partition_time_windows_not_in_subset(
         self,
         current_time: Optional[datetime] = None,
-    ) -> Sequence[TimeWindow]:
+    ) -> Sequence[PersistedTimeWindow]:
         """Returns a list of partition time windows that are not in the subset.
         Each time window is a single partition.
         """
@@ -1692,11 +1702,13 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         first_tw_start_timestamp = first_tw.start.timestamp()
 
         if len(self.included_time_windows) == 0:
-            return [TimeWindow(first_tw.start, last_tw.end)]
+            return [PersistedTimeWindow(first_tw.start, last_tw.end)]
 
         time_windows = []
         if first_tw_start_timestamp < self.included_time_windows[0].start.timestamp():
-            time_windows.append(TimeWindow(first_tw.start, self.included_time_windows[0].start))
+            time_windows.append(
+                PersistedTimeWindow(first_tw.start, self.included_time_windows[0].start)
+            )
 
         for i in range(len(self.included_time_windows) - 1):
             if self.included_time_windows[i].start.timestamp() >= last_tw_end_timestamp:
@@ -1704,21 +1716,23 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
             if self.included_time_windows[i].end.timestamp() < last_tw_end_timestamp:
                 if self.included_time_windows[i + 1].start.timestamp() <= last_tw_end_timestamp:
                     time_windows.append(
-                        TimeWindow(
+                        PersistedTimeWindow(
                             self.included_time_windows[i].end,
                             self.included_time_windows[i + 1].start,
                         )
                     )
                 else:
                     time_windows.append(
-                        TimeWindow(
+                        PersistedTimeWindow(
                             self.included_time_windows[i].end,
                             last_tw.end,
                         )
                     )
 
         if last_tw_end_timestamp > self.included_time_windows[-1].end.timestamp():
-            time_windows.append(TimeWindow(self.included_time_windows[-1].end, last_tw.end))
+            time_windows.append(
+                PersistedTimeWindow(self.included_time_windows[-1].end, last_tw.end)
+            )
 
         return time_windows
 
@@ -1760,16 +1774,16 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         return [
             cast(
                 TimeWindowPartitionsDefinition, self.partitions_def
-            ).get_partition_key_range_for_time_window(window)
+            ).get_partition_key_range_for_time_window(window.to_public_time_window())
             for window in self.included_time_windows
         ]
 
     def _add_partitions_to_time_windows(
         self,
-        initial_windows: Sequence[TimeWindow],
+        initial_windows: Sequence[PersistedTimeWindow],
         partition_keys: Sequence[str],
         validate: bool = True,
-    ) -> Tuple[Sequence[TimeWindow], int]:
+    ) -> Tuple[Sequence[PersistedTimeWindow], int]:
         """Merges a set of partition keys into an existing set of time windows, returning the
         minimized set of time windows and the number of partitions added.
         """
@@ -1777,6 +1791,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
         time_windows = cast(
             TimeWindowPartitionsDefinition, self.partitions_def
         ).time_windows_for_partition_keys(frozenset(partition_keys), validate=validate)
+
         num_added_partitions = 0
         for window in sorted(time_windows, key=lambda tw: tw.start.timestamp()):
             window_start_timestamp = window.start.timestamp()
@@ -1797,28 +1812,32 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
                     )
 
                     if merge_with_range and merge_with_later_range:
-                        result_windows[i] = TimeWindow(
+                        result_windows[i] = PersistedTimeWindow(
                             included_window.start, result_windows[i + 1].end
                         )
                         del result_windows[i + 1]
                     elif merge_with_range:
-                        result_windows[i] = TimeWindow(included_window.start, window.end)
+                        result_windows[i] = PersistedTimeWindow(included_window.start, window.end)
                     elif merge_with_later_range:
-                        result_windows[i + 1] = TimeWindow(window.start, result_windows[i + 1].end)
+                        result_windows[i + 1] = PersistedTimeWindow(
+                            window.start, result_windows[i + 1].end
+                        )
                     else:
-                        result_windows.insert(i + 1, window)
+                        result_windows.insert(
+                            i + 1, PersistedTimeWindow.from_public_time_window(window)
+                        )
 
                     num_added_partitions += 1
                     break
             else:
                 if result_windows and window_start_timestamp == result_windows[0].start.timestamp():
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
+                    result_windows[0] = PersistedTimeWindow(window.start, included_window.end)
                 elif (
                     result_windows and window.end.timestamp() == result_windows[0].start.timestamp()
                 ):
-                    result_windows[0] = TimeWindow(window.start, included_window.end)
+                    result_windows[0] = PersistedTimeWindow(window.start, included_window.end)
                 else:
-                    result_windows.insert(0, window)
+                    result_windows.insert(0, PersistedTimeWindow.from_public_time_window(window))
 
                 num_added_partitions += 1
 
@@ -1850,7 +1869,7 @@ class BaseTimeWindowPartitionsSubset(PartitionsSubset):
 
         def tuples_to_time_windows(tuples):
             return [
-                TimeWindow(
+                PersistedTimeWindow(
                     pendulum.from_timestamp(tup[0], tz=partitions_def.timezone),
                     pendulum.from_timestamp(tup[1], tz=partitions_def.timezone),
                 )
@@ -1971,7 +1990,7 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         )
 
     @cached_property
-    def included_time_windows(self) -> Sequence[TimeWindow]:
+    def included_time_windows(self) -> Sequence[PersistedTimeWindow]:
         result_time_windows, _ = self._add_partitions_to_time_windows(
             initial_windows=[],
             partition_keys=list(check.not_none(self._included_partition_keys)),
@@ -2139,7 +2158,7 @@ class TimeWindowPartitionsSubset(
         [
             ("partitions_def", TimeWindowPartitionsDefinition),
             ("num_partitions", Optional[int]),
-            ("included_time_windows", Sequence[TimeWindow]),
+            ("included_time_windows", Sequence[PersistedTimeWindow]),
         ],
     ),
 ):
@@ -2151,8 +2170,13 @@ class TimeWindowPartitionsSubset(
         cls,
         partitions_def: TimeWindowPartitionsDefinition,
         num_partitions: Optional[int],
-        included_time_windows: Sequence[TimeWindow],
+        included_time_windows: Sequence[Union[PersistedTimeWindow, TimeWindow]],
     ):
+        included_time_windows = [
+            PersistedTimeWindow.from_public_time_window(tw) if isinstance(tw, TimeWindow) else tw
+            for tw in included_time_windows
+        ]
+
         return super(TimeWindowPartitionsSubset, cls).__new__(
             cls,
             partitions_def=check.inst_param(
@@ -2160,7 +2184,7 @@ class TimeWindowPartitionsSubset(
             ),
             num_partitions=check.opt_int_param(num_partitions, "num_partitions"),
             included_time_windows=check.sequence_param(
-                included_time_windows, "included_time_windows", of_type=TimeWindow
+                included_time_windows, "included_time_windows", of_type=PersistedTimeWindow
             ),
         )
 
@@ -2175,14 +2199,14 @@ class TimeWindowPartitionsSubset(
         last_window = partitions_def.get_last_partition_window(subset.current_time)
         return TimeWindowPartitionsSubset(
             partitions_def=partitions_def,
-            included_time_windows=[TimeWindow(first_window.start, last_window.end)]
+            included_time_windows=[PersistedTimeWindow(first_window.start, last_window.end)]
             if first_window and last_window
             else [],
             num_partitions=None,
         )
 
     @cached_property
-    def included_time_windows(self) -> Sequence[TimeWindow]:
+    def included_time_windows(self) -> Sequence[PersistedTimeWindow]:
         return self._asdict()["included_time_windows"]
 
     @property
@@ -2216,14 +2240,18 @@ class TimeWindowPartitionsSubset(
         num_partitions_ = self._asdict()["num_partitions"]
         if num_partitions_ is None:
             return sum(
-                self.partitions_def.get_num_partitions_in_window(time_window)
+                self.partitions_def.get_num_partitions_in_window(
+                    time_window.to_public_time_window()
+                )
                 for time_window in self.included_time_windows
             )
         return num_partitions_
 
     @classmethod
     def _num_partitions_from_time_windows(
-        cls, partitions_def: TimeWindowPartitionsDefinition, time_windows: Sequence[TimeWindow]
+        cls,
+        partitions_def: TimeWindowPartitionsDefinition,
+        time_windows: Sequence[PersistedTimeWindow],
     ) -> int:
         return sum(
             len(partitions_def.get_partition_keys_in_time_window(time_window))
@@ -2296,11 +2324,11 @@ class TimeWindowPartitionsSubset(
             end = min(self_window.end, other_window.end)
 
             # these windows intersect
-            if start < end:
-                result_windows.append(TimeWindow(start=start, end=end))
+            if start.timestamp() < end.timestamp():
+                result_windows.append(PersistedTimeWindow(start=start, end=end))
 
             # advance the iterator with the earliest end time to find the next potential intersection
-            if self_window.end < other_window.end:
+            if self_window.end.timestamp() < other_window.end.timestamp():
                 self_window = next(self_time_windows_iter, None)
             else:
                 other_window = next(other_time_windows_iter, None)
@@ -2325,7 +2353,7 @@ class TimeWindowPartitionsSubset(
             latest_window = result_windows[-1]
             if window.start.timestamp() <= latest_window.end.timestamp():
                 # merge this window with the latest window
-                result_windows[-1] = TimeWindow(
+                result_windows[-1] = PersistedTimeWindow(
                     latest_window.start, max(latest_window.end, window.end)
                 )
             else:
@@ -2532,7 +2560,8 @@ def fetch_flattened_time_window_ranges(
     flattened_time_window_statuses = []
     for status, subset in prioritized_subsets:
         subset_time_window_statuses = [
-            PartitionTimeWindowStatus(tw, status) for tw in subset.included_time_windows
+            PartitionTimeWindowStatus(tw.to_public_time_window(), status)
+            for tw in subset.included_time_windows
         ]
         flattened_time_window_statuses = _flatten(
             flattened_time_window_statuses, subset_time_window_statuses
