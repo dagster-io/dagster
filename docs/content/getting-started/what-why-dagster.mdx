@@ -42,6 +42,7 @@ Dagster’s asset-centric approach to building data pipelines makes it easy to:
 
 - **Understand how an asset - like a database table or report - is produced.** Everyone in your organization can understand the data lineage and how data assets relate to each other, even if they didn’t build the pipeline themselves.
 - **Determine if an asset is up to date.** It’s easy to tell exactly why assets are out-of-date, whether it might be late upstream data or errors in code.
+- **Diagnose data quality issues.** Building data quality checks into your pipelines is straightforward, and you can be notified automatically when data quality issues arise.
 - **Standardize best practices.** [Software-defined Assets (SDAs)](/concepts/assets/software-defined-assets), the Dagster concept that produces data assets, are a unifying abstraction across all data teams. SDAs enable easier collaboration and rapid adoption of best practices such as domain-specific languages, continuous integration, local development, and testing.
 - **Simplify debugging.** Every run and computation is tied to the goal of producing data, so debugging tools like logs are specific to the assets being produced. When something goes wrong, you can quickly identify the problematic asset, address it, and only need to re-execute that asset.
 
