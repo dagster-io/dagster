@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._model import DagsterModel
+from dagster._model import dagster_model
 from dagster._serdes import whitelist_for_serdes
 
 from .metadata_set import (
@@ -23,7 +23,8 @@ DEFAULT_SOURCE_FILE_KEY = "asset_definition"
 
 @experimental
 @whitelist_for_serdes
-class LocalFileCodeReference(DagsterModel):
+@dagster_model
+class LocalFileCodeReference:
     """Represents a local file source location."""
 
     file_path: str
@@ -33,7 +34,8 @@ class LocalFileCodeReference(DagsterModel):
 
 @experimental
 @whitelist_for_serdes
-class UrlCodeReference(DagsterModel):
+@dagster_model
+class UrlCodeReference:
     """Represents a source location which points at a URL, for example
     in source control.
     """
@@ -44,7 +46,8 @@ class UrlCodeReference(DagsterModel):
 
 @experimental
 @whitelist_for_serdes
-class CodeReferencesMetadataValue(DagsterModel, MetadataValue["CodeReferencesMetadataValue"]):
+@dagster_model
+class CodeReferencesMetadataValue(MetadataValue["CodeReferencesMetadataValue"]):
     """Metadata value type which represents source locations (locally or otherwise)
     of the asset in question. For example, the file path and line number where the
     asset is defined.
