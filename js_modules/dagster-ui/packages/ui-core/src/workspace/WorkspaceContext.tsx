@@ -204,7 +204,7 @@ const useWorkspaceState = (): WorkspaceState => {
   });
 
   // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('RootWorkspace');
+  indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
   useMemo(() => refetch(), [refetch]);
 
   const workspaceOrError = data?.workspaceOrError;

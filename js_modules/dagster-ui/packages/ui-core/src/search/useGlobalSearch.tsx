@@ -342,7 +342,7 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   });
 
   // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('SearchPrimary');
+  indexedDB.deleteDatabase('indexdbQueryCache:SearchPrimary');
 
   const {
     data: secondaryData,
@@ -355,7 +355,7 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   });
 
   // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('SearchSecondary');
+  indexedDB.deleteDatabase('indexdbQueryCache:SearchSecondary');
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
