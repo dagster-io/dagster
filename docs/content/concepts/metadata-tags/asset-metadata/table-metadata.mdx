@@ -106,7 +106,16 @@ In addition to showing the latest row count, Dagster will let you track changes 
 To attach row count metadata to an asset, you will need to attach a numerical value to the `dagster/row_count` key in the metadata parameter of the <PyObject object="MaterializeResult" /> object returned by the asset function. For example:
 
 ```python file=/concepts/metadata-tags/asset_row_count.py
-ENOENT: no such file or directory, open '/Users/ben/repos/dagster/examples/docs_snippets/docs_snippets/concepts/metadata-tags/asset_row_count.py'
+import pandas as pd
+
+from dagster import AssetKey, MaterializeResult, asset
+
+
+@asset(deps=[AssetKey("source_bar"), AssetKey("source_baz")])
+def my_asset():
+    my_df: pd.DataFrame = ...
+
+    yield MaterializeResult(metadata={"dagster/row_count": 374})
 ```
 
 ---
