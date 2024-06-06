@@ -2,7 +2,11 @@ from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
-from dagster import AssetKey
+from dagster import AssetKey, AssetSelection, DagsterInvalidDefinitionError, materialize
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 from dagster_looker.asset_decorator import looker_assets
 from dagster_looker.dagster_looker_translator import DagsterLookerTranslator, LookMLStructureType
 
@@ -350,7 +354,10 @@ def test_with_metadata_replacements() -> None:
     def my_looker_assets(): ...
 
     for metadata in my_looker_assets.metadata_by_key.values():
-        assert metadata == expected_metadata
+        assert metadata == {
+            **expected_metadata,
+            SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
+        }
 
 
 def test_with_group_replacements() -> None:
@@ -402,3 +409,14 @@ def test_with_tag_replacements() -> None:
 
     for tags in my_looker_assets.tags_by_key.values():
         assert tags == expected_tags
+
+
+def test_unexecutable() -> None:
+    @looker_assets(project_dir=test_retail_demo_path)
+    def my_looker_assets(): ...
+
+    with pytest.raises(DagsterInvalidDefinitionError):
+        materialize(
+            [my_looker_assets],
+            selection=AssetSelection.assets(my_looker_assets),
+        )

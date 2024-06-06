@@ -4,6 +4,10 @@ from typing import List, Sequence
 import lkml
 import yaml
 from dagster import AssetSpec
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 
 from .dagster_looker_translator import DagsterLookerTranslator
 
@@ -24,7 +28,10 @@ def build_looker_dashboard_specs(
                     key=dagster_looker_translator.get_asset_key(lookml_dashboard),
                     deps=dagster_looker_translator.get_deps(lookml_dashboard),
                     description=dagster_looker_translator.get_description(lookml_dashboard),
-                    metadata=dagster_looker_translator.get_metadata(lookml_dashboard),
+                    metadata={
+                        **(dagster_looker_translator.get_metadata(lookml_dashboard) or {}),
+                        SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
+                    },
                     group_name=dagster_looker_translator.get_group_name(lookml_dashboard),
                     owners=dagster_looker_translator.get_owners(lookml_dashboard),
                     tags=dagster_looker_translator.get_tags(lookml_dashboard),
@@ -50,7 +57,10 @@ def build_looker_explore_specs(
                     key=dagster_looker_translator.get_asset_key(lookml_explore),
                     deps=dagster_looker_translator.get_deps(lookml_explore),
                     description=dagster_looker_translator.get_description(lookml_explore),
-                    metadata=dagster_looker_translator.get_metadata(lookml_explore),
+                    metadata={
+                        **(dagster_looker_translator.get_metadata(lookml_explore) or {}),
+                        SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
+                    },
                     group_name=dagster_looker_translator.get_group_name(lookml_explore),
                     owners=dagster_looker_translator.get_owners(lookml_explore),
                     tags=dagster_looker_translator.get_tags(lookml_explore),
@@ -76,7 +86,10 @@ def build_looker_view_specs(
                     key=dagster_looker_translator.get_asset_key(lookml_view),
                     deps=dagster_looker_translator.get_deps(lookml_view),
                     description=dagster_looker_translator.get_description(lookml_view),
-                    metadata=dagster_looker_translator.get_metadata(lookml_view),
+                    metadata={
+                        **(dagster_looker_translator.get_metadata(lookml_view) or {}),
+                        SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value,
+                    },
                     group_name=dagster_looker_translator.get_group_name(lookml_view),
                     owners=dagster_looker_translator.get_owners(lookml_view),
                     tags=dagster_looker_translator.get_tags(lookml_view),
