@@ -192,6 +192,27 @@ def test_launch_asset_backfill_read_only_context():
                 == "UnauthorizedError"
             )
 
+            launch_backfill_result = execute_dagster_graphql(
+                read_only_context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": key.to_graphql_input(),
+                                "partitions": {"range": {"start": "a", "end": "b"}},
+                            }
+                            for key in all_asset_keys
+                        ]
+                    }
+                },
+            )
+
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "UnauthorizedError"
+            )
+
         location_name = main_repo_location_name()
 
         # context with per-location permissions on the specific location succeeds
@@ -222,6 +243,30 @@ def test_launch_asset_backfill_read_only_context():
                 == "LaunchBackfillSuccess"
             )
 
+            launch_backfill_result = execute_dagster_graphql(
+                read_only_context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": key.to_graphql_input(),
+                                "partitions": {"range": {"start": "a", "end": "b"}},
+                            }
+                            for key in all_asset_keys
+                        ]
+                    }
+                },
+            )
+
+            assert launch_backfill_result
+            assert launch_backfill_result.data
+
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "LaunchBackfillSuccess"
+            )
+
             # assets that aren't in the asset graph at all fail permissions check
             # because they can't be mapped to a particular code location
             launch_backfill_result = execute_dagster_graphql(
@@ -234,6 +279,29 @@ def test_launch_asset_backfill_read_only_context():
                     }
                 },
             )
+            assert launch_backfill_result
+            assert launch_backfill_result.data
+
+            assert (
+                launch_backfill_result.data["launchPartitionBackfill"]["__typename"]
+                == "UnauthorizedError"
+            )
+
+            launch_backfill_result = execute_dagster_graphql(
+                read_only_context,
+                LAUNCH_PARTITION_BACKFILL_MUTATION,
+                variables={
+                    "backfillParams": {
+                        "partitionsByAssets": [
+                            {
+                                "assetKey": {"path": ["doesnot", "exist"]},
+                                "partitions": {"range": {"start": "a", "end": "b"}},
+                            }
+                        ]
+                    }
+                },
+            )
+
             assert launch_backfill_result
             assert launch_backfill_result.data
 
