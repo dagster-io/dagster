@@ -235,7 +235,7 @@ class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         self, log_key_prefix: Sequence[str], io_type: ComputeIOType
     ) -> Sequence[Sequence[str]]:
         directory = self._resolve_path_for_namespace(log_key_prefix)
-        blobs = self._client.list_blobs(self._bucket, prefix="/".join(directory), delimeter="/")
+        blobs = self._client.list_blobs(self._bucket, prefix="/".join(directory))
         results = []
         list_key_prefix = list(log_key_prefix)
 
