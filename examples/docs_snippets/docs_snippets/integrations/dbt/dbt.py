@@ -29,6 +29,20 @@ def scope_compile_dbt_manifest(manifest):
     # end_compile_dbt_manifest
 
 
+def scope_troubleshooting_dbt_manifest(manifest):
+    # start_troubleshooting_dbt_manifest
+    import os
+    from pathlib import Path
+
+    from dagster_dbt import DbtCliResource
+
+    dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+    dbt_parse_invocation = dbt.cli(["parse"], target_path=Path("target")).wait()
+    dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+    # end_troubleshooting_dbt_manifest
+
+
 def scope_schedule_assets_dbt_only(manifest):
     from dagster import Config, RunConfig
 

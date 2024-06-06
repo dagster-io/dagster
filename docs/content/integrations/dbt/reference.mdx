@@ -121,6 +121,24 @@ DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev
 
 In production, `DAGSTER_DBT_PARSE_PROJECT_ON_LOAD` should be unset so that your project uses the precompiled manifest.
 
+### Troubleshooting
+
+Creating the manifest at runtime in production is known to cause issues and is not recommended. This is often cause by the following code:
+
+```python startafter=start_troubleshooting_dbt_manifest endbefore=end_troubleshooting_dbt_manifest file=/integrations/dbt/dbt.py dedent=4
+import os
+from pathlib import Path
+
+from dagster_dbt import DbtCliResource
+
+dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+dbt_parse_invocation = dbt.cli(["parse"], target_path=Path("target")).wait()
+dbt_manifest_path = dbt_parse_invocation.target_path.joinpath("manifest.json")
+```
+
+In this example, the command `dbt parse` is invoked at run time. To avoid any issues, it is recommended to create the manifest at build time and to use the same code as that created by the `dagster-dbt project scaffold` command line interface, which is displayed in the previous example of this section.
+
 ---
 
 ## Deploying a Dagster project with a dbt project
