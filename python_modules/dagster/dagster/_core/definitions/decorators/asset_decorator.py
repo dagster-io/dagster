@@ -654,10 +654,6 @@ def multi_asset(
         additional_message="Only dicts are supported for asset config_schema.",
     )
 
-    bare_required_resource_keys = set(required_resource_keys)
-    resource_defs_keys = set(resource_defs.keys())
-    required_resource_keys = bare_required_resource_keys | resource_defs_keys
-
     asset_out_map: Mapping[str, AssetOut] = {} if outs is None else outs
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -712,7 +708,7 @@ def multi_asset(
                 ins=in_out_mapper.asset_ins_by_input_names,
                 out=in_out_mapper.combined_outs_by_output_name,
                 required_resource_keys=compute_required_resource_keys(
-                    required_resource_keys, resource_defs, fn
+                    set(required_resource_keys), resource_defs, fn
                 ),
                 tags={
                     **({"kind": compute_kind} if compute_kind else {}),
