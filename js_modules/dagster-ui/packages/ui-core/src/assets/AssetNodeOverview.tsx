@@ -53,18 +53,20 @@ import {
 } from '../asset-graph/Utils';
 import {StatusDot} from '../asset-graph/sidebar/StatusDot';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
+import {CodeLink, getCodeReferenceKey} from '../code-links/CodeLink';
 import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {
   AssetComputeKindTag,
   AssetStorageKindTag,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
-import {IntMetadataEntry} from '../graphql/types';
+import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {
   TableSchema,
   TableSchemaAssetContext,
+  isCanonicalCodeSourceEntry,
   isCanonicalRelationIdentifierEntry,
   isCanonicalUriEntry,
 } from '../metadata/TableSchema';
@@ -235,6 +237,10 @@ export const AssetNodeOverview = ({
   );
   const uriMetadata = assetNode.metadataEntries?.find(isCanonicalUriEntry);
 
+  const codeSource = assetNode.metadataEntries?.find((m) => isCanonicalCodeSourceEntry(m)) as
+    | CodeReferencesMetadataEntry
+    | undefined;
+
   const renderDefinitionSection = () => (
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Group">
@@ -320,6 +326,13 @@ export const AssetNodeOverview = ({
         {filteredTags &&
           filteredTags.length > 0 &&
           filteredTags.map((tag, idx) => <Tag key={idx}>{buildTagString(tag)}</Tag>)}
+      </AttributeAndValue>
+      <AttributeAndValue label="Source code">
+        {codeSource &&
+          codeSource.codeReferences &&
+          codeSource.codeReferences.map((ref) => (
+            <CodeLink key={getCodeReferenceKey(ref)} sourceLocation={ref} />
+          ))}
       </AttributeAndValue>
     </Box>
   );

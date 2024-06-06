@@ -8,7 +8,6 @@ import {useSetRecoilState} from 'recoil';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetFeatureContext} from './AssetFeatureContext';
-import {metadataForAssetNode} from './AssetMetadata';
 import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
@@ -48,10 +47,7 @@ import {
 } from '../asset-graph/Utils';
 import {useAssetGraphData} from '../asset-graph/useAssetGraphData';
 import {StaleReasonsTag} from '../assets/Stale';
-import {CodeLink} from '../code-links/CodeLink';
-import {CodeReferencesMetadataEntry} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {isCanonicalCodeSourceEntry} from '../metadata/TableSchema';
 import {PageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
@@ -275,12 +271,6 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
     refresh,
   );
 
-  const assetMetadata = definition && metadataForAssetNode(definition).assetMetadata;
-  const codeSource = assetMetadata?.find((m) => isCanonicalCodeSourceEntry(m)) as
-    | CodeReferencesMetadataEntry
-    | undefined;
-  console.log(codeSource);
-
   return (
     <Box
       flex={{direction: 'column', grow: 1}}
@@ -306,9 +296,6 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
         }
         right={
           <Box style={{margin: '-4px 0'}} flex={{direction: 'row', gap: 8}}>
-            {codeSource && codeSource.codeReferences && codeSource.codeReferences.length > 0 && (
-              <CodeLink codeLinkData={codeSource} />
-            )}
             {definition && definition.isObservable ? (
               <LaunchAssetObservationButton
                 primary
