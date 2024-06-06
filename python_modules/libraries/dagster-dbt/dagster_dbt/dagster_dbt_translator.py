@@ -16,7 +16,6 @@ from dagster._core.definitions.asset_key import (
 from dagster._core.definitions.metadata import HasSerializedMetadataRepresentation
 from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.utils import is_valid_definition_tag_key
-from deltalake import Metadata
 
 from .asset_utils import (
     default_asset_key_fn,
