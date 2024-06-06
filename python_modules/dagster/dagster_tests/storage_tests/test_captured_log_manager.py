@@ -105,7 +105,7 @@ def test_get_log_keys_for_log_key_prefix():
         for i in range(4):
             write_log_file(i)
 
-        log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix)
+        log_keys = cm.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
         assert sorted(log_keys) == [
             [*log_key_prefix, "0"],
             [*log_key_prefix, "1"],
@@ -141,7 +141,9 @@ def test_read_log_lines_for_log_key_prefix():
 
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         # read the entirety of the first file
-        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(log_key_prefix, cursor=None)
+        log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
+            log_key_prefix, cursor=None, io_type=ComputeIOType.STDERR
+        )
         assert len(log_lines) == 10
         assert cursor.has_more_now
         assert cursor.log_key == [*log_key_prefix, "1"]
