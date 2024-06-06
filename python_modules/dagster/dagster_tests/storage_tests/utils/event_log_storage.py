@@ -649,8 +649,23 @@ class TestEventLogStorage:
             storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
-            result = storage.get_records_for_run(test_run_id, ascending=True)
-            storage_ids = [r.storage_id for r in result.records]
+            desc_result = storage.get_records_for_run(test_run_id, ascending=False)
+            assert [r.event_log_entry.user_message for r in desc_result.records] == [
+                "D",
+                "C",
+                "B",
+                "A",
+            ]
+
+            asc_result = storage.get_records_for_run(test_run_id, ascending=True)
+            assert [r.event_log_entry.user_message for r in asc_result.records] == [
+                "A",
+                "B",
+                "C",
+                "D",
+            ]
+
+            storage_ids = [r.storage_id for r in asc_result.records]
             assert len(storage_ids) == 4
 
             def _cursor(storage_id: int):
