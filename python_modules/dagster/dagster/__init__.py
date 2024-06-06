@@ -165,7 +165,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.declarative_automation import (
     AssetCondition as AssetCondition,
     AutomationCondition as AutomationCondition,
-    AutomationConditionTester as AutomationConditionTester,
+    evaluate_automation_conditions as evaluate_automation_conditions,
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,

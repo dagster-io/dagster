@@ -1,14 +1,13 @@
-import datetime
-
 from dagster import (
     AssetSelection,
     AutomationCondition,
-    AutomationConditionTester,
     Definitions,
     HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
+    evaluate_automation_conditions,
 )
+from dagster._core.instance import DagsterInstance
 
 
 @asset(
@@ -34,23 +33,32 @@ def unpartitioned() -> None: ...
 defs = Definitions(assets=[hourly, static, unpartitioned])
 
 
-def test_current_time_manipulation() -> None:
-    tester = AutomationConditionTester(
+def test_basic_regular_defs() -> None:
+    instance = DagsterInstance.ephemeral()
+
+    result = evaluate_automation_conditions(
         defs=defs,
-        asset_selection=AssetSelection.assets(hourly),
-        current_time=datetime.datetime(2020, 2, 2),
+        asset_selection=AssetSelection.assets(unpartitioned),
+        instance=instance,
     )
-
-    result = tester.evaluate()
     assert result.total_requested == 1
-    assert result.get_requested_partitions(hourly.key) == {"2020-02-01-23:00"}
 
-    tester.set_current_time(datetime.datetime(3005, 5, 5))
-    result = tester.evaluate()
-    assert result.total_requested == 1
-    assert result.get_requested_partitions(hourly.key) == {"3005-05-04-23:00"}
-
-    tester.add_materializations(hourly.key, ["3005-05-03-23:00"])
-    result = tester.evaluate()
+    result = evaluate_automation_conditions(
+        defs=defs,
+        asset_selection=AssetSelection.assets(unpartitioned),
+        instance=instance,
+        cursor=result.cursor,
+    )
     assert result.total_requested == 0
-    assert result.get_requested_partitions(hourly.key) == set()
+
+
+def test_basic_assets_defs() -> None:
+    instance = DagsterInstance.ephemeral()
+
+    result = evaluate_automation_conditions(defs=[unpartitioned], instance=instance)
+    assert result.total_requested == 1
+
+    result = evaluate_automation_conditions(
+        defs=[unpartitioned], instance=instance, cursor=result.cursor
+    )
+    assert result.total_requested == 0

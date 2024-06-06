@@ -2,31 +2,31 @@ import datetime
 import logging
 from collections import defaultdict
 from functools import cached_property
-from typing import AbstractSet, Mapping, Optional, Sequence
-
-import mock
-import pendulum
+from typing import AbstractSet, Mapping, Optional, Sequence, Union
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-)
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKeyPartitionKey, AssetMaterialization
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.instance import DagsterInstance
-from dagster._utils.log import create_console_logger
+from dagster._seven import get_current_datetime_in_utc
 
 
-class AutomationConditionTesterResult:
-    def __init__(self, requested_asset_partitions: AbstractSet[AssetKeyPartitionKey]):
+class EvaluateAutomationConditionsResult:
+    def __init__(
+        self,
+        requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        cursor: AssetDaemonCursor,
+    ):
         self._requested_asset_partitions = requested_asset_partitions
+        self.cursor = cursor
 
     @cached_property
     def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[Optional[str]]]:
@@ -49,75 +49,89 @@ class AutomationConditionTesterResult:
         return len(self.get_requested_partitions(asset_key))
 
 
-class AutomationConditionTester:
-    def __init__(
-        self,
-        defs: Definitions,
-        asset_selection: AssetSelection = AssetSelection.all(),
-        current_time: Optional[datetime.datetime] = None,
-    ):
-        self._defs = defs
-        self._asset_selection = asset_selection
-        self._current_time = current_time or pendulum.now("UTC")
-        self._instance = DagsterInstance.ephemeral()
-        self._cursor = AssetDaemonCursor.empty()
-        self._logger = create_console_logger("dagster.automation", logging.DEBUG)
+def evaluate_automation_conditions(
+    defs: Union[Definitions, Sequence[AssetsDefinition]],
+    instance: DagsterInstance,
+    asset_selection: AssetSelection = AssetSelection.all(),
+    evaluation_time: Optional[datetime.datetime] = None,
+    cursor: Optional[AssetDaemonCursor] = None,
+) -> EvaluateAutomationConditionsResult:
+    """Evaluates the AutomationConditions of the provided assets, returning the results. Intended
+    for use in unit tests.
 
-    def set_current_time(self, dt: datetime.datetime) -> None:
-        self._current_time = dt
+    Params:
+        defs (Union[Definitions, Sequence[AssetsDefinitions]]):
+            The definitions to evaluate the conditions of.
+        instance (DagsterInstance):
+            The instance to evaluate against.
+        asset_selection (AssetSelection):
+            The selection of assets within defs to evaluate against. Defaults to AssetSelection.all()
+        evaluation_time (Optional[datetime.datetime]):
+            The time to use for the evaluation. Defaults to the true current time.
+        cursor (Optional[AssetDaemonCursor]):
+            The cursor for the computation. If you are evaluating multiple ticks within a test, this
+            value should be supplied from the `cursor` property of the returned `result` object.
 
-    def add_materializations(
-        self, asset_key: AssetKey, partitions: Optional[Sequence[str]] = None
-    ) -> None:
-        with mock.patch("time.time", new=lambda: self._current_time.timestamp()):
-            for partition in partitions or {None}:
-                self._instance.report_runless_asset_event(
-                    AssetMaterialization(asset_key=asset_key, partition=partition)
-                )
+    Examples:
+         .. code-block:: python
 
-    def evaluate(self) -> AutomationConditionTesterResult:
-        """Evaluates the AutomationConditions of all provided assets."""
-        asset_graph_view = AssetGraphView.for_test(
-            defs=self._defs,
-            instance=self._instance,
-            effective_dt=self._current_time,
-            last_event_id=self._instance.event_log_storage.get_maximum_record_id(),
-        )
-        asset_graph = self._defs.get_asset_graph()
-        data_time_resolver = CachingDataTimeResolver(
-            asset_graph_view.get_inner_queryer_for_back_compat()
-        )
-        evaluator = AutomationConditionEvaluator(
-            asset_graph=asset_graph,
-            asset_keys=self._asset_selection.resolve(asset_graph),
-            asset_graph_view=asset_graph_view,
-            logger=self._logger,
-            cursor=self._cursor,
-            data_time_resolver=data_time_resolver,
-            respect_materialization_data_versions=False,
-            auto_materialize_run_tags={},
-        )
-        results, requested_asset_partitions = evaluator.evaluate()
-        self._cursor = AssetDaemonCursor(
-            evaluation_id=0,
-            last_observe_request_timestamp_by_asset_key={},
-            previous_evaluation_state=None,
-            previous_condition_cursors=[result.get_new_cursor() for result in results],
-        )
+            from dagster import DagsterInstance, evaluate_automation_conditions
 
-        for result in results:
-            self._logger.info(f"Evaluation of {result.asset_key}:")
-            self._log_evaluation(result.serializable_evaluation)
+            from my_proj import defs
 
-        return AutomationConditionTesterResult(requested_asset_partitions)
+            def test_my_automation_conditions() -> None:
 
-    def _log_evaluation(self, evaluation: AssetConditionEvaluation, depth: int = 1) -> None:
-        msg = "  " * depth
-        msg += f"{evaluation.condition_snapshot.description} "
-        msg += f"({evaluation.true_subset.size} true) "
-        msg += (
-            f"({(evaluation.end_timestamp or 0) - (evaluation.start_timestamp or 0):.2f} seconds)"
-        )
-        self._logger.info(msg)
-        for child in evaluation.child_evaluations:
-            self._log_evaluation(child, depth + 1)
+                instance = DagsterInstance.ephemeral()
+
+                # asset starts off as missing, expect it to be requested
+                result = evaluate_automation_conditions(defs, instance)
+                assert result.total_requested == 1
+
+                # don't re-request the same asset
+                result = evaluate_automation_conditions(defs, instance, cursor=cursor)
+                assert result.total_requested == 0
+
+
+            from dagster import AssetExecutionContext
+            from dagster_dbt import DbtCliResource, dbt_assets
+
+
+            @dbt_assets(manifest=Path("target", "manifest.json"))
+            def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+                yield from dbt.cli(["build"], context=context).stream()
+    """
+    if not isinstance(defs, Definitions):
+        defs = Definitions(assets=defs)
+
+    asset_graph_view = AssetGraphView.for_test(
+        defs=defs,
+        instance=instance,
+        effective_dt=evaluation_time or get_current_datetime_in_utc(),
+        last_event_id=instance.event_log_storage.get_maximum_record_id(),
+    )
+    asset_graph = defs.get_asset_graph()
+    data_time_resolver = CachingDataTimeResolver(
+        asset_graph_view.get_inner_queryer_for_back_compat()
+    )
+    evaluator = AutomationConditionEvaluator(
+        asset_graph=asset_graph,
+        asset_keys=asset_selection.resolve(asset_graph),
+        asset_graph_view=asset_graph_view,
+        logger=logging.getLogger("dagster.automation_condition_tester"),
+        cursor=cursor or AssetDaemonCursor.empty(),
+        data_time_resolver=data_time_resolver,
+        respect_materialization_data_versions=False,
+        auto_materialize_run_tags={},
+    )
+    results, requested_asset_partitions = evaluator.evaluate()
+    cursor = AssetDaemonCursor(
+        evaluation_id=0,
+        last_observe_request_timestamp_by_asset_key={},
+        previous_evaluation_state=None,
+        previous_condition_cursors=[result.get_new_cursor() for result in results],
+    )
+
+    return EvaluateAutomationConditionsResult(
+        cursor=cursor,
+        requested_asset_partitions=requested_asset_partitions,
+    )
