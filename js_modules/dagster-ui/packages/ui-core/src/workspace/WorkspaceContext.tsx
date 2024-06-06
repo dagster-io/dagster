@@ -202,6 +202,9 @@ const useWorkspaceState = (): WorkspaceState => {
     key: `${localCacheIdPrefix}/RootWorkspace`,
     version: 1,
   });
+
+  // Delete old database from before the prefix, remove this at some point
+  indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
   useMemo(() => refetch(), [refetch]);
 
   const workspaceOrError = data?.workspaceOrError;
