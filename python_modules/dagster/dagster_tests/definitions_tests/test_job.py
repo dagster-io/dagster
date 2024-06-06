@@ -16,6 +16,7 @@ from dagster import (
     usable_as_dagster_type,
     validate_run_config,
 )
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import HasSerializedMetadataRepresentation
 from dagster._core.definitions.metadata.metadata_value import (
     JsonMetadataValue,
@@ -356,6 +357,10 @@ def test_arbitrary_metadata() -> None:
     @job(metadata={"custom_object": SomeCustomObjectForUserFramework()})
     def a_job() -> None:
         an_op()
+
+    assert isinstance(a_job, JobDefinition)
+    assert isinstance(a_job.metadata["custom_object"], SomeCustomObjectForUserFramework)
+    assert isinstance(a_job.get_job_snapshot().metadata["custom_object"], JsonMetadataValue)
 
     assert a_job.execute_in_process().success
     assert executed["yes"]
