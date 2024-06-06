@@ -174,6 +174,10 @@ class TimestampWithTimezone(NamedTuple):
     timestamp: float  # Seconds since the Unix epoch
     timezone: str
 
+    @staticmethod
+    def from_pendulum_time(dt: PendulumDateTime):
+        return TimestampWithTimezone(dt.timestamp(), dt.timezone.name)
+
 
 class DatetimeFieldSerializer(FieldSerializer):
     """Serializes datetime objects to and from floats."""
@@ -234,15 +238,48 @@ class TimeWindow(NamedTuple):
 
 @whitelist_for_serdes(
     storage_name="TimeWindow",  # For back-compat with existing serdes
-    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
 )
-class PersistedTimeWindow(NamedTuple):
+class PersistedTimeWindow(
+    NamedTuple(
+        "_PersistedTimeWindow", [("start", TimestampWithTimezone), ("end", TimestampWithTimezone)]
+    )
+):
     """Internal serialized representation of a time interval that is closed at the
     start and open at the end.
     """
 
-    start: datetime
-    end: datetime
+    def __new__(
+        cls,
+        start: Union[TimestampWithTimezone, PendulumDateTime],
+        end: Union[TimestampWithTimezone, PendulumDateTime],
+    ):
+        return super(cls, PersistedTimeWindow).__new__(
+            cls,
+            start=(
+                start
+                if isinstance(start, TimestampWithTimezone)
+                else TimestampWithTimezone.from_pendulum_time(start)
+            ),
+            end=(
+                end
+                if isinstance(end, TimestampWithTimezone)
+                else TimestampWithTimezone.from_pendulum_time(end)
+            ),
+        )
+
+    @cached_property
+    def start(self) -> datetime:
+        start_timestamp_with_timezone = self._asdict()["start"]
+        return pendulum.from_timestamp(
+            start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
+        )
+
+    @cached_property
+    def end(self) -> datetime:
+        end_timestamp_with_timezone = self._asdict()["end"]
+        return pendulum.from_timestamp(
+            end_timestamp_with_timezone.timestamp, end_timestamp_with_timezone.timezone
+        )
 
     @staticmethod
     def from_public_time_window(tw: TimeWindow):
@@ -276,18 +313,15 @@ class PersistedTimeWindow(NamedTuple):
         return TimeWindow(start=self.start, end=self.end)
 
 
-@whitelist_for_serdes(
-    field_serializers={"start": DatetimeFieldSerializer, "end": DatetimeFieldSerializer},
-    is_pickleable=False,
-)
+@whitelist_for_serdes(is_pickleable=False)
 class TimeWindowPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_TimeWindowPartitionsDefinition",
         [
-            ("start", PublicAttr[datetime]),
+            ("start", TimestampWithTimezone),
             ("timezone", PublicAttr[str]),
-            ("end", PublicAttr[Optional[datetime]]),
+            ("end", Optional[TimestampWithTimezone]),
             ("fmt", PublicAttr[str]),
             ("end_offset", PublicAttr[int]),
             ("cron_schedule", PublicAttr[str]),
@@ -332,9 +366,9 @@ class TimeWindowPartitionsDefinition(
 
     def __new__(
         cls,
-        start: Union[datetime, str],
+        start: Union[datetime, str, TimestampWithTimezone],
         fmt: str,
-        end: Union[datetime, str, None] = None,
+        end: Union[datetime, str, TimestampWithTimezone, None] = None,
         schedule_type: Optional[ScheduleType] = None,
         timezone: Optional[str] = None,
         end_offset: int = 0,
@@ -346,25 +380,29 @@ class TimeWindowPartitionsDefinition(
         check.opt_str_param(timezone, "timezone")
         timezone = timezone or "UTC"
 
-        if isinstance(start, datetime):
+        if isinstance(start, str):
+            start_dt = dst_safe_strptime(start, timezone, fmt)
+            start = TimestampWithTimezone(start_dt.timestamp(), timezone)
+        elif isinstance(start, datetime):
             start_dt = pendulum.instance(start, tz=timezone)
             if start.tzinfo:
                 # Pendulum.instance does not override the timezone of the datetime object,
                 # so we convert it to the provided timezone
                 start_dt = to_timezone(start_dt, timezone)
-        else:
-            start_dt = dst_safe_strptime(start, timezone, fmt)
+            start = TimestampWithTimezone(start_dt.timestamp(), timezone)
 
         if not end:
-            end_dt = None
+            end = None
+        elif isinstance(end, str):
+            end_dt = dst_safe_strptime(end, timezone, fmt)
+            end = TimestampWithTimezone(end_dt.timestamp(), timezone)
         elif isinstance(end, datetime):
             end_dt = pendulum.instance(end, tz=timezone)
             if end.tzinfo:
                 # Pendulum.instance does not override the timezone of the datetime object,
                 # so we convert it to the provided timezone
                 end_dt = to_timezone(end_dt, timezone)
-        else:
-            end_dt = dst_safe_strptime(end, timezone, fmt)
+            end = TimestampWithTimezone(end_dt.timestamp(), timezone)
 
         if cron_schedule is not None:
             check.invariant(
@@ -390,7 +428,27 @@ class TimeWindowPartitionsDefinition(
             )
 
         return super(TimeWindowPartitionsDefinition, cls).__new__(
-            cls, start_dt, timezone, end_dt, fmt, end_offset, cron_schedule
+            cls, start, timezone, end, fmt, end_offset, cron_schedule
+        )
+
+    @public
+    @cached_property
+    def start(self) -> datetime:
+        start_timestamp_with_timezone = self._asdict()["start"]
+        return pendulum.from_timestamp(
+            start_timestamp_with_timezone.timestamp, start_timestamp_with_timezone.timezone
+        )
+
+    @public
+    @cached_property
+    def end(self) -> Optional[datetime]:
+        end_timestamp_with_timezone = self._asdict()["end"]
+
+        if not end_timestamp_with_timezone:
+            return None
+
+        return pendulum.from_timestamp(
+            end_timestamp_with_timezone.timestamp, end_timestamp_with_timezone.timezone
         )
 
     def get_current_timestamp(self, current_time: Optional[datetime] = None) -> float:
