@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
 from .types import DbtOutput
@@ -10,7 +11,7 @@ _DEFAULT_OP_PROPS: Dict[str, Any] = dict(
     required_resource_keys={"dbt"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtOutput, description="Parsed output from running the dbt command."),
-    tags={"kind": "dbt"},
+    tags={COMPUTE_KIND_TAG: "dbt"},
 )
 
 

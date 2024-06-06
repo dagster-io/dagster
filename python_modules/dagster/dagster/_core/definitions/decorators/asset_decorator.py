@@ -27,6 +27,7 @@ from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -429,7 +430,7 @@ class _Asset:
                 # part of the Op definition instantiation
                 required_resource_keys=op_required_resource_keys,
                 tags={
-                    **({"kind": self.compute_kind} if self.compute_kind else {}),
+                    **({COMPUTE_KIND_TAG: self.compute_kind} if self.compute_kind else {}),
                     **(self.op_tags or {}),
                 },
                 config_schema=self.config_schema,
@@ -711,7 +712,7 @@ def multi_asset(
                     set(required_resource_keys), resource_defs, fn
                 ),
                 tags={
-                    **({"kind": compute_kind} if compute_kind else {}),
+                    **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
                 },
                 config_schema=_config_schema,
