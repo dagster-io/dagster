@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 export const LOCATION_WORKSPACE_QUERY = gql`
@@ -117,6 +118,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     sensorType
     ...SensorSwitchFragment
   }
+  ${BASIC_INSTIGATION_STATE_FRAGMENT}
   ${SENSOR_SWITCH_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
