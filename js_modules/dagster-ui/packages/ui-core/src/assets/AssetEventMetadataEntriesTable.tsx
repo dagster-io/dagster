@@ -23,7 +23,11 @@ import {
   AssetObservationFragment,
 } from './types/useRecentAssetEvents.types';
 import {Timestamp} from '../app/time/Timestamp';
-import {HIDDEN_METADATA_ENTRY_LABELS, MetadataEntry} from '../metadata/MetadataEntry';
+import {
+  HIDDEN_METADATA_ENTRY_LABELS,
+  MetadataEntry,
+  isCanonicalRowCountMetadataEntry,
+} from '../metadata/MetadataEntry';
 import {
   isCanonicalCodeSourceEntry,
   isCanonicalColumnLineageEntry,
@@ -136,6 +140,7 @@ export const AssetEventMetadataEntriesTable = ({
             !HIDDEN_METADATA_ENTRY_LABELS.has(row.entry.label) &&
             !(isCanonicalColumnSchemaEntry(row.entry) && hideTableSchema) &&
             !isCanonicalColumnLineageEntry(row.entry) &&
+            !isCanonicalRowCountMetadataEntry(row.entry) &&
             !isCanonicalCodeSourceEntry(row.entry),
         ),
     [allRows, filter, hideTableSchema],
