@@ -12,7 +12,7 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
-from dagster._core.definitions.time_window_partitions import TimestampWithTimezone
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
