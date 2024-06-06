@@ -263,10 +263,10 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
             self._s3_session.download_fileobj(self._s3_bucket, s3_key, fileobj)
 
     def get_log_keys_for_log_key_prefix(
-        self, log_key_prefix: Sequence[str]
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
     ) -> Sequence[Sequence[str]]:
-        directory = self._resolve_path_for_namespace(log_key_prefix, legacy=False)
-        objects = self.s3_session.list_objects_v2(
+        directory = self._resolve_path_for_namespace(log_key_prefix)
+        objects = self._s3_session.list_objects_v2(
             Bucket=self._s3_bucket, Prefix="/".join(directory)
         )
         results = []
@@ -275,9 +275,7 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         for obj in objects["Contents"]:
             full_key = obj["Key"]
             filename, obj_io_type = full_key.split("/")[-1].split(".")
-            # Currently, this method is only used for fetching backfill daemon logs, which are stored as
-            # .err files. If this method gets used for other log types, the io_type can become a parameter.
-            if obj_io_type != IO_TYPE_EXTENSION[ComputeIOType.STDERR]:
+            if obj_io_type != IO_TYPE_EXTENSION[io_type]:
                 continue
             results.append(list_key_prefix + [filename])
 

@@ -2,6 +2,7 @@ import os
 import sys
 import tempfile
 
+import pendulum
 import pytest
 from botocore.exceptions import ClientError
 from dagster import DagsterEventType, job, op
@@ -201,6 +202,33 @@ def test_prefix_filter(mock_s3_bucket):
         s3_object = mock_s3_bucket.Object(key="foo/bar/storage/arbitrary/log/key.err")
         logs = s3_object.get()["Body"].read().decode("utf-8")
         assert logs == "hello hello"
+
+
+def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
+    evaluation_time = pendulum.now()
+    s3_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix=s3_prefix, local_dir=temp_dir
+        )
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with manager.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
+                f.write("foo")
+
+    for i in range(4):
+        write_log_file(i)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
 
 
 class TestS3ComputeLogManager(TestCapturedLogManager):
