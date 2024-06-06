@@ -21,6 +21,7 @@ class DatabricksRunLifeCycleState(str, Enum):
 
     BLOCKED = "BLOCKED"
     INTERNAL_ERROR = "INTERNAL_ERROR"
+    QUEUED = "QUEUED"
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SKIPPED = "SKIPPED"
