@@ -58,6 +58,7 @@ from .partition import (
     cron_schedule_from_schedule_type_and_offsets,
 )
 from .partition_key_range import PartitionKeyRange
+from .timestamp import TimestampWithTimezone
 
 
 def is_second_ambiguous_time(dt: datetime, tz: Optional[str]):
@@ -154,21 +155,6 @@ def dst_safe_strptime(date_string: str, tz: str, fmt: str) -> PendulumDateTime:
         if _IS_PENDULUM_1:
             dt = dt.add(microseconds=-1)
         return dt
-
-
-# TimestampWithTimezone is used to preserve IANA timezone information when serializing.
-# Serializing with the UTC offset (i.e. via datetime.isoformat) is insufficient because offsets vary
-# depending on daylight savings time. This causes timedelta operations to be inexact, since the
-# exact timezone is not preserved. To prevent any lossy serialization, ths implementation
-# serializes both the datetime float and the IANA timezone.
-@whitelist_for_serdes
-class TimestampWithTimezone(NamedTuple):
-    timestamp: float  # Seconds since the Unix epoch
-    timezone: str
-
-    @staticmethod
-    def from_pendulum_time(dt: PendulumDateTime):
-        return TimestampWithTimezone(dt.timestamp(), dt.timezone.name)
 
 
 class TimeWindow(NamedTuple):

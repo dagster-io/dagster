@@ -65,7 +65,7 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.time_window_partitions import TimestampWithTimezone
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData

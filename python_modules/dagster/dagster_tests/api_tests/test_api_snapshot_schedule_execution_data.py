@@ -8,6 +8,7 @@ from dagster._api.snapshot_schedule import (
     sync_get_external_schedule_execution_data_grpc,
 )
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
 from dagster._core.test_utils import instance_for_test
@@ -122,7 +123,7 @@ def test_include_execution_time_grpc():
                 instance,
                 repository_handle,
                 "foo_schedule_echo_time",
-                execution_time,
+                TimestampWithTimezone(execution_time.timestamp(), "UTC"),
                 None,
             )
 
@@ -141,7 +142,7 @@ def test_run_request_partition_key_schedule_grpc():
                 instance,
                 repository_handle,
                 "partitioned_run_request_schedule",
-                execution_time,
+                TimestampWithTimezone(execution_time.timestamp(), "UTC"),
                 None,
             )
 
