@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Union
 
 import yaml
 from dagster._annotations import experimental
-from dagster._model.decorator import dagster_model_with_new
+from dagster._model.decorator import IHaveNew, dagster_model_with_new
 from dagster._utils import run_with_concurrent_update_guard
 
 from .errors import (
@@ -104,7 +104,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
 @experimental
 @dagster_model_with_new
-class DbtProject:
+class DbtProject(IHaveNew):
     """Representation of a dbt project and related settings that assist with managing manifest.json preparation.
 
     By default, using this helps achieve a setup where:
@@ -221,7 +221,7 @@ class DbtProject:
             dependencies_path.exists() or packages_path.exists()
         ) and not packages_install_path.exists()
 
-        val = cls.__model_new__(  # type: ignore
+        val = super().__new__(
             cls,
             project_dir=project_dir,
             target_path=target_path,

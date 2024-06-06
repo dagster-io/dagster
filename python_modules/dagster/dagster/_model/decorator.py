@@ -1,6 +1,17 @@
 from abc import ABC
 from functools import cached_property, partial
-from typing import Any, Callable, Mapping, NamedTuple, Optional, Type, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from typing_extensions import dataclass_transform
 
@@ -200,6 +211,12 @@ class LegacyNamedTupleMixin(ABC):
 
     def _asdict(self):
         return as_dict(self)
+
+
+class IHaveNew:
+    if TYPE_CHECKING:
+
+        def __new__(cls, **kwargs): ...
 
 
 class LazyCheckBuilder:
