@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional, Sequence
+from typing import Any, NamedTuple, Optional, Sequence
 
 import tomli
 
@@ -40,6 +40,15 @@ class WorkspaceFileTarget(
         return location_origins_from_yaml_paths(self.paths)
 
 
+def is_valid_modules_list(modules: Any) -> bool:
+    if isinstance(modules, list):
+        for item in modules:
+            if not (isinstance(item, dict) and 'type' in item and 'name' in item):
+                return False
+        return True
+    return False
+
+
 def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvCodeLocationOrigin]:
     with open(path, "rb") as f:
         data = tomli.load(f)
@@ -47,14 +56,28 @@ def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvCodeLocatio
             return []
 
         dagster_block = data.get("tool", {}).get("dagster", {})
+        origins = []
+
         if "module_name" in dagster_block:
-            return ModuleTarget(
+            origins += ModuleTarget(
                 module_name=dagster_block["module_name"],
                 attribute=None,
                 working_directory=os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
-        return []
+
+        if "modules" in dagster_block and is_valid_modules_list(dagster_block["modules"]):
+            for module in dagster_block["modules"]:
+                if module["type"] == "module":
+                    origins += ModuleTarget(
+                        module_name=module["name"],
+                        attribute=None,
+                        working_directory=os.getcwd(),
+                        location_name=dagster_block.get("code_location_name"),
+                    ).create_origins()
+
+        return origins
+
 
 
 class PyProjectFileTarget(NamedTuple("PyProjectFileTarget", [("path", str)]), WorkspaceLoadTarget):
