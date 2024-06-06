@@ -179,6 +179,8 @@ def normalize_metadata_value(raw_value: RawMetadataValue) -> "MetadataValue[Any]
         return MetadataValue.table_schema(raw_value)
     elif isinstance(raw_value, TableColumnLineage):
         return MetadataValue.column_lineage(raw_value)
+    elif isinstance(raw_value, HasSerializedMetadataRepresentation):
+        return raw_value.serialized_representation()
     elif raw_value is None:
         return MetadataValue.null()
 
