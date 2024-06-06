@@ -1,13 +1,15 @@
 import inspect
 import os
+from pathlib import Path
 from typing import Any, Dict
 
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
+    SourceControlFilePathMapping,
     UrlCodeReference,
-    link_to_source_control,
+    link_to_git,
     with_source_code_references,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -85,7 +87,7 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str
         assert code_reference.file_path.endswith("test_code_references.py")
 
 
-def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
+def test_link_to_git_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     @dbt_assets(
         manifest=test_jaffle_shop_manifest,
         dagster_dbt_translator=DagsterDbtTranslator(
@@ -96,11 +98,13 @@ def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any
     def my_dbt_assets(): ...
 
     defs = Definitions(
-        assets=link_to_source_control(
+        assets=link_to_git(
             with_source_code_references([my_dbt_assets]),
             source_control_url="https://github.com/dagster-io/jaffle_shop",
             source_control_branch="master",
-            repository_root_absolute_path=JAFFLE_SHOP_ROOT_PATH,
+            source_control_file_path_mapping=SourceControlFilePathMapping(
+                local_file_anchor=Path(JAFFLE_SHOP_ROOT_PATH), file_anchor_path_in_repository=""
+            ),
         )
     )
 
