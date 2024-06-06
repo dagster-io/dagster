@@ -886,7 +886,7 @@
             ]
           },
           {
-            "title": "Deploying dbt to Dagster+",
+            "title": "Using dbt with Dagster+",
             "path": "/integrations/dbt/using-dbt-with-dagster-plus"
           },
           {
