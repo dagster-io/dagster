@@ -127,6 +127,10 @@ def get_current_datetime_in_utc() -> Any:
     return datetime.now(tz=timezone.utc)
 
 
+def create_utc_datetime(year, month, day, *args, **kwargs):
+    return datetime(year, month, day, *args, **kwargs, tzinfo=timezone.utc)
+
+
 def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
     if isinstance(utc_datetime, PendulumDateTime):
         return utc_datetime.timestamp()
