@@ -25,8 +25,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -49,11 +48,12 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
+from .automation_target import resolve_automation_target
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition, define_asset_job
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
@@ -460,71 +460,6 @@ class ScheduleExecutionData(
         )
 
 
-class AutomationTarget(NamedTuple):
-    target_executable: ExecutableDefinition
-    passed_assets_defs: Sequence[AssetsDefinition]
-    ...
-
-
-def is_coercible_to_asset_selection(target: Any) -> bool:
-    from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
-
-    # CoercibleToAssetSelection: TypeAlias = Union[
-    #     str,
-    #     Sequence[str],
-    #     Sequence[AssetKey],
-    #     Sequence[Union["AssetsDefinition", "SourceAsset"]],
-    #     "AssetSelection",
-    # ]
-
-    if isinstance(target, (str, AssetSelection)):
-        return True
-
-    if isinstance(target, Sequence):
-        for item in target:
-            if not isinstance(item, (str, AssetKey, AssetsDefinition, SourceAsset)):
-                check.failed(f"Invalid list element passed to target: {item}")
-        return True
-
-    return False
-
-
-def resolve_target(
-    automation_name: str,
-    target: Union[CoercibleToAssetSelection, AssetsDefinition, ExecutableDefinition],
-) -> AutomationTarget:
-    from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.source_asset import SourceAsset
-
-    passed_assets_defs = []
-
-    if isinstance(target, AssetsDefinition):
-        asset_selection = AssetSelection.assets(target)
-        passed_assets_defs = [target]
-    elif is_coercible_to_asset_selection(target):
-        if isinstance(target, Sequence):
-            for individual_target in target:
-                if isinstance(individual_target, (AssetsDefinition, SourceAsset)):
-                    passed_assets_defs.append(individual_target)
-
-        asset_selection = AssetSelection.from_coercible(target)  # type: ignore
-    elif isinstance(target, ExecutableDefinition):
-        return AutomationTarget(target, passed_assets_defs=[])
-    else:
-        check.failed(f"Invalid target passed to schedule: {target}")
-    return AutomationTarget(
-        target_executable=define_asset_job(
-            name=make_syntetic_job_name(automation_name), selection=asset_selection
-        ),
-        passed_assets_defs=passed_assets_defs,
-    )
-
-
-def make_syntetic_job_name(automation_name: str) -> str:
-    return f"__synthetic_asset_job_{automation_name}"
-
-
 def validate_and_get_schedule_resource_dict(
     resources: Resources, schedule_name: str, required_resource_keys: Set[str]
 ) -> Dict[str, Any]:
@@ -661,7 +596,7 @@ class ScheduleDefinition(IHasInternalInit):
         if job is not None:
             self._direct_target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         elif target is not None:
-            self.automation_target = resolve_target(
+            self.automation_target = resolve_automation_target(
                 target=target,
                 automation_name=check.not_none(name, "If you specify target you must specify name"),
             )
