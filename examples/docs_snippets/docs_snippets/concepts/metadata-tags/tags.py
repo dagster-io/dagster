@@ -9,6 +9,16 @@ def leads(): ...
 
 # end_asset_tags
 
+
+# start_asset_storage_kind_tag
+
+
+@asset(tags={"dagster/storage_kind": "snowflake"})
+def users(): ...
+
+
+# end_asset_storage_kind_tag
+
 # start_asset_job_tags
 
 asset_job = define_asset_job(
