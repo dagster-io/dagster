@@ -685,6 +685,7 @@ def multi_asset(
                 ins=ins or {},
                 fn=fn,
                 op_name=op_name,
+                group_name=group_name,
             )
         else:
             in_out_mapper = InOutMapper.from_asset_outs(
@@ -696,6 +697,7 @@ def multi_asset(
                 asset_deps=asset_deps,
                 deps_directly_passed_to_multi_asset=upstream_asset_deps,
                 can_subset=can_subset,
+                group_name=group_name,
             )
 
         check.invariant(
@@ -721,43 +723,6 @@ def multi_asset(
                 code_version=code_version,
             )(fn)
 
-        if specs:
-            resolved_specs = specs
-        else:
-            resolved_specs = []
-            input_deps_by_key = {
-                key: AssetDep(
-                    asset=key, partition_mapping=in_out_mapper.partition_mappings.get(key)
-                )
-                for key in in_out_mapper.asset_keys_by_input_names.values()
-            }
-            input_deps = list(input_deps_by_key.values())
-            for output_name, asset_out in asset_out_map.items():
-                key = in_out_mapper.asset_keys_by_output_name[output_name]
-                if internal_asset_deps:
-                    deps = [
-                        input_deps_by_key.get(
-                            dep_key,
-                            AssetDep(
-                                asset=dep_key,
-                                partition_mapping=in_out_mapper.partition_mappings.get(key),
-                            ),
-                        )
-                        for dep_key in internal_asset_deps.get(output_name, [])
-                    ]
-                else:
-                    deps = input_deps
-
-                resolved_specs.append(asset_out.to_spec(key, deps=deps))
-
-        if group_name:
-            check.invariant(
-                all(spec.group_name is None for spec in resolved_specs),
-                "Cannot set group_name parameter on multi_asset if one or more of the"
-                " AssetSpecs/AssetOuts supplied to this multi_asset have a group_name defined.",
-            )
-            resolved_specs = [spec._replace(group_name=group_name) for spec in resolved_specs]
-
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=in_out_mapper.asset_keys_by_input_names,
             keys_by_output_name=in_out_mapper.asset_keys_by_output_name,
@@ -770,7 +735,7 @@ def multi_asset(
             check_specs_by_output_name=in_out_mapper.check_specs_by_output_name,
             selected_asset_check_keys=None,  # no subselection in decorator
             is_subset=False,
-            specs=resolved_specs,
+            specs=in_out_mapper.resolved_specs,
         )
 
     return inner
