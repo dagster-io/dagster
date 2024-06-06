@@ -55,7 +55,14 @@ In this section, we'll demonstrate how to import an existing project Dagster+. O
 
 7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note**: dbt projects must have `dbt_profiles.yml` and `profiles.yml` files in the repository root or an error will display.
 
-8. Click **Continue**. Dagster+ will begin importing the project and open a pull request to update the repository. This pull request adds a few files, which we'll discuss in the next section.
+8. Click **Continue** to begin the import process.
+
+9. The last step of the import process adds a few files, which we'll discuss in the next section, to the project. Depending on the type of project you imported, this step will vary:
+
+   - **For dbt-only projects**, Dagster+ will open a pull request to update the repository. You'll need to review and merge the pull request to complete the process.
+   - **For dbt and Dagster projects,** Dagster+ will directly commit the files to the repository.
+
+Once Dagster+ finishes importing the project, move onto the next step.
 
 ---
 
