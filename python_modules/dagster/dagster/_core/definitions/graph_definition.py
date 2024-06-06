@@ -48,7 +48,6 @@ from .dependency import (
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
 from .logger_definition import LoggerDefinition
-from .metadata import RawMetadataValue
 from .node_container import create_execution_structure, normalize_dependency_dict
 from .node_definition import NodeDefinition
 from .output import OutputDefinition, OutputMapping
@@ -599,7 +598,7 @@ class GraphDefinition(NodeDefinition):
             Union["RunConfig", ConfigMapping, Mapping[str, object], "PartitionedConfig"]
         ] = None,
         tags: Union[NormalizedTags, Optional[Mapping[str, str]]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
         logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
         hooks: Optional[AbstractSet[HookDefinition]] = None,

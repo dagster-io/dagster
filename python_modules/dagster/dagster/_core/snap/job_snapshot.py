@@ -29,6 +29,7 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     RawMetadataValue,
     normalize_metadata,
+    serialize_definition_metadata_for_snaps,
 )
 from dagster._core.utils import toposort_flatten
 from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
@@ -170,7 +171,7 @@ class JobSnapshot(
             name=job_def.name,
             description=job_def.description,
             tags=job_def.tags,
-            metadata=job_def.metadata,
+            metadata=serialize_definition_metadata_for_snaps(job_def.metadata),
             config_schema_snapshot=build_config_schema_snapshot(job_def),
             dagster_type_namespace_snapshot=build_dagster_type_namespace_snapshot(job_def),
             node_defs_snapshot=build_node_defs_snapshot(job_def),

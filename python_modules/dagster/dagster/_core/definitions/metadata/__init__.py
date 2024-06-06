@@ -88,6 +88,30 @@ T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, c
 # ########################
 
 
+def normalize_definition_metadata(metadata: Mapping[str, object]) -> Mapping[str, object]:
+    def_metadata = {}
+    for k, v in metadata.items():
+        try:
+            normalized_value = normalize_metadata_value(v)  # type: ignore
+        except DagsterInvalidMetadata:
+            normalized_value = v
+        def_metadata[k] = normalized_value
+    return def_metadata
+
+
+def serialize_definition_metadata_for_snaps(
+    metadata: Mapping[str, object],
+) -> Mapping[str, RawMetadataValue]:
+    normed_metadata = {}
+    for k, v in metadata.items():
+        try:
+            normalize_metadata[k] = normalize_metadata_value(v)  # type: ignore
+        except DagsterInvalidMetadata:
+            ...
+            # Just hide it
+    return normed_metadata
+
+
 def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
     allow_invalid: bool = False,

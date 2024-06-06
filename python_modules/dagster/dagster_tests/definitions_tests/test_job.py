@@ -14,6 +14,7 @@ from dagster import (
     usable_as_dagster_type,
     validate_run_config,
 )
+from dagster._core.execution.context.compute import OpExecutionContext
 
 
 def builder(graph):
@@ -329,3 +330,23 @@ def test_job_recreation_works() -> None:
         "resources": {"io_manager": {"config": None}},
         "loggers": {},
     }
+
+
+def test_arbitrary_metadata() -> None:
+    class SomeCustomObjectForUserFramework: ...
+
+    executed = {}
+
+    @op
+    def an_op(context: OpExecutionContext) -> None:
+        executed["yes"] = True
+        assert isinstance(
+            context.job_def.metadata["custom_object"], SomeCustomObjectForUserFramework
+        )
+
+    @job(metadata={"custom_object": SomeCustomObjectForUserFramework()})
+    def a_job() -> None:
+        an_op()
+
+    assert a_job.execute_in_process().success
+    assert executed["yes"]
