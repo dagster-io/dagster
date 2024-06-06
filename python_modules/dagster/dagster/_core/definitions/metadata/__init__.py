@@ -97,7 +97,12 @@ def normalize_definition_metadata(metadata: Mapping[str, object]) -> Mapping[str
     def_metadata = {}
     for k, v in metadata.items():
         try:
-            normalized_value = normalize_metadata_value(v)  # type: ignore
+            # do not serialize metadata values for the in-memory representation
+            normalized_value = (
+                v
+                if isinstance(v, HasSerializedMetadataRepresentation)
+                else normalize_metadata_value(v)  # type: ignore
+            )
         except DagsterInvalidMetadata:
             normalized_value = v
         def_metadata[k] = normalized_value
@@ -116,8 +121,7 @@ def serialize_definition_metadata_for_snaps(
                 else normalize_metadata_value(v)  # type: ignore
             )
         except DagsterInvalidMetadata:
-            ...
-            # Just hide it
+            normed_metadata[k] = TextMetadataValue(f"[{v.__class__.__name__}] (unserializable)")
     return normed_metadata
 
 
