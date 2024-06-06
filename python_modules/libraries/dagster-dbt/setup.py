@@ -57,6 +57,7 @@ setup(
             "dbt-duckdb",
             "dagster-duckdb",
             "dagster-duckdb-pandas",
+            "pytest-retry",
         ]
     },
     entry_points={
