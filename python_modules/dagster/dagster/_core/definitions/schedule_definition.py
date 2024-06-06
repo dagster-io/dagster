@@ -25,6 +25,7 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.instigation_logger import InstigationLogger
@@ -460,25 +461,60 @@ class ScheduleExecutionData(
 
 
 class AutomationTarget(NamedTuple):
-    target_job: UnresolvedAssetJobDefinition
+    target_executable: ExecutableDefinition
     passed_assets_defs: Sequence[AssetsDefinition]
     ...
 
 
+def is_coercible_to_asset_selection(target: Any) -> bool:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
+
+    # CoercibleToAssetSelection: TypeAlias = Union[
+    #     str,
+    #     Sequence[str],
+    #     Sequence[AssetKey],
+    #     Sequence[Union["AssetsDefinition", "SourceAsset"]],
+    #     "AssetSelection",
+    # ]
+
+    if isinstance(target, (str, AssetSelection)):
+        return True
+
+    if isinstance(target, Sequence):
+        for item in target:
+            if not isinstance(item, (str, AssetKey, AssetsDefinition, SourceAsset)):
+                check.failed(f"Invalid list element passed to target: {item}")
+        return True
+
+    return False
+
+
 def resolve_target(
-    automation_name: str, target: Union[CoercibleToAssetSelection, AssetsDefinition]
+    automation_name: str,
+    target: Union[CoercibleToAssetSelection, AssetsDefinition, ExecutableDefinition],
 ) -> AutomationTarget:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
 
     passed_assets_defs = []
 
     if isinstance(target, AssetsDefinition):
         asset_selection = AssetSelection.assets(target)
         passed_assets_defs = [target]
+    elif is_coercible_to_asset_selection(target):
+        if isinstance(target, Sequence):
+            for individual_target in target:
+                if isinstance(individual_target, (AssetsDefinition, SourceAsset)):
+                    passed_assets_defs.append(individual_target)
+
+        asset_selection = AssetSelection.from_coercible(target)  # type: ignore
+    elif isinstance(target, ExecutableDefinition):
+        return AutomationTarget(target, passed_assets_defs=[])
     else:
-        asset_selection = AssetSelection.from_coercible(target)
+        check.failed(f"Invalid target passed to schedule: {target}")
     return AutomationTarget(
-        target_job=define_asset_job(
+        target_executable=define_asset_job(
             name=make_syntetic_job_name(automation_name), selection=asset_selection
         ),
         passed_assets_defs=passed_assets_defs,
@@ -596,7 +632,9 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
-        target: Optional[Union[AssetsDefinition, CoercibleToAssetSelection]] = None,
+        target: Optional[
+            Union[AssetsDefinition, CoercibleToAssetSelection, ExecutableDefinition]
+        ] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -627,7 +665,7 @@ class ScheduleDefinition(IHasInternalInit):
                 target=target,
                 automation_name=check.not_none(name, "If you specify target you must specify name"),
             )
-            self._direct_target = DirectTarget(self.automation_target.target_job)
+            self._direct_target = DirectTarget(self.automation_target.target_executable)
         else:
             self._direct_target = RepoRelativeTarget(
                 job_name=check.str_param(job_name, "job_name"),
