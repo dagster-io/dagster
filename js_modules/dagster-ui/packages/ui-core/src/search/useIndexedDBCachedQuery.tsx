@@ -35,7 +35,7 @@ export class CacheManager<TQuery> {
   }
 
   set(data: TQuery, version: number): Promise<void> {
-    return this.cache.set('cache', {data, version}, {expiry: new Date('3000-01-01')});
+    return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
   }
 }
 

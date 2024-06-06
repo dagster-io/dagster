@@ -99,6 +99,15 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     }
     didInitiateFetchFromCache.current = true;
     (async () => {
+      /**
+       * 1. Load the cached code location status query
+       * 2. Load the cached data for those locations
+       * 3. Set the cached data to `locationsData` state
+       * 4. Set prevLocations equal to these cached locations so that we can check if they
+       *  have changed after the next call to codeLocationStatusQuery
+       * 5. set didLoadCachedData to true to unblock the `locationsToFetch` memo so that it can compare
+       *  the latest codeLocationStatusQuery result to what was in the cache.
+       */
       const data = await getCachedData<CodeLocationStatusQuery>({
         key: `${localCacheIdPrefix}/${CODE_LOCATION_STATUS_QUERY_KEY}`,
         version: CODE_LOCATION_STATUS_QUERY_VERSION,
