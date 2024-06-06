@@ -130,6 +130,7 @@ class AssetDaemonCursor:
         return dataclasses.replace(
             self,
             evaluation_id=evaluation_id,
+            previous_evaluation_state=[],
             previous_condition_cursors=list(new_condition_cursors.values()),
             last_observe_request_timestamp_by_asset_key={
                 **self.last_observe_request_timestamp_by_asset_key,
