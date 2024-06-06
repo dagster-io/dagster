@@ -154,8 +154,7 @@ def test_read_log_lines_for_log_key_prefix():
         # read half of the next log file
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "5"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix,
-            cursor=cursor.to_string(),
+            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
         )
         assert len(log_lines) == 5
         assert cursor.has_more_now
@@ -167,7 +166,7 @@ def test_read_log_lines_for_log_key_prefix():
         # read the next ten lines, five will be in the second file, five will be in the third
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "10"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix, cursor=cursor.to_string()
+            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
         )
         assert len(log_lines) == 10
         assert cursor.has_more_now
@@ -179,8 +178,7 @@ def test_read_log_lines_for_log_key_prefix():
         # read the remaining 15 lines, but request 20
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix,
-            cursor=cursor.to_string(),
+            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
         )
         assert len(log_lines) == 15
         assert not cursor.has_more_now
@@ -196,8 +194,7 @@ def test_read_log_lines_for_log_key_prefix():
 
         os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "15"
         log_lines, cursor = cm.read_log_lines_for_log_key_prefix(
-            log_key_prefix,
-            cursor=cursor.to_string(),
+            log_key_prefix, cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
         )
         assert len(log_lines) == 10
         assert not cursor.has_more_now
