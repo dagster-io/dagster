@@ -65,6 +65,7 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.time_window_partitions import TimestampWithTimezone
 from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.asset_backfill import AssetBackfillData
@@ -301,7 +302,7 @@ class AssetReconciliationScenario(
                     materialized_subset=empty_subset,
                     requested_subset=empty_subset,
                     failed_and_downstream_subset=empty_subset,
-                    backfill_start_time=test_time,
+                    backfill_start_time=TimestampWithTimezone(test_time.timestamp(), "UTC"),
                 )
                 backfill = PartitionBackfill(
                     backfill_id=f"backfill{i}",

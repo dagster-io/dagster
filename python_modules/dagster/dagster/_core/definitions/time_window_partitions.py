@@ -24,21 +24,13 @@ from typing import (
 )
 
 import pendulum
-import pytz
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    NamedTupleSerializer,
-    UnpackContext,
-    WhitelistMap,
-    pack_value,
-    unpack_value,
-)
+from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._seven.compat.pendulum import (
     _IS_PENDULUM_1,
     PRE_TRANSITION,
@@ -177,51 +169,6 @@ class TimestampWithTimezone(NamedTuple):
     @staticmethod
     def from_pendulum_time(dt: PendulumDateTime):
         return TimestampWithTimezone(dt.timestamp(), dt.timezone.name)
-
-
-class DatetimeFieldSerializer(FieldSerializer):
-    """Serializes datetime objects to and from floats."""
-
-    def pack(
-        self, datetime: Optional[datetime], whitelist_map: WhitelistMap, descent_path: str
-    ) -> Optional[Mapping[str, Any]]:
-        if datetime:
-            check.invariant(datetime.tzinfo is not None, "No timezone set")
-            pendulum_datetime = pendulum.instance(datetime, tz=datetime.tzinfo)
-            timezone_name = pendulum_datetime.timezone.name
-
-            # Assert that the timezone name is a IANA timezone
-            check.invariant(
-                timezone_name in pytz.all_timezones_set,
-                f"Timezone {timezone_name} is not a valid IANA timezone",
-            )
-
-            return pack_value(
-                TimestampWithTimezone(datetime.timestamp(), timezone_name),
-                whitelist_map,
-                descent_path,
-            )
-
-        return None
-
-    def unpack(
-        self,
-        serialized_datetime_with_timezone: Optional[Mapping[str, Any]],
-        whitelist_map: WhitelistMap,
-        context: UnpackContext,
-    ) -> Optional[datetime]:
-        if serialized_datetime_with_timezone:
-            unpacked = unpack_value(
-                serialized_datetime_with_timezone,
-                TimestampWithTimezone,
-                whitelist_map,
-                context,
-            )
-            unpacked_datetime = pendulum.from_timestamp(unpacked.timestamp, unpacked.timezone)
-            check.invariant(unpacked_datetime.tzinfo is not None)
-            return unpacked_datetime
-
-        return None
 
 
 class TimeWindow(NamedTuple):

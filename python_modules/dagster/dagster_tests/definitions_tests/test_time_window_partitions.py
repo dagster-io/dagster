@@ -1,7 +1,7 @@
 import pickle
 import random
 from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import Optional, Sequence, cast
 
 import pendulum.parser
 import pytest
@@ -21,7 +21,6 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
-    DatetimeFieldSerializer,
     PartitionKeysTimeWindowPartitionsSubset,
     PersistedTimeWindow,
     ScheduleType,
@@ -29,7 +28,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -1520,21 +1519,6 @@ def test_time_window_partitions_def_serialization(partitions_def):
     deserialized = deserialize_value(serialize_value(time_window_partitions_def))
     assert deserialized == time_window_partitions_def
     assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
-
-
-def test_datetime_field_serializer():
-    @whitelist_for_serdes(field_serializers={"dt": DatetimeFieldSerializer})
-    class Foo(NamedTuple):
-        dt: datetime
-
-    utc_datetime_with_no_timezone = Foo(dt=datetime.now())
-    with pytest.raises(CheckError, match="No timezone set"):
-        serialize_value(utc_datetime_with_no_timezone)
-
-    assert (
-        deserialize_value(serialize_value(Foo(dt=pendulum.now("US/Pacific")))).dt.timezone_name
-        == "US/Pacific"
-    )
 
 
 def test_cannot_pickle_time_window_partitions_def():
