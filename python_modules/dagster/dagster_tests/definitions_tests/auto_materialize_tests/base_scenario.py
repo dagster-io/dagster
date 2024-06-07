@@ -21,7 +21,6 @@ from typing import (
 
 import dagster._check as check
 import mock
-import pendulum
 import pytest
 from dagster import (
     AssetIn,
@@ -75,10 +74,11 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
+    freeze_time,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import AssetDaemon
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
@@ -253,9 +253,9 @@ class AssetReconciliationScenario(
             pytest.skip("requires respect_materialization_data_versions to be True")
         assert not self.code_locations, "setting code_locations not supported for sensor tests"
 
-        test_time = self.current_time or pendulum.now()
+        test_time = self.current_time or get_current_datetime_in_utc()
 
-        with pendulum_freeze_time(test_time):
+        with freeze_time(test_time):
 
             @repository
             def repo():
@@ -350,7 +350,7 @@ class AssetReconciliationScenario(
             if self.between_runs_delta is not None:
                 test_time += self.between_runs_delta
 
-            with pendulum_freeze_time(test_time), mock.patch("time.time", new=test_time_fn):
+            with freeze_time(test_time), mock.patch("time.time", new=test_time_fn):
                 if run.is_observation:
                     observe(
                         instance=instance,
@@ -371,7 +371,7 @@ class AssetReconciliationScenario(
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
-        with pendulum_freeze_time(test_time):
+        with freeze_time(test_time):
             # get asset_graph
             if not with_external_asset_graph:
                 asset_graph = repo.asset_graph
@@ -432,9 +432,9 @@ class AssetReconciliationScenario(
             not self.active_backfill_targets
         ), "setting active_backfill_targets not supported for daemon tests"
 
-        test_time = self.current_time or pendulum.now()
+        test_time = self.current_time or get_current_datetime_in_utc()
 
-        with pendulum_freeze_time(test_time) if self.current_time else contextlib.nullcontext():
+        with freeze_time(test_time) if self.current_time else contextlib.nullcontext():
             if self.cursor_from is not None:
                 self.cursor_from.do_daemon_scenario(
                     instance,
@@ -450,7 +450,7 @@ class AssetReconciliationScenario(
             if self.between_runs_delta is not None:
                 test_time += self.between_runs_delta
 
-            with pendulum_freeze_time(test_time), mock.patch("time.time", new=test_time_fn):
+            with freeze_time(test_time), mock.patch("time.time", new=test_time_fn):
                 assert not run.is_observation, "Observations not supported for daemon tests"
                 if self.assets:
                     do_run(
@@ -476,7 +476,7 @@ class AssetReconciliationScenario(
 
         if self.evaluation_delta is not None:
             test_time += self.evaluation_delta
-        with pendulum_freeze_time(test_time):
+        with freeze_time(test_time):
             assert scenario_name is not None, "scenario_name must be provided for daemon runs"
 
             if self.code_locations:
@@ -685,7 +685,7 @@ def observable_source_asset_def(
 ):
     def _data_version() -> DataVersion:
         return (
-            DataVersion(str(pendulum.now().minute // minutes_to_change))
+            DataVersion(str(get_current_datetime_in_utc().minute // minutes_to_change))
             if minutes_to_change
             else DataVersion(str(random.random()))
         )

@@ -45,11 +45,11 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
+    freeze_time,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
-from dagster._seven.compat.pendulum import pendulum_freeze_time
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -266,7 +266,7 @@ class ScenarioState:
         status: DagsterRunStatus,
     ) -> Self:
         run_id = make_new_run_id()
-        with pendulum_freeze_time(self.current_time):
+        with freeze_time(self.current_time):
             job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
                 asset_keys=list(asset_keys)
             )
@@ -307,7 +307,7 @@ class ScenarioState:
             # fake current_time on the scenario state
             return (self.current_time + (datetime.datetime.now() - start)).timestamp()
 
-        with pendulum_freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
+        with freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.scenario_spec.assets,

@@ -1,10 +1,10 @@
 # pyright: reportPrivateImportUsage=false
 
+import datetime
 import json
 import time
 from typing import Iterator
 
-import pendulum
 import pytest
 from dagster import asset
 from dagster._check import CheckError
@@ -30,7 +30,9 @@ from dagster._core.definitions.time_window_partitions import (
 )
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._core.test_utils import freeze_time
+from dagster._seven import create_utc_datetime
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils.env import environ
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -42,7 +44,7 @@ def test_params() -> None:
 
     @asset(
         partitions_def=DailyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         )
     )
     def my_partitioned_asset():
@@ -69,7 +71,7 @@ def test_params() -> None:
 
     @asset(
         partitions_def=DailyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         )
     )
     def other_partitioned_asset():
@@ -119,7 +121,7 @@ def test_params() -> None:
         },
         can_subset=True,
         partitions_def=DailyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         ),
     )
     def my_multi_asset(context):
@@ -182,7 +184,7 @@ def test_params() -> None:
 
     @asset(
         partitions_def=DailyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         )
     )
     def my_other_partitioned_asset():
@@ -208,19 +210,16 @@ def test_params() -> None:
 
 
 def test_result_cron_param(
-    pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
 ) -> None:
     """Move time forward and backward, with a freshness check parameterized with a cron, and ensure that the check passes and fails as expected."""
-    partitions_def = DailyPartitionsDefinition(
-        start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
-    )
+    partitions_def = DailyPartitionsDefinition(start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0))
 
     @asset(partitions_def=partitions_def)
     def my_asset():
         pass
 
-    start_time = pendulum.datetime(2021, 1, 3, 1, 0, 0, tz="UTC")  # 2021-01-03 at 01:00:00
+    start_time = create_utc_datetime(2021, 1, 3, 1, 0, 0)  # 2021-01-03 at 01:00:00
 
     check = build_time_partition_freshness_checks(
         assets=[my_asset],
@@ -229,7 +228,7 @@ def test_result_cron_param(
     )[0]
 
     freeze_datetime = start_time
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # With no events, check fails.
         assert_check_result(
             my_asset,
@@ -247,7 +246,7 @@ def test_result_cron_param(
                     }
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    pendulum.datetime(2021, 1, 2, 9, 0, 0, tz="UTC").timestamp()
+                    create_utc_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
         )
@@ -267,8 +266,8 @@ def test_result_cron_param(
         # cron. Now the check passes.
         add_new_event(instance, my_asset.key, "2021-01-01")
     # Add a bit of time so that the description renders properly.
-    freeze_datetime = freeze_datetime.add(seconds=1)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(seconds=1)
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_asset,
             instance,
@@ -278,21 +277,21 @@ def test_result_cron_param(
             description_match="Asset is currently fresh",
             metadata_match={
                 "dagster/fresh_until_timestamp": TimestampMetadataValue(
-                    pendulum.datetime(2021, 1, 3, 9, 0, 0, tz="UTC").timestamp()
+                    create_utc_datetime(2021, 1, 3, 9, 0, 0).timestamp()
                 ),
                 "dagster/freshness_params": JsonMetadataValue(
                     {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    pendulum.datetime(2021, 1, 2, 9, 0, 0, tz="UTC").timestamp()
+                    create_utc_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
         )
 
     # Advance a full day. By now, we would expect a new event to have been added.
     # Since that is not the case, we expect the check to fail.
-    freeze_datetime = freeze_datetime.add(days=1)  # 2021-01-04 at 01:00:00
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(days=1)  # 2021-01-04 at 01:00:00
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_asset,
             instance,
@@ -318,8 +317,8 @@ def test_result_cron_param(
         # before the tick of the cron. Now we expect the check to pass.
         add_new_event(instance, my_asset.key, "2021-01-02")
 
-    freeze_datetime = freeze_datetime.add(seconds=1)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(seconds=1)
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_asset,
             instance,
@@ -331,7 +330,6 @@ def test_result_cron_param(
 
 
 def test_invalid_runtime_assets(
-    pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
 ) -> None:
     """Ensure that the check fails when the asset does not have a TimeWindowPartitionsDefinition."""
@@ -372,12 +370,9 @@ def test_invalid_runtime_assets(
 
 
 def test_observations(
-    pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
 ) -> None:
-    partitions_def = DailyPartitionsDefinition(
-        start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
-    )
+    partitions_def = DailyPartitionsDefinition(start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0))
 
     @asset(partitions_def=partitions_def)
     def my_asset():
@@ -389,9 +384,9 @@ def test_observations(
         timezone="UTC",  # 09:00 UTC
     )[0]
 
-    with pendulum_freeze_time(pendulum.datetime(2021, 1, 3, 1, 0, 0, tz="UTC")):
+    with freeze_time(create_utc_datetime(2021, 1, 3, 1, 0, 0)):
         add_new_event(instance, my_asset.key, "2021-01-01", is_materialization=False)
-    with pendulum_freeze_time(pendulum.datetime(2021, 1, 3, 1, 0, 1, tz="UTC")):
+    with freeze_time(create_utc_datetime(2021, 1, 3, 1, 0, 1)):
         assert_check_result(
             my_asset,
             instance,
@@ -411,13 +406,14 @@ def new_york_time() -> Iterator[None]:
 
 
 def test_differing_timezones(
-    pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
     new_york_time: None,
 ) -> None:
     """Test the interplay between the three different timezones: the timezone of the cron, the timezone of the asset, and the timezone of the running process."""
     partitions_def = DailyPartitionsDefinition(
-        start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="America/Chicago"),
+        start_date=datetime.datetime(
+            2020, 1, 1, 0, 0, 0, tzinfo=timezone_from_string("America/Chicago")
+        ),
         timezone="America/Chicago",
     )
 
@@ -433,11 +429,13 @@ def test_differing_timezones(
 
     # Start in a neutral hour in all timezones, such that the cron is on the same tick for all, and add a new event. expect the check to pass.
     # Current time is 2021-01-03 at 01:00:00 in America/Chicago, 2021-01-03 at 02:00:00 in America/New_York, and 2021-01-03 at 00:00:00 in America/Los_Angeles
-    freeze_datetime = pendulum.datetime(2021, 1, 3, 1, 0, 0, tz="America/Chicago")
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = datetime.datetime(
+        2021, 1, 3, 1, 0, 0, tzinfo=timezone_from_string("America/Chicago")
+    )
+    with freeze_time(freeze_datetime):
         add_new_event(instance, my_chicago_asset.key, "2021-01-01")
-    freeze_datetime = freeze_datetime.add(seconds=1)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(seconds=1)
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_chicago_asset,
             instance,
@@ -449,8 +447,8 @@ def test_differing_timezones(
 
     # Move forward enough that only the process timezone would have ticked. The check should still pass.
     # Current time is 2021-01-03 at 08:00:01 in America/Chicago, 2021-01-03 at 09:00:01 in America/New_York, and 2021-01-03 at 06:00:01 in America/Los_Angeles
-    freeze_datetime = freeze_datetime.add(hours=7)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(hours=7)
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_chicago_asset,
             instance,
@@ -462,8 +460,8 @@ def test_differing_timezones(
 
     # Then, move forward only enough that in the timezone of the partition, and the process timezone, the cron would have ticked, but not in the timezone of the cron. The check should still therefore pass.
     # Current time is 2021-01-03 at 09:00:00 in America/Chicago, 2021-01-03 at 10:00:00 in America/New_York, and 2021-01-03 at 07:00:00 in America/Los_Angeles
-    freeze_datetime = freeze_datetime.add(hours=1)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(hours=1)
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_chicago_asset,
             instance,
@@ -475,8 +473,8 @@ def test_differing_timezones(
 
     # Finally, move forward enough that the cron has ticked in all timezones, and the new partition isn't present. The check should now fail.
     # Current time is 2021-01-03 at 11:00:01 in America/Chicago, 2021-01-03 at 12:00:01 in America/New_York, and 2021-01-03 at 09:00:01 in America/Los_Angeles
-    freeze_datetime = freeze_datetime.add(hours=2)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + datetime.timedelta(hours=2)
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_chicago_asset,
             instance,
@@ -487,7 +485,7 @@ def test_differing_timezones(
         )
 
         add_new_event(instance, my_chicago_asset.key, "2021-01-02")
-    with pendulum_freeze_time(freeze_datetime.add(seconds=1)):
+    with freeze_time(freeze_datetime + datetime.timedelta(seconds=1)):
         assert_check_result(
             my_chicago_asset,
             instance,
@@ -505,7 +503,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
 
     @asset(
         partitions_def=DailyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         )
     )
     def my_asset():
@@ -514,7 +512,7 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     # Test multiple different partition defs
     @asset(
         partitions_def=HourlyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         )
     )
     def my_other_asset():
@@ -559,19 +557,17 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     assert not all(evaluation.passed for evaluation in result.get_asset_check_evaluations())
 
 
-def test_observation_descriptions(
-    pendulum_aware_report_dagster_event: None, instance: DagsterInstance
-) -> None:
+def test_observation_descriptions(instance: DagsterInstance) -> None:
     @asset(
         partitions_def=DailyPartitionsDefinition(
-            start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
         )
     )
     def my_asset():
         pass
 
-    start_time = pendulum.datetime(
-        2021, 1, 3, 9, 0, 1, tz="UTC"
+    start_time = create_utc_datetime(
+        2021, 1, 3, 9, 0, 1
     )  # 2021-01-03 at 09:00:00. We expect the 2021-01-02 partition to be fresh.
 
     check = build_time_partition_freshness_checks(
@@ -579,10 +575,10 @@ def test_observation_descriptions(
         deadline_cron="0 9 * * *",
     )[0]
     # First, create an event that is outside of the allowed time window.
-    with pendulum_freeze_time(pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")):
+    with freeze_time(create_utc_datetime(2021, 1, 1, 1, 0, 0)):
         add_new_event(instance, my_asset.key, is_materialization=False, partition_key="2021-01-01")
     # Asset is in an unknown state since we haven't had any observation events during this time window.
-    with pendulum_freeze_time(start_time):
+    with freeze_time(start_time):
         assert_check_result(
             my_asset,
             instance,
@@ -596,7 +592,7 @@ def test_observation_descriptions(
             instance,
             my_asset.key,
             is_materialization=False,
-            override_timestamp=start_time.subtract(minutes=2).timestamp(),
+            override_timestamp=(start_time - datetime.timedelta(minutes=2)).timestamp(),
             partition_key="2021-01-01",
         )
         assert_check_result(
@@ -613,7 +609,7 @@ def test_observation_descriptions(
             instance,
             my_asset.key,
             is_materialization=False,
-            override_timestamp=start_time.subtract(minutes=1).timestamp(),
+            override_timestamp=(start_time - datetime.timedelta(minutes=1)).timestamp(),
             partition_key="2021-01-02",
         )
         assert_check_result(

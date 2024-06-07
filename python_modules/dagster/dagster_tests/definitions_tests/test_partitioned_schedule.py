@@ -1,7 +1,5 @@
 from datetime import datetime
-from typing import cast
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -27,13 +25,14 @@ from dagster._core.definitions.time_window_partitions import (
     monthly_partitioned_config,
     weekly_partitioned_config,
 )
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._core.test_utils import freeze_time
+from dagster._seven import create_utc_datetime, parse_with_timezone
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(cast(datetime, pendulum.parse(start)), cast(datetime, pendulum.parse(end)))
+    return TimeWindow(parse_with_timezone(start), parse_with_timezone(end))
 
 
 def schedule_for_partitioned_config(
@@ -391,7 +390,7 @@ def test_empty_partitions():
 
 
 def test_future_tick():
-    with pendulum_freeze_time(pendulum.parse("2022-02-28")):
+    with freeze_time(create_utc_datetime(2022, 2, 28)):
 
         @daily_partitioned_config(start_date="2021-05-05")
         def my_partitioned_config(start, end):
