@@ -234,17 +234,18 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   );
 
   useLayoutEffect(() => {
-    if (locationsRemoved.length) {
-      setLocationsData((locationsData) => {
-        const copy = {...locationsData};
-        locationsRemoved.forEach((loc) => {
-          delete copy[loc.name];
-          indexedDB.deleteDatabase(`${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`);
-        });
-        return copy;
-      });
+    if (!locationsRemoved.length) {
+      return;
     }
-  }, [localCacheIdPrefix, locationsRemoved]);
+    const copy = {...locationsData};
+    locationsRemoved.forEach((loc) => {
+      delete copy[loc.name];
+      indexedDB.deleteDatabase(`${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`);
+    });
+    if (Object.keys(copy).length !== Object.keys(locationsData).length) {
+      setLocationsData(copy);
+    }
+  }, [localCacheIdPrefix, locationsData, locationsRemoved]);
 
   const locationEntries = useMemo(
     () =>
