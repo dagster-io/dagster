@@ -7,7 +7,7 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
@@ -129,6 +129,54 @@ def get_current_datetime_in_utc() -> Any:
 
 def create_utc_datetime(year, month, day, *args, **kwargs):
     return datetime(year, month, day, *args, **kwargs, tzinfo=timezone.utc)
+
+
+def add_fixed_time(
+    dt: datetime,
+    *,
+    hours=0,
+    minutes=0,
+    seconds=0,
+    milliseconds=0,
+    microseconds=0,
+):
+    """Behaves like adding a time using a timedelta, but handles fall DST transitions correctly
+    without skipping an hour ahead.
+    """
+    return (
+        dt.astimezone(timezone.utc)
+        + timedelta(
+            seconds=seconds,
+            microseconds=microseconds,
+            milliseconds=milliseconds,
+            minutes=minutes,
+            hours=hours,
+        )
+    ).astimezone(dt.tzinfo)
+
+
+def subtract_fixed_time(
+    dt: datetime,
+    *,
+    hours=0,
+    minutes=0,
+    seconds=0,
+    milliseconds=0,
+    microseconds=0,
+):
+    """Behaves like adding a time using a timedelta, but handles fall DST transitions correctly
+    without skipping an hour behind.
+    """
+    return (
+        dt.astimezone(timezone.utc)
+        - timedelta(
+            seconds=seconds,
+            microseconds=microseconds,
+            milliseconds=milliseconds,
+            minutes=minutes,
+            hours=hours,
+        )
+    ).astimezone(dt.tzinfo)
 
 
 def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:

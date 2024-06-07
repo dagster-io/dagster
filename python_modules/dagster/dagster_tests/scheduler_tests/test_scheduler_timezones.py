@@ -7,8 +7,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._seven import create_utc_datetime, get_current_datetime_in_utc
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._seven import add_fixed_time, create_utc_datetime, get_current_datetime_in_utc
+from dagster._seven.compat.datetime import safe_freeze_time, timezone_from_string
 from dateutil.relativedelta import relativedelta
 
 from .test_scheduler_run import (
@@ -154,7 +154,7 @@ def test_differing_timezones(
         )
 
     # Past midnight central time, the central timezone schedule will now run
-    freeze_datetime = freeze_datetime + relativedelta(hours=1)
+    freeze_datetime = add_fixed_time(freeze_datetime, hours=1)
     with freezegun.freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
 
@@ -281,13 +281,13 @@ def test_hourly_dst_spring_forward(
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 1
 
-    freeze_datetime = freeze_datetime + relativedelta(hours=1)
+    freeze_datetime = add_fixed_time(freeze_datetime, hours=1)
     with freezegun.freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
 
     # DST has now happened, 2 hours later it is 4AM CST
     # Should be 3 runs: 1AM CST, 3AM CST, 4AM CST
-    freeze_datetime = freeze_datetime + relativedelta(hours=1)
+    freeze_datetime = add_fixed_time(freeze_datetime, hours=1)
     with freezegun.freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
 
@@ -346,7 +346,7 @@ def test_hourly_dst_fall_back(
 
     external_schedule = external_repo.get_external_schedule("hourly_central_time_schedule")
     schedule_origin = external_schedule.get_external_origin()
-    with freezegun.freeze_time(freeze_datetime):
+    with safe_freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
         evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
 
@@ -355,14 +355,29 @@ def test_hourly_dst_fall_back(
         assert len(ticks) == 0
 
     for _ in range(3):
-        freeze_datetime = freeze_datetime + relativedelta(hours=1)
-        with freezegun.freeze_time(freeze_datetime):
+        freeze_datetime = add_fixed_time(freeze_datetime, hours=1)
+        with safe_freeze_time(freeze_datetime):
             evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
 
     # DST has now happened, 4 hours later it is 3:30AM CST
     # Should be 4 runs: 1AM CDT, 2AM CDT, 2AM CST, 3AM CST
-    freeze_datetime = freeze_datetime + relativedelta(hours=1)
-    with freezegun.freeze_time(freeze_datetime):
+    freeze_datetime = add_fixed_time(freeze_datetime, hours=1)
+
+    expected_datetimes_utc = [
+        create_utc_datetime(2019, 11, 3, 9, 0, 0),
+        create_utc_datetime(2019, 11, 3, 8, 0, 0),
+        create_utc_datetime(2019, 11, 3, 7, 0, 0),
+        create_utc_datetime(2019, 11, 3, 6, 0, 0),
+    ]
+
+    expected_ct_times = [
+        "2019-11-03T03:00:00-06:00",  # 3 AM CST
+        "2019-11-03T02:00:00-06:00",  # 2 AM CST
+        "2019-11-03T01:00:00-06:00",  # 1 AM CST
+        "2019-11-03T01:00:00-05:00",  # 1 AM CDT
+    ]
+
+    with safe_freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
 
         wait_for_all_runs_to_start(instance)
@@ -370,20 +385,6 @@ def test_hourly_dst_fall_back(
         assert instance.get_runs_count() == 4
         ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
         assert len(ticks) == 4
-
-        expected_datetimes_utc = [
-            create_utc_datetime(2019, 11, 3, 9, 0, 0),
-            create_utc_datetime(2019, 11, 3, 8, 0, 0),
-            create_utc_datetime(2019, 11, 3, 7, 0, 0),
-            create_utc_datetime(2019, 11, 3, 6, 0, 0),
-        ]
-
-        expected_ct_times = [
-            "2019-11-03T03:00:00-06:00",  # 3 AM CST
-            "2019-11-03T02:00:00-06:00",  # 2 AM CST
-            "2019-11-03T01:00:00-06:00",  # 1 AM CST
-            "2019-11-03T01:00:00-05:00",  # 1 AM CDT
-        ]
 
         for i in range(4):
             assert (
