@@ -9,6 +9,7 @@ from dagster._core.definitions.load_assets_from_modules import assets_from_modul
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
+DEFS_PRIMARY_ATTR_NAME = "defs"
 
 
 class LoadableTarget(NamedTuple):
@@ -54,9 +55,19 @@ def loadable_targets_from_loaded_module(module: ModuleType) -> Sequence[Loadable
 
     if loadable_defs:
         if len(loadable_defs) > 1:
-            raise DagsterInvariantViolationError(
-                "Cannot have more than one Definitions object defined at module scope"
-            )
+            loadable_defs_named_defs = [
+                loadable_defs_object
+                for loadable_defs_object in loadable_defs
+                if loadable_defs_object.attribute == DEFS_PRIMARY_ATTR_NAME
+            ]
+
+            if len(loadable_defs_named_defs) == 1:
+                return loadable_defs_named_defs
+            else:
+                raise DagsterInvariantViolationError(
+                    "Cannot have more than one Definitions object defined at module scope, unless "
+                    "one is named 'defs'"
+                )
 
         return loadable_defs
 
