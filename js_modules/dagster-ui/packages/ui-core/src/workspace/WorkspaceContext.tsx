@@ -208,7 +208,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       return (
         prev?.updateTimestamp !== loc.updateTimestamp ||
         prev?.loadStatus !== loc.loadStatus ||
-        entry?.updatedTimestamp !== loc.updateTimestamp ||
         entry?.loadStatus !== loc.loadStatus
       );
     });
