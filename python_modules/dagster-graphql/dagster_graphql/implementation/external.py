@@ -92,13 +92,13 @@ def ensure_valid_config(external_job: ExternalJob, run_config: object) -> object
 
 
 def get_external_execution_plan_or_raise(
-    graphene_info: "ResolveInfo",
+    graphql_context: BaseWorkspaceRequestContext,
     external_pipeline: ExternalJob,
     run_config: Mapping[str, object],
     step_keys_to_execute: Optional[Sequence[str]],
     known_state: Optional[KnownExecutionState],
 ) -> ExternalExecutionPlan:
-    return graphene_info.context.get_external_execution_plan(
+    return graphql_context.get_external_execution_plan(
         external_job=external_pipeline,
         run_config=run_config,
         step_keys_to_execute=step_keys_to_execute,
