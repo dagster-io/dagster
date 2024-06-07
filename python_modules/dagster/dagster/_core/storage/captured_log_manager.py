@@ -284,10 +284,11 @@ class CapturedLogManager(ABC):
         return log_lines
 
     def read_log_lines_for_log_key_prefix(
-        self, log_key_prefix: Sequence[str], cursor: Optional[str], num_lines: int = 100
+        self, log_key_prefix: Sequence[str], cursor: Optional[str]
     ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
         """For a given directory defined by log_key_prefix that contains files, read the logs from the files
-        as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
+        as if they are a single continuous file. Reads DAGSTER_CAPTURED_LOG_CHUNK_SIZE lines at a time.
+        Returns the lines read and the next cursor.
 
         Note that the has_more_now attribute of the cursor indicates if there are more logs that can be read immediately.
         If has_more_now if False, the process producing logs could still be running and dump more logs into the
