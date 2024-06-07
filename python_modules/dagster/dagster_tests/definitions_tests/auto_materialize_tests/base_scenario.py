@@ -336,7 +336,7 @@ class AssetReconciliationScenario(
                 )
                 for run_request in run_requests:
                     instance.create_run_for_job(
-                        prior_repo.get_implicit_job_def_for_assets(run_request.asset_selection),
+                        prior_repo.get_implicit_global_asset_job_def(),
                         asset_selection=set(run_request.asset_selection),
                         tags=run_request.tags,
                     )
@@ -416,7 +416,7 @@ class AssetReconciliationScenario(
             ).evaluate()
 
         for run_request in run_requests:
-            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
+            base_job = repo.get_implicit_global_asset_job_def()
             assert base_job is not None
 
         return run_requests, cursor, evaluations

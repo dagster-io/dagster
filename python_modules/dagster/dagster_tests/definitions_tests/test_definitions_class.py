@@ -516,18 +516,8 @@ def test_implicit_global_job_with_partitioned_asset():
         assets=[daily_partition_asset, unpartitioned_asset, hourly_partition_asset],
     )
 
-    assert len(defs.get_all_job_defs()) == 2
-
-    assert defs.get_implicit_job_def_for_assets(
-        [AssetKey("daily_partition_asset"), AssetKey("unpartitioned_asset")]
-    )
-
-    assert defs.get_implicit_job_def_for_assets(
-        [AssetKey("hourly_partition_asset"), AssetKey("unpartitioned_asset")]
-    )
-
-    with pytest.raises(DagsterInvariantViolationError):
-        defs.get_implicit_global_asset_job_def()
+    assert len(defs.get_all_job_defs()) == 1
+    defs.get_implicit_global_asset_job_def()
 
 
 def test_implicit_job_with_source_assets():
@@ -540,7 +530,6 @@ def test_implicit_job_with_source_assets():
     defs = Definitions(assets=[source_asset, downstream_of_source])
     assert defs.get_all_job_defs()
     assert len(defs.get_all_job_defs()) == 1
-    assert defs.get_implicit_job_def_for_assets(asset_keys=[AssetKey("downstream_of_source")])
     assert defs.has_implicit_global_asset_job_def()
     assert defs.get_implicit_global_asset_job_def()
 
