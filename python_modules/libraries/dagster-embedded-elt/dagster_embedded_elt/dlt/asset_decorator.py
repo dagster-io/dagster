@@ -85,6 +85,7 @@ def dlt_assets(
         check.opt_inst_param(dlt_dagster_translator, "dlt_dagster_translator", DagsterDltTranslator)
         or DagsterDltTranslator()
     )
+    destination_type = dlt_pipeline.destination.destination_name
     return multi_asset(
         name=name,
         group_name=group_name,
@@ -104,6 +105,7 @@ def dlt_assets(
                     META_KEY_TRANSLATOR: dlt_dagster_translator,
                     **dlt_dagster_translator.get_metadata(dlt_source_resource),
                 },
+                tags={"dagster/storage_kind": destination_type},
             )
             for dlt_source_resource in dlt_source.selected_resources.values()
         ],
