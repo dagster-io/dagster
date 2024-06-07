@@ -44,11 +44,13 @@ from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import create_test_daemon_workspace_context
+from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._seven import create_utc_datetime
+from dagster._seven.compat.datetime import timezone_from_string
+from dateutil.relativedelta import relativedelta
 
 from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
 
@@ -414,20 +416,16 @@ def test_resources(
     sensor_name,
 ) -> None:
     assert not is_in_cm
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_utc_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(timezone_from_string("US/Central"))
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         base_run_count = 0
         if "asset" in sensor_name:
             the_job.execute_in_process(instance=instance)
@@ -482,21 +480,17 @@ def test_resources_freshness_policy_sensor(
     sensor_name,
 ) -> None:
     assert not is_in_cm
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_utc_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(timezone_from_string("US/Central"))
     original_time = freeze_datetime
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
@@ -512,15 +506,15 @@ def test_resources_freshness_policy_sensor(
 
     # We have to do two ticks because the first tick will be skipped due to the freshness policy
     # sensor initializing its cursor
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
@@ -558,21 +552,17 @@ def test_resources_run_status_sensor(
 ) -> None:
     assert not is_in_cm
 
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_utc_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(timezone_from_string("US/Central"))
     original_time = freeze_datetime
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
@@ -588,16 +578,16 @@ def test_resources_run_status_sensor(
 
     # We have to do two ticks because the first tick will be skipped due to the run status
     # sensor initializing its cursor
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_job.execute_in_process(instance=instance)
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )
@@ -640,21 +630,17 @@ def test_resources_run_failure_sensor(
 ) -> None:
     assert not is_in_cm
 
-    freeze_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=27,
-            hour=23,
-            minute=59,
-            second=59,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
+    freeze_datetime = create_utc_datetime(
+        year=2019,
+        month=2,
+        day=27,
+        hour=23,
+        minute=59,
+        second=59,
+    ).astimezone(timezone_from_string("US/Central"))
     original_time = freeze_datetime
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_sensor = external_repo_struct_resources.get_external_sensor(sensor_name)
         instance.add_instigator_state(
             InstigatorState(
@@ -670,16 +656,16 @@ def test_resources_run_failure_sensor(
 
     # We have to do two ticks because the first tick will be skipped due to the run status
     # sensor initializing its cursor
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
     the_failure_job.execute_in_process(instance=instance, raise_on_error=False)
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         evaluate_sensors(workspace_context_struct_resources, None)
         wait_for_all_runs_to_start(instance)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         ticks = instance.get_ticks(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
         )

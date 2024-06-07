@@ -23,7 +23,8 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._core.test_utils import freeze_time
+from dagster._seven import get_current_datetime_in_utc, parse_with_timezone
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
@@ -639,9 +640,9 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
-        test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
+        test_time = parse_with_timezone("2023-03-04T00:00:00")
     else:
-        test_time = pendulum.now("UTC")
+        test_time = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -684,7 +685,7 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
         all_partitions=False,
     )
     assert backfill_data
-    with pendulum_freeze_time(test_time):
+    with freeze_time(test_time):
         result = execute_asset_backfill_iteration_consume_generator(
             backfill_id="test_backfill_id",
             asset_backfill_data=backfill_data,
@@ -707,9 +708,9 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
-        test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
+        test_time = parse_with_timezone("2023-03-04T00:00:00")
     else:
-        test_time = pendulum.now("UTC")
+        test_time = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -1007,7 +1008,7 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         all_partitions=False,
     )
     assert backfill_data
-    with pendulum_freeze_time(test_time):
+    with freeze_time(test_time):
         result = execute_asset_backfill_iteration_consume_generator(
             backfill_id="test_backfill_id",
             asset_backfill_data=backfill_data,
