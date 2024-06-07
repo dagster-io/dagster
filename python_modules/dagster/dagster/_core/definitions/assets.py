@@ -1372,6 +1372,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output_name, NodeHandle(self.node_def.name, parent=None)
             )[0]
             key = self._keys_by_output_name[output_name]
+            spec = self.specs_by_key[key]
 
             return SourceAsset(
                 key=key,
@@ -1380,8 +1381,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 description=output_def.description,
                 resource_defs=self.resource_defs,
                 partitions_def=self.partitions_def,
-                group_name=self.group_names_by_key[key],
-                tags=self.tags_by_key.get(key),
+                group_name=spec.group_name,
+                tags=spec.tags,
             )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:

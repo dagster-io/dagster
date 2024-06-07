@@ -185,7 +185,10 @@ class AssetReconciliationScenario(
         # and add them to the assets.
         assets_with_implicit_policies = assets
         if assets and all(
-            (isinstance(a, AssetsDefinition) and not a.auto_materialize_policies_by_key)
+            (
+                isinstance(a, AssetsDefinition)
+                and all(spec.auto_materialize_policy is None for spec in a.specs)
+            )
             or isinstance(a, SourceAsset)
             for a in assets
         ):

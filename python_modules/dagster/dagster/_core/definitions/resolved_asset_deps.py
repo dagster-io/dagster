@@ -2,6 +2,7 @@ import itertools
 from collections import defaultdict
 from typing import AbstractSet, Dict, Iterable, List, Mapping, Sequence, Tuple, cast
 
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.warnings import experimental_warning
@@ -136,7 +137,8 @@ def resolve_assets_def_deps(
     """
     group_names_by_key: Dict[AssetKey, str] = {}
     for assets_def in assets_defs:
-        group_names_by_key.update(assets_def.group_names_by_key)
+        for spec in assets_def.specs:
+            group_names_by_key[spec.key] = check.not_none(spec.group_name)
     for source_asset in source_assets:
         group_names_by_key[source_asset.key] = source_asset.group_name
 
@@ -152,7 +154,7 @@ def resolve_assets_def_deps(
     result: Dict[int, Mapping[AssetKey, AssetKey]] = {}
     for assets_def in assets_defs:
         # If all keys have the same group name, use that
-        group_names = set(assets_def.group_names_by_key.values())
+        group_names = {spec.group_name for spec in assets_def.specs}
         group_name = next(iter(group_names)) if len(group_names) == 1 else None
 
         resolved_keys_by_unresolved_key: Dict[AssetKey, AssetKey] = {}

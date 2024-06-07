@@ -44,12 +44,8 @@ def test_assets(schema_prefix, auto_materialize_policy, monkeypatch):
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables}
     assert len(ab_assets[0].op.output_defs) == 2
 
-    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
-    if auto_materialize_policy:
-        assert auto_materialize_policies_by_key
     assert all(
-        auto_materialize_policies_by_key[key] == auto_materialize_policy
-        for key in auto_materialize_policies_by_key
+        spec.auto_materialize_policy == auto_materialize_policy for spec in ab_assets[0].specs
     )
 
     responses.add(
@@ -139,20 +135,15 @@ def test_assets_with_normalization(
         auto_materialize_policy=auto_materialize_policy,
     )
 
-    freshness_policies = ab_assets[0].freshness_policies_by_key
-    assert all(freshness_policies[key] == freshness_policy for key in freshness_policies)
+    assert all(spec.freshness_policy == freshness_policy for spec in ab_assets[0].specs)
 
     assert ab_assets[0].keys == {AssetKey(["some", "prefix", t]) for t in destination_tables} | {
         AssetKey(["some", "prefix", t]) for t in bar_normalization_tables
     }
     assert len(ab_assets[0].op.output_defs) == 4
 
-    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
-    if auto_materialize_policy:
-        assert auto_materialize_policies_by_key
     assert all(
-        auto_materialize_policies_by_key[key] == auto_materialize_policy
-        for key in auto_materialize_policies_by_key
+        spec.auto_materialize_policy == auto_materialize_policy for spec in ab_assets[0].specs
     )
 
     responses.add(
@@ -264,7 +255,7 @@ def test_assets_cloud() -> None:
             AssetKey(["some", "prefix", "bar_baz"]),
             AssetKey(["some", "prefix", "bar_qux"]),
         }
-        assert ab_assets[0].group_names_by_key == {
+        assert {spec.key: spec.group_name for spec in ab_assets[0].specs} == {
             AssetKey(["some", "prefix", "foo"]): "foo",
             AssetKey(["some", "prefix", "bar"]): "foo",
             AssetKey(["some", "prefix", "bar_baz"]): "foo",
