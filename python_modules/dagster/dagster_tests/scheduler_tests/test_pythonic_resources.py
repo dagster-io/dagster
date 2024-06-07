@@ -2,7 +2,6 @@ import os
 import sys
 from typing import Optional, Sequence
 
-import freezegun
 import pytest
 from dagster import (
     DagsterInstance,
@@ -20,7 +19,7 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 )
 from dagster._core.definitions.schedule_definition import RunRequest
 from dagster._core.scheduler.instigation import InstigatorTick, TickStatus
-from dagster._core.test_utils import create_test_daemon_workspace_context
+from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
@@ -183,7 +182,7 @@ def test_resources(
         second=59,
     ).astimezone(timezone_from_string("US/Central"))
 
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_schedule = external_repo_struct_resources.get_external_schedule(schedule_name)
         instance.start_schedule(external_schedule)
 
@@ -194,7 +193,7 @@ def test_resources(
         assert len(ticks) == 0
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
 
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         evaluate_schedules(workspace_context_struct_resources, None, get_current_datetime_in_utc())
         wait_for_all_runs_to_start(instance)
 

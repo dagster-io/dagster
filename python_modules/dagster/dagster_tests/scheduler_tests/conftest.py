@@ -2,7 +2,6 @@ import os
 import sys
 from typing import Iterator, Optional
 
-import freezegun
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.external import ExternalRepository
@@ -14,12 +13,6 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-
-
-@pytest.fixture(scope="session", autouse=True)
-def configure_freezegun():
-    # grpc servers always timeout when time is frozen to the past
-    freezegun.configure(extend_ignore_list=["grpc"])
 
 
 @pytest.fixture(params=["synchronous", "threadpool"])

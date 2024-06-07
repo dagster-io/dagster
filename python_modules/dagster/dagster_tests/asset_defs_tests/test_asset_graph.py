@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Callable, List, Optional
 from unittest.mock import MagicMock
 
-import freezegun
 import pytest
 from dagster import (
     AssetIn,
@@ -42,7 +41,7 @@ from dagster._core.remote_representation.external_data import (
     external_asset_checks_from_defs,
     external_asset_nodes_from_defs,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._seven import create_utc_datetime, get_current_datetime_in_utc
 
 
@@ -248,7 +247,7 @@ def test_get_parent_partitions_non_default_partition_mapping(
 
     asset_graph = asset_graph_from_assets([parent, child])
 
-    with freezegun.freeze_time(create_utc_datetime(year=2022, month=1, day=3, hour=4)):
+    with freeze_time(create_utc_datetime(year=2022, month=1, day=3, hour=4)):
         with instance_for_test() as instance:
             current_time = get_current_datetime_in_utc()
 

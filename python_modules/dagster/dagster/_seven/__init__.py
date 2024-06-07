@@ -123,8 +123,22 @@ def builtin_print() -> str:
     return "builtins.print"
 
 
-def get_current_datetime_in_utc() -> Any:
+def _mockable_get_current_datetime_in_utc():
+    # Can be mocked in tests by freeze_time()
     return datetime.now(tz=timezone.utc)
+
+
+def get_current_datetime_in_utc() -> Any:
+    return _mockable_get_current_datetime_in_utc()
+
+
+def _mockable_get_current_timestamp():
+    return time.time()
+
+
+def get_current_timestamp():
+    # Like time.time() but can be mocked in tests by freeze_time()
+    return _mockable_get_current_timestamp()
 
 
 def create_utc_datetime(year, month, day, *args, **kwargs):

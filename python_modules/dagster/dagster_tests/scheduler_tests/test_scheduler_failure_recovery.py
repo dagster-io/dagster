@@ -3,7 +3,6 @@ import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from signal import Signals
 
-import freezegun
 import pytest
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
@@ -15,6 +14,7 @@ from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     cleanup_test_instance,
     create_test_daemon_workspace_context,
+    freeze_time,
     get_crash_signals,
 )
 from dagster._seven import IS_WINDOWS, create_utc_datetime, get_current_datetime_in_utc
@@ -53,13 +53,12 @@ def _test_launch_scheduled_runs_in_subprocess(
     executor_name: str,
 ) -> None:
     executor = SingleThreadPoolExecutor() if executor_name == "single" else None
-    freezegun.configure(extend_ignore_list=["grpc"])
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
             with create_test_daemon_workspace_context(
                 workspace_load_target(), instance
             ) as workspace_context:
-                with freezegun.freeze_time(execution_datetime):
+                with freeze_time(execution_datetime):
                     evaluate_schedules(
                         workspace_context,
                         executor,
@@ -90,7 +89,7 @@ def test_failure_recovery_before_run_created(
     freeze_datetime = initial_datetime
 
     external_schedule = external_repo.get_external_schedule("simple_schedule")
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -114,7 +113,7 @@ def test_failure_recovery_before_run_created(
 
     freeze_datetime = freeze_datetime + relativedelta(minutes=5)
 
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), freeze_datetime, None, executor],
@@ -161,7 +160,7 @@ def test_failure_recovery_after_run_created(
     initial_datetime = create_utc_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
     external_schedule = external_repo.get_external_schedule("simple_schedule")
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -205,7 +204,7 @@ def test_failure_recovery_after_run_created(
             validate_run_exists(instance.get_runs()[0], freeze_datetime)
 
     freeze_datetime = freeze_datetime + relativedelta(minutes=5)
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # Running again just launches the existing run and marks the tick as success
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
@@ -248,7 +247,7 @@ def test_failure_recovery_after_tick_success(
     initial_datetime = create_utc_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
     external_schedule = external_repo.get_external_schedule("simple_schedule")
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -289,7 +288,7 @@ def test_failure_recovery_after_tick_success(
         )
 
     freeze_datetime = freeze_datetime + relativedelta(minutes=1)
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # Running again just marks the tick as success since the run has already started
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
@@ -331,7 +330,7 @@ def test_failure_recovery_between_multi_runs(
     initial_datetime = create_utc_datetime(year=2019, month=2, day=28, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
     external_schedule = external_repo.get_external_schedule("multi_run_schedule")
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
@@ -355,7 +354,7 @@ def test_failure_recovery_between_multi_runs(
         assert len(ticks) == 1
 
     freeze_datetime = freeze_datetime + relativedelta(minutes=1)
-    with freezegun.freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         scheduler_process = spawn_ctx.Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), freeze_datetime, None, executor],

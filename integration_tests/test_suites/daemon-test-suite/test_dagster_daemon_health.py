@@ -1,11 +1,10 @@
 import time
 from datetime import timedelta
 
-import freezegun
 import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ, freeze_time, instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
@@ -488,7 +487,7 @@ def test_workspace_refresh_failed(monkeypatch, caplog):
                 for record in caplog.records
             )
 
-            with freezegun.freeze_time(
+            with freeze_time(
                 last_workspace_update_time + timedelta(seconds=(RELOAD_WORKSPACE_INTERVAL + 1)),
             ):
                 controller.check_workspace_freshness(last_workspace_update_time.timestamp())
@@ -498,7 +497,7 @@ def test_workspace_refresh_failed(monkeypatch, caplog):
                     for record in caplog.records
                 )
 
-            with freezegun.freeze_time(
+            with freeze_time(
                 last_workspace_update_time
                 + timedelta(seconds=(DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE + 1)),
             ):
