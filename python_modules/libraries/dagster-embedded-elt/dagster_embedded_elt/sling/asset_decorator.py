@@ -133,6 +133,7 @@ def sling_assets(
                     METADATA_KEY_TRANSLATOR: dagster_sling_translator,
                     METADATA_KEY_REPLICATION_CONFIG: replication_config,
                 },
+                tags=dagster_sling_translator.get_tags(stream),
                 group_name=dagster_sling_translator.get_group_name(stream),
                 freshness_policy=dagster_sling_translator.get_freshness_policy(stream),
                 auto_materialize_policy=dagster_sling_translator.get_auto_materialize_policy(
