@@ -212,6 +212,16 @@ class JobDefinition(IHasInternalInit):
                 self._config_mapping = config
             elif isinstance(config, PartitionedConfig):
                 self._partitioned_config = config
+                if asset_layer:
+                    for asset_key in _output_asset_keys(asset_layer):
+                        asset_partitions_def = asset_layer.get(asset_key).partitions_def
+                        check.invariant(
+                            asset_partitions_def is None
+                            or asset_partitions_def == config.partitions_def,
+                            "Can't supply a PartitionedConfig for 'config' with a different PartitionsDefinition"
+                            f" than supplied for a target asset 'partitions_def'. Asset: {asset_key.to_user_string()}",
+                        )
+
             elif isinstance(config, dict):
                 self._run_config = config
                 # Using config mapping here is a trick to make it so that the preset will be used even
@@ -696,22 +706,21 @@ class JobDefinition(IHasInternalInit):
 
         merged_tags = merge_dicts(self.tags, tags or {})
         if partition_key:
-            if not (self.partitions_def and self.partitioned_config):
-                check.failed("Attempted to execute a partitioned run for a non-partitioned job")
-            self.partitions_def.validate_partition_key(
+            partitions_def = ephemeral_job.validate_partition_key(
                 partition_key, dynamic_partitions_store=instance
             )
 
-            run_config = (
-                run_config
-                if run_config
-                else self.partitioned_config.get_run_config_for_partition_key(partition_key)
-            )
-            merged_tags.update(
-                self.partitioned_config.get_tags_for_partition_key(
-                    partition_key, job_name=self.name
+            if not run_config and self.partitioned_config:
+                run_config = self.partitioned_config.get_run_config_for_partition_key(partition_key)
+
+            if self.partitioned_config:
+                merged_tags.update(
+                    self.partitioned_config.get_tags_for_partition_key(
+                        partition_key, job_name=self.name
+                    )
                 )
-            )
+            else:
+                merged_tags.update(partitions_def.get_tags_for_partition_key(partition_key))
 
         return core_execute_in_process(
             ephemeral_job=ephemeral_job,
@@ -723,6 +732,41 @@ class JobDefinition(IHasInternalInit):
             run_id=run_id,
             asset_selection=frozenset(asset_selection),
         )
+
+    def validate_partition_key(
+        self, partition_key: str, dynamic_partitions_store
+    ) -> PartitionsDefinition:
+        if self.partitions_def:
+            self.partitions_def.validate_partition_key(
+                partition_key, dynamic_partitions_store=dynamic_partitions_store
+            )
+            return self.partitions_def
+        elif self.asset_layer:
+            if self.asset_selection:
+                selected_asset_keys = self.asset_selection
+            else:
+                selected_asset_keys = [
+                    asset_info.key
+                    for asset_info in self.asset_layer.asset_info_by_node_output_handle.values()
+                ]
+
+            partitions_def = None
+            for asset_key in selected_asset_keys:
+                asset_node = self.asset_layer.get(asset_key)
+                if asset_node.partitions_def:
+                    asset_node.partitions_def.validate_partition_key(
+                        partition_key, dynamic_partitions_store=dynamic_partitions_store
+                    )
+                    partitions_def = asset_node.partitions_def
+
+            if partitions_def is None:
+                check.failed(
+                    "Attempted to execute a partitioned run for a job with no partitioned assets",
+                )
+
+            return partitions_def
+        else:
+            check.failed("Attempted to execute a partitioned run for a non-partitioned job")
 
     @property
     def op_selection_data(self) -> Optional[OpSelectionData]:
@@ -1308,3 +1352,7 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=job_def.config_mapping,
     )
+
+
+def _output_asset_keys(asset_layer: AssetLayer) -> Iterable[AssetKey]:
+    return [asset_info.key for asset_info in asset_layer.asset_info_by_node_output_handle.values()]

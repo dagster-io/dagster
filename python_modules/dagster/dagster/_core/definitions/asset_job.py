@@ -125,25 +125,11 @@ def get_base_asset_jobs(
     executor_def: Optional[ExecutorDefinition],
     logger_defs: Optional[Mapping[str, LoggerDefinition]],
 ) -> Mapping[str, Callable[[], JobDefinition]]:
-    if len(asset_graph.all_partitions_defs) == 0:
-        return {
-            ASSET_BASE_JOB_PREFIX: _build_global_asset_job_lambda(
-                asset_graph, executor_def, resource_defs, logger_defs
-            )
-        }
-    else:
-        jobs = {}
-        for i, partitions_def in enumerate(asset_graph.all_partitions_defs):
-            job_name = f"{ASSET_BASE_JOB_PREFIX}_{i}"
-            jobs[job_name] = _build_partitioned_asset_job_lambda(
-                f"{ASSET_BASE_JOB_PREFIX}_{i}",
-                asset_graph,
-                partitions_def,
-                resource_defs,
-                executor_def,
-                logger_defs,
-            )
-        return jobs
+    return {
+        ASSET_BASE_JOB_PREFIX: _build_global_asset_job_lambda(
+            asset_graph, executor_def, resource_defs, logger_defs
+        )
+    }
 
 
 def build_asset_job(
@@ -201,9 +187,6 @@ def build_asset_job(
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
-    partitions_def = _infer_and_validate_common_partitions_def(
-        asset_graph, asset_graph.executable_asset_keys, partitions_def
-    )
 
     deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
 

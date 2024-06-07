@@ -555,7 +555,7 @@ def _create_external_run(
         job_code_origin=external_job.get_python_origin(),
         asset_selection=None,
         asset_check_selection=None,
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_job),
+        asset_graph=external_repo.asset_graph,
     )
 
 
