@@ -62,6 +62,24 @@ def leads(): ...
 
 Other APIs that define assets can also accept tag arguments, such as <PyObject object="AssetSpec" />, <PyObject object="AssetOut" />, <PyObject object="AssetOut" />, and <PyObject object="graph_asset" decorator />.
 
+#### Storage kind tags
+
+You can attach the `dagster/storage_kind` tag to an asset to specify the storage technology used to store the asset. For example, `s3` or `snowflake`.
+
+```python file=/concepts/metadata-tags/tags.py startafter=start_asset_storage_kind_tag endbefore=end_asset_storage_kind_tag
+@asset(tags={"dagster/storage_kind": "snowflake"})
+def users(): ...
+```
+
+These tags will appear in the asset graph and can be used to filter assets in the Dagster UI:
+
+<Image
+alt="An asset with a storage kind tag in the Dagster UI"
+src="/images/concepts/metadata-tags/storage-kind-tag.png"
+width={758}
+height={303}
+/>
+
 ### Jobs
 
 Adding tags to a job will attach them to every run executed by the job.
