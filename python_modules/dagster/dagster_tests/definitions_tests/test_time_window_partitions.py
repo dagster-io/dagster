@@ -28,8 +28,10 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._seven import create_utc_datetime
+from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -1553,7 +1555,7 @@ def test_get_partition_keys_not_in_subset_empty_subset() -> None:
     time_windows_subset = TimeWindowPartitionsSubset(
         partitions_def, num_partitions=0, included_time_windows=[]
     )
-    with pendulum_freeze_time(create_pendulum_time(2023, 1, 1)):
+    with freeze_time(create_utc_datetime(2023, 1, 1)):
         assert time_windows_subset.get_partition_keys_not_in_subset(partitions_def) == []
 
 

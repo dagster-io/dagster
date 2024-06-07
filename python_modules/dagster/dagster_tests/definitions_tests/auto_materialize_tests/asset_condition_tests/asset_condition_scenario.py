@@ -27,7 +27,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionCursor,
 )
 from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._core.test_utils import freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..scenario_state import ScenarioState
@@ -92,7 +92,7 @@ class AutomationConditionScenarioState(ScenarioState):
             auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(asset_condition),
         ).asset_graph
 
-        with pendulum_freeze_time(self.current_time):
+        with freeze_time(self.current_time):
             instance_queryer = CachingInstanceQueryer(
                 instance=self.instance, asset_graph=asset_graph
             )
