@@ -1,8 +1,7 @@
 import datetime
 import time
 
-import freezegun
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
@@ -25,5 +24,6 @@ def test_heartbeat():
             + DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS
             + 5
         )
-        with freezegun.freeze_time(frozen_datetime):
+
+        with freeze_time(frozen_datetime):
             assert all_daemons_healthy(instance) is False

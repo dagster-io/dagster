@@ -123,7 +123,6 @@ setup(
         "test": [
             "buildkite-test-collector",
             "docker",
-            "freezegun",
             f"grpcio-tools>={GRPC_VERSION_FLOOR}",
             "mock==3.0.5",
             "mypy-protobuf",

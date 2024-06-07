@@ -1,7 +1,6 @@
 import sys
 import time
 
-import freezegun
 import pytest
 from dateutil.relativedelta import relativedelta
 
@@ -26,6 +25,7 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.error import SerializableErrorInfo
@@ -328,7 +328,7 @@ class TestScheduleStorage:
 
         freeze_datetime = get_current_datetime_in_utc()
 
-        with freezegun.freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
             assert updated_tick.status == TickStatus.SUCCESS
             assert updated_tick.end_timestamp == freeze_datetime.timestamp()
@@ -353,7 +353,7 @@ class TestScheduleStorage:
 
         freeze_datetime = get_current_datetime_in_utc()
 
-        with freezegun.freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SKIPPED)
             assert updated_tick.status == TickStatus.SKIPPED
             assert updated_tick.end_timestamp == freeze_datetime.timestamp()
@@ -377,7 +377,7 @@ class TestScheduleStorage:
 
         freeze_datetime = get_current_datetime_in_utc()
 
-        with freezegun.freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(
                 TickStatus.FAILURE,
                 error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
