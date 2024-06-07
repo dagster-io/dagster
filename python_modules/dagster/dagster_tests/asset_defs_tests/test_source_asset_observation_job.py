@@ -74,7 +74,7 @@ def test_partitioned_observable_source_asset():
         return 1
 
     with instance_for_test() as instance:
-        job_def = Definitions(assets=[foo, bar, baz]).get_implicit_job_def_for_assets([foo.key])
+        job_def = Definitions(assets=[foo, bar, baz]).get_implicit_global_asset_job_def()
 
         # If the asset selection contains any materializable assets, source assets observations will not run
         job_def.execute_in_process(partition_key="A", instance=instance)

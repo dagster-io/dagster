@@ -572,11 +572,6 @@ class Definitions(IHaveNew):
         """
         return self.get_repository_def().get_implicit_global_asset_job_def()
 
-    def get_implicit_job_def_for_assets(
-        self, asset_keys: Iterable[AssetKey]
-    ) -> Optional[JobDefinition]:
-        return self.get_repository_def().get_implicit_job_def_for_assets(asset_keys)
-
     def get_assets_def(self, key: CoercibleToAssetKey) -> AssetsDefinition:
         asset_key = AssetKey.from_coercible(key)
         for assets_def in self.get_asset_graph().assets_defs:

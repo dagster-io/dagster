@@ -2090,7 +2090,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_obser
     p2_observable_key = AssetKey("p2_observable")
     external_key = AssetKey("external_asset")
 
-    p1_job_def = defs.get_implicit_job_def_for_assets([p1_key])
+    p1_job_def = defs.get_implicit_global_asset_job_def()
     assert p1_job_def.asset_layer.asset_graph.asset_check_keys == {
         AssetCheckKey(p1_key, "p1_check1"),
         AssetCheckKey(p1_key, "p1_check2"),
@@ -2098,7 +2098,7 @@ def test_get_base_asset_jobs_multiple_partitions_defs_and_asset_checks_and_obser
         AssetCheckKey(external_key, "orphan_check"),
     }
 
-    p2_job_def = defs.get_implicit_job_def_for_assets([p2_key])
+    p2_job_def = defs.get_implicit_global_asset_job_def()
     assert p2_job_def.asset_layer.asset_graph.asset_check_keys == {
         AssetCheckKey(p2_key, "p2_check1"),
         AssetCheckKey(p2_key, "p2_check2"),

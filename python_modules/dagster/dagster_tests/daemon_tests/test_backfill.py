@@ -1096,7 +1096,7 @@ def test_backfill_with_asset_selection(
 ):
     partition_keys = static_partitions.get_partition_keys()
     asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
-    job_def = the_repo.get_implicit_job_def_for_assets(asset_selection)
+    job_def = the_repo.get_implicit_global_asset_job_def()
     assert job_def
     asset_job_name = job_def.name
     partition_set_name = f"{asset_job_name}_partition_set"

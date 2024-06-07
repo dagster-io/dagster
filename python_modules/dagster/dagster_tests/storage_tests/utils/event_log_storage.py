@@ -281,7 +281,7 @@ def _synthesize_events(
             loggers=_default_loggers(_append_event),
             resources=_default_resources(),
             executor=in_process_executor,
-        ).get_implicit_job_def_for_assets([k for a in ops_fn_or_assets for k in a.keys])
+        ).get_implicit_global_asset_job_def()
         assert job_def
         a_job = job_def
     else:  # op_fn

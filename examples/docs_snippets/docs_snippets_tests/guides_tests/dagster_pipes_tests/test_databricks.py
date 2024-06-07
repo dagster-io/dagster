@@ -35,9 +35,7 @@ if not IS_BUILDKITE:
             script_file=script_file,
             dbfs_path="dbfs:/my_python_script.py",
         ) as script_file:
-            job_def = databricks_asset_defs.get_implicit_job_def_for_assets(
-                [AssetKey("databricks_asset")],
-            )
+            job_def = databricks_asset_defs.get_implicit_global_asset_job_def()
             assert job_def
             result = job_def.execute_in_process()
             assert result.success
