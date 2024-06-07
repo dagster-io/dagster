@@ -2,6 +2,7 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    Dict,
     Iterable,
     Mapping,
     Optional,
@@ -216,26 +217,28 @@ def asset(
             def my_asset(my_upstream_asset: int) -> int:
                 return my_upstream_asset + 1
     """
+    compute_kind = check.opt_str_param(compute_kind, "compute_kind")
+    required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
+    upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
+        deps=deps, non_argument_deps=non_argument_deps
+    )
+    resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
 
-    def create_asset():
-        upstream_asset_deps = _deps_and_non_argument_deps_to_asset_deps(
-            deps=deps, non_argument_deps=non_argument_deps
-        )
-
+    def create_asset() -> Callable[[Callable[..., Any]], AssetsDefinition]:
         return _Asset(
-            name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
+            name=name,
             key_prefix=key_prefix,
-            ins=ins,
-            deps=upstream_asset_deps,
+            ins=ins or {},
+            deps=upstream_asset_deps or [],
             metadata=metadata,
-            tags=validate_tags_strict(tags),
+            tags=tags,
             description=description,
             config_schema=config_schema,
             required_resource_keys=required_resource_keys,
             resource_defs=resource_defs,
             io_manager_key=io_manager_key,
             io_manager_def=io_manager_def,
-            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            compute_kind=compute_kind,
             dagster_type=dagster_type,
             partitions_def=partitions_def,
             op_tags=op_tags,
@@ -297,43 +300,42 @@ def resolve_asset_key_and_name_for_decorator(
 class _Asset:
     def __init__(
         self,
-        name: Optional[str] = None,
-        key_prefix: Optional[CoercibleToAssetKeyPrefix] = None,
-        ins: Optional[Mapping[str, AssetIn]] = None,
-        deps: Optional[Iterable[AssetDep]] = None,
-        metadata: Optional[ArbitraryMetadataMapping] = None,
-        tags: Optional[Mapping[str, str]] = None,
-        description: Optional[str] = None,
-        config_schema: Optional[UserConfigSchema] = None,
-        required_resource_keys: Optional[Set[str]] = None,
-        resource_defs: Optional[Mapping[str, object]] = None,
-        io_manager_key: Optional[str] = None,
-        io_manager_def: Optional[object] = None,
-        compute_kind: Optional[str] = None,
-        dagster_type: Optional[DagsterType] = None,
-        partitions_def: Optional[PartitionsDefinition] = None,
-        op_tags: Optional[Mapping[str, Any]] = None,
-        group_name: Optional[str] = None,
+        *,
+        required_resource_keys: AbstractSet[str],
+        name: Optional[str],
+        key_prefix: Optional[CoercibleToAssetKeyPrefix],
+        ins: Mapping[str, AssetIn],
+        deps: Iterable[AssetDep],
+        metadata: Optional[ArbitraryMetadataMapping],
+        tags: Optional[Mapping[str, str]],
+        description: Optional[str],
+        config_schema: Optional[UserConfigSchema],
+        resource_defs: Dict[str, object],
+        io_manager_key: Optional[str],
+        io_manager_def: Optional[object],
+        compute_kind: Optional[str],
+        dagster_type: Optional[DagsterType],
+        partitions_def: Optional[PartitionsDefinition],
+        op_tags: Optional[Mapping[str, Any]],
+        group_name: Optional[str],
         output_required: bool = True,
-        freshness_policy: Optional[FreshnessPolicy] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
-        backfill_policy: Optional[BackfillPolicy] = None,
-        retry_policy: Optional[RetryPolicy] = None,
-        code_version: Optional[str] = None,
-        key: Optional[CoercibleToAssetKey] = None,
-        check_specs: Optional[Sequence[AssetCheckSpec]] = None,
-        owners: Optional[Sequence[str]] = None,
+        freshness_policy: Optional[FreshnessPolicy],
+        auto_materialize_policy: Optional[AutoMaterializePolicy],
+        backfill_policy: Optional[BackfillPolicy],
+        retry_policy: Optional[RetryPolicy],
+        code_version: Optional[str],
+        key: Optional[CoercibleToAssetKey],
+        check_specs: Optional[Sequence[AssetCheckSpec]],
+        owners: Optional[Sequence[str]],
     ):
         self.name = name
         self.key_prefix = key_prefix
-        self.ins = ins or {}
-        self.deps = deps or []
+        self.ins = ins
+        self.deps = deps
         self.metadata = metadata
         self.tags = tags
         self.description = description
-        self.required_resource_keys = check.opt_set_param(
-            required_resource_keys, "required_resource_keys"
-        )
+        self.required_resource_keys = required_resource_keys
         self.io_manager_key = io_manager_key
         self.io_manager_def = io_manager_def
         self.config_schema = config_schema
@@ -341,7 +343,7 @@ class _Asset:
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.op_tags = op_tags
-        self.resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
+        self.resource_defs = resource_defs
         self.group_name = group_name
         self.output_required = output_required
         self.freshness_policy = freshness_policy
@@ -452,7 +454,7 @@ class _Asset:
                         auto_materialize_policy=self.auto_materialize_policy,
                         backfill_policy=self.backfill_policy,
                         owners=self.owners,
-                        tags=self.tags,
+                        tags=validate_tags_strict(self.tags),
                     )
                 },
                 upstream_asset_deps=self.deps,
