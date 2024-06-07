@@ -1,3 +1,4 @@
+import shlex
 from typing import AbstractSet, Literal, Mapping, Optional, Sequence, Union
 
 from dagster import AssetExecutionContext
@@ -33,6 +34,11 @@ class ShellCommandBlueprint(BlueprintAssetsDefinition):
         return {"pipes_subprocess_client"}
 
     def materialize(self, context: AssetExecutionContext):
+        if isinstance(self.command, str):
+            command = shlex.split(self.command)
+        else:
+            command = self.command
+
         return context.resources.pipes_subprocess_client.run(
-            context=context, command=self.command, env=self.env, cwd=self.cwd, extras=self.extras
+            context=context, command=command, env=self.env, cwd=self.cwd, extras=self.extras
         ).get_results()
