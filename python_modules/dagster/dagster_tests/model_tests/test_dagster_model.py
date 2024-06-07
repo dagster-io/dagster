@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 from dagster._check import CheckError
@@ -288,3 +288,58 @@ def test_didnt_override_new():
         @dagster_model_custom
         class FailedAgain:
             local: Optional[str]
+
+
+def test_empty():
+    @dagster_model
+    class Empty: ...
+
+    assert Empty()
+
+
+def test_optional_arg() -> None:
+    @dagster_model
+    class Opt:
+        maybe: Optional[str] = None
+        always: Optional[str]
+
+    assert Opt(always="set")
+    assert Opt(always="set", maybe="x").maybe == "x"
+
+    @dagster_model(checked=False)
+    class Other:
+        maybe: Optional[str] = None
+        always: Optional[str]
+
+    assert Other(always="set")
+    assert Other(always="set", maybe="x").maybe == "x"
+
+
+def test_dont_share_containers() -> None:
+    @dagster_model
+    class Empties:
+        items: List[str] = []
+        map: Dict[str, str] = {}
+
+    e_1 = Empties()
+    e_2 = Empties()
+    assert e_1.items is not e_2.items
+    assert e_1.map is not e_2.map
+
+
+def test_sentinel():
+    _unset = object()
+
+    @dagster_model
+    class Sample:
+        val: Optional[Any] = _unset
+
+    assert Sample().val is _unset
+    assert Sample(val=None).val is None
+
+    @dagster_model(checked=False)
+    class OtherSample:
+        val: Optional[Any] = _unset
+
+    assert OtherSample().val is _unset
+    assert OtherSample(val=None).val is None

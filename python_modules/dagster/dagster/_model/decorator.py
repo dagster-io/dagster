@@ -7,6 +7,7 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -26,7 +27,9 @@ _MODEL_MARKER_VALUE = object()
 _MODEL_MARKER_FIELD = (
     "__checkrepublic__"  # "I do want to release this as checkrepublic one day" - schrockn
 )
-_GENERATED_NEW = "__checked_new__"
+_CHECKED_NEW = "__checked_new__"
+_DEFAULTS_NEW = "__defaults_new__"
+_DEFAULT_VALUES_KEY = "__dm_defaults__"
 
 
 def _namedtuple_model_transform(
@@ -41,20 +44,41 @@ def _namedtuple_model_transform(
         * bans tuple methods that don't make sense for a model object
         * creates a run time checked __new__  (optional).
     """
-    base = NamedTuple(f"_{cls.__name__}", cls.__annotations__.items())
+    field_set = getattr(cls, "__annotations__", {})
+    defaults = {name: getattr(cls, name) for name in field_set.keys() if hasattr(cls, name)}
+
+    base = NamedTuple(f"_{cls.__name__}", field_set.items())
     nt_new = base.__new__
     if checked:
+        eval_ctx = EvalContext.capture_from_frame(1 + decorator_frames)
+        eval_ctx.local_ns[_DEFAULT_VALUES_KEY] = defaults
         jit_checked_new = JitCheckedNew(
-            cls.__annotations__,
-            EvalContext.capture_from_frame(1 + decorator_frames),
-            1 if with_new else 0,
+            field_set,
+            defaults,
             base,
+            eval_ctx,
+            1 if with_new else 0,
         )
         base.__new__ = jit_checked_new  # type: ignore
+
+    elif defaults:
+        # allow arbitrary ordering of default values since we are kwarg only by generating a __new__ impl
+        eval_ctx = EvalContext({}, {})
+        eval_ctx.local_ns[_DEFAULT_VALUES_KEY] = defaults
+        defaults_new = eval_ctx.compile_fn(
+            _build_defaults_new(field_set, defaults),
+            _DEFAULTS_NEW,
+        )
+        base.__new__ = defaults_new
 
     if with_new and cls.__new__ is object.__new__:
         # verify the alignment since it impacts frame capture
         check.failed(f"Expected __new__ on {cls}, add it or switch from the _with_new decorator.")
+
+    # clear default values
+    for name in field_set.keys():
+        if hasattr(cls, name):
+            delattr(cls, name)
 
     new_type = type(
         cls.__name__,
@@ -66,6 +90,7 @@ def _namedtuple_model_transform(
             _MODEL_MARKER_FIELD: _MODEL_MARKER_VALUE,
             "__annotations__": cls.__annotations__,
             "__nt_new__": nt_new,
+            "__bool__": _true,
         },
     )
 
@@ -189,7 +214,7 @@ def is_dagster_model(obj) -> bool:
 
 
 def has_generated_new(obj) -> bool:
-    return obj.__new__.__name__ == _GENERATED_NEW
+    return obj.__new__.__name__ in (_DEFAULTS_NEW, _CHECKED_NEW)
 
 
 def as_dict(obj) -> Mapping[str, Any]:
@@ -228,25 +253,27 @@ class LegacyNamedTupleMixin(ABC):
 
 
 class JitCheckedNew:
-    """Object that allows us to just-in-time compile a __checked_new__ implementation on first use.
+    """Object that allows us to just-in-time compile a checked __new__ implementation on first use.
     This has two benefits:
         1. Defer processing ForwardRefs until their definitions are in scope.
         2. Avoid up-front cost for unused objects.
     """
 
-    __name__ = _GENERATED_NEW
+    __name__ = _CHECKED_NEW
 
     def __init__(
         self,
-        field_set: dict,
+        field_set: Mapping[str, Type],
+        defaults: Mapping[str, Any],
+        nt_base: Type,
         eval_ctx: EvalContext,
         new_frames: int,
-        nt_base: Type,
     ):
         self._field_set = field_set
+        self._defaults = defaults
+        self._nt_base = nt_base
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
-        self._nt_base = nt_base
 
     def __call__(self, cls, **kwargs):
         # update the context with callsite locals/globals to resolve
@@ -260,13 +287,16 @@ class JitCheckedNew:
         # jit that shit
         self._nt_base.__new__ = self._eval_ctx.compile_fn(
             self._build_checked_new_str(),
-            _GENERATED_NEW,
+            _CHECKED_NEW,
         )
 
         return self._nt_base.__new__(cls, **kwargs)
 
     def _build_checked_new_str(self) -> str:
-        kw_args = ", ".join(self._field_set.keys())
+        # field_set = getattr(self._cls, "__annotations__", {})
+
+        kw_args_str, set_calls_str = _build_args_and_sets(self._field_set, self._defaults)
+
         check_calls = []
         for name, ttype in self._field_set.items():
             call_str = build_check_call_str(
@@ -276,13 +306,63 @@ class JitCheckedNew:
             )
             check_calls.append(f"{name}={call_str}")
 
-        check_call_block = "        ,\n".join(check_calls)
+        check_call_block = ",\n        ".join(check_calls)
         return f"""
-def __checked_new__(cls, {kw_args}):
+def __checked_new__(cls{kw_args_str}):
+    {set_calls_str}
     return cls.__nt_new__(
-        cls,{check_call_block}
+        cls,
+        {check_call_block}
     )
 """
+
+
+def _build_defaults_new(field_set: Mapping[str, Type], defaults: Mapping[str, Any]) -> str:
+    kw_args_str, set_calls_str = _build_args_and_sets(field_set, defaults)
+    assign_str = ",\n        ".join([f"{name}={name}" for name in field_set.keys()])
+    return f"""
+def __defaults_new__(cls{kw_args_str}):
+    {set_calls_str}
+    return cls.__nt_new__(
+        cls,
+        {assign_str}
+    )
+    """
+
+
+def _build_args_and_sets(
+    field_set: Mapping[str, Type],
+    defaults: Mapping[str, Any],
+) -> Tuple[str, str]:
+    kw_args = []
+    set_calls = []
+    for arg in field_set.keys():
+        if arg in defaults:
+            default = defaults[arg]
+            if default is None:
+                kw_args.append(f"{arg} = None")
+            # dont share class instance of default empty containers
+            elif default == []:
+                kw_args.append(f"{arg} = None")
+                set_calls.append(f"{arg} = {arg} if {arg} is not None else []")
+            elif default == {}:
+                kw_args.append(f"{arg} = None")
+                set_calls.append(f"{arg} = {arg} if {arg} is not None else {'{}'}")
+            # fallback to direct reference if unknown
+            else:
+                kw_args.append(f"{arg} = {_DEFAULT_VALUES_KEY}['{arg}']")
+        else:
+            kw_args.append(arg)
+
+    kw_args_str = ""
+    if kw_args:
+        kw_args_str = f", *, {', '.join(kw_args)}"
+
+    set_calls_str = ""
+    if set_calls:
+        set_calls_str = "\n    ".join(set_calls)
+
+    return kw_args_str, set_calls_str
 
 
 def _banned_iter(*args, **kwargs):
@@ -291,3 +371,7 @@ def _banned_iter(*args, **kwargs):
 
 def _banned_idx(*args, **kwargs):
     raise Exception("Index access is not allowed on `@dagster_model`s.")
+
+
+def _true(_):
+    return True
