@@ -4,7 +4,6 @@ from collections import defaultdict
 from typing import List, NamedTuple, Optional
 
 import mock
-import pendulum
 import pytest
 from dagster import (
     AssetKey,
@@ -25,8 +24,8 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
-from dagster._core.test_utils import create_test_asset_job
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._core.test_utils import create_test_asset_job, freeze_time
+from dagster._seven import create_utc_datetime, get_current_datetime_in_utc
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 
@@ -265,9 +264,7 @@ scenarios = {
 
 @pytest.mark.parametrize("scenario", list(scenarios.values()), ids=list(scenarios.keys()))
 def test_partitioned_data_time(scenario):
-    with DagsterInstance.ephemeral() as instance, pendulum_freeze_time(
-        create_pendulum_time(2023, 1, 7)
-    ):
+    with DagsterInstance.ephemeral() as instance, freeze_time(create_utc_datetime(2023, 1, 7)):
         _materialize_partitions(instance, scenario.before_partitions)
         record = _get_record(instance=instance)
         _materialize_partitions(instance, scenario.after_partitions)
@@ -456,5 +453,5 @@ def test_non_volatile_data_time(timeline):
             action(
                 instance=instance,
                 times_by_key=times_by_key,
-                evaluation_time=pendulum.now("UTC"),
+                evaluation_time=get_current_datetime_in_utc(),
             )

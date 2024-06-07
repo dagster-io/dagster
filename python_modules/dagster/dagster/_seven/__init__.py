@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
+from dateutil import parser
 from typing_extensions import TypeGuard
 
 from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
@@ -191,6 +192,16 @@ def subtract_fixed_time(
             hours=hours,
         )
     ).astimezone(dt.tzinfo)
+
+
+def parse_with_timezone(datetime_str) -> datetime:
+    """Like dateutil.parser.parse, but always includes a timezone."""
+    dt = parser.parse(datetime_str)
+
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    return dt
 
 
 def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
