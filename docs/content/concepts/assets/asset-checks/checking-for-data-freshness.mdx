@@ -40,7 +40,7 @@ Before continuing, you should be familiar with:
 
 - [Asset definitions](/concepts/assets/software-defined-assets)
 - [Asset checks](/concepts/assets/asset-checks)
-- [Schedules](/concepts/partitions-schedules-sensors/schedules) and/or [sensors](/concepts/partitions-schedules-sensors/sensors)
+- [Schedules](/concepts/automation/schedules) and/or [sensors](/concepts/partitions-schedules-sensors/sensors)
 - [Alerts](/dagster-plus/managing-deployments/alerts) (Dagster+ only)
 
 ---
@@ -91,7 +91,7 @@ def source_tables(snowflake: SnowflakeResource):
 
 ### Step 2: Schedule the observations
 
-Next, we'll define a [schedule](/concepts/partitions-schedules-sensors/schedules) that regularly executes the function in the `source_tables` observable source asset:
+Next, we'll define a [schedule](/concepts/automation/schedules) that regularly executes the function in the `source_tables` observable source asset:
 
 ```python file=/concepts/assets/asset_checks/source_data_freshness_in_pieces.py startafter=start_schedule_marker endbefore=end_schedule_marker
 from dagster import AssetSelection, ScheduleDefinition, define_asset_job
@@ -280,7 +280,7 @@ asset1_freshness_checks = build_last_update_freshness_checks(
 
 ### Step 2: Create a sensor to execute the check
 
-A [schedule](/concepts/partitions-schedules-sensors/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) is required to ensure the freshness check executes. If the check only runs after the asset has been materialized, the check won't be able to detect the times materialization fails.
+A [schedule](/concepts/automation/schedules) or [sensor](/concepts/partitions-schedules-sensors/sensors) is required to ensure the freshness check executes. If the check only runs after the asset has been materialized, the check won't be able to detect the times materialization fails.
 
 In this example, we'll use <PyObject object="build_sensor_for_freshness_checks" /> to create a sensor to automatically run the check. Based on the check's parameters and last run time, the sensor will run the check when enough time has elapsed that the asset might fail the check:
 
@@ -396,7 +396,7 @@ To alert on overdue assets, create an alert policy with the following settings:
   ></ArticleListItem>
   <ArticleListItem
     title="Schedules"
-    href="/concepts/partitions-schedules-sensors/schedules"
+    href="/concepts/automation/schedules"
   ></ArticleListItem>
   <ArticleListItem
     title="Sensors"

@@ -331,7 +331,7 @@ Materializing an asset from the UI will also execute any checks defined for that
 
 ### Via sensors and schedules
 
-To define jobs that execute sets of assets and checks, you can use <PyObject object="define_asset_job" /> and then trigger the jobs via [sensors](/concepts/partitions-schedules-sensors/sensors) or [schedules](/concepts/partitions-schedules-sensors/schedules). By default, checks are included with the assets they check. You can also define jobs that include only checks, or only assets.
+To define jobs that execute sets of assets and checks, you can use <PyObject object="define_asset_job" /> and then trigger the jobs via [sensors](/concepts/partitions-schedules-sensors/sensors) or [schedules](/concepts/automation/schedules). By default, checks are included with the assets they check. You can also define jobs that include only checks, or only assets.
 
 ```python file=/concepts/assets/asset_checks/jobs.py
 from dagster import (
@@ -434,7 +434,7 @@ In Dagster+, you can set up alerts to notify you when assets checks fail. To ale
   ></ArticleListItem>
   <ArticleListItem
     title="Schedules"
-    href="/concepts/partitions-schedules-sensors/schedules"
+    href="/concepts/automation/schedules"
   ></ArticleListItem>
   <ArticleListItem
     title="Sensors"

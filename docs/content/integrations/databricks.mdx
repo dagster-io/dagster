@@ -126,7 +126,7 @@ materialize_databricks_table = define_asset_job(
 
 ## Step 3: Schedule your Databricks computation
 
-Now that your Databricks API calls are modeled within Dagster, you can [schedule](/concepts/partitions-schedules-sensors/schedules) them to run regularly.
+Now that your Databricks API calls are modeled within Dagster, you can [schedule](/concepts/automation/schedules) them to run regularly.
 
 In the example below, we schedule the `materialize_databricks_table` and `my_databricks_job` jobs to run daily:
 
