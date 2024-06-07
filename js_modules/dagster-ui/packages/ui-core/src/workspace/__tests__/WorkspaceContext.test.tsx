@@ -194,6 +194,7 @@ describe('WorkspaceContext', () => {
     });
 
     await act(async () => {
+      // Exhaust any remaining tasks so they don't affect the next test.
       await jest.runAllTicks();
     });
   });
@@ -257,6 +258,7 @@ describe('WorkspaceContext', () => {
     });
 
     await act(async () => {
+      // Exhaust any remaining tasks so they don't affect the next test.
       await jest.runAllTicks();
     });
   });
@@ -306,8 +308,7 @@ describe('WorkspaceContext', () => {
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
     });
-    // We queries for code location statuses and we see we are not up to date so we call the location queries
-    // but their data hasn't returned yet so the current data is still equal to the cached data
+    // We queries for code location statuses and we see we are not up to date yet so the current data is still equal to the cached data
     expect(mockCbs[0]).toHaveBeenCalled();
     expect(mockCbs[1]).not.toHaveBeenCalled();
     expect(mockCbs[2]).not.toHaveBeenCalled();
@@ -324,7 +325,7 @@ describe('WorkspaceContext', () => {
       [location3.name]: location3,
     });
 
-    // Wait for the location queries to return
+    // Run the location queries and wait for the location queries to return
     await act(async () => {
       await jest.runOnlyPendingTimersAsync();
     });
@@ -337,6 +338,7 @@ describe('WorkspaceContext', () => {
     expect(updatedLocation1).not.toEqual(location1);
 
     await act(async () => {
+      // Exhaust any remaining tasks so they don't affect the next test.
       await jest.runAllTicks();
     });
   });
