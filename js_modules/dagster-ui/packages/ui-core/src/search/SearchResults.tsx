@@ -18,6 +18,8 @@ import {
   SearchResultType,
   isAssetFilterSearchResultType,
 } from './types';
+import {isCanonicalComputeKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
+import {KNOWN_TAGS, TagIcon} from '../graph/OpTags';
 
 const iconForType = (type: SearchResultType | AssetFilterSearchResultType): IconName => {
   switch (type) {
@@ -121,6 +123,47 @@ function buildSearchLabel(result: Fuse.FuseResult<SearchResult>): JSX.Element[] 
   return labelComponents;
 }
 
+function buildSearchIcons(item: SearchResult, isHighlight: boolean): JSX.Element[] {
+  const icons = [];
+
+  if (item.type === SearchResultType.Asset) {
+    const computeKindTag = item.tags?.find(isCanonicalComputeKindTag);
+    if (computeKindTag && KNOWN_TAGS[computeKindTag.value]) {
+      const computeKindSearchIcon = <TagIcon label={computeKindTag.value} />;
+
+      icons.push(computeKindSearchIcon);
+    }
+
+    const storageKindTag = item.tags?.find(isCanonicalStorageKindTag);
+    if (storageKindTag && KNOWN_TAGS[storageKindTag.value]) {
+      const storageKindSearchIcon = <TagIcon label={storageKindTag.value} />;
+
+      icons.push(storageKindSearchIcon);
+    }
+  }
+
+  if (item.type === AssetFilterSearchResultType.ComputeKind) {
+    if (KNOWN_TAGS[item.label]) {
+      const computeKindSearchIcon = <TagIcon label={item.label} />;
+
+      icons.push(computeKindSearchIcon);
+    }
+  }
+
+  if (icons.length === 0) {
+    const defaultSearchIcon = (
+      <Icon
+        name={iconForType(item.type)}
+        color={isHighlight ? Colors.textDefault() : Colors.textLight()}
+      />
+    );
+
+    icons.push(defaultSearchIcon);
+  }
+
+  return icons;
+}
+
 export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}: ItemProps) => {
   const {item} = result;
   const element = React.useRef<HTMLLIElement>(null);
@@ -152,11 +195,8 @@ export const SearchResultItem = React.memo(({isHighlight, onClickResult, result}
             $interactive={false}
             $textColor={Colors.textDefault()}
           >
-            <Box flex={{gap: 4}}>
-              <Icon
-                name={iconForType(item.type)}
-                color={isHighlight ? Colors.textDefault() : Colors.textLight()}
-              />
+            <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+              {buildSearchIcons(item, isHighlight)}
               {isAssetFilterSearchResultType(item.type) && (
                 <Caption>{assetFilterPrefixString(item.type)}:</Caption>
               )}
