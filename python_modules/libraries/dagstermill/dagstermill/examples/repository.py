@@ -570,6 +570,7 @@ custom_io_mgr_key_asset = dagstermill.define_dagstermill_asset(
     name="custom_io_mgr_key",
     notebook_path=nb_test_path("hello_world"),
     io_manager_key="my_custom_io_manager",
+    asset_tags={"foo": "bar"},
 )
 
 yield_event_asset = dagstermill.define_dagstermill_asset(
