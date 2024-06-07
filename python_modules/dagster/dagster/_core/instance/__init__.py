@@ -3228,3 +3228,6 @@ class DagsterInstance(DynamicPartitionsStore):
             if self.event_log_storage.supports_asset_checks
             else AssetCheckInstanceSupport.NEEDS_MIGRATION
         )
+
+    def backfill_log_storage_enabled(self) -> bool:
+        return False

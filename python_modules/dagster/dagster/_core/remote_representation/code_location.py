@@ -1,4 +1,3 @@
-import datetime
 import sys
 import threading
 from abc import abstractmethod
@@ -24,6 +23,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
@@ -212,7 +212,7 @@ class CodeLocation(AbstractContextManager):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time: datetime.datetime,
+        scheduled_execution_time: Optional[TimestampWithTimezone],
         log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         pass
@@ -506,7 +506,7 @@ class InProcessCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time: datetime.datetime,  # actually a pendulum datetime
+        scheduled_execution_time: Optional[TimestampWithTimezone],
         log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
@@ -519,8 +519,12 @@ class InProcessCodeLocation(CodeLocation):
             self._get_repo_def(repository_handle.repository_name),
             instance_ref=instance.get_ref(),
             schedule_name=schedule_name,
-            scheduled_execution_timestamp=scheduled_execution_time.timestamp(),
-            scheduled_execution_timezone=scheduled_execution_time.timezone.name,  # type: ignore
+            scheduled_execution_timestamp=(
+                scheduled_execution_time.timestamp if scheduled_execution_time else None
+            ),
+            scheduled_execution_timezone=(
+                scheduled_execution_time.timezone if scheduled_execution_time else None
+            ),
             log_key=log_key,
         )
         if isinstance(result, ExternalScheduleExecutionErrorData):
@@ -889,13 +893,15 @@ class GrpcServerCodeLocation(CodeLocation):
         instance: DagsterInstance,
         repository_handle: RepositoryHandle,
         schedule_name: str,
-        scheduled_execution_time: Optional[datetime.datetime],
+        scheduled_execution_time: Optional[TimestampWithTimezone],
         log_key: Optional[Sequence[str]],
     ) -> "ScheduleExecutionData":
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
-        check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
+        check.opt_inst_param(
+            scheduled_execution_time, "scheduled_execution_time", TimestampWithTimezone
+        )
         check.opt_list_param(log_key, "log_key", of_type=str)
 
         return sync_get_external_schedule_execution_data_grpc(

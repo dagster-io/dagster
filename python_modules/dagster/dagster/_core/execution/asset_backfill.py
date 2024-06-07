@@ -39,10 +39,8 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import PartitionsByAssetSelector
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import (
-    DatetimeFieldSerializer,
-    TimeWindowPartitionsSubset,
-)
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsSubset
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import (
     DagsterAssetBackfillDataLoadError,
     DagsterBackfillFailedError,
@@ -66,7 +64,6 @@ from dagster._core.storage.tags import (
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
-from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .submit_asset_runs import submit_asset_runs_in_chunks
@@ -131,7 +128,7 @@ class UnpartitionedAssetBackfillStatus(
         )
 
 
-@whitelist_for_serdes(field_serializers={"backfill_start_time": DatetimeFieldSerializer})
+@whitelist_for_serdes
 class AssetBackfillData(NamedTuple):
     """Has custom serialization instead of standard Dagster NamedTuple serialization because the
     asset graph is required to build the AssetGraphSubset objects.
@@ -143,7 +140,15 @@ class AssetBackfillData(NamedTuple):
     materialized_subset: AssetGraphSubset
     requested_subset: AssetGraphSubset
     failed_and_downstream_subset: AssetGraphSubset
-    backfill_start_time: datetime
+    backfill_start_time: TimestampWithTimezone
+
+    @property
+    def backfill_start_timestamp(self) -> float:
+        return self.backfill_start_time.timestamp
+
+    @property
+    def backfill_start_datetime(self) -> datetime:
+        return pendulum.from_timestamp(self.backfill_start_time.timestamp, "UTC")
 
     def replace_requested_subset(self, requested_subset: AssetGraphSubset) -> "AssetBackfillData":
         return AssetBackfillData(
@@ -395,7 +400,7 @@ class AssetBackfillData(NamedTuple):
     def empty(
         cls,
         target_subset: AssetGraphSubset,
-        backfill_start_time: datetime,
+        backfill_start_timestamp: float,
         dynamic_partitions_store: DynamicPartitionsStore,
     ) -> "AssetBackfillData":
         return cls(
@@ -405,7 +410,7 @@ class AssetBackfillData(NamedTuple):
             materialized_subset=AssetGraphSubset(),
             failed_and_downstream_subset=AssetGraphSubset(),
             latest_storage_id=None,
-            backfill_start_time=backfill_start_time,
+            backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
         )
 
     @classmethod
@@ -436,7 +441,7 @@ class AssetBackfillData(NamedTuple):
                 storage_dict["serialized_failed_subset"], asset_graph
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
-            backfill_start_time=utc_datetime_from_timestamp(backfill_start_timestamp),
+            backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
         )
 
     @classmethod
@@ -444,7 +449,7 @@ class AssetBackfillData(NamedTuple):
         cls,
         asset_graph: BaseAssetGraph,
         dynamic_partitions_store: DynamicPartitionsStore,
-        backfill_start_time: datetime,
+        backfill_start_timestamp: float,
         partitions_by_assets: Sequence[PartitionsByAssetSelector],
     ) -> "AssetBackfillData":
         """Create an AssetBackfillData object from a list of PartitionsByAssetSelector objects.
@@ -489,7 +494,7 @@ class AssetBackfillData(NamedTuple):
             partitions_subsets_by_asset_key=partitions_subsets_by_asset_key,
             non_partitioned_asset_keys=non_partitioned_asset_keys,
         )
-        return cls.empty(target_subset, backfill_start_time, dynamic_partitions_store)
+        return cls.empty(target_subset, backfill_start_timestamp, dynamic_partitions_store)
 
     @classmethod
     def from_asset_partitions(
@@ -498,7 +503,7 @@ class AssetBackfillData(NamedTuple):
         partition_names: Optional[Sequence[str]],
         asset_selection: Sequence[AssetKey],
         dynamic_partitions_store: DynamicPartitionsStore,
-        backfill_start_time: datetime,
+        backfill_start_timestamp: float,
         all_partitions: bool,
     ) -> "AssetBackfillData":
         check.invariant(
@@ -506,9 +511,14 @@ class AssetBackfillData(NamedTuple):
             "Can't provide both a set of partitions and all_partitions=True",
         )
 
+        backfill_start_datetime = pendulum.from_timestamp(backfill_start_timestamp, "UTC")
+
         if all_partitions:
             target_subset = AssetGraphSubset.from_asset_keys(
-                asset_selection, asset_graph, dynamic_partitions_store, backfill_start_time
+                asset_selection,
+                asset_graph,
+                dynamic_partitions_store,
+                backfill_start_datetime,
             )
         elif partition_names is not None:
             partitioned_asset_keys = {
@@ -550,12 +560,12 @@ class AssetBackfillData(NamedTuple):
                     AssetGraphSubset(
                         partitions_subsets_by_asset_key={root_asset_key: root_partitions_subset},
                     ),
-                    current_time=backfill_start_time,
+                    current_time=backfill_start_datetime,
                 )
         else:
             check.failed("Either partition_names must not be None or all_partitions must be True")
 
-        return cls.empty(target_subset, backfill_start_time, dynamic_partitions_store)
+        return cls.empty(target_subset, backfill_start_timestamp, dynamic_partitions_store)
 
     def serialize(
         self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: BaseAssetGraph
@@ -592,7 +602,7 @@ def create_asset_backfill_data_from_asset_partitions(
         asset_selection=asset_selection,
         dynamic_partitions_store=dynamic_partitions_store,
         all_partitions=False,
-        backfill_start_time=utc_datetime_from_timestamp(backfill_timestamp),
+        backfill_start_timestamp=backfill_timestamp,
     )
 
 
@@ -895,9 +905,9 @@ def execute_asset_backfill_iteration(
     if not backfill.is_asset_backfill:
         check.failed("Backfill must be an asset backfill")
 
-    backfill_start_time = pendulum.from_timestamp(backfill.backfill_timestamp, "UTC")
+    backfill_start_datetime = pendulum.from_timestamp(backfill.backfill_timestamp, "UTC")
     instance_queryer = CachingInstanceQueryer(
-        instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_time
+        instance=instance, asset_graph=asset_graph, evaluation_time=backfill_start_datetime
     )
 
     previous_asset_backfill_data = _check_validity_and_deserialize_asset_backfill_data(
@@ -918,7 +928,7 @@ def execute_asset_backfill_iteration(
             instance_queryer=instance_queryer,
             asset_graph=asset_graph,
             run_tags=backfill.tags,
-            backfill_start_time=backfill_start_time,
+            backfill_start_timestamp=backfill.backfill_timestamp,
             logger=logger,
         ):
             yield None
@@ -1003,7 +1013,7 @@ def execute_asset_backfill_iteration(
             previous_asset_backfill_data,
             instance_queryer,
             asset_graph,
-            backfill_start_time,
+            backfill.backfill_timestamp,
         ):
             yield None
 
@@ -1061,7 +1071,7 @@ def get_canceling_asset_backfill_iteration_data(
     asset_backfill_data: AssetBackfillData,
     instance_queryer: CachingInstanceQueryer,
     asset_graph: RemoteAssetGraph,
-    backfill_start_time: datetime,
+    backfill_start_timestamp: float,
 ) -> Iterable[Optional[AssetBackfillData]]:
     """For asset backfills in the "canceling" state, fetch the asset backfill data with the updated
     materialized and failed subsets.
@@ -1089,7 +1099,7 @@ def get_canceling_asset_backfill_iteration_data(
         failed_and_downstream_subset=asset_backfill_data.failed_and_downstream_subset
         | failed_subset,
         requested_subset=asset_backfill_data.requested_subset,
-        backfill_start_time=backfill_start_time,
+        backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
     )
 
     yield updated_backfill_data
@@ -1149,7 +1159,7 @@ def _get_failed_and_downstream_asset_partitions(
     asset_backfill_data: AssetBackfillData,
     asset_graph: RemoteAssetGraph,
     instance_queryer: CachingInstanceQueryer,
-    backfill_start_time: datetime,
+    backfill_start_timestamp: float,
 ) -> AssetGraphSubset:
     failed_and_downstream_subset = AssetGraphSubset.from_asset_partition_set(
         asset_graph.bfs_filter_asset_partitions(
@@ -1162,7 +1172,7 @@ def _get_failed_and_downstream_asset_partitions(
                 "",
             ),
             _get_failed_asset_partitions(instance_queryer, backfill_id, asset_graph),
-            evaluation_time=backfill_start_time,
+            evaluation_time=pendulum.from_timestamp(backfill_start_timestamp, "UTC"),
         )[0],
         asset_graph,
     )
@@ -1189,7 +1199,7 @@ def execute_asset_backfill_iteration_inner(
     asset_graph: RemoteAssetGraph,
     instance_queryer: CachingInstanceQueryer,
     run_tags: Mapping[str, str],
-    backfill_start_time: datetime,
+    backfill_start_timestamp: float,
     logger: logging.Logger,
 ) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
@@ -1257,10 +1267,16 @@ def execute_asset_backfill_iteration_inner(
         yield None
 
         failed_and_downstream_subset = _get_failed_and_downstream_asset_partitions(
-            backfill_id, asset_backfill_data, asset_graph, instance_queryer, backfill_start_time
+            backfill_id,
+            asset_backfill_data,
+            asset_graph,
+            instance_queryer,
+            backfill_start_timestamp,
         )
 
         yield None
+
+    backfill_start_datetime = pendulum.from_timestamp(backfill_start_timestamp, "UTC")
 
     asset_partitions_to_request, not_requested_and_reasons = (
         asset_graph.bfs_filter_asset_partitions(
@@ -1274,10 +1290,10 @@ def execute_asset_backfill_iteration_inner(
                 target_subset=asset_backfill_data.target_subset,
                 failed_and_downstream_subset=failed_and_downstream_subset,
                 dynamic_partitions_store=instance_queryer,
-                current_time=backfill_start_time,
+                current_time=backfill_start_datetime,
             ),
             initial_asset_partitions=initial_candidates,
-            evaluation_time=backfill_start_time,
+            evaluation_time=backfill_start_datetime,
         )
     )
 
@@ -1342,7 +1358,7 @@ def execute_asset_backfill_iteration_inner(
         failed_and_downstream_subset=failed_and_downstream_subset,
         requested_subset=asset_backfill_data.requested_subset
         | AssetGraphSubset.from_asset_partition_set(set(asset_partitions_to_request), asset_graph),
-        backfill_start_time=backfill_start_time,
+        backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
     )
     yield AssetBackfillIterationResult(run_requests, updated_asset_backfill_data)
 

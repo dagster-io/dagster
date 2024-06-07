@@ -3065,6 +3065,7 @@ export type PartitionBackfill = {
   id: Scalars['String']['output'];
   isAssetBackfill: Scalars['Boolean']['output'];
   isValidSerialization: Scalars['Boolean']['output'];
+  logEvents: InstigationEventConnection;
   numCancelable: Scalars['Int']['output'];
   numPartitions: Maybe<Scalars['Int']['output']>;
   partitionNames: Maybe<Array<Scalars['String']['output']>>;
@@ -3081,6 +3082,10 @@ export type PartitionBackfill = {
   title: Maybe<Scalars['String']['output']>;
   unfinishedRuns: Array<Run>;
   user: Maybe<Scalars['String']['output']>;
+};
+
+export type PartitionBackfillLogEventsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type PartitionBackfillPartitionsTargetedForAssetKeyArgs = {
@@ -10644,6 +10649,12 @@ export const buildPartitionBackfill = (
       overrides && overrides.hasOwnProperty('isValidSerialization')
         ? overrides.isValidSerialization!
         : false,
+    logEvents:
+      overrides && overrides.hasOwnProperty('logEvents')
+        ? overrides.logEvents!
+        : relationshipsToOmit.has('InstigationEventConnection')
+        ? ({} as InstigationEventConnection)
+        : buildInstigationEventConnection({}, relationshipsToOmit),
     numCancelable:
       overrides && overrides.hasOwnProperty('numCancelable') ? overrides.numCancelable! : 53,
     numPartitions:

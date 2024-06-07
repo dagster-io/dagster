@@ -17,7 +17,7 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
-    TimeWindow,
+    PersistedTimeWindow,
     TimeWindowPartitionsSubset,
 )
 from dagster._serdes import deserialize_value, serialize_value
@@ -104,10 +104,10 @@ def test_operations(
             DailyPartitionsDefinition("2020-01-01"),
             num_partitions=2,
             included_time_windows=[
-                TimeWindow(
+                PersistedTimeWindow(
                     start=create_pendulum_time(2020, 1, 1), end=create_pendulum_time(2020, 1, 2)
                 ),
-                TimeWindow(
+                PersistedTimeWindow(
                     start=create_pendulum_time(2020, 1, 4), end=create_pendulum_time(2020, 1, 5)
                 ),
             ],

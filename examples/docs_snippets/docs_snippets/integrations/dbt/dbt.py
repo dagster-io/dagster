@@ -5,6 +5,7 @@ MANIFEST_PATH = ""
 
 def scope_compile_dbt_manifest(manifest):
     # start_compile_dbt_manifest
+    """✅ This is recommended!"""
     import os
     from pathlib import Path
 
@@ -27,6 +28,29 @@ def scope_compile_dbt_manifest(manifest):
     else:
         dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
     # end_compile_dbt_manifest
+
+
+def scope_troubleshooting_dbt_manifest(manifest):
+    # start_troubleshooting_dbt_manifest
+    """❌ This is not recommended."""
+    import os
+    from pathlib import Path
+
+    from dagster_dbt import DbtCliResource
+
+    dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+
+    # A manifest will always be created at runtime.
+    dbt_manifest_path = (
+        dbt.cli(
+            ["--quiet", "parse"],
+            target_path=Path("target"),
+        )
+        .wait()
+        .target_path.joinpath("manifest.json")
+    )
+    # end_troubleshooting_dbt_manifest
 
 
 def scope_schedule_assets_dbt_only(manifest):

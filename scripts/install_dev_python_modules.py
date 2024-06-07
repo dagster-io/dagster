@@ -91,6 +91,7 @@ def main(
         "-e python_modules/libraries/dagster-deltalake-polars",
         "-e helm/dagster/schema[test]",
         "-e .buildkite/dagster-buildkite",
+        "-e examples/experimental/dagster-blueprints",
     ]
 
     if sys.version_info <= (3, 12):

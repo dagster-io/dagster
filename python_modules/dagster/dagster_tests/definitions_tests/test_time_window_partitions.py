@@ -1,7 +1,7 @@
 import pickle
 import random
 from datetime import datetime
-from typing import NamedTuple, Optional, Sequence, cast
+from typing import Optional, Sequence, cast
 
 import pendulum.parser
 import pytest
@@ -21,14 +21,14 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
-    DatetimeFieldSerializer,
     PartitionKeysTimeWindowPartitionsSubset,
+    PersistedTimeWindow,
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
 )
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._serdes import deserialize_value, serialize_value, whitelist_for_serdes
+from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
@@ -37,6 +37,13 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
+        cast(datetime, pendulum.parser.parse(start)),
+        cast(datetime, pendulum.parser.parse(end)),
+    )
+
+
+def persisted_time_window(start: str, end: str) -> PersistedTimeWindow:
+    return PersistedTimeWindow(
         cast(datetime, pendulum.parser.parse(start)),
         cast(datetime, pendulum.parser.parse(end)),
     )
@@ -1514,21 +1521,6 @@ def test_time_window_partitions_def_serialization(partitions_def):
     assert deserialized.start.tzinfo == time_window_partitions_def.start.tzinfo
 
 
-def test_datetime_field_serializer():
-    @whitelist_for_serdes(field_serializers={"dt": DatetimeFieldSerializer})
-    class Foo(NamedTuple):
-        dt: datetime
-
-    utc_datetime_with_no_timezone = Foo(dt=datetime.now())
-    with pytest.raises(CheckError, match="No timezone set"):
-        serialize_value(utc_datetime_with_no_timezone)
-
-    assert (
-        deserialize_value(serialize_value(Foo(dt=pendulum.now("US/Pacific")))).dt.timezone_name
-        == "US/Pacific"
-    )
-
-
 def test_cannot_pickle_time_window_partitions_def():
     import datetime
 
@@ -1569,74 +1561,74 @@ def test_get_partition_keys_not_in_subset_empty_subset() -> None:
     "subtractor,subtractee,result",
     [
         (  # Subtractee earlier than subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2019-01-02", "2019-01-03"),
-            [time_window("2019-02-27", "2025-04-01")],
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-01-02", "2019-01-03"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
         ),
         (  # Subtractee later than subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2025-05-01", "2026-01-01"),
-            [time_window("2019-02-27", "2025-04-01")],
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2025-05-01", "2026-01-01"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
         ),
         (  # Subtractee <= subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2019-01-02", "2019-02-27"),
-            [time_window("2019-02-27", "2025-04-01")],
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-01-02", "2019-02-27"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
         ),
         (  # Subtractee >= subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2025-04-01", "2026-01-01"),
-            [time_window("2019-02-27", "2025-04-01")],
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2025-04-01", "2026-01-01"),
+            [persisted_time_window("2019-02-27", "2025-04-01")],
         ),
         (  # Subtractee == subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
             [],
         ),
         (  # Subtractee fully covers subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2018-02-27", "2026-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2018-02-27", "2026-04-01"),
             [],
         ),
         (  # Subtractee overlaps left part of subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2019-02-27", "2024-01-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2019-02-27", "2024-01-01"),
             [
-                time_window("2024-01-01", "2025-04-01"),
+                persisted_time_window("2024-01-01", "2025-04-01"),
             ],
         ),
         (  # Subtractee overlaps left part of subtractor, extends earlier
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2018-02-27", "2024-01-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2018-02-27", "2024-01-01"),
             [
-                time_window("2024-01-01", "2025-04-01"),
+                persisted_time_window("2024-01-01", "2025-04-01"),
             ],
         ),
         (  # Subtractee overlaps right part of subtractor
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2021-02-27", "2025-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2021-02-27", "2025-04-01"),
             [
-                time_window("2019-02-27", "2021-02-27"),
+                persisted_time_window("2019-02-27", "2021-02-27"),
             ],
         ),
         (  # Subtractee overlaps right part of subtractor, extends later
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2021-02-27", "2026-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2021-02-27", "2026-04-01"),
             [
-                time_window("2019-02-27", "2021-02-27"),
+                persisted_time_window("2019-02-27", "2021-02-27"),
             ],
         ),
         (  # Subtractee breaks subtractor into two
-            time_window("2019-02-27", "2025-04-01"),
-            time_window("2021-02-27", "2023-04-01"),
+            persisted_time_window("2019-02-27", "2025-04-01"),
+            persisted_time_window("2021-02-27", "2023-04-01"),
             [
-                time_window("2019-02-27", "2021-02-27"),
-                time_window("2023-04-01", "2025-04-01"),
+                persisted_time_window("2019-02-27", "2021-02-27"),
+                persisted_time_window("2023-04-01", "2025-04-01"),
             ],
         ),
     ],
 )
-def test_time_window_subtract(subtractor, subtractee, result):
+def test_persisted_time_window_subtract(subtractor, subtractee, result):
     assert subtractor.subtract(subtractee) == result
 
 
@@ -1645,35 +1637,35 @@ def test_time_window_subtract(subtractor, subtractee, result):
     [
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
             [
                 # does nothing, is just happy to be here
-                time_window("2017-01-01", "2018-01-01"),
+                persisted_time_window("2017-01-01", "2018-01-01"),
                 # fully consumes the first two windows and part of the third window
-                time_window("2019-01-01", "2023-12-31"),
+                persisted_time_window("2019-01-01", "2023-12-31"),
                 # also does nothing, too late
-                time_window("2025-01-01", "2026-01-01"),
+                persisted_time_window("2025-01-01", "2026-01-01"),
             ],
-            [time_window("2023-12-31", "2024-12-31")],
+            [persisted_time_window("2023-12-31", "2024-12-31")],
         ),
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
             ],
             [  # splits the first window in two
-                time_window("2019-06-01", "2019-07-01"),
+                persisted_time_window("2019-06-01", "2019-07-01"),
                 # splits the newly split second window into two as well
-                time_window("2019-10-01", "2019-11-01"),
+                persisted_time_window("2019-10-01", "2019-11-01"),
             ],
             [
-                time_window("2019-02-27", "2019-06-01"),
-                time_window("2019-07-01", "2019-10-01"),
-                time_window("2019-11-01", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2019-02-27", "2019-06-01"),
+                persisted_time_window("2019-07-01", "2019-10-01"),
+                persisted_time_window("2019-11-01", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
             ],
         ),
         (
@@ -1683,27 +1675,27 @@ def test_time_window_subtract(subtractor, subtractee, result):
         ),
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
             [],  # subtracting nothing leaves you with the same thing
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
         ),
         (
             [  # subtracting yourself from yourself leaves you with nothing
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
             [],
         ),
@@ -1730,42 +1722,42 @@ def test_asset_subset_subtract(subtractor, subtractee, result):
     [
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
             [
                 # does nothing, is just happy to be here
-                time_window("2017-01-01", "2018-01-01"),
+                persisted_time_window("2017-01-01", "2018-01-01"),
                 # fully intersects the first two windows and part of the third
-                time_window("2019-01-01", "2023-12-31"),
+                persisted_time_window("2019-01-01", "2023-12-31"),
                 # also does nothing, too late
-                time_window("2025-01-01", "2026-01-01"),
+                persisted_time_window("2025-01-01", "2026-01-01"),
             ],
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2023-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2023-12-31"),
             ],
         ),
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
             ],
             [
                 # takes a chunk out of the first window
-                time_window("2019-06-01", "2019-07-01"),
+                persisted_time_window("2019-06-01", "2019-07-01"),
                 # also takes a chunk out of the first window
-                time_window("2019-10-01", "2019-11-01"),
+                persisted_time_window("2019-10-01", "2019-11-01"),
                 # overlaps both the first and second window
-                time_window("2019-11-15", "2022-08-16"),
+                persisted_time_window("2019-11-15", "2022-08-16"),
             ],
             [
-                time_window("2019-06-01", "2019-07-01"),
-                time_window("2019-10-01", "2019-11-01"),
-                time_window("2019-11-15", "2019-12-31"),
-                time_window("2022-06-29", "2022-08-16"),
+                persisted_time_window("2019-06-01", "2019-07-01"),
+                persisted_time_window("2019-10-01", "2019-11-01"),
+                persisted_time_window("2019-11-15", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-08-16"),
             ],
         ),
     ],
@@ -1791,39 +1783,39 @@ def test_asset_subset_and(a, b, result) -> None:
     [
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
-                time_window("2023-01-01", "2024-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2023-01-01", "2024-12-31"),
             ],
             [
                 # no intersection
-                time_window("2017-01-01", "2018-01-01"),
+                persisted_time_window("2017-01-01", "2018-01-01"),
                 # fully intersects the first two windows and part of the third
-                time_window("2019-01-01", "2023-12-31"),
+                persisted_time_window("2019-01-01", "2023-12-31"),
                 # no intersection
-                time_window("2025-01-01", "2026-01-01"),
+                persisted_time_window("2025-01-01", "2026-01-01"),
             ],
             [
-                time_window("2017-01-01", "2018-01-01"),
-                time_window("2019-01-01", "2024-12-31"),
-                time_window("2025-01-01", "2026-01-01"),
+                persisted_time_window("2017-01-01", "2018-01-01"),
+                persisted_time_window("2019-01-01", "2024-12-31"),
+                persisted_time_window("2025-01-01", "2026-01-01"),
             ],
         ),
         (
             [
-                time_window("2019-02-27", "2019-12-31"),
-                time_window("2022-06-29", "2022-12-31"),
+                persisted_time_window("2019-02-27", "2019-12-31"),
+                persisted_time_window("2022-06-29", "2022-12-31"),
             ],
             [
                 # intersects with the first window
-                time_window("2019-06-01", "2019-07-01"),
+                persisted_time_window("2019-06-01", "2019-07-01"),
                 # also intersects with the first window
-                time_window("2019-10-01", "2019-11-01"),
+                persisted_time_window("2019-10-01", "2019-11-01"),
                 # overlaps both the first and second window
-                time_window("2019-11-15", "2022-08-16"),
+                persisted_time_window("2019-11-15", "2022-08-16"),
             ],
             [
-                time_window("2019-02-27", "2022-12-31"),
+                persisted_time_window("2019-02-27", "2022-12-31"),
             ],
         ),
     ],
@@ -1842,3 +1834,10 @@ def test_asset_subset_or(a, b, result) -> None:
     assert a_subset | b_subset == TimeWindowPartitionsSubset(
         partitions_def, num_partitions=None, included_time_windows=result
     )
+
+
+def test_persisted_time_window_serdes():
+    serialized_time_window = '{"__class__": "TimeWindow", "end": {"__class__": "TimestampWithTimezone", "timestamp": 1717680319.16809, "timezone": "America/Chicago"}, "start": {"__class__": "TimestampWithTimezone", "timestamp": 1717593919.168011, "timezone": "America/Chicago"}}'
+    deserialized_time_window = deserialize_value(serialized_time_window, PersistedTimeWindow)
+    assert isinstance(deserialized_time_window, PersistedTimeWindow)
+    assert serialize_value(deserialized_time_window) == serialized_time_window

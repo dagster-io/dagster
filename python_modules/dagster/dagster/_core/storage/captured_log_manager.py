@@ -1,10 +1,12 @@
+import os
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence
+from typing import IO, Callable, Generator, Iterator, NamedTuple, Optional, Sequence, Tuple
 
 from typing_extensions import Final, Self
 
 import dagster._check as check
+from dagster._core.captured_log_api import LogLineCursor
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 MAX_BYTES_CHUNK_READ: Final = 4194304  # 4 MB
@@ -258,3 +260,91 @@ class CapturedLogManager(ABC):
     def build_log_key_for_run(self, run_id: str, step_key: str) -> Sequence[str]:
         """Legacy adapter to translate run_id/key to captured log manager-based log_key."""
         return [run_id, "compute_logs", step_key]
+
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str]
+    ) -> Sequence[Sequence[str]]:
+        """Returns the logs keys for a given log key prefix. This is determined by looking at the
+        directory defined by the log key prefix and creating a log_key for each file in the directory.
+        """
+        # NOTE: This method was introduced to support backfill logs, which are always stored as .err files.
+        # Thus the implementations only look for .err files when determining the log_keys. If other file extensions
+        # need to be supported, an io_type parameter will need to be added to this method
+        raise NotImplementedError("Must implement get_log_keys_for_log_key_prefix")
+
+    def _get_log_lines_for_log_key(self, log_key: Sequence[str]) -> Sequence[str]:
+        """For a log key, gets the corresponding file, and splits the file into lines."""
+        log_data = self.get_log_data(log_key)
+        # Note: This method was implemented to support backfill logs, which are always stored as .err files.
+        # If other file extensions need to be supported, this method will need to be updated to look at the
+        # correct part of log_data based on an io_type parameter
+        raw_logs = log_data.stderr.decode("utf-8") if log_data.stderr else ""
+        log_lines = raw_logs.split("\n")
+
+        return log_lines
+
+    def read_log_lines_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str], cursor: Optional[str], num_lines: int = 100
+    ) -> Tuple[Sequence[str], Optional[LogLineCursor]]:
+        """For a given directory defined by log_key_prefix that contains files, read the logs from the files
+        as if they are a single continuous file. Reads num_lines lines at a time. Returns the lines read and the next cursor.
+
+        Note that the has_more_now attribute of the cursor indicates if there are more logs that can be read immediately.
+        If has_more_now if False, the process producing logs could still be running and dump more logs into the
+        directory at a later time.
+        """
+        num_lines = int(os.getenv("DAGSTER_CAPTURED_LOG_CHUNK_SIZE", "1000"))
+        # find all of the log_keys to read from and sort them in the order to be read
+        log_keys = sorted(
+            self.get_log_keys_for_log_key_prefix(log_key_prefix), key=lambda x: "/".join(x)
+        )
+        if len(log_keys) == 0:
+            return [], None
+
+        log_cursor = LogLineCursor.parse(cursor) if cursor else None
+        if log_cursor is None:
+            log_key_to_fetch_idx = 0
+            line_cursor = 0
+        else:
+            log_key_to_fetch_idx = log_keys.index(log_cursor.log_key)
+            line_cursor = log_cursor.line
+
+        if line_cursor == -1:
+            # line_cursor for -1 means the entirety of the file has been read, but the next file
+            # didn't exist yet. So we see if a new file has been added.
+            # if the next file doesn't exist yet, return
+            if log_key_to_fetch_idx + 1 >= len(log_keys):
+                return [], log_cursor
+            log_key_to_fetch_idx += 1
+            line_cursor = 0
+
+        log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
+        records = []
+        has_more = True
+
+        while len(records) < num_lines:
+            remaining_log_lines = log_lines[line_cursor:]
+            remaining_lines_to_fetch = num_lines - len(records)
+            if remaining_lines_to_fetch < len(remaining_log_lines):
+                records.extend(remaining_log_lines[:remaining_lines_to_fetch])
+                line_cursor += remaining_lines_to_fetch
+            else:
+                records.extend(remaining_log_lines)
+                line_cursor = -1
+
+            if line_cursor == -1:
+                # we've read the entirety of the file, update the cursor
+                if log_key_to_fetch_idx + 1 >= len(log_keys):
+                    # no more files to process
+                    has_more = False
+                    break
+                log_key_to_fetch_idx += 1
+                line_cursor = 0
+                if len(records) < num_lines:
+                    # we still need more records, so fetch the next file
+                    log_lines = self._get_log_lines_for_log_key(log_keys[log_key_to_fetch_idx])
+
+        new_cursor = LogLineCursor(
+            log_key=log_keys[log_key_to_fetch_idx], line=line_cursor, has_more_now=has_more
+        )
+        return records, new_cursor

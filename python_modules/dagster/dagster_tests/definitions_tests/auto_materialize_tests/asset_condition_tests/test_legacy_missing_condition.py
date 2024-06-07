@@ -2,6 +2,7 @@ import datetime
 
 from dagster import AutoMaterializePolicy, Definitions, asset
 from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._serdes import serialize_value
 
@@ -68,7 +69,9 @@ def test_missing_time_partitioned() -> None:
     # if the partitions definition changes, then we have 1 fewer missing partition
     state = state.with_asset_properties(
         partitions_def=daily_partitions_def._replace(
-            start=time_partitions_start_datetime + datetime.timedelta(days=1)
+            start=TimestampWithTimezone.from_pendulum_time(
+                time_partitions_start_datetime + datetime.timedelta(days=1)
+            )
         )
     )
     state, result = state.evaluate("A")

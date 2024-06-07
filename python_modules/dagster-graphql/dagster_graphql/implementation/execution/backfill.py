@@ -234,8 +234,16 @@ def create_and_launch_partition_backfill(
             raise DagsterError("fromFailure is not supported for pure asset backfills")
 
         asset_graph = graphene_info.context.asset_graph
+
+        partitions_by_assets = [
+            PartitionsByAssetSelector.from_graphql_input(partitions_by_asset_selector)
+            for partitions_by_asset_selector in partitions_by_assets
+        ]
+
+        selected_assets = list({selector.asset_key for selector in partitions_by_assets})
+
         assert_permission_for_asset_graph(
-            graphene_info, asset_graph, asset_selection, Permissions.LAUNCH_PARTITION_BACKFILL
+            graphene_info, asset_graph, selected_assets, Permissions.LAUNCH_PARTITION_BACKFILL
         )
         backfill = PartitionBackfill.from_partitions_by_assets(
             backfill_id=backfill_id,
@@ -247,10 +255,7 @@ def create_and_launch_partition_backfill(
                 asset_graph,
                 utc_datetime_from_timestamp(backfill_timestamp),
             ),
-            partitions_by_assets=[
-                PartitionsByAssetSelector.from_graphql_input(partitions_by_asset_selector)
-                for partitions_by_asset_selector in partitions_by_assets
-            ],
+            partitions_by_assets=partitions_by_assets,
             title=backfill_params.get("title"),
             description=backfill_params.get("description"),
         )

@@ -50,14 +50,12 @@ export const CurrentRunsBanner = ({
                   {inProgressRunIds.length && unstartedRunIds.length ? ' ' : ''}
                   {unstartedRunIds.length > 1 && (
                     <>
-                      Runs <RunIdLinks ids={unstartedRunIds} /> have started and will refresh this
-                      asset.
+                      Runs <RunIdLinks ids={unstartedRunIds} /> that target this asset are queued.
                     </>
                   )}
                   {unstartedRunIds.length === 1 && (
                     <>
-                      Run <RunIdLinks ids={unstartedRunIds} /> has started and will refresh this
-                      asset.
+                      Run <RunIdLinks ids={unstartedRunIds} /> that targets this asset are queued.
                     </>
                   )}
                 </div>

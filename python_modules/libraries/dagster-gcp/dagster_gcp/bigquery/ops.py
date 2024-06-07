@@ -8,6 +8,7 @@ from dagster import (
     _check as check,
     op,
 )
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_pandas import DataFrame
 from google.cloud.bigquery.encryption_configuration import EncryptionConfiguration
 from google.cloud.bigquery.job import LoadJobConfig, QueryJobConfig
@@ -57,7 +58,7 @@ def bq_op_for_queries(sql_queries):
         out=Out(List[DataFrame]),
         config_schema=define_bigquery_query_config(),
         required_resource_keys={"bigquery"},
-        tags={"kind": "sql", "sql": "\n".join(sql_queries)},
+        tags={COMPUTE_KIND_TAG: "sql", "sql": "\n".join(sql_queries)},
     )
     def _bq_fn(context):
         query_job_config = _preprocess_config(context.op_config.get("query_job_config", {}))

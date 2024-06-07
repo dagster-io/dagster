@@ -89,6 +89,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       }
     }, [codeLocationStatusQueryResult.data, setCodeLocationStatusAtom]);
   }
+  indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
 
   const fetch = codeLocationStatusQueryResult.fetch;
   useRefreshAtInterval({

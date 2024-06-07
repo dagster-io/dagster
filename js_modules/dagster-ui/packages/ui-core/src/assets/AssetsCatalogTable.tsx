@@ -1,5 +1,6 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
+import {indexedDB} from 'fake-indexeddb';
 import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
@@ -51,6 +52,8 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
     query: ASSET_CATALOG_TABLE_QUERY,
     version: 1,
   });
+  // Delete old database from before the prefix, remove this at some point
+  indexedDB.deleteDatabase('indexdbQueryCache:allAssets');
 
   const {data, fetch: fetchAssets} = assetsQuery;
 

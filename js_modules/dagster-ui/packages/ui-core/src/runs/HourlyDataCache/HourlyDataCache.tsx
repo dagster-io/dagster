@@ -23,6 +23,9 @@ export class HourlyDataCache<T> {
   constructor(id?: string | false, keyPrefix = '', keyMaxCount = 1) {
     this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
 
+    // Delete old database from before the prefix, remove this at some point
+    indexedDB.deleteDatabase('HourlyDataCache:useRunsForTimeline');
+
     if (id) {
       this.indexedDBCache = cache<string, typeof this.cache>({
         dbName: `HourlyDataCache:${id}`,

@@ -12,6 +12,7 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
@@ -393,7 +394,9 @@ partition_scenarios = [
         .with_asset_properties(
             keys=["B"],
             partitions_def=hourly_partitions_def._replace(
-                start=time_partitions_start_datetime + datetime.timedelta(hours=1)
+                start=TimestampWithTimezone.from_pendulum_time(
+                    time_partitions_start_datetime + datetime.timedelta(hours=1)
+                )
             ),
         )
         # allow nonexistent partitions
@@ -513,7 +516,9 @@ partition_scenarios = [
         .with_current_time_advanced(days=5)
         .with_asset_properties(
             partitions_def=hourly_partitions_def._replace(
-                start=time_partitions_start_datetime + datetime.timedelta(days=5)
+                start=TimestampWithTimezone.from_pendulum_time(
+                    time_partitions_start_datetime + datetime.timedelta(days=5)
+                )
             )
         )
         .evaluate_tick("BAR")
@@ -681,7 +686,9 @@ partition_scenarios = [
         initial_spec=three_assets_in_sequence.with_asset_properties(
             keys=["A"],
             partitions_def=daily_partitions_def._replace(
-                start=time_partitions_start_datetime + datetime.timedelta(days=4)
+                start=TimestampWithTimezone.from_pendulum_time(
+                    time_partitions_start_datetime + datetime.timedelta(days=4)
+                )
             ),
         )
         .with_asset_properties(keys=["B"], partitions_def=daily_partitions_def)

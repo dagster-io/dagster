@@ -4,7 +4,7 @@ import {Button, ButtonContainer} from '../components/markdoc/Button';
 import {Note, Warning} from '../components/markdoc/Callouts';
 import {Check, Cross} from '../components/markdoc/CheckCross';
 import {CodeReferenceLink} from '../components/markdoc/CodeReferenceLink';
-import {Image} from '../components/markdoc/Image';
+import {MyImage} from '../components/markdoc/Image';
 import {ReferenceTable, ReferenceTableItem} from '../components/markdoc/ReferenceTable';
 
 export const note = {
@@ -45,7 +45,7 @@ export const cross = {
 };
 
 export const image = {
-  render: Image,
+  render: MyImage,
   selfClosing: true,
   attributes: {
     src: {

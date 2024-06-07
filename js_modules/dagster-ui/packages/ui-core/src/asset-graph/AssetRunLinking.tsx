@@ -26,7 +26,7 @@ export const AssetLatestRunSpinner = ({
   }
   if (liveData?.unstartedRunIds?.length) {
     return (
-      <Tooltip content="A run has started that will rematerialize this asset soon.">
+      <Tooltip content="A run that targets this asset is queued.">
         <Spinner purpose={purpose} stopped />
       </Tooltip>
     );

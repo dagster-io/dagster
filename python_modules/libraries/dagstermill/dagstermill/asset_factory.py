@@ -21,6 +21,7 @@ from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 from dagstermill.factory import _clean_path_for_windows, execute_notebook
 
@@ -180,12 +181,15 @@ def define_dagstermill_asset(
             " is reserved for use by Dagster",
         )
         check.invariant(
-            "kind" not in op_tags,
-            "user-defined op tags contains the `kind` key, but the `kind` key is reserved for"
+            COMPUTE_KIND_TAG not in op_tags,
+            f"user-defined op tags contains the `{COMPUTE_KIND_TAG}` key, but the `{COMPUTE_KIND_TAG}` key is reserved for"
             " use by Dagster",
         )
 
-    default_tags = {"notebook_path": _clean_path_for_windows(notebook_path), "kind": "ipynb"}
+    default_tags = {
+        "notebook_path": _clean_path_for_windows(notebook_path),
+        COMPUTE_KIND_TAG: "ipynb",
+    }
 
     if safe_is_subclass(config_schema, Config):
         config_schema = infer_schema_from_config_class(cast(Type[Config], config_schema))

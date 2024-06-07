@@ -61,7 +61,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=pendulum.now("UTC"),
+        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
     )
 
     with pytest.raises(
@@ -109,7 +109,7 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     result1 = execute_asset_backfill_iteration_consume_generator(
@@ -160,7 +160,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -233,7 +233,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -271,7 +271,7 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=pendulum.now("UTC"),
+        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
     )
     backfill_id = "test_backfill_id"
     result = execute_asset_backfill_iteration_consume_generator(
@@ -309,7 +309,7 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -354,7 +354,7 @@ def test_asset_backfill_return_multiple_run_request_for_partitioned():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -422,7 +422,7 @@ def test_asset_backfill_status_count_with_backfill_policies():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     (
@@ -504,7 +504,7 @@ def test_backfill_run_contains_more_than_one_asset():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     (
@@ -576,7 +576,7 @@ def test_dynamic_partitions_multi_run_backfill_policy():
         asset_selection=[asset1.key],
         dynamic_partitions_store=instance,
         partition_names=["foo", "bar"],
-        backfill_start_time=pendulum.now("UTC"),
+        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
         all_partitions=False,
     )
 
@@ -618,7 +618,7 @@ def test_dynamic_partitions_single_run_backfill_policy():
         asset_selection=[asset1.key],
         dynamic_partitions_store=instance,
         partition_names=["foo", "bar"],
-        backfill_start_time=pendulum.now("UTC"),
+        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
         all_partitions=False,
     )
 
@@ -680,7 +680,7 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=test_time,
+        backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
     assert backfill_data
@@ -748,7 +748,7 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=test_time,
+        backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
 
@@ -818,7 +818,7 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
     assert backfill_data
@@ -881,7 +881,7 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
     assert backfill_data
@@ -940,7 +940,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
         all_partitions=False,
     )
     assert backfill_data
@@ -1003,7 +1003,7 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         asset_graph=asset_graph,
         asset_selection=[upstream_a.key, downstream_b.key],
         dynamic_partitions_store=MagicMock(),
-        backfill_start_time=test_time,
+        backfill_start_timestamp=test_time.timestamp(),
         all_partitions=False,
     )
     assert backfill_data
@@ -1053,7 +1053,7 @@ def test_run_request_partition_order():
         asset_selection=[foo.key, foo_child.key],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        backfill_start_time=pendulum.datetime(2023, 10, 7, 0, 0, 0),
+        backfill_start_timestamp=pendulum.datetime(2023, 10, 7, 0, 0, 0).timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -1098,7 +1098,7 @@ def test_single_run_backfill_full_execution(
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_time=time_now,
+        backfill_start_timestamp=time_now.timestamp(),
     )
 
     with instance_for_test() as instance:
