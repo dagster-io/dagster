@@ -18,6 +18,7 @@ from dagster import (
     AssetMaterialization,
     Output,
     _check as check,
+    asset,
     file_relative_path,
     job,
     op,
@@ -42,7 +43,11 @@ from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster._core.storage.tags import (
+    COMPUTE_KIND_TAG,
+    LEGACY_COMPUTE_KIND_TAG,
+    REPOSITORY_LABEL_TAG,
+)
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
@@ -1289,3 +1294,22 @@ def test_known_execution_state_step_output_version_serialization() -> None:
     ]
 
     assert deserialize_value(serialized, KnownExecutionState) == known_state
+
+
+def test_legacy_compute_kind_tag_backcompat():
+    legacy_tags = {LEGACY_COMPUTE_KIND_TAG: "foo"}
+    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
+
+        @asset(op_tags=legacy_tags)
+        def legacy_asset():
+            pass
+
+        assert legacy_asset.op.tags[COMPUTE_KIND_TAG] == "foo"
+
+    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
+
+        @op(tags=legacy_tags)
+        def legacy_op():
+            pass
+
+        assert legacy_op.tags[COMPUTE_KIND_TAG] == "foo"

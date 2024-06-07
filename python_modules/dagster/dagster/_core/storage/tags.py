@@ -76,8 +76,9 @@ RUN_ISOLATION_TAG = f"{SYSTEM_TAG_PREFIX}isolation"
 
 RUN_FAILURE_REASON_TAG = f"{SYSTEM_TAG_PREFIX}failure_reason"
 
-# Compute kind is a historical anomaly in lacking the SYSTEM_TAG_PREFIX
-COMPUTE_KIND_TAG = "kind"
+# Support for the legacy compute kind tag will be removed in 1.9.0
+LEGACY_COMPUTE_KIND_TAG = "kind"
+COMPUTE_KIND_TAG = f"{SYSTEM_TAG_PREFIX}compute_kind"
 
 USER_EDITABLE_SYSTEM_TAGS = [
     PRIORITY_TAG,
