@@ -35,7 +35,7 @@ This parameter accepts any [`tz` timezone](https://en.wikipedia.org/wiki/List_of
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
 my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+    job=asset_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
 )
 ```
 

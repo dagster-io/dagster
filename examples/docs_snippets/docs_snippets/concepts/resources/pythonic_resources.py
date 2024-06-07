@@ -804,6 +804,7 @@ def new_resource_on_schedule() -> None:
         job,
         RunRequest,
         RunConfig,
+        define_asset_job,
         Definitions,
     )
     from datetime import datetime
@@ -815,8 +816,9 @@ def new_resource_on_schedule() -> None:
         def strftime(self, dt: datetime) -> str:
             return dt.strftime(self.format)
 
-    @job
-    def process_data(): ...
+    process_data = define_asset_job(
+        "process_data",
+    )
 
     @schedule(job=process_data, cron_schedule="* * * * *")
     def process_data_schedule(

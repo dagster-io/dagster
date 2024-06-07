@@ -21,14 +21,14 @@ The following examples demonstrate how to define some basic schedules.
 <TabGroup>
   <TabItem name="Using ScheduleDefinition">
 
-This example demonstrates how to define a schedule using <PyObject object="ScheduleDefinition" /> that will run a job every day at midnight. While this example uses [op jobs](/concepts/ops-jobs-graphs/jobs) (<PyObject object="job" decorator />), the same approach will work with [asset jobs](/concepts/assets/asset-jobs) (<PyObject object="define_asset_job" />).
+This example demonstrates how to define a schedule using <PyObject object="ScheduleDefinition" /> that will run a job every day at midnight.
 
-```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
-@job
-def my_job(): ...
+```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_asset_schedule endbefore=end_basic_asset_schedule
+from dagster import AssetSelection, ScheduleDefinition, define_asset_job
 
+asset_job = define_asset_job("asset_job", AssetSelection.groups("some_asset_group"))
 
-basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
+basic_schedule = ScheduleDefinition(job=asset_job, cron_schedule="0 0 * * *")
 ```
 
 <table
@@ -202,7 +202,7 @@ def basic_schedule(): ...
 This example demonstrates how to emit log messages from a schedule during its evaluation function. These logs will be visible in the UI when you inspect a tick in the schedule's tick history.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_schedule_logging endbefore=end_schedule_logging
-@schedule(job=my_job, cron_schedule="* * * * *")
+@schedule(job=asset_job, cron_schedule="* * * * *")
 def logs_then_skips(context):
     context.log.info("Logging from a schedule!")
     return SkipReason("Nothing to do")
@@ -276,6 +276,7 @@ from dagster import (
     job,
     RunRequest,
     RunConfig,
+    define_asset_job,
     Definitions,
 )
 from datetime import datetime
@@ -287,8 +288,9 @@ class DateFormatter(ConfigurableResource):
     def strftime(self, dt: datetime) -> str:
         return dt.strftime(self.format)
 
-@job
-def process_data(): ...
+process_data = define_asset_job(
+    "process_data",
+)
 
 @schedule(job=process_data, cron_schedule="* * * * *")
 def process_data_schedule(
@@ -387,14 +389,12 @@ defs = Definitions(
 This example demonstrates how to use run config to vary the behavior of a job based on its scheduled run time.
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_run_config_schedule endbefore=end_run_config_schedule
-@op(config_schema={"scheduled_date": str})
-def configurable_op(context: OpExecutionContext):
+@asset(config_schema={"scheduled_date": str})
+def configurable_asset(context: OpExecutionContext):
     context.log.info(context.op_config["scheduled_date"])
 
 
-@job
-def configurable_job():
-    configurable_op()
+configurable_job = define_asset_job("configurable_job", [configurable_asset])
 
 
 @schedule(job=configurable_job, cron_schedule="0 0 * * *")
@@ -403,7 +403,9 @@ def configurable_job_schedule(context: ScheduleEvaluationContext):
     return RunRequest(
         run_key=None,
         run_config={
-            "ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}
+            "ops": {
+                "configurable_asset": {"config": {"scheduled_date": scheduled_date}}
+            }
         },
         tags={"date": scheduled_date},
     )
@@ -456,7 +458,7 @@ This example demonstrates how to customize the timezone a schedule executes in. 
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_timezone endbefore=end_timezone
 my_timezone_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
+    job=asset_job, cron_schedule="0 9 * * *", execution_timezone="America/Los_Angeles"
 )
 ```
 
@@ -542,7 +544,7 @@ def daily_asset(): ...
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
 
 
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
+partitioned_asset_schedule = build_schedule_from_partitioned_job(
     partitioned_asset_job,
 )
 ```
@@ -608,78 +610,6 @@ asset_partitioned_schedule = build_schedule_from_partitioned_job(
   </tbody>
 </table>
 
-</TabItem>
-<TabItem name="Jobs">
-
-#### Partitioned op jobs
-
-This example demonstrates how to construct a schedule for a time-partitioned op job using <PyObject object="build_schedule_from_partitioned_job"/>.
-
-```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import build_schedule_from_partitioned_job, job
-
-
-@job(config=partitioned_config)
-def partitioned_op_job(): ...
-
-
-partitioned_op_schedule = build_schedule_from_partitioned_job(
-    partitioned_op_job,
-)
-```
-
-<table
-  className="table"
-  style={{
-    width: "100%",
-  }}
->
-  <tbody>
-    <tr>
-      <td
-        style={{
-          width: "20%",
-        }}
-      >
-        <strong>Notes</strong>
-      </td>
-      <td>
-        If the partition has a timezone defined, the schedule will execute in
-        the timezone specified on the partitioned config.
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>Related docs</strong>
-      </td>
-      <td>
-        <ul>
-          <li>
-            <a href="/concepts/ops-jobs-graphs/jobs">Op jobs</a>
-          </li>
-          <li>
-            <a href="/concepts/partitions-schedules-sensors/partitioning-ops">
-              Partitioning ops
-            </a>
-          </li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <strong>APIs in this example</strong>
-      </td>
-      <td>
-        <PyObject object="job" decorator />,{" "}
-        <PyObject object="build_schedule_from_partitioned_job" />
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-  </TabItem>
-</TabGroup>
-
 ### Manually constructing schedules
 
 This example demonstrates how to manually construct a schedule for a job with a static partition from scratch using the <PyObject object="schedule" decorator /> decorator.
@@ -693,7 +623,7 @@ from dagster import schedule, RunRequest
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        yield RunRequest(run_key=c, partition_key=c)
+        yield RunRequest(partition_key=c)
 ```
 
 <table

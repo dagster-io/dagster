@@ -1,4 +1,13 @@
-from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
+from dagster import (
+    AssetExecutionContext,
+    Config,
+    StaticPartitionsDefinition,
+    asset,
+    define_asset_job,
+    job,
+    op,
+    static_partitioned_config,
+)
 
 CONTINENTS = [
     "Africa",
@@ -11,20 +20,9 @@ CONTINENTS = [
 ]
 
 
-@static_partitioned_config(partition_keys=CONTINENTS)
-def continent_config(partition_key: str):
-    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+@asset(partitions_def=StaticPartitionsDefinition(CONTINENTS))
+def continents_info(context: AssetExecutionContext):
+    context.log.info(f"continent name: {context.partition_key}")
 
 
-class ContinentOpConfig(Config):
-    continent_name: str
-
-
-@op
-def continent_op(context: OpExecutionContext, config: ContinentOpConfig):
-    context.log.info(config.continent_name)
-
-
-@job(config=continent_config)
-def continent_job():
-    continent_op()
+continent_job = define_asset_job("continent_job", [continents_info])

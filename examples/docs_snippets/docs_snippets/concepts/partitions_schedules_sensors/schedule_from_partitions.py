@@ -2,20 +2,6 @@
 
 from .partitioned_job import partitioned_config
 
-# start_marker
-from dagster import build_schedule_from_partitioned_job, job
-
-
-@job(config=partitioned_config)
-def partitioned_op_job(): ...
-
-
-partitioned_op_schedule = build_schedule_from_partitioned_job(
-    partitioned_op_job,
-)
-
-# end_marker
-
 
 # start_partitioned_asset_schedule
 from dagster import (
@@ -35,7 +21,7 @@ def daily_asset(): ...
 partitioned_asset_job = define_asset_job("partitioned_job", selection=[daily_asset])
 
 
-asset_partitioned_schedule = build_schedule_from_partitioned_job(
+partitioned_asset_schedule = build_schedule_from_partitioned_job(
     partitioned_asset_job,
 )
 
@@ -51,7 +37,7 @@ from dagster import schedule, RunRequest
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def continent_schedule():
     for c in CONTINENTS:
-        yield RunRequest(run_key=c, partition_key=c)
+        yield RunRequest(partition_key=c)
 
 
 # end_static_partition
