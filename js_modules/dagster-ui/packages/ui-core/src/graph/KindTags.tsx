@@ -33,7 +33,7 @@ export const AssetComputeKindTag = ({
       content={
         shouldLink ? (
           <>
-            View all assets with compute kind <CaptionMono>{definition.computeKind}</CaptionMono>
+            View all <CaptionMono>{definition.computeKind}</CaptionMono> assets
           </>
         ) : (
           <>
@@ -82,7 +82,7 @@ export const AssetStorageKindTag = ({
       content={
         shouldLink ? (
           <>
-            View all assets with storage kind <CaptionMono>{storageKind}</CaptionMono>
+            View all <CaptionMono>{storageKind}</CaptionMono> assets
           </>
         ) : (
           <>
