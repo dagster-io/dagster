@@ -219,7 +219,7 @@ def test_load_from_instance(
     assert ab_assets[0].keys == {AssetKey(t) for t in tables}
     assert all(
         [
-            ab_assets[0].group_names_by_key.get(AssetKey(t))
+            ab_assets[0].specs_by_key[AssetKey(t)].group_name
             == (
                 connection_meta_to_group_fn(
                     AirbyteConnectionMetadata("GitHub <> snowflake-ben", "", False, [])
@@ -237,13 +237,15 @@ def test_load_from_instance(
     assert len(ab_assets[0].op.output_defs) == len(tables)
 
     expected_freshness_policy = TEST_FRESHNESS_POLICY if connection_to_freshness_policy_fn else None
-    freshness_policies = ab_assets[0].freshness_policies_by_key
+    freshness_policies = {spec.key: spec.freshness_policy for spec in ab_assets[0].specs}
     assert all(freshness_policies[key] == expected_freshness_policy for key in freshness_policies)
 
     expected_auto_materialize_policy = (
         AutoMaterializePolicy.lazy() if connection_to_auto_materialize_policy_fn else None
     )
-    auto_materialize_policies_by_key = ab_assets[0].auto_materialize_policies_by_key
+    auto_materialize_policies_by_key = {
+        spec.key: spec.auto_materialize_policy for spec in ab_assets[0].specs
+    }
     if expected_auto_materialize_policy:
         assert auto_materialize_policies_by_key
     assert all(
