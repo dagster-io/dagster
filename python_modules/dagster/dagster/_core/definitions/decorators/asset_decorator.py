@@ -27,7 +27,6 @@ from dagster._core.definitions.decorators.assets_definition_factory import (
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
-from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.warnings import disable_dagster_warnings
@@ -50,6 +49,7 @@ from .assets_definition_factory import (
     AssetsDefinitionBuilderArgs,
     build_asset_ins,
     build_asset_outs,
+    compute_required_resource_keys,
 )
 
 
@@ -343,17 +343,18 @@ def create_assets_def_from_fn_and_decorator_args(
     )
 
     with disable_dagster_warnings():
-        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
-
-        bare_required_resource_keys = set(args.required_resource_keys)
-
         resource_defs_dict = args.resource_defs
-        resource_defs_keys = set(resource_defs_dict.keys())
-        decorator_resource_keys = bare_required_resource_keys | resource_defs_keys
 
         # TODO: rename op_resource_defs and asset_resource_defs and document
         # the strange logic -- schrockn 2024-06-03
         op_resource_defs = wrap_resources_for_execution(resource_defs_dict)
+
+        op_required_resource_keys = compute_required_resource_keys(
+            required_resource_keys=args.required_resource_keys,
+            resource_defs=op_resource_defs,
+            fn=fn,
+            decorator_name="@asset",
+        )
 
         io_manager_key = args.io_manager_key
         if args.io_manager_def:
@@ -373,15 +374,7 @@ def create_assets_def_from_fn_and_decorator_args(
 
         asset_resource_defs = wrap_resources_for_execution(resource_defs_dict)
 
-        check.param_invariant(
-            len(bare_required_resource_keys) == 0 or len(arg_resource_keys) == 0,
-            "Cannot specify resource requirements in both @asset decorator and as arguments"
-            " to the decorated function",
-        )
-
         io_manager_key = cast(str, io_manager_key) if io_manager_key else DEFAULT_IO_MANAGER_KEY
-
-        op_required_resource_keys = decorator_resource_keys - arg_resource_keys
 
         # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
         if args.partitions_def is None:
