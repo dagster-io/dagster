@@ -14,7 +14,7 @@ from dagster._check import (
     EvalContext,
     NotImplementedCheckError,
     ParameterCheckError,
-    build_check_call,
+    build_check_call_str,
 )
 
 
@@ -1517,6 +1517,16 @@ def test_opt_iterable():
 # ###################################################################################################
 # ##### CHECK BUILDER
 # ###################################################################################################
+
+
+def build_check_call(ttype, name, eval_ctx: EvalContext):
+    body = build_check_call_str(ttype, name, eval_ctx)
+    fn = f"""
+def _check({name}):
+    return {body}
+"""
+    # print(fn) # debug output
+    return eval_ctx.compile_fn(fn, "_check")
 
 
 class Foo: ...
