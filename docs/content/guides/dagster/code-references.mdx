@@ -29,7 +29,9 @@ To complete the steps in this guide, you'll need:
 
 ## Automatically attaching code references to asset definitions
 
-To automatically attach code references to the asset's function definition, you can use the `dagster._core.definitions.metadata.with_source_code_references` utility. Any asset definitions passed to the utility will have their source file attached as metadata.
+### Assets defined in Python
+
+To automatically attach code references to Python assets' function definitions, you can use the `dagster._core.definitions.metadata.with_source_code_references` utility. Any asset definitions passed to the utility will have their source file attached as metadata.
 
 ```python file=/guides/dagster/code_references/with_source_code_references.py
 from dagster import Definitions, asset
@@ -58,6 +60,10 @@ A link to the asset's source in `with_source_code_references.py` will then be vi
   />
 </center>
 
+### dbt assets
+
+Dagster's dbt integration can automatically attach references to the SQL files backing your dbt assets. For more information, see the [dagster-dbt integration reference](/integrations/dbt/reference#attaching-code-reference-metadata).
+
 ---
 
 ## Manually attaching code references to asset definitions
@@ -83,6 +89,7 @@ from dagster._core.definitions.metadata import (
             code_references=[
                 LocalFileCodeReference(
                     file_path=os.path.join(os.path.dirname(__file__), "source.yaml"),
+                    # Label and line number are optional
                     line_number=1,
                     label="Model YAML",
                 )
