@@ -2,12 +2,10 @@ import os
 from pathlib import Path
 from typing import cast
 
-import pytest
 from dagster import AssetsDefinition, load_assets_from_modules
 from dagster._core.definitions.metadata import (
     LocalFileCodeReference,
     UrlCodeReference,
-    link_to_source_control,
     with_source_code_references,
 )
 from dagster._core.definitions.metadata.source_code import SourceControlFilePathMapping, link_to_git
@@ -99,11 +97,7 @@ def test_asset_code_origins() -> None:
                 assert meta.line_number == int(expected_line_number)
 
 
-@pytest.mark.parametrize(
-    "use_old_source_control_link_fn",
-    [False, True],
-)
-def test_asset_code_origins_source_control(use_old_source_control_link_fn: bool) -> None:
+def test_asset_code_origins_source_control() -> None:
     from dagster_tests.asset_defs_tests import asset_package
 
     from .asset_package import module_with_assets
@@ -122,22 +116,14 @@ def test_asset_code_origins_source_control(use_old_source_control_link_fn: bool)
 
     collection_with_source_metadata = with_source_code_references(collection)
 
-    if use_old_source_control_link_fn:
-        collection_with_source_control_metadata = link_to_source_control(
-            collection_with_source_metadata,
-            source_control_url="https://github.com/dagster-io/dagster",
-            source_control_branch="master",
-            repository_root_absolute_path=GIT_ROOT_PATH,
-        )
-    else:
-        collection_with_source_control_metadata = link_to_git(
-            collection_with_source_metadata,
-            source_control_url="https://github.com/dagster-io/dagster",
-            source_control_branch="master",
-            source_control_file_path_mapping=SourceControlFilePathMapping(
-                local_file_anchor=Path(GIT_ROOT_PATH), file_anchor_path_in_repository=""
-            ),
-        )
+    collection_with_source_control_metadata = link_to_git(
+        collection_with_source_metadata,
+        git_url="https://github.com/dagster-io/dagster",
+        git_branch="master",
+        git_file_path_mapping=SourceControlFilePathMapping(
+            local_file_anchor=Path(GIT_ROOT_PATH), file_anchor_path_in_repository=""
+        ),
+    )
 
     for asset in collection_with_source_control_metadata:
         if isinstance(asset, AssetsDefinition):
@@ -188,9 +174,9 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
 
     collection_with_source_control_metadata = link_to_git(
         collection_with_source_metadata,
-        source_control_url="https://github.com/dagster-io/dagster",
-        source_control_branch="master",
-        source_control_file_path_mapping=lambda file_path: "override.py"
+        git_url="https://github.com/dagster-io/dagster",
+        git_branch="master",
+        git_file_path_mapping=lambda file_path: "override.py"
         if os.fspath(file_path).endswith("module_with_assets.py")
         else os.path.normpath(os.path.relpath(file_path, GIT_ROOT_PATH)),
     )

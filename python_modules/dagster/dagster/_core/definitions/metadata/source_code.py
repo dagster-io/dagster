@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental
+from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
 
@@ -141,7 +141,7 @@ class SourceControlFilePathMapping(NamedTuple):
 
     Args:
         local_file_anchor (Path): The path to a local file that is present in the repository.
-        file_anchor_path_in_repository (Path): The path to the anchor file in the repository.
+        file_anchor_path_in_repository (str): The path to the anchor file in the repository.
 
     Example:
         .. code-block:: python
@@ -159,23 +159,23 @@ class SourceControlFilePathMapping(NamedTuple):
 SourceControlFilePathMappingFn = Callable[[Path], str]
 
 
-def convert_local_path_to_source_control_path(
-    base_source_control_url: str,
-    source_control_file_path_mapping_fn: SourceControlFilePathMappingFn,
+def convert_local_path_to_git_path(
+    base_git_url: str,
+    git_file_path_mapping_fn: SourceControlFilePathMappingFn,
     local_path: LocalFileCodeReference,
 ) -> UrlCodeReference:
-    source_file_from_repo_root = source_control_file_path_mapping_fn(Path(local_path.file_path))
+    source_file_from_repo_root = git_file_path_mapping_fn(Path(local_path.file_path))
     line_number_suffix = f"#L{local_path.line_number}" if local_path.line_number else ""
 
     return UrlCodeReference(
-        url=f"{base_source_control_url}/{source_file_from_repo_root}{line_number_suffix}",
+        url=f"{base_git_url}/{source_file_from_repo_root}{line_number_suffix}",
         label=local_path.label,
     )
 
 
-def _convert_local_path_to_source_control_path_single_definition(
-    base_source_control_url: str,
-    source_control_file_path_mapping_fn: SourceControlFilePathMappingFn,
+def _convert_local_path_to_git_path_single_definition(
+    base_git_url: str,
+    git_file_path_mapping_fn: SourceControlFilePathMappingFn,
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -195,9 +195,9 @@ def _convert_local_path_to_source_control_path_single_definition(
             continue
 
         sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
-            convert_local_path_to_source_control_path(
-                base_source_control_url,
-                source_control_file_path_mapping_fn,
+            convert_local_path_to_git_path(
+                base_git_url,
+                git_file_path_mapping_fn,
                 source,
             )
             if isinstance(source, LocalFileCodeReference)
@@ -226,35 +226,11 @@ def _build_gitlab_url(url: str, branch: str) -> str:
 
 
 @experimental
-@deprecated(breaking_version="1.8", additional_warn_text="Use `link_to_git` instead.")
-def link_to_source_control(
-    assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
-    source_control_url: str,
-    source_control_branch: str,
-    repository_root_absolute_path: Union[Path, str],
-) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
-    caller_file = Path(inspect.stack()[3].filename).absolute()
-    file_anchor_path_in_repository = os.path.relpath(caller_file, repository_root_absolute_path)
-
-    return link_to_git(
-        assets_defs=assets_defs,
-        source_control_url=source_control_url,
-        source_control_branch=source_control_branch,
-        source_control_file_path_mapping=SourceControlFilePathMapping(
-            local_file_anchor=(caller_file),
-            file_anchor_path_in_repository=file_anchor_path_in_repository,
-        ),
-    )
-
-
-@experimental
 def link_to_git(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
-    source_control_url: str,
-    source_control_branch: str,
-    source_control_file_path_mapping: Union[
-        SourceControlFilePathMapping, SourceControlFilePathMappingFn
-    ],
+    git_url: str,
+    git_branch: str,
+    git_file_path_mapping: Union[SourceControlFilePathMapping, SourceControlFilePathMappingFn],
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
@@ -264,10 +240,10 @@ def link_to_git(
             The asset definitions to which source control metadata should be attached.
             Only assets with local file code references (such as those created by
             `with_source_code_references`) will be converted.
-        source_control_url (str): The base URL for the source control system. For example,
+        git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
-        source_control_branch (str): The branch in the source control system, such as "master".
-        source_control_file_path_mapping (Union[SourceControlFilePathMapping, SourceControlFilePathMappingFn]):
+        git_branch (str): The branch in the source control system, such as "master".
+        git_file_path_mapping (Union[SourceControlFilePathMapping, SourceControlFilePathMappingFn]):
             Specifies the mapping between local file paths and their corresponding paths in a source control repository.
             Simple usage is to provide a `SourceControlFilePathMapping` instance, which specifies an anchor file in the
             repository and the corresponding local file path, which is extrapolated to all other local file paths.
@@ -279,48 +255,48 @@ def link_to_git(
                 defs = Definitions(
                     assets=link_to_git(
                         with_source_code_references([my_dbt_assets]),
-                        source_control_url="https://github.com/dagster-io/dagster",
-                        source_control_branch="master",
-                        source_control_file_path_mapping=SourceControlFilePathMapping(
+                        git_url="https://github.com/dagster-io/dagster",
+                        git_branch="master",
+                        git_file_path_mapping=SourceControlFilePathMapping(
                             local_file_anchor=Path(__file__),
                             file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
                         ),
                     )
                 )
     """
-    if "gitlab.com" in source_control_url:
-        source_control_url = _build_gitlab_url(source_control_url, source_control_branch)
-    elif "github.com" in source_control_url:
-        source_control_url = _build_github_url(source_control_url, source_control_branch)
+    if "gitlab.com" in git_url:
+        git_url = _build_gitlab_url(git_url, git_branch)
+    elif "github.com" in git_url:
+        git_url = _build_github_url(git_url, git_branch)
     else:
         raise ValueError(
-            "Invalid `source_control_url`."
+            "Invalid `git_url`."
             " Only GitHub and GitLab are supported for linking to source control at this time."
         )
 
-    _source_control_file_path_mapping: SourceControlFilePathMappingFn
-    if isinstance(source_control_file_path_mapping, SourceControlFilePathMapping):
+    _git_file_path_mapping: SourceControlFilePathMappingFn
+    if isinstance(git_file_path_mapping, SourceControlFilePathMapping):
 
         def resolve_path(local_path: Path) -> str:
             path_from_anchor_to_target = os.path.relpath(
                 local_path,
-                source_control_file_path_mapping.local_file_anchor,
+                git_file_path_mapping.local_file_anchor,
             )
             return os.path.normpath(
                 os.path.join(
-                    source_control_file_path_mapping.file_anchor_path_in_repository,
+                    git_file_path_mapping.file_anchor_path_in_repository,
                     path_from_anchor_to_target,
                 )
             )
 
-        _source_control_file_path_mapping = resolve_path
+        _git_file_path_mapping = resolve_path
     else:
-        _source_control_file_path_mapping = source_control_file_path_mapping
+        _git_file_path_mapping = git_file_path_mapping
 
     return [
-        _convert_local_path_to_source_control_path_single_definition(
-            base_source_control_url=source_control_url,
-            source_control_file_path_mapping_fn=_source_control_file_path_mapping,
+        _convert_local_path_to_git_path_single_definition(
+            base_git_url=git_url,
+            git_file_path_mapping_fn=_git_file_path_mapping,
             assets_def=assets_def,
         )
         for assets_def in assets_defs

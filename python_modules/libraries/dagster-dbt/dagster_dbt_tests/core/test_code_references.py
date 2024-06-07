@@ -100,9 +100,9 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     defs = Definitions(
         assets=link_to_git(
             with_source_code_references([my_dbt_assets]),
-            source_control_url="https://github.com/dagster-io/jaffle_shop",
-            source_control_branch="master",
-            source_control_file_path_mapping=SourceControlFilePathMapping(
+            git_url="https://github.com/dagster-io/jaffle_shop",
+            git_branch="master",
+            git_file_path_mapping=SourceControlFilePathMapping(
                 local_file_anchor=Path(JAFFLE_SHOP_ROOT_PATH), file_anchor_path_in_repository=""
             ),
         )
