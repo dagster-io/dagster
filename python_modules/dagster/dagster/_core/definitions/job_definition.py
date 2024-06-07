@@ -712,7 +712,7 @@ class JobDefinition(IHasInternalInit):
         )
 
     def validate_partition_key(
-        self, partition_key: str, dynamic_partitions_store
+        self, partition_key: str, dynamic_partitions_store: "DynamicPartitionsStore"
     ) -> PartitionsDefinition:
         if self.partitions_def:
             self.partitions_def.validate_partition_key(
@@ -804,7 +804,9 @@ class JobDefinition(IHasInternalInit):
                 *selection_data.asset_check_selection
             )
 
-        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+        job_asset_graph = get_asset_graph_for_job(
+            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+        )
 
         return build_asset_job(
             name=self.name,
@@ -815,6 +817,7 @@ class JobDefinition(IHasInternalInit):
             tags=self.tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
+            allow_different_partitions_defs=True,
         )
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":

@@ -17,7 +17,7 @@ import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME
 from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -266,26 +266,21 @@ class RepositoryDefinition:
 
     def has_implicit_global_asset_job_def(self) -> bool:
         """Returns true is there is a single implicit asset job for all asset keys in a repository."""
-        return self.has_job(ASSET_BASE_JOB_PREFIX)
+        return self.has_job(ASSET_BASE_JOB_NAME)
 
     def get_implicit_global_asset_job_def(self) -> JobDefinition:
         """A useful conveninence method for repositories where there are a set of assets with
         the same partitioning schema and one wants to access their corresponding implicit job
         easily.
         """
-        if not self.has_job(ASSET_BASE_JOB_PREFIX):
+        if not self.has_job(ASSET_BASE_JOB_NAME):
             raise DagsterInvariantViolationError(
                 "There is no single global asset job, likely due to assets using "
                 "different partitioning schemes via their partitions_def parameter. You must "
                 "use get_implicit_job_def_for_assets in order to access the correct implicit job."
             )
 
-        return self.get_job(ASSET_BASE_JOB_PREFIX)
-
-    def get_implicit_asset_job_names(self) -> Sequence[str]:
-        return [
-            job_name for job_name in self.job_names if job_name.startswith(ASSET_BASE_JOB_PREFIX)
-        ]
+        return self.get_job(ASSET_BASE_JOB_NAME)
 
     def get_maybe_subset_job_def(
         self,

@@ -177,7 +177,9 @@ class UnresolvedAssetJobDefinition(
     ) -> "JobDefinition":
         """Resolve this UnresolvedAssetJobDefinition into a JobDefinition."""
         try:
-            job_asset_graph = get_asset_graph_for_job(asset_graph, self.selection)
+            job_asset_graph = get_asset_graph_for_job(
+                asset_graph, self.selection, allow_different_partitions_defs=False
+            )
         except DagsterInvalidDefinitionError as e:
             raise DagsterInvalidDefinitionError(
                 f'Error resolving selection for asset job "{self.name}": {e}'
@@ -226,6 +228,7 @@ class UnresolvedAssetJobDefinition(
             hooks=self.hooks,
             op_retry_policy=self.op_retry_policy,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=False,
         )
 
 
