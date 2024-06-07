@@ -1,5 +1,5 @@
 import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
-import {useCallback, useContext, useEffect, useLayoutEffect, useState} from 'react';
+import {useCallback, useContext, useLayoutEffect, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 import {atom, useRecoilValue} from 'recoil';
 import styled from 'styled-components';
@@ -38,8 +38,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
   // Reload the workspace, but don't toast about it.
 
   // Reload the workspace, and show a success or error toast upon completion.
-  useEffect(() => {
-    const isFreshPageload = previousEntriesById === null;
+  useLayoutEffect(() => {
     const anyErrors = Object.values(data).some(
       (entry) =>
         entry.__typename === 'PythonError' ||
@@ -59,7 +58,27 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         ),
         icon: 'check_circle',
       });
-    } else if (!isFreshPageload) {
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, onClickViewButton]);
+
+  const codeLocationStatusQueryData = useRecoilValue(codeLocationStatusAtom);
+
+  useLayoutEffect(() => {
+    const isFreshPageload = previousEntriesById === null;
+    const showViewButton = !alreadyViewingCodeLocations();
+
+    // Given the previous and current code locations, determine whether to show a) a loading spinner
+    // and/or b) a toast indicating that a code location is being reloaded.
+    const entries =
+      codeLocationStatusQueryData?.locationStatusesOrError?.__typename ===
+      'WorkspaceLocationStatusEntries'
+        ? codeLocationStatusQueryData?.locationStatusesOrError.entries
+        : [];
+
+    let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
+
+    if (!isFreshPageload && hasUpdatedEntries) {
       showSharedToaster({
         intent: 'success',
         message: (
@@ -71,23 +90,6 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         icon: 'check_circle',
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, onClickViewButton]);
-
-  const codeLocationStatusQueryData = useRecoilValue(codeLocationStatusAtom);
-
-  useLayoutEffect(() => {
-    const isFreshPageload = previousEntriesById === null;
-
-    // Given the previous and current code locations, determine whether to show a) a loading spinner
-    // and/or b) a toast indicating that a code location is being reloaded.
-    const entries =
-      codeLocationStatusQueryData?.locationStatusesOrError?.__typename ===
-      'WorkspaceLocationStatusEntries'
-        ? codeLocationStatusQueryData?.locationStatusesOrError.entries
-        : [];
-
-    let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
     const currEntriesById: {[key: string]: LocationStatusEntry} = {};
     entries.forEach((entry) => {
       const previousEntry = previousEntriesById && previousEntriesById[entry.id];
@@ -129,8 +131,6 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     if (previousEntries.length > currentEntries.length) {
       return;
     }
-
-    const showViewButton = !alreadyViewingCodeLocations();
 
     // We have a new entry, and it has already finished loading. Wow! It's surprisingly fast for it
     // to have finished loading so quickly, but go ahead and indicate that the location has

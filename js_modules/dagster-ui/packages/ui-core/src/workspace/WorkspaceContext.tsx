@@ -192,19 +192,30 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     [client, getData, localCacheIdPrefix],
   );
 
+  const [isRefetching, setIsRefetching] = useState(false);
+
   const locationsToFetch = useMemo(() => {
     if (!didLoadCachedData) {
       return [];
     }
+    if (isRefetching) {
+      return [];
+    }
     const toFetch = Object.values(locations).filter((loc) => {
       const prev = prevLocations.current?.[loc.name];
-      return prev?.updateTimestamp !== loc.updateTimestamp || prev?.loadStatus !== loc.loadStatus;
+      const d = locationsData[loc.name];
+      const entry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
+      return (
+        prev?.updateTimestamp !== loc.updateTimestamp ||
+        prev?.loadStatus !== loc.loadStatus ||
+        entry?.updatedTimestamp !== loc.updateTimestamp ||
+        entry?.loadStatus !== loc.loadStatus
+      );
     });
     prevLocations.current = locations;
     return toFetch;
-  }, [locations, didLoadCachedData]);
+  }, [didLoadCachedData, isRefetching, locations, locationsData]);
 
-  const [isRefetching, setIsRefetching] = useState(false);
   useLayoutEffect(() => {
     if (!locationsToFetch.length) {
       return;
