@@ -1408,7 +1408,7 @@ def test_default_loggers_keys_conflict():
     assert the_repo.get_job("the_job").loggers == {"foo": some_logger}
 
 
-def test_base_jobs():
+def test_implicit_asset_job():
     @asset
     def asset1(): ...
 
@@ -1422,12 +1422,9 @@ def test_base_jobs():
     def repo():
         return [asset1, asset2, asset3]
 
-    assert sorted(repo.get_implicit_asset_job_names()) == ["__ASSET_JOB"]
-    assert repo.get_implicit_global_asset_job_def().asset_layer.executable_asset_keys == {
-        asset1.key,
-        asset2.key,
-        asset3.key,
-    }
+    job_def = repo.get_implicit_global_asset_job_def()
+    assert job_def.name == "__ASSET_JOB"
+    assert job_def.asset_layer.executable_asset_keys == {asset1.key, asset2.key, asset3.key}
 
 
 def test_auto_materialize_sensors_do_not_conflict():

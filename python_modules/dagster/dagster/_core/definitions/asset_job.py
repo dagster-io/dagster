@@ -52,8 +52,8 @@ from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied
 from .utils import DEFAULT_IO_MANAGER_KEY
 
-# Prefix for auto created jobs that are used to materialize assets
-ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"
+# Name for auto-created job that's used to materialize assets
+ASSET_BASE_JOB_NAME = "__ASSET_JOB"
 
 if TYPE_CHECKING:
     from dagster._core.definitions.run_config import RunConfig
@@ -61,55 +61,19 @@ if TYPE_CHECKING:
     from .asset_check_spec import AssetCheckSpec
 
 
-def is_base_asset_job_name(name: str) -> bool:
-    return name.startswith(ASSET_BASE_JOB_PREFIX)
-
-
-def _build_partitioned_asset_job_lambda(
-    job_name: str,
+def get_base_asset_job_lambda(
     asset_graph: AssetGraph,
-    partitions_def: PartitionsDefinition,
     resource_defs: Optional[Mapping[str, ResourceDefinition]],
     executor_def: Optional[ExecutorDefinition],
     logger_defs: Optional[Mapping[str, LoggerDefinition]],
 ) -> Callable[[], JobDefinition]:
     def build_asset_job_lambda() -> JobDefinition:
-        executable_asset_keys = asset_graph.executable_asset_keys & {
-            *asset_graph.asset_keys_for_partitions_def(partitions_def=partitions_def),
-            *asset_graph.unpartitioned_asset_keys,
-        }
-        # For now, to preserve behavior keep all orphaned asset checks (where the target check
-        # has no corresponding executable definition) in all base jobs. When checks support
-        # partitions, they should only go in the corresponding partitioned job.
-        selection = AssetSelection.assets(*executable_asset_keys) | AssetSelection.checks(
-            *asset_graph.orphan_asset_check_keys
-        )
         job_def = build_asset_job(
-            job_name,
-            asset_graph=get_asset_graph_for_job(asset_graph, selection),
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-            partitions_def=partitions_def,
-        )
-        job_def.validate_resource_requirements_satisfied()
-
-        if logger_defs and not job_def.has_specified_loggers:
-            job_def = job_def.with_logger_defs(logger_defs)
-
-        return job_def
-
-    return build_asset_job_lambda
-
-
-def _build_global_asset_job_lambda(
-    asset_graph, executor_def, resource_defs, logger_defs
-) -> Callable[[], JobDefinition]:
-    def build_asset_job_lambda() -> JobDefinition:
-        job_def = build_asset_job(
-            name=ASSET_BASE_JOB_PREFIX,
+            name=ASSET_BASE_JOB_NAME,
             asset_graph=asset_graph,
             executor_def=executor_def,
             resource_defs=resource_defs,
+            allow_different_partitions_defs=True,
         )
         job_def.validate_resource_requirements_satisfied()
         if logger_defs and not job_def.has_specified_loggers:
@@ -117,24 +81,12 @@ def _build_global_asset_job_lambda(
         return job_def
 
     return build_asset_job_lambda
-
-
-def get_base_asset_jobs(
-    asset_graph: AssetGraph,
-    resource_defs: Optional[Mapping[str, ResourceDefinition]],
-    executor_def: Optional[ExecutorDefinition],
-    logger_defs: Optional[Mapping[str, LoggerDefinition]],
-) -> Mapping[str, Callable[[], JobDefinition]]:
-    return {
-        ASSET_BASE_JOB_PREFIX: _build_global_asset_job_lambda(
-            asset_graph, executor_def, resource_defs, logger_defs
-        )
-    }
 
 
 def build_asset_job(
     name: str,
     asset_graph: AssetGraph,
+    allow_different_partitions_defs: bool,
     resource_defs: Optional[Mapping[str, object]] = None,
     description: Optional[str] = None,
     config: Optional[
@@ -187,6 +139,12 @@ def build_asset_job(
     resource_defs = check.opt_mapping_param(resource_defs, "resource_defs")
     resource_defs = merge_dicts({DEFAULT_IO_MANAGER_KEY: default_job_io_manager}, resource_defs)
     wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
+    partitions_def = _infer_and_validate_common_partitions_def(
+        asset_graph,
+        asset_graph.executable_asset_keys,
+        required_partitions_def=partitions_def,
+        allow_different_partitions_defs=allow_different_partitions_defs,
+    )
 
     deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
 
@@ -255,7 +213,9 @@ def build_asset_job(
 
 
 def get_asset_graph_for_job(
-    parent_asset_graph: AssetGraph, selection: AssetSelection
+    parent_asset_graph: AssetGraph,
+    selection: AssetSelection,
+    allow_different_partitions_defs: bool,
 ) -> AssetGraph:
     """Subset an AssetGraph to create an AssetGraph representing an asset job.
 
@@ -279,7 +239,11 @@ def get_asset_graph_for_job(
             f" Invalid selected keys: {invalid_keys}",
         )
 
-    _infer_and_validate_common_partitions_def(parent_asset_graph, selected_keys)
+    _infer_and_validate_common_partitions_def(
+        parent_asset_graph,
+        selected_keys,
+        allow_different_partitions_defs=allow_different_partitions_defs,
+    )
 
     selected_check_keys = selection.resolve_checks(parent_asset_graph)
 
@@ -388,6 +352,7 @@ def _subset_assets_defs(
 def _infer_and_validate_common_partitions_def(
     asset_graph: AssetGraph,
     asset_keys: Iterable[AssetKey],
+    allow_different_partitions_defs: bool,
     required_partitions_def: Optional[PartitionsDefinition] = None,
 ) -> Optional[PartitionsDefinition]:
     keys_by_partitions_def = defaultdict(set)
@@ -402,18 +367,19 @@ def _infer_and_validate_common_partitions_def(
                 )
             keys_by_partitions_def[partitions_def].add(key)
 
-    if len(keys_by_partitions_def) > 1:
-        keys_by_partitions_def_str = "\n".join(
-            f"{partitions_def}: {asset_keys}"
-            for partitions_def, asset_keys in keys_by_partitions_def.items()
-        )
-        raise DagsterInvalidDefinitionError(
-            f"Selected assets must have the same partitions definitions, but the"
-            f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
-        )
-    elif len(keys_by_partitions_def) == 1:
+    if len(keys_by_partitions_def) == 1:
         return next(iter(keys_by_partitions_def.keys()))
     else:
+        if len(keys_by_partitions_def) > 1 and not allow_different_partitions_defs:
+            keys_by_partitions_def_str = "\n".join(
+                f"{partitions_def}: {asset_keys}"
+                for partitions_def, asset_keys in keys_by_partitions_def.items()
+            )
+            raise DagsterInvalidDefinitionError(
+                f"Selected assets must have the same partitions definitions, but the"
+                f" selected assets have different partitions definitions: \n{keys_by_partitions_def_str}"
+            )
+
         return None
 
 

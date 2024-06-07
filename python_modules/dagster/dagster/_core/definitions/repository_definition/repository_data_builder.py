@@ -24,7 +24,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import get_base_asset_jobs, is_base_asset_job_name
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME, get_base_asset_job_lambda
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
@@ -190,7 +190,7 @@ def build_caching_repository_data_from_list(
                 raise DagsterInvalidDefinitionError(
                     f"Duplicate job definition found for {definition.describe_target()}"
                 )
-            if is_base_asset_job_name(definition.name):
+            if definition.name == ASSET_BASE_JOB_NAME:
                 raise DagsterInvalidDefinitionError(
                     f"Attempted to provide job called {definition.name} to repository, which "
                     "is a reserved name. Please rename the job."
@@ -274,13 +274,12 @@ def build_caching_repository_data_from_list(
         key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
     }
     if assets_defs or asset_checks_defs or source_assets:
-        for job_name, job_def in get_base_asset_jobs(
+        jobs[ASSET_BASE_JOB_NAME] = get_base_asset_job_lambda(
             asset_graph=asset_graph,
             executor_def=default_executor_def,
             resource_defs=top_level_resources,
             logger_defs=default_logger_defs,
-        ).items():
-            jobs[job_name] = job_def
+        )
 
     for name, sensor_def in sensors.items():
         if sensor_def.has_loadable_targets():

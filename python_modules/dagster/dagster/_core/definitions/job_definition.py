@@ -417,11 +417,11 @@ class JobDefinition(IHasInternalInit):
 
     @cached_property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
-        from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
+        from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME
 
         executable_nodes = {self.asset_layer.get(k) for k in self.asset_layer.executable_asset_keys}
         backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
-        if not self.name.startswith(ASSET_BASE_JOB_PREFIX):
+        if self.name != ASSET_BASE_JOB_NAME:
             check.invariant(
                 len(backfill_policies) <= 1,
                 "All assets in non-asset base job a job must have the same backfill policy.",
@@ -734,7 +734,7 @@ class JobDefinition(IHasInternalInit):
         )
 
     def validate_partition_key(
-        self, partition_key: str, dynamic_partitions_store
+        self, partition_key: str, dynamic_partitions_store: "DynamicPartitionsStore"
     ) -> PartitionsDefinition:
         if self.partitions_def:
             self.partitions_def.validate_partition_key(
@@ -826,7 +826,9 @@ class JobDefinition(IHasInternalInit):
                 *selection_data.asset_check_selection
             )
 
-        job_asset_graph = get_asset_graph_for_job(self.asset_layer.asset_graph, selection)
+        job_asset_graph = get_asset_graph_for_job(
+            self.asset_layer.asset_graph, selection, allow_different_partitions_defs=True
+        )
 
         return build_asset_job(
             name=self.name,
@@ -837,6 +839,7 @@ class JobDefinition(IHasInternalInit):
             tags=self.tags,
             config=self.config_mapping or self.partitioned_config,
             _asset_selection_data=selection_data,
+            allow_different_partitions_defs=True,
         )
 
     def _get_job_def_for_op_selection(self, op_selection: Iterable[str]) -> "JobDefinition":

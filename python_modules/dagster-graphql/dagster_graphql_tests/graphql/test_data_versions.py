@@ -358,7 +358,7 @@ def _materialize_assets(
         else None
     )
     selector = infer_job_selector(
-        context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
+        context, repo.get_implicit_global_asset_job_def().name, asset_selection=gql_asset_selection
     )
     if partition_keys:
         results = []
@@ -381,7 +381,9 @@ def _materialize_assets(
         return results
     else:
         selector = infer_job_selector(
-            context, repo.get_implicit_asset_job_names()[0], asset_selection=gql_asset_selection
+            context,
+            repo.get_implicit_global_asset_job_def().name,
+            asset_selection=gql_asset_selection,
         )
         return execute_dagster_graphql(
             context,
@@ -396,7 +398,7 @@ def _materialize_assets(
 
 
 def _fetch_data_versions(context: WorkspaceRequestContext, repo: RepositoryDefinition):
-    selector = infer_job_selector(context, repo.get_implicit_asset_job_names()[0])
+    selector = infer_job_selector(context, repo.get_implicit_global_asset_job_def().name)
     return execute_dagster_graphql(
         context,
         GET_ASSET_DATA_VERSIONS,
