@@ -45,13 +45,14 @@ In this section, we'll demonstrate how to import an existing project Dagster+. O
 
 3. Click **Add code location**.
 
-4. Click **Import a dbt project**, then **Continue**.
+4. Depending on the type of project you imported, this step will vary:
+
+   - **For dbt-only projects**, click **Import a dbt project**, then **Continue**.
+   - **For dbt and Dagster projects,** click **Import a Dagster project**.
 
 5. At this point, you'll be prompted to select either GitHub or Gitlab. For this guide, we'll select **GitHub**.
 
-6. You'll be redirected to GitHub, where you'll be prompted to authorize the Dagster+ application. **Note**: The profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project.
-
-   After the authorization is complete, you'll be redirected back to Dagster+.
+6. If prompted, sign into your GitHub account and complete the authorization process for the Dagster+ application. **Note**: The profile or organization you're using to authorize Dagster+ must have read and write access to the repository containing the project. After the authorization is complete, you'll be redirected back to Dagster+.
 
 7. In Dagster+, locate and select the repository containing the project by using the dropdowns. **Note**: dbt projects must have `dbt_profiles.yml` and `profiles.yml` files in the repository root or an error will display.
 
