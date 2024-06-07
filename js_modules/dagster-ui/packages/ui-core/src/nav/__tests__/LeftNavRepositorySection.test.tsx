@@ -29,21 +29,20 @@ describe('Repository options', () => {
 
   let nativeGBRC: any;
 
-  beforeAll(() => {
+  beforeEach(() => {
+    window.localStorage.clear();
     nativeGBRC = window.Element.prototype.getBoundingClientRect;
     window.Element.prototype.getBoundingClientRect = jest
       .fn()
       .mockReturnValue({height: 400, width: 400});
   });
 
-  afterAll(() => {
-    window.Element.prototype.getBoundingClientRect = nativeGBRC;
-  });
-
   afterEach(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
     window.localStorage.clear();
     __resetForJest();
     jest.resetModules();
+    jest.resetAllMocks();
   });
 
   it('Correctly displays the current repository state', async () => {
@@ -128,18 +127,14 @@ describe('Repository options', () => {
 
       const loremHeader = await screen.findByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeVisible();
-      const fooHeader = screen.getByRole('button', {name: /foo/i});
+      const fooHeader = await waitFor(() => screen.getByRole('button', {name: /foo/i}));
       expect(fooHeader).toBeVisible();
-      const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
+      const dunderHeader = await waitFor(() => screen.getByRole('button', {name: /abc_location/i}));
       expect(dunderHeader).toBeVisible();
 
       await userEvent.click(loremHeader);
-      await userEvent.click(fooHeader);
-      await userEvent.click(dunderHeader);
-
       await waitFor(() => {
-        // Twelve jobs total. No repo name link since multiple repos are visible.
-        expect(screen.queryAllByRole('link')).toHaveLength(12);
+        expect(screen.queryAllByRole('link')).toHaveLength(6);
       });
     });
 

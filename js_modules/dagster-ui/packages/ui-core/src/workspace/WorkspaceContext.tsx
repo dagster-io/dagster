@@ -1,6 +1,7 @@
 import {useApolloClient} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
-import React, {useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useSetRecoilState} from 'recoil';
 
 import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from './WorkspaceQueries';
 import {buildRepoAddress} from './buildRepoAddress';
@@ -23,11 +24,16 @@ import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {PipelineSelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
-import {getCachedData, getData, useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
+import {
+  useGetCachedData,
+  useGetData,
+  useIndexedDBCachedQuery,
+} from '../search/useIndexedDBCachedQuery';
 
-const CODE_LOCATION_STATUS_QUERY_KEY = 'CodeLocationStatusQuery';
-const CODE_LOCATION_STATUS_QUERY_VERSION = 3;
-const LOCATION_WORKSPACE_QUERY_VERSION = 5;
+export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
+export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
+export const LOCATION_WORKSPACE_QUERY_VERSION = 1;
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
 
@@ -69,8 +75,21 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   >({
     query: CODE_LOCATION_STATUS_QUERY,
     version: CODE_LOCATION_STATUS_QUERY_VERSION,
-    key: `${localCacheIdPrefix}/${CODE_LOCATION_STATUS_QUERY_KEY}`,
+    key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
   });
+  if (typeof jest === 'undefined') {
+    // Only do this outside of jest for now so that we don't need to add RecoilRoot around everything...
+    // we will switch to jotai at some point instead... which doesnt require a
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useLayoutEffect(() => {
+      if (codeLocationStatusQueryResult.data) {
+        setCodeLocationStatusAtom(codeLocationStatusQueryResult.data);
+      }
+    }, [codeLocationStatusQueryResult.data, setCodeLocationStatusAtom]);
+  }
+
   const fetch = codeLocationStatusQueryResult.fetch;
   useRefreshAtInterval({
     refresh: useCallback(async () => {
@@ -80,7 +99,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     leading: true,
   });
 
-  const {data} = codeLocationStatusQueryResult;
+  const {data, loading: loadingCodeLocationStatus} = codeLocationStatusQueryResult;
 
   const locations = useMemo(() => getLocations(data), [data]);
   const prevLocations = useRef<typeof locations>({});
@@ -92,13 +111,16 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
   >({});
 
-  useEffect(() => {
+  const getCachedData = useGetCachedData();
+  const getData = useGetData();
+
+  useLayoutEffect(() => {
     // Load data from the cache
     if (didInitiateFetchFromCache.current) {
       return;
     }
     didInitiateFetchFromCache.current = true;
-    (async () => {
+    new Promise(async (res) => {
       /**
        * 1. Load the cached code location status query
        * 2. Load the cached data for those locations
@@ -109,7 +131,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
        *  the latest codeLocationStatusQuery result to what was in the cache.
        */
       const data = await getCachedData<CodeLocationStatusQuery>({
-        key: `${localCacheIdPrefix}/${CODE_LOCATION_STATUS_QUERY_KEY}`,
+        key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
         version: CODE_LOCATION_STATUS_QUERY_VERSION,
       });
       const cachedLocations = getLocations(data);
@@ -118,7 +140,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       await Promise.all([
         ...Object.values(cachedLocations).map(async (location) => {
           const locationData = await getCachedData<LocationWorkspaceQuery>({
-            key: `${localCacheIdPrefix}/${locationWorkspaceKey(location.name)}`,
+            key: `${localCacheIdPrefix}${locationWorkspaceKey(location.name)}`,
             version: LOCATION_WORKSPACE_QUERY_VERSION,
           });
           const entry = locationData?.workspaceLocationEntryOrError;
@@ -138,9 +160,11 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         }),
       ]);
       prevLocations.current = prevCachedLocations;
+      res(void 0);
+    }).then(() => {
       setDidLoadCachedData(true);
-    })();
-  }, [localCacheIdPrefix, locations]);
+    });
+  }, [getCachedData, localCacheIdPrefix, locations]);
 
   const client = useApolloClient();
 
@@ -149,7 +173,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       const locationData = await getData<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
         client,
         query: LOCATION_WORKSPACE_QUERY,
-        key: `${localCacheIdPrefix}/${locationWorkspaceKey(name)}`,
+        key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
         version: LOCATION_WORKSPACE_QUERY_VERSION,
         variables: {
           name,
@@ -179,23 +203,42 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     return toFetch;
   }, [locations, didLoadCachedData]);
 
-  useEffect(() => {
-    locationsToFetch.forEach(async (location) => {
-      refetchLocation(location.name);
+  const [isRefetching, setIsRefetching] = useState(false);
+  useLayoutEffect(() => {
+    if (!locationsToFetch.length) {
+      return;
+    }
+    setIsRefetching(true);
+    Promise.all(
+      locationsToFetch.map(async (location) => {
+        return await refetchLocation(location.name);
+      }),
+    ).then(() => {
+      setIsRefetching(false);
     });
   }, [refetchLocation, locationsToFetch]);
 
-  const locationsRemoved = useMemo(() => {
-    return Object.values(prevLocations.current).filter((loc) => !locations[loc.name]);
-  }, [locations]);
+  const locationsRemoved = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...Object.values(prevLocations.current).filter((loc) => !locations[loc.name]),
+          ...Object.values(locationsData).filter(
+            (loc): loc is WorkspaceLocationNodeFragment =>
+              loc.__typename === 'WorkspaceLocationEntry' && !locations[loc.name],
+          ),
+        ]),
+      ),
+    [locations, locationsData],
+  );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (locationsRemoved.length) {
       setLocationsData((locationsData) => {
         const copy = {...locationsData};
         locationsRemoved.forEach((loc) => {
           delete copy[loc.name];
-          indexedDB.deleteDatabase(`${localCacheIdPrefix}/${locationWorkspaceKey(loc.name)}`);
+          indexedDB.deleteDatabase(`${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`);
         });
         return copy;
       });
@@ -211,7 +254,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     [locationsData],
   );
 
-  const {allRepos} = React.useMemo(() => {
+  const allRepos = React.useMemo(() => {
     let allRepos: DagsterRepoOption[] = [];
 
     allRepos = sortBy(
@@ -220,9 +263,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
           return accum;
         }
         const repositoryLocation = locationEntry.locationOrLoadError;
-        const reposForLocation = repositoryLocation.repositories.map((repository) => {
-          return {repository, repositoryLocation};
-        });
+        const reposForLocation = repoLocationToRepos(repositoryLocation);
         return [...accum, ...reposForLocation];
       }, [] as DagsterRepoOption[]),
 
@@ -230,7 +271,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       (r) => `${r.repositoryLocation.name}:${r.repository.name}`,
     );
 
-    return {allRepos};
+    return allRepos;
   }, [locationEntries]);
 
   const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
@@ -246,7 +287,9 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   return (
     <WorkspaceContext.Provider
       value={{
-        loading: Object.keys(locationsData).length !== Object.keys(locations).length, // Only "loading" on initial load.
+        loading:
+          !didLoadCachedData ||
+          (!Object.values(locationsData).length && (isRefetching || loadingCodeLocationStatus)), // Only "loading" on initial load.
         locationEntries,
         allRepos,
         visibleRepos,
@@ -268,6 +311,7 @@ function getLocations(d: CodeLocationStatusQuery | undefined | null) {
     d?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
       ? d?.locationStatusesOrError.entries
       : [];
+
   return locations.reduce(
     (accum, loc) => {
       accum[loc.name] = loc;
@@ -277,8 +321,8 @@ function getLocations(d: CodeLocationStatusQuery | undefined | null) {
   );
 }
 
-function locationWorkspaceKey(name: string) {
-  return `LocationWorkspace/${name}`;
+export function locationWorkspaceKey(name: string) {
+  return `/LocationWorkspace/${name}`;
 }
 
 /**
@@ -467,3 +511,9 @@ export const buildPipelineSelector = (
 
 export const optionToRepoAddress = (option: DagsterRepoOption) =>
   buildRepoAddress(option.repository.name, option.repository.location.name);
+
+export function repoLocationToRepos(repositoryLocation: RepositoryLocation) {
+  return repositoryLocation.repositories.map((repository) => {
+    return {repository, repositoryLocation};
+  });
+}

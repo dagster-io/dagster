@@ -17,6 +17,7 @@ import {
 
 export const buildCodeLocationsStatusQuery = (
   entries: WorkspaceLocationStatusEntry[],
+  options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> = {},
 ): MockedResponse => {
   return buildQueryMock<CodeLocationStatusQuery, CodeLocationStatusQueryVariables>({
     query: CODE_LOCATION_STATUS_QUERY,
@@ -26,11 +27,25 @@ export const buildCodeLocationsStatusQuery = (
         entries,
       }),
     },
+    ...options,
   });
 };
 
-export const buildWorkspaceMocks = (entries: WorkspaceLocationEntry[]) => {
+export const buildWorkspaceMocks = (
+  entries: WorkspaceLocationEntry[],
+  options: Partial<Omit<MockedResponse, 'result' | 'query' | 'variables' | 'data'>> = {},
+) => {
   return [
+    buildCodeLocationsStatusQuery(
+      entries.map((entry) =>
+        buildWorkspaceLocationStatusEntry({
+          ...entry,
+          updateTimestamp: entry.updatedTimestamp,
+          __typename: 'WorkspaceLocationStatusEntry',
+        }),
+      ),
+      options,
+    ),
     ...entries.map((entry) =>
       buildQueryMock<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
         query: LOCATION_WORKSPACE_QUERY,
@@ -40,15 +55,8 @@ export const buildWorkspaceMocks = (entries: WorkspaceLocationEntry[]) => {
         data: {
           workspaceLocationEntryOrError: entry,
         },
+        ...options,
       }),
-    ),
-    buildCodeLocationsStatusQuery(
-      entries.map((entry) =>
-        buildWorkspaceLocationStatusEntry({
-          ...entry,
-          __typename: 'WorkspaceLocationStatusEntry',
-        }),
-      ),
     ),
   ];
 };
