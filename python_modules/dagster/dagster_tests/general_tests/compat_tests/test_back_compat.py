@@ -10,7 +10,6 @@ from enum import Enum
 from gzip import GzipFile
 from typing import NamedTuple, Optional, Union
 
-import pendulum
 import pytest
 import sqlalchemy as db
 from dagster import (
@@ -52,6 +51,7 @@ from dagster._serdes.serdes import (
     pack_value,
     serialize_value,
 )
+from dagster._seven import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
 
@@ -974,7 +974,7 @@ def test_add_bulk_actions_columns():
                     from_failure=False,
                     reexecution_steps=None,
                     tags=None,
-                    backfill_timestamp=pendulum.now().timestamp(),
+                    backfill_timestamp=get_current_timestamp(),
                 )
             )
             unmigrated_row_count = instance._run_storage.fetchone(

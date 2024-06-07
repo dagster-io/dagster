@@ -1,7 +1,6 @@
 import base64
 import os
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInstance,
@@ -15,6 +14,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.observe import observe
+from dagster._seven import get_current_timestamp
 from dagster_gcp import BigQueryResource, bigquery_resource, fetch_last_updated_timestamps
 
 from .conftest import IS_BUILDKITE, SHARED_BUILDKITE_BQ_CONFIG, temporary_bigquery_table
@@ -141,7 +141,7 @@ def test_fetch_last_updated_timestamps_no_table():
 @pytest.mark.skipif(not IS_BUILDKITE, reason="Requires access to the BUILDKITE bigquery DB")
 @pytest.mark.integration
 def test_fetch_last_updated_timestamps():
-    start_timestamp = pendulum.now("UTC").timestamp()
+    start_timestamp = get_current_timestamp()
     dataset_name = "BIGQUERY_IO_MANAGER_SCHEMA"
     with temporary_bigquery_table(schema_name=dataset_name, column_str="FOO string") as table_name:
 

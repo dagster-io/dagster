@@ -4,7 +4,6 @@ import tempfile
 from contextlib import contextmanager
 from typing import Any, Generator, Mapping, Sequence
 
-import pendulum
 import pytest
 from dagster import job, op
 from dagster._core.events import DagsterEventType
@@ -14,6 +13,7 @@ from dagster._core.storage.local_compute_log_manager import LocalComputeLogManag
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.test_utils import instance_for_test
 from dagster._serdes import ConfigurableClassData
+from dagster._seven import get_current_datetime_in_utc
 from typing_extensions import Self
 
 from .utils.captured_log_manager import TestCapturedLogManager
@@ -94,7 +94,7 @@ def test_external_captured_log_manager():
 def test_get_log_keys_for_log_key_prefix():
     with tempfile.TemporaryDirectory() as tmpdir_path:
         cm = LocalComputeLogManager(tmpdir_path)
-        evaluation_time = pendulum.now()
+        evaluation_time = get_current_datetime_in_utc()
         log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
 
         def write_log_file(file_id: int):
@@ -118,7 +118,7 @@ def test_read_log_lines_for_log_key_prefix():
     """Tests that we can read a sequence of files in a bucket as if they are a single file."""
     with tempfile.TemporaryDirectory() as tmpdir_path:
         cm = LocalComputeLogManager(tmpdir_path)
-        evaluation_time = pendulum.now()
+        evaluation_time = get_current_datetime_in_utc()
         log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
 
         all_logs = []

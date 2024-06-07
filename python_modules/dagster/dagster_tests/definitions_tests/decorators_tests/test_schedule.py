@@ -4,7 +4,6 @@ import re
 import warnings
 from datetime import datetime
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -17,6 +16,7 @@ from dagster import (
     validate_run_config,
 )
 from dagster._core.errors import ScheduleExecutionError
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.merger import merge_dicts
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
@@ -177,7 +177,7 @@ def test_schedule_with_nested_tags():
         return {}
 
     assert my_tag_schedule.evaluate_tick(
-        build_schedule_context(scheduled_execution_time=pendulum.now())
+        build_schedule_context(scheduled_execution_time=get_current_datetime_in_utc())
     )[0][0].tags == merge_dicts(
         {key: json.dumps(val) for key, val in nested_tags.items()},
         {"dagster/schedule_name": "my_tag_schedule"},
@@ -203,7 +203,7 @@ def test_invalid_tag_keys():
         assert warning.filename.endswith("test_schedule.py")
 
     assert my_tag_schedule.evaluate_tick(
-        build_schedule_context(scheduled_execution_time=pendulum.now())
+        build_schedule_context(scheduled_execution_time=get_current_datetime_in_utc())
     )[0][0].tags == merge_dicts(tags, {"dagster/schedule_name": "my_tag_schedule"})
 
 
