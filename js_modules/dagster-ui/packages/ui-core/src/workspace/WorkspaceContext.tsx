@@ -189,7 +189,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       );
       return locationData;
     },
-    [client, localCacheIdPrefix],
+    [client, getData, localCacheIdPrefix],
   );
 
   const locationsToFetch = useMemo(() => {
