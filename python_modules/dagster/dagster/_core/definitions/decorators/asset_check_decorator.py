@@ -33,7 +33,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 from ..input import In
 from .asset_decorator import make_asset_deps
-from .assets_definition_factory import (
+from .decorator_assets_definition_builder import (
     build_asset_ins,
     get_function_params_without_context_or_config_or_resources,
 )
