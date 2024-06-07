@@ -169,6 +169,10 @@ class DagsterSlingTranslator:
         return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
 
     @public
+    def get_tags(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
+        return {}
+
+    @public
     def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:
         config = stream_definition.get("config", {}) or {}
         meta = config.get("meta", {})
