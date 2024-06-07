@@ -27,7 +27,7 @@ To complete the steps in this guide, you'll need:
 
 ---
 
-## Automatically attaching code references to asset definitions
+## Automatically attaching local file code references to asset definitions
 
 ### Assets defined in Python
 
@@ -66,7 +66,7 @@ Dagster's dbt integration can automatically attach references to the SQL files b
 
 ---
 
-## Manually attaching code references to asset definitions
+## Manually attaching local file code references to asset definitions
 
 In some cases, you may want to manually attach code references to your asset definitions. Some assets may have a more complex source structure, such as an asset whose definition is spread across multiple Python source files or an asset which is partially defined with a `.sql` model file.
 
@@ -113,3 +113,108 @@ Each of the code references to `manual_references.py` will be visible in the **A
     height={389}
   />
 </center>
+
+---
+
+## Converting code references to link to a git repository
+
+In a local context, it is useful to specify local code references in order to navigate directly to the source code of an asset. However, in a production environment, you may want to link to the source control repository where the code is stored.
+
+### In Dagster Plus
+
+If using Dagster Plus, you can use the <PyObject module="dagster_plus" object="dagster_cloud.metadata.source_code.link_to_git_if_cloud"/> utility to conditionally convert local file code references to source control links. This utility will automatically detect if your code is running in a Dagster Cloud environment and convert local file code references to source control links, pointing at the commit hash of the code running in the current deployment.
+
+```python file=/guides/dagster/code_references/link_to_source_control_plus.py
+import os
+from pathlib import Path
+
+from dagster_cloud.metadata.source_code import link_to_git_if_cloud
+
+from dagster import Definitions, asset
+from dagster._core.definitions.metadata import with_source_code_references
+
+
+@asset
+def my_asset(): ...
+
+
+@asset
+def another_asset(): ...
+
+
+defs = Definitions(
+    assets=link_to_git_if_cloud(
+        assets_defs=with_source_code_references([my_asset, another_asset]),
+        # Inferred from searching for .git directory in parent directories
+        # of the module containing this code - may also be set explicitly
+        repository_root_absolute_path=Path(__file__).parent,
+    )
+)
+```
+
+### In any Dagster environment
+
+The <PyObject module="dagster" object="dagster._core.definitions.metadata.link_to_source_control"/> utility allows you to convert local file code references to source control links. You'll need to provide the base URL of your git repository, the branch or commit hash, and a path to the repository root locally.
+
+```python file=/guides/dagster/code_references/link_to_source_control.py
+from pathlib import Path
+
+from dagster import Definitions, asset
+from dagster._core.definitions.metadata import (
+    link_to_source_control,
+    with_source_code_references,
+)
+
+
+@asset
+def my_asset(): ...
+
+
+@asset
+def another_asset(): ...
+
+
+defs = Definitions(
+    assets=link_to_source_control(
+        assets_defs=with_source_code_references([my_asset, another_asset]),
+        source_control_url="https://github.com/dagster-io/dagster",
+        source_control_branch="main",
+        repository_root_absolute_path=Path(__file__).parent,
+    )
+)
+```
+
+You may choose to conditionally apply this transformation based on the environment in which your Dagster code is running. For example, you could use an environment variable to determine whether to link to local files or to a source control repository:
+
+```python file=/guides/dagster/code_references/link_to_source_control_conditional.py
+import os
+from pathlib import Path
+
+from dagster import Definitions, asset
+from dagster._core.definitions.metadata import (
+    link_to_source_control,
+    with_source_code_references,
+)
+
+
+@asset
+def my_asset(): ...
+
+
+@asset
+def another_asset(): ...
+
+
+assets = with_source_code_references([my_asset, another_asset])
+
+defs = Definitions(
+    assets=link_to_source_control(
+        assets_defs=assets,
+        source_control_url="https://github.com/dagster-io/dagster",
+        source_control_branch="main",
+        repository_root_absolute_path=Path(__file__).parent,
+    )
+    if bool(os.getenv("IS_PRODUCTION"))
+    else assets
+)
+```
