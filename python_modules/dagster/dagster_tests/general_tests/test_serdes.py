@@ -908,9 +908,20 @@ def test_dagster_model() -> None:
     assert m == deserialize_value(m_str, whitelist_map=test_env)
 
     @_whitelist_for_serdes(test_env)
+    @dagster_model(checked=False)
+    class UncheckedModel:
+        nums: List[int]
+        optional: int = 130
+
+    m = UncheckedModel(nums=[1, 2, 3])
+    m_str = serialize_value(m, whitelist_map=test_env)
+    assert m == deserialize_value(m_str, whitelist_map=test_env)
+
+    @_whitelist_for_serdes(test_env)
     @dagster_model
     class CachedModel:
         nums: List[int]
+        optional: int = 42
 
         @cached_method
         def map(self) -> dict:

@@ -1,9 +1,12 @@
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 from dagster._check import CheckError
-from dagster._model import DagsterModel, copy, dagster_model, dagster_model_custom
-from dagster._model.decorator import IHaveNew
+from dagster._model import DagsterModel, IHaveNew, copy, dagster_model, dagster_model_custom
+from dagster._model.decorator import (
+    _INJECTED_DEFAULT_VALS_LOCAL_VAR,
+    build_args_and_assignment_strs,
+)
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 from pydantic import ValidationError
 
@@ -288,3 +291,113 @@ def test_didnt_override_new():
         @dagster_model_custom
         class FailedAgain:
             local: Optional[str]
+
+
+def test_empty():
+    @dagster_model
+    class Empty: ...
+
+    assert Empty()
+
+
+def test_optional_arg() -> None:
+    @dagster_model
+    class Opt:
+        maybe: Optional[str] = None
+        always: Optional[str]
+
+    assert Opt(always="set")
+    assert Opt(always="set", maybe="x").maybe == "x"
+
+    @dagster_model(checked=False)
+    class Other:
+        maybe: Optional[str] = None
+        always: Optional[str]
+
+    assert Other(always="set")
+    assert Other(always="set", maybe="x").maybe == "x"
+
+
+def test_dont_share_containers() -> None:
+    @dagster_model
+    class Empties:
+        items: List[str] = []
+        map: Dict[str, str] = {}
+
+    e_1 = Empties()
+    e_2 = Empties()
+    assert e_1.items is not e_2.items
+    assert e_1.map is not e_2.map
+
+
+def test_sentinel():
+    _unset = object()
+
+    @dagster_model
+    class Sample:
+        val: Optional[Any] = _unset
+
+    assert Sample().val is _unset
+    assert Sample(val=None).val is None
+
+    @dagster_model(checked=False)
+    class OtherSample:
+        val: Optional[Any] = _unset
+
+    assert OtherSample().val is _unset
+    assert OtherSample(val=None).val is None
+
+
+@pytest.mark.parametrize(
+    "fields, defaults, expected",
+    [
+        (
+            {"name": str},
+            {},
+            (
+                ", *, name",
+                "",
+            ),
+        ),
+        # defaults dont need to be in certain order since we force kwargs
+        # None handled directly by arg default
+        (
+            {"name": str, "age": int, "f": float},
+            {"age": None},
+            (
+                ", *, name, age = None, f",
+                "",
+            ),
+        ),
+        # empty container defaults get fresh copies via assignments
+        (
+            {"things": list},
+            {"things": []},
+            (
+                ", *, things = None",
+                "things = things if things is not None else []",
+            ),
+        ),
+        (
+            {"map": dict},
+            {"map": {}},
+            (
+                ", *, map = None",
+                "map = map if map is not None else {}",
+            ),
+        ),
+        # base case - default values resolved by reference to injected local
+        (
+            {"val": Any},
+            {"val": object()},
+            (
+                f", *, val = {_INJECTED_DEFAULT_VALS_LOCAL_VAR}['val']",
+                "",
+            ),
+        ),
+    ],
+)
+def test_build_args_and_assign(fields, defaults, expected):
+    # tests / documents shared utility fn
+    # don't hesitate to delete this upon refactor
+    assert build_args_and_assignment_strs(fields, defaults) == expected
