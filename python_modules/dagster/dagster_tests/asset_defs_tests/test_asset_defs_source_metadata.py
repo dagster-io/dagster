@@ -8,7 +8,7 @@ from dagster._core.definitions.metadata import (
     UrlCodeReference,
     with_source_code_references,
 )
-from dagster._core.definitions.metadata.source_code import SourceControlFilePathMapping, link_to_git
+from dagster._core.definitions.metadata.source_code import AnchorBasedFilePathMappingFn, link_to_git
 from dagster._utils import file_relative_path
 
 # path of the `dagster` package on the filesystem
@@ -120,7 +120,7 @@ def test_asset_code_origins_source_control() -> None:
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
-        git_file_path_mapping=SourceControlFilePathMapping(
+        git_file_path_mapping=AnchorBasedFilePathMappingFn(
             local_file_anchor=Path(GIT_ROOT_PATH), file_anchor_path_in_repository=""
         ),
     )

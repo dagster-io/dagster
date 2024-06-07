@@ -135,7 +135,10 @@ def _with_code_source_single_definition(
     )
 
 
-class SourceControlFilePathMapping(NamedTuple):
+FilePathMappingFn = Callable[[Path], str]
+
+
+class AnchorBasedFilePathMappingFn(NamedTuple):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
     using a specific anchor file as a reference point. All other paths are calculated relative to this anchor file.
 
@@ -146,7 +149,7 @@ class SourceControlFilePathMapping(NamedTuple):
     Example:
         .. code-block:: python
 
-            anchor = SourceControlFilePathMapping(
+            mapping_fn = AnchorBasedFilePathMappingFn(
                 local_file_anchor=Path(__file__),
                 file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
             )
@@ -155,13 +158,22 @@ class SourceControlFilePathMapping(NamedTuple):
     local_file_anchor: Path
     file_anchor_path_in_repository: str
 
-
-SourceControlFilePathMappingFn = Callable[[Path], str]
+    def __call__(self, local_path: Path) -> str:
+        path_from_anchor_to_target = os.path.relpath(
+            local_path,
+            self.local_file_anchor,
+        )
+        return os.path.normpath(
+            os.path.join(
+                self.file_anchor_path_in_repository,
+                path_from_anchor_to_target,
+            )
+        )
 
 
 def convert_local_path_to_git_path(
     base_git_url: str,
-    git_file_path_mapping_fn: SourceControlFilePathMappingFn,
+    git_file_path_mapping_fn: FilePathMappingFn,
     local_path: LocalFileCodeReference,
 ) -> UrlCodeReference:
     source_file_from_repo_root = git_file_path_mapping_fn(Path(local_path.file_path))
@@ -175,7 +187,7 @@ def convert_local_path_to_git_path(
 
 def _convert_local_path_to_git_path_single_definition(
     base_git_url: str,
-    git_file_path_mapping_fn: SourceControlFilePathMappingFn,
+    git_file_path_mapping_fn: FilePathMappingFn,
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -230,7 +242,7 @@ def link_to_git(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
     git_url: str,
     git_branch: str,
-    git_file_path_mapping: Union[SourceControlFilePathMapping, SourceControlFilePathMappingFn],
+    git_file_path_mapping: FilePathMappingFn,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
@@ -243,12 +255,12 @@ def link_to_git(
         git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
         git_branch (str): The branch in the source control system, such as "master".
-        git_file_path_mapping (Union[SourceControlFilePathMapping, SourceControlFilePathMappingFn]):
+        git_file_path_mapping (FilePathMappingFn):
             Specifies the mapping between local file paths and their corresponding paths in a source control repository.
-            Simple usage is to provide a `SourceControlFilePathMapping` instance, which specifies an anchor file in the
+            Simple usage is to provide a `AnchorBasedFilePathMappingFn` instance, which specifies an anchor file in the
             repository and the corresponding local file path, which is extrapolated to all other local file paths.
-            Alternatively, a function can be provided which takes a local file path and returns the corresponding path in
-            the repository, allowing for more complex mappings.
+            Alternatively, a custom function can be provided which takes a local file path and returns the corresponding
+            path in the repository, allowing for more complex mappings.
 
     Example:
         .. code-block:: python
@@ -257,7 +269,7 @@ def link_to_git(
                         with_source_code_references([my_dbt_assets]),
                         git_url="https://github.com/dagster-io/dagster",
                         git_branch="master",
-                        git_file_path_mapping=SourceControlFilePathMapping(
+                        git_file_path_mapping=AnchorBasedFilePathMappingFn(
                             local_file_anchor=Path(__file__),
                             file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
                         ),
@@ -274,29 +286,10 @@ def link_to_git(
             " Only GitHub and GitLab are supported for linking to source control at this time."
         )
 
-    _git_file_path_mapping: SourceControlFilePathMappingFn
-    if isinstance(git_file_path_mapping, SourceControlFilePathMapping):
-
-        def resolve_path(local_path: Path) -> str:
-            path_from_anchor_to_target = os.path.relpath(
-                local_path,
-                git_file_path_mapping.local_file_anchor,
-            )
-            return os.path.normpath(
-                os.path.join(
-                    git_file_path_mapping.file_anchor_path_in_repository,
-                    path_from_anchor_to_target,
-                )
-            )
-
-        _git_file_path_mapping = resolve_path
-    else:
-        _git_file_path_mapping = git_file_path_mapping
-
     return [
         _convert_local_path_to_git_path_single_definition(
             base_git_url=git_url,
-            git_file_path_mapping_fn=_git_file_path_mapping,
+            git_file_path_mapping_fn=git_file_path_mapping,
             assets_def=assets_def,
         )
         for assets_def in assets_defs
