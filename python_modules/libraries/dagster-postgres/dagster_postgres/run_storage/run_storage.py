@@ -25,15 +25,16 @@ from dagster._core.storage.sql import (
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
 from dagster._utils import utc_datetime_from_timestamp
+from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
 from ..utils import (
     create_pg_connection,
     pg_alembic_config,
-    pg_statement_timeout,
     pg_url_from_config,
     retry_pg_connection_fn,
     retry_pg_creation_fn,
+    set_pg_statement_timeout,
 )
 
 
@@ -118,7 +119,11 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
         self._engine = create_engine(**kwargs)
-        self._engine.execute(pg_statement_timeout(statement_timeout))
+        event.listen(
+            self._engine,
+            "connect",
+            lambda connection, _: set_pg_statement_timeout(connection, statement_timeout),
+        )
 
     @property
     def inst_data(self) -> Optional[ConfigurableClassData]:
