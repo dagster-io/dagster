@@ -448,9 +448,17 @@ def create_assets_def_from_fn_and_decorator_args(
             can_subset=False,
             decorator_name="@asset",
         )
+
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs(
-            args=builder_args, fn=fn, op_name=out_asset_key.to_python_identifier()
+            fn=fn,
+            op_name=out_asset_key.to_python_identifier(),
+            asset_in_map=builder_args.asset_in_map,
+            asset_out_map=builder_args.asset_out_map,
+            asset_deps=builder_args.asset_deps,
+            upstream_asset_deps=builder_args.upstream_asset_deps,
+            passed_args=builder_args,
         )
+
     return builder.create_assets_definition()
 
 
