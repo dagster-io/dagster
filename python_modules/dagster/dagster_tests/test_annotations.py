@@ -20,6 +20,7 @@ from dagster._annotations import (
     is_experimental,
     is_experimental_param,
     is_public,
+    only_allow_hidden_params_in_kwargs,
     public,
 )
 from dagster._check import CheckError
@@ -761,3 +762,37 @@ def test_all_annotations():
 
     dep = next(warning for warning in all_warnings if warning.category == DeprecationWarning)
     assert re.search(r"`[^`]+foo` is deprecated", str(dep.message))
+
+
+def test_hidden_annotations() -> None:
+    @deprecated_param(param="baz", breaking_version="2.0", hidden=True)
+    def with_hidden_args(**kwargs) -> bool:
+        only_allow_hidden_params_in_kwargs(with_hidden_args, kwargs)
+        return True
+
+    assert with_hidden_args(baz="foo")
+    with pytest.raises(
+        TypeError,
+        match="with_hidden_args got an unexpected keyword argument 'does_not_exist'",
+    ):
+        with_hidden_args(does_not_exist="foo")
+
+    with pytest.raises(
+        CheckError,
+        match="Invariant failed. Description: Attempted to mark undefined parameter `baz` deprecated.",
+    ):
+
+        @deprecated_param(param="baz", breaking_version="2.0")
+        def incorrectly_annotated(**kwargs) -> bool:
+            raise NotImplementedError("This function should not be called")
+
+    def vanilla_func(**kwargs) -> bool:
+        only_allow_hidden_params_in_kwargs(vanilla_func, kwargs)
+        return True
+
+    assert vanilla_func()
+    with pytest.raises(
+        TypeError,
+        match="vanilla_func got an unexpected keyword argument 'hidden_param'",
+    ):
+        vanilla_func(hidden_param="foo")

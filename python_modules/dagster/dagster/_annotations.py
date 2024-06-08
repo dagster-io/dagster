@@ -70,8 +70,9 @@ _DEPRECATED_ATTR_NAME: Final[str] = "_deprecated"
 @dataclass
 class DeprecatedInfo:
     breaking_version: str
-    additional_warn_text: Optional[str] = None
-    subject: Optional[str] = None
+    hidden: bool
+    additional_warn_text: Optional[str]
+    subject: Optional[str]
 
 
 @overload
@@ -122,9 +123,14 @@ def deprecated(
             `emit_runtime_warning=False`, as we don't want to warn users when a
             deprecated API is used internally.
         emit_runtime_warning (bool): Whether to emit a warning when the function is called.
+        hidden (bool): Whether or not this is a hidden parameters. Hidden parameters are only
+            passed via kwargs and are hidden from the type signature. This makes it so
+            that this hidden parameter does not appear in typeaheads. In order to provide
+            high quality error messages we also provide the helper function
+            only_allow_hidden_params_in_kwargs to ensure there are high quality
+            error messages if the user passes an unsupported keyword argument.
 
     Usage:
-
         .. code-block:: python
 
             @deprecated(breaking_version="2.0", additional_warn_text="Use my_new_function instead")
@@ -140,6 +146,11 @@ def deprecated(
                 ...
                 some_deprecated_function()
                 ...
+
+            @deprecated_param(param="baz", breaking_version="2.0", hidden=True)
+            def func_with_hidden_args(**kwargs):
+                only_allow_hidden_params_in_kwargs(func_with_hidden_args, kwargs)
+                ...
     """
     if __obj is None:
         return lambda obj: deprecated(
@@ -154,7 +165,12 @@ def deprecated(
         setattr(
             target,
             _DEPRECATED_ATTR_NAME,
-            DeprecatedInfo(breaking_version, additional_warn_text, subject),
+            DeprecatedInfo(
+                breaking_version=breaking_version,
+                additional_warn_text=additional_warn_text,
+                subject=subject,
+                hidden=False,
+            ),
         )
 
         if emit_runtime_warning:
@@ -196,6 +212,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
+    hidden: bool = ...,
 ) -> T_Annotatable: ...
 
 
@@ -207,6 +224,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
+    hidden: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
@@ -217,6 +235,7 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = None,
     emit_runtime_warning: bool = True,
+    hidden: bool = False,
 ) -> T_Annotatable:
     """Mark a parameter of a class initializer or function/method as deprecated. This appends some
     metadata to the decorated object that causes the specified argument to be rendered with a
@@ -233,6 +252,14 @@ def deprecated_param(
         additional_warn_text (str): Additional text to display after the deprecation warning.
             Typically this should suggest a newer API.
         emit_runtime_warning (bool): Whether to emit a warning when the function is called.
+        hidden (bool): Whether or not this is a hidden parameters. Hidden parameters are only
+            passed via kwargs and are hidden from the type signature. This makes it so
+            that this hidden parameter does not appear in typeaheads. In order to provide
+            high quality error messages we also provide the helper function
+            only_allow_hidden_params_in_kwargs to ensure there are high quality
+            error messages if the user passes an unsupported keyword argument.
+
+
     """
     if __obj is None:
         return lambda obj: deprecated_param(  # type: ignore
@@ -241,18 +268,22 @@ def deprecated_param(
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
             emit_runtime_warning=emit_runtime_warning,
+            hidden=hidden,
         )
     else:
-        check.invariant(
-            _annotatable_has_param(__obj, param),
-            f"Attempted to mark undefined parameter `{param}` deprecated.",
-        )
+        if not hidden:
+            check.invariant(
+                _annotatable_has_param(__obj, param),
+                f"Attempted to mark undefined parameter `{param}` deprecated.",
+            )
         target = _get_annotation_target(__obj)
         if not hasattr(target, _DEPRECATED_PARAM_ATTR_NAME):
             setattr(target, _DEPRECATED_PARAM_ATTR_NAME, {})
         getattr(target, _DEPRECATED_PARAM_ATTR_NAME)[param] = DeprecatedInfo(
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
+            hidden=hidden,
+            subject=None,
         )
 
         if emit_runtime_warning:
@@ -575,3 +606,17 @@ def _get_warning_stacklevel(obj: Annotatable):
 def _annotatable_has_param(obj: Annotatable, param: str) -> bool:
     target_fn = get_decorator_target(obj)
     return param in inspect.signature(target_fn).parameters
+
+
+def only_allow_hidden_params_in_kwargs(annotatable: Annotatable, kwargs: Mapping[str, Any]) -> None:
+    deprecated_params = (
+        get_deprecated_params(annotatable) if has_deprecated_params(annotatable) else {}
+    )
+    for param in kwargs:
+        if param not in deprecated_params:
+            raise TypeError(f"{annotatable.__name__} got an unexpected keyword argument '{param}'")
+
+        check.invariant(
+            deprecated_params[param].hidden,
+            f"Unexpected non-hidden deprecated parameter '{param}' in kwargs. Should never get here.",
+        )
