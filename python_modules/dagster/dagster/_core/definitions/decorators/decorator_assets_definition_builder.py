@@ -71,7 +71,7 @@ def get_function_params_without_context_or_config_or_resources(
     return new_input_args
 
 
-def build_asset_ins(
+def build_named_ins(
     fn: Callable[..., Any],
     asset_ins: Mapping[str, AssetIn],
     deps: Optional[AbstractSet[AssetKey]],
@@ -99,7 +99,7 @@ def build_asset_ins(
                     "of the arguments to the decorated function"
                 )
 
-    ins_by_asset_key: Dict[AssetKey, NamedIn] = {}
+    named_ins_by_asset_key: Dict[AssetKey, NamedIn] = {}
     for input_name in all_input_names:
         asset_key = None
 
@@ -117,23 +117,23 @@ def build_asset_ins(
 
         asset_key = asset_key or AssetKey(list(filter(None, [*(key_prefix or []), input_name])))
 
-        ins_by_asset_key[asset_key] = NamedIn(
+        named_ins_by_asset_key[asset_key] = NamedIn(
             input_name.replace("-", "_"),
             In(metadata=metadata, input_manager_key=input_manager_key, dagster_type=dagster_type),
         )
 
     for asset_key in deps:
-        if asset_key in ins_by_asset_key:
+        if asset_key in named_ins_by_asset_key:
             raise DagsterInvalidDefinitionError(
                 f"deps value {asset_key} also declared as input/AssetIn"
             )
             # mypy doesn't realize that Nothing is a valid type here
-        ins_by_asset_key[asset_key] = NamedIn(
+        named_ins_by_asset_key[asset_key] = NamedIn(
             stringify_asset_key_to_input_name(asset_key),
             In(cast(type, Nothing)),
         )
 
-    return ins_by_asset_key
+    return named_ins_by_asset_key
 
 
 def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "NamedOut"]:
@@ -324,7 +324,7 @@ class DecoratorAssetsDefinitionBuilder:
 
         explicit_ins = args.asset_in_map
         # get which asset keys have inputs set
-        loaded_upstreams = build_asset_ins(fn, explicit_ins, deps=set())
+        loaded_upstreams = build_named_ins(fn, explicit_ins, deps=set())
         unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
         if unexpected_upstreams:
             raise DagsterInvalidDefinitionError(
@@ -332,7 +332,7 @@ class DecoratorAssetsDefinitionBuilder:
                 " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
             )
         remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
-        input_tuples_by_asset_key = build_asset_ins(fn, explicit_ins, deps=remaining_upstream_keys)
+        named_ins_by_asset_key = build_named_ins(fn, explicit_ins, deps=remaining_upstream_keys)
 
         internal_deps = {
             spec.key: {dep.asset_key for dep in spec.deps}
@@ -341,7 +341,7 @@ class DecoratorAssetsDefinitionBuilder:
         }
 
         return DecoratorAssetsDefinitionBuilder(
-            named_ins_by_asset_key=input_tuples_by_asset_key,
+            named_ins_by_asset_key=named_ins_by_asset_key,
             named_outs_by_asset_key=named_outs_by_asset_key,
             internal_deps=internal_deps,
             op_name=op_name,
@@ -358,7 +358,7 @@ class DecoratorAssetsDefinitionBuilder:
     ):
         check.param_invariant(not args.specs, "args", "This codepath for non-spec based create")
         asset_out_map = args.asset_out_map
-        inputs_tuples_by_asset_key = build_asset_ins(
+        named_ins_by_asset_key = build_named_ins(
             fn,
             args.asset_in_map,
             deps=(
@@ -373,7 +373,7 @@ class DecoratorAssetsDefinitionBuilder:
 
         # validate that the asset_ins are a subset of the upstream asset_deps.
         upstream_internal_asset_keys = set().union(*asset_deps.values())
-        asset_in_keys = set(inputs_tuples_by_asset_key.keys())
+        asset_in_keys = set(named_ins_by_asset_key.keys())
         if asset_deps and not asset_in_keys.issubset(upstream_internal_asset_keys):
             invalid_asset_in_keys = asset_in_keys - upstream_internal_asset_keys
             check.failed(
@@ -405,7 +405,7 @@ class DecoratorAssetsDefinitionBuilder:
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
         return DecoratorAssetsDefinitionBuilder(
-            named_ins_by_asset_key=inputs_tuples_by_asset_key,
+            named_ins_by_asset_key=named_ins_by_asset_key,
             named_outs_by_asset_key=output_tuples_by_asset_key,
             internal_deps=internal_deps,
             op_name=op_name,
