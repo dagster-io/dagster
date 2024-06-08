@@ -218,7 +218,7 @@ pyjwt==2.8.0
 pylint==3.2.0
 pyopenssl==24.1.0
 pyparsing==3.1.2
-pyright==1.1.356
+pyright==1.1.366
 pyspark==3.5.1
 pytest==7.4.4
 pytest-cases==3.8.5
