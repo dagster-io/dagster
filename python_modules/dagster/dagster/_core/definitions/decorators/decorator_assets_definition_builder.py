@@ -207,28 +207,28 @@ def compute_required_resource_keys(
 
 
 class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
-    name: Optional[str]
-    description: Optional[str]
-    specs: Sequence[AssetSpec]
-    check_specs: Sequence[AssetCheckSpec]
-    asset_out_map: Mapping[str, AssetOut]
-    upstream_asset_deps: Optional[Iterable[AssetDep]]
     asset_deps: Mapping[str, Set[AssetKey]]
     asset_in_map: Mapping[str, AssetIn]
-    can_subset: bool
-    group_name: Optional[str]
-    partitions_def: Optional[PartitionsDefinition]
-    retry_policy: Optional[RetryPolicy]
-    code_version: Optional[str]
-    op_tags: Optional[Mapping[str, Any]]
-    config_schema: Optional[UserConfigSchema]
-    retry_policy: Optional[RetryPolicy]
-    compute_kind: Optional[str]
-    required_resource_keys: AbstractSet[str]
+    asset_out_map: Mapping[str, AssetOut]
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
-    op_def_resource_defs: Mapping[str, ResourceDefinition]
     backfill_policy: Optional[BackfillPolicy]
+    can_subset: bool
+    check_specs: Sequence[AssetCheckSpec]
+    code_version: Optional[str]
+    compute_kind: Optional[str]
+    config_schema: Optional[UserConfigSchema]
     decorator_name: str
+    description: Optional[str]
+    group_name: Optional[str]
+    name: Optional[str]
+    op_def_resource_defs: Mapping[str, ResourceDefinition]
+    op_tags: Optional[Mapping[str, Any]]
+    partitions_def: Optional[PartitionsDefinition]
+    required_resource_keys: AbstractSet[str]
+    retry_policy: Optional[RetryPolicy]
+    retry_policy: Optional[RetryPolicy]
+    specs: Sequence[AssetSpec]
+    upstream_asset_deps: Optional[Iterable[AssetDep]]
 
 
 class DecoratorAssetsDefinitionBuilder:
