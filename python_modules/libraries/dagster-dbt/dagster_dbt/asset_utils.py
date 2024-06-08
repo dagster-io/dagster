@@ -822,7 +822,9 @@ def get_asset_deps(
     check_specs_by_output_name = cast(
         Dict[str, AssetCheckSpec],
         validate_and_assign_output_names_to_check_specs(
-            list(check_specs_by_key.values()), list(asset_outs.keys())
+            list(check_specs_by_key.values()),
+            list(asset_outs.keys()),
+            validate_check_specs_against_valid_asset_keys_param=True,
         ),
     )
 

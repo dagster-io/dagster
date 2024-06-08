@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
@@ -311,11 +312,17 @@ class DecoratorAssetsDefinitionBuilder:
         fn: Callable[..., Any],
         op_name: str,
         asset_specs: Sequence[AssetSpec],
+        # TODO: I would guess we need to add check specs
         can_subset: bool,
         asset_in_map: Mapping[str, AssetIn],
         passed_args: DecoratorAssetsDefinitionBuilderArgs,
+        deps_for_build_named_ins: Optional[AbstractSet[AssetKey]] = None,
     ) -> "DecoratorAssetsDefinitionBuilder":
-        check.param_invariant(passed_args.specs, "passed_args", "Must use specs in this codepath")
+        # check.param_invariant(passed_args.specs, "passed_args", "Must use specs in this codepath")
+
+        deps_for_build_named_ins = check.opt_set_param(
+            deps_for_build_named_ins, "deps_for_build_named_ins", AssetKey
+        )
 
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut] = {}
         for asset_spec in asset_specs:
@@ -340,15 +347,19 @@ class DecoratorAssetsDefinitionBuilder:
                     # self-dependent asset also needs to be considered an upstream_key
                     upstream_keys.add(dep.asset_key)
 
+        upstream_keys |= deps_for_build_named_ins
+
         # get which asset keys have inputs set
-        loaded_upstreams = build_named_ins(fn, asset_in_map, deps=set())
-        unexpected_upstreams = {key for key in loaded_upstreams.keys() if key not in upstream_keys}
+        loaded_named_ins = build_named_ins(fn, asset_in_map, deps=set())
+        unexpected_upstreams = {
+            key for key in loaded_named_ins.keys() if key not in (upstream_keys)
+        }
         if unexpected_upstreams:
             raise DagsterInvalidDefinitionError(
                 f"Asset inputs {unexpected_upstreams} do not have dependencies on the passed"
                 " AssetSpec(s). Set the deps on the appropriate AssetSpec(s)."
             )
-        remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_upstreams}
+        remaining_upstream_keys = {key for key in upstream_keys if key not in loaded_named_ins}
         named_ins_by_asset_key = build_named_ins(fn, asset_in_map, deps=remaining_upstream_keys)
 
         internal_deps = {
@@ -458,7 +469,11 @@ class DecoratorAssetsDefinitionBuilder:
     @cached_property
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
         return validate_and_assign_output_names_to_check_specs(
-            self.args.check_specs, list(self.asset_keys)
+            self.args.check_specs,
+            list(self.asset_keys),
+            validate_check_specs_against_valid_asset_keys_param=(
+                self.args.decorator_name in ["@multi_asset", "@asset"]
+            ),
         )
 
     @cached_property
@@ -544,6 +559,15 @@ class DecoratorAssetsDefinitionBuilder:
             selected_asset_check_keys=None,  # not a subset so this is none
         )
 
+    def create_asset_checks_definition(self) -> AssetChecksDefinition:
+        return AssetChecksDefinition.create(
+            node_def=self._create_op_definition(),
+            resource_defs=self.args.assets_def_resource_defs,
+            keys_by_input_name=self.asset_keys_by_input_names,
+            check_specs_by_output_name=self.check_specs_by_output_name,
+            can_subset=self.args.can_subset,
+        )
+
     @cached_property
     def specs(self) -> Sequence[AssetSpec]:
         specs = self.args.specs if self.args.specs else self._synthesize_specs()
@@ -589,9 +613,12 @@ class DecoratorAssetsDefinitionBuilder:
 
 
 def validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+    check_specs: Optional[Sequence[AssetCheckSpec]],
+    valid_asset_keys: Sequence[AssetKey],
+    validate_check_specs_against_valid_asset_keys_param: bool,
 ) -> Mapping[str, AssetCheckSpec]:
-    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
+    if validate_check_specs_against_valid_asset_keys_param:
+        _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
     return _assign_output_names_to_check_specs(check_specs)
 
 

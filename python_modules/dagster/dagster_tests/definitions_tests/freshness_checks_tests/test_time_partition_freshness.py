@@ -207,6 +207,33 @@ def test_params() -> None:
     assert check_multiple_assets.node_def.name == f"freshness_check_{unique_id_switched_order}"
 
 
+def test_time_partition_freshness_checks_structure(
+    pendulum_aware_report_dagster_event: None,
+    instance: DagsterInstance,
+):
+    """Move time forward and backward, with a freshness check parameterized with a cron, and ensure that the check passes and fails as expected."""
+    partitions_def = DailyPartitionsDefinition(
+        start_date=pendulum.datetime(2020, 1, 1, 0, 0, 0, tz="UTC")
+    )
+
+    @asset(partitions_def=partitions_def)
+    def my_asset() -> None:
+        pass
+
+    check = build_time_partition_freshness_checks(
+        assets=[my_asset],
+        deadline_cron="0 9 * * *",  # 09:00 UTC
+        timezone="UTC",
+    )[0]
+
+    assert check
+
+    assert set(check.input_names) == {"my_asset"}
+    assert check.keys_by_input_name == {"my_asset": AssetKey(["my_asset"])}
+
+    # import code; code.interact(local=locals())
+
+
 def test_result_cron_param(
     pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,

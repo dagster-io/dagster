@@ -30,9 +30,11 @@ from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.warnings import disable_dagster_warnings
 
-from ..input import In
 from .asset_decorator import make_asset_deps
 from .decorator_assets_definition_builder import (
+    DecoratorAssetsDefinitionBuilder,
+    DecoratorAssetsDefinitionBuilderArgs,
+    NamedIn,
     build_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
@@ -49,7 +51,25 @@ def _build_asset_check_input(
     fn: Callable[..., Any],
     additional_ins: Mapping[str, AssetIn],
     additional_deps: Optional[AbstractSet[AssetKey]],
-) -> Mapping[AssetKey, Tuple[str, In]]:
+) -> Mapping[AssetKey, NamedIn]:
+    all_deps, all_ins = _build_all_deps_and_all_ins_for_check_input(
+        name, asset_key, fn, additional_ins, additional_deps
+    )
+
+    return build_named_ins(
+        fn=fn,
+        asset_ins=all_ins,
+        deps=all_deps,
+    )
+
+
+def _build_all_deps_and_all_ins_for_check_input(
+    name: str,
+    asset_key: AssetKey,
+    fn: Callable[..., Any],
+    additional_ins: Mapping[str, AssetIn],
+    additional_deps: Optional[AbstractSet[AssetKey]],
+) -> Tuple[AbstractSet[AssetKey], Mapping[str, AssetIn]]:
     fn_params = get_function_params_without_context_or_config_or_resources(fn)
 
     if asset_key in (additional_deps or []):
@@ -91,11 +111,7 @@ def _build_asset_check_input(
             " the target asset or be specified in 'additional_ins'."
         )
 
-    return build_named_ins(
-        fn=fn,
-        asset_ins=all_ins,
-        deps=all_deps,
-    )
+    return all_deps, all_ins
 
 
 def asset_check(
@@ -189,7 +205,77 @@ def asset_check(
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
         resolved_name = name or fn.__name__
+
+        wrapped_resource_defs = wrap_resources_for_execution(resource_defs)
+
         asset_key = AssetKey.from_coercible_or_definition(asset)
+
+        additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
+        input_tuples_by_asset_key = _build_asset_check_input(
+            resolved_name,
+            asset_key,
+            fn,
+            additional_ins=additional_ins or {},
+            additional_deps=additional_dep_keys,
+        )
+        all_deps, all_ins = _build_all_deps_and_all_ins_for_check_input(
+            resolved_name,
+            asset_key,
+            fn,
+            additional_ins=additional_ins or {},
+            additional_deps=additional_dep_keys,
+        )
+
+        # additional_deps on AssetCheckSpec holds the keys passed to additional_deps and
+        # additional_ins. We don't want to include the primary asset key in this set.
+        additional_ins_and_deps = input_tuples_by_asset_key.keys() - {asset_key}
+
+        spec = AssetCheckSpec(
+            name=resolved_name,
+            description=description,
+            asset=asset_key,
+            additional_deps=additional_ins_and_deps,
+            blocking=blocking,
+            metadata=metadata,
+        )
+
+        args = DecoratorAssetsDefinitionBuilderArgs(
+            decorator_name="@asset_check",
+            name=name,
+            description=description,
+            required_resource_keys=required_resource_keys or set(),
+            config_schema=config_schema,
+            retry_policy=retry_policy,
+            specs=[],
+            check_specs=[spec],
+            can_subset=False,
+            compute_kind=compute_kind,
+            op_tags=op_tags,
+            op_def_resource_defs=wrapped_resource_defs,
+            assets_def_resource_defs=wrapped_resource_defs,
+            upstream_asset_deps=[],
+            # unsupported capabiltiies in asset checks
+            partitions_def=None,
+            code_version=None,
+            backfill_policy=None,
+            group_name=None,
+            # non-sensical args in this context
+            asset_deps={},
+            asset_in_map={},
+            asset_out_map={},
+        )
+
+        if False:
+            builder = DecoratorAssetsDefinitionBuilder.from_specs(
+                fn=fn,
+                passed_args=args,
+                asset_specs=[],
+                can_subset=False,
+                asset_in_map=all_ins,
+                op_name=resolved_name,
+            )
+
+            return builder.create_asset_checks_definition()
 
         additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
         input_tuples_by_asset_key = _build_asset_check_input(
@@ -324,6 +410,81 @@ def multi_asset_check(
 
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         op_name = name or fn.__name__
+        upstream_asset_deps_ = {spec.asset_key for spec in specs} | {
+            dep.asset_key for spec in specs for dep in spec.additional_deps or []
+        }
+        upstream_asset_deps = make_asset_deps(upstream_asset_deps_)
+        # List[AssetDep] = []
+        # make_asset_deps
+        # for check_spec in specs:
+        #     upstream_asset_deps.append
+        #     upstream_asset_deps.extend(check_spec.additional_deps)
+        deps_for_build_named_ins = {spec.asset_key for spec in specs} | {
+            dep.asset_key for spec in specs for dep in spec.additional_deps or []
+        }
+
+        args = DecoratorAssetsDefinitionBuilderArgs(
+            decorator_name="@multi_asset_check",
+            name=None,
+            description=description,
+            required_resource_keys=required_resource_keys,
+            config_schema=config_schema,
+            retry_policy=retry_policy,
+            specs=[],
+            check_specs=specs,
+            can_subset=can_subset,
+            compute_kind=compute_kind,
+            op_tags=op_tags,
+            op_def_resource_defs=resource_defs,
+            assets_def_resource_defs=resource_defs,
+            upstream_asset_deps=upstream_asset_deps,
+            # unsupported capabiltiies in asset checks
+            partitions_def=None,
+            code_version=None,
+            backfill_policy=None,
+            group_name=None,
+            # non-sensical args in this context
+            asset_deps={},
+            asset_in_map={},
+            asset_out_map={},
+        )
+
+        # builder = DecoratorAssetsDefinitionBuilder(
+        #     fn=fn,
+        #     op_name=op_name,
+        #     internal_deps={},
+        #     named_ins_by_asset_key={},
+        #     named_outs_by_asset_key={},
+        #     args=args
+        # )
+
+        if True:
+            builder = DecoratorAssetsDefinitionBuilder.from_specs(
+                op_name=op_name,
+                asset_specs=[],
+                # check_specs=specs,
+                can_subset=can_subset,
+                # compute_kind=compute_kind,
+                # op_tags=op_tags,
+                fn=fn,
+                # resource_defs=resource_defs,
+                # required_resource_keys=required_resource_keys,
+                passed_args=args,
+                asset_in_map={},
+                deps_for_build_named_ins=deps_for_build_named_ins,
+            )
+            # return AssetChecksDefinition.create(
+            #     node_def=op_def,
+            #     resource_defs=wrap_resources_for_execution(resource_defs),
+            #     keys_by_input_name={
+            #         input_tuple[0]: asset_key
+            #         for asset_key, input_tuple in named_ins_by_asset_key.items()
+            #     },
+            #     check_specs_by_output_name={spec.get_python_identifier(): spec for spec in specs},
+            #     can_subset=can_subset,
+            # )
+            return builder.create_asset_checks_definition()
+
         op_required_resource_keys = compute_required_resource_keys(
             required_resource_keys, resource_defs, fn=fn, decorator_name="@multi_asset_check"
         )

@@ -822,7 +822,7 @@ def graph_asset_no_defaults(
     }
 
     check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
-        check_specs, [out_asset_key]
+        check_specs, [out_asset_key], validate_check_specs_against_valid_asset_keys_param=True
     )
     check_outs_by_output_name: Mapping[str, GraphOut] = {
         output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
@@ -924,7 +924,9 @@ def graph_multi_asset(
         named_outs = build_named_outs(outs)
 
         check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
-            check_specs, list(named_outs.keys())
+            check_specs,
+            list(named_outs.keys()),
+            validate_check_specs_against_valid_asset_keys_param=False,
         )
         check_outs_by_output_name: Mapping[str, GraphOut] = {
             output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
