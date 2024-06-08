@@ -8,4 +8,4 @@ ops:
     type: shell_command_op
     command: fsjkl
     deps:
-    - op1
+      - op1
