@@ -150,7 +150,7 @@ def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "N
     return named_outs_by_asset_key
 
 
-def build_subsettable_asset_ins(
+def build_subsettable_named_ins(
     asset_ins: Mapping[AssetKey, Tuple[str, In]],
     asset_outs: Mapping[AssetKey, Tuple[str, Out]],
     internal_upstream_deps: Iterable[AbstractSet[AssetKey]],
@@ -252,7 +252,7 @@ class DecoratorAssetsDefinitionBuilder:
             (
                 {
                     **named_ins_by_asset_key,
-                    **build_subsettable_asset_ins(
+                    **build_subsettable_named_ins(
                         named_ins_by_asset_key,
                         named_outs_by_asset_key,
                         self.internal_deps.values(),
