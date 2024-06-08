@@ -3,7 +3,7 @@ import operator
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 from dagster._core.definitions.partition import (
     AllPartitionsSubset,
     PartitionsDefinition,
@@ -32,7 +32,7 @@ class AssetSubsetSerializer(NamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=AssetSubsetSerializer)
 class AssetSubset(NamedTuple):
-    """Represents a set of AssetKeyPartitionKeys for a given AssetKey. For partitioned assets, this
+    """Represents a set of AssetPartitionKeys for a given AssetKey. For partitioned assets, this
     class uses a PartitionsSubset to represent the set of partitions, enabling lazy evaluation of the
     underlying partition keys. For unpartitioned assets, this class uses a bool to represent whether
     the asset is present or not.
@@ -58,12 +58,12 @@ class AssetSubset(NamedTuple):
         return cast(PartitionsSubset, self.value)
 
     @property
-    def asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+    def asset_partitions(self) -> AbstractSet[AssetPartitionKey]:
         if not self.is_partitioned:
-            return {AssetKeyPartitionKey(self.asset_key)} if self.bool_value else set()
+            return {AssetPartitionKey(self.asset_key)} if self.bool_value else set()
         else:
             return {
-                AssetKeyPartitionKey(self.asset_key, partition_key)
+                AssetPartitionKey(self.asset_key, partition_key)
                 for partition_key in self.subset_value.get_partition_keys()
             }
 
@@ -141,7 +141,7 @@ class AssetSubset(NamedTuple):
     def from_asset_partitions_set(
         asset_key: AssetKey,
         partitions_def: Optional[PartitionsDefinition],
-        asset_partitions_set: AbstractSet[AssetKeyPartitionKey],
+        asset_partitions_set: AbstractSet[AssetPartitionKey],
     ) -> "ValidAssetSubset":
         return (
             ValidAssetSubset.from_partition_keys(
@@ -165,7 +165,7 @@ class AssetSubset(NamedTuple):
             asset_key=asset_key, value=partitions_def.subset_with_partition_keys(partition_keys)
         )
 
-    def __contains__(self, item: AssetKeyPartitionKey) -> bool:
+    def __contains__(self, item: AssetPartitionKey) -> bool:
         if not self.is_partitioned:
             return (
                 item.asset_key == self.asset_key and item.partition_key is None and self.bool_value
@@ -195,7 +195,7 @@ class ValidAssetSubset(AssetSubset):
     This class serializes to a regular AssetSubset, as it is unknown if this value will still be
     valid in the process that deserializes it.
 
-    All operations act over the set of AssetKeyPartitionKeys that the operands represent if the
+    All operations act over the set of AssetPartitionKeys that the operands represent if the
     subsets are both ValidAssetSubsets. If the other operand cannot be coerced to a ValidAssetSubset,
     it is treated as an empty subset.
     """

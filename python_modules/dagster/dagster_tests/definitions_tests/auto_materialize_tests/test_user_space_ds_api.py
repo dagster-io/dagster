@@ -13,7 +13,7 @@ from dagster._core.definitions.declarative_automation.automation_condition_evalu
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.test_utils import MockedRunLauncher, in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -26,7 +26,7 @@ from .user_space_ds_defs import amp_sensor, downstream, upstream
 
 class AutomationTickResult(NamedTuple):
     results: Sequence[AutomationResult]
-    asset_partition_keys: AbstractSet[AssetKeyPartitionKey]
+    asset_partition_keys: AbstractSet[AssetPartitionKey]
 
 
 def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[AutomationTickResult]:
@@ -87,8 +87,8 @@ def test_basic_asset_scheduling_test() -> None:
     result = execute_ds_tick(defs)
     assert result
     assert result.asset_partition_keys == {
-        AssetKeyPartitionKey(upstream.key),
-        AssetKeyPartitionKey(downstream.key),
+        AssetPartitionKey(upstream.key),
+        AssetPartitionKey(downstream.key),
     }
     # both are true because both missing
     assert result.results[0].true_subset.bool_value

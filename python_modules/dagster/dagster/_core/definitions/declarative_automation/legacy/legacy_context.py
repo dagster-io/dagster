@@ -24,7 +24,7 @@ from dagster._core.definitions.declarative_automation.automation_condition impor
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
 
@@ -374,8 +374,8 @@ class LegacyRuleEvaluationContext:
         return materializable_in_same_run(self.asset_graph, child_key, parent_key)
 
     def get_parents_that_will_not_be_materialized_on_current_tick(
-        self, *, asset_partition: AssetKeyPartitionKey
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+        self, *, asset_partition: AssetPartitionKey
+    ) -> AbstractSet[AssetPartitionKey]:
         """Returns the set of parent asset partitions that will not be updated in the same run of
         this asset partition if a run is launched for this asset partition on this tick.
         """
@@ -391,7 +391,7 @@ class LegacyRuleEvaluationContext:
             or not self.materializable_in_same_run(asset_partition.asset_key, parent.asset_key)
         }
 
-    def will_update_asset_partition(self, asset_partition: AssetKeyPartitionKey) -> bool:
+    def will_update_asset_partition(self, asset_partition: AssetPartitionKey) -> bool:
         parent_result = self.current_results_by_key.get(asset_partition.asset_key)
         if not parent_result:
             return False
@@ -400,7 +400,7 @@ class LegacyRuleEvaluationContext:
     def add_evaluation_data_from_previous_tick(
         self,
         asset_partitions_by_frozen_metadata: Mapping[
-            FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetKeyPartitionKey]
+            FrozenSet[Tuple[str, MetadataValue]], AbstractSet[AssetPartitionKey]
         ],
         ignore_subset: AssetSubset,
     ) -> Tuple[ValidAssetSubset, Sequence[AssetSubsetWithMetadata]]:

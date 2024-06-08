@@ -12,7 +12,7 @@ import datetime
 from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
 
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._seven.compat.pendulum import PendulumInterval
 from dagster._utils.schedules import cron_string_iterator
@@ -134,7 +134,7 @@ def get_expected_data_time_for_asset_key(
             # if the parent will be materialized on this tick, and it's not in the same repo, then
             # we must wait for this asset to be materialized
             if isinstance(asset_graph, RemoteAssetGraph) and context.will_update_asset_partition(
-                AssetKeyPartitionKey(parent_key)
+                AssetPartitionKey(parent_key)
             ):
                 parent_repo = asset_graph.get_repository_handle(parent_key)
                 if parent_repo != asset_graph.get_repository_handle(asset_key):
@@ -156,7 +156,7 @@ def get_expected_data_time_for_asset_key(
 def freshness_evaluation_results_for_asset_key(
     context: "LegacyRuleEvaluationContext",
 ) -> Tuple[ValidAssetSubset, Sequence["AssetSubsetWithMetadata"]]:
-    """Returns a set of AssetKeyPartitionKeys to materialize in order to abide by the given
+    """Returns a set of AssetPartitionKeys to materialize in order to abide by the given
     FreshnessPolicies.
 
     Attempts to minimize the total number of asset executions.

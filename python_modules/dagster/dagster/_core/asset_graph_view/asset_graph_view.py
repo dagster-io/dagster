@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Opt
 
 from dagster import _check as check
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
@@ -130,7 +130,7 @@ class AssetSlice:
             for akpk in self._compatible_subset.asset_partitions
         }
 
-    def expensively_compute_asset_partitions(self) -> AbstractSet[AssetKeyPartitionKey]:
+    def expensively_compute_asset_partitions(self) -> AbstractSet[AssetPartitionKey]:
         # this method requires computing all partition keys of the definition, which
         # may be expensive
         return self._compatible_subset.asset_partitions
@@ -367,7 +367,7 @@ class AssetGraphView:
         return _slice_from_valid_subset(self, subset)
 
     def get_asset_slice_from_asset_partitions(
-        self, asset_partitions: AbstractSet[AssetKeyPartitionKey]
+        self, asset_partitions: AbstractSet[AssetPartitionKey]
     ) -> "AssetSlice":
         asset_keys = {akpk.asset_key for akpk in asset_partitions}
         check.invariant(len(asset_keys) == 1, "Must have exactly one asset key")

@@ -41,7 +41,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
     PartitionRangeSelector,
@@ -228,7 +228,7 @@ def test_from_asset_partitions_target_subset(
     )
     assert backfill_data.target_subset == AssetGraphSubset.from_asset_partition_set(
         {
-            AssetKeyPartitionKey(AssetKey(asset_key_str), partition_key)
+            AssetPartitionKey(AssetKey(asset_key_str), partition_key)
             for asset_key_str, partition_key in expected_target_asset_partitions
         },
         asset_graph=asset_graph,
@@ -319,7 +319,7 @@ def test_scenario_to_completion(scenario: AssetBackfillScenario, failures: str, 
                 dynamic_partitions_store=instance,
             )
             if failures == "no_failures":
-                fail_asset_partitions: Set[AssetKeyPartitionKey] = set()
+                fail_asset_partitions: Set[AssetPartitionKey] = set()
             elif failures == "root_failures":
                 fail_asset_partitions = set(
                     (
@@ -409,7 +409,7 @@ def test_do_not_rerequest_while_existing_run_in_progress():
     )
 
     assert (
-        AssetKeyPartitionKey(downstream.key, partition_key="2023-01-01")
+        AssetPartitionKey(downstream.key, partition_key="2023-01-01")
         in asset_backfill_data.requested_subset
     )
 
@@ -464,7 +464,7 @@ def make_random_subset(
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
     # all partitions downstream of half of the partitions in each partitioned root asset
-    root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    root_asset_partitions: Set[AssetPartitionKey] = set()
     for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
         partitions_def = asset_graph.get(root_asset_key).partitions_def
 
@@ -477,12 +477,12 @@ def make_random_subset(
             start_index = len(partition_keys) // 2
             chosen_partition_keys = partition_keys[start_index:]
             root_asset_partitions.update(
-                AssetKeyPartitionKey(root_asset_key, partition_key)
+                AssetPartitionKey(root_asset_key, partition_key)
                 for partition_key in chosen_partition_keys
             )
         else:
             if i % 2 == 0:
-                root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
+                root_asset_partitions.add(AssetPartitionKey(root_asset_key, None))
 
     target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
         instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
@@ -497,15 +497,14 @@ def make_subset_from_partition_keys(
     instance: DagsterInstance,
     evaluation_time: datetime.datetime,
 ) -> AssetGraphSubset:
-    root_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    root_asset_partitions: Set[AssetPartitionKey] = set()
     for i, root_asset_key in enumerate(sorted(asset_graph.root_materializable_asset_keys)):
         if asset_graph.get(root_asset_key).is_partitioned:
             root_asset_partitions.update(
-                AssetKeyPartitionKey(root_asset_key, partition_key)
-                for partition_key in partition_keys
+                AssetPartitionKey(root_asset_key, partition_key) for partition_key in partition_keys
             )
         else:
-            root_asset_partitions.add(AssetKeyPartitionKey(root_asset_key, None))
+            root_asset_partitions.add(AssetPartitionKey(root_asset_key, None))
 
     target_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
         instance, lambda _a, _b: (True, ""), root_asset_partitions, evaluation_time=evaluation_time
@@ -568,15 +567,15 @@ def run_backfill_to_completion(
     asset_graph: RemoteAssetGraph,
     assets_by_repo_name: Mapping[str, Sequence[AssetsDefinition]],
     backfill_data: AssetBackfillData,
-    fail_asset_partitions: Iterable[AssetKeyPartitionKey],
+    fail_asset_partitions: Iterable[AssetPartitionKey],
     instance: DagsterInstance,
-) -> Tuple[AssetBackfillData, AbstractSet[AssetKeyPartitionKey], AbstractSet[AssetKeyPartitionKey]]:
+) -> Tuple[AssetBackfillData, AbstractSet[AssetPartitionKey], AbstractSet[AssetPartitionKey]]:
     iteration_count = 0
     instance = instance or DagsterInstance.ephemeral()
     backfill_id = "backfillid_x"
 
     # assert each asset partition only targeted once
-    requested_asset_partitions: Set[AssetKeyPartitionKey] = set()
+    requested_asset_partitions: Set[AssetPartitionKey] = set()
 
     fail_and_downstream_asset_partitions, _ = asset_graph.bfs_filter_asset_partitions(
         instance,
@@ -651,7 +650,7 @@ def run_backfill_to_completion(
                 failed_asset_keys=[
                     asset_key
                     for asset_key in asset_keys
-                    if AssetKeyPartitionKey(asset_key, run_request.partition_key)
+                    if AssetPartitionKey(asset_key, run_request.partition_key)
                     in fail_asset_partitions
                 ],
                 tags=run_request.tags,
@@ -663,7 +662,7 @@ def run_backfill_to_completion(
 
 def _requested_asset_partitions_in_run_request(
     run_request: RunRequest, asset_graph: BaseAssetGraph
-) -> Set[AssetKeyPartitionKey]:
+) -> Set[AssetPartitionKey]:
     asset_keys = run_request.asset_selection
     assert asset_keys is not None
     requested_asset_partitions = set()
@@ -693,7 +692,7 @@ def _requested_asset_partitions_in_run_request(
     else:
         # backfill was a partition by partition backfill
         for asset_key in asset_keys:
-            asset_partition = AssetKeyPartitionKey(asset_key, run_request.partition_key)
+            asset_partition = AssetPartitionKey(asset_key, run_request.partition_key)
             assert (
                 asset_partition not in requested_asset_partitions
             ), f"{asset_partition} requested twice. Requested: {requested_asset_partitions}."
@@ -892,7 +891,7 @@ def test_asset_backfill_status_counts():
         assets_by_repo_name=assets_by_repo_name,
         backfill_data=backfill_data,
         fail_asset_partitions=[
-            AssetKeyPartitionKey(
+            AssetPartitionKey(
                 asset_key=upstream_daily_partitioned_asset.key, partition_key="2023-01-09"
             )
         ],
@@ -1173,11 +1172,11 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
         )
 
     assert (
-        AssetKeyPartitionKey(upstream_hourly_partitioned_asset.key, "2023-01-09-00:00")
+        AssetPartitionKey(upstream_hourly_partitioned_asset.key, "2023-01-09-00:00")
         in asset_backfill_data.failed_and_downstream_subset
     )
     assert (
-        AssetKeyPartitionKey(downstream_daily_partitioned_asset.key, "2023-01-09")
+        AssetPartitionKey(downstream_daily_partitioned_asset.key, "2023-01-09")
         in asset_backfill_data.failed_and_downstream_subset
     )
 
@@ -1195,11 +1194,11 @@ def test_asset_backfill_cancels_without_fetching_downstreams_of_failed_partition
 
     assert isinstance(canceling_backfill_data, AssetBackfillData)
     assert (
-        AssetKeyPartitionKey(upstream_hourly_partitioned_asset.key, "2023-01-09-00:00")
+        AssetPartitionKey(upstream_hourly_partitioned_asset.key, "2023-01-09-00:00")
         in canceling_backfill_data.failed_and_downstream_subset
     )
     assert (
-        AssetKeyPartitionKey(downstream_daily_partitioned_asset.key, "2023-01-09")
+        AssetPartitionKey(downstream_daily_partitioned_asset.key, "2023-01-09")
         in canceling_backfill_data.failed_and_downstream_subset
     )
 
@@ -1243,7 +1242,7 @@ def test_asset_backfill_target_asset_and_same_partitioning_grandchild():
         backfill_start_timestamp=pendulum.datetime(2023, 10, 5, 0, 0, 0).timestamp(),
     )
     assert set(asset_backfill_data.target_subset.iterate_asset_partitions()) == {
-        AssetKeyPartitionKey(asset_key, partition_key)
+        AssetPartitionKey(asset_key, partition_key)
         for asset_key in [foo.key, foo_grandchild.key]
         for partition_key in all_partitions
     }
@@ -1293,9 +1292,9 @@ def test_asset_backfill_target_asset_and_differently_partitioned_grandchild():
     )
 
     expected_targeted_partitions = {
-        AssetKeyPartitionKey(foo_grandchild.key, "2023-10-01"),
+        AssetPartitionKey(foo_grandchild.key, "2023-10-01"),
         *{
-            AssetKeyPartitionKey(asset_key, partition_key)
+            AssetPartitionKey(asset_key, partition_key)
             for asset_key in [foo.key]
             for partition_key in [f"2023-10-0{x}" for x in range(1, 8)]
         },
@@ -1415,15 +1414,15 @@ def test_connected_assets_disconnected_partitions():
 
     target_root_partitions = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
     assert set(target_root_partitions) == {
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-05"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-03"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-04"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-02"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-01"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-11"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-13"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-12"),
-        AssetKeyPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-10"),
+        AssetPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-05"),
+        AssetPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-03"),
+        AssetPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-04"),
+        AssetPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-02"),
+        AssetPartitionKey(asset_key=AssetKey(["foo"]), partition_key="2023-10-01"),
+        AssetPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-11"),
+        AssetPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-13"),
+        AssetPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-12"),
+        AssetPartitionKey(asset_key=AssetKey(["foo_grandchild"]), partition_key="2023-10-10"),
     }
 
 
@@ -1621,9 +1620,9 @@ def test_multi_asset_internal_deps_asset_backfill():
     backfill_data = _single_backfill_iteration(
         "fake_id", asset_backfill_data, asset_graph, instance, repo_with_unpartitioned_root
     )
-    assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
-    assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
-    assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
+    assert AssetPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
+    assert AssetPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
+    assert AssetPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
 
 
 def test_multi_asset_internal_and_external_deps_asset_backfill() -> None:
@@ -1660,9 +1659,9 @@ def test_multi_asset_internal_and_external_deps_asset_backfill() -> None:
     backfill_data = _single_backfill_iteration(
         "fake_id", asset_backfill_data, asset_graph, instance, repo_with_unpartitioned_root
     )
-    assert AssetKeyPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
-    assert AssetKeyPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
-    assert AssetKeyPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
+    assert AssetPartitionKey(AssetKey("a"), "1") in backfill_data.requested_subset
+    assert AssetPartitionKey(AssetKey("b"), "1") in backfill_data.requested_subset
+    assert AssetPartitionKey(AssetKey("c"), "1") in backfill_data.requested_subset
 
 
 def test_run_request_partition_order():

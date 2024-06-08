@@ -2,7 +2,7 @@ import datetime
 
 from dagster import AutomationCondition
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 
 from ..scenario_specs import (
     daily_partitions_def,
@@ -68,16 +68,12 @@ def test_in_latest_time_window_time_partitioned() -> None:
     state = state.with_current_time("2020-02-02T01:00:00")
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-01")
-    }
+    assert result.true_subset.asset_partitions == {AssetPartitionKey(AssetKey("A"), "2020-02-01")}
 
     state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
-    assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-06")
-    }
+    assert result.true_subset.asset_partitions == {AssetPartitionKey(AssetKey("A"), "2020-02-06")}
 
 
 def test_in_latest_time_window_time_partitioned_lookback() -> None:
@@ -97,16 +93,16 @@ def test_in_latest_time_window_time_partitioned_lookback() -> None:
     state, result = state.evaluate("A")
     assert result.true_subset.size == 3
     assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-06"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-05"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-04"),
+        AssetPartitionKey(AssetKey("A"), "2020-02-06"),
+        AssetPartitionKey(AssetKey("A"), "2020-02-05"),
+        AssetPartitionKey(AssetKey("A"), "2020-02-04"),
     }
 
     state = state.with_current_time_advanced(days=5)
     state, result = state.evaluate("A")
     assert result.true_subset.size == 3
     assert result.true_subset.asset_partitions == {
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-11"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-10"),
-        AssetKeyPartitionKey(AssetKey("A"), "2020-02-09"),
+        AssetPartitionKey(AssetKey("A"), "2020-02-11"),
+        AssetPartitionKey(AssetKey("A"), "2020-02-10"),
+        AssetPartitionKey(AssetKey("A"), "2020-02-09"),
     }

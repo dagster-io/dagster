@@ -9,7 +9,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 
 from ..asset_daemon_cursor import AssetDaemonCursor
 from ..base_asset_graph import BaseAssetGraph
@@ -61,7 +61,7 @@ class AutomationConditionEvaluator:
     asset_graph_view: AssetGraphView
     current_results_by_key: Dict[AssetKey, AutomationResult]
     expected_data_time_mapping: Dict[AssetKey, Optional[datetime.datetime]]
-    to_request: Set[AssetKeyPartitionKey]
+    to_request: Set[AssetPartitionKey]
     num_checked_assets: int
     num_asset_keys: int
     logger: logging.Logger
@@ -98,7 +98,7 @@ class AutomationConditionEvaluator:
         self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
         self.logger.info("Done prefetching asset records.")
 
-    def evaluate(self) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
+    def evaluate(self) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetPartitionKey]]:
         self.prefetch()
         for asset_key in self.asset_graph.toposorted_asset_keys:
             # an asset may have already been visited if it was part of a non-subsettable multi-asset

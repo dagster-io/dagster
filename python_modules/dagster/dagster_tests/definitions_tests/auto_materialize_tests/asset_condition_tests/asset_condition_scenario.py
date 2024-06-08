@@ -26,7 +26,7 @@ from dagster._core.definitions.declarative_automation.operators.boolean_operator
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionCursor,
 )
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
+from dagster._core.definitions.events import AssetPartitionKey, CoercibleToAssetKey
 from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -51,7 +51,7 @@ class FalseAssetCondition(AutomationCondition):
 class AutomationConditionScenarioState(ScenarioState):
     automation_condition: Optional[AutomationCondition] = None
     condition_cursor: Optional[AutomationConditionCursor] = None
-    requested_asset_partitions: Optional[Sequence[AssetKeyPartitionKey]] = None
+    requested_asset_partitions: Optional[Sequence[AssetPartitionKey]] = None
     ensure_empty_result: bool = True
 
     def _get_current_results_by_key(
@@ -143,6 +143,6 @@ class AutomationConditionScenarioState(ScenarioState):
         return dataclasses.replace(self, condition_cursor=None)
 
     def with_requested_asset_partitions(
-        self, requested_asset_partitions: Sequence[AssetKeyPartitionKey]
+        self, requested_asset_partitions: Sequence[AssetPartitionKey]
     ) -> "AutomationConditionScenarioState":
         return dataclasses.replace(self, requested_asset_partitions=requested_asset_partitions)

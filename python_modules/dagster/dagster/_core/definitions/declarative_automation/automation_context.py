@@ -22,7 +22,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.partition import PartitionsDefinition
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
@@ -59,10 +59,10 @@ class NonAGVInstanceInterface:
     def get_parent_asset_partitions_updated_after_child(
         self,
         *,
-        asset_partition: AssetKeyPartitionKey,
-        parent_asset_partitions: AbstractSet[AssetKeyPartitionKey],
+        asset_partition: AssetPartitionKey,
+        parent_asset_partitions: AbstractSet[AssetPartitionKey],
         ignored_parent_keys: AbstractSet[AssetKey],
-    ) -> AbstractSet[AssetKeyPartitionKey]:
+    ) -> AbstractSet[AssetPartitionKey]:
         return self._queryer.get_parent_asset_partitions_updated_after_child(
             asset_partition=asset_partition,
             parent_asset_partitions=parent_asset_partitions,

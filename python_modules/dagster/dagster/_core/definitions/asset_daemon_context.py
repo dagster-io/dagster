@@ -25,7 +25,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetKey, AssetPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
@@ -154,7 +154,7 @@ class AssetDaemonContext:
 
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetPartitionKey]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
@@ -230,7 +230,7 @@ class AssetDaemonContext:
 
 
 def build_run_requests(
-    asset_partitions: Iterable[AssetKeyPartitionKey],
+    asset_partitions: Iterable[AssetPartitionKey],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
 ) -> Sequence[RunRequest]:
@@ -277,7 +277,7 @@ def build_run_requests(
 
 
 def build_run_requests_with_backfill_policies(
-    asset_partitions: Iterable[AssetKeyPartitionKey],
+    asset_partitions: Iterable[AssetPartitionKey],
     asset_graph: BaseAssetGraph,
     run_tags: Optional[Mapping[str, str]],
     dynamic_partitions_store: DynamicPartitionsStore,

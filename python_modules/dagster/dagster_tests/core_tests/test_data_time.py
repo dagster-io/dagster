@@ -21,7 +21,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.events import AssetPartitionKey
 from dagster._core.definitions.materialize import materialize_to_memory
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
@@ -139,7 +139,7 @@ def test_calculate_data_time_unpartitioned(ignore_asset_tags, runs_to_expected_d
             for asset_keys, expected_data_times in expected_index_mapping.items():
                 for ak in asset_keys:
                     latest_asset_record = data_time_queryer.instance_queryer.get_latest_materialization_or_observation_record(
-                        AssetKeyPartitionKey(AssetKey(ak))
+                        AssetPartitionKey(AssetKey(ak))
                     )
                     if ignore_asset_tags:
                         # simulate an environment where materialization tags were not populated
