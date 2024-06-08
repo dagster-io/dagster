@@ -1,3 +1,4 @@
+import functools
 import json
 import os
 from pathlib import Path
@@ -33,7 +34,7 @@ from dagster import (
     get_dagster_logger,
     op,
 )
-from dagster._annotations import deprecated_param
+from dagster._annotations import hidden_param, only_allow_hidden_params_in_kwargs
 from dagster._core.definitions.events import (
     AssetMaterialization,
     AssetObservation,
@@ -633,39 +634,41 @@ def load_assets_from_dbt_project(
     )
 
 
-@deprecated_param(
-    param="manifest_json", breaking_version="0.21", additional_warn_text="Use manifest instead"
-)
-@deprecated_param(
-    param="selected_unique_ids",
+# declare hidden parameter that will break at 2.0
+def hidden_until_20_param(param: str) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    return functools.partial(hidden_param, param=param, breaking_version="2.0")
+
+
+@hidden_param(
+    param="manifest_json",
     breaking_version="0.21",
-    additional_warn_text="Use the select parameter instead.",
+    additional_warn_text="Use manifest instead",
 )
-@deprecated_param(
+@hidden_param(
     param="dbt_resource_key",
     breaking_version="0.21",
     additional_warn_text=(
         "Use the `@dbt_assets` decorator if you need to customize your resource key."
     ),
 )
-@deprecated_param(
+@hidden_param(
     param="use_build_command",
     breaking_version="0.21",
     additional_warn_text=(
         "Use the `@dbt_assets` decorator if you need to customize the underlying dbt commands."
     ),
 )
-@deprecated_param(
+@hidden_param(
     param="partitions_def",
     breaking_version="0.21",
     additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
 )
-@deprecated_param(
+@hidden_param(
     param="partition_key_to_vars_fn",
     breaking_version="0.21",
     additional_warn_text="Use the `@dbt_assets` decorator to define partitioned dbt assets.",
 )
-@deprecated_param(
+@hidden_param(
     param="runtime_metadata_fn",
     breaking_version="0.21",
     additional_warn_text=(

@@ -15,6 +15,7 @@ from dagster._annotations import (
     experimental_param,
     get_deprecated_info,
     get_experimental_info,
+    hidden_param,
     is_deprecated,
     is_deprecated_param,
     is_experimental,
@@ -765,7 +766,7 @@ def test_all_annotations():
 
 
 def test_hidden_annotations() -> None:
-    @deprecated_param(param="baz", breaking_version="2.0", hidden=True)
+    @hidden_param(param="baz", breaking_version="2.0")
     def with_hidden_args(**kwargs) -> bool:
         only_allow_hidden_params_in_kwargs(with_hidden_args, kwargs)
         return True

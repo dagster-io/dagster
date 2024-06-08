@@ -16,8 +16,8 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import (
-    deprecated_param,
     experimental_param,
+    hidden_param,
     only_allow_hidden_params_in_kwargs,
 )
 from dagster._config.config_schema import UserConfigSchema
@@ -123,11 +123,10 @@ def _validate_hidden_non_argument_dep_param(
 @experimental_param(param="backfill_policy")
 @experimental_param(param="owners")
 @experimental_param(param="tags")
-@deprecated_param(
+@hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
     additional_warn_text="use `deps` instead.",
-    hidden=True,
 )
 def asset(
     compute_fn: Optional[Callable[..., Any]] = None,
@@ -495,11 +494,10 @@ def create_assets_def_from_fn_and_decorator_args(
 
 
 @experimental_param(param="resource_defs")
-@deprecated_param(
+@hidden_param(
     param="non_argument_deps",
     breaking_version="2.0.0",
     additional_warn_text="use `deps` instead.",
-    hidden=True,
 )
 def multi_asset(
     *,

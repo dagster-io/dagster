@@ -212,7 +212,6 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-    hidden: bool = ...,
 ) -> T_Annotatable: ...
 
 
@@ -224,7 +223,6 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = ...,
     emit_runtime_warning: bool = ...,
-    hidden: bool = ...,
 ) -> Callable[[T_Annotatable], T_Annotatable]: ...
 
 
@@ -235,7 +233,6 @@ def deprecated_param(
     breaking_version: str,
     additional_warn_text: Optional[str] = None,
     emit_runtime_warning: bool = True,
-    hidden: bool = False,
 ) -> T_Annotatable:
     """Mark a parameter of a class initializer or function/method as deprecated. This appends some
     metadata to the decorated object that causes the specified argument to be rendered with a
@@ -268,35 +265,101 @@ def deprecated_param(
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
             emit_runtime_warning=emit_runtime_warning,
-            hidden=hidden,
         )
     else:
-        if not hidden:
-            check.invariant(
-                _annotatable_has_param(__obj, param),
-                f"Attempted to mark undefined parameter `{param}` deprecated.",
-            )
-        target = _get_annotation_target(__obj)
-        if not hasattr(target, _DEPRECATED_PARAM_ATTR_NAME):
-            setattr(target, _DEPRECATED_PARAM_ATTR_NAME, {})
-        getattr(target, _DEPRECATED_PARAM_ATTR_NAME)[param] = DeprecatedInfo(
+        return attach_deprecation_info_and_wrap(
+            __obj,
+            param=param,
             breaking_version=breaking_version,
             additional_warn_text=additional_warn_text,
-            hidden=hidden,
-            subject=None,
+            emit_runtime_warning=emit_runtime_warning,
+            hidden=False,
         )
 
-        if emit_runtime_warning:
-            condition = lambda *_, **kwargs: kwargs.get(param) is not None
-            warning_fn = lambda: deprecation_warning(
-                _get_subject(__obj, param=param),
-                breaking_version=breaking_version,
-                additional_warn_text=additional_warn_text,
-                stacklevel=4,
-            )
-            return apply_pre_call_decorator(__obj, warning_fn, condition=condition)
-        else:
-            return __obj
+
+def attach_deprecation_info_and_wrap(
+    obj: T_Annotatable,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = None,
+    emit_runtime_warning: bool = True,
+    hidden: bool = False,
+) -> T_Annotatable:
+    if not hidden:
+        check.invariant(
+            _annotatable_has_param(obj, param),
+            f"Attempted to mark undefined parameter `{param}` deprecated.",
+        )
+    target = _get_annotation_target(obj)
+    if not hasattr(target, _DEPRECATED_PARAM_ATTR_NAME):
+        setattr(target, _DEPRECATED_PARAM_ATTR_NAME, {})
+    getattr(target, _DEPRECATED_PARAM_ATTR_NAME)[param] = DeprecatedInfo(
+        breaking_version=breaking_version,
+        additional_warn_text=additional_warn_text,
+        hidden=hidden,
+        subject=None,
+    )
+
+    if not emit_runtime_warning:
+        return obj
+
+    condition = lambda *_, **kwargs: kwargs.get(param) is not None
+    warning_fn = lambda: deprecation_warning(
+        _get_subject(obj, param=param),
+        breaking_version=breaking_version,
+        additional_warn_text=additional_warn_text,
+        stacklevel=4,
+    )
+    return apply_pre_call_decorator(obj, warning_fn, condition=condition)
+
+
+@overload
+def hidden_param(
+    __obj: T_Annotatable,
+    *,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> T_Annotatable: ...
+
+
+@overload
+def hidden_param(
+    __obj: None = ...,
+    *,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = ...,
+    emit_runtime_warning: bool = ...,
+) -> Callable[[T_Annotatable], T_Annotatable]: ...
+
+
+def hidden_param(
+    __obj: Optional[T_Annotatable] = None,
+    *,
+    param: str,
+    breaking_version: str,
+    additional_warn_text: Optional[str] = None,
+    emit_runtime_warning: bool = True,
+) -> T_Annotatable:
+    if __obj is None:
+        return lambda obj: hidden_param(  # type: ignore
+            obj,
+            param=param,
+            breaking_version=breaking_version,
+            additional_warn_text=additional_warn_text,
+            emit_runtime_warning=emit_runtime_warning,
+        )
+    else:
+        return attach_deprecation_info_and_wrap(
+            __obj,
+            param=param,
+            breaking_version=breaking_version,
+            additional_warn_text=additional_warn_text,
+            emit_runtime_warning=emit_runtime_warning,
+            hidden=True,
+        )
 
 
 def has_deprecated_params(obj: Annotatable) -> bool:
