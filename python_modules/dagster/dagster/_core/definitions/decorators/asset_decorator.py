@@ -46,8 +46,8 @@ from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
 from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilderArgs,
-    build_asset_ins,
     build_asset_outs,
+    build_named_ins,
 )
 
 
@@ -797,7 +797,7 @@ def graph_asset_no_defaults(
     key: Optional[CoercibleToAssetKey],
 ) -> AssetsDefinition:
     ins = ins or {}
-    asset_ins = build_asset_ins(compose_fn, ins or {}, set())
+    named_ins = build_named_ins(compose_fn, ins or {}, set())
     out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
         key=key,
         key_prefix=key_prefix,
@@ -806,7 +806,7 @@ def graph_asset_no_defaults(
         fn=compose_fn,
     )
 
-    keys_by_input_name = {input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()}
+    keys_by_input_name = {input_name: asset_key for asset_key, (input_name, _) in named_ins.items()}
     partition_mappings = {
         input_name: asset_in.partition_mapping
         for input_name, asset_in in ins.items()
@@ -829,7 +829,7 @@ def graph_asset_no_defaults(
         name=out_asset_key.to_python_identifier(),
         description=description,
         config=config,
-        ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
+        ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},
         out=combined_outs_by_output_name,
     )(compose_fn)
     return AssetsDefinition.from_graph(
@@ -909,9 +909,9 @@ def graph_multi_asset(
             if asset_in.partition_mapping
         }
 
-        asset_ins = build_asset_ins(fn, ins or {}, set())
+        named_ins = build_named_ins(fn, ins or {}, set())
         keys_by_input_name = {
-            input_name: asset_key for asset_key, (input_name, _) in asset_ins.items()
+            input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
         asset_outs = build_asset_outs(outs)
 
@@ -931,7 +931,7 @@ def graph_multi_asset(
             name=name or fn.__name__,
             out=combined_outs_by_output_name,
             config=config,
-            ins={input_name: GraphIn() for _, (input_name, _) in asset_ins.items()},
+            ins={input_name: GraphIn() for _, (input_name, _) in named_ins.items()},
         )(fn)
 
         # source metadata from the AssetOuts (if any)
