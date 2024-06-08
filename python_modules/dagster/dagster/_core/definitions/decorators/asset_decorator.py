@@ -404,7 +404,6 @@ def create_assets_def_from_fn_and_decorator_args(
 
     with disable_dagster_warnings():
         builder_args = DecoratorAssetsDefinitionBuilderArgs(
-            name=args.name,
             description=args.description,
             check_specs=check.opt_list_param(
                 args.check_specs, "check_specs", of_type=AssetCheckSpec

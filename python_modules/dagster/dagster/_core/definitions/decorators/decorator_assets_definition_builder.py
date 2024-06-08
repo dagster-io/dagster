@@ -1,4 +1,6 @@
+from abc import ABC
 from collections import Counter
+from dataclasses import dataclass
 from functools import cached_property
 from inspect import Parameter
 from typing import (
@@ -206,7 +208,7 @@ def compute_required_resource_keys(
     return required_resource_keys - arg_resource_keys
 
 
-class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
+class IBuilderState(ABC):
     asset_deps: Mapping[str, Set[AssetKey]]
     asset_in_map: Mapping[str, AssetIn]
     asset_out_map: Mapping[str, AssetOut]
@@ -220,12 +222,34 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     decorator_name: str
     description: Optional[str]
     group_name: Optional[str]
-    name: Optional[str]
     op_def_resource_defs: Mapping[str, ResourceDefinition]
     op_tags: Optional[Mapping[str, Any]]
     partitions_def: Optional[PartitionsDefinition]
     required_resource_keys: AbstractSet[str]
     retry_policy: Optional[RetryPolicy]
+    specs: Sequence[AssetSpec]
+    upstream_asset_deps: Optional[Iterable[AssetDep]]
+
+
+@dataclass
+class DecoratorAssetsDefinitionBuilderArgs(IBuilderState):
+    asset_deps: Mapping[str, Set[AssetKey]]
+    asset_in_map: Mapping[str, AssetIn]
+    asset_out_map: Mapping[str, AssetOut]
+    assets_def_resource_defs: Mapping[str, ResourceDefinition]
+    backfill_policy: Optional[BackfillPolicy]
+    can_subset: bool
+    check_specs: Sequence[AssetCheckSpec]
+    code_version: Optional[str]
+    compute_kind: Optional[str]
+    config_schema: Optional[UserConfigSchema]
+    decorator_name: str
+    description: Optional[str]
+    group_name: Optional[str]
+    op_def_resource_defs: Mapping[str, ResourceDefinition]
+    op_tags: Optional[Mapping[str, Any]]
+    partitions_def: Optional[PartitionsDefinition]
+    required_resource_keys: AbstractSet[str]
     retry_policy: Optional[RetryPolicy]
     specs: Sequence[AssetSpec]
     upstream_asset_deps: Optional[Iterable[AssetDep]]
@@ -239,7 +263,7 @@ class DecoratorAssetsDefinitionBuilder:
         named_outs_by_asset_key: Mapping[AssetKey, NamedOut],
         internal_deps: Mapping[AssetKey, Set[AssetKey]],
         op_name: str,
-        args: DecoratorAssetsDefinitionBuilderArgs,
+        args: IBuilderState,
         fn: Callable[..., Any],
     ) -> None:
         self.named_outs_by_asset_key = named_outs_by_asset_key
