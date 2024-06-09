@@ -100,6 +100,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       id
       selectorId
       status
+      ...BasicInstigationStateFragment
     }
   }
 

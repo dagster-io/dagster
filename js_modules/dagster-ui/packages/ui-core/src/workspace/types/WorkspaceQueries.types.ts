@@ -74,6 +74,8 @@ export type LocationWorkspaceQuery = {
                     id: string;
                     selectorId: string;
                     status: Types.InstigationStatus;
+                    hasStartPermission: boolean;
+                    hasStopPermission: boolean;
                   };
                 }>;
                 sensors: Array<{
@@ -186,6 +188,8 @@ export type WorkspaceLocationNodeFragment = {
               id: string;
               selectorId: string;
               status: Types.InstigationStatus;
+              hasStartPermission: boolean;
+              hasStopPermission: boolean;
             };
           }>;
           sensors: Array<{
@@ -276,6 +280,8 @@ export type WorkspaceLocationFragment = {
         id: string;
         selectorId: string;
         status: Types.InstigationStatus;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
       };
     }>;
     sensors: Array<{
@@ -347,6 +353,8 @@ export type WorkspaceRepositoryFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
     };
   }>;
   sensors: Array<{
@@ -405,6 +413,8 @@ export type WorkspaceScheduleFragment = {
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
   };
 };
 
