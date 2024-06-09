@@ -848,9 +848,7 @@ def test_multi_check_direct_invocation() -> None:
         yield AssetCheckResult(passed=False, asset_key="asset1", check_name="check2")
         yield AssetCheckResult(passed=True, asset_key="asset2")
 
-    checks_ret_obj = checks()
-    assert isinstance(checks_ret_obj, Iterable)
-    results = check.is_list(list(checks_ret_obj), of_type=AssetCheckResult)
+    results = check.is_list(list(check.is_iterable(checks())), of_type=AssetCheckResult)
     assert len(results) == 3
     assert all(isinstance(result, AssetCheckResult) for result in results)
     assert results[0].passed
