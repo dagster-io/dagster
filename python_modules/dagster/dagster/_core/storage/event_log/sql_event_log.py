@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -70,7 +69,7 @@ from dagster._core.storage.sqlalchemy_compat import (
 )
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.errors import DeserializationError
-from dagster._time import datetime_from_timestamp, utc_datetime_from_naive
+from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.concurrency import (
     ClaimedSlotInfo,
@@ -1756,7 +1755,7 @@ class SqlEventLogStorage(EventLogStorage):
         return event_or_materialization.dagster_event.step_materialization_data.materialization  # type: ignore
 
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
-        wipe_timestamp = pendulum.now("UTC").timestamp()
+        wipe_timestamp = get_current_timestamp()
         values = {
             "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
             "last_run_id": None,

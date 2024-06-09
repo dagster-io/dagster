@@ -21,7 +21,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -64,7 +63,7 @@ from dagster._core.storage.tags import (
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven import JSONDecodeError
-from dagster._time import datetime_from_timestamp, utc_datetime_from_naive
+from dagster._time import datetime_from_timestamp, get_current_datetime, utc_datetime_from_naive
 from dagster._utils import PrintFn
 from dagster._utils.merger import merge_dicts
 
@@ -186,7 +185,7 @@ class SqlRunStorage(RunStorage):
 
         # consider changing the `handle_run_event` signature to get timestamp off of the
         # EventLogEntry instead of the DagsterEvent, for consistency
-        now = pendulum.now("UTC")
+        now = get_current_datetime()
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
             kwargs["start_time"] = now.timestamp()
@@ -496,7 +495,7 @@ class SqlRunStorage(RunStorage):
                     run_body=serialize_value(run.with_tags(merge_dicts(current_tags, new_tags))),
                     partition=partition,
                     partition_set=partition_set,
-                    update_timestamp=pendulum.now("UTC"),
+                    update_timestamp=get_current_datetime(),
                 )
             )
 

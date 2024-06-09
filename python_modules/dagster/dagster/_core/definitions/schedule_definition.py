@@ -32,7 +32,7 @@ from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import pendulum_create_timezone
+from dagster._time import get_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
@@ -704,7 +704,7 @@ class ScheduleDefinition(IHasInternalInit):
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum_create_timezone(self._execution_timezone)
+                get_timezone(self._execution_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"
