@@ -181,6 +181,7 @@ def asset_check(
     def inner(fn: AssetCheckFunction) -> AssetChecksDefinition:
         check.callable_param(fn, "fn")
         resolved_name = name or fn.__name__
+
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
         additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
@@ -244,15 +245,11 @@ def asset_check(
         )
 
         op_def = builder.create_op_definition()
-
         return AssetChecksDefinition.create(
-            keys_by_input_name={
-                input_tuple[0]: asset_key
-                for asset_key, input_tuple in named_in_by_asset_key.items()
-            },
+            keys_by_input_name=builder.asset_keys_by_input_name,
             node_def=op_def,
-            resource_defs=resource_defs_for_execution,
-            check_specs_by_output_name={op_def.output_defs[0].name: spec},
+            resource_defs=builder.args.assets_def_resource_defs,
+            check_specs_by_output_name=builder.check_specs_by_output_name,
             can_subset=False,
         )
 
