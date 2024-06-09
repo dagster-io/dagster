@@ -31,6 +31,7 @@ from dagster._core.definitions.assets import (
     get_partition_mappings_from_deps,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -152,7 +153,7 @@ def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "N
 
 def build_subsettable_named_ins(
     asset_ins: Mapping[AssetKey, Tuple[str, In]],
-    asset_outs: Mapping[AssetKey, Tuple[str, Out]],
+    asset_outs: Mapping[AssetKeyOrCheckKey, Tuple[str, Out]],
     internal_upstream_deps: Iterable[AbstractSet[AssetKey]],
 ) -> Mapping[AssetKey, "NamedIn"]:
     """Creates a mapping from AssetKey to (name of input, In object) for any asset key that is not
@@ -166,7 +167,8 @@ def build_subsettable_named_ins(
     # set of asset keys which are upstream of another asset, and are not currently inputs
     potential_deps = set().union(*internal_upstream_deps).difference(set(asset_ins.keys()))
     return {
-        key: NamedIn(f"{ASSET_SUBSET_INPUT_PREFIX}{name}", In(Nothing))
+        # anything in potential deps should be an AssetKey ATM
+        check.inst(key, AssetKey): NamedIn(f"{ASSET_SUBSET_INPUT_PREFIX}{name}", In(Nothing))
         for key, (name, _) in asset_outs.items()
         if key in potential_deps
     }
@@ -236,13 +238,13 @@ class DecoratorAssetsDefinitionBuilder:
         self,
         *,
         named_ins_by_asset_key: Mapping[AssetKey, NamedIn],
-        named_outs_by_asset_key: Mapping[AssetKey, NamedOut],
+        named_outs_by_asset_graph_key: Mapping[AssetKeyOrCheckKey, NamedOut],
         internal_deps: Mapping[AssetKey, Set[AssetKey]],
         op_name: str,
         args: DecoratorAssetsDefinitionBuilderArgs,
         fn: Callable[..., Any],
     ) -> None:
-        self.named_outs_by_asset_key = named_outs_by_asset_key
+        self.named_outs_by_asset_graph_key = named_outs_by_asset_graph_key
         self.internal_deps = internal_deps
         self.op_name = op_name
         self.args = args
@@ -254,7 +256,7 @@ class DecoratorAssetsDefinitionBuilder:
                     **named_ins_by_asset_key,
                     **build_subsettable_named_ins(
                         named_ins_by_asset_key,
-                        named_outs_by_asset_key,
+                        named_outs_by_asset_graph_key,
                         self.internal_deps.values(),
                     ),
                 }
@@ -317,10 +319,10 @@ class DecoratorAssetsDefinitionBuilder:
     ) -> "DecoratorAssetsDefinitionBuilder":
         check.param_invariant(passed_args.specs, "passed_args", "Must use specs in this codepath")
 
-        named_outs_by_asset_key: Mapping[AssetKey, NamedOut] = {}
+        named_outs_by_asset_graph_key: Mapping[AssetKeyOrCheckKey, NamedOut] = {}
         for asset_spec in asset_specs:
             output_name = asset_spec.key.to_python_identifier()
-            named_outs_by_asset_key[asset_spec.key] = NamedOut(
+            named_outs_by_asset_graph_key[asset_spec.key] = NamedOut(
                 output_name,
                 Out(
                     Nothing,
@@ -334,9 +336,12 @@ class DecoratorAssetsDefinitionBuilder:
         upstream_keys = set()
         for spec in asset_specs:
             for dep in spec.deps:
-                if dep.asset_key not in named_outs_by_asset_key:
+                if dep.asset_key not in named_outs_by_asset_graph_key:
                     upstream_keys.add(dep.asset_key)
-                if dep.asset_key in named_outs_by_asset_key and dep.partition_mapping is not None:
+                if (
+                    dep.asset_key in named_outs_by_asset_graph_key
+                    and dep.partition_mapping is not None
+                ):
                     # self-dependent asset also needs to be considered an upstream_key
                     upstream_keys.add(dep.asset_key)
 
@@ -363,7 +368,7 @@ class DecoratorAssetsDefinitionBuilder:
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
-            named_outs_by_asset_key=named_outs_by_asset_key,
+            named_outs_by_asset_graph_key=named_outs_by_asset_graph_key,
             internal_deps=internal_deps,
             op_name=op_name,
             args=passed_args,
@@ -430,7 +435,7 @@ class DecoratorAssetsDefinitionBuilder:
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
-            named_outs_by_asset_key=named_outs_by_asset_key,
+            named_outs_by_asset_graph_key=named_outs_by_asset_key,  # type: ignore
             internal_deps=internal_deps,
             op_name=op_name,
             args=passed_args,
@@ -443,7 +448,7 @@ class DecoratorAssetsDefinitionBuilder:
 
     @cached_property
     def outs_by_output_name(self) -> Mapping[str, Out]:
-        return dict(self.named_outs_by_asset_key.values())
+        return dict(self.named_outs_by_asset_graph_key.values())
 
     @cached_property
     def asset_keys_by_input_name(self) -> Mapping[str, AssetKey]:
@@ -455,13 +460,16 @@ class DecoratorAssetsDefinitionBuilder:
     @cached_property
     def asset_keys_by_output_name(self) -> Mapping[str, AssetKey]:
         return {
-            out_mapping.output_name: asset_key
-            for asset_key, out_mapping in self.named_outs_by_asset_key.items()
+            out_mapping.output_name: kry
+            for kry, out_mapping in self.named_outs_by_asset_graph_key.items()
+            if isinstance(kry, AssetKey)
         }
 
     @cached_property
     def asset_keys(self) -> Set[AssetKey]:
-        return set(self.named_outs_by_asset_key.keys())
+        return {
+            key for key in self.named_outs_by_asset_graph_key.keys() if isinstance(key, AssetKey)
+        }
 
     @cached_property
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
@@ -476,6 +484,9 @@ class DecoratorAssetsDefinitionBuilder:
 
     @cached_property
     def combined_outs_by_output_name(self) -> Mapping[str, Out]:
+        if self.args.decorator_name == "@asset_check":
+            return self.outs_by_output_name
+
         return {
             **self.outs_by_output_name,
             **self.check_outs_by_output_name,
@@ -522,7 +533,7 @@ class DecoratorAssetsDefinitionBuilder:
             decorator_name=self.args.decorator_name,
         )
 
-    def _create_op_definition(self) -> OpDefinition:
+    def create_op_definition(self) -> OpDefinition:
         return _Op(
             name=self.op_name,
             description=self.args.description,
@@ -542,7 +553,7 @@ class DecoratorAssetsDefinitionBuilder:
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=self.asset_keys_by_input_names,
             keys_by_output_name=self.asset_keys_by_output_name,
-            node_def=self._create_op_definition(),
+            node_def=self.create_op_definition(),
             partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
             resource_defs=self.args.assets_def_resource_defs,

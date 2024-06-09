@@ -1,4 +1,16 @@
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
 
 from typing_extensions import TypeAlias
 
@@ -14,6 +26,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -24,11 +37,15 @@ from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
     DecoratorAssetsDefinitionBuilderArgs,
     NamedIn,
+    NamedOut,
     build_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
 )
 from .op_decorator import _Op
+
+if TYPE_CHECKING:
+    from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
 
 AssetCheckFunctionReturn: TypeAlias = AssetCheckResult
 AssetCheckFunction: TypeAlias = Callable[..., AssetCheckFunctionReturn]
@@ -208,7 +225,7 @@ def asset_check(
 
         builder_args = DecoratorAssetsDefinitionBuilderArgs(
             decorator_name="@asset_check",
-            name=name,
+            name=spec.get_python_identifier(),
             description=description,
             required_resource_keys=required_resource_keys or set(),
             config_schema=config_schema,
@@ -232,33 +249,44 @@ def asset_check(
             asset_out_map={},
         )
 
+        named_outs_by_key: Dict[AssetKeyOrCheckKey, NamedOut] = {
+            spec.key: NamedOut(output_name=DEFAULT_OUTPUT, output=Out(dagster_type=None))
+        }
+
         builder = DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_in_by_asset_key,
-            named_outs_by_asset_key={},
+            named_outs_by_asset_graph_key=named_outs_by_key,
             internal_deps={},
             op_name=spec.get_python_identifier(),
             args=builder_args,
             fn=fn,
         )
 
-        op_required_resource_keys = builder.required_resource_keys
+        # op_required_resource_keys = builder.required_resource_keys
 
-        out = Out(dagster_type=None)
+        # out = Out(dagster_type=None)
 
-        op_def = _Op(
-            name=spec.get_python_identifier(),
-            ins=dict(named_in_by_asset_key.values()),
-            out=out,
-            # Any resource requirements specified as arguments will be identified as
-            # part of the Op definition instantiation
-            required_resource_keys=op_required_resource_keys,
-            tags={
-                **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
-                **(op_tags or {}),
-            },
-            config_schema=config_schema,
-            retry_policy=retry_policy,
-        )(fn)
+        # old_op_def = _Op(
+        #     name=spec.get_python_identifier(),
+        #     ins=dict(named_in_by_asset_key.values()),
+        #     out=out,
+        #     # Any resource requirements specified as arguments will be identified as
+        #     # part of the Op definition instantiation
+        #     required_resource_keys=op_required_resource_keys,
+        #     tags={
+        #         **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
+        #         **(op_tags or {}),
+        #     },
+        #     config_schema=config_schema,
+        #     retry_policy=retry_policy,
+        # )(fn)
+
+        op_def = builder.create_op_definition()
+
+        # check.invariant(
+        #     [od.name for od in old_op_def.output_defs] == [od.name for od in op_def.output_defs],
+        #     f"Comparing {old_op_def.output_defs} to {op_def.output_defs}",
+        # )
 
         return AssetChecksDefinition.create(
             keys_by_input_name={
