@@ -1,4 +1,5 @@
 import re
+from typing import Any, Iterable
 
 import pytest
 from dagster import (
@@ -10,6 +11,7 @@ from dagster import (
     In,
     MetadataValue,
     Output,
+    _check as check,
     asset,
     graph_asset,
     graph_multi_asset,
@@ -32,9 +34,9 @@ from dagster._core.test_utils import instance_for_test
 from dagster._core.types.dagster_type import Nothing
 
 
-def test_asset_check_same_op():
+def test_asset_check_same_op() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
@@ -56,14 +58,14 @@ def test_asset_check_same_op():
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
 
-def test_asset_check_same_op_with_key_prefix():
+def test_asset_check_same_op_with_key_prefix() -> None:
     @asset(
         key_prefix="my_prefix",
         check_specs=[
             AssetCheckSpec("check1", asset=AssetKey(["my_prefix", "asset1"]), description="desc")
         ],
     )
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
@@ -85,14 +87,14 @@ def test_asset_check_same_op_with_key_prefix():
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
 
-def test_multiple_asset_checks_same_op():
+def test_multiple_asset_checks_same_op() -> None:
     @asset(
         check_specs=[
             AssetCheckSpec("check1", asset="asset1", description="desc"),
             AssetCheckSpec("check2", asset="asset1", description="desc"),
         ]
     )
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
         yield AssetCheckResult(check_name="check2", passed=False, metadata={"baz": "bla"})
@@ -111,9 +113,9 @@ def test_multiple_asset_checks_same_op():
     assert check_evals[1].metadata == {"baz": MetadataValue.text("bla")}
 
 
-def test_no_result_for_check():
+def test_no_result_for_check() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
 
     with pytest.raises(
@@ -126,9 +128,9 @@ def test_no_result_for_check():
         materialize(assets=[asset1])
 
 
-def test_check_result_but_no_output():
+def test_check_result_but_no_output() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
-    def asset1():
+    def asset1() -> Iterable:
         yield AssetCheckResult(passed=True)
 
     with pytest.raises(
@@ -140,9 +142,9 @@ def test_check_result_but_no_output():
         materialize(assets=[asset1])
 
 
-def test_unexpected_check_name():
+def test_unexpected_check_name() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
-    def asset1():
+    def asset1() -> AssetCheckResult:
         return AssetCheckResult(check_name="check2", passed=True, metadata={"foo": "bar"})
 
     with pytest.raises(
@@ -155,9 +157,9 @@ def test_unexpected_check_name():
         materialize(assets=[asset1])
 
 
-def test_asset_decorator_unexpected_asset_key():
+def test_asset_decorator_unexpected_asset_key() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
-    def asset1():
+    def asset1() -> AssetCheckResult:
         return AssetCheckResult(asset_key=AssetKey("asset2"), check_name="check1", passed=True)
 
     with pytest.raises(
@@ -170,14 +172,14 @@ def test_asset_decorator_unexpected_asset_key():
         materialize(assets=[asset1])
 
 
-def test_result_missing_check_name():
+def test_result_missing_check_name() -> None:
     @asset(
         check_specs=[
             AssetCheckSpec("check1", asset="asset1"),
             AssetCheckSpec("check2", asset="asset1"),
         ]
     )
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
         yield AssetCheckResult(passed=True)
 
@@ -191,9 +193,9 @@ def test_result_missing_check_name():
         materialize(assets=[asset1])
 
 
-def test_unexpected_result():
+def test_unexpected_result() -> None:
     @asset
-    def my_asset():
+    def my_asset() -> Iterable:
         yield AssetCheckResult(passed=True)
 
     result = materialize(assets=[my_asset], raise_on_error=False)
@@ -202,18 +204,18 @@ def test_unexpected_result():
         "Received unexpected AssetCheckResult. No AssetCheckSpecs were found for this step."
         "You may need to set `check_specs` on the asset decorator, or you may be emitting an "
         "AssetCheckResult that isn't in the subset passed in `context.selected_asset_check_keys`."
-        in result.get_step_failure_events()[0].step_failure_data.error.message
+        in check.not_none(result.get_step_failure_events()[0].step_failure_data.error).message
     )
 
 
-def test_asset_check_fails_downstream_still_executes():
+def test_asset_check_fails_downstream_still_executes() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1")])
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
         yield AssetCheckResult(passed=False)
 
     @asset(deps=[asset1])
-    def asset2(): ...
+    def asset2() -> None: ...
 
     result = materialize(assets=[asset1, asset2])
     assert result.success
@@ -229,14 +231,14 @@ def test_asset_check_fails_downstream_still_executes():
     assert not check_eval.passed
 
 
-def test_blocking_check_skips_downstream():
+def test_blocking_check_skips_downstream() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", blocking=True)])
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(5)
         yield AssetCheckResult(passed=False)
 
     @asset
-    def asset2(asset1: int):
+    def asset2(asset1: int) -> None:
         assert asset1 == 5
 
     result = materialize(assets=[asset1, asset2], raise_on_error=False)
@@ -252,14 +254,14 @@ def test_blocking_check_skips_downstream():
     assert check_eval.check_name == "check1"
     assert not check_eval.passed
 
-    error = result.failure_data_for_node("asset1").error
-    assert error.message.startswith(
+    error = check.not_none(result.failure_data_for_node("asset1")).error
+    assert check.not_none(error).message.startswith(
         "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1'"
         " failed with ERROR severity."
     )
 
 
-def test_duplicate_checks_same_asset():
+def test_duplicate_checks_same_asset() -> None:
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape("Duplicate check specs: {(AssetKey(['asset1']), 'check1'): 2}"),
@@ -271,10 +273,10 @@ def test_duplicate_checks_same_asset():
                 AssetCheckSpec("check1", asset="asset1", description="desc2"),
             ]
         )
-        def asset1(): ...
+        def asset1() -> None: ...
 
 
-def test_check_wrong_asset():
+def test_check_wrong_asset() -> None:
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=re.escape("Invalid asset key"),
@@ -285,17 +287,17 @@ def test_check_wrong_asset():
                 AssetCheckSpec("check1", asset="other_asset", description="desc1"),
             ]
         )
-        def asset1(): ...
+        def asset1() -> None: ...
 
 
-def test_multi_asset_with_check():
+def test_multi_asset_with_check() -> None:
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
         check_specs=[
             AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), description="desc")
         ],
     )
-    def asset_1_and_2():
+    def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
@@ -313,14 +315,14 @@ def test_multi_asset_with_check():
     assert check_eval.metadata == {"foo": MetadataValue.text("bar")}
 
 
-def test_multi_asset_no_result_for_check():
+def test_multi_asset_no_result_for_check() -> None:
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
         check_specs=[
             AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), description="desc")
         ],
     )
-    def asset_1_and_2():
+    def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
 
@@ -334,22 +336,22 @@ def test_multi_asset_no_result_for_check():
         materialize(assets=[asset_1_and_2])
 
 
-def test_multi_asset_blocking_check_skips_downstream():
+def test_multi_asset_blocking_check_skips_downstream() -> None:
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
         check_specs=[AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), blocking=True)],
     )
-    def asset_1_and_2():
+    def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
         yield AssetCheckResult(check_name="check1", passed=False)
 
     @asset(deps=[AssetKey(["asset1", "one"])])
-    def asset3():
+    def asset3() -> None:
         pass
 
     @asset(deps=[AssetKey(["asset2", "two"])])
-    def asset4():
+    def asset4() -> None:
         pass
 
     result = materialize(assets=[asset_1_and_2, asset3, asset4], raise_on_error=False)
@@ -369,14 +371,14 @@ def test_multi_asset_blocking_check_skips_downstream():
     assert check_eval.check_name == "check1"
     assert not check_eval.passed
 
-    error = result.failure_data_for_node("asset_1_and_2").error
-    assert error.message.startswith(
+    error = check.not_none(check.not_none(result.failure_data_for_node("asset_1_and_2")).error)
+    assert check.not_none(error.message).startswith(
         "dagster._core.errors.DagsterAssetCheckFailedError: Blocking check 'check1' for asset 'asset1/one'"
         " failed with ERROR severity."
     )
 
 
-def test_result_missing_asset_key():
+def test_result_missing_asset_key() -> None:
     @multi_asset(
         outs={"one": AssetOut(key="asset1"), "two": AssetOut(key="asset2")},
         check_specs=[
@@ -384,7 +386,7 @@ def test_result_missing_asset_key():
             AssetCheckSpec("check2", asset="asset2"),
         ],
     )
-    def asset_1_and_2():
+    def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
         yield AssetCheckResult(passed=True)
@@ -399,23 +401,23 @@ def test_result_missing_asset_key():
         materialize(assets=[asset_1_and_2])
 
 
-def test_asset_check_doesnt_store_output():
+def test_asset_check_doesnt_store_output() -> None:
     handle_output_called = 0
 
     class DummyIOManager(IOManager):
-        def handle_output(self, context, obj):
+        def handle_output(self, context, obj) -> None:
             assert context
             assert obj == "the-only-allowed-output"
 
             nonlocal handle_output_called
             handle_output_called += 1
 
-        def load_input(self, context):
+        def load_input(self, context) -> dict:
             assert context
             return {}
 
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
-    def asset1():
+    def asset1() -> Iterable:
         yield Output("the-only-allowed-output")
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
@@ -440,7 +442,7 @@ def test_asset_check_doesnt_store_output():
     assert check_eval.target_materialization_data.timestamp == materialization_record.timestamp
 
 
-def test_multi_asset_with_check_subset():
+def test_multi_asset_with_check_subset() -> None:
     @multi_asset(
         outs={
             "one": AssetOut(key="asset1", is_required=False),
@@ -449,7 +451,7 @@ def test_multi_asset_with_check_subset():
         check_specs=[AssetCheckSpec("check1", asset=AssetKey(["asset1"]))],
         can_subset=True,
     )
-    def asset_1_and_2(context: AssetExecutionContext):
+    def asset_1_and_2(context: AssetExecutionContext) -> Iterable:
         if AssetKey("asset1") in context.selected_asset_keys:
             yield Output(None, output_name="one")
             yield AssetCheckResult(check_name="check1", passed=True)
@@ -501,21 +503,25 @@ def test_multi_asset_with_check_subset():
         )
 
 
-def test_graph_asset():
+def test_graph_asset() -> None:
     @op
-    def create_asset():
+    # must be Any to not skip i/o manager shenanigans
+    def create_asset() -> Any:
         return None
 
     @op
-    def validate_asset(word):
+    # must be Any to avoid runtime error because internal machinery thinks we returned None
+    def validate_asset(word) -> Any:
         return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     @op
-    def non_blocking_validation(word):
+    # must be Any to avoid runtime error because internal machinery thinks we returned None
+    def non_blocking_validation(word) -> Any:
         return AssetCheckResult(check_name="check2", passed=True, metadata={"biz": "buz"})
 
     @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
-    def promote_asset():
+    # must be Any to not skip i/o manager shenanigans
+    def promote_asset() -> Any:
         return None
 
     @graph_asset(
@@ -525,7 +531,7 @@ def test_graph_asset():
             AssetCheckSpec("check2", asset="foo", description="desc"),
         ],
     )
-    def asset1():
+    def asset1() -> dict:
         staging_asset = create_asset()
         check_result = validate_asset(staging_asset)
         promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
@@ -551,28 +557,31 @@ def test_graph_asset():
     assert evals_by_name["check2"].metadata == {"biz": MetadataValue.text("buz")}
 
 
-def test_graph_multi_asset():
+def test_graph_multi_asset() -> None:
+    # typed to Any to skip various type-annotation-based bugs in framework
+    # see test_graph_asset for more detailed comments
+
     @op
-    def create_asset():
+    def create_asset() -> Any:
         return None
 
     @op
-    def validate_asset(word):
+    def validate_asset(word) -> Any:
         return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
     @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
-    def promote_asset():
+    def promote_asset() -> Any:
         return None
 
     @op
-    def create_asset_2():
+    def create_asset_2() -> Any:
         return None
 
     @graph_multi_asset(
         outs={"asset_one": AssetOut(), "asset_two": AssetOut()},
         check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
     )
-    def asset1():
+    def asset1() -> dict:
         staging_asset = create_asset()
         check_result = validate_asset(staging_asset)
         promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
@@ -604,7 +613,7 @@ def test_can_subset_no_selection() -> None:
             AssetCheckSpec("check2", asset="asset2"),
         ],
     )
-    def foo(context: AssetExecutionContext):
+    def foo(context: AssetExecutionContext) -> Iterable:
         assert context.selected_asset_keys == {AssetKey("asset1"), AssetKey("asset2")}
         assert context.selected_asset_check_keys == {
             AssetCheckKey(AssetKey("asset1"), "check1"),
@@ -729,12 +738,14 @@ def test_can_subset_select_only_check() -> None:
 
 
 @op
-def create_asset():
+# typed as Any to avoid io-manager-based bugs
+def create_asset() -> Any:
     return None
 
 
 @op
-def validate_asset(word):
+# typed as Any to avoid io-manager-based bugs
+def validate_asset(word) -> Any:
     return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
 
@@ -743,7 +754,7 @@ def validate_asset(word):
     check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
     can_subset=True,
 )
-def my_asset():
+def my_asset() -> dict:
     asset_one = create_asset()
     return {
         "asset_one": asset_one,
@@ -752,7 +763,7 @@ def my_asset():
     }
 
 
-def test_graph_asset_all():
+def test_graph_asset_all() -> None:
     result = materialize(assets=[my_asset])
     assert result.success
 
@@ -760,7 +771,7 @@ def test_graph_asset_all():
     assert len(result.get_asset_check_evaluations()) == 1
 
 
-def test_graph_asset_subset_no_checks():
+def test_graph_asset_subset_no_checks() -> None:
     result = materialize(
         assets=[my_asset], selection=AssetSelection.assets(AssetKey("asset_one")).without_checks()
     )
@@ -770,7 +781,7 @@ def test_graph_asset_subset_no_checks():
     assert not result.get_asset_check_evaluations()
 
 
-def test_graph_asset_subset_with_checks():
+def test_graph_asset_subset_with_checks() -> None:
     result = materialize(assets=[my_asset], selection=AssetSelection.assets(AssetKey("asset_one")))
     assert result.success
 
@@ -779,12 +790,12 @@ def test_graph_asset_subset_with_checks():
 
 
 @op
-def validate_asset_1(word):
+def validate_asset_1(word) -> Any:
     return AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
 
 @op
-def validate_asset_2(word):
+def validate_asset_2(word) -> Any:
     return word
 
 
@@ -793,7 +804,7 @@ def validate_asset_2(word):
     check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
     can_subset=True,
 )
-def nested_check_graph_asset():
+def nested_check_graph_asset() -> dict:
     asset_one = create_asset()
     return {
         "asset_one": asset_one,
@@ -802,7 +813,7 @@ def nested_check_graph_asset():
     }
 
 
-def test_nested_graph_asset_all():
+def test_nested_graph_asset_all() -> None:
     result = materialize(assets=[nested_check_graph_asset])
     assert result.success
 
@@ -810,7 +821,7 @@ def test_nested_graph_asset_all():
     assert len(result.get_asset_check_evaluations()) == 1
 
 
-def test_nested_graph_asset_subset_no_checks():
+def test_nested_graph_asset_subset_no_checks() -> None:
     result = materialize(
         assets=[nested_check_graph_asset],
         selection=AssetSelection.assets(AssetKey("asset_one")).without_checks(),
@@ -821,7 +832,7 @@ def test_nested_graph_asset_subset_no_checks():
     assert not result.get_asset_check_evaluations()
 
 
-def test_nested_graph_asset_subset_with_checks():
+def test_nested_graph_asset_subset_with_checks() -> None:
     result = materialize(
         assets=[nested_check_graph_asset], selection=AssetSelection.assets(AssetKey("asset_one"))
     )
@@ -832,7 +843,7 @@ def test_nested_graph_asset_subset_with_checks():
 
 
 @op(ins={"staging_asset": In(Nothing), "check_result": In(Nothing)})
-def promote_asset():
+def promote_asset() -> Any:
     return None
 
 
@@ -841,7 +852,7 @@ def promote_asset():
     check_specs=[AssetCheckSpec("check1", asset="asset_one", description="desc")],
     can_subset=True,
 )
-def validate_promote_graph_asset():
+def validate_promote_graph_asset() -> dict:
     staging_asset = create_asset()
     check_result = validate_asset(staging_asset)
     promoted_asset = promote_asset(staging_asset=staging_asset, check_result=check_result)
@@ -852,7 +863,7 @@ def validate_promote_graph_asset():
     }
 
 
-def test_validate_promote_graph_asset_subset_checks_and_asset():
+def test_validate_promote_graph_asset_subset_checks_and_asset() -> None:
     result = materialize(
         assets=[validate_promote_graph_asset],
         selection=AssetSelection.assets(AssetKey("asset_one")),
@@ -863,32 +874,32 @@ def test_validate_promote_graph_asset_subset_checks_and_asset():
     assert len(result.get_asset_check_evaluations()) == 1
 
 
-def test_direct_invocation():
+def test_direct_invocation() -> None:
     @asset(check_specs=[AssetCheckSpec("check1", asset="asset1", description="desc")])
-    def asset1():
+    def asset1() -> Iterable:
         yield Output(None)
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
-    results = list(asset1())
+    results = list(check.is_iterable(asset1()))
     assert len(results) == 2
     assert isinstance(results[0], Output)
     assert isinstance(results[1], AssetCheckResult)
     assert results[1].passed
 
 
-def test_multi_asset_direct_invocation():
+def test_multi_asset_direct_invocation() -> None:
     @multi_asset(
         outs={"one": AssetOut("asset1"), "two": AssetOut("asset2")},
         check_specs=[
             AssetCheckSpec("check1", asset=AssetKey(["asset1", "one"]), description="desc")
         ],
     )
-    def asset_1_and_2():
+    def asset_1_and_2() -> Iterable:
         yield Output(None, output_name="one")
         yield Output(None, output_name="two")
         yield AssetCheckResult(check_name="check1", passed=True, metadata={"foo": "bar"})
 
-    results = list(asset_1_and_2())
+    results = list(check.is_iterable(asset_1_and_2()))
     assert len(results) == 3
     assert isinstance(results[0], Output)
     assert isinstance(results[1], Output)
