@@ -18,6 +18,7 @@ import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {BACKFILL_ACTIONS_BACKFILL_FRAGMENT, BackfillActionsMenu} from './BackfillActionsMenu';
+import {BackfillLogsTab} from './BackfillLogsTab';
 import {BackfillPartitionsTab} from './BackfillPartitionsTab';
 import {BackfillRunsTab} from './BackfillRunsTab';
 import {BackfillStatusTagForPage} from './BackfillStatusTagForPage';
@@ -45,7 +46,7 @@ export const BackfillPage = () => {
   useTrackPageView();
   useDocumentTitle(`Backfill | ${backfillId}`);
 
-  const [selectedTab, setSelectedTab] = useQueryPersistedState({
+  const [selectedTab, setSelectedTab] = useQueryPersistedState<'partitions' | 'logs' | 'runs'>({
     queryKey: 'tab',
     defaults: {tab: 'partitions'},
   });
@@ -132,14 +133,18 @@ export const BackfillPage = () => {
           <Tabs size="large" selectedTabId={selectedTab}>
             <Tab id="partitions" title="Partitions" onClick={() => setSelectedTab('partitions')} />
             <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
+            <Tab id="logs" title="Coordinator Logs" onClick={() => setSelectedTab('logs')} />
           </Tabs>
         </Box>
 
         {error?.graphQLErrors && (
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
-        {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
-        {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
+        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+          {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
+          {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
+          {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
+        </Box>
       </>
     );
   }

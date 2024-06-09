@@ -10,23 +10,11 @@ import {
   Icon,
   NonIdealState,
 } from '@dagster-io/ui-components';
-import {useContext} from 'react';
 
-import {
-  TickLogEventFragment,
-  TickLogEventsQuery,
-  TickLogEventsQueryVariables,
-} from './types/TickLogDialog.types';
+import {INSTIGATION_EVENT_LOG_FRAGMENT, InstigationEventLogTable} from './InstigationEventLogTable';
+import {TickLogEventsQuery, TickLogEventsQueryVariables} from './types/TickLogDialog.types';
 import {InstigationSelector} from '../graphql/types';
 import {HistoryTickFragment} from '../instigation/types/InstigationUtils.types';
-import {EventTypeColumn, Row, TimestampColumn} from '../runs/LogsRowComponents';
-import {
-  ColumnWidthsContext,
-  ColumnWidthsProvider,
-  Header,
-  HeaderContainer,
-  HeadersContainer,
-} from '../runs/LogsScrollingTableHeader';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 
 export const TickLogDialog = ({
@@ -58,7 +46,7 @@ export const TickLogDialog = ({
     >
       <DialogBody>
         {events && events.length ? (
-          <TickLogsTable events={events} />
+          <InstigationEventLogTable events={events} />
         ) : (
           <Box
             flex={{justifyContent: 'center', alignItems: 'center'}}
@@ -97,7 +85,7 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
       : undefined;
 
   if (events && events.length) {
-    return <TickLogsTable events={events} />;
+    return <InstigationEventLogTable events={events} />;
   }
 
   const tickStatus =
@@ -160,57 +148,6 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
   );
 };
 
-const TickLogsTable = ({events}: {events: TickLogEventFragment[]}) => {
-  return (
-    <ColumnWidthsProvider onWidthsChanged={() => {}}>
-      <div style={{height: 500, position: 'relative', zIndex: 0}}>
-        <Headers />
-        <div style={{height: 468, overflowY: 'auto'}}>
-          {events.map((event, idx) => (
-            <TickLogRow event={event} key={idx} />
-          ))}
-        </div>
-      </div>
-    </ColumnWidthsProvider>
-  );
-};
-
-const Headers = () => {
-  const widths = useContext(ColumnWidthsContext);
-  return (
-    <HeadersContainer>
-      <Header
-        width={widths.eventType}
-        onResize={(width) => widths.onChange({...widths, eventType: width})}
-      >
-        Event Type
-      </Header>
-      <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
-      <Header
-        handleSide="left"
-        width={widths.timestamp}
-        onResize={(width) => widths.onChange({...widths, timestamp: width})}
-      >
-        Timestamp
-      </Header>
-    </HeadersContainer>
-  );
-};
-
-const TickLogRow = ({event}: {event: TickLogEventFragment}) => {
-  return (
-    <Row level={event.level} highlighted={false} style={{height: 'auto'}}>
-      <EventTypeColumn>
-        <span style={{marginLeft: 8}}>{event.level}</span>
-      </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
-        {event.message}
-      </Box>
-      <TimestampColumn time={event.timestamp} />
-    </Row>
-  );
-};
-
 const TICK_LOG_EVENTS_QUERY = gql`
   query TickLogEventsQuery($instigationSelector: InstigationSelector!, $tickId: BigInt!) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
@@ -223,17 +160,12 @@ const TICK_LOG_EVENTS_QUERY = gql`
           timestamp
           logEvents {
             events {
-              ...TickLogEvent
+              ...InstigationEventLog
             }
           }
         }
       }
     }
   }
-
-  fragment TickLogEvent on InstigationEvent {
-    message
-    timestamp
-    level
-  }
+  ${INSTIGATION_EVENT_LOG_FRAGMENT}
 `;

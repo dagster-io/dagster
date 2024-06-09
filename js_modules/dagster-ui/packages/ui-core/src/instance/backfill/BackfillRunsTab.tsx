@@ -12,7 +12,11 @@ import React, {useDeferredValue, useMemo} from 'react';
 
 import {ExecutionTimeline} from './ExecutionTimeline';
 import {BackfillDetailsBackfillFragment} from './types/BackfillPage.types';
-import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../../app/QueryRefresh';
 import {RunsFilter} from '../../graphql/types';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
@@ -89,19 +93,15 @@ export const BackfillRunsTab = ({backfill}: {backfill: BackfillDetailsBackfillFr
     </Box>
   );
 
-  return (
-    <Box flex={{direction: 'column'}} style={{minHeight: 0}}>
-      {view === 'timeline' ? (
-        <ExecutionRunTimeline
-          filter={filter}
-          rangeMs={rangeMs}
-          annotations={annotations}
-          actionBarComponents={actionBarComponents}
-        />
-      ) : (
-        <ExecutionRunTable filter={filter} actionBarComponents={actionBarComponents} />
-      )}
-    </Box>
+  return view === 'timeline' ? (
+    <ExecutionRunTimeline
+      filter={filter}
+      rangeMs={rangeMs}
+      annotations={annotations}
+      actionBarComponents={actionBarComponents}
+    />
+  ) : (
+    <ExecutionRunTable filter={filter} actionBarComponents={actionBarComponents} />
   );
 };
 
@@ -115,7 +115,7 @@ const ExecutionRunTable = ({
   const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter);
   const pipelineRunsOrError = queryResult.data?.pipelineRunsOrError;
 
-  useQueryRefreshAtInterval(queryResult, 15000);
+  const refreshState = useQueryRefreshAtInterval(queryResult, 15000);
 
   if (!pipelineRunsOrError) {
     return (
@@ -133,20 +133,25 @@ const ExecutionRunTable = ({
   }
 
   return (
-    <Box style={{flex: 1, overflowY: 'auto'}}>
-      <StickyTableContainer $top={56}>
-        <RunTable
-          runs={pipelineRunsOrError.results}
-          actionBarComponents={actionBarComponents}
-          actionBarSticky
-        />
-        {pipelineRunsOrError.results.length > 0 ? (
-          <Box margin={{vertical: 16}}>
-            <CursorHistoryControls {...paginationProps} />
-          </Box>
-        ) : null}
-      </StickyTableContainer>
-    </Box>
+    <>
+      <div style={{position: 'absolute', right: 16, top: -32}}>
+        <QueryRefreshCountdown refreshState={refreshState} />
+      </div>
+      <Box style={{flex: 1, overflowY: 'auto'}}>
+        <StickyTableContainer $top={56}>
+          <RunTable
+            runs={pipelineRunsOrError.results}
+            actionBarComponents={actionBarComponents}
+            actionBarSticky
+          />
+          {pipelineRunsOrError.results.length > 0 ? (
+            <Box margin={{vertical: 16}}>
+              <CursorHistoryControls {...paginationProps} />
+            </Box>
+          ) : null}
+        </StickyTableContainer>
+      </Box>
+    </>
   );
 };
 
@@ -183,6 +188,9 @@ const ExecutionRunTimeline = ({
 
   return (
     <>
+      <div style={{position: 'absolute', right: 16, top: -32}}>
+        <QueryRefreshCountdown refreshState={runsForTimelineRet.refreshState} />
+      </div>
       <Box
         padding={{horizontal: 24, vertical: 12}}
         style={{position: 'sticky', top: 0, zIndex: 2, background: Colors.backgroundDefault()}}

@@ -33,10 +33,3 @@ export type TickLogEventsQuery = {
     | {__typename: 'InstigationStateNotFoundError'}
     | {__typename: 'PythonError'};
 };
-
-export type TickLogEventFragment = {
-  __typename: 'InstigationEvent';
-  message: string;
-  timestamp: string;
-  level: Types.LogLevel;
-};
