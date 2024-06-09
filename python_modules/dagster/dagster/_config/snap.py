@@ -180,7 +180,8 @@ class ConfigTypeSnap(
     @property
     def field_names(self) -> Sequence[str]:
         fields = check.is_list(self.fields, of_type=ConfigFieldSnap)
-        return [fs.name for fs in fields]
+        # Typing error caught by making is_list typed -- schrockn 2024-06-09
+        return [fs.name for fs in fields]  # type: ignore
 
     def get_child_type_keys(self) -> Sequence[str]:
         if ConfigTypeKind.is_closed_generic(self.kind):
