@@ -30,9 +30,15 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const OverviewSchedules = () => {
-  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -62,10 +68,18 @@ export const OverviewSchedules = () => {
 
   const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(data).filter(({repoAddress}) =>
+    const cachedEntries = Object.values(cachedData).filter(
+      (location) => location.__typename === 'WorkspaceLocationEntry',
+    );
+    const workspaceOrError = data?.workspaceOrError;
+    const entries =
+      workspaceOrError?.__typename === 'Workspace'
+        ? workspaceOrError.locationEntries
+        : cachedEntries;
+    return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, visibleRepos]);
+  }, [data, cachedData, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
   const filteredBuckets = useMemo(() => {
@@ -293,12 +307,15 @@ type RepoBucket = {
   schedules: {name: string; scheduleState: BasicInstigationStateFragment}[];
 };
 
-const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
-  if (data?.workspaceOrError.__typename !== 'Workspace') {
-    return [];
-  }
-
-  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+const buildBuckets = (
+  locationEntries:
+    | Extract<
+        OverviewSchedulesQuery['workspaceOrError'],
+        {__typename: 'Workspace'}
+      >['locationEntries']
+    | Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
+): RepoBucket[] => {
+  const entries = locationEntries.map((entry) => entry.locationOrLoadError);
 
   const buckets = [];
 

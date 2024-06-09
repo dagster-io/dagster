@@ -3,6 +3,7 @@ import {Box, Colors, NonIdealState, Spinner, TextInput} from '@dagster-io/ui-com
 import {useLayoutEffect, useMemo} from 'react';
 
 import {VirtualizedJobTable} from './VirtualizedJobTable';
+import {useRepository} from './WorkspaceContext';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -20,6 +21,8 @@ import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   const trace = usePageLoadTrace('WorkspaceJobsRoot');
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Jobs: ${repoName}`);
@@ -53,11 +56,14 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   const anySearch = sanitizedSearch.length > 0;
 
   const jobs = useMemo(() => {
+    if (repo) {
+      return repo.repository.pipelines;
+    }
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
     }
     return [];
-  }, [data]);
+  }, [data, repo]);
 
   const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
