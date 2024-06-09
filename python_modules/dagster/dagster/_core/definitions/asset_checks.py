@@ -125,7 +125,7 @@ def build_asset_with_blocking_check(
         key_prefix=None,
         key=asset_def.key,
         group_name=spec.group_name,
-        partitions_def=asset_def.partitions_def,
+        partitions_def=spec.partitions_def,
         check_specs=check_specs,
         description=spec.description,
         ins={name: AssetIn(key) for name, key in asset_def.keys_by_input_name.items()},

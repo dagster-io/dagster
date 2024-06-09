@@ -32,7 +32,7 @@ from dagster._core.definitions.asset_spec import (
     AssetExecutionType,
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
@@ -105,7 +105,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _node_def: NodeDefinition
     _keys_by_input_name: Mapping[str, AssetKey]
     _keys_by_output_name: Mapping[str, AssetKey]
-    _partitions_def: Optional[PartitionsDefinition]
     # partition mappings are also tracked inside the AssetSpecs, but this enables faster access by
     # upstream asset key
     _partition_mappings: Mapping[AssetKey, PartitionMapping]
@@ -185,7 +184,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         all_asset_keys = set(keys_by_output_name.values())
 
-        self._partitions_def = partitions_def
         if partition_mappings:
             _validate_partition_mappings(
                 partition_mappings=partition_mappings,
@@ -223,18 +221,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._backfill_policy = check.opt_inst_param(
             backfill_policy, "backfill_policy", BackfillPolicy
         )
-
-        if self._partitions_def is None:
-            # check if backfill policy is BackfillPolicyType.SINGLE_RUN if asset is not partitioned
-            check.param_invariant(
-                (
-                    backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
-                    if backfill_policy
-                    else True
-                ),
-                "backfill_policy",
-                "Non partitioned asset can only have single run backfill policy",
-            )
 
         self._is_subset = check.bool_param(is_subset, "is_subset")
 
@@ -284,14 +270,21 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             code_version = spec.code_version or output_def.code_version
             skippable = not output_def.is_required
 
+            if spec.partitions_def is not None and partitions_def is not None:
+                check.failed(
+                    "If partitions_def is supplied at the AssetSpec level, it can't also be "
+                    "supplied to the partitions_def argument across all assets"
+                )
+            spec_partitions_def = spec.partitions_def or partitions_def
+
             check.invariant(
                 not (
                     spec.freshness_policy
-                    and self._partitions_def is not None
-                    and not isinstance(self._partitions_def, TimeWindowPartitionsDefinition)
+                    and spec_partitions_def is not None
+                    and not isinstance(spec_partitions_def, TimeWindowPartitionsDefinition)
                 ),
                 "FreshnessPolicies are currently unsupported for assets with partitions of type"
-                f" {type(self._partitions_def)}.",
+                f" {spec_partitions_def}.",
             )
 
             normalized_specs.append(
@@ -301,26 +294,22 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     metadata=metadata,
                     description=description,
                     skippable=skippable,
+                    partitions_def=spec_partitions_def,
                 )
             )
 
         self._partition_mappings = get_partition_mappings_from_deps(
             {}, [dep for spec in normalized_specs for dep in spec.deps], node_def.name
         )
+        unique_partitions_defs = {
+            spec.partitions_def for spec in normalized_specs if spec.partitions_def is not None
+        }
+        if len(unique_partitions_defs) > 1 and not can_subset:
+            raise DagsterInvalidDefinitionError(
+                "If different AssetSpecs have different partitions_defs, can_subset must be True"
+            )
 
-        _validate_self_deps(
-            input_keys=[
-                key
-                # filter out the special inputs which are used for cases when a multi-asset is
-                # subsetted, as these are not the same as self-dependencies and are never loaded
-                # in the same step that their corresponding output is produced
-                for input_name, key in self._keys_by_input_name.items()
-                if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
-            ],
-            output_keys=self._selected_asset_keys,
-            partition_mappings=self._partition_mappings,
-            partitions_def=self._partitions_def,
-        )
+        _validate_self_deps(normalized_specs)
 
         self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
@@ -954,10 +943,20 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._backfill_policy
 
     @public
-    @property
+    @cached_property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         """Optional[PartitionsDefinition]: The PartitionsDefinition for this AssetsDefinition (if any)."""
-        return self._partitions_def
+        partitions_defs = {
+            spec.partitions_def for spec in self.specs if spec.partitions_def is not None
+        }
+        if len(partitions_defs) == 1:
+            return next(iter(partitions_defs))
+        elif len(partitions_defs) == 0:
+            return None
+        else:
+            check.failed(
+                "Different assets within this AssetsDefinition have different PartitionsDefinitions"
+            )
 
     @property
     def metadata_by_key(self) -> Mapping[AssetKey, ArbitraryMetadataMapping]:
@@ -1051,12 +1050,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return self._partition_mappings.get(self._keys_by_input_name[input_name])
 
     def infer_partition_mapping(
-        self, upstream_asset_key: AssetKey, upstream_partitions_def: Optional[PartitionsDefinition]
+        self,
+        asset_key: AssetKey,
+        upstream_asset_key: AssetKey,
+        upstream_partitions_def: Optional[PartitionsDefinition],
     ) -> PartitionMapping:
         with disable_dagster_warnings():
             partition_mapping = self._partition_mappings.get(upstream_asset_key)
             return infer_partition_mapping(
-                partition_mapping, self._partitions_def, upstream_partitions_def
+                partition_mapping,
+                self.specs_by_key[asset_key].partitions_def,
+                upstream_partitions_def,
             )
 
     def get_output_name_for_asset_key(self, key: AssetKey) -> str:
@@ -1380,7 +1384,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 io_manager_key=output_def.io_manager_key,
                 description=output_def.description,
                 resource_defs=self.resource_defs,
-                partitions_def=self.partitions_def,
+                partitions_def=spec.partitions_def,
                 group_name=spec.group_name,
                 tags=spec.tags,
             )
@@ -1437,7 +1441,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             keys_by_input_name=self._keys_by_input_name,
             keys_by_output_name=self._keys_by_output_name,
             node_def=self._node_def,
-            partitions_def=self._partitions_def,
+            partitions_def=None,
             selected_asset_keys=self._selected_asset_keys,
             can_subset=self._can_subset,
             resource_defs=self._resource_defs,
@@ -1683,39 +1687,35 @@ def _asset_specs_from_attr_key_params(
                     # Value here is irrelevant, because it will be replaced by value from
                     # NodeDefinition
                     skippable=False,
+                    # Value here is irrelevant, because it will be replaced by value from partitions_def
+                    partitions_def=None,
                 )
             )
 
     return result
 
 
-def _validate_self_deps(
-    input_keys: Iterable[AssetKey],
-    output_keys: Iterable[AssetKey],
-    partition_mappings: Mapping[AssetKey, PartitionMapping],
-    partitions_def: Optional[PartitionsDefinition],
-) -> None:
-    output_keys_set = set(output_keys)
-    for input_key in input_keys:
-        if input_key in output_keys_set:
-            if input_key in partition_mappings:
-                partition_mapping = partition_mappings[input_key]
-                time_window_partition_mapping = get_self_dep_time_window_partition_mapping(
-                    partition_mapping, partitions_def
-                )
-                if (
-                    time_window_partition_mapping is not None
-                    and (time_window_partition_mapping.start_offset or 0) < 0
-                    and (time_window_partition_mapping.end_offset or 0) < 0
-                ):
-                    continue
+def _validate_self_deps(specs: Iterable[AssetSpec]) -> None:
+    for spec in specs:
+        for dep in spec.deps:
+            if dep.asset_key == spec.key:
+                if dep.partition_mapping:
+                    time_window_partition_mapping = get_self_dep_time_window_partition_mapping(
+                        dep.partition_mapping, spec.partitions_def
+                    )
+                    if (
+                        time_window_partition_mapping is not None
+                        and (time_window_partition_mapping.start_offset or 0) < 0
+                        and (time_window_partition_mapping.end_offset or 0) < 0
+                    ):
+                        continue
 
-            raise DagsterInvalidDefinitionError(
-                f'Asset "{input_key.to_user_string()}" depends on itself. Assets can only depend'
-                " on themselves if they are:\n(a) time-partitioned and each partition depends on"
-                " earlier partitions\n(b) multipartitioned, with one time dimension that depends"
-                " on earlier time partitions"
-            )
+                raise DagsterInvalidDefinitionError(
+                    f'Asset "{spec.key.to_user_string()}" depends on itself. Assets can only depend'
+                    " on themselves if they are:\n(a) time-partitioned and each partition depends on"
+                    " earlier partitions\n(b) multipartitioned, with one time dimension that depends"
+                    " on earlier time partitions"
+                )
 
 
 def get_self_dep_time_window_partition_mapping(

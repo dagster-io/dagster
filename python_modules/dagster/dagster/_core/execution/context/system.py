@@ -362,18 +362,6 @@ class PlanExecutionContext(IPlanContext):
         return self._log_manager
 
     @property
-    def partitions_def(self) -> Optional[PartitionsDefinition]:
-        from dagster._core.definitions.job_definition import JobDefinition
-
-        job_def = self._execution_data.job_def
-        if not isinstance(job_def, JobDefinition):
-            check.failed(
-                "Can only call 'partitions_def', when using jobs, not legacy pipelines",
-            )
-        partitions_def = job_def.partitions_def
-        return partitions_def
-
-    @property
     def has_partitions(self) -> bool:
         tags = self._plan_data.dagster_run.tags
         return bool(
@@ -952,6 +940,26 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             output_keys.add(asset_info.key)
         return output_keys
 
+    @property
+    def partitions_def(self) -> Optional[PartitionsDefinition]:
+        job_def_partitions_def = self.job_def.partitions_def
+        if job_def_partitions_def is not None:
+            return job_def_partitions_def
+
+        # In the case where a job targets assets with different PartitionsDefinitions,
+        # job_def.partitions_def will be None, but the assets targeted in this step might still be
+        # partitioned. All assets within a step are expected to either have the same partitions_def
+        # or no partitions_def. Get the partitions_def from one of the assets that has one.
+        asset_layer = self.job_def.asset_layer
+        assets_def = asset_layer.assets_def_for_node(self.node_handle) if asset_layer else None
+        if assets_def is not None:
+            for asset_key in assets_def.keys:
+                partitions_def = self.job_def.asset_layer.get(asset_key).partitions_def
+                if partitions_def is not None:
+                    return partitions_def
+
+        return None
+
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
         asset_layer = self.job_def.asset_layer
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
@@ -1114,12 +1122,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     @property
     def partition_time_window(self) -> TimeWindow:
-        asset_layer = self.job_def.asset_layer
-        partitions_def = self.job_def.partitions_def
-        if asset_layer:
-            assets_def = asset_layer.assets_def_for_node(self.node_handle)
-            if assets_def:
-                partitions_def = assets_def.partitions_def
+        partitions_def = self.partitions_def
 
         if partitions_def is None:
             raise DagsterInvariantViolationError("Partitions definition is not defined")

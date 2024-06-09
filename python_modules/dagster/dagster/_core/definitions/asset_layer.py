@@ -465,10 +465,11 @@ class AssetLayer(NamedTuple):
                         )
                     )
 
+                spec = assets_def.specs_by_key[asset_key]
                 asset_info_by_output[node_output_handle] = AssetOutputInfo(
                     asset_key,
-                    partitions_fn=partitions_fn if assets_def.partitions_def else None,
-                    partitions_def=assets_def.partitions_def,
+                    partitions_fn=partitions_fn if spec.partitions_def else None,
+                    partitions_def=spec.partitions_def,
                     is_required=asset_key in assets_def.keys,
                     code_version=inner_output_def.code_version,
                 )

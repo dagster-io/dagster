@@ -10,6 +10,7 @@ from dagster._utils.internal_init import IHasInternalInit
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import AssetKey, CoercibleToAssetKey
 from .freshness_policy import FreshnessPolicy
+from .partition import PartitionsDefinition
 from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
@@ -70,6 +71,7 @@ class AssetSpec(
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
+            ("partitions_def", PublicAttr[Optional[PartitionsDefinition]]),
         ],
     ),
     IHasInternalInit,
@@ -117,6 +119,7 @@ class AssetSpec(
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        partitions_def: Optional[PartitionsDefinition] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -148,6 +151,9 @@ class AssetSpec(
             ),
             owners=owners,
             tags=validate_tags_strict(tags) or {},
+            partitions_def=check.opt_inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
+            ),
         )
 
     @staticmethod
@@ -164,6 +170,7 @@ class AssetSpec(
         auto_materialize_policy: Optional[AutoMaterializePolicy],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
+        partitions_def: Optional[PartitionsDefinition],
     ) -> "AssetSpec":
         return AssetSpec(
             key=key,
@@ -177,4 +184,5 @@ class AssetSpec(
             auto_materialize_policy=auto_materialize_policy,
             owners=owners,
             tags=tags,
+            partitions_def=partitions_def,
         )

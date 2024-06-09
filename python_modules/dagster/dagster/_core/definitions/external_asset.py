@@ -125,6 +125,7 @@ def external_assets_from_specs(specs: Sequence[AssetSpec]) -> List[AssetsDefinit
                         skippable=False,
                         code_version=None,
                         auto_materialize_policy=None,
+                        partitions_def=None,
                     )
                 ],
             )

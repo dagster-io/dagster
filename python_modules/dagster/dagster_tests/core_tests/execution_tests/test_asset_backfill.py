@@ -528,7 +528,7 @@ def get_asset_graph(
     ) as get_builtin_partition_mapping_types:
         get_builtin_partition_mapping_types.return_value = tuple(
             assets_def.infer_partition_mapping(
-                dep_key, assets_defs_by_key[dep_key].partitions_def
+                next(iter(assets_def.keys)), dep_key, assets_defs_by_key[dep_key].partitions_def
             ).__class__
             for assets in assets_by_repo_name.values()
             for assets_def in assets

@@ -153,4 +153,5 @@ class AssetOut(
                 owners=self.owners,
                 tags=self.tags,
                 deps=deps,
+                partitions_def=None,
             )
