@@ -33,7 +33,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 from ..input import In
 from .asset_decorator import make_asset_deps
 from .decorator_assets_definition_builder import (
-    build_asset_ins,
+    build_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
 )
@@ -91,7 +91,7 @@ def _build_asset_check_input(
             " the target asset or be specified in 'additional_ins'."
         )
 
-    return build_asset_ins(
+    return build_named_ins(
         fn=fn,
         asset_ins=all_ins,
         deps=all_deps,
@@ -331,7 +331,7 @@ def multi_asset_check(
         outs = {
             spec.get_python_identifier(): Out(None, is_required=not can_subset) for spec in specs
         }
-        input_tuples_by_asset_key = build_asset_ins(
+        named_ins_by_asset_key = build_named_ins(
             fn=fn,
             asset_ins={},
             deps={spec.asset_key for spec in specs}
@@ -342,7 +342,7 @@ def multi_asset_check(
             op_def = _Op(
                 name=op_name,
                 description=description,
-                ins=dict(input_tuples_by_asset_key.values()),
+                ins=dict(named_ins_by_asset_key.values()),
                 out=outs,
                 required_resource_keys=op_required_resource_keys,
                 tags={
@@ -358,7 +358,7 @@ def multi_asset_check(
             resource_defs=wrap_resources_for_execution(resource_defs),
             keys_by_input_name={
                 input_tuple[0]: asset_key
-                for asset_key, input_tuple in input_tuples_by_asset_key.items()
+                for asset_key, input_tuple in named_ins_by_asset_key.items()
             },
             check_specs_by_output_name={spec.get_python_identifier(): spec for spec in specs},
             can_subset=can_subset,
