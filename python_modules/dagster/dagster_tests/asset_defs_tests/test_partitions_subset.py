@@ -135,7 +135,8 @@ def test_time_window_partitions_subset_num_partitions_serialization():
     )
 
     tw = PersistedTimeWindow.from_public_time_window(
-        time_partitions_def.time_window_for_partition_key("2023-01-01")
+        time_partitions_def.time_window_for_partition_key("2023-01-01"),
+        time_partitions_def.timezone,
     )
 
     subset = TimeWindowPartitionsSubset(

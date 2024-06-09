@@ -1,9 +1,8 @@
 import pickle
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, Sequence, cast
 
-import pendulum.parser
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
@@ -26,11 +25,13 @@ from dagster._core.definitions.time_window_partitions import (
     ScheduleType,
     TimeWindow,
     TimeWindowPartitionsSubset,
+    dst_safe_strptime,
 )
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven import create_datetime, create_utc_datetime
+from dagster._seven import create_datetime, create_utc_datetime, parse_with_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -38,15 +39,15 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, pendulum.parser.parse(start)),
-        cast(datetime, pendulum.parser.parse(end)),
+        cast(datetime, parse_with_timezone(start)),
+        cast(datetime, parse_with_timezone(end)),
     )
 
 
 def persisted_time_window(start: str, end: str) -> PersistedTimeWindow:
     return PersistedTimeWindow(
-        cast(datetime, pendulum.parser.parse(start)),
-        cast(datetime, pendulum.parser.parse(end)),
+        TimestampWithTimezone(parse_with_timezone(start).timestamp(), "UTC"),
+        TimestampWithTimezone(parse_with_timezone(end).timestamp(), "UTC"),
     )
 
 
@@ -58,16 +59,16 @@ def test_daily_partitions():
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
+    assert partitions_def.get_last_partition_key(parse_with_timezone("2021-05-06")) == "2021-05-05"
     assert (
-        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06")) == "2021-05-05"
-    )
-    assert (
-        partitions_def.get_last_partition_key(pendulum.parser.parse("2021-05-06").add(minutes=1))
+        partitions_def.get_last_partition_key(
+            parse_with_timezone("2021-05-06") + timedelta(minutes=1)
+        )
         == "2021-05-05"
     )
     assert (
         partitions_def.get_last_partition_key(
-            pendulum.parser.parse("2021-05-07").subtract(minutes=1)
+            parse_with_timezone("2021-05-07") - timedelta(minutes=1)
         )
         == "2021-05-05"
     )
@@ -748,7 +749,7 @@ def test_invalid_get_partition_keys_in_range():
 
 def test_twice_daily_partitions():
     partitions_def = TimeWindowPartitionsDefinition(
-        start=pendulum.parse("2021-05-05"),
+        start=parse_with_timezone("2021-05-05"),
         cron_schedule="0 0,11 * * *",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     )
@@ -773,7 +774,7 @@ def test_twice_daily_partitions():
 
 def test_start_not_aligned():
     partitions_def = TimeWindowPartitionsDefinition(
-        start=pendulum.parse("2021-05-05"),
+        start=parse_with_timezone("2021-05-05"),
         cron_schedule="0 7 * * *",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     )
@@ -1388,7 +1389,7 @@ def test_invalid_cron_schedule():
     # creating a new partition definition with an invalid cron schedule should raise an error
     with pytest.raises(DagsterInvalidDefinitionError):
         TimeWindowPartitionsDefinition(
-            start=pendulum.parse("2021-05-05"),
+            start=parse_with_timezone("2021-05-05"),
             cron_schedule="0 -24 * * *",
             fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         )
@@ -1466,13 +1467,13 @@ def test_partition_with_end_date(
     fmt: str,
 ):
     first_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(first_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(first_partition_window[1], fmt), tz="UTC"),
+        start=dst_safe_strptime(first_partition_window[0], partitions_def.timezone, fmt),
+        end=dst_safe_strptime(first_partition_window[1], partitions_def.timezone, fmt),
     )
 
     last_partition_window_ = TimeWindow(
-        start=pendulum.instance(datetime.strptime(last_partition_window[0], fmt), tz="UTC"),
-        end=pendulum.instance(datetime.strptime(last_partition_window[1], fmt), tz="UTC"),
+        start=dst_safe_strptime(last_partition_window[0], partitions_def.timezone, fmt),
+        end=dst_safe_strptime(last_partition_window[1], partitions_def.timezone, fmt),
     )
 
     # get_last_partition_window
