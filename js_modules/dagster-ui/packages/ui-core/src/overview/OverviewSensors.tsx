@@ -18,7 +18,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {makeSensorKey} from '../sensors/makeSensorKey';
@@ -105,7 +105,7 @@ export const OverviewSensors = () => {
   );
   const {data, loading} = queryResultOverview;
 
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSensorsQuery');
+  useBlockTraceUntilTrue('OverviewSensors', !!data || !workspaceLoading);
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 

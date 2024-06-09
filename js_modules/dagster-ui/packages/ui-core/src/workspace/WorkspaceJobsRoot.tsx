@@ -16,7 +16,9 @@ import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {usePageLoadTrace} from '../performance';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+
+const NO_REPOS_EMPTY_ARR: any[] = [];
 
 export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   const trace = usePageLoadTrace('WorkspaceJobsRoot');
@@ -41,7 +43,6 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       variables: {selector},
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceJobsQuery');
   const {data, loading} = queryResultOverview;
 
   useLayoutEffect(() => {
@@ -62,8 +63,10 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
     }
-    return [];
+    return NO_REPOS_EMPTY_ARR;
   }, [data, repo]);
+
+  useBlockTraceUntilTrue('WorkspaceJobs', jobs !== NO_REPOS_EMPTY_ARR);
 
   const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();

@@ -33,7 +33,7 @@ import {
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
-export const LOCATION_WORKSPACE_QUERY_VERSION = 1;
+export const LOCATION_WORKSPACE_QUERY_VERSION = 2;
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
 
@@ -121,6 +121,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       return;
     }
     didInitiateFetchFromCache.current = true;
+    const allData: typeof locationsData = {};
     new Promise(async (res) => {
       /**
        * 1. Load the cached code location status query
@@ -149,11 +150,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
           if (!entry) {
             return;
           }
-          setLocationsData((locationsData) =>
-            Object.assign({}, locationsData, {
-              [location.name]: entry,
-            }),
-          );
+          allData[location.name] = entry;
 
           if (entry.__typename === 'WorkspaceLocationEntry') {
             prevCachedLocations[location.name] = location;
@@ -164,6 +161,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       res(void 0);
     }).then(() => {
       setDidLoadCachedData(true);
+      setLocationsData(allData);
     });
   }, [getCachedData, localCacheIdPrefix, locations]);
 

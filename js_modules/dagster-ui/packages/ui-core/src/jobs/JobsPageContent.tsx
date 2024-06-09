@@ -22,7 +22,7 @@ import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {OverviewJobsTable} from '../overview/OverviewJobsTable';
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -51,7 +51,6 @@ export const JobsPageContent = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewJobsQuery');
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
@@ -70,7 +69,9 @@ export const JobsPageContent = () => {
     return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, visibleRepos]);
+  }, [cachedData, data, visibleRepos]);
+
+  useBlockTraceUntilTrue('WorkspaceJobs', !!data || !workspaceLoading);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
