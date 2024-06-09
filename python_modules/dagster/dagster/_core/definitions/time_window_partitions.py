@@ -61,22 +61,16 @@ from .partition_key_range import PartitionKeyRange
 from .timestamp import TimestampWithTimezone
 
 
-def is_second_ambiguous_time(dt: datetime, tz: Optional[str]):
+def is_second_ambiguous_time(dt: datetime, tz: str):
     """Returns if a datetime is the second instance of an ambiguous time in the given timezone due
-    to DST transitions.
+    to DST transitions. Assumes that dt is alraedy in the specified timezone.
     """
     # UTC is never ambiguous
-    if tz is not None and tz.upper() == "UTC":
+    if tz.upper() == "UTC":
         return False
 
     # Ensure that the datetime is in the correct timezone
     tzinfo = check.not_none(dt.tzinfo)
-
-    # pendulum has the non-standard "name" attribute on it's tzinfo, check for it
-    # otherwise there is no standard way of getting the IANA timezone name from datetime/tzinfo
-    if tz is not None and getattr(tzinfo, "name", None) != tz:
-        dt = to_timezone(dt, tz)
-        tzinfo = check.not_none(dt.tzinfo)
 
     # Only interested in the second instance of an ambiguous time
     if dt.fold == 0:
@@ -102,11 +96,11 @@ def dst_safe_fmt(fmt: str) -> str:
     return fmt + "%z"
 
 
-def dst_safe_strftime(dt: datetime, tz: Optional[str], fmt: str, cron_schedule: str) -> str:
+def dst_safe_strftime(dt: datetime, tz: str, fmt: str, cron_schedule: str) -> str:
     """A method for converting a datetime to a string which will append a suffix in cases where
     the resulting timestamp would be ambiguous due to DST transitions.
 
-    tz is Optional. None means use the timezone on the datetime object
+    Assumes that dt is already in the specified timezone.
     """
     # if the format already includes a UTC offset, then we don't need to do anything
     if "%z" in fmt:
@@ -448,9 +442,10 @@ class TimeWindowPartitionsDefinition(
                 or partitions_past_current_time < self.end_offset
             ):
                 if idx >= start_idx and idx < end_idx:
-                    # datetimes from _iterate_time_windows have the correct tz so use None as a optimization
                     partition_keys.append(
-                        dst_safe_strftime(time_window.start, None, self.fmt, self.cron_schedule)
+                        dst_safe_strftime(
+                            time_window.start, self.timezone, self.fmt, self.cron_schedule
+                        )
                     )
                 if time_window.end.timestamp() > current_timestamp:
                     partitions_past_current_time += 1
@@ -480,9 +475,10 @@ class TimeWindowPartitionsDefinition(
                 time_window.end.timestamp() <= current_timestamp
                 or partitions_past_current_time < self.end_offset
             ):
-                # datetimes from _iterate_time_windows have the correct tz so use None as a optimization
                 partition_keys.append(
-                    dst_safe_strftime(time_window.start, None, self.fmt, self.cron_schedule)
+                    dst_safe_strftime(
+                        time_window.start, self.timezone, self.fmt, self.cron_schedule
+                    )
                 )
 
                 if time_window.end.timestamp() > current_timestamp:
@@ -553,7 +549,7 @@ class TimeWindowPartitionsDefinition(
         for partition_key in sorted_pks:
             next_window = next(cur_windows_iterator)
             if (
-                dst_safe_strftime(next_window.start, None, self.fmt, self.cron_schedule)
+                dst_safe_strftime(next_window.start, self.timezone, self.fmt, self.cron_schedule)
                 == partition_key
             ):
                 partition_key_time_windows.append(next_window)
@@ -609,7 +605,7 @@ class TimeWindowPartitionsDefinition(
         if start_time.timestamp() >= last_partition_window.end.timestamp():
             return None
         else:
-            return dst_safe_strftime(start_time, None, self.fmt, self.cron_schedule)
+            return dst_safe_strftime(start_time, self.timezone, self.fmt, self.cron_schedule)
 
     def get_next_partition_window(
         self, end_dt: datetime, current_time: Optional[datetime] = None, respect_bounds: bool = True
