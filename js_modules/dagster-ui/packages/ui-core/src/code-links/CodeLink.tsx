@@ -1,5 +1,4 @@
-import {Box, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
-import {Icon, IconName} from '@dagster-io/ui-components/src/components/Icon';
+import {Box, Icon, IconName, MiddleTruncate, Tooltip} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {CodeLinkProtocolContext, ProtocolData} from './CodeLinkProtocol';
