@@ -598,6 +598,13 @@ class DecoratorAssetsDefinitionBuilder:
         return specs
 
 
+def validate_and_assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+) -> Mapping[str, AssetCheckSpec]:
+    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
+    return create_check_specs_by_output_name(check_specs)
+
+
 def create_check_specs_by_output_name(
     check_specs: Optional[Sequence[AssetCheckSpec]],
 ) -> Mapping[str, AssetCheckSpec]:
@@ -614,13 +621,6 @@ def create_check_specs_by_output_name(
         raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
 
     return checks_by_output_name
-
-
-def validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
-) -> Mapping[str, AssetCheckSpec]:
-    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
-    return create_check_specs_by_output_name(check_specs)
 
 
 def _validate_check_specs_target_relevant_asset_keys(
