@@ -507,18 +507,22 @@ class DecoratorAssetsDefinitionBuilder:
             asset_name=self.op_name,
         )
 
+    @cached_property
+    def required_resource_keys(self) -> AbstractSet[str]:
+        return compute_required_resource_keys(
+            required_resource_keys=self.args.required_resource_keys,
+            resource_defs=self.args.op_def_resource_defs,
+            fn=self.fn,
+            decorator_name=self.args.decorator_name,
+        )
+
     def _create_op_definition(self) -> OpDefinition:
         return _Op(
             name=self.op_name,
             description=self.args.description,
             ins=self.ins_by_input_names,
             out=self.combined_outs_by_output_name,
-            required_resource_keys=compute_required_resource_keys(
-                required_resource_keys=self.args.required_resource_keys,
-                resource_defs=self.args.op_def_resource_defs,
-                fn=self.fn,
-                decorator_name=self.args.decorator_name,
-            ),
+            required_resource_keys=self.required_resource_keys,
             tags={
                 **({COMPUTE_KIND_TAG: self.args.compute_kind} if self.args.compute_kind else {}),
                 **(self.args.op_tags or {}),
