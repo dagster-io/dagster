@@ -136,7 +136,7 @@ def build_named_ins(
     return named_ins_by_asset_key
 
 
-def build_asset_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "NamedOut"]:
+def build_named_outs(asset_outs: Mapping[str, AssetOut]) -> Mapping[AssetKey, "NamedOut"]:
     """Creates a mapping from AssetKey to (name of output, Out object)."""
     named_outs_by_asset_key: Dict[AssetKey, NamedOut] = {}
     for output_name, asset_out in asset_outs.items():
@@ -367,7 +367,7 @@ class DecoratorAssetsDefinitionBuilder:
                 else set()
             ),
         )
-        output_tuples_by_asset_key = build_asset_outs(asset_out_map)
+        named_outs_by_asset_key = build_named_outs(asset_out_map)
 
         asset_deps = args.asset_deps
 
@@ -383,7 +383,7 @@ class DecoratorAssetsDefinitionBuilder:
             )
 
         # validate that the asset_deps make sense
-        valid_asset_deps = asset_in_keys | set(output_tuples_by_asset_key.keys())
+        valid_asset_deps = asset_in_keys | set(named_outs_by_asset_key.keys())
         for out_name, asset_keys in asset_deps.items():
             if asset_out_map and out_name not in asset_out_map:
                 check.failed(
@@ -401,12 +401,12 @@ class DecoratorAssetsDefinitionBuilder:
                 f" {list(valid_asset_deps)[:20]}",
             )
 
-        keys_by_output_name = make_keys_by_output_name(output_tuples_by_asset_key)
+        keys_by_output_name = make_keys_by_output_name(named_outs_by_asset_key)
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
-            named_outs_by_asset_key=output_tuples_by_asset_key,
+            named_outs_by_asset_key=named_outs_by_asset_key,
             internal_deps=internal_deps,
             op_name=op_name,
             args=args,

@@ -46,8 +46,8 @@ from ..resource_definition import ResourceDefinition
 from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
 from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilderArgs,
-    build_asset_outs,
     build_named_ins,
+    build_named_outs,
 )
 
 
@@ -913,17 +913,17 @@ def graph_multi_asset(
         keys_by_input_name = {
             input_name: asset_key for asset_key, (input_name, _) in named_ins.items()
         }
-        asset_outs = build_asset_outs(outs)
+        named_outs = build_named_outs(outs)
 
         check_specs_by_output_name = validate_and_assign_output_names_to_check_specs(
-            check_specs, list(asset_outs.keys())
+            check_specs, list(named_outs.keys())
         )
         check_outs_by_output_name: Mapping[str, GraphOut] = {
             output_name: GraphOut() for output_name in check_specs_by_output_name.keys()
         }
 
         combined_outs_by_output_name = {
-            **{output_name: GraphOut() for output_name, _ in asset_outs.values()},
+            **{output_name: GraphOut() for output_name, _ in named_outs.values()},
             **check_outs_by_output_name,
         }
 
@@ -979,7 +979,7 @@ def graph_multi_asset(
             op_graph,
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name={
-                output_name: asset_key for asset_key, (output_name, _) in asset_outs.items()
+                output_name: asset_key for asset_key, (output_name, _) in named_outs.items()
             },
             partitions_def=partitions_def,
             partition_mappings=partition_mappings if partition_mappings else None,
