@@ -1,4 +1,5 @@
 import {Box, Icon} from '@dagster-io/ui-components';
+import uniqBy from 'lodash/uniqBy';
 import {useMemo} from 'react';
 
 import {useStaticSetFilter} from './useStaticSetFilter';
@@ -46,9 +47,10 @@ export function useAssetKindTagsForAssets(
 ): string[] {
   return useMemo(
     () =>
-      Array.from(
-        new Set(assets.map((a) => a.definition?.computeKind).filter((x) => x)),
-      ) as string[],
+      uniqBy(
+        assets.map((a) => a.definition?.computeKind).filter((x): x is string => !!x),
+        (c) => c.toLowerCase(),
+      ),
     [assets],
   );
 }
