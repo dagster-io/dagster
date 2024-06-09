@@ -62,6 +62,7 @@ def build_dbt_asset_specs(
             key=check.inst(asset_out.key, AssetKey),
             deps=[AssetDep(asset=dep) for dep in internal_asset_deps.get(output_name, set())],
             additional_tags={f"{KIND_PREFIX}dbt": ""},
+            partitions_def=None,
         )
         # Allow specs to be represented as external assets by adhering to external asset invariants.
         ._replace(
