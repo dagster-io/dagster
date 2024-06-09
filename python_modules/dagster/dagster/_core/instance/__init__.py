@@ -2,7 +2,6 @@ import logging
 import logging.config
 import os
 import sys
-import time
 import warnings
 import weakref
 from abc import abstractmethod

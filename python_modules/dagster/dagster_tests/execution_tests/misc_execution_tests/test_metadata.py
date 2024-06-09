@@ -1,7 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 
-import pendulum
 import pytest
 import pytz
 from dagster import (
@@ -42,6 +41,7 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
+from dagster._seven import create_datetime
 
 
 def step_events_of_type(result: ExecutionResult, node_name: str, event_type: DagsterEventType):
@@ -139,12 +139,12 @@ def test_metadata_asset_observation():
 
 
 def test_metadata_value_timestamp():
-    pendulum_dt_with_timezone = pendulum.datetime(2024, 3, 6, 12, 0, 0, tz="America/New_York")
+    pendulum_dt_with_timezone = create_datetime(2024, 3, 6, 12, 0, 0, tz="America/New_York")
     assert (
         MetadataValue.timestamp(pendulum_dt_with_timezone).value
         == pendulum_dt_with_timezone.timestamp()
     )
-    pendulum_dt_without_timezone = pendulum.datetime(2024, 3, 6, 12, 0, 0)
+    pendulum_dt_without_timezone = create_datetime(2024, 3, 6, 12, 0, 0)
     assert (
         MetadataValue.timestamp(pendulum_dt_without_timezone).value
         == pendulum_dt_without_timezone.timestamp()

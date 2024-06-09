@@ -14,6 +14,8 @@ from typing import Any, Callable, List, Sequence, Type
 from dateutil import parser
 from typing_extensions import TypeGuard
 
+from dagster._seven.compat.datetime import timezone_from_string
+
 from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (
     JSONDecodeError as JSONDecodeError,
@@ -142,8 +144,15 @@ def get_current_timestamp():
     return _mockable_get_current_timestamp()
 
 
+def create_datetime(year, month, day, *args, **kwargs):
+    tz = kwargs.pop("tz", "UTC")
+    if isinstance(tz, str):
+        tz = timezone_from_string(tz)
+    return datetime(year, month, day, *args, **kwargs, tzinfo=tz)
+
+
 def create_utc_datetime(year, month, day, *args, **kwargs):
-    return datetime(year, month, day, *args, **kwargs, tzinfo=timezone.utc)
+    return create_datetime(year, month, day, *args, **kwargs, tz="UTC")
 
 
 def add_fixed_time(
