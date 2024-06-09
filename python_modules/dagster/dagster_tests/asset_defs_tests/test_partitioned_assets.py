@@ -42,8 +42,12 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import assert_namedtuple_lists_equal, raise_exception_on_warnings
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._core.test_utils import (
+    assert_namedtuple_lists_equal,
+    freeze_time,
+    raise_exception_on_warnings,
+)
+from dagster._seven import create_datetime
 
 
 @pytest.fixture(autouse=True)
@@ -752,7 +756,7 @@ def test_error_on_nonexistent_upstream_partition():
     def downstream_asset(context, upstream_asset):
         return upstream_asset + 1
 
-    with pendulum_freeze_time(create_pendulum_time(2020, 1, 2, 10, 0)):
+    with freeze_time(create_datetime(2020, 1, 2, 10, 0)):
         with pytest.raises(
             DagsterInvariantViolationError,
             match="invalid partition keys",

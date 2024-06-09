@@ -11,7 +11,7 @@ from dagster import (
     static_partitioned_config,
 )
 from dagster._core.definitions.partition import partitioned_config
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven import create_datetime
 
 
 @op
@@ -58,7 +58,7 @@ def test_time_based_partitioned_job():
     def my_job():
         my_op()
 
-    freeze_datetime = create_pendulum_time(
+    freeze_datetime = create_datetime(
         year=2021, month=5, day=6, hour=23, minute=59, second=59, tz="UTC"
     )
     partition_keys = my_daily_partitioned_config.get_partition_keys(freeze_datetime)
