@@ -297,7 +297,7 @@ def test_prefix_filter(gcs_bucket):
 
 @pytest.mark.integration
 def test_get_log_keys_for_log_key_prefix(gcs_bucket):
-    evaluation_time = pendulum.now()
+    evaluation_time = get_current_datetime_in_utc()
     gcs_prefix = "foo/bar/"  # note the trailing slash
 
     with tempfile.TemporaryDirectory() as temp_dir:

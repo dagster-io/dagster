@@ -41,7 +41,6 @@ from dagster._core.definitions.metadata.table import (
 )
 from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.snap.node import build_node_defs_snapshot
-from dagster._seven import create_datetime
 
 
 def step_events_of_type(result: ExecutionResult, node_name: str, event_type: DagsterEventType):
@@ -139,29 +138,15 @@ def test_metadata_asset_observation():
 
 
 def test_metadata_value_timestamp():
-    pendulum_dt_with_timezone = create_datetime(2024, 3, 6, 12, 0, 0, tz="America/New_York")
-    assert (
-        MetadataValue.timestamp(pendulum_dt_with_timezone).value
-        == pendulum_dt_with_timezone.timestamp()
-    )
-    pendulum_dt_without_timezone = create_datetime(2024, 3, 6, 12, 0, 0)
-    assert (
-        MetadataValue.timestamp(pendulum_dt_without_timezone).value
-        == pendulum_dt_without_timezone.timestamp()
-    )
+    dt_with_timezone = pytz.timezone("America/New_York").localize(datetime(2024, 3, 6, 12, 0, 0))
+    metadata_value = MetadataValue.timestamp(dt_with_timezone)
+    assert metadata_value.value == dt_with_timezone.timestamp()
 
-    normal_dt_with_timezone = pytz.timezone("America/New_York").localize(
-        datetime(2024, 3, 6, 12, 0, 0)
-    )
-    metadata_value = MetadataValue.timestamp(normal_dt_with_timezone)
-    assert metadata_value.value == normal_dt_with_timezone.timestamp()
-    assert metadata_value.value == pendulum_dt_with_timezone.timestamp()
-
-    normal_dt_without_timezone = datetime(2024, 3, 6, 12, 0, 0)
+    dt_without_timezone = datetime(2024, 3, 6, 12, 0, 0)
     with pytest.raises(
         CheckError, match="Datetime values provided to MetadataValue.timestamp must have timezones"
     ):
-        MetadataValue.timestamp(normal_dt_without_timezone)
+        MetadataValue.timestamp(dt_without_timezone)
 
 
 def test_unknown_metadata_value():
