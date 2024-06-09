@@ -14,6 +14,7 @@ from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
@@ -209,12 +210,13 @@ def asset_check(
         builder_args = DecoratorAssetsDefinitionBuilderArgs(
             decorator_name="@asset_check",
             name=name,
-            description=description,
+            # @asset_check previous behavior is to not set description on underlying op
+            op_description=None,
             required_resource_keys=required_resource_keys or set(),
             config_schema=config_schema,
             retry_policy=retry_policy,
             specs=[],
-            check_specs=[spec],
+            check_specs_by_output_name={DEFAULT_OUTPUT: spec},
             can_subset=False,
             compute_kind=compute_kind,
             op_tags=op_tags,
@@ -241,24 +243,7 @@ def asset_check(
             fn=fn,
         )
 
-        op_required_resource_keys = builder.required_resource_keys
-
-        out = Out(dagster_type=None)
-
-        op_def = _Op(
-            name=spec.get_python_identifier(),
-            ins=dict(named_in_by_asset_key.values()),
-            out=out,
-            # Any resource requirements specified as arguments will be identified as
-            # part of the Op definition instantiation
-            required_resource_keys=op_required_resource_keys,
-            tags={
-                **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
-                **(op_tags or {}),
-            },
-            config_schema=config_schema,
-            retry_policy=retry_policy,
-        )(fn)
+        op_def = builder.create_op_definition()
 
         return AssetChecksDefinition.create(
             keys_by_input_name={
