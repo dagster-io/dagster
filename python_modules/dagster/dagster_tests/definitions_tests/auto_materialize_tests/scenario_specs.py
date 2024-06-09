@@ -1,6 +1,5 @@
 import datetime
 
-import pendulum
 from dagster import AssetSpec, MultiPartitionKey, StaticPartitionsDefinition
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
@@ -11,6 +10,7 @@ from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
+from dagster._seven import parse_with_timezone
 
 from .scenario_state import MultiAssetSpec, ScenarioSpec
 
@@ -23,7 +23,7 @@ two_partitions_def = StaticPartitionsDefinition(["1", "2"])
 three_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
 time_partitions_start_str = "2013-01-05"
-time_partitions_start_datetime = pendulum.parse(time_partitions_start_str)
+time_partitions_start_datetime = parse_with_timezone(time_partitions_start_str)
 hourly_partitions_def = HourlyPartitionsDefinition(start_date=time_partitions_start_str + "-00:00")
 daily_partitions_def = DailyPartitionsDefinition(start_date=time_partitions_start_str)
 time_multipartitions_def = MultiPartitionsDefinition(

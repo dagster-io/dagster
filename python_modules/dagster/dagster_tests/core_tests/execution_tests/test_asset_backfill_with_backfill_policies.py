@@ -2,7 +2,6 @@ import math
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
-import pendulum
 import pytest
 from dagster import (
     AssetDep,
@@ -965,7 +964,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    test_time = pendulum.parse("2023-03-10T00:00:00", tz="UTC")
+    test_time = parse_with_timezone("2023-03-10T00:00:00")
 
     @asset(
         name="upstream_a",

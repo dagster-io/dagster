@@ -50,6 +50,7 @@ from dagster._core.test_utils import (
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
+from dagster._seven import parse_with_timezone
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -179,7 +180,7 @@ class ScenarioSpec:
 
     def with_current_time(self, time: Union[str, datetime.datetime]) -> "ScenarioSpec":
         if isinstance(time, str):
-            time = pendulum.parse(time)
+            time = parse_with_timezone(time)
         return dataclasses.replace(self, current_time=time)
 
     def with_current_time_advanced(self, **kwargs) -> "ScenarioSpec":
@@ -244,7 +245,7 @@ class ScenarioState:
     def asset_graph(self) -> AssetGraph:
         return self.scenario_spec.asset_graph
 
-    def with_current_time(self, time: str) -> Self:
+    def with_current_time(self, time: Union[str, datetime.datetime]) -> Self:
         return dataclasses.replace(self, scenario_spec=self.scenario_spec.with_current_time(time))
 
     def with_current_time_advanced(self, **kwargs) -> Self:

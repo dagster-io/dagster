@@ -69,8 +69,8 @@ def test_missing_time_partitioned() -> None:
     # if the partitions definition changes, then we have 1 fewer missing partition
     state = state.with_asset_properties(
         partitions_def=daily_partitions_def._replace(
-            start=TimestampWithTimezone.from_pendulum_time(
-                time_partitions_start_datetime + datetime.timedelta(days=1)
+            start=TimestampWithTimezone(
+                (time_partitions_start_datetime + datetime.timedelta(days=1)).timestamp(), "UTC"
             )
         )
     )
