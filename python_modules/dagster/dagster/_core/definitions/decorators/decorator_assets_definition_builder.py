@@ -357,6 +357,10 @@ class DecoratorAssetsDefinitionBuilder:
             if spec.deps is not None
         }
 
+        _validate_check_specs_target_relevant_asset_keys(
+            passed_args.check_specs, [spec.key for spec in asset_specs]
+        )
+
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
             named_outs_by_asset_key=named_outs_by_asset_key,
@@ -420,6 +424,10 @@ class DecoratorAssetsDefinitionBuilder:
         keys_by_output_name = make_keys_by_output_name(named_outs_by_asset_key)
         internal_deps = {keys_by_output_name[name]: asset_deps[name] for name in asset_deps}
 
+        _validate_check_specs_target_relevant_asset_keys(
+            passed_args.check_specs, list(named_outs_by_asset_key.keys())
+        )
+
         return DecoratorAssetsDefinitionBuilder(
             named_ins_by_asset_key=named_ins_by_asset_key,
             named_outs_by_asset_key=named_outs_by_asset_key,
@@ -457,9 +465,7 @@ class DecoratorAssetsDefinitionBuilder:
 
     @cached_property
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
-        return validate_and_assign_output_names_to_check_specs(
-            self.args.check_specs, list(self.asset_keys)
-        )
+        return create_check_specs_by_output_name(self.args.check_specs)
 
     @cached_property
     def check_outs_by_output_name(self) -> Mapping[str, Out]:
@@ -592,14 +598,7 @@ class DecoratorAssetsDefinitionBuilder:
         return specs
 
 
-def validate_and_assign_output_names_to_check_specs(
-    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
-) -> Mapping[str, AssetCheckSpec]:
-    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
-    return _assign_output_names_to_check_specs(check_specs)
-
-
-def _assign_output_names_to_check_specs(
+def create_check_specs_by_output_name(
     check_specs: Optional[Sequence[AssetCheckSpec]],
 ) -> Mapping[str, AssetCheckSpec]:
     checks_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
@@ -615,6 +614,13 @@ def _assign_output_names_to_check_specs(
         raise DagsterInvalidDefinitionError(f"Duplicate check specs: {duplicates}")
 
     return checks_by_output_name
+
+
+def validate_and_assign_output_names_to_check_specs(
+    check_specs: Optional[Sequence[AssetCheckSpec]], valid_asset_keys: Sequence[AssetKey]
+) -> Mapping[str, AssetCheckSpec]:
+    _validate_check_specs_target_relevant_asset_keys(check_specs, valid_asset_keys)
+    return create_check_specs_by_output_name(check_specs)
 
 
 def _validate_check_specs_target_relevant_asset_keys(

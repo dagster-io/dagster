@@ -599,8 +599,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
-            _assign_output_names_to_check_specs,
             _validate_check_specs_target_relevant_asset_keys,
+            create_check_specs_by_output_name,
         )
 
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
@@ -632,7 +632,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
-        check_specs_by_output_name = _assign_output_names_to_check_specs(check_specs)
+        check_specs_by_output_name = create_check_specs_by_output_name(check_specs)
 
         keys_by_output_name = _infer_keys_by_output_names(
             node_def, keys_by_output_name or {}, check_specs_by_output_name
