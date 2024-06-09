@@ -58,7 +58,8 @@ export const OverviewResourcesRoot = () => {
   const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
     const cachedEntries = Object.values(cachedData).filter(
-      (location) => location.__typename === 'WorkspaceLocationEntry',
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
     );
     const workspaceOrError = data?.workspaceOrError;
     const entries =

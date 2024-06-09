@@ -58,7 +58,8 @@ export const JobsPageContent = () => {
   // Batch up the data and bucket by repo.
   const repoBuckets = useMemo(() => {
     const cachedEntries = Object.values(cachedData).filter(
-      (location) => location.__typename === 'WorkspaceLocationEntry',
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
     );
     const workspaceOrError = data?.workspaceOrError;
     const entries =

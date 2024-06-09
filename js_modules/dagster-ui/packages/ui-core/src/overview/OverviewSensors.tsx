@@ -111,7 +111,8 @@ export const OverviewSensors = () => {
 
   const repoBuckets = useMemo(() => {
     const cachedEntries = Object.values(cachedData).filter(
-      (location) => location.__typename === 'WorkspaceLocationEntry',
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
     );
     const workspaceOrError = data?.workspaceOrError;
     const entries =
