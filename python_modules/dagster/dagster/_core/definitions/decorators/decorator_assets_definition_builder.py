@@ -264,7 +264,7 @@ class DecoratorAssetsDefinitionBuilder:
         )
 
     @staticmethod
-    def from_args(
+    def for_multi_asset(
         *, fn: Callable[..., Any], args: DecoratorAssetsDefinitionBuilderArgs
     ) -> "DecoratorAssetsDefinitionBuilder":
         op_name = args.name or fn.__name__
@@ -286,7 +286,7 @@ class DecoratorAssetsDefinitionBuilder:
                     "Can not pass internal_asset_deps and specs to @multi_asset, specify deps on"
                     " the AssetSpecs directly."
                 )
-            return DecoratorAssetsDefinitionBuilder.from_specs(
+            return DecoratorAssetsDefinitionBuilder.from_multi_asset_specs(
                 fn=fn,
                 op_name=op_name,
                 passed_args=args,
@@ -295,7 +295,7 @@ class DecoratorAssetsDefinitionBuilder:
                 asset_in_map=args.asset_in_map,
             )
 
-        return DecoratorAssetsDefinitionBuilder.from_asset_outs(
+        return DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
             fn=fn,
             op_name=op_name,
             asset_in_map=args.asset_in_map,
@@ -306,7 +306,7 @@ class DecoratorAssetsDefinitionBuilder:
         )
 
     @staticmethod
-    def from_specs(
+    def from_multi_asset_specs(
         *,
         fn: Callable[..., Any],
         op_name: str,
@@ -367,7 +367,7 @@ class DecoratorAssetsDefinitionBuilder:
         )
 
     @staticmethod
-    def from_asset_outs(
+    def from_asset_outs_in_asset_centric_decorator(
         *,
         fn: Callable[..., Any],
         op_name: str,
