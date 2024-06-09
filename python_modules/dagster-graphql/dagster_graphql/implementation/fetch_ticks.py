@@ -1,8 +1,9 @@
 import warnings
 from typing import TYPE_CHECKING, Optional, Sequence
 
-import pendulum
 from dagster._core.scheduler.instigation import InstigatorType, TickStatus
+from dagster._seven import get_current_datetime_in_utc
+from dateutil.relativedelta import relativedelta
 
 if TYPE_CHECKING:
     from ..schema.util import ResolveInfo
@@ -27,7 +28,7 @@ def get_instigation_ticks(
 
     if before is None:
         if dayOffset:
-            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+            before = (get_current_datetime_in_utc() - relativedelta(days=dayOffset)).timestamp()
         elif cursor:
             parts = cursor.split(":")
             if parts:
@@ -38,7 +39,9 @@ def get_instigation_ticks(
 
     if after is None:
         after = (
-            pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
+            (
+                get_current_datetime_in_utc() - relativedelta(days=dayRange + (dayOffset or 0))
+            ).timestamp()
             if dayRange
             else None
         )

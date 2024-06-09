@@ -3,10 +3,10 @@ import string
 import sys
 import time
 
-import pendulum
 import pytest
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._seven import get_current_datetime_in_utc
 
 
 class TestCapturedLogManager:
@@ -44,7 +44,7 @@ class TestCapturedLogManager:
         should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
     )
     def test_capture(self, captured_log_manager):
-        now = pendulum.now("UTC")
+        now = get_current_datetime_in_utc()
         log_key = ["arbitrary", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
 
         with captured_log_manager.capture_logs(log_key) as context:
@@ -106,7 +106,7 @@ class TestCapturedLogManager:
         ):
             pytest.skip("does not support streaming")
 
-        now = pendulum.now("UTC")
+        now = get_current_datetime_in_utc()
         log_key = ["streaming", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
             print("hello stdout")  # noqa: T201
@@ -143,7 +143,7 @@ class TestCapturedLogManager:
         ):
             pytest.skip("unnecessary check since write/read manager should have the same behavior")
 
-        now = pendulum.now("UTC")
+        now = get_current_datetime_in_utc()
         log_key = ["complete", "test", "log", "key", now.strftime("%Y_%m_%d__%H_%M_%S")]
         with write_manager.capture_logs(log_key):
             print("hello stdout")  # noqa: T201

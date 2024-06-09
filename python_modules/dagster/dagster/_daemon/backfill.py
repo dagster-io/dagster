@@ -3,14 +3,13 @@ import sys
 from contextlib import contextmanager
 from typing import Iterable, Mapping, Optional, Sequence, cast
 
-import pendulum
-
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -19,7 +18,7 @@ def _get_instigation_logger_if_log_storage_enabled(
     instance, backfill: PartitionBackfill, default_logger: logging.Logger
 ):
     if instance.backfill_log_storage_enabled():
-        evaluation_time = pendulum.now("UTC")
+        evaluation_time = get_current_datetime_in_utc()
         log_key = [*backfill.log_storage_prefix, evaluation_time.strftime("%Y%m%d_%H%M%S")]
         with InstigationLogger(
             log_key,

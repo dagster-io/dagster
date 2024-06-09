@@ -16,7 +16,6 @@ from typing_extensions import TypeGuard
 
 from dagster._seven.compat.datetime import timezone_from_string
 
-from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (
     JSONDecodeError as JSONDecodeError,
     dump as dump,
@@ -211,16 +210,6 @@ def parse_with_timezone(datetime_str) -> datetime:
         dt = dt.replace(tzinfo=timezone.utc)
 
     return dt
-
-
-def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
-    if isinstance(utc_datetime, PendulumDateTime):
-        return utc_datetime.timestamp()
-
-    if utc_datetime.tzinfo != timezone.utc:
-        raise Exception("Must pass in a UTC timezone to compute UNIX timestamp")
-
-    return utc_datetime.timestamp()
 
 
 def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:

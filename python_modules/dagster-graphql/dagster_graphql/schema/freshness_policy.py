@@ -1,7 +1,7 @@
 import dagster._check as check
 import graphene
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster._seven import get_current_datetime_in_utc
 
 
 class GrapheneAssetFreshnessInfo(graphene.ObjectType):
@@ -39,4 +39,4 @@ class GrapheneFreshnessPolicy(graphene.ObjectType):
         # Note: This is presented as a string in milliseconds (JS timestamp)
         # for consistency with the asset materialization timestamps
         tick = self._freshness_policy.get_evaluation_tick(get_current_datetime_in_utc())
-        return str(int(get_timestamp_from_utc_datetime(tick) * 1000)) if tick else None
+        return str(int(tick.timestamp() * 1000)) if tick else None

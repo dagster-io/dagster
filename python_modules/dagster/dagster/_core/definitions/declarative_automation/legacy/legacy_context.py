@@ -18,8 +18,6 @@ from typing import (
     TypeVar,
 )
 
-import pendulum
-
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     HistoricalAllPartitionsSubsetSentinel,
@@ -27,6 +25,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._seven import get_current_timestamp
 
 from ...asset_subset import AssetSubset, ValidAssetSubset
 from ..serialized_objects import (
@@ -140,7 +139,7 @@ class LegacyRuleEvaluationContext:
             instance_queryer=instance_queryer,
             current_results_by_key=current_results_by_key,
             expected_data_time_mapping=expected_data_time_mapping,
-            start_timestamp=pendulum.now("UTC").timestamp(),
+            start_timestamp=get_current_timestamp(),
             respect_materialization_data_versions=respect_materialization_data_versions,
             auto_materialize_run_tags=auto_materialize_run_tags,
             logger=logger,
@@ -160,7 +159,7 @@ class LegacyRuleEvaluationContext:
             else None,
             candidate_subset=candidate_subset,
             root_ref=self.root_context,
-            start_timestamp=pendulum.now("UTC").timestamp(),
+            start_timestamp=get_current_timestamp(),
         )
 
     @property

@@ -8,6 +8,7 @@ import inspect
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from datetime import datetime
 from enum import Enum
 from typing import (
     Any,
@@ -25,7 +26,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Final, Self
 
 from dagster import (
@@ -101,6 +101,7 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"
@@ -778,21 +779,29 @@ class ExternalTimeWindowPartitionsDefinitionData(
         if self.cron_schedule is not None:
             return TimeWindowPartitionsDefinition(
                 cron_schedule=self.cron_schedule,
-                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                start=datetime.fromtimestamp(self.start, tz=timezone_from_string(self.timezone)),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
+                end=(
+                    datetime.fromtimestamp(self.end, tz=timezone_from_string(self.timezone))
+                    if self.end
+                    else None
+                ),
             )
         else:
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,
-                start=pendulum.from_timestamp(self.start, tz=self.timezone),
+                start=datetime.fromtimestamp(self.start, tz=timezone_from_string(self.timezone)),
                 timezone=self.timezone,
                 fmt=self.fmt,
                 end_offset=self.end_offset,
-                end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
+                end=(
+                    datetime.fromtimestamp(self.end, tz=timezone_from_string(self.timezone))
+                    if self.end
+                    else None
+                ),
                 minute_offset=self.minute_offset,
                 hour_offset=self.hour_offset,
                 day_offset=self.day_offset,
@@ -2036,12 +2045,8 @@ def external_time_window_partitions_definition_from_def(
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule=partitions_def.cron_schedule,
-        start=pendulum.instance(partitions_def.start, tz=partitions_def.timezone).timestamp(),
-        end=(
-            pendulum.instance(partitions_def.end, tz=partitions_def.timezone).timestamp()
-            if partitions_def.end
-            else None
-        ),
+        start=partitions_def.start.timestamp(),
+        end=partitions_def.end.timestamp() if partitions_def.end else None,
         timezone=partitions_def.timezone,
         fmt=partitions_def.fmt,
         end_offset=partitions_def.end_offset,

@@ -16,6 +16,7 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -276,8 +277,6 @@ class AssetGraphView:
         effective_dt: Optional[datetime] = None,
         last_event_id: Optional[int] = None,
     ):
-        import pendulum
-
         from dagster._core.definitions.data_version import CachingStaleStatusResolver
         from dagster._core.instance import DagsterInstance
 
@@ -290,7 +289,7 @@ class AssetGraphView:
         return AssetGraphView(
             stale_resolver=stale_resolver,
             temporal_context=TemporalContext(
-                effective_dt=effective_dt or pendulum.now(),
+                effective_dt=effective_dt or get_current_datetime_in_utc(),
                 last_event_id=last_event_id or instance.event_log_storage.get_maximum_record_id(),
             ),
         )

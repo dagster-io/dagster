@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -47,6 +46,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._serdes import whitelist_for_serdes
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
@@ -204,7 +204,7 @@ class SensorEvaluationContext:
             self._log_key = [
                 repository_name,
                 sensor_name,
-                pendulum.now("UTC").strftime("%Y%m%d_%H%M%S"),
+                get_current_datetime_in_utc().strftime("%Y%m%d_%H%M%S"),
             ]
 
         self._logger: Optional[InstigationLogger] = None

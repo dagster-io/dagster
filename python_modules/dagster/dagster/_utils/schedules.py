@@ -5,7 +5,6 @@ import math
 import re
 from typing import Iterator, Optional, Sequence, Union
 
-import pendulum
 from croniter import croniter as _croniter
 from dateutil.relativedelta import relativedelta
 from dateutil.tz import datetime_ambiguous, datetime_exists
@@ -13,7 +12,6 @@ from dateutil.tz import datetime_ambiguous, datetime_exists
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
 from dagster._seven.compat.datetime import timezone_from_string
-from dagster._seven.compat.pendulum import pendulum_create_timezone
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
@@ -631,7 +629,6 @@ def cron_string_iterator(
                 yield shifted_dt
         return
     execution_timezone = execution_timezone or "UTC"
-    timezone = pendulum_create_timezone(execution_timezone)
 
     # Croniter < 1.4 returns 2 items
     # Croniter >= 1.4 returns 3 items
@@ -689,7 +686,7 @@ def cron_string_iterator(
             # and slow
             next_date = start_datetime
             # This is already on a cron boundary, so yield it
-            yield pendulum.from_timestamp(next_date.timestamp(), tz=timezone)
+            yield start_datetime
         else:
             next_date = _find_schedule_time(
                 expected_minutes,
@@ -733,7 +730,7 @@ def cron_string_iterator(
                 else:
                     check.invariant(next_date.timestamp() <= start_timestamp)
 
-            yield pendulum.from_timestamp(next_date.timestamp(), tz=timezone)
+            yield next_date
     else:
         yield from _croniter_string_iterator(
             start_timestamp, cron_string, execution_timezone, ascending, start_offset
@@ -747,7 +744,6 @@ def _croniter_string_iterator(
     ascending: bool = True,
     start_offset: int = 0,
 ):
-    timezone = pendulum_create_timezone(timezone_str)
     start_datetime = datetime.datetime.fromtimestamp(
         start_timestamp, timezone_from_string(timezone_str)
     )
@@ -768,7 +764,7 @@ def _croniter_string_iterator(
             else:
                 check.invariant(next_date.timestamp() <= start_timestamp)
 
-        yield pendulum.from_timestamp(next_date.timestamp(), tz=timezone)
+        yield next_date
 
 
 def reverse_cron_string_iterator(

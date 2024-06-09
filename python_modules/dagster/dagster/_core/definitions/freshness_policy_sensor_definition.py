@@ -1,7 +1,5 @@
 from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -20,7 +18,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import JSONDecodeError
+from dagster._seven import JSONDecodeError, get_current_datetime_in_utc
 
 from .sensor_definition import (
     DefaultSensorStatus,
@@ -240,7 +238,7 @@ class FreshnessPolicySensorDefinition(SensorDefinition):
                 yield SkipReason(f"Initializing {name}.")
                 return
 
-            evaluation_time = pendulum.now("UTC")
+            evaluation_time = get_current_datetime_in_utc()
             asset_graph = context.repository_def.asset_graph
             instance_queryer = CachingInstanceQueryer(
                 context.instance, asset_graph, evaluation_time

@@ -15,8 +15,6 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
@@ -48,6 +46,7 @@ from dagster._core.storage.dagster_run import (
     RunRecord,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
@@ -89,7 +88,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
 
         self._dynamic_partitions_cache: Dict[str, Sequence[str]] = {}
 
-        self._evaluation_time = evaluation_time if evaluation_time else pendulum.now("UTC")
+        self._evaluation_time = (
+            evaluation_time if evaluation_time else get_current_datetime_in_utc()
+        )
 
         self._respect_materialization_data_versions = (
             self._instance.auto_materialize_respect_materialization_data_versions

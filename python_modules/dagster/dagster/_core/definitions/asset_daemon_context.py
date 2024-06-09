@@ -17,8 +17,6 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -29,6 +27,7 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._seven import get_current_timestamp
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
@@ -178,7 +177,7 @@ class AssetDaemonContext:
     def evaluate(
         self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
-        observe_request_timestamp = pendulum.now().timestamp()
+        observe_request_timestamp = get_current_timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
                 asset_graph=self.asset_graph,

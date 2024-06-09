@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional, Sequence, Set, Tuple
 
-import pendulum
-
 from dagster import (
     AssetKey,
     DagsterInstance,
@@ -29,6 +27,7 @@ from dagster._core.storage.tags import (
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
+from dagster._seven import get_current_datetime_in_utc
 
 if TYPE_CHECKING:
     from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
@@ -215,7 +214,7 @@ def get_validated_partition_keys(
     else:
         if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
             check.failed("Unexpected partitions definition type {partitions_def}")
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime_in_utc()
         validated_partitions = {
             pk
             for pk in partition_keys

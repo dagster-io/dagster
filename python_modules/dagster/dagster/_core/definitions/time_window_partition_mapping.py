@@ -18,6 +18,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes import whitelist_for_serdes
+from dagster._seven import add_fixed_time
 
 
 @whitelist_for_serdes
@@ -514,7 +515,7 @@ def _offsetted_datetime(
         return result
 
     elif partitions_def.is_basic_hourly and offset != 0:
-        return dt + timedelta(hours=offset)
+        return add_fixed_time(dt, hours=offset)
 
     result = dt
     for _ in range(abs(offset)):
