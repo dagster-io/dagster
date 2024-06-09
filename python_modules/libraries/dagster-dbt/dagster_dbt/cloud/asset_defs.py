@@ -1,6 +1,6 @@
 import json
 import shlex
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from contextlib import suppress
 from typing import (
     Any,
@@ -502,12 +502,12 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
             # Map the selected outputs to dbt models that should be materialized.
             #
-            # HACK: This selection filter works even if an existing `--select` is specified in the
-            # dbt Cloud job. We take advantage of the fact that the last `--select` will be used.
+            # From version 1.5.0 dbt allows multiple select args to be used in command,
+            # so we cannot just add our arg as last one to be used and need to remove
+            # both command-native --select args and --selector arg to run dagster-generated
+            # subset of models
             #
-            # This is not ideal, as the triggered run for the dbt Cloud job will still have both
-            # `--select` options when displayed in the UI, but parsing the command line argument
-            # to remove the initial select using argparse.
+            # See https://docs.getdbt.com/reference/node-selection/syntax for details.
             if context.is_subset:
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
@@ -516,18 +516,16 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")
 
-                # If the `--selector` option is used, we need to remove it from the command, since
-                # it disables other selection options from being functional.
-                #
-                # See https://docs.getdbt.com/reference/node-selection/syntax for details.
-                split_materialization_command = shlex.split(materialization_command)
-                if "--selector" in split_materialization_command:
-                    idx = split_materialization_command.index("--selector")
+                parser = ArgumentParser(description="Parse selection args from dbt command")
+                # Select arg should have nargs="+", but we probably want dbt itself to deal with it
+                parser.add_argument("-s", "--select", nargs="*", action="append")
+                parser.add_argument("--selector", nargs="*")
 
-                    materialization_command = " ".join(
-                        split_materialization_command[:idx]
-                        + split_materialization_command[idx + 2 :]
-                    )
+                split_materialization_command = shlex.split(materialization_command)
+                _, non_selection_command_parts = parser.parse_known_args(
+                    split_materialization_command
+                )
+                materialization_command = " ".join(non_selection_command_parts)
 
             job_commands[job_materialization_command_step] = (
                 f"{materialization_command} {' '.join(dbt_options)}".strip()
