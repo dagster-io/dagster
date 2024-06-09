@@ -38,6 +38,7 @@ setup(
         "urllib3<2",  # docker version pinned above requires this but has no pin
         "lazy_object_proxy",
         "setuptools<71.0.0",
+        "pendulum",
     ],
     project_urls={
         # airflow will embed a link this in the providers page UI
