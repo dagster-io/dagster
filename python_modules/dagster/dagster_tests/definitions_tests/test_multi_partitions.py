@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import pendulum
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -24,6 +23,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindow, get_tim
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
+from dagster._seven import create_datetime
 
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -480,14 +480,8 @@ def test_context_partition_time_window():
             assert False, "expected a time component in the partitions definition"
 
         time_window = TimeWindow(
-            start=pendulum.instance(
-                datetime(year=2020, month=1, day=1),
-                tz=time_partition.timezone,
-            ),
-            end=pendulum.instance(
-                datetime(year=2020, month=1, day=2),
-                tz=time_partition.timezone,
-            ),
+            start=create_datetime(year=2020, month=1, day=1, tz=time_partition.timezone),
+            end=create_datetime(year=2020, month=1, day=2, tz=time_partition.timezone),
         )
         assert context.partition_time_window == time_window
         return 1

@@ -14,7 +14,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._core.types.dagster_type import resolve_dagster_type
-from pendulum import datetime
+from dagster._seven import create_datetime
 
 resource_config = {
     "database": "database_abc",
@@ -152,12 +152,14 @@ def test_asset_out_partitioned():
     asset_key = AssetKey(["schema1", "table1"])
     partitions_def = DailyPartitionsDefinition(start_date="2020-01-02")
     partitions_def.time_window_for_partition_key = MagicMock(
-        return_value=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3))
+        return_value=TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3))
     )
     output_context = MagicMock(
         asset_key=asset_key,
         resource_config=resource_config,
-        asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+        asset_partitions_time_window=TimeWindow(
+            create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)
+        ),
         definition_metadata={"partition_expr": "abc"},
         asset_partitions_def=partitions_def,
     )
@@ -167,7 +169,9 @@ def test_asset_out_partitioned():
         upstream_output=output_context,
         resource_config=resource_config,
         dagster_type=resolve_dagster_type(int),
-        asset_partitions_time_window=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+        asset_partitions_time_window=TimeWindow(
+            create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)
+        ),
         definition_metadata=None,
         asset_partitions_def=partitions_def,
     )
@@ -180,7 +184,7 @@ def test_asset_out_partitioned():
         table="table1",
         partition_dimensions=[
             TablePartitionDimension(
-                partitions=TimeWindow(datetime(2020, 1, 2), datetime(2020, 1, 3)),
+                partitions=TimeWindow(create_datetime(2020, 1, 2), create_datetime(2020, 1, 3)),
                 partition_expr="abc",
             )
         ],
