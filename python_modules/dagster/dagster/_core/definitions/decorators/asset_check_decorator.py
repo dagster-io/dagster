@@ -262,31 +262,7 @@ def asset_check(
             fn=fn,
         )
 
-        # op_required_resource_keys = builder.required_resource_keys
-
-        # out = Out(dagster_type=None)
-
-        # old_op_def = _Op(
-        #     name=spec.get_python_identifier(),
-        #     ins=dict(named_in_by_asset_key.values()),
-        #     out=out,
-        #     # Any resource requirements specified as arguments will be identified as
-        #     # part of the Op definition instantiation
-        #     required_resource_keys=op_required_resource_keys,
-        #     tags={
-        #         **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
-        #         **(op_tags or {}),
-        #     },
-        #     config_schema=config_schema,
-        #     retry_policy=retry_policy,
-        # )(fn)
-
         op_def = builder.create_op_definition()
-
-        # check.invariant(
-        #     [od.name for od in old_op_def.output_defs] == [od.name for od in op_def.output_defs],
-        #     f"Comparing {old_op_def.output_defs} to {op_def.output_defs}",
-        # )
 
         return AssetChecksDefinition.create(
             keys_by_input_name={
