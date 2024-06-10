@@ -5,6 +5,11 @@ export type QueryResultData<DataType> = {
   called: boolean;
 };
 
+/**
+ * Don't use this function, its an awkward API really meant just for the RunTimeline
+ * setQueryData doesn't actually set any data, you have to do it yourself.
+ * In the case of the RunTimeline it doesn't set any data because it persists it to a cache instead
+ */
 export async function fetchPaginatedBucketData<BucketType, DataType, CursorType, ErrorType>({
   buckets,
   fetchData,
