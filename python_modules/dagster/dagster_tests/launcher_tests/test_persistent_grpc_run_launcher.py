@@ -151,9 +151,9 @@ def test_run_from_pending_repository():
                     asset_selection=None,
                     op_selection=None,
                     asset_check_selection=None,
-                    asset_job_partitions_def=code_location.get_asset_job_partitions_def(
-                        external_job
-                    ),
+                    asset_graph=code_location.get_repository(
+                        external_job.repository_handle.repository_name
+                    ).asset_graph,
                 )
 
                 run_id = dagster_run.run_id

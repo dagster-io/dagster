@@ -110,7 +110,9 @@ def create_valid_pipeline_run(
         status=DagsterRunStatus.NOT_STARTED,
         external_job_origin=external_pipeline.get_external_origin(),
         job_code_origin=external_pipeline.get_python_origin(),
-        asset_job_partitions_def=code_location.get_asset_job_partitions_def(external_pipeline),
+        asset_graph=code_location.get_repository(
+            external_pipeline.repository_handle.repository_name
+        ).asset_graph,
     )
 
     return dagster_run

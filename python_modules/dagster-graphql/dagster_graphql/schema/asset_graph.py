@@ -7,7 +7,7 @@ from dagster import (
     _check as check,
 )
 from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer, ChangeReason
-from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
@@ -950,7 +950,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         job_names = {
             job_name
             for job_name in self._external_asset_node.job_names
-            if not job_name.startswith(ASSET_BASE_JOB_PREFIX)
+            if not job_name.startswith(ASSET_BASE_JOB_NAME)
         }
 
         results = []
