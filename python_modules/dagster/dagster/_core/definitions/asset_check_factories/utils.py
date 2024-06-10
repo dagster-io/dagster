@@ -61,7 +61,7 @@ def ensure_no_duplicate_assets(
     )
 
 
-def _asset_to_keys_iterable(
+def asset_to_keys_iterable(
     asset: Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset],
 ) -> Iterator[AssetKey]:
     if isinstance(asset, AssetsDefinition):
@@ -76,7 +76,7 @@ def assets_to_keys(
     assets: Sequence[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]],
 ) -> Sequence[AssetKey]:
     """Converts the provided assets to a sequence of their contained AssetKeys."""
-    return [asset_key for asset in assets for asset_key in _asset_to_keys_iterable(asset)]
+    return [asset_key for asset in assets for asset_key in asset_to_keys_iterable(asset)]
 
 
 def ensure_no_duplicate_asset_checks(
