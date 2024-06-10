@@ -3,6 +3,7 @@ import sys
 import tempfile
 from unittest import mock
 
+import pendulum
 import pytest
 from dagster import DagsterEventType, graph, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
@@ -175,6 +176,54 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
         )
         logs = adls2_object.download_blob().readall().decode("utf-8")
         assert logs == "hello hello"
+
+
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_get_log_keys_for_log_key_prefix(
+    mock_create_blob_client, storage_account, container, credential
+):
+    evaluation_time = pendulum.now()
+    blob_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = AzureBlobComputeLogManager(
+            storage_account=storage_account,
+            container=container,
+            prefix=blob_prefix,
+            local_dir=temp_dir,
+            secret_key=credential,
+        )
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int, io_type: ComputeIOType):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with manager.open_log_stream(full_log_key, io_type) as f:
+                f.write("foo")
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert len(log_keys) == 0
+
+    for i in range(4):
+        write_log_file(i, ComputeIOType.STDERR)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
+    # write a different file type
+    write_log_file(4, ComputeIOType.STDOUT)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
 
 
 class TestAzureComputeLogManager(TestCapturedLogManager):
