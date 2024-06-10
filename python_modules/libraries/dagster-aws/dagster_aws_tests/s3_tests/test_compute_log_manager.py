@@ -230,6 +230,17 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
         [*log_key_prefix, "3"],
     ]
 
+    # write a different file type
+    write_log_file(4, ComputeIOType.STDOUT)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
 
 class TestS3ComputeLogManager(TestCapturedLogManager):
     __test__ = True
