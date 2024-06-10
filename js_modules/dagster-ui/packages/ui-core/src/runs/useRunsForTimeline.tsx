@@ -193,7 +193,14 @@ export const useRunsForTimeline = ({
     });
   }, [batchLimit, buckets, client, completedRunsCache, runsFilter]);
 
+  // If the user paginates backwards quickly then there will be multiple outstanding fetches
+  // but we only want the most recent fetch to change loading back to false.
+  // fetchIdRef will help us tell if this fetch is the most recent fetch.
+  const loadIdRef = useRef(0);
+  const ongoingRunFetchIdRef = useRef(0);
+  const futureTicksFetchIdRef = useRef(0);
   const fetchOngoingRunsQueryData = useCallback(async () => {
+    const id = ++ongoingRunFetchIdRef.current;
     setOngoingRunsData(({data}) => ({
       data, // preserve existing data
       loading: true,
@@ -239,19 +246,23 @@ export const useRunsForTimeline = ({
           };
         },
       });
-      setOngoingRunsData({
-        data,
-        loading: false,
-        called: true,
-        error: undefined,
-      });
+      if (ongoingRunFetchIdRef.current === id) {
+        setOngoingRunsData({
+          data,
+          loading: false,
+          called: true,
+          error: undefined,
+        });
+      }
     } catch (e) {
-      setOngoingRunsData(({data}) => ({
-        data, // preserve existing data
-        loading: false,
-        called: true,
-        error: e,
-      }));
+      if (ongoingRunFetchIdRef.current === id) {
+        setOngoingRunsData(({data}) => ({
+          data, // preserve existing data
+          loading: false,
+          called: true,
+          error: e,
+        }));
+      }
     }
   }, [client, runsFilter, batchLimit]);
 
@@ -260,6 +271,7 @@ export const useRunsForTimeline = ({
   >({data: undefined, called: true, loading: true, error: undefined});
 
   const fetchFutureTicks = useCallback(async () => {
+    const id = ++futureTicksFetchIdRef.current;
     const queryData = await client.query<FutureTicksQuery, FutureTicksQueryVariables>({
       query: FUTURE_TICKS_QUERY,
       variables: showTicks
@@ -267,7 +279,9 @@ export const useRunsForTimeline = ({
         : {tickCursor: startSec, ticksUntil: startSec},
       fetchPolicy: 'no-cache',
     });
-    setFutureTicksQueryData({...queryData, called: true});
+    if (id === futureTicksFetchIdRef.current) {
+      setFutureTicksQueryData({...queryData, called: true});
+    }
   }, [startSec, _end, client, showTicks]);
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
@@ -502,13 +516,9 @@ export const useRunsForTimeline = ({
   }
   lastRangeMs.current = rangeMs;
 
-  const loadingRef = useRef(0);
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
-      // If the user paginates backwards quickly then there will be multiple outstanding fetches
-      // but we only want the most recent fetch to change loading back to false.
-      // loadingRef will help us tell if this fetch is the most recent fetch.
-      const loadId = ++loadingRef.current;
+      const loadId = ++loadIdRef.current;
       setLoading(true);
       await Promise.all([
         // Only fetch ongoing runs once every 30 seconds
@@ -526,7 +536,7 @@ export const useRunsForTimeline = ({
         })(),
         fetchCompletedRunsQueryData(),
       ]);
-      if (loadId === loadingRef.current) {
+      if (loadId === loadIdRef.current) {
         setLoading(false);
       }
     }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
