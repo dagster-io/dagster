@@ -3,12 +3,14 @@ import {gql} from '@apollo/client';
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
+import {RESOURCE_ENTRY_FRAGMENT} from '../resources/WorkspaceResourcesRoot';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 
 export const LOCATION_WORKSPACE_QUERY = gql`
   query LocationWorkspaceQuery($name: String!) {
     workspaceLocationEntryOrError(name: $name) {
       ...WorkspaceLocationNode
+      ...PythonErrorFragment
     }
   }
 
@@ -82,7 +84,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     }
     allTopLevelResourceDetails {
       id
-      name
+      ...ResourceEntryFragment
     }
     ...RepositoryInfoFragment
   }
@@ -98,6 +100,7 @@ export const LOCATION_WORKSPACE_QUERY = gql`
       id
       selectorId
       status
+      ...BasicInstigationStateFragment
     }
   }
 
@@ -122,6 +125,8 @@ export const LOCATION_WORKSPACE_QUERY = gql`
   ${SENSOR_SWITCH_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
+  ${RESOURCE_ENTRY_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const CODE_LOCATION_STATUS_QUERY = gql`

@@ -9,7 +9,16 @@ export type LocationWorkspaceQueryVariables = Types.Exact<{
 export type LocationWorkspaceQuery = {
   __typename: 'Query';
   workspaceLocationEntryOrError:
-    | {__typename: 'PythonError'}
+    | {
+        __typename: 'PythonError';
+        message: string;
+        stack: Array<string>;
+        errorChain: Array<{
+          __typename: 'ErrorChainLink';
+          isExplicitLink: boolean;
+          error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+        }>;
+      }
     | {
         __typename: 'WorkspaceLocationEntry';
         id: string;
@@ -65,6 +74,8 @@ export type LocationWorkspaceQuery = {
                     id: string;
                     selectorId: string;
                     status: Types.InstigationStatus;
+                    hasStartPermission: boolean;
+                    hasStopPermission: boolean;
                   };
                 }>;
                 sensors: Array<{
@@ -98,6 +109,16 @@ export type LocationWorkspaceQuery = {
                   __typename: 'ResourceDetails';
                   id: string;
                   name: string;
+                  description: string | null;
+                  resourceType: string;
+                  schedulesUsing: Array<string>;
+                  sensorsUsing: Array<string>;
+                  parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+                  assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+                  jobsOpsUsing: Array<{
+                    __typename: 'JobWithOps';
+                    job: {__typename: 'Job'; id: string};
+                  }>;
                 }>;
                 location: {__typename: 'RepositoryLocation'; id: string; name: string};
                 displayMetadata: Array<{
@@ -167,6 +188,8 @@ export type WorkspaceLocationNodeFragment = {
               id: string;
               selectorId: string;
               status: Types.InstigationStatus;
+              hasStartPermission: boolean;
+              hasStopPermission: boolean;
             };
           }>;
           sensors: Array<{
@@ -200,6 +223,13 @@ export type WorkspaceLocationNodeFragment = {
             __typename: 'ResourceDetails';
             id: string;
             name: string;
+            description: string | null;
+            resourceType: string;
+            schedulesUsing: Array<string>;
+            sensorsUsing: Array<string>;
+            parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+            assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+            jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
           }>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
@@ -250,6 +280,8 @@ export type WorkspaceLocationFragment = {
         id: string;
         selectorId: string;
         status: Types.InstigationStatus;
+        hasStartPermission: boolean;
+        hasStopPermission: boolean;
       };
     }>;
     sensors: Array<{
@@ -279,7 +311,18 @@ export type WorkspaceLocationFragment = {
       pipelineName: string;
     }>;
     assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
-    allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; id: string; name: string}>;
+    allTopLevelResourceDetails: Array<{
+      __typename: 'ResourceDetails';
+      id: string;
+      name: string;
+      description: string | null;
+      resourceType: string;
+      schedulesUsing: Array<string>;
+      sensorsUsing: Array<string>;
+      parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+      assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+      jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+    }>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
     displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
   }>;
@@ -310,6 +353,8 @@ export type WorkspaceRepositoryFragment = {
       id: string;
       selectorId: string;
       status: Types.InstigationStatus;
+      hasStartPermission: boolean;
+      hasStopPermission: boolean;
     };
   }>;
   sensors: Array<{
@@ -339,7 +384,18 @@ export type WorkspaceRepositoryFragment = {
     pipelineName: string;
   }>;
   assetGroups: Array<{__typename: 'AssetGroup'; id: string; groupName: string}>;
-  allTopLevelResourceDetails: Array<{__typename: 'ResourceDetails'; id: string; name: string}>;
+  allTopLevelResourceDetails: Array<{
+    __typename: 'ResourceDetails';
+    id: string;
+    name: string;
+    description: string | null;
+    resourceType: string;
+    schedulesUsing: Array<string>;
+    sensorsUsing: Array<string>;
+    parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
+    assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
+    jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+  }>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
 };
@@ -357,6 +413,8 @@ export type WorkspaceScheduleFragment = {
     id: string;
     selectorId: string;
     status: Types.InstigationStatus;
+    hasStartPermission: boolean;
+    hasStopPermission: boolean;
   };
 };
 

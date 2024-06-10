@@ -32,6 +32,7 @@ import {SENSOR_TYPE_META} from '../workspace/VirtualizedSensorRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
+import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 function toSetFilterValue(type: SensorType) {
   const label = SENSOR_TYPE_META[type].name;
@@ -54,7 +55,12 @@ const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetF
 const ALL_SENSOR_TYPE_FILTERS = Object.values(SENSOR_TYPE_TO_FILTER);
 
 export const OverviewSensors = () => {
-  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
 
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -104,11 +110,20 @@ export const OverviewSensors = () => {
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const repoBuckets = useMemo(() => {
+    const cachedEntries = Object.values(cachedData).filter(
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
+    );
+    const workspaceOrError = data?.workspaceOrError;
+    const entries =
+      workspaceOrError?.__typename === 'Workspace'
+        ? workspaceOrError.locationEntries
+        : cachedEntries;
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(data).filter(({repoAddress}) =>
+    return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, visibleRepos]);
+  }, [data, cachedData, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
 
@@ -340,12 +355,15 @@ export const OverviewSensors = () => {
   );
 };
 
-const buildBuckets = (data?: null | OverviewSensorsQuery) => {
-  if (data?.workspaceOrError.__typename !== 'Workspace') {
-    return [];
-  }
-
-  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+const buildBuckets = (
+  locationEntries:
+    | Extract<
+        OverviewSensorsQuery['workspaceOrError'],
+        {__typename: 'Workspace'}
+      >['locationEntries']
+    | Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
+) => {
+  const entries = locationEntries.map((entry) => entry.locationOrLoadError);
 
   const buckets = [];
 

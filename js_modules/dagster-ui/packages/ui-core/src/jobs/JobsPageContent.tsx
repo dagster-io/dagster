@@ -22,15 +22,21 @@ import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {OverviewJobsTable} from '../overview/OverviewJobsTable';
 import {sortRepoBuckets} from '../overview/sortRepoBuckets';
 import {visibleRepoKeys} from '../overview/visibleRepoKeys';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const JobsPageContent = () => {
-  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -45,18 +51,28 @@ export const JobsPageContent = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewJobsQuery');
   const {data, loading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
   const repoBuckets = useMemo(() => {
+    const cachedEntries = Object.values(cachedData).filter(
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
+    );
+    const workspaceOrError = data?.workspaceOrError;
+    const entries =
+      workspaceOrError?.__typename === 'Workspace'
+        ? workspaceOrError.locationEntries
+        : cachedEntries;
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(data).filter(({repoAddress}) =>
+    return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, visibleRepos]);
+  }, [cachedData, data, visibleRepos]);
+
+  useBlockTraceUntilTrue('OverviewJobs', !!data || !workspaceLoading);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -169,12 +185,12 @@ type RepoBucket = {
   }[];
 };
 
-const buildBuckets = (data?: OverviewJobsQuery): RepoBucket[] => {
-  if (data?.workspaceOrError.__typename !== 'Workspace') {
-    return [];
-  }
-
-  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+const buildBuckets = (
+  locationEntries:
+    | Extract<OverviewJobsQuery['workspaceOrError'], {__typename: 'Workspace'}>['locationEntries']
+    | Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
+): RepoBucket[] => {
+  const entries = locationEntries.map((entry) => entry.locationOrLoadError);
   const buckets = [];
 
   for (const entry of entries) {
