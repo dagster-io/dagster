@@ -463,7 +463,6 @@ class PartitionBackfill(
     def from_asset_graph_subset(
         cls,
         backfill_id: str,
-        asset_graph: BaseAssetGraph,
         backfill_timestamp: float,
         tags: Mapping[str, str],
         dynamic_partitions_store: DynamicPartitionsStore,
@@ -482,7 +481,7 @@ class PartitionBackfill(
             backfill_timestamp=backfill_timestamp,
             serialized_asset_backfill_data=None,
             asset_backfill_data=asset_backfill_data,
-            asset_selection=asset_graph_subset.asset_keys,
+            asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
         )

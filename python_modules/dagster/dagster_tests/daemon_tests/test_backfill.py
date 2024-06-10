@@ -2360,3 +2360,122 @@ def test_asset_backfill_logs(
         except json.JSONDecodeError:
             continue
         assert record_dict.get("msg")
+
+
+def test_asset_backfill_from_asset_graph_subset(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    del external_repo
+
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+
+    asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
+        asset_partitions_set={
+            AssetKeyPartitionKey(ak, pk) for ak in asset_selection for pk in partition_keys
+        },
+        asset_graph=workspace_context.create_request_context().asset_graph,
+    )
+    instance.add_backfill(
+        PartitionBackfill.from_asset_graph_subset(
+            backfill_id="backfill_from_asset_graph_subset",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            dynamic_partitions_store=instance,
+            title=None,
+            description=None,
+            asset_graph_subset=asset_graph_subset,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("backfill_from_asset_graph_subset")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 3
+    runs = reversed(list(instance.get_runs()))
+    for run in runs:
+        assert run.tags[BACKFILL_ID_TAG] == "backfill_from_asset_graph_subset"
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
+        assert step_succeeded(instance, run, "foo")
+        assert step_succeeded(instance, run, "reusable")
+        assert step_succeeded(instance, run, "bar")
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill("backfill_from_asset_graph_subset")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
+
+
+def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    del external_repo
+
+    static_partition_keys = static_partitions.get_partition_keys()
+    static_asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    static_asset_partition_set = {
+        AssetKeyPartitionKey(ak, pk)
+        for ak in static_asset_selection
+        for pk in static_partition_keys
+    }
+
+    time_asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
+    time_target_partitions = daily_partitions_def.get_partition_keys()[0:5]
+    time_asset_partition_set = {
+        AssetKeyPartitionKey(ak, pk) for ak in time_asset_selection for pk in time_target_partitions
+    }
+
+    asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
+        asset_partitions_set=static_asset_partition_set | time_asset_partition_set,
+        asset_graph=workspace_context.create_request_context().asset_graph,
+    )
+    instance.add_backfill(
+        PartitionBackfill.from_asset_graph_subset(
+            backfill_id="backfill_from_asset_graph_subset_with_static_and_time_partitions",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=pendulum.now().timestamp(),
+            dynamic_partitions_store=instance,
+            title=None,
+            description=None,
+            asset_graph_subset=asset_graph_subset,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(
+        "backfill_from_asset_graph_subset_with_static_and_time_partitions"
+    )
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 8
+    wait_for_all_runs_to_start(instance, timeout=30)
+    assert instance.get_runs_count() == 8
+    wait_for_all_runs_to_finish(instance, timeout=30)
+
+    assert instance.get_runs_count() == 8
+    runs = reversed(list(instance.get_runs()))
+    for run in runs:
+        assert (
+            run.tags[BACKFILL_ID_TAG]
+            == "backfill_from_asset_graph_subset_with_static_and_time_partitions"
+        )
+        assert run.tags["custom_tag_key"] == "custom_tag_value"
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill(
+        "backfill_from_asset_graph_subset_with_static_and_time_partitions"
+    )
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
