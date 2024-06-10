@@ -365,13 +365,10 @@ def multi_asset_check(
 
         return AssetChecksDefinition.create(
             node_def=op_def,
-            resource_defs=wrap_resources_for_execution(resource_defs),
-            keys_by_input_name={
-                input_tuple[0]: asset_key
-                for asset_key, input_tuple in named_ins_by_asset_key.items()
-            },
-            check_specs_by_output_name={spec.get_python_identifier(): spec for spec in specs},
-            can_subset=can_subset,
+            resource_defs=builder.args.op_def_resource_defs,
+            keys_by_input_name=builder.asset_keys_by_input_name,
+            check_specs_by_output_name=builder.check_specs_by_output_name,
+            can_subset=builder.args.can_subset,
         )
 
     return inner
