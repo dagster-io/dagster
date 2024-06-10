@@ -10,7 +10,7 @@ export const LeftNav = () => {
 
   return (
     <LeftNavContainer $open={nav.isOpen} $smallScreen={nav.isSmallScreen}>
-      <LeftNavRepositorySection />
+      {nav.isOpen ? <LeftNavRepositorySection /> : null}
     </LeftNavContainer>
   );
 };
