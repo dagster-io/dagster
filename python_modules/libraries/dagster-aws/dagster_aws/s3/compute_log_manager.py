@@ -272,6 +272,9 @@ class S3ComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):
         results = []
         list_key_prefix = list(log_key_prefix)
 
+        if objects["KeyCount"] == 0:
+            return []
+
         for obj in objects["Contents"]:
             full_key = obj["Key"]
             filename, obj_io_type = full_key.split("/")[-1].split(".")

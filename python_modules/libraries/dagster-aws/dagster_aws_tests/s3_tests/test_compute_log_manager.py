@@ -219,6 +219,9 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
             with manager.open_log_stream(full_log_key, io_type) as f:
                 f.write("foo")
 
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert len(log_keys) == 0
+
     for i in range(4):
         write_log_file(i, ComputeIOType.STDERR)
 
