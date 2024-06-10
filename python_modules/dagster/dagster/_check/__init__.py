@@ -42,6 +42,8 @@ T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 
+TTypeOrTupleOfTTypes = Union[Type[T], Tuple[Type[T], ...]]
+
 # This module contains runtime type-checking code used throughout Dagster. It is divided into three
 # sections:
 #
@@ -740,9 +742,9 @@ def iterator_param(
 def list_param(
     obj: object,
     param_name: str,
-    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> List[Any]:
+) -> List[T]:
     if not isinstance(obj, list):
         raise _param_type_mismatch_exception(obj, list, param_name, additional_message)
 
@@ -755,9 +757,9 @@ def list_param(
 def opt_list_param(
     obj: object,
     param_name: str,
-    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> List[Any]:
+) -> List[T]:
     """Ensures argument obj is a list or None; in the latter case, instantiates an empty list
     and returns it.
 
@@ -779,7 +781,7 @@ def opt_list_param(
 def opt_nullable_list_param(
     obj: None,
     param_name: str,
-    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = ...,
     additional_message: Optional[str] = None,
 ) -> None: ...
 
@@ -788,7 +790,7 @@ def opt_nullable_list_param(
 def opt_nullable_list_param(
     obj: List[T],
     param_name: str,
-    of_type: Optional[TypeOrTupleOfTypes] = ...,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = ...,
     additional_message: Optional[str] = None,
 ) -> List[T]: ...
 
@@ -796,9 +798,9 @@ def opt_nullable_list_param(
 def opt_nullable_list_param(
     obj: object,
     param_name: str,
-    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> Optional[List]:
+) -> Optional[List[T]]:
     """Ensures argument obj is a list or None. Returns None if input is None.
 
     If the of_type argument is provided, also ensures that list items conform to the type specified
@@ -876,9 +878,6 @@ def opt_list_elem(
         return value
 
     return _check_iterable_items(value, of_type, "list")
-
-
-TTypeOrTupleOfTTypes = Union[Type[T], Tuple[Type[T], ...]]
 
 
 def is_list(
