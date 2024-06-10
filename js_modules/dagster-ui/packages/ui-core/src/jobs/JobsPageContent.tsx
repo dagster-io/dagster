@@ -72,7 +72,7 @@ export const JobsPageContent = () => {
     );
   }, [cachedData, data, visibleRepos]);
 
-  useBlockTraceUntilTrue('WorkspaceJobs', !!data || !workspaceLoading);
+  useBlockTraceUntilTrue('OverviewJobs', !!data || !workspaceLoading);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
