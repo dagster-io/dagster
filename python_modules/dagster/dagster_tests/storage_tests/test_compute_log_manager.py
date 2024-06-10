@@ -109,6 +109,11 @@ class BrokenCapturedLogManager(CapturedLogManager, ComputeLogManager):
     def on_unsubscribe(self, subscription):
         pass
 
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
+    ) -> Sequence[Sequence[str]]:
+        return []
+
 
 class BrokenComputeLogManager(ComputeLogManager):
     def __init__(self, fail_on_setup=False, fail_on_teardown=False):
