@@ -169,7 +169,7 @@ const ExecutionRunTimeline = ({
   });
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
-  const {jobs, initialLoading} = useDeferredValue(runsForTimelineRet);
+  const {jobs, loading} = useDeferredValue(runsForTimelineRet);
 
   // Unwrap the timeline to show runs on separate rows, and sort them explicitly by
   // newest => oldest so that they match what you see in the "List" tab.
@@ -192,7 +192,7 @@ const ExecutionRunTimeline = ({
       </Box>
       <ErrorBoundary region="timeline">
         <ExecutionTimeline
-          loading={initialLoading}
+          loading={loading}
           rangeMs={rangeMs}
           annotations={annotations}
           runs={runs}

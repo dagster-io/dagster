@@ -53,16 +53,20 @@ describe('fetchPaginatedBucketData', () => {
       setQueryDataMock.mock.calls[0][0]!({data: [{id: 1}], hasMore: false, cursor: undefined}),
     ).toEqual({
       called: true,
+      cursor: undefined,
       data: [{id: 1}],
       error: undefined,
+      hasMore: false,
       loading: true,
     });
 
-    expect(setQueryDataMock.mock.calls[1][0]).toEqual({
+    const data = [{id: 999}, {id: 999}];
+
+    expect(setQueryDataMock.mock.calls[1][0]({data})).toEqual({
       loading: false,
       called: true,
       error: undefined,
-      data: [{id: 999}, {id: 999}],
+      data,
     });
   });
 
@@ -124,14 +128,13 @@ describe('fetchPaginatedBucketData', () => {
     expect(fetchDataMock).toHaveBeenCalledWith('bucket1', undefined);
     expect(fetchDataMock).toHaveBeenCalledWith('bucket1', 'cursor1');
 
-    expect(setQueryDataMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: [...dataPage1, ...dataPage2],
-        loading: false,
-        called: true,
-        error: undefined,
-      }),
-    );
+    const calls = setQueryDataMock.mock.calls;
+    expect(calls.length).toEqual(2);
+    expect(calls[calls.length - 1]![0]({})).toEqual({
+      loading: false,
+      called: true,
+      error: undefined,
+    });
   });
 
   it('should handle fetchData returning an error', async () => {
@@ -152,7 +155,9 @@ describe('fetchPaginatedBucketData', () => {
     });
 
     const data = [{id: 1}];
-    expect(setQueryDataMock.mock.calls[1][0]!({data})).toEqual({
+    const calls = setQueryDataMock.mock.calls;
+    expect(calls.length).toEqual(2);
+    expect(calls[calls.length - 1]![0]({data})).toEqual({
       data,
       loading: false,
       called: true,
@@ -177,13 +182,13 @@ describe('fetchPaginatedBucketData', () => {
       setQueryData: setQueryDataMock,
     });
 
-    expect(setQueryDataMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data,
-        loading: false,
-        called: true,
-        error: undefined,
-      }),
-    );
+    const calls = setQueryDataMock.mock.calls;
+    expect(calls.length).toEqual(2);
+    expect(calls[calls.length - 1]![0]({data})).toEqual({
+      data,
+      loading: false,
+      called: true,
+      error: undefined,
+    });
   });
 });

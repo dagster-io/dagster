@@ -99,13 +99,13 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
   const runsForTimelineRet = useRunsForTimeline({rangeMs});
 
   // Use deferred value to allow paginating quickly with the UI feeling more responsive.
-  const {jobs, initialLoading, refreshState} = useDeferredValue(runsForTimelineRet);
+  const {jobs, loading, refreshState} = useDeferredValue(runsForTimelineRet);
 
   React.useEffect(() => {
-    if (!initialLoading) {
+    if (!loading) {
       trace.endTrace();
     }
-  }, [initialLoading, trace]);
+  }, [loading, trace]);
 
   const visibleJobKeys = React.useMemo(() => {
     const searchLower = searchValue.toLocaleLowerCase().trim();
@@ -160,7 +160,7 @@ export const OverviewTimelineRoot = ({Header, TabButton}: Props) => {
         </Box>
       </Box>
       <ErrorBoundary region="timeline">
-        <RunTimeline loading={initialLoading} rangeMs={rangeMs} jobs={visibleJobs} />
+        <RunTimeline loading={loading} rangeMs={rangeMs} jobs={visibleJobs} />
       </ErrorBoundary>
     </>
   );

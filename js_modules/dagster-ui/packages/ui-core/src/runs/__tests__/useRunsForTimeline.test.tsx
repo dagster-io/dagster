@@ -55,24 +55,24 @@ const mockCompletedRuns = (variables: any, result: any) => ({
   result,
 });
 
+const defaultOngoingRun = buildRun({
+  id: '2',
+  pipelineName: 'pipeline2',
+  repositoryOrigin: buildRepositoryOrigin({
+    id: '2',
+    repositoryName: 'repo2',
+    repositoryLocationName: 'location2',
+  }),
+  startTime: 1,
+  endTime: 2,
+  status: RunStatus.STARTED,
+});
+
 const mockOngoingRuns = ({
   limit = 500,
   cursor,
   runsFilter,
-  results = [
-    {
-      id: '2',
-      pipelineName: 'pipeline2',
-      repositoryOrigin: {
-        id: '2',
-        repositoryName: 'repo2',
-        repositoryLocationName: 'location2',
-      },
-      startTime: 1,
-      endTime: 2,
-      status: 'STARTED',
-    },
-  ],
+  results = [defaultOngoingRun],
 }: {
   limit?: number;
   results?: any[];
@@ -223,13 +223,16 @@ describe('useRunsForTimeline', () => {
 
     // Initial state
     expect(result.current.jobs).toEqual([]);
-    expect(result.current.initialLoading).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     await waitFor(() => {
-      expect(result.current.jobs).toHaveLength(buckets.length);
+      // Add 1 for the ongoing run
+      expect(result.current.jobs).toHaveLength(buckets.length + 1);
     });
 
-    expect(result.current.jobs[0]).toEqual({
+    const pipeline0 = result.current.jobs.find((job) => job.jobName === 'pipeline0');
+
+    expect(pipeline0).toEqual({
       key: 'pipeline0-repo1@repo1',
       jobName: 'pipeline0',
       jobType: 'job',
@@ -238,7 +241,7 @@ describe('useRunsForTimeline', () => {
       runs: [
         {
           id: `1-0`,
-          status: 'SUCCESS',
+          status: RunStatus.SUCCESS,
           startTime: buckets[0]![0] * 1000,
           endTime: buckets[0]![1] * 1000,
         },
@@ -293,6 +296,7 @@ describe('useRunsForTimeline', () => {
               }),
               startTime: initialInterval[0],
               endTime: initialInterval[1],
+              updateTime: initialInterval[1],
               status: RunStatus.SUCCESS,
             }),
           ],
@@ -314,6 +318,7 @@ describe('useRunsForTimeline', () => {
               }),
               startTime: extendedInterval[0],
               endTime: extendedInterval[1],
+              updateTime: extendedInterval[1],
               status: RunStatus.SUCCESS,
             }),
           ],
@@ -352,16 +357,16 @@ describe('useRunsForTimeline', () => {
 
     // Initial state
     expect(result.current.jobs).toEqual([]);
-    expect(result.current.initialLoading).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     // Wait for the hook to update with initial interval data
     await waitFor(() => {
-      expect(result.current.initialLoading).toBe(false);
+      expect(result.current.loading).toBe(false);
     });
 
     // Verify the initial data
-    expect(result.current.jobs).toHaveLength(1);
-    expect(result.current.initialLoading).toBe(false);
+    expect(result.current.jobs).toHaveLength(2);
+    expect(result.current.loading).toBe(false);
     expect(result.current.jobs[0]!.runs).toHaveLength(1);
 
     // Rerender hook with extended interval
@@ -418,6 +423,7 @@ describe('useRunsForTimeline', () => {
               }),
               startTime: updatedAfter,
               endTime: updatedBefore,
+              updateTime: updatedBefore,
               status: RunStatus.SUCCESS,
             }),
           ],
@@ -439,6 +445,7 @@ describe('useRunsForTimeline', () => {
               }),
               startTime: updatedAfter,
               endTime: updatedBefore,
+              updateTime: updatedBefore,
               status: RunStatus.SUCCESS,
             }),
           ],
@@ -478,10 +485,10 @@ describe('useRunsForTimeline', () => {
 
     // Initial state
     expect(result.current.jobs).toEqual([]);
-    expect(result.current.initialLoading).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     await waitFor(() => {
-      expect(result.current.jobs).toHaveLength(1);
+      expect(result.current.jobs).toHaveLength(2);
     });
 
     expect(result.current.jobs[0]!.runs).toHaveLength(2);
@@ -540,6 +547,7 @@ describe('useRunsForTimeline', () => {
                   }),
                   startTime: initialRange[0],
                   endTime: initialRange[1],
+                  updateTime: initialRange[1],
                   status: RunStatus.SUCCESS,
                 }),
               ],
@@ -549,7 +557,7 @@ describe('useRunsForTimeline', () => {
       ),
     ];
 
-    mocks.push(mockOngoingRuns(), mockFutureTicks(initialRange[0], initialRange[1]));
+    mocks.push(mockOngoingRuns({results: []}), mockFutureTicks(initialRange[0], initialRange[1]));
 
     const wrapper = ({children}: {children: ReactNode}) => (
       <AppContext.Provider value={contextWithCacheId}>
@@ -581,6 +589,7 @@ describe('useRunsForTimeline', () => {
                   }),
                   startTime: initialRange[0],
                   endTime: initialRange[1],
+                  updateTime: initialRange[1],
                   status: RunStatus.SUCCESS,
                 }),
               ],
@@ -599,13 +608,13 @@ describe('useRunsForTimeline', () => {
 
     // Initial state
     expect(result.current.jobs).toEqual([]);
-    expect(result.current.initialLoading).toBe(true);
+    expect(result.current.loading).toBe(true);
 
     await waitFor(() => {
       expect(result.current.jobs).toHaveLength(1);
     });
 
-    expect(result.current.jobs[0]).toEqual({
+    expect(result.current.jobs.find((job) => job.jobName === 'pipeline0')).toEqual({
       key: 'pipeline0-repo1@repo1',
       jobName: 'pipeline0',
       jobType: 'job',
@@ -616,13 +625,13 @@ describe('useRunsForTimeline', () => {
           endTime: initialRange[1] * 1000,
           id: 'cached-run',
           startTime: initialRange[0] * 1000,
-          status: 'SUCCESS',
+          status: RunStatus.SUCCESS,
         },
         {
           endTime: initialRange[1] * 1000,
           id: '1-0',
           startTime: initialRange[0] * 1000,
-          status: 'SUCCESS',
+          status: RunStatus.SUCCESS,
         },
       ],
     });
