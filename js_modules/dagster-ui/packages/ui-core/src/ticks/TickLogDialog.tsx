@@ -85,7 +85,11 @@ export const QueryfulTickLogsTable = ({instigationSelector, tick}: TickLogTableP
       : undefined;
 
   if (events && events.length) {
-    return <InstigationEventLogTable events={events} />;
+    return (
+      <Box style={{height: 500}} flex={{direction: 'column'}}>
+        <InstigationEventLogTable events={events} />
+      </Box>
+    );
   }
 
   const tickStatus =

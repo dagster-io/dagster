@@ -1,9 +1,10 @@
 import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui-components';
-import {useContext} from 'react';
+import {useVirtualizer} from '@tanstack/react-virtual';
+import {useContext, useRef} from 'react';
 
 import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
-import {EventTypeColumn, Row, TimestampColumn} from '../runs/LogsRowComponents';
+import {EventTypeColumn, Row as LogsRow, TimestampColumn} from '../runs/LogsRowComponents';
 import {
   ColumnWidthsContext,
   ColumnWidthsProvider,
@@ -11,6 +12,7 @@ import {
   HeaderContainer,
   HeadersContainer,
 } from '../runs/LogsScrollingTableHeader';
+import {Container, Inner, Row} from '../ui/VirtualizedTable';
 
 const Headers = () => {
   const widths = useContext(ColumnWidthsContext);
@@ -20,45 +22,60 @@ const Headers = () => {
         width={widths.eventType}
         onResize={(width) => widths.onChange({...widths, eventType: width})}
       >
-        Event Type
+        Type
       </Header>
-      <HeaderContainer style={{flex: 1}}>Info</HeaderContainer>
       <Header
-        handleSide="left"
         width={widths.timestamp}
         onResize={(width) => widths.onChange({...widths, timestamp: width})}
       >
         Timestamp
       </Header>
+      <HeaderContainer style={{flex: 1}}>Event</HeaderContainer>
     </HeadersContainer>
   );
 };
 
-const InstigationEventLogRow = ({event}: {event: InstigationEventLogFragment}) => {
-  return (
-    <Row level={event.level} highlighted={false} style={{height: 'auto'}}>
-      <EventTypeColumn>
-        <span style={{marginLeft: 8}}>{event.level}</span>
-      </EventTypeColumn>
-      <Box padding={{horizontal: 12}} style={{flex: 1}}>
-        {event.message}
-      </Box>
-      <TimestampColumn time={event.timestamp} />
-    </Row>
-  );
-};
-
 export const InstigationEventLogTable = ({events}: {events: InstigationEventLogFragment[]}) => {
+  const parentRef = useRef<HTMLDivElement | null>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: events.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 28,
+    overscan: 10,
+  });
+  const totalHeight = rowVirtualizer.getTotalSize();
+  const items = rowVirtualizer.getVirtualItems();
+
   return (
     <ColumnWidthsProvider onWidthsChanged={() => {}}>
-      <div style={{height: 500, position: 'relative', zIndex: 0}}>
-        <Headers />
-        <div style={{height: 468, overflowY: 'auto'}}>
-          {events.map((event, idx) => (
-            <InstigationEventLogRow event={event} key={idx} />
-          ))}
-        </div>
-      </div>
+      <Headers />
+      <Container ref={parentRef} style={{position: 'relative'}}>
+        <Inner $totalHeight={totalHeight}>
+          {items.map(({index, key, size, start}) => {
+            const event = events[index]!;
+            return (
+              <Row key={key} $start={start} $height={size}>
+                <LogsRow
+                  level={event.level}
+                  highlighted={false}
+                  data-index={index}
+                  ref={rowVirtualizer.measureElement}
+                  style={{height: 'auto'}}
+                >
+                  <EventTypeColumn>
+                    <span style={{marginLeft: 8}}>{event.level}</span>
+                  </EventTypeColumn>
+                  <TimestampColumn time={event.timestamp} />
+                  <Box padding={{horizontal: 12, vertical: 4}} style={{flex: 1}}>
+                    {event.message}
+                  </Box>
+                </LogsRow>
+              </Row>
+            );
+          })}
+        </Inner>
+      </Container>
     </ColumnWidthsProvider>
   );
 };
