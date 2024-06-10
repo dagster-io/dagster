@@ -1,6 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, screen} from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import {act, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter} from 'react-router-dom';
 
 import * as Alerting from '../../../app/CustomAlertProvider';
@@ -28,7 +27,11 @@ describe('BackfillTable', () => {
 
     expect(screen.getByRole('table')).toBeVisible();
     const statusLabel = await screen.findByText('Failed');
-    await userEvent.click(statusLabel);
-    expect(Alerting.showCustomAlert).toHaveBeenCalled();
+    act(() => {
+      statusLabel.click();
+    });
+    await waitFor(() => {
+      expect(Alerting.showCustomAlert).toHaveBeenCalled();
+    });
   });
 });

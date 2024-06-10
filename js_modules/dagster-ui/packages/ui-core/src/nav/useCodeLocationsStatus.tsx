@@ -1,18 +1,14 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, ButtonLink, Colors} from '@dagster-io/ui-components';
-import {useCallback, useContext, useState} from 'react';
+import {useCallback, useContext, useLayoutEffect, useState} from 'react';
 import {useHistory} from 'react-router-dom';
+import {atom, useRecoilValue} from 'recoil';
 import styled from 'styled-components';
 
-import {
-  CodeLocationStatusQuery,
-  CodeLocationStatusQueryVariables,
-} from './types/useCodeLocationsStatus.types';
 import {showSharedToaster} from '../app/DomUtils';
-import {useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {RepositoryLocationLoadStatus} from '../graphql/types';
 import {StatusAndMessage} from '../instance/DeploymentStatusType';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {CodeLocationStatusQuery} from '../workspace/types/WorkspaceQueries.types';
 
 type LocationStatusEntry = {
   loadStatus: RepositoryLocationLoadStatus;
@@ -20,12 +16,15 @@ type LocationStatusEntry = {
   name: string;
 };
 
-const POLL_INTERVAL = 5 * 1000;
-
 type EntriesById = Record<string, LocationStatusEntry>;
 
-export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null => {
-  const {locationEntries, refetch} = useContext(WorkspaceContext);
+export const codeLocationStatusAtom = atom<CodeLocationStatusQuery | undefined>({
+  key: 'codeLocationStatusQuery',
+  default: undefined,
+});
+
+export const useCodeLocationsStatus = (): StatusAndMessage | null => {
+  const {locationEntries, data} = useContext(WorkspaceContext);
   const [previousEntriesById, setPreviousEntriesById] = useState<EntriesById | null>(null);
 
   const history = useHistory();
@@ -37,28 +36,19 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
   }, [history]);
 
   // Reload the workspace, but don't toast about it.
-  const reloadWorkspaceQuietly = useCallback(async () => {
-    setShowSpinner(true);
-    await refetch();
-    setShowSpinner(false);
-  }, [refetch]);
 
   // Reload the workspace, and show a success or error toast upon completion.
-  const reloadWorkspaceLoudly = useCallback(async () => {
-    setShowSpinner(true);
-    const result = await refetch();
-    setShowSpinner(false);
-
-    const anyErrors =
-      result.data.workspaceOrError.__typename === 'PythonError' ||
-      result.data.workspaceOrError.locationEntries.some(
-        (entry) => entry.locationOrLoadError?.__typename === 'PythonError',
-      );
+  useLayoutEffect(() => {
+    const anyErrors = Object.values(data).some(
+      (entry) =>
+        entry.__typename === 'PythonError' ||
+        entry.locationOrLoadError?.__typename === 'PythonError',
+    );
 
     const showViewButton = !alreadyViewingCodeLocations();
 
     if (anyErrors) {
-      await showSharedToaster({
+      showSharedToaster({
         intent: 'warning',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -68,8 +58,28 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         ),
         icon: 'check_circle',
       });
-    } else {
-      await showSharedToaster({
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, onClickViewButton]);
+
+  const codeLocationStatusQueryData = useRecoilValue(codeLocationStatusAtom);
+
+  useLayoutEffect(() => {
+    const isFreshPageload = previousEntriesById === null;
+    const showViewButton = !alreadyViewingCodeLocations();
+
+    // Given the previous and current code locations, determine whether to show a) a loading spinner
+    // and/or b) a toast indicating that a code location is being reloaded.
+    const entries =
+      codeLocationStatusQueryData?.locationStatusesOrError?.__typename ===
+      'WorkspaceLocationStatusEntries'
+        ? codeLocationStatusQueryData?.locationStatusesOrError.entries
+        : [];
+
+    let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
+
+    if (!isFreshPageload && hasUpdatedEntries) {
+      showSharedToaster({
         intent: 'success',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -80,19 +90,6 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         icon: 'check_circle',
       });
     }
-  }, [onClickViewButton, refetch]);
-
-  const onLocationUpdate = async (data: CodeLocationStatusQuery) => {
-    const isFreshPageload = previousEntriesById === null;
-
-    // Given the previous and current code locations, determine whether to show a) a loading spinner
-    // and/or b) a toast indicating that a code location is being reloaded.
-    const entries =
-      data?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
-        ? data?.locationStatusesOrError.entries
-        : [];
-
-    let hasUpdatedEntries = entries.length !== Object.keys(previousEntriesById || {}).length;
     const currEntriesById: {[key: string]: LocationStatusEntry} = {};
     entries.forEach((entry) => {
       const previousEntry = previousEntriesById && previousEntriesById[entry.id];
@@ -132,11 +129,8 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     // At least one code location has been removed. Reload, but don't make a big deal about it
     // since this was probably done manually.
     if (previousEntries.length > currentEntries.length) {
-      reloadWorkspaceQuietly();
       return;
     }
-
-    const showViewButton = !alreadyViewingCodeLocations();
 
     // We have a new entry, and it has already finished loading. Wow! It's surprisingly fast for it
     // to have finished loading so quickly, but go ahead and indicate that the location has
@@ -168,7 +162,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         return <span>{addedEntries.length} code locations added</span>;
       };
 
-      await showSharedToaster({
+      showSharedToaster({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -179,7 +173,6 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
         icon: 'add_circle',
       });
 
-      reloadWorkspaceLoudly();
       return;
     }
 
@@ -192,7 +185,7 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
     if (!anyPreviouslyLoading && anyCurrentlyLoading) {
       setShowSpinner(true);
 
-      await showSharedToaster({
+      showSharedToaster({
         intent: 'primary',
         message: (
           <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 24, grow: 1}}>
@@ -211,30 +204,8 @@ export const useCodeLocationsStatus = (skip = false): StatusAndMessage | null =>
 
       return;
     }
-
-    // A location was previously loading, and no longer is. Our workspace is ready. Refetch it.
-    if (anyPreviouslyLoading && !anyCurrentlyLoading) {
-      reloadWorkspaceLoudly();
-      return;
-    }
-
-    if (hasUpdatedEntries) {
-      reloadWorkspaceLoudly();
-      return;
-    }
-  };
-
-  const queryData = useQuery<CodeLocationStatusQuery, CodeLocationStatusQueryVariables>(
-    CODE_LOCATION_STATUS_QUERY,
-    {
-      fetchPolicy: 'network-only',
-      notifyOnNetworkStatusChange: true,
-      skip,
-      onCompleted: onLocationUpdate,
-    },
-  );
-
-  useQueryRefreshAtInterval(queryData, POLL_INTERVAL);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codeLocationStatusQueryData]);
 
   if (showSpinner) {
     return {
@@ -273,18 +244,4 @@ const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
 
 const ViewButton = styled(ButtonLink)`
   white-space: nowrap;
-`;
-
-const CODE_LOCATION_STATUS_QUERY = gql`
-  query CodeLocationStatusQuery {
-    locationStatusesOrError {
-      ... on WorkspaceLocationStatusEntries {
-        entries {
-          id
-          name
-          loadStatus
-        }
-      }
-    }
-  }
 `;

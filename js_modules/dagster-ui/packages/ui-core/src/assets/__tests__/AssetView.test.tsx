@@ -59,7 +59,7 @@ describe('AssetView', () => {
       <RecoilRoot>
         <MockedProvider
           mocks={[
-            RootWorkspaceWithOneLocation,
+            ...RootWorkspaceWithOneLocation,
             AssetViewDefinitionSDA,
             AssetViewDefinitionNonSDA,
             AssetViewDefinitionSourceAsset,

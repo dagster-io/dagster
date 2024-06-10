@@ -1,30 +1,40 @@
-import {ApolloQueryResult, gql} from '@apollo/client';
+import {useApolloClient} from '@apollo/client';
 import sortBy from 'lodash/sortBy';
-import * as React from 'react';
-import {useContext, useMemo} from 'react';
+import React, {useCallback, useContext, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {useSetRecoilState} from 'recoil';
 
-import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
+import {CODE_LOCATION_STATUS_QUERY, LOCATION_WORKSPACE_QUERY} from './WorkspaceQueries';
 import {buildRepoAddress} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {RepoAddress} from './types';
 import {
-  RootWorkspaceQuery,
-  RootWorkspaceQueryVariables,
+  CodeLocationStatusQuery,
+  CodeLocationStatusQueryVariables,
+  LocationWorkspaceQuery,
+  LocationWorkspaceQueryVariables,
   WorkspaceLocationFragment,
   WorkspaceLocationNodeFragment,
   WorkspaceRepositoryFragment,
   WorkspaceScheduleFragment,
   WorkspaceSensorFragment,
-} from './types/WorkspaceContext.types';
+} from './types/WorkspaceQueries.types';
 import {AppContext} from '../app/AppContext';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {useRefreshAtInterval} from '../app/QueryRefresh';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {PipelineSelector} from '../graphql/types';
 import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStateFragment';
-import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
-import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
+import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
+import {
+  useClearCachedData,
+  useGetCachedData,
+  useGetData,
+  useIndexedDBCachedQuery,
+} from '../search/useIndexedDBCachedQuery';
 
+export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
+export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
+export const LOCATION_WORKSPACE_QUERY_VERSION = 1;
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
 
@@ -40,14 +50,13 @@ export interface DagsterRepoOption {
 type SetVisibleOrHiddenFn = (repoAddresses: RepoAddress[]) => void;
 
 type WorkspaceState = {
-  error: PythonErrorFragment | null;
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
   visibleRepos: DagsterRepoOption[];
-  data: RootWorkspaceQuery | null;
+  data: Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>;
+  refetch: () => Promise<LocationWorkspaceQuery[]>;
 
-  refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
   toggleVisible: SetVisibleOrHiddenFn;
   setVisible: SetVisibleOrHiddenFn;
   setHidden: SetVisibleOrHiddenFn;
@@ -59,180 +68,216 @@ export const WorkspaceContext = React.createContext<WorkspaceState>(
 
 export const HIDDEN_REPO_KEYS = 'dagster.hidden-repo-keys';
 
-export const ROOT_WORKSPACE_QUERY = gql`
-  query RootWorkspaceQuery {
-    workspaceOrError {
-      ... on Workspace {
-        id
-        locationEntries {
-          id
-          ...WorkspaceLocationNode
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  fragment WorkspaceLocationNode on WorkspaceLocationEntry {
-    id
-    name
-    loadStatus
-    displayMetadata {
-      ...WorkspaceDisplayMetadata
-    }
-    updatedTimestamp
-    featureFlags {
-      name
-      enabled
-    }
-    locationOrLoadError {
-      ... on RepositoryLocation {
-        id
-        ...WorkspaceLocation
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  fragment WorkspaceDisplayMetadata on RepositoryMetadata {
-    key
-    value
-  }
-
-  fragment WorkspaceLocation on RepositoryLocation {
-    id
-    isReloadSupported
-    serverId
-    name
-    dagsterLibraryVersions {
-      name
-      version
-    }
-    repositories {
-      id
-      ...WorkspaceRepository
-    }
-  }
-
-  fragment WorkspaceRepository on Repository {
-    id
-    name
-    pipelines {
-      id
-      name
-      isJob
-      isAssetJob
-      pipelineSnapshotId
-    }
-    schedules {
-      id
-      ...WorkspaceSchedule
-    }
-    sensors {
-      id
-      ...WorkspaceSensor
-    }
-    partitionSets {
-      id
-      mode
-      pipelineName
-    }
-    assetGroups {
-      id
-      groupName
-    }
-    allTopLevelResourceDetails {
-      id
-      name
-    }
-    ...RepositoryInfoFragment
-  }
-
-  fragment WorkspaceSchedule on Schedule {
-    id
-    cronSchedule
-    executionTimezone
-    mode
-    name
-    pipelineName
-    scheduleState {
-      id
-      selectorId
-      status
-    }
-  }
-
-  fragment WorkspaceSensor on Sensor {
-    id
-    jobOriginId
-    name
-    targets {
-      mode
-      pipelineName
-    }
-    sensorState {
-      id
-      selectorId
-      status
-      ...BasicInstigationStateFragment
-    }
-    sensorType
-    ...SensorSwitchFragment
-  }
-
-  ${PYTHON_ERROR_FRAGMENT}
-  ${REPOSITORY_INFO_FRAGMENT}
-  ${SENSOR_SWITCH_FRAGMENT}
-  ${BASIC_INSTIGATION_STATE_FRAGMENT}
-`;
-
-/**
- * A hook that supplies the current workspace state of Dagster UI, including the current
- * "active" repo based on the URL or localStorage, all fetched repositories available
- * in the workspace, and loading/error state for the relevant query.
- */
-const useWorkspaceState = (): WorkspaceState => {
+export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const {localCacheIdPrefix} = useContext(AppContext);
-  const {
-    data,
-    loading,
-    fetch: refetch,
-  } = useIndexedDBCachedQuery<RootWorkspaceQuery, RootWorkspaceQueryVariables>({
-    query: ROOT_WORKSPACE_QUERY,
-    key: `${localCacheIdPrefix}/RootWorkspace`,
-    version: 1,
+  const codeLocationStatusQueryResult = useIndexedDBCachedQuery<
+    CodeLocationStatusQuery,
+    CodeLocationStatusQueryVariables
+  >({
+    query: CODE_LOCATION_STATUS_QUERY,
+    version: CODE_LOCATION_STATUS_QUERY_VERSION,
+    key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
+  });
+  if (typeof jest === 'undefined') {
+    // Only do this outside of jest for now so that we don't need to add RecoilRoot around everything...
+    // we will switch to jotai at some point instead... which doesnt require a
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const setCodeLocationStatusAtom = useSetRecoilState(codeLocationStatusAtom);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useLayoutEffect(() => {
+      if (codeLocationStatusQueryResult.data) {
+        setCodeLocationStatusAtom(codeLocationStatusQueryResult.data);
+      }
+    }, [codeLocationStatusQueryResult.data, setCodeLocationStatusAtom]);
+  }
+  indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
+
+  const fetch = codeLocationStatusQueryResult.fetch;
+  useRefreshAtInterval({
+    refresh: useCallback(async () => {
+      return await fetch();
+    }, [fetch]),
+    intervalMs: 5000,
+    leading: true,
   });
 
-  // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('indexdbQueryCache:RootWorkspace');
-  useMemo(() => refetch(), [refetch]);
+  const {data, loading: loadingCodeLocationStatus} = codeLocationStatusQueryResult;
 
-  const workspaceOrError = data?.workspaceOrError;
+  const locations = useMemo(() => getLocations(data), [data]);
+  const prevLocations = useRef<typeof locations>({});
 
-  const locationEntries = React.useMemo(
-    () => (workspaceOrError?.__typename === 'Workspace' ? workspaceOrError.locationEntries : []),
-    [workspaceOrError],
+  const didInitiateFetchFromCache = useRef(false);
+  const [didLoadCachedData, setDidLoadCachedData] = useState(false);
+
+  const [locationsData, setLocationsData] = React.useState<
+    Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
+  >({});
+
+  const getCachedData = useGetCachedData();
+  const getData = useGetData();
+  const clearCachedData = useClearCachedData();
+
+  useLayoutEffect(() => {
+    // Load data from the cache
+    if (didInitiateFetchFromCache.current) {
+      return;
+    }
+    didInitiateFetchFromCache.current = true;
+    new Promise(async (res) => {
+      /**
+       * 1. Load the cached code location status query
+       * 2. Load the cached data for those locations
+       * 3. Set the cached data to `locationsData` state
+       * 4. Set prevLocations equal to these cached locations so that we can check if they
+       *  have changed after the next call to codeLocationStatusQuery
+       * 5. set didLoadCachedData to true to unblock the `locationsToFetch` memo so that it can compare
+       *  the latest codeLocationStatusQuery result to what was in the cache.
+       */
+      const data = await getCachedData<CodeLocationStatusQuery>({
+        key: `${localCacheIdPrefix}${CODE_LOCATION_STATUS_QUERY_KEY}`,
+        version: CODE_LOCATION_STATUS_QUERY_VERSION,
+      });
+      const cachedLocations = getLocations(data);
+      const prevCachedLocations: typeof locations = {};
+
+      await Promise.all([
+        ...Object.values(cachedLocations).map(async (location) => {
+          const locationData = await getCachedData<LocationWorkspaceQuery>({
+            key: `${localCacheIdPrefix}${locationWorkspaceKey(location.name)}`,
+            version: LOCATION_WORKSPACE_QUERY_VERSION,
+          });
+          const entry = locationData?.workspaceLocationEntryOrError;
+
+          if (!entry) {
+            return;
+          }
+          setLocationsData((locationsData) =>
+            Object.assign({}, locationsData, {
+              [location.name]: entry,
+            }),
+          );
+
+          if (entry.__typename === 'WorkspaceLocationEntry') {
+            prevCachedLocations[location.name] = location;
+          }
+        }),
+      ]);
+      prevLocations.current = prevCachedLocations;
+      res(void 0);
+    }).then(() => {
+      setDidLoadCachedData(true);
+    });
+  }, [getCachedData, localCacheIdPrefix, locations]);
+
+  const client = useApolloClient();
+
+  const refetchLocation = useCallback(
+    async (name: string) => {
+      const locationData = await getData<LocationWorkspaceQuery, LocationWorkspaceQueryVariables>({
+        client,
+        query: LOCATION_WORKSPACE_QUERY,
+        key: `${localCacheIdPrefix}${locationWorkspaceKey(name)}`,
+        version: LOCATION_WORKSPACE_QUERY_VERSION,
+        variables: {
+          name,
+        },
+        bypassCache: true,
+      });
+      const entry = locationData?.workspaceLocationEntryOrError;
+      setLocationsData((locationsData) =>
+        Object.assign({}, locationsData, {
+          [name]: entry,
+        }),
+      );
+      return locationData;
+    },
+    [client, getData, localCacheIdPrefix],
   );
 
-  const {allRepos, error} = React.useMemo(() => {
-    let allRepos: DagsterRepoOption[] = [];
-    if (!workspaceOrError) {
-      return {allRepos, error: null};
-    }
+  const [isRefetching, setIsRefetching] = useState(false);
 
-    if (workspaceOrError.__typename === 'PythonError') {
-      return {allRepos, error: workspaceOrError};
+  const locationsToFetch = useMemo(() => {
+    if (!didLoadCachedData) {
+      return [];
     }
+    if (isRefetching) {
+      return [];
+    }
+    const toFetch = Object.values(locations).filter((loc) => {
+      const prev = prevLocations.current?.[loc.name];
+      const d = locationsData[loc.name];
+      const entry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
+      return (
+        prev?.updateTimestamp !== loc.updateTimestamp ||
+        prev?.loadStatus !== loc.loadStatus ||
+        entry?.loadStatus !== loc.loadStatus
+      );
+    });
+    prevLocations.current = locations;
+    return toFetch;
+  }, [didLoadCachedData, isRefetching, locations, locationsData]);
+
+  useLayoutEffect(() => {
+    if (!locationsToFetch.length) {
+      return;
+    }
+    setIsRefetching(true);
+    Promise.all(
+      locationsToFetch.map(async (location) => {
+        return await refetchLocation(location.name);
+      }),
+    ).then(() => {
+      setIsRefetching(false);
+    });
+  }, [refetchLocation, locationsToFetch]);
+
+  const locationsRemoved = useMemo(
+    () =>
+      Array.from(
+        new Set([
+          ...Object.values(prevLocations.current).filter((loc) => !locations[loc.name]),
+          ...Object.values(locationsData).filter(
+            (loc): loc is WorkspaceLocationNodeFragment =>
+              loc.__typename === 'WorkspaceLocationEntry' && !locations[loc.name],
+          ),
+        ]),
+      ),
+    [locations, locationsData],
+  );
+
+  useLayoutEffect(() => {
+    if (!locationsRemoved.length) {
+      return;
+    }
+    const copy = {...locationsData};
+    locationsRemoved.forEach((loc) => {
+      delete copy[loc.name];
+      clearCachedData({key: `${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`});
+    });
+    if (Object.keys(copy).length !== Object.keys(locationsData).length) {
+      setLocationsData(copy);
+    }
+  }, [clearCachedData, localCacheIdPrefix, locationsData, locationsRemoved]);
+
+  const locationEntries = useMemo(
+    () =>
+      Object.values(locationsData).filter(
+        (entry): entry is WorkspaceLocationNodeFragment =>
+          entry.__typename === 'WorkspaceLocationEntry',
+      ),
+    [locationsData],
+  );
+
+  const allRepos = React.useMemo(() => {
+    let allRepos: DagsterRepoOption[] = [];
 
     allRepos = sortBy(
-      workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
+      locationEntries.reduce((accum, locationEntry) => {
         if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
           return accum;
         }
         const repositoryLocation = locationEntry.locationOrLoadError;
-        const reposForLocation = repositoryLocation.repositories.map((repository) => {
-          return {repository, repositoryLocation};
-        });
+        const reposForLocation = repoLocationToRepos(repositoryLocation);
         return [...accum, ...reposForLocation];
       }, [] as DagsterRepoOption[]),
 
@@ -240,24 +285,59 @@ const useWorkspaceState = (): WorkspaceState => {
       (r) => `${r.repositoryLocation.name}:${r.repository.name}`,
     );
 
-    return {error: null, allRepos};
-  }, [workspaceOrError]);
+    return allRepos;
+  }, [locationEntries]);
 
   const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
 
-  return {
-    refetch,
-    loading: loading && !data, // Only "loading" on initial load.
-    error,
-    locationEntries,
-    data,
-    allRepos,
-    visibleRepos,
-    toggleVisible,
-    setVisible,
-    setHidden,
-  };
+  const locationsRef = useUpdatingRef(locations);
+
+  const refetch = useCallback(async () => {
+    return await Promise.all(
+      Object.values(locationsRef.current).map((location) => refetchLocation(location.name)),
+    );
+  }, [locationsRef, refetchLocation]);
+
+  return (
+    <WorkspaceContext.Provider
+      value={{
+        loading:
+          !didLoadCachedData ||
+          (!Object.values(locationsData).length && (isRefetching || loadingCodeLocationStatus)), // Only "loading" on initial load.
+        locationEntries,
+        allRepos,
+        visibleRepos,
+        toggleVisible,
+        setVisible,
+        setHidden,
+
+        data: locationsData,
+        refetch,
+      }}
+    >
+      {children}
+    </WorkspaceContext.Provider>
+  );
 };
+
+function getLocations(d: CodeLocationStatusQuery | undefined | null) {
+  const locations =
+    d?.locationStatusesOrError?.__typename === 'WorkspaceLocationStatusEntries'
+      ? d?.locationStatusesOrError.entries
+      : [];
+
+  return locations.reduce(
+    (accum, loc) => {
+      accum[loc.name] = loc;
+      return accum;
+    },
+    {} as Record<string, (typeof locations)[0]>,
+  );
+}
+
+export function locationWorkspaceKey(name: string) {
+  return `/LocationWorkspace/${name}`;
+}
 
 /**
  * useVisibleRepos returns `{reposForKeys, toggleVisible, setVisible, setHidden}` and internally
@@ -355,16 +435,9 @@ const useVisibleRepos = (
 
 const getRepositoryOptionHash = (a: DagsterRepoOption) =>
   `${a.repository.name}:${a.repositoryLocation.name}`;
-
-export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
-  const workspaceState = useWorkspaceState();
-
-  return <WorkspaceContext.Provider value={workspaceState}>{children}</WorkspaceContext.Provider>;
-};
-
 export const useRepositoryOptions = () => {
-  const {allRepos: options, loading, error} = React.useContext(WorkspaceContext);
-  return {options, loading, error};
+  const {allRepos: options, loading} = React.useContext(WorkspaceContext);
+  return {options, loading};
 };
 
 export const useRepository = (repoAddress: RepoAddress | null) => {
@@ -412,7 +485,7 @@ export const getFeatureFlagForCodeLocation = (
 };
 
 export const useFeatureFlagForCodeLocation = (locationName: string, flagName: string) => {
-  const {locationEntries} = useWorkspaceState();
+  const {locationEntries} = useContext(WorkspaceContext);
   return getFeatureFlagForCodeLocation(locationEntries, locationName, flagName);
 };
 
@@ -452,3 +525,9 @@ export const buildPipelineSelector = (
 
 export const optionToRepoAddress = (option: DagsterRepoOption) =>
   buildRepoAddress(option.repository.name, option.repository.location.name);
+
+export function repoLocationToRepos(repositoryLocation: RepositoryLocation) {
+  return repositoryLocation.repositories.map((repository) => {
+    return {repository, repositoryLocation};
+  });
+}

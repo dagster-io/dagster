@@ -26,7 +26,7 @@ describe('RunActionButtons', () => {
 
   const Test = ({run}: {run: RunPageFragment}) => {
     return (
-      <MockedProvider mocks={[buildMockRootWorkspaceQuery()]}>
+      <MockedProvider mocks={buildMockRootWorkspaceQuery()}>
         <MemoryRouter>
           <WorkspaceProvider>
             <RunActionButtons {...props} run={run} />

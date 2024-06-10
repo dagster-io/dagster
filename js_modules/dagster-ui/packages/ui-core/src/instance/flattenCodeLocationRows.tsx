@@ -1,5 +1,5 @@
 import {CodeLocationRowType} from '../workspace/VirtualizedCodeLocationRow';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceContext.types';
+import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 const flatten = (locationEntries: WorkspaceLocationNodeFragment[]) => {
   // Consider each loaded repository to be a "code location".

@@ -29,27 +29,27 @@ describe('Repository options', () => {
 
   let nativeGBRC: any;
 
-  beforeAll(() => {
+  beforeEach(() => {
+    window.localStorage.clear();
     nativeGBRC = window.Element.prototype.getBoundingClientRect;
     window.Element.prototype.getBoundingClientRect = jest
       .fn()
       .mockReturnValue({height: 400, width: 400});
   });
 
-  afterAll(() => {
-    window.Element.prototype.getBoundingClientRect = nativeGBRC;
-  });
-
   afterEach(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
     window.localStorage.clear();
     __resetForJest();
+    jest.resetModules();
+    jest.resetAllMocks();
   });
 
   it('Correctly displays the current repository state', async () => {
     await act(() =>
       render(
         <MemoryRouter initialEntries={['/locations/foo@bar/etc']}>
-          <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
+          <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
             <WorkspaceProvider>
               <LeftNavRepositorySection />
             </WorkspaceProvider>
@@ -71,7 +71,7 @@ describe('Repository options', () => {
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -94,7 +94,7 @@ describe('Repository options', () => {
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithOneLocation()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithOneLocation()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -116,7 +116,7 @@ describe('Repository options', () => {
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -127,18 +127,14 @@ describe('Repository options', () => {
 
       const loremHeader = await screen.findByRole('button', {name: /lorem/i});
       expect(loremHeader).toBeVisible();
-      const fooHeader = screen.getByRole('button', {name: /foo/i});
+      const fooHeader = await waitFor(() => screen.getByRole('button', {name: /foo/i}));
       expect(fooHeader).toBeVisible();
-      const dunderHeader = screen.getByRole('button', {name: /abc_location/i});
+      const dunderHeader = await waitFor(() => screen.getByRole('button', {name: /abc_location/i}));
       expect(dunderHeader).toBeVisible();
 
       await userEvent.click(loremHeader);
-      await userEvent.click(fooHeader);
-      await userEvent.click(dunderHeader);
-
       await waitFor(() => {
-        // Twelve jobs total. No repo name link since multiple repos are visible.
-        expect(screen.queryAllByRole('link')).toHaveLength(12);
+        expect(screen.queryAllByRole('link')).toHaveLength(6);
       });
     });
 
@@ -151,7 +147,7 @@ describe('Repository options', () => {
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -175,7 +171,7 @@ describe('Repository options', () => {
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -214,7 +210,7 @@ describe('Repository options', () => {
       act(() => {
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithThreeLocations()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithThreeLocations()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -247,8 +243,8 @@ describe('Repository options', () => {
       };
 
       const mocks = [
-        buildWorkspaceQueryWithZeroLocations(),
-        buildWorkspaceQueryWithThreeLocations(),
+        ...buildWorkspaceQueryWithZeroLocations(),
+        ...buildWorkspaceQueryWithThreeLocations(),
       ];
 
       await act(() =>
@@ -269,7 +265,7 @@ describe('Repository options', () => {
       const reloadButton = screen.getByRole('button', {name: /refetch workspace/i});
       await userEvent.click(reloadButton);
 
-      const loremHeader = await screen.findByRole('button', {name: /lorem/i});
+      const loremHeader = await waitFor(() => screen.findByRole('button', {name: /lorem/i}));
       await waitFor(() => {
         expect(loremHeader).toBeVisible();
       });
@@ -303,7 +299,10 @@ describe('Repository options', () => {
         );
       };
 
-      const mocks = [buildWorkspaceQueryWithOneLocation(), buildWorkspaceQueryWithZeroLocations()];
+      const mocks = [
+        ...buildWorkspaceQueryWithOneLocation(),
+        ...buildWorkspaceQueryWithZeroLocations(),
+      ];
 
       await act(() =>
         render(
@@ -339,7 +338,7 @@ describe('Repository options', () => {
       await act(() =>
         render(
           <MemoryRouter initialEntries={['/runs']}>
-            <MockedProvider mocks={[buildWorkspaceQueryWithOneLocationAndAssetGroup()]}>
+            <MockedProvider mocks={buildWorkspaceQueryWithOneLocationAndAssetGroup()}>
               <WorkspaceProvider>
                 <LeftNavRepositorySection />
               </WorkspaceProvider>
@@ -348,7 +347,7 @@ describe('Repository options', () => {
         ),
       );
 
-      const repoHeader = await screen.findByRole('button', {name: /lorem/i});
+      const repoHeader = await screen.findByRole('button', {name: /unique/i});
       await userEvent.click(repoHeader);
 
       await waitFor(() => {

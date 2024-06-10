@@ -7,7 +7,7 @@ export const ONE_HOUR_S = 60 * 60;
 type Subscription<T> = (data: T[]) => void;
 
 export const defaultOptions = {
-  expiry: new Date('3000-01-01'), // never expire,
+  expiry: new Date('3030-01-01'), // never expire,
 };
 
 export class HourlyDataCache<T> {

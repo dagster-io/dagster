@@ -66,7 +66,7 @@
     "@storybook/react-webpack5": "^7.2.0",
     "@testing-library/dom": "^10.0.0",
     "@testing-library/jest-dom": "^6.4.2",
-    "@testing-library/react": "^15.0.3",
+    "@testing-library/react": "^16.0.0",
     "@testing-library/user-event": "^14.5.2",
     "@types/babel__core": "^7",
     "@types/babel__preset-env": "^7",

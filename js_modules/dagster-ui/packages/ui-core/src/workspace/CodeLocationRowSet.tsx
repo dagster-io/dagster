@@ -4,23 +4,16 @@ import {
   ButtonLink,
   Colors,
   Icon,
-  JoinedButtons,
   MiddleTruncate,
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
 import {useCallback, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
-import {CodeLocationMenu} from './CodeLocationMenu';
-import {RepositoryCountTags} from './RepositoryCountTags';
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {buildRepoAddress} from './buildRepoAddress';
-import {repoAddressAsHumanString} from './repoAddressAsString';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceContext.types';
-import {workspacePathFromAddress} from './workspacePath';
+import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceQueries.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -31,81 +24,6 @@ import {
   buildReloadFnForLocation,
   useRepositoryLocationReload,
 } from '../nav/useRepositoryLocationReload';
-import {TimeFromNow} from '../ui/TimeFromNow';
-
-interface Props {
-  locationNode: WorkspaceRepositoryLocationNode;
-}
-
-export const CodeLocationRowSet = ({locationNode}: Props) => {
-  const {name, locationOrLoadError} = locationNode;
-
-  if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
-    return (
-      <tr>
-        <td style={{maxWidth: '400px', color: Colors.textLight()}}>
-          <MiddleTruncate text={name} />
-        </td>
-        <td>
-          <LocationStatus location={name} locationOrError={locationNode} />
-        </td>
-        <td style={{whiteSpace: 'nowrap'}}>
-          <TimeFromNow unixTimestamp={locationNode.updatedTimestamp} />
-        </td>
-        <td>{'\u2013'}</td>
-        <td style={{width: '180px'}}>
-          <JoinedButtons>
-            <ReloadButton location={name} />
-            <CodeLocationMenu locationNode={locationNode} />
-          </JoinedButtons>
-        </td>
-      </tr>
-    );
-  }
-
-  const repositories = [...locationOrLoadError.repositories].sort((a, b) =>
-    a.name.localeCompare(b.name),
-  );
-
-  return (
-    <>
-      {repositories.map((repository) => {
-        const repoAddress = buildRepoAddress(repository.name, name);
-        const allMetadata = [...locationNode.displayMetadata, ...repository.displayMetadata];
-        return (
-          <tr key={repoAddressAsHumanString(repoAddress)}>
-            <td style={{maxWidth: '400px'}}>
-              <Box flex={{direction: 'column', gap: 4}}>
-                <div style={{fontWeight: 500}}>
-                  <Link to={workspacePathFromAddress(repoAddress)}>
-                    <MiddleTruncate text={repoAddressAsHumanString(repoAddress)} />
-                  </Link>
-                </div>
-                <ImageName metadata={allMetadata} />
-                <ModuleOrPackageOrFile metadata={allMetadata} />
-              </Box>
-            </td>
-            <td>
-              <LocationStatus location={repository.name} locationOrError={locationNode} />
-            </td>
-            <td style={{whiteSpace: 'nowrap'}}>
-              <TimeFromNow unixTimestamp={locationNode.updatedTimestamp} />
-            </td>
-            <td>
-              <RepositoryCountTags repo={repository} repoAddress={repoAddress} />
-            </td>
-            <td style={{width: '180px'}}>
-              <JoinedButtons>
-                <ReloadButton location={name} />
-                <CodeLocationMenu locationNode={locationNode} />
-              </JoinedButtons>
-            </td>
-          </tr>
-        );
-      })}
-    </>
-  );
-};
 
 export const ImageName = ({metadata}: {metadata: WorkspaceDisplayMetadataFragment[]}) => {
   const copy = useCopyToClipboard();
