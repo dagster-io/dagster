@@ -1,5 +1,5 @@
 from abc import ABC
-from functools import cached_property, partial
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,7 +16,7 @@ from typing import (
 from typing_extensions import dataclass_transform
 
 import dagster._check as check
-from dagster._check import EvalContext, build_check_call
+from dagster._check import EvalContext, build_check_call_str
 
 TType = TypeVar("TType", bound=Type)
 TVal = TypeVar("TVal")
@@ -42,22 +42,15 @@ def _namedtuple_model_transform(
         * creates a run time checked __new__  (optional).
     """
     base = NamedTuple(f"_{cls.__name__}", cls.__annotations__.items())
-
+    nt_new = base.__new__
     if checked:
-        orig_new = base.__new__
-        checks_builder = LazyCheckBuilder(
+        jit_checked_new = JitCheckedNew(
             cls.__annotations__,
             EvalContext.capture_from_frame(1 + decorator_frames),
             1 if with_new else 0,
+            base,
         )
-
-        def __checked_new__(cls: TType, **kwargs):
-            for key, fn in checks_builder.checks.items():
-                fn(kwargs[key])
-
-            return orig_new(cls, **kwargs)
-
-        base.__new__ = __checked_new__  # type: ignore # unhappy with dropping positional args
+        base.__new__ = jit_checked_new  # type: ignore
 
     if with_new and cls.__new__ is object.__new__:
         # verify the alignment since it impacts frame capture
@@ -72,6 +65,7 @@ def _namedtuple_model_transform(
             "__hidden_iter__": base.__iter__,
             _MODEL_MARKER_FIELD: _MODEL_MARKER_VALUE,
             "__annotations__": cls.__annotations__,
+            "__nt_new__": nt_new,
         },
     )
 
@@ -233,27 +227,62 @@ class LegacyNamedTupleMixin(ABC):
         return as_dict(self)
 
 
-class LazyCheckBuilder:
-    # Class object to support building check calls on first use and keeping them.
-    # This allows resolving ForwardRefs for types that were not available at initial definition.
+class JitCheckedNew:
+    """Object that allows us to just-in-time compile a __checked_new__ implementation on first use.
+    This has two benefits:
+        1. Defer processing ForwardRefs until their definitions are in scope.
+        2. Avoid up-front cost for unused objects.
+    """
 
-    def __init__(self, field_set: dict, eval_ctx: EvalContext, new_frames: int):
+    __name__ = _GENERATED_NEW
+
+    def __init__(
+        self,
+        field_set: dict,
+        eval_ctx: EvalContext,
+        new_frames: int,
+        nt_base: Type,
+    ):
         self._field_set = field_set
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
+        self._nt_base = nt_base
 
-    @cached_property
-    def checks(self) -> Mapping[str, Callable[[Any], Any]]:
+    def __call__(self, cls, **kwargs):
         # update the context with callsite locals/globals to resolve
         # ForwardRefs that were unavailable at definition time.
+        self._eval_ctx.update_from_frame(1 + self._new_frames)
 
-        # 3: checks -> __new__ -> callsite (+ optional override __new__ frame)
-        self._eval_ctx.update_from_frame(3 + self._new_frames)
+        # ensure check is in scope
+        if "check" not in self._eval_ctx.global_ns:
+            self._eval_ctx.global_ns["check"] = check
 
-        return {
-            name: build_check_call(ttype=ttype, name=name, eval_ctx=self._eval_ctx)
-            for name, ttype in self._field_set.items()
-        }
+        # jit that shit
+        self._nt_base.__new__ = self._eval_ctx.compile_fn(
+            self._build_checked_new_str(),
+            _GENERATED_NEW,
+        )
+
+        return self._nt_base.__new__(cls, **kwargs)
+
+    def _build_checked_new_str(self) -> str:
+        kw_args = ", ".join(self._field_set.keys())
+        check_calls = []
+        for name, ttype in self._field_set.items():
+            call_str = build_check_call_str(
+                ttype=ttype,
+                name=name,
+                eval_ctx=self._eval_ctx,
+            )
+            check_calls.append(f"{name}={call_str}")
+
+        check_call_block = "        ,\n".join(check_calls)
+        return f"""
+def __checked_new__(cls, {kw_args}):
+    return cls.__nt_new__(
+        cls,{check_call_block}
+    )
+"""
 
 
 def _banned_iter(*args, **kwargs):

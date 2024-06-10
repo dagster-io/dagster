@@ -35,7 +35,7 @@ try:
 except ImportError:
     UnionType = Union
 
-
+NoneType = type(None)
 TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
@@ -1873,14 +1873,23 @@ class EvalContext(NamedTuple):
         except NameError as e:
             raise CheckError(f"Unable to resolve {ref}") from e
 
+    def compile_fn(self, body: str, fn_name: str) -> Callable:
+        merged_global_ns = {**self.global_ns, **self.local_ns}
+        local_ns = {}
+        exec(
+            body,
+            merged_global_ns,
+            local_ns,
+        )
+        return local_ns[fn_name]
 
-def _no_op(_): ...
 
-
-def _coerce(
+def _coerce_type(
     ttype: Optional[TypeOrTupleOfTypes],
     eval_ctx: Optional[EvalContext],
 ) -> Optional[TypeOrTupleOfTypes]:
+    # coerce input type in to the type we want to pass to check call
+
     if ttype is Any:
         return None
     if isinstance(ttype, str):
@@ -1906,8 +1915,10 @@ def _coerce(
 def _container_pair_args(
     args: Tuple[Type, ...], eval_ctx
 ) -> Tuple[Optional[TypeOrTupleOfTypes], Optional[TypeOrTupleOfTypes]]:
+    # process tuple of types as if its two arguments to a container type
+
     if len(args) == 2:
-        return _coerce(args[0], eval_ctx), _coerce(args[1], eval_ctx)
+        return _coerce_type(args[0], eval_ctx), _coerce_type(args[1], eval_ctx)
 
     return None, None
 
@@ -1915,65 +1926,77 @@ def _container_pair_args(
 def _container_single_arg(
     args: Tuple[Type, ...], eval_ctx: Optional[EvalContext]
 ) -> Optional[TypeOrTupleOfTypes]:
+    # process tuple of types as if its the single argument to a container type
+
     if len(args) == 1:
-        return _coerce(args[0], eval_ctx)
+        return _coerce_type(args[0], eval_ctx)
 
     return None
 
 
-def build_check_call(
+def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
+    # turn a type or tuple of types in to its string representation for printing
+
+    if target is None:
+        return "None"
+
+    if isinstance(target, tuple):
+        return f"({', '.join(tup_type.__name__ if tup_type is not NoneType else 'check.NoneType' for tup_type in target)})"
+
+    return target.__name__
+
+
+def build_check_call_str(
     ttype: Type,
     name: str,
-    # have this be passed in to avoid guessing which stack frame to use
-    eval_ctx: Optional[EvalContext] = None,
-) -> Callable[[Any], Any]:
-    # performance notes:
-    # * lambdas measured to beat functools.partial
-    # * positional arg use measured to beat keyword arg use
-
+    eval_ctx: Optional[EvalContext],
+) -> str:
+    # assumes this module is in global/local scope as check
     origin = get_origin(ttype)
     args = get_args(ttype)
 
     # scalars
     if origin is None:
         if ttype is str:
-            return lambda o: str_param(o, name)
+            return f'{name} if isinstance({name}, str) else check.str_param({name}, "{name}")'
         elif ttype is float:
-            return lambda o: float_param(o, name)
+            return f'{name} if isinstance({name}, float) else check.float_param({name}, "{name}")'
         elif ttype is int:
-            return lambda o: int_param(o, name)
+            return f'{name} if isinstance({name}, int) else check.int_param({name}, "{name}")'
         elif ttype is bool:
-            return lambda o: int_param(o, name)
+            return f'{name} if isinstance({name}, bool) else check.bool_param({name}, "{name}")'
         elif ttype is Any:
-            return _no_op
+            return name  # no-op
 
         # fallback to inst
-        inst_type = _coerce(ttype, eval_ctx)
+        inst_type = _coerce_type(ttype, eval_ctx)
         if inst_type:
-            return lambda o: inst_param(o, name, inst_type)
+            it = _name(inst_type)
+            return (
+                f'{name} if isinstance({name}, {it}) else check.inst_param({name}, "{name}", {it})'
+            )
         else:
-            return _no_op
+            return name  # no-op
     else:
         if origin is Annotated and args:
-            return build_check_call(args[0], name, eval_ctx)
+            return build_check_call_str(args[0], f"{name}", eval_ctx)
 
         pair_left, pair_right = _container_pair_args(args, eval_ctx)
         single = _container_single_arg(args, eval_ctx)
 
         # containers
         if origin is list:
-            return lambda o: list_param(o, name, single)
+            return f'check.list_param({name}, "{name}", {_name(single)})'
         elif origin is dict:
-            return lambda o: dict_param(o, name, pair_left, pair_right)
+            return f'check.dict_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin is set:
-            return lambda o: set_param(o, param_name=name, of_type=single)
+            return f'check.set_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Sequence:
-            return lambda o: sequence_param(o, param_name=name, of_type=single)
+            return f'check.sequence_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Iterable:
-            return lambda o: iterable_param(o, param_name=name, of_type=single)
+            return f'check.iterable_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Mapping:
-            return lambda o: mapping_param(o, name, pair_left, pair_right)
-
+            return f'check.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
         elif origin in (UnionType, Union):
             # optional
             if pair_right is type(None):
@@ -1981,20 +2004,21 @@ def build_check_call(
                 # optional scalar
                 if inner_origin is None:
                     if pair_left is str:
-                        return lambda o: opt_str_param(o, param_name=name)
+                        return f'{name} if {name} is None or isinstance({name}, str) else check.opt_str_param({name}, "{name}")'
                     elif pair_left is float:
-                        return lambda o: opt_float_param(o, param_name=name)
+                        return f'{name} if {name} is None or isinstance({name}, float) else check.opt_float_param({name}, "{name}")'
                     elif pair_left is int:
-                        return lambda o: opt_int_param(o, param_name=name)
+                        return f'{name} if {name} is None or isinstance({name}, int) else check.opt_int_param({name}, "{name}")'
                     elif pair_left is bool:
-                        return lambda o: opt_bool_param(o, param_name=name)
+                        return f'{name} if {name} is None or isinstance({name}, bool) else check.opt_bool_param({name}, "{name}")'
 
                     # fallback to opt_inst
-                    inst_type = _coerce(pair_left, eval_ctx)
+                    inst_type = _coerce_type(pair_left, eval_ctx)
+                    it = _name(inst_type)
                     if inst_type:
-                        return lambda o: opt_inst_param(o, ttype=inst_type, param_name=name)
+                        return f'{name} if {name} is None or isinstance({name}, {it}) else check.opt_inst_param({name}, "{name}", {it})'
                     else:
-                        return _no_op
+                        return name  # no-op
 
                 # optional container
                 else:
@@ -2002,25 +2026,24 @@ def build_check_call(
                     inner_pair_left, inner_pair_right = _container_pair_args(inner_args, eval_ctx)
                     inner_single = _container_single_arg(inner_args, eval_ctx)
                     if inner_origin is list:
-                        return lambda o: opt_nullable_list_param(o, name, inner_single)
+                        return f'check.opt_nullable_list_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is dict:
-                        return lambda o: opt_nullable_dict_param(
-                            o, name, inner_pair_left, inner_pair_right
-                        )
+                        return f'check.opt_nullable_dict_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
                     elif inner_origin is set:
-                        return lambda o: opt_nullable_set_param(o, name, inner_single)
-                    elif inner_origin is collections.abc.Sequence:
-                        return lambda o: opt_nullable_sequence_param(o, name, inner_single)
-                    elif inner_origin is collections.abc.Iterable:
-                        return lambda o: opt_nullable_iterable_param(o, name, inner_single)
-                    elif inner_origin is collections.abc.Mapping:
-                        return lambda o: opt_nullable_mapping_param(
-                            o, name, inner_pair_left, inner_pair_right
+                        return (
+                            f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
                         )
+                    elif inner_origin is collections.abc.Sequence:
+                        return f'check.opt_nullable_sequence_param({name}, "{name}", {_name(inner_single)})'
+                    elif inner_origin is collections.abc.Iterable:
+                        return f'check.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
+                    elif inner_origin is collections.abc.Mapping:
+                        return f'check.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
             # union
             else:
-                tuple_types = _coerce(ttype, eval_ctx)
+                tuple_types = _coerce_type(ttype, eval_ctx)
                 if tuple_types is not None:
-                    return lambda o: inst_param(o, name, tuple_types)
+                    tt_name = _name(tuple_types)
+                    return f'{name} if isinstance({name}, {tt_name}) else check.inst_param({name}, "{name}", {tt_name})'
 
         failed(f"Unhandled {ttype}")
