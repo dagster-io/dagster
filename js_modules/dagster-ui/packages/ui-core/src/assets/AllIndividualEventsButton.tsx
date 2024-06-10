@@ -35,16 +35,16 @@ interface AssetEventsTableProps {
   hasPartitions: boolean;
   hasLineage: boolean;
   groups: AssetEventGroup[];
-  focused?: AssetEventGroup;
-  setFocused?: (timestamp: AssetEventGroup | undefined) => void;
+  focusedTimestamp?: string;
+  setFocusedTimestamp?: (timestamp: string | undefined) => void;
 }
 
 const AssetEventsTable = ({
   hasPartitions,
   hasLineage,
   groups,
-  focused,
-  setFocused,
+  focusedTimestamp,
+  setFocusedTimestamp,
 }: AssetEventsTableProps) => {
   return (
     <Table>
@@ -67,17 +67,19 @@ const AssetEventsTable = ({
                 if (e.target instanceof HTMLElement && e.target.closest('a')) {
                   return;
                 }
-                setFocused?.(focused !== group ? group : undefined);
+                setFocusedTimestamp?.(
+                  focusedTimestamp !== group.timestamp ? group.timestamp : undefined,
+                );
               }}
             >
               <EventGroupRow
                 group={group}
                 hasPartitions={hasPartitions}
                 hasLineage={hasLineage}
-                isFocused={focused === group}
+                isFocused={focusedTimestamp === group.timestamp}
               />
             </HoverableRow>
-            {focused === group ? (
+            {focusedTimestamp === group.timestamp ? (
               <MetadataEntriesRow hasLineage={hasLineage} group={group} />
             ) : undefined}
           </React.Fragment>
@@ -309,7 +311,7 @@ export const AllIndividualEventsButton = ({
     decode: (qs) => (qs.showAllEvents === 'true' ? true : false),
     encode: (b) => ({showAllEvents: b || undefined}),
   });
-  const [focused, setFocused] = React.useState<AssetEventGroup | undefined>();
+  const [focusedTimestamp, setFocusedTimestamp] = React.useState<string | undefined>();
   const groups = React.useMemo(
     () =>
       events.map((p) => ({
@@ -351,8 +353,8 @@ export const AllIndividualEventsButton = ({
             <AssetEventsTable
               hasLineage={hasLineage}
               hasPartitions={hasPartitions}
-              focused={focused}
-              setFocused={setFocused}
+              focusedTimestamp={focusedTimestamp}
+              setFocusedTimestamp={setFocusedTimestamp}
               groups={groups}
             />
           </Box>
