@@ -15,7 +15,7 @@ export const OverviewRoot = () => {
   const {flagSettingsPage} = useFeatureFlags();
   return (
     <Switch>
-      <Route path="/overview/activity">
+      <Route path="/overview/activity" isNestingRoute>
         <OverviewActivityRoot />
       </Route>
       <Route
@@ -60,7 +60,7 @@ export const OverviewRoot = () => {
       <Route path="/overview/resources">
         <OverviewResourcesRoot />
       </Route>
-      <Route path="*" render={() => <Redirect to="/overview/activity" />} />
+      <Route path="*" isNestingRoute render={() => <Redirect to="/overview/activity" />} />
     </Switch>
   );
 };

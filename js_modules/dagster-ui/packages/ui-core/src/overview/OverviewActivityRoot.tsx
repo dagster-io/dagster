@@ -65,6 +65,7 @@ export const OverviewActivityRoot = () => {
         </Route>
         <Route
           path="*"
+          isNestingRoute
           render={React.useCallback(
             () =>
               defaultTab === 'timeline' ? (
