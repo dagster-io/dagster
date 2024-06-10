@@ -5,7 +5,7 @@ import {useSetRecoilState} from 'recoil';
 import {currentPageAtom} from './analytics';
 
 type Props = ComponentProps<typeof ReactRouterRoute> & {
-  // Set to true if this route should contain more routes.
+  // Set to true if this route nests other routes below it.
   isNestingRoute?: boolean;
 };
 
