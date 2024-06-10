@@ -133,7 +133,7 @@ export const BackfillPage = () => {
           <Tabs size="large" selectedTabId={selectedTab}>
             <Tab id="partitions" title="Partitions" onClick={() => setSelectedTab('partitions')} />
             <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
-            <Tab id="logs" title="Coordinator Logs" onClick={() => setSelectedTab('logs')} />
+            <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
           </Tabs>
         </Box>
 

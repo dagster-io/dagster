@@ -1,7 +1,7 @@
 import {gql} from '@apollo/client';
 import {Box} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
-import {useContext, useRef} from 'react';
+import {useContext, useEffect, useRef} from 'react';
 
 import {InstigationEventLogFragment} from './types/InstigationEventLogTable.types';
 import {EventTypeColumn, Row as LogsRow, TimestampColumn} from '../runs/LogsRowComponents';
@@ -46,6 +46,22 @@ export const InstigationEventLogTable = ({events}: {events: InstigationEventLogF
   });
   const totalHeight = rowVirtualizer.getTotalSize();
   const items = rowVirtualizer.getVirtualItems();
+  const isAtBottom = useRef(true);
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) {
+      return;
+    }
+    if (isAtBottom.current && events.length) {
+      el.scrollTo(0, el.scrollHeight);
+    }
+    const onScroll = () => {
+      isAtBottom.current = el.scrollTop >= el.scrollHeight - el.clientHeight;
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  });
 
   return (
     <ColumnWidthsProvider onWidthsChanged={() => {}}>

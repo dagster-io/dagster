@@ -38,8 +38,8 @@ export function useCursorAccumulatedQuery<T, TVars extends {cursor?: string | nu
     }
   }, [queryResult, getResultArray, getNextFetchState]);
 
-  // When we have reached the last event, switch to refreshing every 5s
-  const refreshState = useQueryRefreshAtInterval(queryResult, 5 * 1000, !fetchState.hasMore);
+  // When we have reached the last event, switch to refreshing every 10s
+  const refreshState = useQueryRefreshAtInterval(queryResult, 10 * 1000, !fetchState.hasMore);
 
   return {fetched, refreshState};
 }

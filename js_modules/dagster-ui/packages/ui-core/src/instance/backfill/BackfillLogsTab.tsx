@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box, NonIdealState} from '@dagster-io/ui-components';
+import {Box, NonIdealState, Spinner} from '@dagster-io/ui-components';
 import React from 'react';
 
 import {BackfillLogsPageQuery, BackfillLogsPageQueryVariables} from './types/BackfillLogsTab.types';
@@ -40,7 +40,11 @@ export const BackfillLogsTab = ({backfill}: {backfill: BackfillDetailsBackfillFr
       <div style={{position: 'absolute', right: 16, top: -32}}>
         <QueryRefreshCountdown refreshState={refreshState} />
       </div>
-      {events && events.length ? (
+      {events === null ? (
+        <Box flex={{justifyContent: 'center', alignItems: 'center'}} style={{flex: 1}}>
+          <Spinner purpose="page" />
+        </Box>
+      ) : events.length > 0 ? (
         <InstigationEventLogTable events={events} />
       ) : (
         <Box flex={{justifyContent: 'center', alignItems: 'center'}} style={{flex: 1}}>
