@@ -183,40 +183,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetCheckSpec,
         )
 
-        all_asset_keys = set(keys_by_output_name.values())
-
         self._partitions_def = partitions_def
-        if partition_mappings:
-            _validate_partition_mappings(
-                partition_mappings=partition_mappings,
-                input_asset_keys=set(keys_by_input_name.values()),
-                all_asset_keys=all_asset_keys,
-            )
 
-        if asset_deps:
-            check.invariant(
-                set(asset_deps.keys()) == all_asset_keys,
-                "The set of asset keys with dependencies specified in the asset_deps argument must "
-                "equal the set of asset keys produced by this AssetsDefinition. \n"
-                f"asset_deps keys: {set(asset_deps.keys())} \n"
-                f"expected keys: {all_asset_keys}",
-            )
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs")
         )
-
-        self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
-            all_asset_keys=all_asset_keys,
-            all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
-            selected_asset_keys=selected_asset_keys,
-            selected_asset_check_keys=selected_asset_check_keys,
-        )
-
-        self._check_specs_by_key = {
-            spec.key: spec
-            for spec in self._check_specs_by_output_name.values()
-            if spec.key in self._selected_asset_check_keys
-        }
 
         self._can_subset = can_subset
 
@@ -251,6 +222,24 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             resolved_specs = specs
 
         else:
+            all_asset_keys = set(keys_by_output_name.values())
+
+            if asset_deps:
+                check.invariant(
+                    set(asset_deps.keys()) == all_asset_keys,
+                    "The set of asset keys with dependencies specified in the asset_deps argument must "
+                    "equal the set of asset keys produced by this AssetsDefinition. \n"
+                    f"asset_deps keys: {set(asset_deps.keys())} \n"
+                    f"expected keys: {all_asset_keys}",
+                )
+
+            if partition_mappings:
+                _validate_partition_mappings(
+                    partition_mappings=partition_mappings,
+                    input_asset_keys=set(keys_by_input_name.values()),
+                    all_asset_keys=all_asset_keys,
+                )
+
             resolved_specs = _asset_specs_from_attr_key_params(
                 all_asset_keys=all_asset_keys,
                 keys_by_input_name=keys_by_input_name,
@@ -304,9 +293,23 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 )
             )
 
+        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
+
         self._partition_mappings = get_partition_mappings_from_deps(
             {}, [dep for spec in normalized_specs for dep in spec.deps], node_def.name
         )
+        self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
+            all_asset_keys=self._specs_by_key.keys(),
+            all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
+            selected_asset_keys=selected_asset_keys,
+            selected_asset_check_keys=selected_asset_check_keys,
+        )
+
+        self._check_specs_by_key = {
+            spec.key: spec
+            for spec in self._check_specs_by_output_name.values()
+            if spec.key in self._selected_asset_check_keys
+        }
 
         _validate_self_deps(
             input_keys=[
@@ -321,8 +324,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             partition_mappings=self._partition_mappings,
             partitions_def=self._partitions_def,
         )
-
-        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
     def dagster_internal_init(
         *,
