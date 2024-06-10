@@ -196,7 +196,7 @@ export const useRunsForTimeline = ({
   // If the user paginates backwards quickly then there will be multiple outstanding fetches
   // but we only want the most recent fetch to change loading back to false.
   // fetchIdRef will help us tell if this fetch is the most recent fetch.
-  const loadIdRef = useRef(0);
+  const fetchIdRef = useRef(0);
   const ongoingRunFetchIdRef = useRef(0);
   const futureTicksFetchIdRef = useRef(0);
   const fetchOngoingRunsQueryData = useCallback(async () => {
@@ -518,7 +518,7 @@ export const useRunsForTimeline = ({
 
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
-      const loadId = ++loadIdRef.current;
+      const loadId = ++fetchIdRef.current;
       setLoading(true);
       await Promise.all([
         // Only fetch ongoing runs once every 30 seconds
@@ -536,7 +536,7 @@ export const useRunsForTimeline = ({
         })(),
         fetchCompletedRunsQueryData(),
       ]);
-      if (loadId === loadIdRef.current) {
+      if (loadId === fetchIdRef.current) {
         setLoading(false);
       }
     }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
