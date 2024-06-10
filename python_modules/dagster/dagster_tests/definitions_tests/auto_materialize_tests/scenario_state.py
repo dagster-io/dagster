@@ -29,7 +29,7 @@ from dagster import (
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -152,6 +152,7 @@ class ScenarioSpec:
                     "auto_materialize_policy",
                     "freshness_policy",
                     "partitions_def",
+                    "metadata",
                 }
                 assets.append(
                     asset(
@@ -324,6 +325,16 @@ class ScenarioState:
                 pendulum.from_timestamp(test_time_fn())
             ),
         )
+
+    def with_reported_materialization(
+        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+    ) -> Self:
+        mat = AssetMaterialization(
+            asset_key=asset_key,
+            partition=partition_key,
+        )
+        self.instance.report_runless_asset_event(mat)
+        return self
 
     def _with_runs_with_status(self, status: DagsterRunStatus) -> Self:
         """Create new runs that will run to completion for all existing runs with the given status,
