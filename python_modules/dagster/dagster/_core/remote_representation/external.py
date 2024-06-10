@@ -871,6 +871,10 @@ class ExternalSchedule:
     def tags(self) -> Mapping[str, str]:
         return self._external_schedule_data.tags
 
+    @property
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._external_schedule_data.metadata
+
     def get_remote_origin(self) -> RemoteInstigatorOrigin:
         return self.handle.get_remote_origin()
 

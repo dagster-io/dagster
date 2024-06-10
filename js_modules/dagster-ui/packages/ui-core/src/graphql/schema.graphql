@@ -1640,6 +1640,7 @@ type Schedule {
   potentialTickTimestamps(startTimestamp: Float, upperLimit: Int, lowerLimit: Int): [Float!]!
   assetSelection: AssetSelection
   tags: [DefinitionTag!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 enum InstigationStatus {
