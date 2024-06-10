@@ -178,10 +178,8 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
         assert logs == "hello hello"
 
 
-@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
-def test_get_log_keys_for_log_key_prefix(
-    mock_create_blob_client, storage_account, container, credential
-):
+# @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_get_log_keys_for_log_key_prefix(storage_account, container, credential):
     evaluation_time = pendulum.now()
     blob_prefix = "foo/bar/"  # note the trailing slash
 
