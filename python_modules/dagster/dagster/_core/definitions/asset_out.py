@@ -19,7 +19,7 @@ from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY, resolve_automation_condition
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
-from dagster._utils.tags import validate_tags_strict
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 
@@ -42,7 +42,7 @@ class AssetOut(
             ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
@@ -132,7 +132,7 @@ class AssetOut(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_tags_strict(tags),
+            tags=normalize_tags(tags or {}, strict=True),
         )
 
     def to_out(self) -> Out:

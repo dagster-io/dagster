@@ -59,7 +59,7 @@ from dagster._core.definitions.utils import (
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import KIND_PREFIX
 from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.tags import validate_tags_strict
+from dagster._utils.tags import normalize_tags
 from dagster._utils.warnings import disable_dagster_warnings
 
 
@@ -254,7 +254,7 @@ def asset(
             "Cannot specify compute_kind and kinds on the @asset decorator."
         )
     tags_with_kinds = {
-        **(validate_tags_strict(tags) or {}),
+        **(normalize_tags(tags, strict=True)),
         **{f"{KIND_PREFIX}{kind}": "" for kind in kinds or []},
     }
 
@@ -469,7 +469,7 @@ def create_assets_def_from_fn_and_decorator_args(
                     automation_condition=args.automation_condition,
                     backfill_policy=args.backfill_policy,
                     owners=args.owners,
-                    tags=validate_tags_strict(args.tags),
+                    tags=normalize_tags(args.tags or {}, strict=True),
                 )
             },
             upstream_asset_deps=args.deps,
