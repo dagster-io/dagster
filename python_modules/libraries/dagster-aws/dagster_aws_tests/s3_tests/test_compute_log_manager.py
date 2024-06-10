@@ -214,13 +214,13 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
         )
         log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
 
-        def write_log_file(file_id: int):
+        def write_log_file(file_id: int, io_type: ComputeIOType):
             full_log_key = [*log_key_prefix, f"{file_id}"]
-            with manager.open_log_stream(full_log_key, ComputeIOType.STDERR) as f:
+            with manager.open_log_stream(full_log_key, io_type) as f:
                 f.write("foo")
 
     for i in range(4):
-        write_log_file(i)
+        write_log_file(i, ComputeIOType.STDERR)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
     assert sorted(log_keys) == [
