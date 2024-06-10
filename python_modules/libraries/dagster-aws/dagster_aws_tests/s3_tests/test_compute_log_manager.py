@@ -210,7 +210,7 @@ def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
 
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = S3ComputeLogManager(
-            bucket=mock_s3_bucket.name, prefix=s3_prefix, local_dir=temp_dir
+            bucket=mock_s3_bucket.name, prefix=s3_prefix, local_dir=temp_dir, skip_empty_files=True
         )
         log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
 
