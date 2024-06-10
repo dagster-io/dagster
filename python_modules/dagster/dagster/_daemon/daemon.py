@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import random
@@ -9,9 +10,8 @@ from collections import deque
 from contextlib import AbstractContextManager, ExitStack
 from enum import Enum
 from threading import Event
-from typing import TYPE_CHECKING, Any, Generator, Generic, Mapping, Optional, TypeVar, Union
+from typing import Any, Generator, Generic, Mapping, Optional, TypeVar, Union
 
-import pendulum
 from typing_extensions import TypeAlias
 
 from dagster import (
@@ -31,10 +31,8 @@ from dagster._daemon.sensor import execute_sensor_iteration_loop
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.scheduler import execute_scheduler_iteration_loop
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
 
 
 def get_default_daemon_logger(daemon_name) -> logging.Logger:
@@ -66,7 +64,7 @@ TContext = TypeVar("TContext", bound=IWorkspaceProcessContext)
 
 class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
     _logger: logging.Logger
-    _last_heartbeat_time: Optional["DateTime"]
+    _last_heartbeat_time: Optional[datetime.datetime]
 
     def __init__(self):
         self._logger = get_default_daemon_logger(type(self).__name__)
@@ -120,7 +118,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                     try:
                         result = next(daemon_generator)
                         if isinstance(result, SerializableErrorInfo):
-                            self._errors.appendleft((result, pendulum.now("UTC")))
+                            self._errors.appendleft((result, get_current_datetime_in_utc()))
                     except StopIteration:
                         self._logger.error(
                             "Daemon loop finished without raising an error - daemon loops should"
@@ -133,7 +131,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
                             logger=self._logger,
                             log_message="Caught error, daemon loop will restart",
                         )
-                        self._errors.appendleft((error_info, pendulum.now("UTC")))
+                        self._errors.appendleft((error_info, get_current_datetime_in_utc()))
                         daemon_generator.close()
 
                         # Wait a bit to ensure that errors don't happen in a tight loop
@@ -153,7 +151,9 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
         heartbeat_interval_seconds: float,
         error_interval_seconds: int,
     ) -> None:
-        error_max_time = pendulum.now("UTC").subtract(seconds=error_interval_seconds)
+        error_max_time = get_current_datetime_in_utc() - datetime.timedelta(
+            seconds=error_interval_seconds
+        )
 
         while len(self._errors):
             _earliest_error, earliest_timestamp = self._errors[-1]
@@ -165,7 +165,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
             # no errors to report, so we don't write a heartbeat
             return
 
-        curr_time = pendulum.now("UTC")
+        curr_time = get_current_datetime_in_utc()
 
         if (
             self._last_heartbeat_time
@@ -195,7 +195,7 @@ class DagsterDaemon(AbstractContextManager, ABC, Generic[TContext]):
 
         instance.add_daemon_heartbeat(
             DaemonHeartbeat(
-                curr_time.float_timestamp,
+                curr_time.timestamp(),
                 daemon_type,
                 daemon_uuid,
                 errors=[error for (error, timestamp) in self._errors],

@@ -16,8 +16,6 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
@@ -31,6 +29,7 @@ from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
+from dagster._seven import get_current_datetime_in_utc
 
 from .partition import (
     DefaultPartitionsSubset,
@@ -341,7 +340,7 @@ class MultiPartitionsDefinition(PartitionsDefinition[MultiPartitionKey]):
             Sequence[MultiPartitionKey]
         """
         return self._get_partition_keys(
-            current_time or pendulum.now("UTC"), dynamic_partitions_store
+            current_time or get_current_datetime_in_utc(), dynamic_partitions_store
         )
 
     def filter_valid_partition_keys(

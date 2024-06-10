@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -1757,7 +1756,7 @@ class SqlEventLogStorage(EventLogStorage):
         return event_or_materialization.dagster_event.step_materialization_data.materialization  # type: ignore
 
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
-        wipe_timestamp = pendulum.now("UTC").timestamp()
+        wipe_timestamp = seven.get_current_timestamp()
         values = {
             "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
             "last_run_id": None,

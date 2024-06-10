@@ -13,7 +13,6 @@ from pathlib import Path
 from signal import Signals
 from threading import Event
 from typing import (
-    TYPE_CHECKING,
     AbstractSet,
     Any,
     Callable,
@@ -29,7 +28,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Self
 
 from dagster import (
@@ -65,7 +63,6 @@ from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
 from dagster._seven import create_datetime
 from dagster._seven.compat.datetime import timezone_from_string
-from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -75,9 +72,6 @@ from .instance_for_test import (
     environ as environ,
     instance_for_test as instance_for_test,
 )
-
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
 
 T = TypeVar("T")
 T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple)
@@ -311,7 +305,7 @@ def new_cwd(path: str) -> Iterator[None]:
         os.chdir(old)
 
 
-def today_at_midnight(timezone_name="UTC") -> "DateTime":
+def today_at_midnight(timezone_name="UTC") -> datetime.datetime:
     check.str_param(timezone_name, "timezone_name")
     tzinfo = timezone_from_string(timezone_name)
     now = datetime.datetime.now(tz=tzinfo)
@@ -715,10 +709,6 @@ def raise_exception_on_warnings():
         "ignore", category=ResourceWarning, message=r".*Implicitly cleaning up.*"
     )
 
-    if sys.version_info >= (3, 12):
-        # pendulum sometimes raises DeprecationWarning on python3.12
-        warnings.filterwarnings("ignore", category=DeprecationWarning, module="pendulum")
-
 
 def ensure_dagster_tests_import() -> None:
     dagster_package_root = (Path(dagster_init_py) / ".." / "..").resolve()
@@ -752,14 +742,9 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
     )
 
-    new_timestamp = new_dt.timestamp()
-
-    # Remove once pendulum is out of the picture
-    new_pendulum_dt = pendulum.from_timestamp(new_timestamp, "UTC")
-
     with unittest.mock.patch(
         "dagster._seven._mockable_get_current_datetime_in_utc", return_value=new_dt
     ), unittest.mock.patch(
         "dagster._seven._mockable_get_current_timestamp", return_value=new_dt.timestamp()
-    ), pendulum_freeze_time(new_pendulum_dt):
+    ):
         yield

@@ -2,9 +2,8 @@ import os
 from collections import defaultdict
 from typing import Mapping, Optional, Sequence
 
-import pendulum
-
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
+from dagster._seven import get_current_timestamp
 
 from .instance import DagsterInstance
 from .storage.dagster_run import DagsterRun, DagsterRunStatus, RunOpConcurrency, RunRecord
@@ -85,7 +84,7 @@ class GlobalOpConcurrencyLimitsCounter:
             return True
         if status != DagsterRunStatus.STARTED or not record.start_time:
             return False
-        time_elapsed = pendulum.now("UTC").timestamp() - record.start_time
+        time_elapsed = get_current_timestamp() - record.start_time
         if time_elapsed < self._started_run_concurrency_keys_allotted_seconds:
             return True
 

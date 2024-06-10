@@ -15,8 +15,6 @@ from typing import (
     Union,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.definitions import ScheduleEvaluationContext
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -65,7 +63,7 @@ from dagster._core.storage.dagster_run import DagsterRun
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
 from dagster._serdes import deserialize_value
 from dagster._serdes.ipc import IPCErrorMessage
-from dagster._seven import nullcontext
+from dagster._seven import datetime_from_timestamp, nullcontext
 from dagster._utils import start_termination_thread
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts
@@ -309,9 +307,9 @@ def get_external_schedule_execution(
     try:
         schedule_def = repo_def.get_schedule_def(schedule_name)
         scheduled_execution_time = (
-            pendulum.from_timestamp(
+            datetime_from_timestamp(
                 scheduled_execution_timestamp,
-                tz=check.not_none(scheduled_execution_timezone),
+                tz=scheduled_execution_timezone or "UTC",
             )
             if scheduled_execution_timestamp
             else None

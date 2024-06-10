@@ -1,7 +1,7 @@
 import graphene
-import pendulum
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._seven import datetime_from_timestamp
 from dagster._utils import check
 
 from .pipelines.status import GrapheneRunStatus
@@ -60,10 +60,10 @@ class GrapheneRunsFilter(graphene.InputObjectType):
         else:
             statuses = None
 
-        updated_before = pendulum.from_timestamp(self.updatedBefore) if self.updatedBefore else None
-        updated_after = pendulum.from_timestamp(self.updatedAfter) if self.updatedAfter else None
-        created_before = pendulum.from_timestamp(self.createdBefore) if self.createdBefore else None
-        created_after = pendulum.from_timestamp(self.createdAfter) if self.createdAfter else None
+        updated_before = datetime_from_timestamp(self.updatedBefore) if self.updatedBefore else None
+        updated_after = datetime_from_timestamp(self.updatedAfter) if self.updatedAfter else None
+        created_before = datetime_from_timestamp(self.createdBefore) if self.createdBefore else None
+        created_after = datetime_from_timestamp(self.createdAfter) if self.createdAfter else None
 
         return RunsFilter(
             run_ids=self.runIds if self.runIds else None,

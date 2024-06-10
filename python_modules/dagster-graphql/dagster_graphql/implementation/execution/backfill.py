@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, List, Sequence, Union, cast
 
 import dagster._check as check
-import pendulum
 from dagster._core.definitions.selector import PartitionsByAssetSelector, RepositorySelector
 from dagster._core.definitions.utils import is_valid_title_and_reason
 from dagster._core.errors import (
@@ -16,6 +15,7 @@ from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
+from dagster._seven import get_current_timestamp
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -111,7 +111,7 @@ def create_and_launch_partition_backfill(
 
     tags = {**tags, **graphene_info.context.get_viewer_tags()}
 
-    backfill_timestamp = pendulum.now("UTC").timestamp()
+    backfill_timestamp = get_current_timestamp()
 
     if backfill_params.get("selector") is not None:  # job backfill
         partition_set_selector = backfill_params["selector"]

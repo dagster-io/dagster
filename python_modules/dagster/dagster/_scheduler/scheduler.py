@@ -20,7 +20,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Self
 
 import dagster._check as check
@@ -51,7 +50,7 @@ from dagster._core.utils import InheritContextThreadPoolExecutor
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
-from dagster._seven.compat.pendulum import to_timezone
+from dagster._seven import get_current_datetime_in_utc, get_current_timestamp
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.log import default_date_format_string
@@ -139,7 +138,9 @@ class _ScheduleLaunchContext(AbstractContextManager):
             self._instance.purge_ticks(
                 self._external_schedule.get_external_origin_id(),
                 selector_id=self._external_schedule.selector_id,
-                before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
+                before=(
+                    get_current_datetime_in_utc() - datetime.timedelta(days=day_offset)
+                ).timestamp(),
                 tick_statuses=list(statuses),
             )
 
@@ -217,8 +218,8 @@ def execute_scheduler_iteration_loop(
                 )
 
         while True:
-            start_time = pendulum.now("UTC").timestamp()
-            end_datetime_utc = pendulum.now("UTC")
+            start_time = get_current_timestamp()
+            end_datetime_utc = get_current_datetime_in_utc()
 
             next_interval_time = _get_next_scheduler_iteration_time(start_time)
 
@@ -246,7 +247,7 @@ def execute_scheduler_iteration_loop(
                 next_interval_time = min(start_time + ERROR_INTERVAL_TIME, next_interval_time)
 
             yield SpanMarker.END_SPAN
-            end_time = pendulum.now("UTC").timestamp()
+            end_time = get_current_timestamp()
 
             if next_interval_time > end_time:
                 # Sleep until the beginning of the next minute, plus a small epsilon to
@@ -893,7 +894,9 @@ def _get_existing_run_for_request(
     tags = merge_dicts(
         DagsterRun.tags_for_schedule(external_schedule),
         {
-            SCHEDULED_EXECUTION_TIME_TAG: to_timezone(schedule_time, "UTC").isoformat(),
+            SCHEDULED_EXECUTION_TIME_TAG: schedule_time.astimezone(
+                datetime.timezone.utc
+            ).isoformat(),
         },
     )
     if run_request.run_key:
@@ -949,7 +952,7 @@ def _create_scheduler_run(
         schedule_tags,
     )
 
-    tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
+    tags[SCHEDULED_EXECUTION_TIME_TAG] = schedule_time.astimezone(datetime.timezone.utc).isoformat()
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
 

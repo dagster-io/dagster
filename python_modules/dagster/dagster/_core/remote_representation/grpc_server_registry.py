@@ -4,7 +4,6 @@ import uuid
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union, cast
 
-import pendulum
 from typing_extensions import TypeGuard
 
 import dagster._check as check
@@ -16,6 +15,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
+from dagster._seven import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 if TYPE_CHECKING:
@@ -210,14 +210,14 @@ class GrpcServerRegistry(AbstractContextManager):
                 self._active_entries[origin_id] = ServerRegistryEntry(
                     process=server_process,
                     loadable_target_origin=loadable_target_origin,
-                    creation_timestamp=pendulum.now("UTC").timestamp(),
+                    creation_timestamp=get_current_timestamp(),
                     server_id=new_server_id,
                 )
             except Exception:
                 self._active_entries[origin_id] = ErrorRegistryEntry(
                     error=serializable_error_info_from_exc_info(sys.exc_info()),
                     loadable_target_origin=loadable_target_origin,
-                    creation_timestamp=pendulum.now("UTC").timestamp(),
+                    creation_timestamp=get_current_timestamp(),
                 )
 
         active_entry = self._active_entries[origin_id]
@@ -244,7 +244,7 @@ class GrpcServerRegistry(AbstractContextManager):
             if shutdown_event.is_set():
                 break
 
-            current_time = pendulum.now("UTC").timestamp()
+            current_time = get_current_timestamp()
             with self._lock:
                 origin_ids_to_clear: List[str] = []
 

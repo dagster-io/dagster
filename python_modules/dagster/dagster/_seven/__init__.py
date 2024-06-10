@@ -16,7 +16,6 @@ from typing_extensions import TypeGuard
 
 from dagster._seven.compat.datetime import timezone_from_string
 
-from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (
     JSONDecodeError as JSONDecodeError,
     dump as dump,
@@ -126,20 +125,20 @@ def builtin_print() -> str:
     return "builtins.print"
 
 
-def _mockable_get_current_datetime_in_utc():
+def _mockable_get_current_datetime_in_utc() -> datetime:
     # Can be mocked in tests by freeze_time()
     return datetime.now(tz=timezone.utc)
 
 
-def get_current_datetime_in_utc() -> Any:
+def get_current_datetime_in_utc() -> datetime:
     return _mockable_get_current_datetime_in_utc()
 
 
-def _mockable_get_current_timestamp():
+def _mockable_get_current_timestamp() -> float:
     return time.time()
 
 
-def get_current_timestamp():
+def get_current_timestamp() -> float:
     # Like time.time() but can be mocked in tests by freeze_time()
     return _mockable_get_current_timestamp()
 
@@ -155,14 +154,14 @@ def datetime_from_timestamp(timestamp: float, tz: Union[str, tzinfo] = timezone.
     return datetime.fromtimestamp(timestamp, tz=tzinfo)
 
 
-def create_datetime(year, month, day, *args, **kwargs):
+def create_datetime(year, month, day, *args, **kwargs) -> datetime:
     tz = kwargs.pop("tz", "UTC")
     if isinstance(tz, str):
         tz = timezone_from_string(tz)
     return datetime(year, month, day, *args, **kwargs, tzinfo=tz)
 
 
-def create_utc_datetime(year, month, day, *args, **kwargs):
+def create_utc_datetime(year, month, day, *args, **kwargs) -> datetime:
     return create_datetime(year, month, day, *args, **kwargs, tz="UTC")
 
 
@@ -174,7 +173,7 @@ def add_fixed_time(
     seconds=0,
     milliseconds=0,
     microseconds=0,
-):
+) -> datetime:
     """Behaves like adding a time using a timedelta, but handles fall DST transitions correctly
     without skipping an hour ahead.
     """
@@ -198,7 +197,7 @@ def subtract_fixed_time(
     seconds=0,
     milliseconds=0,
     microseconds=0,
-):
+) -> datetime:
     """Behaves like adding a time using a timedelta, but handles fall DST transitions correctly
     without skipping an hour behind.
     """
@@ -222,16 +221,6 @@ def parse_with_timezone(datetime_str) -> datetime:
         dt = dt.replace(tzinfo=timezone.utc)
 
     return dt
-
-
-def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
-    if isinstance(utc_datetime, PendulumDateTime):
-        return utc_datetime.timestamp()
-
-    if utc_datetime.tzinfo != timezone.utc:
-        raise Exception("Must pass in a UTC timezone to compute UNIX timestamp")
-
-    return utc_datetime.timestamp()
 
 
 def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:

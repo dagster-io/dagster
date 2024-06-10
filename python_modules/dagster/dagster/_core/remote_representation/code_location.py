@@ -67,7 +67,6 @@ from dagster._grpc.impl import (
 )
 from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
 from dagster._serdes import deserialize_value
-from dagster._seven.compat.pendulum import PendulumDateTime
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
@@ -512,7 +511,9 @@ class InProcessCodeLocation(CodeLocation):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
         check.str_param(schedule_name, "schedule_name")
-        check.opt_inst_param(scheduled_execution_time, "scheduled_execution_time", PendulumDateTime)
+        check.opt_inst_param(
+            scheduled_execution_time, "scheduled_execution_time", TimestampWithTimezone
+        )
         check.opt_list_param(log_key, "log_key", of_type=str)
 
         result = get_external_schedule_execution(

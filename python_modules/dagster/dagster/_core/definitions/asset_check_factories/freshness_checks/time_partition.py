@@ -1,7 +1,5 @@
 from typing import Any, Dict, Iterable, Sequence, Union
 
-import pendulum
-
 from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_result import AssetCheckResult
@@ -16,6 +14,7 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._seven import datetime_from_timestamp, get_current_timestamp
 from dagster._utils.schedules import (
     get_latest_completed_cron_tick,
     get_next_cron_tick,
@@ -143,17 +142,17 @@ def _build_freshness_multi_check(
     def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
         for check_key in context.selected_asset_check_keys:
             asset_key = check_key.asset_key
-            current_timestamp = pendulum.now("UTC").timestamp()
+            current_timestamp = get_current_timestamp()
 
             partitions_def = check.inst(
                 context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def,
                 TimeWindowPartitionsDefinition,
             )
-            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            current_time_in_freshness_tz = datetime_from_timestamp(current_timestamp, tz=timezone)
             deadline = get_latest_completed_cron_tick(
                 deadline_cron, current_time_in_freshness_tz, timezone
             )
-            deadline_in_partitions_def_tz = pendulum.from_timestamp(
+            deadline_in_partitions_def_tz = datetime_from_timestamp(
                 deadline.timestamp(), tz=partitions_def.timezone
             )
             last_completed_time_window = check.not_none(

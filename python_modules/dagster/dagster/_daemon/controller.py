@@ -8,7 +8,6 @@ from contextlib import AbstractContextManager, ExitStack, contextmanager
 from types import TracebackType
 from typing import Callable, Dict, Iterable, Iterator, Mapping, Optional, Sequence, Type
 
-import pendulum
 from typing_extensions import Self
 
 import dagster._check as check
@@ -27,6 +26,7 @@ from dagster._daemon.daemon import (
 )
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
 from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster._seven import get_current_datetime_in_utc, get_current_timestamp
 from dagster._utils.interrupts import raise_interrupts_as
 from dagster._utils.log import configure_loggers
 
@@ -198,7 +198,7 @@ class DagsterDaemonController(AbstractContextManager):
             self._last_healthy_heartbeat_times[daemon_type] = time.time()
             self._daemon_threads[daemon_type].start()
 
-        self._start_time = pendulum.now("UTC")
+        self._start_time = get_current_datetime_in_utc()
 
     def __enter__(self) -> Self:
         return self
@@ -270,13 +270,13 @@ class DagsterDaemonController(AbstractContextManager):
             )
 
     def check_workspace_freshness(self, last_workspace_update_time: float) -> float:
-        nowish = pendulum.now("UTC").float_timestamp
+        nowish = get_current_timestamp()
         try:
             if (nowish - last_workspace_update_time) > RELOAD_WORKSPACE_INTERVAL:
                 if self._grpc_server_registry:
                     self._grpc_server_registry.clear_all_grpc_endpoints()
                 self._workspace_process_context.refresh_workspace()
-                return pendulum.now("UTC").float_timestamp
+                return get_current_timestamp()
         except Exception:
             if (nowish - last_workspace_update_time) > DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE:
                 self._logger.exception("Daemon controller surpassed workspace freshness tolerance.")
@@ -306,7 +306,7 @@ class DagsterDaemonController(AbstractContextManager):
                     # If there's no errors, the daemons won't be writing heartbeats.
                     continue
 
-                now = pendulum.now("UTC").float_timestamp
+                now = get_current_timestamp()
                 # Give the daemon enough time to send an initial heartbeat before checking
                 if (
                     (now - start_time) < 2 * self._heartbeat_interval_seconds
@@ -315,7 +315,7 @@ class DagsterDaemonController(AbstractContextManager):
                     continue
 
                 self.check_daemon_heartbeats()
-                last_heartbeat_check_time = pendulum.now("UTC").float_timestamp
+                last_heartbeat_check_time = get_current_timestamp()
 
     def __exit__(
         self,
@@ -425,7 +425,7 @@ def get_daemon_statuses(
     heartbeat_tolerance_seconds: float = DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
 ) -> Mapping[str, DaemonStatus]:
     curr_time_seconds = check.opt_float_param(
-        curr_time_seconds, "curr_time_seconds", default=pendulum.now("UTC").float_timestamp
+        curr_time_seconds, "curr_time_seconds", default=get_current_timestamp()
     )
 
     daemon_statuses_by_type: Dict[str, DaemonStatus] = {}
@@ -450,7 +450,7 @@ def get_daemon_statuses(
                 maximum_tolerated_time = (
                     hearbeat_timestamp + heartbeat_interval_seconds + heartbeat_tolerance_seconds
                 )
-                healthy = curr_time_seconds <= maximum_tolerated_time  # type: ignore  # (possible none)
+                healthy = curr_time_seconds <= maximum_tolerated_time
 
                 if not ignore_errors and latest_heartbeat.errors:
                     healthy = False
@@ -467,7 +467,7 @@ def get_daemon_statuses(
 
 def debug_daemon_heartbeats(instance: DagsterInstance) -> None:
     daemon = SensorDaemon(settings=instance.get_sensor_settings())
-    timestamp = pendulum.now("UTC").float_timestamp
+    timestamp = get_current_timestamp()
     instance.add_daemon_heartbeat(DaemonHeartbeat(timestamp, daemon.daemon_type(), None, None))
     returned_timestamp = instance.get_daemon_heartbeats()[daemon.daemon_type()].timestamp
     print(f"Written timestamp: {timestamp}\nRead timestamp: {returned_timestamp}")  # noqa: T201

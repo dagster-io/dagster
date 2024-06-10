@@ -6,7 +6,7 @@ import graphene
 from dagster import DefaultScheduleStatus
 from dagster._core.remote_representation import ExternalSchedule
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster._seven import get_current_timestamp
 
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
@@ -181,9 +181,7 @@ class GrapheneSchedule(graphene.ObjectType):
 
         upper_limit defines how many ticks will be retrieved after the current timestamp, and lower_limit defines how many ticks will be retrieved before the current timestamp.
         """
-        start_timestamp = start_timestamp or get_timestamp_from_utc_datetime(
-            get_current_datetime_in_utc()
-        )
+        start_timestamp = start_timestamp or get_current_timestamp()
         upper_limit = upper_limit or 10
         lower_limit = lower_limit or 10
 
