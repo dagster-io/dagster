@@ -13,7 +13,7 @@ import {
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import {useEffect, useReducer} from 'react';
+import {useContext, useEffect, useReducer} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -27,6 +27,7 @@ import {
   BackfillStatusesByAssetQuery,
   BackfillStatusesByAssetQueryVariables,
 } from './types/BackfillPage.types';
+import {CloudOSSContext} from '../../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {QueryRefreshCountdown, useQueryRefreshAtInterval} from '../../app/QueryRefresh';
@@ -42,6 +43,7 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 export const BackfillPage = () => {
+  const {featureContext} = useContext(CloudOSSContext);
   const {backfillId} = useParams<{backfillId: string}>();
   useTrackPageView();
   useDocumentTitle(`Backfill | ${backfillId}`);
@@ -133,7 +135,9 @@ export const BackfillPage = () => {
           <Tabs size="large" selectedTabId={selectedTab}>
             <Tab id="partitions" title="Partitions" onClick={() => setSelectedTab('partitions')} />
             <Tab id="runs" title="Runs" onClick={() => setSelectedTab('runs')} />
-            <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
+            {featureContext.canSeeBackfillCoordinatorLogs ? (
+              <Tab id="logs" title="Coordinator logs" onClick={() => setSelectedTab('logs')} />
+            ) : null}
           </Tabs>
         </Box>
 
