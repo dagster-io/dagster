@@ -15,36 +15,38 @@ export async function fetchPaginatedBucketData<BucketType, DataType, CursorType,
     bucket: BucketType,
     cursor: CursorType | undefined,
   ) => Promise<{
-    data: DataType[];
     hasMore: boolean;
     cursor: CursorType | undefined;
     error: ErrorType;
   }>;
   setQueryData: React.Dispatch<React.SetStateAction<QueryResultData<DataType>>>;
 }) {
-  setQueryData(({data}) => ({
-    data, // preserve existing data
+  setQueryData((queryData) => ({
+    ...queryData,
     loading: true,
     called: true,
     error: undefined,
   }));
   try {
-    const results = await Promise.all(
+    await Promise.all(
       buckets.map((bucket) =>
         fetchPaginatedData<DataType, CursorType, ErrorType>({
-          fetchData: (cursor) => fetchData(bucket, cursor),
+          fetchData: async (cursor) => {
+            const res = await fetchData(bucket, cursor);
+            return {...res, data: []};
+          },
         }),
       ),
     );
-    setQueryData({
-      data: results.flat(),
+    setQueryData((queryData) => ({
+      ...queryData,
       loading: false,
       called: true,
       error: undefined,
-    });
+    }));
   } catch (error) {
-    setQueryData(({data}) => ({
-      data, // preserve existing data
+    setQueryData((queryData) => ({
+      ...queryData,
       loading: false,
       called: true,
       error,

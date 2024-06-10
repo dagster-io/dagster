@@ -232,7 +232,7 @@ export class HourlyDataCache<T> {
    * @param callback - The callback function to notify when new data is added.
    */
   subscribe(ts: number, callback: Subscription<T>) {
-    const startHour = Math.ceil(ts / ONE_HOUR_S);
+    const startHour = Math.floor(ts / ONE_HOUR_S);
     const sub = {hour: startHour, callback};
     this.subscriptions.push(sub);
     this.notifyExistingData(startHour, callback);

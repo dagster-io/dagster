@@ -70,22 +70,27 @@ export const useRunsForTimeline = ({
       localCacheIdPrefix ? `${localCacheIdPrefix}-useRunsForTimeline` : false,
     );
   }, [filter, localCacheIdPrefix]);
-  const [runsNotCapturedByUpdateBuckets, setRunsNotCapturedByUpdateBuckets] = useState<
-    RunTimelineFragment[]
-  >([]);
+  const [completedRuns, setCompletedRuns] = useState<RunTimelineFragment[]>([]);
 
   useLayoutEffect(() => {
-    // We fetch updatedAfter -> updatedBefore buckets but we also need runs that match
-    // updatedAfter (right border) -> createdBefore (right border). Well we rely on the fact
-    // that runs are fetched in adjacent intervals going to the past so we can assume a future bucket that
-    // is being or was fetched will have that run so subscribe to future runs and filter for the ones createdBefore
-    // our right boundary (endSec)
-    return completedRunsCache.subscribe(endSec, (runs) => {
-      setRunsNotCapturedByUpdateBuckets(runs.filter((run) => run.startTime! < endSec));
+    // Fetch runs matching:
+    // 1. updatedAfter (startSec) -> updatedBefore (endSec)
+    // 2. updatedAfter (endSec) -> createdBefore (endSec).
+    // For (2) we rely on the fact that runs are fetched in adjacent intervals from "now" going backwards
+    // so we can assume a future bucket that is being or was fetched will have the runs we need.
+    return completedRunsCache.subscribe(startSec, (runs) => {
+      setCompletedRuns(
+        runs.filter(
+          (run) =>
+            (run.startTime! <= endSec && run.updateTime! >= endSec) ||
+            (run.updateTime! >= startSec && run.updateTime! <= endSec),
+        ),
+      );
     });
-  }, [completedRunsCache, end, endSec]);
+  }, [completedRunsCache, end, endSec, startSec]);
 
   const [completedRunsQueryData, setCompletedRunsData] = useState<{
+    // TODO: Remove data property here since we grab the data from the cache instead of here.
     data: RunTimelineFragment[] | undefined;
     loading: boolean;
     error: any;
@@ -107,42 +112,42 @@ export const useRunsForTimeline = ({
     error: undefined,
     called: false,
   });
-  const {data: ongoingRunsData, loading: loadingOngoingRunsData} = ongoingRunsQueryData;
-  const {data: completedRunsData, loading: loadingCompletedRunsData} = completedRunsQueryData;
+
+  const {data: ongoingRunsData} = ongoingRunsQueryData;
 
   const fetchCompletedRunsQueryData = useCallback(async () => {
     await completedRunsCache.loadCacheFromIndexedDB();
     return await fetchPaginatedBucketData({
-      buckets: buckets.map((bucket) => {
-        let updatedAfter = bucket[0];
-        let updatedBefore = bucket[1];
-        const missingRange = completedRunsCache.getMissingIntervals(updatedAfter);
-        if (missingRange[0]) {
-          // When paginating backwards the missing range will be at the beginning of the hour
-          // When looking the current time the missing range will be at the end of the hour
-          updatedAfter = Math.max(missingRange[0][0], updatedAfter);
-          updatedBefore = Math.min(missingRange[0][1], updatedBefore);
-        }
-        return [updatedAfter, updatedBefore] as [number, number];
-      }),
+      buckets: buckets
+        .filter((bucket) => !completedRunsCache.isCompleteRange(bucket[0], bucket[1]))
+        .map((bucket) => {
+          let updatedAfter = bucket[0];
+          let updatedBefore = bucket[1];
+          const missingRange = completedRunsCache.getMissingIntervals(updatedAfter);
+          if (missingRange[0]) {
+            // When paginating backwards the missing range will be at the beginning of the hour
+            // When looking the current time the missing range will be at the end of the hour
+            updatedAfter = Math.max(missingRange[0][0], updatedAfter);
+            updatedBefore = Math.min(missingRange[0][1], updatedBefore);
+          }
+          return [updatedAfter, updatedBefore] as [number, number];
+        }),
       setQueryData: setCompletedRunsData,
       async fetchData(bucket, cursor: string | undefined) {
         const updatedBefore = bucket[1];
         const updatedAfter = bucket[0];
-        let cacheData: RunTimelineFragment[] = [];
 
         if (completedRunsCache.isCompleteRange(updatedAfter, updatedBefore) && !cursor) {
           // If there's a cursor then that means the current range is being paginated so
           // it is not complete even though there is some data for the time range
 
           return {
-            data: completedRunsCache.getHourData(updatedAfter),
+            // TODO: Remove data property here
+            data: [],
             cursor: undefined,
             hasMore: false,
             error: undefined,
           };
-        } else {
-          cacheData = completedRunsCache.getHourData(updatedAfter);
         }
 
         const {data} = await client.query<
@@ -166,7 +171,7 @@ export const useRunsForTimeline = ({
 
         if (data.completed.__typename !== 'Runs') {
           return {
-            data: [...cacheData],
+            data: [],
             cursor: undefined,
             hasMore: false,
             error: data.completed,
@@ -179,7 +184,7 @@ export const useRunsForTimeline = ({
         const nextCursor = hasMoreData ? runs[runs.length - 1]!.id : undefined;
 
         return {
-          data: [...cacheData, ...runs],
+          data: [],
           cursor: nextCursor,
           hasMore: hasMoreData,
           error: undefined,
@@ -267,38 +272,43 @@ export const useRunsForTimeline = ({
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
   useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
-  useBlockTraceOnQueryResult(futureTicksQueryData, 'FutureTicksQuery');
 
-  const {data: futureTicksData, loading: loadingFutureTicksData} = futureTicksQueryData;
+  const {data: futureTicksData} = futureTicksQueryData;
 
   const {workspaceOrError} = futureTicksData || {workspaceOrError: undefined};
 
-  const runsByJobKey = useMemo(() => {
-    const map: {[jobKey: string]: {[id: string]: TimelineRun}} = {};
+  const [loading, setLoading] = useState(false);
+
+  const previousRunsByJobKey = useRef<{
+    jobInfo: Record<string, {repoAddress: RepoAddress; pipelineName: string; isAdHoc: boolean}>;
+    runsByJobKey: {
+      [jobKey: string]: {
+        [id: string]: TimelineRun;
+      };
+    };
+  }>({jobInfo: {}, runsByJobKey: {}});
+  const {runsByJobKey, jobInfo} = useMemo(() => {
+    if (loading) {
+      // While we're loading data just keep returning the last result so that we're not
+      // re-rendering 24+ times while we populate the cache asynchronously via our batching/chunking.
+      return previousRunsByJobKey.current;
+    }
+    const jobInfo: Record<
+      string,
+      {repoAddress: RepoAddress; pipelineName: string; isAdHoc: boolean}
+    > = {};
+    const map: {
+      [jobKey: string]: {
+        [id: string]: TimelineRun;
+      };
+    } = {};
     const now = Date.now();
 
-    // fetch all the runs in the given range
-    [
-      ...(ongoingRunsData ?? []),
-      ...(completedRunsData ?? []),
-      ...runsNotCapturedByUpdateBuckets,
-    ].forEach((run) => {
+    function saveRunInfo(run: (typeof completedRuns)[0]) {
       if (run.startTime === null) {
         return;
       }
       if (!run.repositoryOrigin) {
-        return;
-      }
-
-      if (
-        !overlap(
-          {start, end},
-          {
-            start: run.startTime * 1000,
-            end: run.endTime ? run.endTime * 1000 : now,
-          },
-        )
-      ) {
         return;
       }
 
@@ -317,16 +327,71 @@ export const useRunsForTimeline = ({
         startTime: run.startTime * 1000,
         endTime: run.endTime ? run.endTime * 1000 : now,
       };
-    });
+      if (!jobInfo[runJobKey] && run.repositoryOrigin) {
+        const pipelineName = run.pipelineName;
+        const isAdHoc = isHiddenAssetGroupJob(pipelineName);
 
-    return map;
-  }, [ongoingRunsData, completedRunsData, runsNotCapturedByUpdateBuckets, start, end]);
-
-  const jobsWithRuns: TimelineJob[] = useMemo(() => {
-    if (!workspaceOrError || workspaceOrError.__typename === 'PythonError') {
-      return [];
+        const repoAddress = buildRepoAddress(
+          run.repositoryOrigin!.repositoryName,
+          run.repositoryOrigin!.repositoryLocationName,
+        );
+        jobInfo[runJobKey] = {
+          repoAddress,
+          isAdHoc,
+          pipelineName,
+        };
+      }
     }
 
+    // fetch all the runs in the given range
+    completedRuns.forEach(saveRunInfo);
+    ongoingRunsData?.forEach(saveRunInfo);
+    const current = {jobInfo, runsByJobKey: map};
+    previousRunsByJobKey.current = current;
+    return current;
+  }, [completedRuns, ongoingRunsData, loading]);
+
+  const jobsWithCompletedRunsAndOngoingRuns = useMemo(() => {
+    const jobs: Record<string, TimelineJob> = {};
+    if (!Object.keys(runsByJobKey).length) {
+      return jobs;
+    }
+
+    Object.entries(runsByJobKey).forEach(([jobKey, jobRunsInfo]) => {
+      const runs = Object.values(jobRunsInfo);
+      const info = jobInfo[jobKey];
+      if (!info) {
+        return;
+      }
+
+      const {pipelineName, isAdHoc, repoAddress} = info;
+
+      jobs[jobKey] = {
+        key: jobKey,
+        jobName: isAdHoc ? 'Ad hoc materializations' : pipelineName,
+        jobType: isAdHoc ? 'asset' : 'job',
+        repoAddress,
+        path: workspacePipelinePath({
+          repoName: repoAddress.name,
+          repoLocation: repoAddress.location,
+          pipelineName,
+          isJob: true,
+        }),
+        runs,
+      } as TimelineJob;
+    });
+
+    return jobs;
+  }, [jobInfo, runsByJobKey]);
+
+  const jobsWithCompletedRunsAndOngoingRunsValues = useMemo(() => {
+    return Object.values(jobsWithCompletedRunsAndOngoingRuns);
+  }, [jobsWithCompletedRunsAndOngoingRuns]);
+
+  const unsortedJobs: TimelineJob[] = useMemo(() => {
+    if (!workspaceOrError || workspaceOrError.__typename === 'PythonError' || _end < Date.now()) {
+      return jobsWithCompletedRunsAndOngoingRunsValues;
+    }
     const jobs: TimelineJob[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
       if (
@@ -378,35 +443,47 @@ export const useRunsForTimeline = ({
             continue;
           }
 
-          const jobsAndTicksToAdd = [...jobRuns, ...jobTicks];
-          if (isAdHoc) {
-            const adHocJobs = jobs.find(
-              (job) => job.jobType === 'asset' && job.repoAddress === repoAddress,
-            );
-            if (adHocJobs) {
-              adHocJobs.runs.push(...jobsAndTicksToAdd);
-              continue;
-            }
+          const runs = [...jobRuns, ...jobTicks];
+
+          let job = jobsWithCompletedRunsAndOngoingRuns[jobKey];
+          if (job) {
+            job = {
+              ...job,
+              runs,
+            };
+          } else {
+            job = {
+              key: jobKey,
+              jobName,
+              jobType: isAdHoc ? 'asset' : 'job',
+              repoAddress,
+              path: workspacePipelinePath({
+                repoName: repoAddress.name,
+                repoLocation: repoAddress.location,
+                pipelineName: pipeline.name,
+                isJob: pipeline.isJob,
+              }),
+              runs,
+            } as TimelineJob;
           }
 
-          jobs.push({
-            key: jobKey,
-            jobName,
-            jobType: isAdHoc ? 'asset' : 'job',
-            repoAddress,
-            path: workspacePipelinePath({
-              repoName: repoAddress.name,
-              repoLocation: repoAddress.location,
-              pipelineName: pipeline.name,
-              isJob: pipeline.isJob,
-            }),
-            runs: [...jobRuns, ...jobTicks],
-          } as TimelineJob);
+          jobs.push(job);
         }
       }
     }
+    return jobs;
+    // Don't add start/end time as a dependency here since it changes often.
+    // Instead rely on the underlying runs changing in response to start/end changing
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    workspaceOrError,
+    jobsWithCompletedRunsAndOngoingRunsValues,
+    runsByJobKey,
+    jobsWithCompletedRunsAndOngoingRuns,
+  ]);
 
-    const earliest = jobs.reduce(
+  const jobsWithRuns = useMemo(() => {
+    const earliest = unsortedJobs.reduce(
       (accum, job) => {
         const startTimes = job.runs.map((job) => job.startTime);
         accum[job.key] = Math.min(...startTimes);
@@ -415,8 +492,8 @@ export const useRunsForTimeline = ({
       {} as {[jobKey: string]: number},
     );
 
-    return jobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
-  }, [workspaceOrError, runsByJobKey, start, _end]);
+    return unsortedJobs.sort((a, b) => earliest[a.key]! - earliest[b.key]!);
+  }, [unsortedJobs]);
 
   const lastFetchRef = useRef({ongoing: 0, future: 0});
   const lastRangeMs = useRef([0, 0] as readonly [number, number]);
@@ -425,8 +502,14 @@ export const useRunsForTimeline = ({
   }
   lastRangeMs.current = rangeMs;
 
+  const loadingRef = useRef(0);
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
+      // If the user paginates backwards quickly then there will be multiple outstanding fetches
+      // but we only want the most recent fetch to change loading back to false.
+      // loadingRef will help us tell if this fetch is the most recent fetch.
+      const loadId = ++loadingRef.current;
+      setLoading(true);
       await Promise.all([
         // Only fetch ongoing runs once every 30 seconds
         (async () => {
@@ -438,31 +521,24 @@ export const useRunsForTimeline = ({
         // Only fetch future ticks on a minute
         (async () => {
           if (lastFetchRef.current.future < Date.now() - 60 * 1000) {
-            await fetchFutureTicks();
-            lastFetchRef.current.future = Date.now();
+            fetchFutureTicks();
           }
         })(),
         fetchCompletedRunsQueryData(),
       ]);
+      if (loadId === loadingRef.current) {
+        setLoading(false);
+      }
     }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
     intervalMs: refreshInterval,
     leading: true,
   });
 
-  const initialLoading =
-    (loadingOngoingRunsData && !ongoingRunsData) ||
-    (loadingCompletedRunsData && !completedRunsData) ||
-    (loadingFutureTicksData && !futureTicksData) ||
-    !workspaceOrError;
-
-  return useMemo(
-    () => ({
-      jobs: jobsWithRuns,
-      initialLoading,
-      refreshState,
-    }),
-    [initialLoading, jobsWithRuns, refreshState],
-  );
+  return {
+    jobs: jobsWithRuns,
+    loading,
+    refreshState,
+  };
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
@@ -520,11 +596,6 @@ export const FUTURE_TICKS_QUERY = gql`
         locationEntries {
           id
           name
-          loadStatus
-          displayMetadata {
-            key
-            value
-          }
           locationOrLoadError {
             ... on RepositoryLocation {
               id
