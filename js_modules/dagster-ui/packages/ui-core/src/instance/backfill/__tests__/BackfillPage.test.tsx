@@ -14,6 +14,7 @@ import {
   buildPythonError,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
+import {buildQueryMock} from '../../../testing/mocking';
 import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -28,56 +29,51 @@ jest.mock('../../../app/QueryRefresh', () => {
 const mockBackfillId = 'mockBackfillId';
 
 const mocks = [
-  {
-    request: {
-      query: BACKFILL_DETAILS_QUERY,
-      variables: {backfillId: mockBackfillId},
-    },
+  buildQueryMock({
+    query: BACKFILL_DETAILS_QUERY,
+    variables: {backfillId: mockBackfillId},
     delay: 10,
-    result: {
-      __typename: 'CloudQuery',
-      data: {
-        partitionBackfillOrError: buildPartitionBackfill({
-          assetBackfillData: buildAssetBackfillData({
-            rootTargetedPartitions: {
-              __typename: 'AssetBackfillTargetPartitions',
-              partitionKeys: ['1', '2', '3'],
-              ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
+    data: {
+      partitionBackfillOrError: buildPartitionBackfill({
+        assetBackfillData: buildAssetBackfillData({
+          rootTargetedPartitions: {
+            __typename: 'AssetBackfillTargetPartitions',
+            partitionKeys: ['1', '2', '3'],
+            ranges: [buildPartitionKeyRange({start: '1', end: '2'})],
+          },
+          assetBackfillStatuses: [
+            {
+              ...buildAssetPartitionsStatusCounts({
+                assetKey: buildAssetKey({
+                  path: ['assetA'],
+                }),
+                numPartitionsTargeted: 33,
+                numPartitionsInProgress: 22,
+                numPartitionsMaterialized: 11,
+                numPartitionsFailed: 0,
+              }),
+              __typename: 'AssetPartitionsStatusCounts',
             },
-            assetBackfillStatuses: [
-              {
-                ...buildAssetPartitionsStatusCounts({
-                  assetKey: buildAssetKey({
-                    path: ['assetA'],
-                  }),
-                  numPartitionsTargeted: 33,
-                  numPartitionsInProgress: 22,
-                  numPartitionsMaterialized: 11,
-                  numPartitionsFailed: 0,
+            {
+              ...buildUnpartitionedAssetStatus({
+                assetKey: buildAssetKey({
+                  path: ['assetB'],
                 }),
-                __typename: 'AssetPartitionsStatusCounts',
-              },
-              {
-                ...buildUnpartitionedAssetStatus({
-                  assetKey: buildAssetKey({
-                    path: ['assetB'],
-                  }),
-                  materialized: true,
-                  inProgress: false,
-                  failed: false,
-                }),
-                __typename: 'UnpartitionedAssetStatus',
-              },
-            ],
-          }),
-          endTimestamp: 2000,
-          numPartitions: 3,
-          status: BulkActionStatus.REQUESTED,
-          timestamp: 1000,
+                materialized: true,
+                inProgress: false,
+                failed: false,
+              }),
+              __typename: 'UnpartitionedAssetStatus',
+            },
+          ],
         }),
-      },
+        endTimestamp: 2000,
+        numPartitions: 3,
+        status: BulkActionStatus.REQUESTED,
+        timestamp: 1000,
+      }),
     },
-  },
+  }),
 ];
 
 describe('BackfillPage', () => {
@@ -102,20 +98,16 @@ describe('BackfillPage', () => {
 
   it('renders the error state', async () => {
     const errorMocks = [
-      {
-        request: {
-          query: BACKFILL_DETAILS_QUERY,
-          variables: {backfillId: mockBackfillId},
+      buildQueryMock({
+        query: BACKFILL_DETAILS_QUERY,
+        variables: {backfillId: mockBackfillId},
+        data: {
+          __typename: 'CloudQuery',
+          partitionBackfillOrError: buildPythonError({
+            message: 'An error occurred',
+          }),
         },
-        result: {
-          data: {
-            __typename: 'CloudQuery',
-            partitionBackfillOrError: buildPythonError({
-              message: 'An error occurred',
-            }),
-          },
-        },
-      },
+      }),
     ];
 
     const {getByText} = render(

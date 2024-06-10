@@ -9,6 +9,7 @@ import {
   buildInstigationEventConnection,
   buildPartitionBackfill,
 } from '../../../graphql/types';
+import {buildQueryMock} from '../../../testing/mocking';
 import {BACKFILL_LOGS_PAGE_QUERY, BackfillLogsTab} from '../BackfillLogsTab';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -23,62 +24,52 @@ jest.mock('../../../app/QueryRefresh', () => {
 const mockBackfillId = 'mockBackfillId';
 
 const mocks = [
-  {
-    request: {
-      query: BACKFILL_LOGS_PAGE_QUERY,
-      variables: {backfillId: mockBackfillId, cursor: undefined},
-    },
+  buildQueryMock({
+    query: BACKFILL_LOGS_PAGE_QUERY,
+    variables: {backfillId: mockBackfillId, cursor: undefined},
     delay: 10,
-    result: {
-      __typename: 'CloudQuery',
-      data: {
-        partitionBackfillOrError: buildPartitionBackfill({
-          logEvents: buildInstigationEventConnection({
-            hasMore: true,
-            cursor: 'next-cursor-value',
-            events: [
-              buildInstigationEvent({
-                message: 'Event 1',
-                timestamp: '1717962300001',
-              }),
-              buildInstigationEvent({
-                message: 'Event 2',
-                timestamp: '1717962300002',
-              }),
-            ],
-          }),
+    data: {
+      partitionBackfillOrError: buildPartitionBackfill({
+        logEvents: buildInstigationEventConnection({
+          hasMore: true,
+          cursor: 'next-cursor-value',
+          events: [
+            buildInstigationEvent({
+              message: 'Event 1',
+              timestamp: '1717962300001',
+            }),
+            buildInstigationEvent({
+              message: 'Event 2',
+              timestamp: '1717962300002',
+            }),
+          ],
         }),
-      },
+      }),
     },
-  },
-  {
-    request: {
-      query: BACKFILL_LOGS_PAGE_QUERY,
-      variables: {backfillId: mockBackfillId, cursor: 'next-cursor-value'},
-    },
+  }),
+  buildQueryMock({
+    query: BACKFILL_LOGS_PAGE_QUERY,
+    variables: {backfillId: mockBackfillId, cursor: 'next-cursor-value'},
     delay: 10,
-    result: {
-      __typename: 'CloudQuery',
-      data: {
-        partitionBackfillOrError: buildPartitionBackfill({
-          logEvents: buildInstigationEventConnection({
-            hasMore: false,
-            cursor: 'final-cursor-value',
-            events: [
-              buildInstigationEvent({
-                message: 'Event 3',
-                timestamp: `1717962300003`,
-              }),
-              buildInstigationEvent({
-                message: 'Event 4',
-                timestamp: `1717962300004`,
-              }),
-            ],
-          }),
+    data: {
+      partitionBackfillOrError: buildPartitionBackfill({
+        logEvents: buildInstigationEventConnection({
+          hasMore: false,
+          cursor: 'final-cursor-value',
+          events: [
+            buildInstigationEvent({
+              message: 'Event 3',
+              timestamp: `1717962300003`,
+            }),
+            buildInstigationEvent({
+              message: 'Event 4',
+              timestamp: `1717962300004`,
+            }),
+          ],
         }),
-      },
+      }),
     },
-  },
+  }),
 ];
 
 describe('BackfillLogsTab', () => {
