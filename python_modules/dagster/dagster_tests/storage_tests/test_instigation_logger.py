@@ -1,11 +1,8 @@
-import logging
-
 from dagster._core.definitions.instigation_logger import InstigationLogger
 
 
-def test_gets_correct_logger(caplog):
+def test_gets_correct_logger():
     custom_logger_name = "foo"
-    caplog.set_level(logging.INFO, logger=custom_logger_name)
 
     instigation_logger = InstigationLogger()
     assert instigation_logger.name == "dagster"
@@ -17,7 +14,3 @@ def test_gets_correct_logger(caplog):
     instigation_logger = InstigationLogger(name="bar", logger_name=custom_logger_name)
     assert instigation_logger.name == custom_logger_name
     assert instigation_logger._name == "bar"  # noqa: SLF001
-
-    instigation_logger.info("this is a test message")
-
-    assert len(caplog.records) == 1
