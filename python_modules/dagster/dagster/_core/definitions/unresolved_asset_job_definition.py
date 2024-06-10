@@ -1,4 +1,5 @@
 from datetime import datetime
+from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
@@ -182,18 +183,24 @@ class UnresolvedAssetJobDefinition(
 
         # Require that all assets in the job have the same backfill policy
         executable_nodes = {job_asset_graph.get(k) for k in job_asset_graph.executable_asset_keys}
-        backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
-        if len(backfill_policies) > 1:
+        nodes_by_backfill_policy = dict(
+            groupby((n for n in executable_nodes if n.is_partitioned), lambda n: n.backfill_policy)
+        )
+        if len(nodes_by_backfill_policy) > 1:
+            keys_by_backfill_policy = {
+                bp: [n.key.to_user_string() for n in nodes]
+                for bp, nodes in nodes_by_backfill_policy.items()
+            }
             raise DagsterInvalidDefinitionError(
                 f"Asset job {self.name} materializes assets with varying BackfillPolicies. All assets"
-                " in a job must share the same BackfillPolicy."
+                f" in a job must share the same BackfillPolicy. Found multiple backfill policies:\n\n{keys_by_backfill_policy}"
             )
 
         # Error if a PartitionedConfig is defined and any target asset has a backfill policy that
         # materializes anything other than a single partition per run. This is because
         # PartitionedConfig is a function that maps single partition keys to run config, so it's
         # behavior is undefined for multiple-partition runs.
-        backfill_policy = next(iter(backfill_policies), None)
+        backfill_policy = next(iter(nodes_by_backfill_policy.keys()), None)
         if (
             backfill_policy
             and backfill_policy.max_partitions_per_run != 1
