@@ -114,6 +114,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
 
   const getCachedData = useGetCachedData();
   const getData = useGetData();
+  const clearCachedData = useClearCachedData();
 
   useLayoutEffect(() => {
     // Load data from the cache
@@ -248,12 +249,12 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     const copy = {...locationsData};
     locationsRemoved.forEach((loc) => {
       delete copy[loc.name];
-      indexedDB.deleteDatabase(`${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`);
+      clearCachedData({key: `${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`});
     });
     if (Object.keys(copy).length !== Object.keys(locationsData).length) {
       setLocationsData(copy);
     }
-  }, [localCacheIdPrefix, locationsData, locationsRemoved]);
+  }, [clearCachedData, localCacheIdPrefix, locationsData, locationsRemoved]);
 
   const locationEntries = useMemo(
     () =>

@@ -28,7 +28,7 @@ Dagster supports attaching a few different types of definition metadata:
 
 - [**Arbitrary metadata**](#arbitrary-metadata-using-the-metadata-parameter), such as the storage location of the table produced by the asset
 - [**Asset owners**](#asset-owners), which are the people and/or teams who own the asset
-- [**Column-level lineage**](#column-level-lineage), which is information about how a column is created and used
+- [**Table and column metadata**](#table-and-column-metadata), which provides additional context about a tabular asset, such as its schema or row count
 
 ### Arbitrary metadata using the metadata parameter
 
@@ -129,9 +129,9 @@ def topstories(context: AssetExecutionContext) -> MaterializeResult:
     )
 ```
 
-### Column-level lineage
+### Table and column metadata
 
-For assets that produce database tables, column-level lineage can be a powerful tool for improving collaboration and debugging issues. Column lineage enables data and analytics engineers alike to understand how a column is created and used in your data platform. Refer to the [Column-level lineage documentation](/concepts/metadata-tags/asset-metadata/column-level-lineage) for more information.
+For assets which produce database tables, you can attach table metadata to provide additional context about the asset. Table metadata can include information such as the schema, row count, or column lineage. Refer to the [Table metadata documentation](/concepts/metadata-tags/asset-metadata/table-metadata) for more information, or the [Column-level lineage documentation](/concepts/metadata-tags/asset-metadata/column-level-lineage) for specific details on column-level lineage.
 
 ---
 

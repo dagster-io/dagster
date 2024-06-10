@@ -29,8 +29,12 @@ export class CacheManager<TQuery> {
     return null;
   }
 
-  set(data: TQuery, version: number): Promise<void> {
+  async set(data: TQuery, version: number): Promise<void> {
     return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
+  }
+
+  async clear() {
+    await this.cache.delete('cache');
   }
 }
 
@@ -156,6 +160,16 @@ export function useGetCachedData() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
+  );
+}
+export function useClearCachedData() {
+  const {getCacheManager} = useContext(IndexedDBCacheContext);
+  return useCallback(
+    async <TQuery,>({key}: {key: string}) => {
+      const cacheManager = getCacheManager<TQuery>(key);
+      await cacheManager.clear();
+    },
+    [getCacheManager],
   );
 }
 

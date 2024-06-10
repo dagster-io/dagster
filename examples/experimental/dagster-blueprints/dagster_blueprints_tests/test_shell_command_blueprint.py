@@ -39,6 +39,18 @@ def test_single_asset_shell_command_blueprint() -> None:
     ).success
 
 
+def test_single_asset_shell_command_blueprint_str_command() -> None:
+    single_asset_blueprint = ShellCommandBlueprint(
+        assets=[AssetSpecModel(key="asset1")], command='echo "hello world"'
+    )
+    defs = single_asset_blueprint.build_defs()
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    assert asset1.key == AssetKey("asset1")
+    assert materialize(
+        [asset1], resources={"pipes_subprocess_client": PipesSubprocessClient()}
+    ).success
+
+
 def test_single_asset_shell_command_blueprint_pipes(capsys) -> None:
     def script_fn():
         from dagster_pipes import open_dagster_pipes

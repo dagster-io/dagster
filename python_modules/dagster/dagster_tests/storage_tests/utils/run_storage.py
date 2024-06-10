@@ -737,6 +737,60 @@ class TestRunStorage:
         run = _get_run_by_id(storage, one)
         assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
 
+    def test_get_run_records(self, storage):
+        assert storage
+        [one, two, three] = [make_new_run_id() for _ in range(3)]
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.handle_run_event(
+            three,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                job_name="some_pipeline",
+            ),
+        )
+        storage.handle_run_event(
+            two,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                job_name="some_pipeline",
+            ),
+        )
+        storage.handle_run_event(
+            one,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                job_name="some_pipeline",
+            ),
+        )
+
+        def _run_ids(records):
+            return [record.dagster_run.run_id for record in records]
+
+        assert _run_ids(storage.get_run_records()) == [three, two, one]
+        assert _run_ids(storage.get_run_records(ascending=True)) == [one, two, three]
+        assert _run_ids(storage.get_run_records(cursor=two)) == [one]
+        assert _run_ids(storage.get_run_records(cursor=two, ascending=True)) == [three]
+        assert _run_ids(storage.get_run_records(limit=1)) == [three]
+        assert _run_ids(storage.get_run_records(cursor=three, limit=1)) == [two]
+        assert _run_ids(storage.get_run_records(cursor=one, limit=1, ascending=True)) == [two]
+
     def test_fetch_records_by_update_timestamp(self, storage):
         assert storage
         self._skip_in_memory(storage)

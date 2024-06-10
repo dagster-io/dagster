@@ -597,7 +597,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
-        from dagster._core.definitions.decorators.assets_definition_factory import (
+        from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
             _assign_output_names_to_check_specs,
             _validate_check_specs_target_relevant_asset_keys,
         )
@@ -1372,6 +1372,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output_name, NodeHandle(self.node_def.name, parent=None)
             )[0]
             key = self._keys_by_output_name[output_name]
+            spec = self.specs_by_key[key]
 
             return SourceAsset(
                 key=key,
@@ -1380,8 +1381,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 description=output_def.description,
                 resource_defs=self.resource_defs,
                 partitions_def=self.partitions_def,
-                group_name=self.group_names_by_key[key],
-                tags=self.tags_by_key.get(key),
+                group_name=spec.group_name,
+                tags=spec.tags,
             )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:

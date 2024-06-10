@@ -47,6 +47,7 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._model import as_dict, has_generated_new, is_dagster_model
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
@@ -315,6 +316,7 @@ def whitelist_for_serdes(
         )(__cls)
     else:  # decorator passed params
         check.opt_class_param(serializer, "serializer", superclass=Serializer)
+
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP,
             serializer=serializer,
@@ -635,10 +637,17 @@ T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple, default=NamedTuple)
 
 class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
     def object_as_mapping(self, value: T_NamedTuple) -> Mapping[str, Any]:
+        if is_dagster_model(value):
+            return as_dict(value)
+
         return value._asdict()
 
     @cached_property
     def constructor_param_names(self) -> Sequence[str]:
+        # if its an @dagster_model generated new, just use annotations
+        if has_generated_new(self.klass):
+            return list(self.klass.__annotations__.keys())
+
         return list(signature(self.klass.__new__).parameters.keys())
 
 
@@ -1193,6 +1202,10 @@ def _unpack_value(
 def _check_serdes_tuple_class_invariants(
     klass: Type[NamedTuple], is_pickleable: bool = True
 ) -> None:
+    # can skip validation on @dagster_model generated new
+    if has_generated_new(klass):
+        return
+
     sig_params = signature(klass.__new__).parameters
     dunder_new_params = list(sig_params.values())
 

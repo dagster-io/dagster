@@ -24,7 +24,6 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
@@ -33,8 +32,9 @@ from dagster._utils.warnings import disable_dagster_warnings
 
 from ..input import In
 from .asset_decorator import make_asset_deps
-from .assets_definition_factory import (
-    build_asset_ins,
+from .decorator_assets_definition_builder import (
+    build_named_ins,
+    compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
 )
 from .op_decorator import _Op
@@ -91,7 +91,7 @@ def _build_asset_check_input(
             " the target asset or be specified in 'additional_ins'."
         )
 
-    return build_asset_ins(
+    return build_named_ins(
         fn=fn,
         asset_ins=all_ins,
         deps=all_deps,
@@ -213,18 +213,14 @@ def asset_check(
             metadata=metadata,
         )
 
-        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
+        resource_defs_for_execution = wrap_resources_for_execution(resource_defs)
 
-        check.param_invariant(
-            len(required_resource_keys or []) == 0 or len(arg_resource_keys) == 0,
-            "Cannot specify resource requirements in both @asset_check decorator and as arguments"
-            " to the decorated function",
+        op_required_resource_keys = compute_required_resource_keys(
+            required_resource_keys or set(),
+            resource_defs_for_execution,
+            fn=fn,
+            decorator_name="@asset_check",
         )
-
-        resource_defs_keys = set(resource_defs.keys() if resource_defs else [])
-        decorator_resource_keys = (required_resource_keys or set()) | resource_defs_keys
-
-        op_required_resource_keys = decorator_resource_keys - arg_resource_keys
 
         out = Out(dagster_type=None)
 
@@ -249,7 +245,7 @@ def asset_check(
                 for asset_key, input_tuple in input_tuples_by_asset_key.items()
             },
             node_def=op_def,
-            resource_defs=wrap_resources_for_execution(resource_defs),
+            resource_defs=resource_defs_for_execution,
             check_specs_by_output_name={op_def.output_defs[0].name: spec},
             can_subset=False,
         )
@@ -328,13 +324,14 @@ def multi_asset_check(
 
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         op_name = name or fn.__name__
-        arg_resource_keys = {arg.name for arg in get_resource_args(fn)}
-        op_required_resource_keys = required_resource_keys - arg_resource_keys
+        op_required_resource_keys = compute_required_resource_keys(
+            required_resource_keys, resource_defs, fn=fn, decorator_name="@multi_asset_check"
+        )
 
         outs = {
             spec.get_python_identifier(): Out(None, is_required=not can_subset) for spec in specs
         }
-        input_tuples_by_asset_key = build_asset_ins(
+        named_ins_by_asset_key = build_named_ins(
             fn=fn,
             asset_ins={},
             deps={spec.asset_key for spec in specs}
@@ -345,7 +342,7 @@ def multi_asset_check(
             op_def = _Op(
                 name=op_name,
                 description=description,
-                ins=dict(input_tuples_by_asset_key.values()),
+                ins=dict(named_ins_by_asset_key.values()),
                 out=outs,
                 required_resource_keys=op_required_resource_keys,
                 tags={
@@ -361,7 +358,7 @@ def multi_asset_check(
             resource_defs=wrap_resources_for_execution(resource_defs),
             keys_by_input_name={
                 input_tuple[0]: asset_key
-                for asset_key, input_tuple in input_tuples_by_asset_key.items()
+                for asset_key, input_tuple in named_ins_by_asset_key.items()
             },
             check_specs_by_output_name={spec.get_python_identifier(): spec for spec in specs},
             can_subset=can_subset,

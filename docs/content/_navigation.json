@@ -129,7 +129,41 @@
           },
           {
             "title": "Schedules",
-            "path": "/concepts/partitions-schedules-sensors/schedules"
+            "path": "/concepts/automation/schedules",
+            "children": [
+              {
+                "title": "Overview",
+                "path": "/concepts/automation/schedules"
+              },
+              {
+                "title": "Automating assets",
+                "path": "/concepts/automation/schedules/automating-assets-schedules-jobs"
+              },
+              {
+                "title": "Automating ops",
+                "path": "/concepts/automation/schedules/automating-ops-schedules-jobs"
+              },
+              {
+                "title": "Examples",
+                "path": "/concepts/automation/schedules/examples"
+              },
+              {
+                "title": "Partitioned schedules",
+                "path": "/concepts/automation/schedules/partitioned-schedules"
+              },
+              {
+                "title": "Customizing timezones",
+                "path": "/concepts/automation/schedules/customizing-executing-timezones"
+              },
+              {
+                "title": "Testing",
+                "path": "/concepts/automation/schedules/testing"
+              },
+              {
+                "title": "Troubleshooting",
+                "path": "/concepts/automation/schedules/troubleshooting"
+              }
+            ]
           },
           {
             "title": "Sensors",
@@ -884,6 +918,10 @@
                 "path": "/integrations/dbt/using-dbt-with-dagster/downstream-assets"
               }
             ]
+          },
+          {
+            "title": "Using dbt with Dagster+",
+            "path": "/integrations/dbt/using-dbt-with-dagster-plus"
           },
           {
             "title": "Reference",

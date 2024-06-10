@@ -86,6 +86,7 @@ def define_dagstermill_asset(
     retry_policy: Optional[RetryPolicy] = None,
     save_notebook_on_failure: bool = False,
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    asset_tags: Optional[Mapping[str, Any]] = None,
 ) -> AssetsDefinition:
     """Creates a Dagster asset for a Jupyter notebook.
 
@@ -124,6 +125,7 @@ def define_dagstermill_asset(
         save_notebook_on_failure (bool): If True and the notebook fails during execution, the failed notebook will be
             written to the Dagster storage directory. The location of the file will be printed in the Dagster logs.
             Defaults to False.
+        asset_tags (Optional[Dict[str, Any]]): A dictionary of tags to apply to the asset.
         non_argument_deps (Optional[Union[Set[AssetKey], Set[str]]]): Deprecated, use deps instead. Set of asset keys that are
             upstream dependencies, but do not pass an input to the asset.
 
@@ -211,6 +213,7 @@ def define_dagstermill_asset(
         io_manager_key=io_mgr_key,
         retry_policy=retry_policy,
         non_argument_deps=non_argument_deps,
+        tags=asset_tags,
     )(
         _make_dagstermill_asset_compute_fn(
             name=name,

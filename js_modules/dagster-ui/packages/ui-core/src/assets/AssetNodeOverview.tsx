@@ -282,7 +282,12 @@ export const AssetNodeOverview = ({
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
         {assetNode.computeKind && (
-          <AssetComputeKindTag style={{position: 'relative'}} definition={assetNode} reduceColor />
+          <AssetComputeKindTag
+            style={{position: 'relative'}}
+            definition={assetNode}
+            reduceColor
+            linkToFilter
+          />
         )}
       </AttributeAndValue>
       <AttributeAndValue label="Storage">
@@ -317,6 +322,7 @@ export const AssetNodeOverview = ({
                 style={{position: 'relative'}}
                 storageKind={storageKindTag.value}
                 reduceColor
+                linkToFilter
               />
             )}
           </Box>

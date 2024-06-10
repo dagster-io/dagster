@@ -55,12 +55,7 @@ const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetF
 const ALL_SENSOR_TYPE_FILTERS = Object.values(SENSOR_TYPE_TO_FILTER);
 
 export const OverviewSensors = () => {
-  const {
-    allRepos,
-    visibleRepos,
-    loading: workspaceLoading,
-    data: cachedData,
-  } = useContext(WorkspaceContext);
+  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
 
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({

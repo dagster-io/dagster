@@ -18,7 +18,9 @@ from dagster import (
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
+from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
+from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import TagType, get_tag_type
 
 from .external import ensure_valid_config, get_external_job_or_raise
@@ -156,6 +158,16 @@ IN_PROGRESS_STATUSES = [
 ]
 
 
+def _get_latest_planned_run_id(instance: DagsterInstance, asset_record: AssetRecord):
+    if instance.event_log_storage.asset_records_have_last_planned_materialization_storage_id:
+        return asset_record.asset_entry.last_planned_materialization_run_id
+    else:
+        planned_info = instance.get_latest_planned_materialization_info(
+            asset_record.asset_entry.asset_key
+        )
+        return planned_info.run_id if planned_info else None
+
+
 def get_assets_latest_info(
     graphene_info: "ResolveInfo",
     asset_keys: Sequence[AssetKey],
@@ -197,16 +209,22 @@ def get_assets_latest_info(
         for asset_record in asset_records
     }
 
-    latest_run_ids_by_asset: Dict[
-        AssetKey, str
-    ] = {  # last_run_id column is written to upon run creation (via ASSET_MATERIALIZATION_PLANNED event)
-        asset_record.asset_entry.asset_key: asset_record.asset_entry.last_run_id
-        for asset_record in asset_records
-        if asset_record.asset_entry.last_run_id
+    latest_planned_run_ids_by_asset = {
+        k: v
+        for k, v in {
+            asset_record.asset_entry.asset_key: _get_latest_planned_run_id(instance, asset_record)
+            for asset_record in asset_records
+        }.items()
+        if v
     }
 
     run_records_by_run_id = {}
-    run_ids = list(set(latest_run_ids_by_asset.values())) if latest_run_ids_by_asset else []
+
+    run_ids = (
+        list(set(latest_planned_run_ids_by_asset.values()))
+        if latest_planned_run_ids_by_asset
+        else []
+    )
     if run_ids:
         run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
         for run_record in run_records:
@@ -218,7 +236,7 @@ def get_assets_latest_info(
     ) = _get_in_progress_runs_for_assets(
         run_records_by_run_id,
         latest_materialization_run_id_by_asset,
-        latest_run_ids_by_asset,
+        latest_planned_run_ids_by_asset,
     )
 
     from .fetch_assets import get_unique_asset_id
@@ -231,11 +249,11 @@ def get_assets_latest_info(
             unstartedRunIds=list(unstarted_run_ids_by_asset.get(asset_key, [])),
             inProgressRunIds=list(in_progress_run_ids_by_asset.get(asset_key, [])),
             latestRun=(
-                GrapheneRun(run_records_by_run_id[latest_run_ids_by_asset[asset_key]])
+                GrapheneRun(run_records_by_run_id[latest_planned_run_ids_by_asset[asset_key]])
                 # Dagster UI error occurs if a run is terminated at the same time that this endpoint is
                 # called so we check to make sure the run ID exists in the run records.
-                if asset_key in latest_run_ids_by_asset
-                and latest_run_ids_by_asset[asset_key] in run_records_by_run_id
+                if asset_key in latest_planned_run_ids_by_asset
+                and latest_planned_run_ids_by_asset[asset_key] in run_records_by_run_id
                 else None
             ),
         )

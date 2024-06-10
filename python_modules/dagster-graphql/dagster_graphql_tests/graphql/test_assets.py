@@ -13,7 +13,6 @@ from dagster import (
     MultiPartitionsDefinition,
     Output,
     StaticPartitionsDefinition,
-    _check as check,
     asset,
     define_asset_job,
     repository,
@@ -21,13 +20,16 @@ from dagster import (
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import create_run_for_test, instance_for_test, poll_for_finished_run
+from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import Counter, safe_tempfile_path, traced_counter
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
+from dagster_graphql.implementation.execution.run_lifecycle import create_valid_pipeline_run
+from dagster_graphql.implementation.utils import ExecutionParams, pipeline_selector_from_graphql
+from dagster_graphql.schema.roots.mutation import create_execution_metadata
 from dagster_graphql.test.utils import (
     GqlAssetKey,
     GqlTag,
@@ -2622,9 +2624,13 @@ class TestAssetEventsReadOnly(ReadonlyGraphQLContextTestMatrix):
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
-    def test_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
+    def test_asset_in_progress_before_materialization(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        """While a run has started, assets that haven't been materialized yet by that run
+        return that run as in-progress.
+        """
         selector = infer_job_selector(graphql_context, "hanging_job")
-
         with safe_tempfile_path() as path:
             result = execute_dagster_graphql(
                 graphql_context,
@@ -2639,16 +2645,12 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
                     }
                 },
             )
-
             assert not result.errors
             assert result.data
-
             run_id = result.data["launchPipelineExecution"]["run"]["runId"]
-
             # ensure the execution has happened
             while not os.path.exists(path):
                 time.sleep(0.1)
-
             result = execute_dagster_graphql(
                 graphql_context,
                 GET_ASSET_IN_PROGRESS_RUNS,
@@ -2661,20 +2663,15 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
                 },
             )
             graphql_context.instance.run_launcher.terminate(run_id)
-
             assert result.data
             assert result.data["assetsLatestInfo"]
-
             assets_live_info = result.data["assetsLatestInfo"]
-
             assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
             assert len(assets_live_info) == 3
-
             assert assets_live_info[0]["assetKey"]["path"] == ["first_asset"]
             assert assets_live_info[0]["latestMaterialization"]["runId"] == run_id
             assert assets_live_info[0]["unstartedRunIds"] == []
             assert assets_live_info[0]["inProgressRunIds"] == []
-
             assert assets_live_info[1]["assetKey"]["path"] == ["hanging_asset"]
             assert assets_live_info[1]["latestMaterialization"] is None
             assert assets_live_info[1]["unstartedRunIds"] == []
@@ -2685,62 +2682,10 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[2]["unstartedRunIds"] == []
             assert assets_live_info[2]["inProgressRunIds"] == [run_id]
 
-            # Create an enqueued run
-            code_location = graphql_context.get_code_location("test")
-            repository = code_location.get_repository("test_repo")
-            job = repository.get_full_external_job("hanging_job")
-
-            queued_run_id = create_run_for_test(
-                graphql_context.instance,
-                job_name="hanging_job",
-                status=DagsterRunStatus.QUEUED,
-                external_job_origin=job.get_external_origin(),
-                job_snapshot=job.job_snapshot,
-                execution_plan_snapshot=graphql_context.instance.get_execution_plan_snapshot(
-                    check.not_none(
-                        check.not_none(
-                            graphql_context.instance.get_run_by_id(run_id)
-                        ).execution_plan_snapshot_id
-                    )
-                ),
-                asset_job_partitions_def=code_location.get_asset_job_partitions_def(job),
-            ).run_id
-
-            graphql_context.asset_record_loader.clear_cache()
-
-            result = execute_dagster_graphql(
-                graphql_context,
-                GET_ASSET_IN_PROGRESS_RUNS,
-                variables={
-                    "assetKeys": [
-                        {"path": "first_asset"},
-                        {"path": "hanging_asset"},
-                        {"path": "never_runs_asset"},
-                    ]
-                },
-            )
-
-            assets_live_info = result.data["assetsLatestInfo"]
-
-            assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
-            assert len(assets_live_info) == 3
-
-            assert assets_live_info[0]["assetKey"]["path"] == ["first_asset"]
-            assert assets_live_info[0]["latestMaterialization"]["runId"] == run_id
-            assert assets_live_info[0]["unstartedRunIds"] == [queued_run_id]
-            assert assets_live_info[0]["inProgressRunIds"] == []
-
-            assert assets_live_info[1]["assetKey"]["path"] == ["hanging_asset"]
-            assert assets_live_info[1]["latestMaterialization"] is None
-            assert assets_live_info[1]["unstartedRunIds"] == [queued_run_id]
-            assert assets_live_info[1]["inProgressRunIds"] == []
-
-            assert assets_live_info[2]["assetKey"]["path"] == ["never_runs_asset"]
-            assert assets_live_info[2]["latestMaterialization"] is None
-            assert assets_live_info[2]["unstartedRunIds"] == [queued_run_id]
-            assert assets_live_info[2]["inProgressRunIds"] == []
-
     def test_asset_in_progress_already_materialized(self, graphql_context: WorkspaceRequestContext):
+        """Once a run has materialized the asset, even though the run is in progress, it is not
+        returned as an in-progress run for that asset.
+        """
         selector = infer_job_selector(graphql_context, "output_then_hang_job")
 
         with safe_tempfile_path() as path:
@@ -2790,6 +2735,91 @@ class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
             assert assets_live_info[0]["latestMaterialization"] is not None
             assert assets_live_info[0]["unstartedRunIds"] == []
             assert assets_live_info[0]["inProgressRunIds"] == []
+
+    def test_asset_unstarted_after_materialization(self, graphql_context: WorkspaceRequestContext):
+        """If two runs are both queued and the first one is materialized, the second one is
+        still considered 'unstarted' since it was the most recently created one.
+        """
+        selector = pipeline_selector_from_graphql(
+            infer_job_selector(graphql_context, "hanging_job")
+        )
+
+        # Create two enqueued runs
+        code_location = graphql_context.get_code_location("test")
+        repository = code_location.get_repository("test_repo")
+        job = repository.get_full_external_job("hanging_job")
+
+        queued_runs = []
+
+        with safe_tempfile_path() as path:
+            run_config = {"resources": {"hanging_asset_resource": {"config": {"file": path}}}}
+
+            execution_params: ExecutionParams = ExecutionParams(
+                selector=selector,
+                run_config=run_config,
+                mode="default",
+                execution_metadata=create_execution_metadata(
+                    {},
+                ),
+                step_keys=None,
+            )
+
+            for i in range(2):
+                queued_runs.append(
+                    create_valid_pipeline_run(graphql_context, job, execution_params, code_location)
+                )
+
+            in_progress_run_id = queued_runs[0].run_id
+            unstarted_run_id = queued_runs[1].run_id
+
+            # Launch the first run, second run is still unstarted
+            graphql_context.instance.submit_run(
+                in_progress_run_id,
+                workspace=graphql_context,
+            )
+
+            # ensure the execution has happened
+            while not os.path.exists(path):
+                time.sleep(0.1)
+
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_ASSET_IN_PROGRESS_RUNS,
+                variables={
+                    "assetKeys": [
+                        {"path": "first_asset"},
+                        {"path": "hanging_asset"},
+                        {"path": "never_runs_asset"},
+                    ]
+                },
+            )
+            graphql_context.instance.run_launcher.terminate(in_progress_run_id)
+
+            assert result.data
+            assert result.data["assetsLatestInfo"]
+
+            assets_live_info = result.data["assetsLatestInfo"]
+
+            assets_live_info = sorted(assets_live_info, key=lambda res: res["assetKey"]["path"])
+            assert len(assets_live_info) == 3
+
+            # Second run is shown as unstarted since it is the most recently creatd run (the
+            # in progress run is not returned in inProgressRunIds since it is not the most
+            # recently created run)
+            assert assets_live_info[0]["assetKey"]["path"] == ["first_asset"]
+            assert assets_live_info[0]["latestMaterialization"]["runId"] == in_progress_run_id
+            assert assets_live_info[0]["unstartedRunIds"] == [unstarted_run_id]
+            assert assets_live_info[0]["inProgressRunIds"] == []
+
+            assert assets_live_info[1]["assetKey"]["path"] == ["hanging_asset"]
+            assert assets_live_info[1]["latestMaterialization"] is None
+            assert assets_live_info[1]["unstartedRunIds"] == [unstarted_run_id]
+            assert assets_live_info[1]["inProgressRunIds"] == []
+
+            assert assets_live_info[2]["assetKey"]["path"] == ["never_runs_asset"]
+            assert assets_live_info[2]["latestMaterialization"] is None
+            assert assets_live_info[2]["unstartedRunIds"] == [unstarted_run_id]
+            assert assets_live_info[2]["inProgressRunIds"] == []
 
     def test_graph_asset_in_progress(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "hanging_graph_asset_job")

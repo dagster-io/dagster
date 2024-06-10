@@ -199,8 +199,8 @@
     "statusCode": 302
   },
   {
-    "source": "/overview/schedules-sensors/schedules",
-    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "source": "/concepts/partitions-schedules-sensors/schedules",
+    "destination": "/concepts/automation/schedules",
     "statusCode": 302
   },
 
@@ -351,7 +351,7 @@
   },
   {
     "source": "/troubleshooting/schedules",
-    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "destination": "/concepts/automation/schedules/troubleshooting",
     "statusCode": 302
   },
   {
@@ -541,7 +541,7 @@
   },
   {
     "source": "/tutorial/advanced-tutorial/scheduling",
-    "destination": "/concepts/partitions-schedules-sensors/schedules",
+    "destination": "/concepts/automation/schedules",
     "statusCode": 302
   },
   {
