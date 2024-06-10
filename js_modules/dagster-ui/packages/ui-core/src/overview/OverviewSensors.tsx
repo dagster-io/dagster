@@ -18,7 +18,7 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {makeSensorKey} from '../sensors/makeSensorKey';
@@ -55,7 +55,12 @@ const SENSOR_TYPE_TO_FILTER: Partial<Record<SensorType, ReturnType<typeof toSetF
 const ALL_SENSOR_TYPE_FILTERS = Object.values(SENSOR_TYPE_TO_FILTER);
 
 export const OverviewSensors = () => {
-  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
 
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -100,7 +105,7 @@ export const OverviewSensors = () => {
   );
   const {data, loading} = queryResultOverview;
 
-  useBlockTraceUntilTrue('OverviewSensors', !!data || !workspaceLoading);
+  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSensorsQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
