@@ -54,6 +54,7 @@ from dagster._core.remote_representation import (
     RemoteRepositoryOrigin,
 )
 from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -2325,7 +2326,7 @@ def test_asset_backfill_logs(
     assert isinstance(cm, CapturedLogManager)
 
     logs, cursor = cm.read_log_lines_for_log_key_prefix(
-        ["backfill", backfill.backfill_id], cursor=None
+        ["backfill", backfill.backfill_id], cursor=None, io_type=ComputeIOType.STDERR
     )
     assert cursor is not None
     assert logs
@@ -2346,8 +2347,7 @@ def test_asset_backfill_logs(
     # set num_lines high so we know we get all of the remaining logs
     os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
     logs, cursor = cm.read_log_lines_for_log_key_prefix(
-        ["backfill", backfill.backfill_id],
-        cursor=cursor.to_string(),
+        ["backfill", backfill.backfill_id], cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
     )
 
     assert cursor is not None
