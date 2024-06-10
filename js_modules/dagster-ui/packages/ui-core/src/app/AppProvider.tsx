@@ -87,6 +87,7 @@ export const AppProvider = (props: AppProviderProps) => {
     () =>
       new SubscriptionClient(websocketURI, {
         reconnect: true,
+        timeout: 10000,
         connectionParams: {...headerObject},
       }),
     [headerObject, websocketURI],
