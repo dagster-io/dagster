@@ -11,6 +11,7 @@ from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLa
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ
@@ -178,10 +179,14 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
         assert logs == "hello hello"
 
 
-# @mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
-def test_get_log_keys_for_log_key_prefix(storage_account, container, credential):
+@mock.patch("dagster_azure.blob.compute_log_manager.create_blob_client")
+def test_get_log_keys_for_log_key_prefix(
+    mock_create_blob_client, storage_account, container, credential
+):
     evaluation_time = pendulum.now()
     blob_prefix = "foo/bar/"  # note the trailing slash
+    fake_client = FakeBlobServiceClient(storage_account)
+    mock_create_blob_client.return_value = fake_client
 
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = AzureBlobComputeLogManager(
@@ -220,7 +225,10 @@ def test_get_log_keys_for_log_key_prefix(storage_account, container, credential)
         f.write("foo")
     blob_key = manager._blob_key(log_key, ComputeIOType.STDOUT)  # noqa: SLF001
     with open(
-        manager.local_manager.get_captured_local_path(log_key, ComputeIOType.STDOUT), "rb"
+        manager.local_manager.get_captured_local_path(
+            log_key, IO_TYPE_EXTENSION[ComputeIOType.STDOUT]
+        ),
+        "rb",
     ) as data:
         blob = manager._container_client.get_blob_client(blob_key)  # noqa: SLF001
         blob.upload_blob(data)
