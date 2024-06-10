@@ -566,7 +566,7 @@ class DecoratorAssetsDefinitionBuilder:
             node_def=op_def,
             resource_defs=self.args.assets_def_resource_defs,
             check_specs_by_output_name=self.check_specs_by_output_name,
-            can_subset=False,
+            can_subset=self.args.can_subset,
         )
 
     @cached_property
