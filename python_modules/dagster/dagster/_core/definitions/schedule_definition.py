@@ -26,6 +26,7 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
@@ -519,6 +520,8 @@ class ScheduleDefinition(IHasInternalInit):
             schedule runs.
         default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
+        metadata (Optional[Dict[Mapping, Any]]): A dict of metadata entries for the definition.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing the definition.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
@@ -564,6 +567,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -728,6 +732,9 @@ class ScheduleDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
 
     @staticmethod
     def dagster_internal_init(

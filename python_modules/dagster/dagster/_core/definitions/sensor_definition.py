@@ -33,6 +33,8 @@ from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.metadata import RawMetadataMapping, normalize_metadata
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.resource_definition import Resources
@@ -64,7 +66,7 @@ from .run_request import (
 )
 from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from .utils import check_valid_name
+from .utils import check_valid_name, validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
@@ -552,6 +554,8 @@ class SensorDefinition(IHasInternalInit):
         asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
             (Experimental) an asset selection to launch a run for if the sensor condition is met.
             This can be provided instead of specifying a job.
+        metadata (Optional[Mapping[str, Any]]): A dict of metadata entries for the definition.
+        tags (Optional[Mapping[str, str]]): Tags for filtering and organizing the definition.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
@@ -596,6 +600,8 @@ class SensorDefinition(IHasInternalInit):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[RawMetadataMapping] = None,
     ):
         from dagster._config.pythonic_config import validate_resource_annotated_function
 
@@ -675,6 +681,10 @@ class SensorDefinition(IHasInternalInit):
             required_resource_keys, "required_resource_keys", of_type=str
         )
         self._required_resource_keys = self._raw_required_resource_keys or resource_arg_names
+        self._tags = validate_tags_strict(check.opt_mapping_param(tags, "tags", key_type=str))
+        self._metadata = normalize_metadata(
+            check.opt_mapping_param(metadata, "metadata", key_type=str)
+        )
 
     @staticmethod
     def dagster_internal_init(
@@ -772,6 +782,14 @@ class SensorDefinition(IHasInternalInit):
     @property
     def sensor_type(self) -> SensorType:
         return SensorType.STANDARD
+
+    @property
+    def metadata(self) -> Mapping[str, MetadataValue]:
+        return self._metadata
+
+    @property
+    def tags(self) -> Mapping[str, str]:
+        return self._tags
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.
