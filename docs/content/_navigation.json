@@ -1140,15 +1140,6 @@
         "isNotDynamic": true
       },
       {
-        "title": "Migrating to Dagster",
-        "children": [
-          {
-            "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
-          }
-        ]
-      },
-      {
         "title": "Best practices",
         "children": [
           {
@@ -1209,11 +1200,11 @@
   {
     "title": "Migration Guides",
     "icon": "Migrations",
-    "path": "/migrations",
+    "path": "/migration-guides",
     "children": [
       {
-        "title": "Migrating from Airflow",
-        "path": "/migrations/migrating-airflow-to-dagster"
+        "title": "Migrating Airflow to Dagster",
+        "path": "/migration-guides/migrating-airflow-to-dagster"
       }
     ]
   },
