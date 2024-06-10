@@ -323,8 +323,13 @@ def test_get_log_keys_for_log_key_prefix(gcs_bucket):
         [*log_key_prefix, "3"],
     ]
 
-    # write a different file type
-    write_log_file(4, ComputeIOType.STDOUT)
+    # gcs creates and stores empty files for both IOTYPES when open_log_stream is used, so make the next file
+    # manually so we can test that files with different IOTYPES are not considered
+
+    log_key = [*log_key_prefix, "4"]
+    with manager.local_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as f:
+        f.write("foo")
+    manager.upload_to_cloud_storage(log_key, ComputeIOType.STDOUT)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
     assert sorted(log_keys) == [
