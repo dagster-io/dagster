@@ -976,11 +976,33 @@ class TimeWindowPartitionsDefinition(
             partition_start_time = self.start_time_for_partition_key(partition_key)
             partition_start_timestamp = partition_start_time.timestamp()
         except ValueError:
+            print("UNPARSABLE PARTITION KEY: " + str(partition_key))
             # unparseable partition key
             return False
 
         first_partition_window = self.get_first_partition_window(current_time=current_time)
+
+        print("FIRST PARTITION WINDOW: " + str(first_partition_window))
+
         last_partition_window = self.get_last_partition_window(current_time=current_time)
+
+        print("LAST PARTITION WINDOW: " + str(last_partition_window))
+
+        print("PARTITION START TIMESTAMP: " + str(partition_start_timestamp))
+
+        if first_partition_window:
+            print("FIRST VALID PARTITION: " + str(first_partition_window.start.timestamp()))
+
+        if last_partition_window:
+            print("LAST VALID PARTITION: " + str(last_partition_window.start.timestamp()))
+
+        print(
+            "STRFTIME: "
+            + str(
+                dst_safe_strftime(partition_start_time, self.timezone, self.fmt, self.cron_schedule)
+            )
+        )
+
         return not (
             # no partitions at all
             first_partition_window is None
