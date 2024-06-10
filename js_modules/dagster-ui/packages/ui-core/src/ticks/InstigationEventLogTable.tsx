@@ -50,8 +50,8 @@ export const InstigationEventLogTable = ({events}: {events: InstigationEventLogF
 
   useEffect(() => {
     const el = parentRef.current;
-    if (!el) {
-      return;
+    if (!el || !('scrollTo' in el)) {
+      return; // scrollTo is not present in jest test
     }
     if (isAtBottom.current && events.length) {
       el.scrollTo(0, el.scrollHeight);

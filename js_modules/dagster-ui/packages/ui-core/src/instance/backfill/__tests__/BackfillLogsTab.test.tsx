@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {render, screen} from '@testing-library/react';
+import {render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter, Route} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
@@ -97,7 +97,9 @@ describe('BackfillLogsTab', () => {
       </RecoilRoot>,
     );
 
-    expect(await screen.findByText('Event 1')).toBeVisible();
-    expect(await screen.findByText('Event 4')).toBeVisible();
+    waitFor(async () => {
+      expect(await screen.findByText('Event 1')).toBeVisible();
+      expect(await screen.findByText('Event 4')).toBeVisible();
+    });
   });
 });
