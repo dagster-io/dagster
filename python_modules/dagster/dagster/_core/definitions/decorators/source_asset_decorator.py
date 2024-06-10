@@ -10,7 +10,7 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.decorators.asset_decorator import (
     multi_asset,
-    resolve_asset_key_and_name_for_decorator,
+    resolve_asset_key_for_decorator,
 )
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
@@ -170,11 +170,11 @@ class _ObservableSourceAsset:
         self.tags = tags
 
     def __call__(self, observe_fn: SourceAssetObserveFunction) -> SourceAsset:
-        source_asset_key, source_asset_name = resolve_asset_key_and_name_for_decorator(
+        source_asset_name = self.name or observe_fn.__name__
+        source_asset_key = resolve_asset_key_for_decorator(
             key=self.key,
             key_prefix=self.key_prefix,
-            name=self.name,
-            fn=observe_fn,
+            name=source_asset_name,
             decorator_name="@observable_source_asset",
         )
 

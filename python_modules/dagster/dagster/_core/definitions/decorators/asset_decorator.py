@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
     overload,
 )
@@ -267,14 +266,13 @@ def asset(
     return inner
 
 
-def resolve_asset_key_and_name_for_decorator(
+def resolve_asset_key_for_decorator(
     *,
     key: Optional[CoercibleToAssetKey],
     key_prefix: Optional[CoercibleToAssetKeyPrefix],
-    name: Optional[str],
+    name: str,
     decorator_name: str,
-    fn: Callable[..., Any],
-) -> Tuple[AssetKey, str]:
+) -> AssetKey:
     if (name or key_prefix) and key:
         raise DagsterInvalidDefinitionError(
             f"Cannot specify a name or key prefix for {decorator_name} when the key"
@@ -282,18 +280,10 @@ def resolve_asset_key_and_name_for_decorator(
         )
     key_prefix_list = [key_prefix] if isinstance(key_prefix, str) else key_prefix
     key = AssetKey.from_coercible(key) if key else None
-    assigned_name = name or fn.__name__
-    return (
-        (
-            # the filter here appears unnecessary per typing, but this exists
-            # historically so keeping it here to be conservative in case users
-            # can get Nones into the key_prefix_list somehow
-            AssetKey(list(filter(None, [*(key_prefix_list or []), assigned_name])))
-            if not key
-            else key
-        ),
-        assigned_name,
-    )
+    # the filter here appears unnecessary per typing, but this exists
+    # historically so keeping it here to be conservative in case users
+    # can get Nones into the key_prefix_list somehow
+    return AssetKey(list(filter(None, [*(key_prefix_list or []), name]))) if not key else key
 
 
 class AssetDecoratorArgs(NamedTuple):
@@ -375,11 +365,10 @@ def create_assets_def_from_fn_and_decorator_args(
 
     validate_resource_annotated_function(fn)
 
-    out_asset_key, asset_name = resolve_asset_key_and_name_for_decorator(
+    out_asset_key = resolve_asset_key_for_decorator(
         key=args.key,
         key_prefix=args.key_prefix,
-        name=args.name,
-        fn=fn,
+        name=args.name or fn.__name__,
         decorator_name="@asset",
     )
 
@@ -805,12 +794,11 @@ def graph_asset_no_defaults(
 ) -> AssetsDefinition:
     ins = ins or {}
     named_ins = build_named_ins(compose_fn, ins or {}, set())
-    out_asset_key, _asset_name = resolve_asset_key_and_name_for_decorator(
+    out_asset_key = resolve_asset_key_for_decorator(
         key=key,
         key_prefix=key_prefix,
-        name=name,
+        name=name or compose_fn.__name__,
         decorator_name="@graph_asset",
-        fn=compose_fn,
     )
 
     keys_by_input_name = {input_name: asset_key for asset_key, (input_name, _) in named_ins.items()}
