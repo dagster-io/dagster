@@ -26,6 +26,7 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
 import {
+  useClearCachedData,
   useGetCachedData,
   useGetData,
   useIndexedDBCachedQuery,
