@@ -109,3 +109,8 @@ class NoOpComputeLogManager(CapturedLogManager, ComputeLogManager, ConfigurableC
 
     def unsubscribe(self, subscription: CapturedLogSubscription):
         pass
+
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
+    ) -> Sequence[Sequence[str]]:
+        return []
