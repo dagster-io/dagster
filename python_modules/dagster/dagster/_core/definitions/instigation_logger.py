@@ -88,8 +88,9 @@ class InstigationLogger(logging.Logger):
         repository_name: Optional[str] = None,
         name: Optional[str] = None,
         level: int = logging.NOTSET,
+        logger_name: str = "dagster",
     ):
-        super().__init__(name="dagster", level=coerce_valid_log_level(level))
+        super().__init__(name=logger_name, level=coerce_valid_log_level(level))
         self._log_key = log_key
         self._instance = instance
         self._repository_name = repository_name
