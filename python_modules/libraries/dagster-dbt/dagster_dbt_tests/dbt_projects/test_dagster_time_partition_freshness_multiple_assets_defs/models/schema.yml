@@ -28,6 +28,12 @@ models:
 
       - name: total_order_amount
         description: Total value (AUD) of a customer's orders
+
+    meta:
+      dagster:
+        freshness_check:
+          deadline_cron: "0 0 * * *"
+          severity: "ERROR"
     
   - name: orders
     description: This table has basic information about orders, as well as some derived facts based on payments
@@ -81,3 +87,9 @@ models:
         description: Amount of the order (AUD) paid for by gift card
         tests:
           - not_null
+
+    meta:
+      dagster:
+        freshness_check:
+          deadline_cron: "1 1 * * *"
+          severity: "WARN"
