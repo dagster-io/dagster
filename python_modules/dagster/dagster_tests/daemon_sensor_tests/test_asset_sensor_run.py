@@ -1,6 +1,9 @@
 from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._core.test_utils import freeze_time
+from dagster._seven import create_utc_datetime
+from dagster._seven.compat.datetime import timezone_from_string
+from dateutil.relativedelta import relativedelta
 
 from .test_run_status_sensors import instance_with_single_code_location_multiple_repos_with_sensors
 from .test_sensor_run import a_source_asset, evaluate_sensors, validate_tick
@@ -8,9 +11,8 @@ from .test_sensor_run import a_source_asset, evaluate_sensors, validate_tick
 
 def test_monitor_source_asset_sensor(executor):
     """Tests a multi asset sensor that monitors an asset in another repo."""
-    freeze_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
-        "US/Central",
+    freeze_datetime = create_utc_datetime(year=2019, month=2, day=27).astimezone(
+        timezone_from_string("US/Central")
     )
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
@@ -18,7 +20,7 @@ def test_monitor_source_asset_sensor(executor):
         repos,
     ):
         asset_sensor_repo = repos["asset_sensor_repo"]
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             the_sensor = asset_sensor_repo.get_external_sensor("monitor_source_asset_sensor")
             instance.start_sensor(the_sensor)
 
@@ -33,8 +35,8 @@ def test_monitor_source_asset_sensor(executor):
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
-        with pendulum_freeze_time(freeze_datetime):
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+        with freeze_time(freeze_datetime):
             materialize([a_source_asset], instance=instance)
 
             evaluate_sensors(workspace_ctx, executor)

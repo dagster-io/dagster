@@ -1,8 +1,8 @@
 import sys
 import time
 
-import pendulum
 import pytest
+from dateutil.relativedelta import relativedelta
 
 from dagster import StaticPartitionsDefinition
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -25,9 +25,9 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
+from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._seven import get_current_datetime_in_utc
-from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -207,7 +207,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(schedule)
 
-        now_time = get_current_datetime_in_utc().timestamp()
+        now_time = time.time()
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigatorData(
@@ -326,9 +326,9 @@ class TestScheduleStorage:
 
         assert not tick.end_timestamp
 
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime_in_utc()
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
             assert updated_tick.status == TickStatus.SUCCESS
             assert updated_tick.end_timestamp == freeze_datetime.timestamp()
@@ -351,9 +351,9 @@ class TestScheduleStorage:
         tick = storage.create_tick(self.build_schedule_tick(current_time))
         assert not tick.end_timestamp
 
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime_in_utc()
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SKIPPED)
             assert updated_tick.status == TickStatus.SKIPPED
             assert updated_tick.end_timestamp == freeze_datetime.timestamp()
@@ -375,9 +375,9 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime_in_utc()
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(
                 TickStatus.FAILURE,
                 error=SerializableErrorInfo(message="Error", stack=[], cls_name="TestError"),
@@ -551,10 +551,10 @@ class TestScheduleStorage:
 
     def test_get_sensor_tick(self, storage):
         assert storage
-        now = pendulum.now()
-        five_days_ago = now.subtract(days=5).timestamp()
-        four_days_ago = now.subtract(days=4).timestamp()
-        one_day_ago = now.subtract(days=1).timestamp()
+        now = get_current_datetime_in_utc()
+        five_days_ago = (now - relativedelta(days=5)).timestamp()
+        four_days_ago = (now - relativedelta(days=4)).timestamp()
+        one_day_ago = (now - relativedelta(days=1)).timestamp()
 
         five_days_ago_tick = storage.create_tick(
             self.build_sensor_tick(five_days_ago, TickStatus.SKIPPED)
@@ -646,10 +646,10 @@ class TestScheduleStorage:
         if not self.can_purge():
             pytest.skip("Storage cannot purge")
 
-        now = pendulum.now()
-        five_minutes_ago = now.subtract(minutes=5).timestamp()
-        four_minutes_ago = now.subtract(minutes=4).timestamp()
-        one_minute_ago = now.subtract(minutes=1).timestamp()
+        now = get_current_datetime_in_utc()
+        five_minutes_ago = (now - relativedelta(minutes=5)).timestamp()
+        four_minutes_ago = (now - relativedelta(minutes=4)).timestamp()
+        one_minute_ago = (now - relativedelta(minutes=1)).timestamp()
         storage.create_tick(self.build_sensor_tick(five_minutes_ago, TickStatus.SKIPPED))
         storage.create_tick(
             self.build_sensor_tick(four_minutes_ago, TickStatus.SUCCESS, run_id="fake_run_id")
@@ -664,7 +664,10 @@ class TestScheduleStorage:
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
         storage.purge_ticks(
-            "my_sensor", "my_sensor", now.subtract(minutes=2).timestamp(), [TickStatus.SKIPPED]
+            "my_sensor",
+            "my_sensor",
+            (now - relativedelta(minutes=2)).timestamp(),
+            [TickStatus.SKIPPED],
         )
 
         ticks = storage.get_ticks("my_sensor", "my_sensor")
@@ -952,14 +955,18 @@ class TestScheduleStorage:
             ],
         )
 
-        storage.purge_asset_evaluations(before=pendulum.now().subtract(hours=10).timestamp())
+        storage.purge_asset_evaluations(
+            before=(get_current_datetime_in_utc() - relativedelta(hours=10)).timestamp()
+        )
 
         res = storage.get_auto_materialize_asset_evaluations(
             asset_key=AssetKey("asset_one"), limit=100
         )
         assert len(res) == 1
 
-        storage.purge_asset_evaluations(before=pendulum.now().add(minutes=10).timestamp())
+        storage.purge_asset_evaluations(
+            before=(get_current_datetime_in_utc() + relativedelta(minutes=10)).timestamp()
+        )
 
         res = storage.get_auto_materialize_asset_evaluations(
             asset_key=AssetKey("asset_one"), limit=100

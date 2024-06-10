@@ -3,7 +3,6 @@ import sys
 from datetime import datetime
 from functools import partial
 
-import pendulum
 import pytest
 from dagster import (
     AssetKey,
@@ -47,6 +46,7 @@ from dagster._core.errors import (
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import DirectOpExecutionContext, build_asset_context
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
+from dagster._seven import create_datetime
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 
@@ -1264,8 +1264,8 @@ def test_partitions_time_window_asset_invocation():
     )
     def partitioned_asset(context: AssetExecutionContext):
         start, end = context.partition_time_window
-        assert start == pendulum.instance(datetime(2023, 2, 2), tz=partitions_def.timezone)
-        assert end == pendulum.instance(datetime(2023, 2, 3), tz=partitions_def.timezone)
+        assert start == create_datetime(2023, 2, 2, tz=partitions_def.timezone)
+        assert end == create_datetime(2023, 2, 3, tz=partitions_def.timezone)
 
     context = build_asset_context(
         partition_key="2023-02-02",
@@ -1287,14 +1287,8 @@ def test_multipartitioned_time_window_asset_invocation():
         if time_partition is None:
             assert False, "partitions def does not have a time component"
         time_window = TimeWindow(
-            start=pendulum.instance(
-                datetime(year=2020, month=1, day=1),
-                tz=time_partition.timezone,
-            ),
-            end=pendulum.instance(
-                datetime(year=2020, month=1, day=2),
-                tz=time_partition.timezone,
-            ),
+            start=create_datetime(year=2020, month=1, day=1, tz=time_partition.timezone),
+            end=create_datetime(year=2020, month=1, day=2, tz=time_partition.timezone),
         )
         assert context.partition_time_window == time_window
         return 1

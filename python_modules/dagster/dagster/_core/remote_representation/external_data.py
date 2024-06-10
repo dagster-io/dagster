@@ -101,6 +101,7 @@ from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"
@@ -785,6 +786,13 @@ class ExternalTimeWindowPartitionsDefinitionData(
                 end=pendulum.from_timestamp(self.end, tz=self.timezone) if self.end else None,
             )
         else:
+            print("TIMESTAMP: " + str(self.start))
+            print("TIMEZONE: " + str(self.timezone))
+            print("TZINFO: " + str(timezone_from_string(self.timezone)))
+            print(
+                "PENDULUM FROM TIMESTAMP: "
+                + str(pendulum.from_timestamp(self.start, tz=self.timezone))
+            )
             # backcompat case
             return TimeWindowPartitionsDefinition(
                 schedule_type=self.schedule_type,

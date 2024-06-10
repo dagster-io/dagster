@@ -7,12 +7,14 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
-import pendulum
+from dateutil import parser
 from typing_extensions import TypeGuard
+
+from dagster._seven.compat.datetime import timezone_from_string
 
 from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (
@@ -124,8 +126,91 @@ def builtin_print() -> str:
     return "builtins.print"
 
 
+def _mockable_get_current_datetime_in_utc():
+    # Can be mocked in tests by freeze_time()
+    return datetime.now(tz=timezone.utc)
+
+
 def get_current_datetime_in_utc() -> Any:
-    return pendulum.now("UTC")
+    return _mockable_get_current_datetime_in_utc()
+
+
+def _mockable_get_current_timestamp():
+    return time.time()
+
+
+def get_current_timestamp():
+    # Like time.time() but can be mocked in tests by freeze_time()
+    return _mockable_get_current_timestamp()
+
+
+def create_datetime(year, month, day, *args, **kwargs):
+    tz = kwargs.pop("tz", "UTC")
+    if isinstance(tz, str):
+        tz = timezone_from_string(tz)
+    return datetime(year, month, day, *args, **kwargs, tzinfo=tz)
+
+
+def create_utc_datetime(year, month, day, *args, **kwargs):
+    return create_datetime(year, month, day, *args, **kwargs, tz="UTC")
+
+
+def add_fixed_time(
+    dt: datetime,
+    *,
+    hours=0,
+    minutes=0,
+    seconds=0,
+    milliseconds=0,
+    microseconds=0,
+):
+    """Behaves like adding a time using a timedelta, but handles fall DST transitions correctly
+    without skipping an hour ahead.
+    """
+    return (
+        dt.astimezone(timezone.utc)
+        + timedelta(
+            seconds=seconds,
+            microseconds=microseconds,
+            milliseconds=milliseconds,
+            minutes=minutes,
+            hours=hours,
+        )
+    ).astimezone(dt.tzinfo)
+
+
+def subtract_fixed_time(
+    dt: datetime,
+    *,
+    hours=0,
+    minutes=0,
+    seconds=0,
+    milliseconds=0,
+    microseconds=0,
+):
+    """Behaves like adding a time using a timedelta, but handles fall DST transitions correctly
+    without skipping an hour behind.
+    """
+    return (
+        dt.astimezone(timezone.utc)
+        - timedelta(
+            seconds=seconds,
+            microseconds=microseconds,
+            milliseconds=milliseconds,
+            minutes=minutes,
+            hours=hours,
+        )
+    ).astimezone(dt.tzinfo)
+
+
+def parse_with_timezone(datetime_str) -> datetime:
+    """Like dateutil.parser.parse, but always includes a timezone."""
+    dt = parser.parse(datetime_str)
+
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    return dt
 
 
 def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:

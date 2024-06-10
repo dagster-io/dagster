@@ -1,3 +1,4 @@
+import datetime
 import time
 from abc import ABC, abstractmethod
 from typing import Iterator
@@ -15,12 +16,13 @@ from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
     environ,
+    freeze_time,
     instance_for_test,
 )
 from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, PythonFileTarget
 from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._seven import create_utc_datetime
 from dagster._utils import file_relative_path
 
 from dagster_tests.api_tests.utils import get_foo_job_handle
@@ -1044,11 +1046,9 @@ class QueuedRunCoordinatorDaemonTests(ABC):
         instance.event_log_storage.set_concurrency_slots("foo", 1)
         list(daemon.run_iteration(concurrency_limited_workspace_context))
         assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
-        freeze_datetime = to_timezone(
-            create_pendulum_time(year=2024, month=2, day=21, tz="UTC"), "US/Pacific"
-        )
+        freeze_datetime = create_utc_datetime(year=2024, month=2, day=21)
         with environ({"DAGSTER_OP_CONCURRENCY_KEYS_ALLOTTED_FOR_STARTED_RUN_SECONDS": "1"}):
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 assert instance.get_run_by_id(run_id_1).status == DagsterRunStatus.STARTING
                 instance.handle_run_event(
                     run_id_1,
@@ -1069,9 +1069,9 @@ class QueuedRunCoordinatorDaemonTests(ABC):
                 # the run has started
                 assert set(self.get_run_ids(instance.run_launcher.queue())) == set([run_id_1])
 
-            freeze_datetime = freeze_datetime.add(seconds=2)
+            freeze_datetime = freeze_datetime + datetime.timedelta(seconds=2)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # we are now out of the 1-second window for having run-1 account for slots in the
                 # run coordinator
                 list(daemon.run_iteration(concurrency_limited_workspace_context))

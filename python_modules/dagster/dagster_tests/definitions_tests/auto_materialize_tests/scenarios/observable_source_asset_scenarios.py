@@ -7,7 +7,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     ParentUpdatedRuleEvaluationData,
 )
 from dagster._core.definitions.events import AssetKey
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven import create_utc_datetime
 
 from ..base_scenario import (
     AssetEvaluationSpec,
@@ -104,7 +104,7 @@ observable_source_asset_scenarios = {
     ),
     "observable_to_partitioned": AssetReconciliationScenario(
         assets=partitioned_downstream_of_observable_source,
-        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1),
+        current_time=create_utc_datetime(year=2013, month=1, day=6, hour=1),
         unevaluated_runs=[
             run(["source_asset"], is_observation=True),
         ]
@@ -118,7 +118,7 @@ observable_source_asset_scenarios = {
     ),
     "observable_to_partitioned2": AssetReconciliationScenario(
         assets=partitioned_downstream_of_observable_source,
-        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=2),
+        current_time=create_utc_datetime(year=2013, month=1, day=6, hour=2),
         unevaluated_runs=[
             run(["source_asset"], is_observation=True),
         ]
@@ -278,10 +278,10 @@ observable_source_asset_scenarios = {
                 run(["source_asset1"], is_observation=True),
             ],
             expected_run_requests=[run_request(["asset1"])],
-            current_time=create_pendulum_time(year=2020, month=1, day=1, hour=1),
+            current_time=create_utc_datetime(year=2020, month=1, day=1, hour=1),
             between_runs_delta=datetime.timedelta(minutes=7),
         ),
-        current_time=create_pendulum_time(year=2020, month=1, day=1, hour=1, minute=45),
+        current_time=create_utc_datetime(year=2020, month=1, day=1, hour=1, minute=45),
         unevaluated_runs=[
             # another observation of the second version
             run(["source_asset1"], is_observation=True),

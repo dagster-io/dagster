@@ -20,8 +20,9 @@ from dagster._core.definitions.time_window_partitions import (
     PersistedTimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven import create_datetime
 
 partitions_defs = [
     None,
@@ -105,10 +106,12 @@ def test_operations(
             num_partitions=2,
             included_time_windows=[
                 PersistedTimeWindow(
-                    start=create_pendulum_time(2020, 1, 1), end=create_pendulum_time(2020, 1, 2)
+                    start=TimestampWithTimezone(create_datetime(2020, 1, 1).timestamp(), "UTC"),
+                    end=TimestampWithTimezone(create_datetime(2020, 1, 2).timestamp(), "UTC"),
                 ),
                 PersistedTimeWindow(
-                    start=create_pendulum_time(2020, 1, 4), end=create_pendulum_time(2020, 1, 5)
+                    start=TimestampWithTimezone(create_datetime(2020, 1, 4).timestamp(), "UTC"),
+                    end=TimestampWithTimezone(create_datetime(2020, 1, 5).timestamp(), "UTC"),
                 ),
             ],
         ),

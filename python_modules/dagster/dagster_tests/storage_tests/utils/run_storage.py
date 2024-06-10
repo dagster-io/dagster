@@ -5,7 +5,6 @@ import unittest
 from datetime import datetime, timedelta
 from typing import Optional
 
-import pendulum
 import pytest
 from dagster import _seven, job, op
 from dagster._core.definitions import GraphDefinition
@@ -39,12 +38,13 @@ from dagster._core.storage.tags import (
     ROOT_RUN_ID_TAG,
     RUN_FAILURE_REASON_TAG,
 )
+from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._seven import create_utc_datetime
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -1276,7 +1276,7 @@ class TestRunStorage:
 
         # test insert
         added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000).float_timestamp,
+            timestamp=1000.0,
             daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
@@ -1288,7 +1288,7 @@ class TestRunStorage:
 
         # test update
         second_added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(2000).float_timestamp,
+            timestamp=2000.0,
             daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
@@ -1305,7 +1305,7 @@ class TestRunStorage:
             pytest.skip("storage cannot delete")
 
         added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000).float_timestamp,
+            timestamp=1000.0,
             daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
@@ -1325,7 +1325,7 @@ class TestRunStorage:
             partition_names=["a", "b", "c"],
             from_failure=False,
             tags={},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=time.time(),
         )
         storage.add_backfill(one)
         assert len(storage.get_backfills()) == 1
@@ -1496,11 +1496,9 @@ class TestRunStorage:
                     run_launcher=SyncInMemoryRunLauncher(),
                 )
 
-            freeze_datetime = to_timezone(
-                create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
-            )
+            freeze_datetime = create_utc_datetime(2019, 11, 2, 0, 0, 0)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 result = my_job.execute_in_process(instance=instance)
                 records = instance.get_run_records(filters=RunsFilter(run_ids=[result.run_id]))
                 assert len(records) == 1

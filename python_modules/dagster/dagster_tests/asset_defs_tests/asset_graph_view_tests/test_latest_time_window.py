@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import pendulum
 from dagster import (
     Definitions,
     _check as check,
@@ -18,6 +17,7 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
+from dagster._seven import create_datetime
 
 
 def _tw(asset_slice: AssetSlice) -> TimeWindow:
@@ -28,7 +28,7 @@ def _tw(asset_slice: AssetSlice) -> TimeWindow:
 
 def test_latest_time_slice_no_end() -> None:
     # starts at 2020-02-01
-    no_end_daily = DailyPartitionsDefinition(pendulum.datetime(2020, 2, 1))
+    no_end_daily = DailyPartitionsDefinition(create_datetime(2020, 2, 1))
 
     @asset(partitions_def=no_end_daily)
     def daily() -> None: ...
@@ -45,7 +45,7 @@ def test_latest_time_slice_no_end() -> None:
     # effective date is 2020-2-4
 
     asset_graph_view_on_2_4 = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 2, 4)
+        defs, instance, effective_dt=create_datetime(2020, 2, 4)
     )
 
     assert asset_graph_view_on_2_4.get_asset_slice(
@@ -58,16 +58,16 @@ def test_latest_time_slice_no_end() -> None:
 
     assert _tw(
         asset_graph_view_on_2_4.compute_latest_time_window_slice(daily.key)
-    ).start == pendulum.datetime(2020, 2, 3)
+    ).start == create_datetime(2020, 2, 3)
 
     assert _tw(
         asset_graph_view_on_2_4.compute_latest_time_window_slice(daily.key)
-    ).end == pendulum.datetime(2020, 2, 4)
+    ).end == create_datetime(2020, 2, 4)
 
     # effective date is 2020-2-5. Ensure one more date
 
     asset_graph_view_on_2_5 = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 2, 5)
+        defs, instance, effective_dt=create_datetime(2020, 2, 5)
     )
 
     assert asset_graph_view_on_2_5.get_asset_slice(
@@ -81,7 +81,7 @@ def test_latest_time_slice_no_end() -> None:
     # in the past
 
     asset_graph_view_on_1_1 = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 1, 1)
+        defs, instance, effective_dt=create_datetime(2020, 1, 1)
     )
 
     assert (
@@ -100,7 +100,7 @@ def test_latest_time_slice_no_end() -> None:
     # complete time window is 02-01 -> 02-02, so the partition key should be 02-01
 
     asset_graph_view_on_2_2_plus_1_min = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 2, 2, minute=1)
+        defs, instance, effective_dt=create_datetime(2020, 2, 2, minute=1)
     )
     assert asset_graph_view_on_2_2_plus_1_min.get_asset_slice(
         asset_key=daily.key
@@ -109,13 +109,13 @@ def test_latest_time_slice_no_end() -> None:
     tw = _tw(asset_graph_view_on_2_2_plus_1_min.get_asset_slice(asset_key=daily.key))
 
     assert tw.start == datetime.min
-    assert tw.end == pendulum.datetime(2020, 2, 2)
+    assert tw.end == create_datetime(2020, 2, 2)
 
 
 def test_latest_time_slice_with_end() -> None:
     # starts at 2020-02-01
     daily_partitions_def = DailyPartitionsDefinition(
-        start_date=pendulum.datetime(2020, 1, 1), end_date=pendulum.datetime(2020, 2, 1)
+        start_date=create_datetime(2020, 1, 1), end_date=create_datetime(2020, 2, 1)
     )
 
     @asset(partitions_def=daily_partitions_def)
@@ -125,7 +125,7 @@ def test_latest_time_slice_with_end() -> None:
     instance = DagsterInstance.ephemeral()
 
     asset_graph_view_before_start = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2019, 12, 31)
+        defs, instance, effective_dt=create_datetime(2019, 12, 31)
     )
     assert (
         asset_graph_view_before_start.compute_latest_time_window_slice(
@@ -135,7 +135,7 @@ def test_latest_time_slice_with_end() -> None:
     )
 
     asset_graph_view_at_start = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 1, 1)
+        defs, instance, effective_dt=create_datetime(2020, 1, 1)
     )
     assert (
         asset_graph_view_at_start.compute_latest_time_window_slice(
@@ -145,14 +145,14 @@ def test_latest_time_slice_with_end() -> None:
     )
 
     asset_graph_view_after_start_before_end = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 1, 3)
+        defs, instance, effective_dt=create_datetime(2020, 1, 3)
     )
     assert asset_graph_view_after_start_before_end.compute_latest_time_window_slice(
         daily.key
     ).compute_partition_keys() == set(["2020-01-02"])
 
     asset_graph_view_after_end = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 2, 5)
+        defs, instance, effective_dt=create_datetime(2020, 2, 5)
     )
     assert asset_graph_view_after_end.compute_latest_time_window_slice(
         daily.key
@@ -189,7 +189,7 @@ def test_latest_time_slice_static_partitioned() -> None:
 def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
     # starts at 2020-02-01
     daily_partitions_def = DailyPartitionsDefinition(
-        start_date=pendulum.datetime(2020, 1, 1), end_date=pendulum.datetime(2020, 1, 3)
+        start_date=create_datetime(2020, 1, 1), end_date=create_datetime(2020, 1, 3)
     )
 
     static_partitions_def = StaticPartitionsDefinition(["CA", "NY", "MN"])
@@ -214,7 +214,7 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
     instance = DagsterInstance.ephemeral()
 
     asset_graph_view_within_partition = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2020, 3, 3)
+        defs, instance, effective_dt=create_datetime(2020, 3, 3)
     )
 
     md_slice = asset_graph_view_within_partition.get_asset_slice(asset_key=multi_dimensional.key)
@@ -223,11 +223,11 @@ def test_multi_dimesional_with_time_partition_latest_time_window() -> None:
         multi_dimensional.key
     )
     assert last_tw_slice.compute_partition_keys() == set(jan_2_keys)
-    assert _tw(last_tw_slice).start == pendulum.datetime(2020, 1, 2)
-    assert _tw(last_tw_slice).end == pendulum.datetime(2020, 1, 3)
+    assert _tw(last_tw_slice).start == create_datetime(2020, 1, 2)
+    assert _tw(last_tw_slice).end == create_datetime(2020, 1, 3)
 
     asset_graph_view_in_past = AssetGraphView.for_test(
-        defs, instance, effective_dt=pendulum.datetime(2019, 3, 3)
+        defs, instance, effective_dt=create_datetime(2019, 3, 3)
     )
 
     md_slice_in_past = asset_graph_view_in_past.compute_latest_time_window_slice(
@@ -273,7 +273,7 @@ def test_dynamic_partitioning_latest_time_window() -> None:
     def dynamic_asset() -> None: ...
 
     daily_partitions_def = DailyPartitionsDefinition(
-        start_date=pendulum.datetime(2020, 1, 1), end_date=pendulum.datetime(2020, 1, 3)
+        start_date=create_datetime(2020, 1, 1), end_date=create_datetime(2020, 1, 3)
     )
     multi_partitions_definition = MultiPartitionsDefinition(
         {"daily": daily_partitions_def, "dynamic": dynamic_partition_def}
@@ -316,8 +316,8 @@ def test_dynamic_partitioning_latest_time_window() -> None:
 
     assert _tw(
         asset_graph_view.compute_latest_time_window_slice(dynamic_multi_dimensional.key)
-    ).start == pendulum.datetime(2020, 1, 2)
+    ).start == create_datetime(2020, 1, 2)
 
     assert _tw(
         asset_graph_view.compute_latest_time_window_slice(dynamic_multi_dimensional.key)
-    ).end == pendulum.datetime(2020, 1, 3)
+    ).end == create_datetime(2020, 1, 3)

@@ -58,8 +58,6 @@ from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
-
     from dagster._daemon.daemon import DaemonIterator
 
 
@@ -260,7 +258,7 @@ def execute_scheduler_iteration_loop(
 def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    end_datetime_utc: "DateTime",
+    end_datetime_utc: datetime.datetime,
     iteration_times: Dict[str, ScheduleIterationTimes],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,

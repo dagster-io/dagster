@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional
 
 import dagster._check as check
@@ -135,7 +136,7 @@ class GrapheneSchedule(graphene.ObjectType):
         limit: Optional[int] = None,
         until: Optional[float] = None,
     ):
-        cursor = cursor or get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+        cursor = cursor or time.time()
 
         tick_times: List[float] = []
         time_iter = self._external_schedule.execution_time_iterator(cursor)

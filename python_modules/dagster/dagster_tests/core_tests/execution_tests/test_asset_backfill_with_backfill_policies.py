@@ -2,7 +2,6 @@ import math
 from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
-import pendulum
 import pytest
 from dagster import (
     AssetDep,
@@ -23,7 +22,13 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._core.test_utils import freeze_time
+from dagster._seven import (
+    create_datetime,
+    get_current_datetime_in_utc,
+    get_current_timestamp,
+    parse_with_timezone,
+)
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
@@ -61,7 +66,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
+        backfill_start_timestamp=get_current_timestamp(),
     )
 
     with pytest.raises(
@@ -80,7 +85,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
 
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
@@ -126,7 +131,7 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
 
 
 def test_asset_backfill_parent_and_children_have_same_backfill_policy():
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(backfill_policy=BackfillPolicy.single_run())
@@ -195,7 +200,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
     """Tests that when a backfill contains multiple backfill policies, we still group assets with the
     same backfill policy in a single run.
     """
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(10))
@@ -271,7 +276,7 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
         ],
         dynamic_partitions_store=MagicMock(),
         all_partitions=True,
-        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
+        backfill_start_timestamp=get_current_timestamp(),
     )
     backfill_id = "test_backfill_id"
     result = execute_asset_backfill_iteration_consume_generator(
@@ -287,7 +292,7 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
 
 
 def test_asset_backfill_return_single_run_request_for_partitioned():
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
@@ -329,7 +334,7 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
 
 
 def test_asset_backfill_return_multiple_run_request_for_partitioned():
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition(
         "2023-01-01", end_date="2023-08-11"
     )
@@ -377,7 +382,7 @@ def test_asset_backfill_status_count_with_backfill_policies():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     weekly_partitions_def = WeeklyPartitionsDefinition("2023-01-01")
 
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
     num_of_weekly_partitions = weekly_partitions_def.get_num_partitions(time_now)
 
@@ -461,7 +466,7 @@ def test_backfill_run_contains_more_than_one_asset():
     upstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     downstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-02")
 
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
     upstream_num_of_partitions = upstream_partitions_def.get_num_partitions(time_now)
     downstream_num_of_partitions = downstream_partitions_def.get_num_partitions(time_now)
 
@@ -576,7 +581,7 @@ def test_dynamic_partitions_multi_run_backfill_policy():
         asset_selection=[asset1.key],
         dynamic_partitions_store=instance,
         partition_names=["foo", "bar"],
-        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
+        backfill_start_timestamp=get_current_timestamp(),
         all_partitions=False,
     )
 
@@ -618,7 +623,7 @@ def test_dynamic_partitions_single_run_backfill_policy():
         asset_selection=[asset1.key],
         dynamic_partitions_store=instance,
         partition_names=["foo", "bar"],
-        backfill_start_timestamp=pendulum.now("UTC").timestamp(),
+        backfill_start_timestamp=get_current_timestamp(),
         all_partitions=False,
     )
 
@@ -639,9 +644,9 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
-        test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
+        test_time = parse_with_timezone("2023-03-04T00:00:00")
     else:
-        test_time = pendulum.now("UTC")
+        test_time = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -684,7 +689,7 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
         all_partitions=False,
     )
     assert backfill_data
-    with pendulum_freeze_time(test_time):
+    with freeze_time(test_time):
         result = execute_asset_backfill_iteration_consume_generator(
             backfill_id="test_backfill_id",
             asset_backfill_data=backfill_data,
@@ -707,9 +712,9 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
-        test_time = pendulum.parse("2023-03-04T00:00:00", tz="UTC")
+        test_time = parse_with_timezone("2023-03-04T00:00:00")
     else:
-        test_time = pendulum.now("UTC")
+        test_time = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -782,7 +787,7 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
 
 def test_assets_backfill_with_partition_mapping_without_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -843,7 +848,7 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
 
 def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -896,7 +901,7 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
 
 def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
 
     @asset(
         name="upstream_a",
@@ -959,7 +964,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    test_time = pendulum.parse("2023-03-10T00:00:00", tz="UTC")
+    test_time = parse_with_timezone("2023-03-10T00:00:00")
 
     @asset(
         name="upstream_a",
@@ -1007,7 +1012,7 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
         all_partitions=False,
     )
     assert backfill_data
-    with pendulum_freeze_time(test_time):
+    with freeze_time(test_time):
         result = execute_asset_backfill_iteration_consume_generator(
             backfill_id="test_backfill_id",
             asset_backfill_data=backfill_data,
@@ -1053,7 +1058,7 @@ def test_run_request_partition_order():
         asset_selection=[foo.key, foo_child.key],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        backfill_start_timestamp=pendulum.datetime(2023, 10, 7, 0, 0, 0).timestamp(),
+        backfill_start_timestamp=create_datetime(2023, 10, 7, 0, 0, 0).timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(
@@ -1075,7 +1080,7 @@ def test_run_request_partition_order():
 def test_single_run_backfill_full_execution(
     batch_size: int, throw_store_event_batch_error: bool, capsys, monkeypatch
 ):
-    time_now = pendulum.now("UTC")
+    time_now = get_current_datetime_in_utc()
 
     partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
 
