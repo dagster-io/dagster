@@ -166,19 +166,19 @@ def compile_datetime_and_add_precision_mysql(_element, _compiler, **_kw) -> str:
     return f"DATETIME({MYSQL_DATE_PRECISION})"
 
 
-class get_current_timestamp(db.sql.expression.FunctionElement):
+class get_sql_current_timestamp(db.sql.expression.FunctionElement):
     """Like CURRENT_TIMESTAMP, but has the same semantics on MySQL, Postgres, and Sqlite."""
 
     type = db.types.DateTime()  # type: ignore
 
 
-@compiles(get_current_timestamp, "mysql")
-def compiles_get_current_timestamp_mysql(_element, _compiler, **_kw) -> str:
+@compiles(get_sql_current_timestamp, "mysql")
+def compiles_get_sql_current_timestamp_mysql(_element, _compiler, **_kw) -> str:
     return f"CURRENT_TIMESTAMP({MYSQL_DATE_PRECISION})"
 
 
-@compiles(get_current_timestamp)
-def compiles_get_current_timestamp_default(_element, _compiler, **_kw) -> str:
+@compiles(get_sql_current_timestamp)
+def compiles_get_sql_current_timestamp_default(_element, _compiler, **_kw) -> str:
     return "CURRENT_TIMESTAMP"
 
 

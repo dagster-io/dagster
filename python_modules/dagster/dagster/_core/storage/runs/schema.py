@@ -1,7 +1,7 @@
 import sqlalchemy as db
 from sqlalchemy.dialects import sqlite
 
-from ..sql import MySQLCompatabilityTypes, get_current_timestamp
+from ..sql import MySQLCompatabilityTypes, get_sql_current_timestamp
 
 RunStorageSqlMetadata = db.MetaData()
 
@@ -28,8 +28,8 @@ RunsTable = db.Table(
     db.Column("run_body", db.Text),
     db.Column("partition", db.Text),
     db.Column("partition_set", db.Text),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     # Added start/end_time in #6038 (12/2021), MySQL fix added in #6451 (2/2022)
     # We are using floats here to store unix timestamps in the database. They are optional perf
     # optimizations, mirroring the timestamps in the event_log for the corresponding events marking
@@ -58,7 +58,7 @@ SecondaryIndexMigrationTable = db.Table(
         autoincrement=True,
     ),
     db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
-    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
     db.Column("migration_completed", db.DateTime),
 )
 
