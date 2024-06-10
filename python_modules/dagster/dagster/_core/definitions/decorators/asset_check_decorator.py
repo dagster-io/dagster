@@ -244,14 +244,7 @@ def asset_check(
             fn=fn,
         )
 
-        op_def = builder.create_op_definition()
-        return AssetChecksDefinition.create(
-            keys_by_input_name=builder.asset_keys_by_input_name,
-            node_def=op_def,
-            resource_defs=builder.args.assets_def_resource_defs,
-            check_specs_by_output_name=builder.check_specs_by_output_name,
-            can_subset=False,
-        )
+        return builder.create_asset_checks_definition()
 
     return inner
 
