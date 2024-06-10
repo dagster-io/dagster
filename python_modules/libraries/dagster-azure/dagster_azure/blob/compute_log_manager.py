@@ -150,6 +150,9 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         parts = prefix.split("/")
         return "/".join([part for part in parts if part])
 
+    def _resolve_path_for_namespace(self, namespace):
+        return [self._blob_prefix, "storage", *namespace]
+
     def _blob_key(self, log_key, io_type, partial=False):
         check.inst_param(io_type, "io_type", ComputeIOType)
         extension = IO_TYPE_EXTENSION[io_type]
@@ -157,7 +160,7 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         filename = f"{filebase}.{extension}"
         if partial:
             filename = f"{filename}.partial"
-        paths = [self._blob_prefix, "storage", *namespace, filename]
+        paths = [*self._resolve_path_for_namespace(namespace), filename]
         return "/".join(paths)  # blob path delimiter
 
     def delete_logs(
@@ -248,6 +251,23 @@ class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClas
         with open(path, "wb") as fileobj:
             blob = self._container_client.get_blob_client(blob_key)
             blob.download_blob().readinto(fileobj)
+
+    def get_log_keys_for_log_key_prefix(
+        self, log_key_prefix: Sequence[str], io_type: ComputeIOType
+    ) -> Sequence[Sequence[str]]:
+        directory = self._resolve_path_for_namespace(log_key_prefix)
+        blobs = self._container_client.list_blobs(name_starts_with="/".join(directory))
+        results = []
+        list_key_prefix = list(log_key_prefix)
+
+        for blob in blobs:
+            full_key = blob.name
+            filename, blob_io_type = full_key.split("/")[-1].split(".")
+            if blob_io_type != IO_TYPE_EXTENSION[io_type]:
+                continue
+            results.append(list_key_prefix + [filename])
+
+        return results
 
     def on_subscribe(self, subscription):
         self._subscription_manager.add_subscription(subscription)
