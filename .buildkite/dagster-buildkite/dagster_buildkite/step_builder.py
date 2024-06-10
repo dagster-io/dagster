@@ -42,6 +42,8 @@ class CommandStepBuilder:
             "retry": {
                 "automatic": [
                     {"exit_status": -1, "limit": 2},  # agent lost
+                    {"exit_status": 143, "limit": 2},  # agent lost
+                    {"exit_status": 2, "limit": 2},  # often a uv read timeout
                     {"exit_status": 255, "limit": 2},  # agent forced shut down
                 ],
                 "manual": {"permit_on_passed": True},
