@@ -96,8 +96,6 @@ export type FutureTicksQuery = {
           __typename: 'WorkspaceLocationEntry';
           id: string;
           name: string;
-          loadStatus: Types.RepositoryLocationLoadStatus;
-          displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
           locationOrLoadError:
             | {__typename: 'PythonError'}
             | {
