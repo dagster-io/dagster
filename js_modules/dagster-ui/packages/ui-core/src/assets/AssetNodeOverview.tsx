@@ -292,10 +292,10 @@ export const AssetNodeOverview = ({
       </AttributeAndValue>
       <AttributeAndValue label="Storage">
         {(relationIdentifierMetadata || uriMetadata || storageKindTag) && (
-          <Box flex={{direction: 'column', gap: 4}}>
+          <Box flex={{direction: 'column', gap: 4}} style={{minWidth: 0}}>
             {relationIdentifierMetadata && (
               <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-                {relationIdentifierMetadata.text}
+                <MiddleTruncate text={relationIdentifierMetadata.text} />
                 <CopyButton value={relationIdentifierMetadata.text} />
               </Box>
             )}

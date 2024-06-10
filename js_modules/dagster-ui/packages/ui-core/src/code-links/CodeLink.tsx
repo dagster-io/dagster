@@ -31,7 +31,7 @@ const getCodeReferenceEntryLabel = (codeReference: SourceLocation): React.ReactE
         codeReference.label || (codeReference.url.split('/').pop()?.split('#')[0] as string);
       const sourceControlName = codeReference.url.includes('github') ? 'GitHub' : 'GitLab';
       return (
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}}>
+        <Box flex={{direction: 'row', alignItems: 'center', gap: 4}} style={{whiteSpace: 'nowrap'}}>
           Open <MiddleTruncate text={labelOrUrl} /> in {sourceControlName}
         </Box>
       );
@@ -86,18 +86,23 @@ export const CodeLink = ({sourceLocation}: {sourceLocation: SourceLocation}) => 
   const [codeLinkProtocol, _] = React.useContext(CodeLinkProtocolContext);
 
   return (
-    <Tooltip content={getCodeReferenceTooltip(sourceLocation)} position="bottom">
-      <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-        <Icon name={getCodeReferenceIcon(sourceLocation)} />
-        <a
-          target="_blank"
-          rel="noreferrer"
-          href={getCodeReferenceLink(codeLinkProtocol, sourceLocation)}
+    <Box style={{minWidth: 0}} flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+      <Icon name={getCodeReferenceIcon(sourceLocation)} />
+      <a
+        target="_blank"
+        rel="noreferrer"
+        style={{minWidth: 0}}
+        href={getCodeReferenceLink(codeLinkProtocol, sourceLocation)}
+      >
+        <Tooltip
+          display="block"
+          content={getCodeReferenceTooltip(sourceLocation)}
+          position="bottom"
         >
           {getCodeReferenceEntryLabel(sourceLocation)}
-        </a>
-        <Icon name="open_in_new" />
-      </Box>
-    </Tooltip>
+        </Tooltip>
+      </a>
+      <Icon name="open_in_new" />
+    </Box>
   );
 };
