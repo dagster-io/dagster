@@ -212,8 +212,18 @@ def test_get_log_keys_for_log_key_prefix(storage_account, container, credential)
         [*log_key_prefix, "3"],
     ]
 
-    # write a different file type
-    write_log_file(4, ComputeIOType.STDOUT)
+    # write a different file type - azure blob compute log manager will create empty files for both file types
+    # when using open_log_stream, sp manually create the file
+
+    log_key = [*log_key_prefix, "4"]
+    with manager.local_manager.open_log_stream(log_key, ComputeIOType.STDOUT) as f:
+        f.write("foo")
+    blob_key = manager._blob_key(log_key, ComputeIOType.STDOUT)  # noqa: SLF001
+    with open(
+        manager.local_manager.get_captured_local_path(log_key, ComputeIOType.STDOUT), "rb"
+    ) as data:
+        blob = manager._container_client.get_blob_client(blob_key)  # noqa: SLF001
+        blob.upload_blob(data)
 
     log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
     assert sorted(log_keys) == [
