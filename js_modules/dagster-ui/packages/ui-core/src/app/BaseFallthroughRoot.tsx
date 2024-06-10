@@ -10,7 +10,7 @@ import {workspacePath, workspacePipelinePath} from '../workspace/workspacePath';
 export const BaseFallthroughRoot = () => {
   return (
     <Switch>
-      <Route path="*">
+      <Route path="*" isNestingRoute>
         <FinalRedirectOrLoadingRoot />
       </Route>
     </Switch>

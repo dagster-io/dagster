@@ -29,7 +29,7 @@ export const SettingsMainPane = () => {
         <Route path="/settings/config">
           <InstanceConfigContent />
         </Route>
-        <Route path="*">
+        <Route path="*" isNestingRoute>
           <Redirect to="/settings/locations" />
         </Route>
       </Switch>
