@@ -100,7 +100,7 @@ export const RunTimeline = (props: Props) => {
           const {repoAddress} = job;
           const repoKey = repoAddressAsURLString(repoAddress);
           accum[repoKey] = accum[repoKey] || [];
-          accum[repoKey].push(job);
+          accum[repoKey]!.push(job);
           return accum;
         },
         {} as Record<string, TimelineJob[]>,
