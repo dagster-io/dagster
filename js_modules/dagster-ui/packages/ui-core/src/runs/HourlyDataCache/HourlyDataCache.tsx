@@ -62,15 +62,19 @@ export class HourlyDataCache<T> {
     return await this.loadPromise;
   }
 
+  private saveTimeout?: ReturnType<typeof setTimeout>;
   private async saveCacheToIndexedDB() {
-    if (!this.indexedDBCache) {
-      return;
-    }
-    await this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+    clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(() => {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+    }, 10000);
   }
 
   public async clearOldEntries() {
-    const oneWeekAgo = Date.now() - 1 * 24 * 60 * 60 * 1000;
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     const hour = Math.floor(oneWeekAgo / (ONE_HOUR_S * 1000));
 
     await this.loadCacheFromIndexedDB();
@@ -79,7 +83,6 @@ export class HourlyDataCache<T> {
         this.cache.delete(ts);
       }
     }
-    await this.saveCacheToIndexedDB();
   }
 
   /**
