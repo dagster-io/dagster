@@ -79,9 +79,6 @@ class InstigationLogger(logging.Logger):
 
     The instigation logger also adds a console logger to emit the logs in a structured way from the
     evaluation process.
-
-    Note: the logger_name is passed to the super class, and will be set as the name attribute. This is
-    distinct from the name parameter that is set as the _name attribute on this class.
     """
 
     def __init__(
