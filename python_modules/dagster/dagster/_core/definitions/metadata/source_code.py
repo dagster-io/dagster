@@ -255,7 +255,7 @@ def link_to_git(
         git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
         git_branch (str): The branch in the source control system, such as "master".
-        file_path_mapping (FilePathMappingFn):
+        file_path_mapping (Callable[[Path], str]):
             Specifies the mapping between local file paths and their corresponding paths in a source control repository.
             Simple usage is to provide a `AnchorBasedFilePathMappingFn` instance, which specifies an anchor file in the
             repository and the corresponding local file path, which is extrapolated to all other local file paths.
