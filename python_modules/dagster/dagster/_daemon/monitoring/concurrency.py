@@ -1,10 +1,10 @@
+import datetime
 import logging
 from typing import Iterator, Optional
 
-import pendulum
-
 from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
 
@@ -31,12 +31,12 @@ def execute_concurrency_slots_iteration(
         yield
         return
 
-    now = pendulum.now("UTC")
+    now = get_current_datetime_in_utc()
     run_records = instance.get_run_records(
         filters=RunsFilter(
             run_ids=list(run_ids),
             statuses=FINISHED_STATUSES,
-            updated_before=now.subtract(seconds=timeout_seconds),
+            updated_before=(now - datetime.timedelta(seconds=timeout_seconds)),
         ),
         limit=RUN_BATCH_SIZE,
     )

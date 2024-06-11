@@ -2,7 +2,6 @@ import logging
 import logging.config
 import os
 import sys
-import time
 import warnings
 import weakref
 from abc import abstractmethod
@@ -29,7 +28,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
@@ -71,7 +69,7 @@ from dagster._core.storage.tags import (
     RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
-from dagster._seven import get_current_datetime_in_utc
+from dagster._seven import get_current_datetime_in_utc, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -2500,7 +2498,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
-            timestamp=time.time(),
+            timestamp=get_current_timestamp(),
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )
@@ -2803,7 +2801,7 @@ class DagsterInstance(DynamicPartitionsStore):
                     InstigatorStatus.RUNNING,
                     SensorInstigatorData(
                         min_interval=external_sensor.min_interval_seconds,
-                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        last_sensor_start_timestamp=get_current_timestamp(),
                         sensor_type=external_sensor.sensor_type,
                     ),
                 )
@@ -2812,7 +2810,7 @@ class DagsterInstance(DynamicPartitionsStore):
             data = cast(SensorInstigatorData, stored_state.instigator_data)
             return self.update_instigator_state(
                 stored_state.with_status(InstigatorStatus.RUNNING).with_data(
-                    data.with_sensor_start_timestamp(pendulum.now("UTC").timestamp())
+                    data.with_sensor_start_timestamp(get_current_timestamp())
                 )
             )
 

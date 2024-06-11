@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any, Iterator, Mapping, Optional, Union
 
 from dagster import (
@@ -25,26 +26,27 @@ class DagsterDltResource(ConfigurableResource):
         return True
 
     def _cast_load_info_metadata(self, mapping: Mapping[Any, Any]) -> Mapping[Any, Any]:
-        """Converts pendulum DateTime and Timezone values in a mapping to strings.
+        """Converts datetime and timezone values in a mapping to strings.
 
         Workaround for dagster._core.errors.DagsterInvalidMetadata: Could not resolve the metadata
         value for "jobs" to a known type. Value is not JSON serializable.
 
         Args:
-            mapping (Mapping): Dictionary possibly containing pendulum values
+            mapping (Mapping): Dictionary possibly containing datetime/timezone values
 
         Returns:
-            Mapping[Any, Any]: Metadata with pendulum DateTime and Timezone values casted to strings
+            Mapping[Any, Any]: Metadata with datetime and timezone values casted to strings
 
         """
-        from pendulum import DateTime
-
         try:
-            from pendulum import Timezone  # type: ignore
+            # zoneinfo is python >= 3.9
+            from zoneinfo import ZoneInfo  # type: ignore
 
-            casted_instance_types = (DateTime, Timezone)
-        except ImportError:
-            casted_instance_types = DateTime
+            casted_instance_types = (datetime, timezone, ZoneInfo)
+        except:
+            from dateutil.tz import tzfile
+
+            casted_instance_types = (datetime, timezone, tzfile)
 
         def _recursive_cast(value: Any):
             if isinstance(value, dict):

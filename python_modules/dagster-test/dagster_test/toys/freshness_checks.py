@@ -2,7 +2,6 @@ import math
 import random
 from datetime import timedelta
 
-import pendulum
 from dagster import (
     AssetExecutionContext,
     MetadataValue,
@@ -17,6 +16,7 @@ from dagster import (
     observable_source_asset,
 )
 from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._seven import get_current_datetime_in_utc
 
 
 @observable_source_asset(group_name="freshness_checks")
@@ -45,7 +45,10 @@ def derived_asset(context: AssetExecutionContext) -> None:
         .value,
         "latest_updated_timestamp",
     )
-    if latest_updated_timestamp < pendulum.now().subtract(minutes=4).timestamp():
+    if (
+        latest_updated_timestamp
+        < (get_current_datetime_in_utc() - timedelta(minutes=4)).timestamp()
+    ):
         raise Exception("source is stale, so I am going to fail :(")
 
 
@@ -95,7 +98,7 @@ def get_last_updated_timestamp_unreliable_source() -> TimestampMetadataValue:
             "dagster/last_updated_timestamp"
         ]  # type: ignore
     else:
-        now = pendulum.now()
+        now = get_current_datetime_in_utc()
         rounded_minute = max(math.floor((now.minute - 1) / 3) * 3, 0)
         return MetadataValue.timestamp(now.replace(minute=rounded_minute))
 

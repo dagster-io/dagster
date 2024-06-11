@@ -357,10 +357,6 @@ def _unsupported_dagster_python_versions(tox_factor: Optional[str]) -> List[Avai
         return [AvailablePythonVersion.V3_11, AvailablePythonVersion.V3_12]
 
     if tox_factor in {
-        "definitions_tests_pendulum_1",
-        "definitions_tests_pendulum_2",
-        "scheduler_tests_pendulum_1",
-        "scheduler_tests_pendulum_2",
         "type_signature_tests",
     }:
         return [AvailablePythonVersion.V3_12]
@@ -409,8 +405,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "daemon_sensor_tests",
             "daemon_tests",
             "definitions_tests",
-            "definitions_tests_pendulum_1",
-            "definitions_tests_pendulum_2",
             "general_tests",
             "general_tests_old_protobuf",
             "launcher_tests",
@@ -418,8 +412,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "model_tests_pydantic1",
             "model_tests_pydantic2",
             "scheduler_tests",
-            "scheduler_tests_pendulum_1",
-            "scheduler_tests_pendulum_2",
             "storage_tests",
             "storage_tests_sqlalchemy_1_3",
             "storage_tests_sqlalchemy_1_4",

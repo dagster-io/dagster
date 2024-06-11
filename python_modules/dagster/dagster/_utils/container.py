@@ -3,7 +3,7 @@ import os
 from enum import Enum
 from typing import Optional, TypedDict
 
-import pendulum
+from dagster._seven import get_current_timestamp
 
 
 def cpu_usage_path_cgroup_v1():
@@ -125,7 +125,7 @@ def retrieve_containerized_utilization_metrics(
         "cpu_cfs_period_us": _retrieve_containerized_cpu_cfs_period_us(logger, cgroup_version),
         "memory_usage": _retrieve_containerized_memory_usage(logger, cgroup_version),
         "memory_limit": _retrieve_containerized_memory_limit(logger, cgroup_version),
-        "measurement_timestamp": pendulum.now("UTC").float_timestamp,
+        "measurement_timestamp": get_current_timestamp(),
         "cgroup_version": cgroup_version.value if cgroup_version else None,
     }
 

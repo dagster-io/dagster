@@ -1,11 +1,11 @@
 import warnings
 
 from dagster import ExperimentalWarning
+from dagster._seven import get_current_timestamp
 
 # squelch experimental warnings since we often include experimental things in toys for development
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
-import pendulum
 from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
@@ -67,7 +67,7 @@ from .sensors import get_toys_sensors
 
 @op
 def materialization_op():
-    timestamp = pendulum.now("UTC").timestamp()
+    timestamp = get_current_timestamp()
     yield AssetMaterialization(asset_key="model", metadata={"timestamp": timestamp})
     yield Output(1)
 

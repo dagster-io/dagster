@@ -1,7 +1,5 @@
 from typing import Any, Mapping, Optional, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
@@ -12,6 +10,7 @@ from dagster._core.definitions.declarative_automation.automation_condition_evalu
     AutomationConditionEvaluator,
 )
 from dagster._core.definitions.run_request import SensorResult
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from .asset_selection import AssetSelection
@@ -36,7 +35,7 @@ def evaluate_scheduling_conditions(context: SensorEvaluationContext):
     instance_queryer = CachingInstanceQueryer(
         context.instance,
         asset_graph,
-        evaluation_time=pendulum.now(),
+        evaluation_time=get_current_datetime_in_utc(),
         logger=context.log,
     )
 

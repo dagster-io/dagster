@@ -5,7 +5,6 @@ import textwrap
 from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
 
 import click
-import pendulum
 from tabulate import tabulate
 
 import dagster._check as check
@@ -53,7 +52,7 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._seven import IS_WINDOWS, JSONDecodeError, json
+from dagster._seven import IS_WINDOWS, JSONDecodeError, get_current_timestamp, json
 from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.hosted_user_process import recon_job_from_origin
@@ -744,7 +743,7 @@ def _execute_backfill_command_at_location(
             from_failure=False,
             reexecution_steps=None,
             tags=run_tags,
-            backfill_timestamp=pendulum.now("UTC").timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
         try:
             partition_execution_data = (

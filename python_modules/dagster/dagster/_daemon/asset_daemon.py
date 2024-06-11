@@ -1,4 +1,5 @@
 import base64
+import datetime
 import logging
 import sys
 import threading
@@ -8,8 +9,6 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import ExitStack
 from types import TracebackType
 from typing import Any, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, cast
-
-import pendulum
 
 import dagster._check as check
 from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
@@ -57,6 +56,7 @@ from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
+from dagster._seven import get_current_datetime_in_utc, get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
@@ -294,7 +294,9 @@ class AutoMaterializeLaunchContext:
                     if self._external_sensor
                     else _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID
                 ),
-                before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
+                before=(
+                    get_current_datetime_in_utc() - datetime.timedelta(days=day_offset)
+                ).timestamp(),
                 tick_statuses=list(statuses),
             )
 
@@ -404,7 +406,7 @@ class AssetDaemon(DagsterDaemon):
                 )
 
             while True:
-                start_time = pendulum.now("UTC").timestamp()
+                start_time = get_current_timestamp()
                 yield SpanMarker.START_SPAN
                 try:
                     yield from self._run_iteration_impl(
@@ -421,7 +423,7 @@ class AssetDaemon(DagsterDaemon):
                     )
                     yield error_info
                 yield SpanMarker.END_SPAN
-                end_time = pendulum.now("UTC").timestamp()
+                end_time = get_current_timestamp()
                 loop_duration = end_time - start_time
                 sleep_time = max(0, MIN_INTERVAL_LOOP_SECONDS - loop_duration)
                 shutdown_event.wait(sleep_time)
@@ -441,7 +443,7 @@ class AssetDaemon(DagsterDaemon):
             yield
             return
 
-        now = pendulum.now("UTC").timestamp()
+        now = get_current_timestamp()
 
         workspace = workspace_process_context.create_request_context()
 
@@ -549,7 +551,7 @@ class AssetDaemon(DagsterDaemon):
                     SensorInstigatorData(
                         min_interval=sensor.min_interval_seconds,
                         cursor=None,
-                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        last_sensor_start_timestamp=get_current_timestamp(),
                         sensor_type=sensor.sensor_type,
                     ),
                 )
@@ -606,7 +608,7 @@ class AssetDaemon(DagsterDaemon):
                 SensorInstigatorData(
                     min_interval=sensor.min_interval_seconds,
                     cursor=asset_daemon_cursor_to_instigator_serialized_cursor(pre_sensor_cursor),
-                    last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    last_sensor_start_timestamp=get_current_timestamp(),
                     sensor_type=sensor.sensor_type,
                 ),
             )
@@ -643,7 +645,7 @@ class AssetDaemon(DagsterDaemon):
         sensor: Optional[ExternalSensor],
         debug_crash_flags: SingleInstigatorDebugCrashFlags,  # TODO No longer single instigator
     ):
-        evaluation_time = pendulum.now("UTC")
+        evaluation_time = get_current_datetime_in_utc()
 
         workspace = workspace_process_context.create_request_context()
 
@@ -742,7 +744,7 @@ class AssetDaemon(DagsterDaemon):
                 # Don't resume very old ticks though in case the daemon crashed for a long time and
                 # then restarted
                 if (
-                    pendulum.now("UTC").timestamp() - latest_tick.timestamp
+                    get_current_timestamp() - latest_tick.timestamp
                     <= MAX_TIME_TO_RESUME_TICK_SECONDS
                     and latest_tick.tick_data.auto_materialize_evaluation_id
                     == stored_cursor.evaluation_id
@@ -1019,7 +1021,9 @@ class AssetDaemon(DagsterDaemon):
 
         if schedule_storage.supports_auto_materialize_asset_evaluations:
             schedule_storage.purge_asset_evaluations(
-                before=pendulum.now("UTC").subtract(days=EVALUATIONS_TTL_DAYS).timestamp(),
+                before=(
+                    get_current_datetime_in_utc() - datetime.timedelta(days=EVALUATIONS_TTL_DAYS)
+                ).timestamp(),
             )
 
         self._logger.info(f"Finished auto-materialization tick{print_group_name}")

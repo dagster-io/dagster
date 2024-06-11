@@ -10,13 +10,15 @@ from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
     cleanup_test_instance,
     create_test_daemon_workspace_context,
+    freeze_time,
     get_crash_signals,
     wait_for_futures,
 )
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
-from dagster._seven import IS_WINDOWS
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._seven import IS_WINDOWS, create_utc_datetime
+from dagster._seven.compat.datetime import timezone_from_string
+from dateutil.relativedelta import relativedelta
 
 from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
 
@@ -26,7 +28,7 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum_freeze_time(execution_datetime), create_test_daemon_workspace_context(
+            with freeze_time(execution_datetime), create_test_daemon_workspace_context(
                 workspace_load_target=create_workspace_load_target(),
                 instance=instance,
             ) as workspace_context:
@@ -54,12 +56,10 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
 @pytest.mark.parametrize("crash_location", ["TICK_CREATED", "TICK_HELD"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_before_run_created(crash_location, crash_signal, instance, external_repo):
-    frozen_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=1, tz="UTC"),
-        "US/Central",
-    )
-
-    with pendulum_freeze_time(frozen_datetime):
+    frozen_datetime = create_utc_datetime(
+        year=2019, month=2, day=28, hour=0, minute=0, second=1
+    ).astimezone(timezone_from_string("US/Central"))
+    with freeze_time(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -86,7 +86,11 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
-            args=[instance.get_ref(), frozen_datetime.add(seconds=31), debug_crash_flags],
+            args=[
+                instance.get_ref(),
+                frozen_datetime + relativedelta(seconds=31),
+                debug_crash_flags,
+            ],
         )
         launch_process.start()
         launch_process.join(timeout=60)
@@ -105,7 +109,7 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
         # successful tick rather than the failed tick
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
-            args=[instance.get_ref(), frozen_datetime.add(seconds=62), None],
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=62), None],
         )
         launch_process.start()
         launch_process.join(timeout=60)
@@ -130,11 +134,10 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
 def test_failure_after_run_created_before_run_launched(
     crash_location, crash_signal, instance, external_repo
 ):
-    frozen_datetime = to_timezone(
-        create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=0, tz="UTC"),
-        "US/Central",
-    )
-    with pendulum_freeze_time(frozen_datetime):
+    frozen_datetime = create_utc_datetime(
+        year=2019, month=2, day=28, hour=0, minute=0, second=0
+    ).astimezone(timezone_from_string("US/Central"))
+    with freeze_time(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -171,7 +174,7 @@ def test_failure_after_run_created_before_run_launched(
 
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
-            args=[instance.get_ref(), frozen_datetime.add(seconds=31), None],
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=31), None],
         )
         launch_process.start()
         launch_process.join(timeout=60)
@@ -195,19 +198,15 @@ def test_failure_after_run_created_before_run_launched(
 @pytest.mark.parametrize("crash_location", ["RUN_LAUNCHED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_after_run_launched(crash_location, crash_signal, instance, external_repo):
-    frozen_datetime = to_timezone(
-        create_pendulum_time(
-            year=2019,
-            month=2,
-            day=28,
-            hour=0,
-            minute=0,
-            second=0,
-            tz="UTC",
-        ),
-        "US/Central",
-    )
-    with pendulum_freeze_time(frozen_datetime):
+    frozen_datetime = create_utc_datetime(
+        year=2019,
+        month=2,
+        day=28,
+        hour=0,
+        minute=0,
+        second=0,
+    ).astimezone(timezone_from_string("US/Central"))
+    with freeze_time(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
             InstigatorState(
@@ -243,7 +242,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, instance, exte
 
         launch_process = spawn_ctx.Process(
             target=_test_launch_sensor_runs_in_subprocess,
-            args=[instance.get_ref(), frozen_datetime.add(seconds=31), None],
+            args=[instance.get_ref(), frozen_datetime + relativedelta(seconds=31), None],
         )
         launch_process.start()
         launch_process.join(timeout=60)

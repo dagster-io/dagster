@@ -8,7 +8,7 @@ from dagster._core.definitions.time_window_partitions import HourlyPartitionsDef
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven import create_utc_datetime
 
 from ..base_scenario import (
     AssetReconciliationScenario,
@@ -63,7 +63,7 @@ active_run_scenarios = {
         unevaluated_runs=[
             run(["upstream_daily", "downstream_daily"], partition_key="2020-01-01"),
         ],
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=0),
+        current_time=create_utc_datetime(year=2020, month=1, day=2, hour=0),
         # manually populate entries here to create an in-progress run for both daily assets
         dagster_runs=[
             DagsterRun(
@@ -92,7 +92,7 @@ active_run_scenarios = {
             run(["observable_source"], is_observation=True),
             run(["asset0", "asset1", "asset2"]),
         ],
-        current_time=create_pendulum_time(year=2020, month=1, day=2, hour=0),
+        current_time=create_utc_datetime(year=2020, month=1, day=2, hour=0),
         # manually populate entries here to create an in-progress run for both downstream assets
         dagster_runs=[
             DagsterRun(

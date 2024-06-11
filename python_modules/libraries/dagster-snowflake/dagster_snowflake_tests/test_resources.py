@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from typing import Iterator
 from unittest import mock
 
-import pendulum
 import pytest
 from dagster import (
     DagsterInstance,
@@ -21,6 +20,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.metadata import FloatMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.test_utils import environ
+from dagster._seven import get_current_timestamp
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
 
 from .utils import create_mock_connector
@@ -296,7 +296,7 @@ def test_fetch_last_updated_timestamps_empty():
 @pytest.mark.integration
 @pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
 def test_fetch_last_updated_timestamps(db_str: str):
-    start_time = pendulum.now("UTC").timestamp()
+    start_time = get_current_timestamp()
     table_name = "the_table"
     with temporary_snowflake_table() as table_name:
 

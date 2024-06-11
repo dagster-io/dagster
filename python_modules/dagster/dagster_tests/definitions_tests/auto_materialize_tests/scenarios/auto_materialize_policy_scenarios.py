@@ -14,7 +14,7 @@ from dagster._core.definitions.auto_materialize_rule_impls import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven import create_utc_datetime
 
 from ..base_scenario import (
     AssetEvaluationSpec,
@@ -200,13 +200,13 @@ auto_materialize_policy_scenarios = {
             AutoMaterializePolicy.eager(),
         ),
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        current_time=create_utc_datetime(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[
             # with default scope, only the last partition is materialized
             run_request(
                 asset_keys=["hourly"],
                 partition_key=hourly_partitions_def.get_last_partition_key(
-                    current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4)
+                    current_time=create_utc_datetime(year=2013, month=1, day=7, hour=4)
                 ),
             )
         ],
@@ -220,7 +220,7 @@ auto_materialize_policy_scenarios = {
                 ),
             ),
             unevaluated_runs=[],
-            current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+            current_time=create_utc_datetime(year=2013, month=1, day=7, hour=4),
             expected_run_requests=[
                 run_request(asset_keys=["hourly"], partition_key=partition_key)
                 for partition_key in hourly_partitions_def.get_partition_keys_in_range(
@@ -267,7 +267,7 @@ auto_materialize_policy_scenarios = {
                 ),
             ),
             unevaluated_runs=[],
-            current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+            current_time=create_utc_datetime(year=2013, month=1, day=7, hour=4),
             expected_run_requests=[
                 run_request(asset_keys=["hourly"], partition_key=partition_key)
                 for partition_key in hourly_partitions_def.get_partition_keys_in_range(
@@ -309,7 +309,7 @@ auto_materialize_policy_scenarios = {
             ),
         ),
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        current_time=create_utc_datetime(year=2013, month=1, day=5, hour=5),
         expected_run_requests=[
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
         ],
@@ -349,7 +349,7 @@ auto_materialize_policy_scenarios = {
             ),
         ),
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        current_time=create_utc_datetime(year=2013, month=1, day=5, hour=5),
         expected_run_requests=[
             run_request(["hourly"], partition_key="2013-01-05-04:00"),
             run_request(["hourly"], partition_key="2013-01-05-03:00"),
@@ -381,7 +381,7 @@ auto_materialize_policy_scenarios = {
             AutoMaterializePolicy.eager(),
         ),
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2020, month=2, day=7, hour=4),
+        current_time=create_utc_datetime(year=2020, month=2, day=7, hour=4),
         expected_run_requests=[run_request(asset_keys=["daily"], partition_key="2020-02-06")],
     ),
     "auto_materialize_policy_diamond_duplicate_conditions": AssetReconciliationScenario(
@@ -469,14 +469,14 @@ auto_materialize_policy_scenarios = {
         assets=time_partitioned_eager_after_non_partitioned,
         asset_selection=AssetSelection.assets("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=6, hour=1, minute=5),
+        current_time=create_utc_datetime(year=2013, month=1, day=6, hour=1, minute=5),
         expected_run_requests=[],
     ),
     "time_partitioned_after_partitioned_upstream_materialized": AssetReconciliationScenario(
         assets=time_partitioned_eager_after_non_partitioned,
         asset_selection=AssetSelection.assets("time_partitioned", "unpartitioned_downstream"),
         unevaluated_runs=[run(["unpartitioned_root_a"])],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=1, minute=5),
+        current_time=create_utc_datetime(year=2013, month=1, day=5, hour=1, minute=5),
         expected_run_requests=[
             run_request(asset_keys=["time_partitioned"], partition_key="2013-01-05-00:00")
         ],
@@ -489,7 +489,7 @@ auto_materialize_policy_scenarios = {
             run(["time_partitioned"], partition_key="2013-01-05-00:00"),
             run(["unpartitioned_root_a"]),
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=1, minute=5),
+        current_time=create_utc_datetime(year=2013, month=1, day=5, hour=1, minute=5),
         # the latest time partition should be rematerialized
         expected_run_requests=[
             run_request(asset_keys=["time_partitioned"], partition_key="2013-01-05-00:00")
@@ -512,7 +512,7 @@ auto_materialize_policy_scenarios = {
             # latest time partition gets newest unpartitioned root data
             run(["time_partitioned"], partition_key="2013-01-05-02:00"),
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=3, minute=5),
+        current_time=create_utc_datetime(year=2013, month=1, day=5, hour=3, minute=5),
         # now the unpartitioned downstream should be rematerialized with the data from
         # the latest time partition
         expected_run_requests=[run_request(["unpartitioned_downstream"])],
@@ -746,18 +746,18 @@ auto_materialize_policy_scenarios = {
                     run(["asset2", "asset3"]),
                     run(["asset2"]),
                 ],
-                current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+                current_time=create_utc_datetime(year=2020, month=1, day=3, hour=1),
                 expected_run_requests=[],
             ),
             unevaluated_runs=[run(["asset1"], "2020-01-01")],
-            current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+            current_time=create_utc_datetime(year=2020, month=1, day=3, hour=1),
             expected_run_requests=[run_request(["asset3"])],
         ),
         unevaluated_runs=[
             run(["asset1"], "2020-01-02"),
             run(["asset2"]),
         ],
-        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+        current_time=create_utc_datetime(year=2020, month=1, day=3, hour=1),
         expected_run_requests=[run_request(["asset3"])],
     ),
     "test_wait_for_all_parents_updated_all_upstream_partitions": AssetReconciliationScenario(
@@ -772,17 +772,17 @@ auto_materialize_policy_scenarios = {
                     run(["asset2", "asset3"]),
                     run(["asset2"]),
                 ],
-                current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+                current_time=create_utc_datetime(year=2020, month=1, day=3, hour=1),
                 expected_run_requests=[],
             ),
             unevaluated_runs=[run(["asset1"], "2020-01-01")],
-            current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+            current_time=create_utc_datetime(year=2020, month=1, day=3, hour=1),
             expected_run_requests=[],
         ),
         unevaluated_runs=[
             run(["asset1"], "2020-01-02"),
         ],
-        current_time=create_pendulum_time(year=2020, month=1, day=3, hour=1),
+        current_time=create_utc_datetime(year=2020, month=1, day=3, hour=1),
         expected_run_requests=[run_request(["asset3"])],
     ),
     "test_wait_for_all_parents_updated_one_upstream_starts_later_than_downstream": (
@@ -794,7 +794,7 @@ auto_materialize_policy_scenarios = {
                     run(["asset1"], partition_key="2023-01-01-03:00"),
                     run(["asset2"], partition_key="2023-01-01-00:00"),
                 ],
-                current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+                current_time=create_utc_datetime(year=2023, month=1, day=1, hour=4),
                 expected_run_requests=[
                     run_request(["asset3"], partition_key="2023-01-01-00:00"),
                 ],
@@ -804,7 +804,7 @@ auto_materialize_policy_scenarios = {
                 run(["asset1"], partition_key="2023-01-01-03:00"),
                 run(["asset2"], partition_key="2023-01-01-03:00"),
             ],
-            current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+            current_time=create_utc_datetime(year=2023, month=1, day=1, hour=4),
             expected_run_requests=[run_request(["asset3"], partition_key="2023-01-01-03:00")],
         )
     ),
@@ -831,7 +831,7 @@ auto_materialize_policy_scenarios = {
             run(["asset2"], partition_key="2023-01-01-01:00"),
             run(["asset2"], partition_key="2023-01-01-00:00"),
         ],
-        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        current_time=create_utc_datetime(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[run_request(["asset3"], "2023-01-01-03:00")],
         expected_evaluations=[
             AssetEvaluationSpec(
@@ -899,7 +899,7 @@ auto_materialize_policy_scenarios = {
             run(["asset2"], partition_key="2023-01-01-01:00"),
             run(["asset2"], partition_key="2023-01-01-00:00"),
         ],
-        current_time=create_pendulum_time(year=2023, month=1, day=1, hour=4),
+        current_time=create_utc_datetime(year=2023, month=1, day=1, hour=4),
         expected_run_requests=[
             run_request(["asset3"], "2023-01-01-00:00"),
             run_request(["asset3"], "2023-01-01-01:00"),

@@ -1,7 +1,6 @@
 from typing import NamedTuple
 
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import PendulumDateTime
 
 
 # TimestampWithTimezone is used to preserve IANA timezone information when serializing.
@@ -13,7 +12,3 @@ from dagster._seven.compat.pendulum import PendulumDateTime
 class TimestampWithTimezone(NamedTuple):
     timestamp: float  # Seconds since the Unix epoch
     timezone: str
-
-    @staticmethod
-    def from_pendulum_time(dt: PendulumDateTime):
-        return TimestampWithTimezone(dt.timestamp(), dt.timezone.name)

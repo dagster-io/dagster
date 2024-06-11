@@ -1,5 +1,5 @@
+import datetime
 import multiprocessing
-from typing import TYPE_CHECKING
 
 import pytest
 from dagster import AssetKey
@@ -9,7 +9,7 @@ from dagster._core.instance.ref import InstanceRef
 from dagster._core.instance_for_test import instance_for_test
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import cleanup_test_instance
+from dagster._core.test_utils import cleanup_test_instance, freeze_time
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
@@ -17,15 +17,11 @@ from dagster._daemon.asset_daemon import (
     _get_pre_sensor_auto_materialize_cursor,
     set_auto_materialize_paused,
 )
-from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 
 from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .scenarios.auto_observe_scenarios import auto_observe_scenarios
 from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
-
-if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
 
 daemon_scenarios = {
     **auto_materialize_policy_scenarios,
@@ -87,7 +83,7 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
 
     debug_crash_flags = {"RUN_CREATED": Exception("OOPS")}
 
-    with pendulum_freeze_time(execution_time):
+    with freeze_time(execution_time):
         error_asset_scenario.do_daemon_scenario(
             instance,
             scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
@@ -105,9 +101,11 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
         assert ticks[0].timestamp == execution_time.timestamp()
 
     # advancing past MAX_TIME_TO_RESUME_TICK_SECONDS gives up and advances to a new evaluation
-    execution_time = execution_time.add(seconds=MAX_TIME_TO_RESUME_TICK_SECONDS + 1)
+    execution_time = execution_time + datetime.timedelta(
+        seconds=MAX_TIME_TO_RESUME_TICK_SECONDS + 1
+    )
 
-    with pendulum_freeze_time(execution_time):
+    with freeze_time(execution_time):
         error_asset_scenario.do_daemon_scenario(
             instance,
             scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
@@ -124,9 +122,11 @@ def test_old_tick_not_resumed(daemon_not_paused_instance):
         assert ticks[0].tick_data.auto_materialize_evaluation_id == 2
 
     # advancing less than that retries the same tick
-    execution_time = execution_time.add(seconds=MAX_TIME_TO_RESUME_TICK_SECONDS - 1)
+    execution_time = execution_time + datetime.timedelta(
+        seconds=MAX_TIME_TO_RESUME_TICK_SECONDS - 1
+    )
 
-    with pendulum_freeze_time(execution_time):
+    with freeze_time(execution_time):
         error_asset_scenario.do_daemon_scenario(
             instance,
             scenario_name="auto_materialize_policy_max_materializations_not_exceeded",
@@ -159,8 +159,8 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
     error_asset_scenario = error_asset_scenario._replace(current_time=None)
 
     for trial_num in range(3):
-        test_time = execution_time.add(seconds=15 * trial_num)
-        with pendulum_freeze_time(test_time):
+        test_time = execution_time + datetime.timedelta(seconds=15 * trial_num)
+        with freeze_time(test_time):
             debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
 
             error_asset_scenario.do_daemon_scenario(
@@ -196,8 +196,8 @@ def test_error_loop_before_cursor_written(daemon_not_paused_instance, crash_loca
             cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
             assert not cursor.evaluation_id
 
-    test_time = test_time.add(seconds=45)
-    with pendulum_freeze_time(test_time):
+    test_time = test_time + datetime.timedelta(seconds=45)
+    with freeze_time(test_time):
         # Next successful tick recovers
         error_asset_scenario.do_daemon_scenario(
             instance,
@@ -241,8 +241,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
     last_cursor = None
 
     # User code error retries but does not increment the retry count
-    test_time = execution_time.add(seconds=15)
-    with pendulum_freeze_time(test_time):
+    test_time = execution_time + datetime.timedelta(seconds=15)
+    with freeze_time(test_time):
         debug_crash_flags = {crash_location: DagsterUserCodeUnreachableError("WHERE IS THE CODE")}
 
         error_asset_scenario.do_daemon_scenario(
@@ -281,8 +281,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         last_cursor = cursor
 
     for trial_num in range(3):
-        test_time = test_time.add(seconds=15)
-        with pendulum_freeze_time(test_time):
+        test_time = test_time + datetime.timedelta(seconds=15)
+        with freeze_time(test_time):
             debug_crash_flags = {crash_location: Exception(f"Oops {trial_num}")}
 
             error_asset_scenario.do_daemon_scenario(
@@ -320,8 +320,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
 
     # Next tick moves on to use the new cursor / evaluation ID since we have passed the maximum
     # number of retries
-    test_time = test_time.add(seconds=45)
-    with pendulum_freeze_time(test_time):
+    test_time = test_time + datetime.timedelta(seconds=45)
+    with freeze_time(test_time):
         debug_crash_flags = {"RUN_IDS_ADDED_TO_EVALUATIONS": Exception("Oops new tick")}
         error_asset_scenario.do_daemon_scenario(
             instance,
@@ -348,8 +348,8 @@ def test_error_loop_after_cursor_written(daemon_not_paused_instance, crash_locat
         moved_on_cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
         assert moved_on_cursor != last_cursor
 
-    test_time = test_time.add(seconds=45)
-    with pendulum_freeze_time(test_time):
+    test_time = test_time + datetime.timedelta(seconds=45)
+    with freeze_time(test_time):
         # Next successful tick recovers
         error_asset_scenario.do_daemon_scenario(
             instance,
@@ -375,7 +375,7 @@ spawn_ctx = multiprocessing.get_context("spawn")
 def _test_asset_daemon_in_subprocess(
     scenario_name,
     instance_ref: InstanceRef,
-    execution_datetime: "DateTime",
+    execution_datetime: datetime.datetime,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
 ) -> None:
     scenario = daemon_scenarios[scenario_name]
@@ -436,7 +436,7 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
     assert not len(ticks[0].tick_data.run_ids)
     assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
 
-    freeze_datetime = scenario.current_time.add(seconds=1)
+    freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)
 
     # Run another tick with no crash, daemon continues on and succeeds
     asset_daemon_process = spawn_ctx.Process(
@@ -563,7 +563,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     assert (cursor.evaluation_id > 0) == cursor_written
 
-    freeze_datetime = scenario.current_time.add(seconds=1)
+    freeze_datetime = scenario.current_time + datetime.timedelta(seconds=1)
 
     # Run another tick with no failure, daemon continues on and succeeds
     asset_daemon_process = spawn_ctx.Process(

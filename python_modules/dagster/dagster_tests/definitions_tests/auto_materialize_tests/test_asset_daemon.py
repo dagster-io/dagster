@@ -3,7 +3,6 @@ import datetime
 from contextlib import contextmanager, nullcontext
 from typing import Any, Generator, Mapping, Optional, Sequence, cast
 
-import pendulum
 import pytest
 from dagster import AssetSpec, AutoMaterializeRule, DagsterInstance, instance_for_test
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
@@ -38,6 +37,7 @@ from dagster._daemon.asset_daemon import (
     set_auto_materialize_paused,
 )
 from dagster._serdes.serdes import serialize_value
+from dagster._seven import get_current_datetime_in_utc
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
@@ -737,12 +737,16 @@ def test_custom_purge() -> None:
     with get_daemon_instance(
         extra_overrides={"retention": {"auto_materialize": {"purge_after_days": {"skipped": 2}}}},
     ) as instance:
-        freeze_datetime = pendulum.now("UTC")
+        freeze_datetime = get_current_datetime_in_utc()
 
-        _create_tick(instance, TickStatus.SKIPPED, freeze_datetime.subtract(days=8).timestamp())
-        _create_tick(instance, TickStatus.SKIPPED, freeze_datetime.subtract(days=6).timestamp())
+        _create_tick(
+            instance, TickStatus.SKIPPED, (freeze_datetime - datetime.timedelta(days=8)).timestamp()
+        )
+        _create_tick(
+            instance, TickStatus.SKIPPED, (freeze_datetime - datetime.timedelta(days=6)).timestamp()
+        )
         tick_1 = _create_tick(
-            instance, TickStatus.SKIPPED, freeze_datetime.subtract(days=1).timestamp()
+            instance, TickStatus.SKIPPED, (freeze_datetime - datetime.timedelta(days=1)).timestamp()
         )
 
         ticks = _get_asset_daemon_ticks(instance)

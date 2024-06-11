@@ -3,9 +3,9 @@ import os
 import urllib.request
 import zipfile
 
-import pendulum
 import requests
 from dagster import DynamicPartitionsDefinition, Output, asset, get_dagster_logger
+from dagster._seven import parse_with_timezone
 from pandas import DataFrame
 
 releases_partitions_def = DynamicPartitionsDefinition(name="releases")
@@ -37,7 +37,7 @@ def releases_metadata(context) -> DataFrame:
                 "zipball_url": response_content["zipball_url"],
                 "id": response_content["id"],
                 "author_login": response_content["author"]["login"],
-                "published_at": pendulum.parse(response_content["published_at"]),
+                "published_at": parse_with_timezone(response_content["published_at"]),
             }
         ]
     )

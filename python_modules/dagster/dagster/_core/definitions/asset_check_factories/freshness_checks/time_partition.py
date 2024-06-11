@@ -1,6 +1,5 @@
+import datetime
 from typing import Any, Dict, Iterable, Sequence, Union
-
-import pendulum
 
 from dagster import _check as check
 from dagster._annotations import experimental
@@ -16,6 +15,8 @@ from dagster._core.definitions.metadata import (
 )
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._seven import get_current_timestamp
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils.schedules import (
     get_latest_completed_cron_tick,
     get_next_cron_tick,
@@ -143,18 +144,20 @@ def _build_freshness_multi_check(
     def the_check(context: AssetCheckExecutionContext) -> Iterable[AssetCheckResult]:
         for check_key in context.selected_asset_check_keys:
             asset_key = check_key.asset_key
-            current_timestamp = pendulum.now("UTC").timestamp()
+            current_timestamp = get_current_timestamp()
 
             partitions_def = check.inst(
                 context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def,
                 TimeWindowPartitionsDefinition,
             )
-            current_time_in_freshness_tz = pendulum.from_timestamp(current_timestamp, tz=timezone)
+            current_time_in_freshness_tz = datetime.datetime.fromtimestamp(
+                current_timestamp, tz=timezone_from_string(timezone)
+            )
             deadline = get_latest_completed_cron_tick(
                 deadline_cron, current_time_in_freshness_tz, timezone
             )
-            deadline_in_partitions_def_tz = pendulum.from_timestamp(
-                deadline.timestamp(), tz=partitions_def.timezone
+            deadline_in_partitions_def_tz = datetime.datetime.fromtimestamp(
+                deadline.timestamp(), tz=timezone_from_string(partitions_def.timezone)
             )
             last_completed_time_window = check.not_none(
                 partitions_def.get_prev_partition_window(deadline_in_partitions_def_tz)

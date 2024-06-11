@@ -2,8 +2,6 @@ import datetime
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
-import pendulum
-
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
 from dagster._core.definitions.asset_key import AssetKey
@@ -20,6 +18,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._model import DagsterModel
+from dagster._seven import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
@@ -357,7 +356,7 @@ class AutomationResult(NamedTuple):
         child_results: Sequence["AutomationResult"],
     ) -> "AutomationResult":
         start_timestamp = context.create_time.timestamp()
-        end_timestamp = pendulum.now("UTC").timestamp()
+        end_timestamp = get_current_timestamp()
 
         return AutomationResult(
             condition=context.condition,

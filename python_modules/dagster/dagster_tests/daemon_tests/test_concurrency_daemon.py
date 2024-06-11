@@ -1,3 +1,4 @@
+import datetime
 import tempfile
 from logging import Logger
 
@@ -7,13 +8,14 @@ from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
+    freeze_time,
     instance_for_test,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.concurrency import execute_concurrency_slots_iteration
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._seven import create_utc_datetime
 
 
 @pytest.fixture
@@ -51,14 +53,13 @@ def test_global_concurrency_release(
     logger: Logger,
 ):
     instance.event_log_storage.set_concurrency_slots("foo", 1)
-    freeze_datetime = create_pendulum_time(
+    freeze_datetime = create_utc_datetime(
         year=2023,
         month=2,
         day=27,
-        tz="UTC",
     )
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         run = create_run_for_test(instance, job_name="my_job", status=DagsterRunStatus.STARTING)
         instance.event_log_storage.claim_concurrency_slot("foo", run.run_id, "my_step")
         key_info = instance.event_log_storage.get_concurrency_info("foo")
@@ -66,15 +67,15 @@ def test_global_concurrency_release(
         assert key_info.active_slot_count == 1
         instance.report_run_canceled(run)
 
-        freeze_datetime = freeze_datetime.add(seconds=59)
-    with pendulum_freeze_time(freeze_datetime):
+        freeze_datetime = freeze_datetime + datetime.timedelta(seconds=59)
+    with freeze_time(freeze_datetime):
         list(execute_concurrency_slots_iteration(workspace_context, logger))
         key_info = instance.event_log_storage.get_concurrency_info("foo")
         assert key_info.slot_count == 1
         assert key_info.active_slot_count == 1
 
-        freeze_datetime = freeze_datetime.add(seconds=2)
-    with pendulum_freeze_time(freeze_datetime):
+        freeze_datetime = freeze_datetime + datetime.timedelta(seconds=2)
+    with freeze_time(freeze_datetime):
         list(execute_concurrency_slots_iteration(workspace_context, logger))
         key_info = instance.event_log_storage.get_concurrency_info("foo")
         assert key_info.slot_count == 1

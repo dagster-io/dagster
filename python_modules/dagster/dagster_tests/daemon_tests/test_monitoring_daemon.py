@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import time
@@ -5,7 +6,6 @@ from logging import Logger
 from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
-import pendulum
 import pytest
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
@@ -17,6 +17,7 @@ from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
     environ,
+    freeze_time,
     instance_for_test,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
@@ -29,7 +30,7 @@ from dagster._daemon.monitoring.run_monitoring import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._seven import create_utc_datetime
 from typing_extensions import Self
 
 
@@ -285,8 +286,8 @@ def test_long_running_termination(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
-        with pendulum_freeze_time(initial):
+        initial = create_utc_datetime(2021, 1, 1)
+        with freeze_time(initial):
             too_long_run = create_run_for_test(
                 instance,
                 job_name="foo",
@@ -302,8 +303,8 @@ def test_long_running_termination(
             run_no_tag = create_run_for_test(
                 instance, job_name="foo", status=DagsterRunStatus.STARTING
             )
-        started_time = initial.add(seconds=1)
-        with pendulum_freeze_time(started_time):
+        started_time = initial + datetime.timedelta(seconds=1)
+        with freeze_time(started_time):
             report_started_event(instance, too_long_run, started_time.timestamp())
             report_started_event(instance, okay_run, started_time.timestamp())
             report_started_event(instance, run_no_tag, started_time.timestamp())
@@ -326,8 +327,8 @@ def test_long_running_termination(
         workspace = workspace_context.create_request_context()
         run_launcher = cast(TestRunLauncher, instance.run_launcher)
 
-        eval_time = started_time.add(seconds=501)
-        with pendulum_freeze_time(eval_time):
+        eval_time = started_time + datetime.timedelta(seconds=501)
+        with freeze_time(eval_time):
             # run_no_tag has no maximum run tag set, so no termination event should be
             # triggered.
             monitor_started_run(instance, workspace, no_tag_record, logger)
@@ -373,16 +374,16 @@ def test_long_running_termination_failure(
             instance.run_launcher.should_fail_termination = True  # type: ignore
         else:
             instance.run_launcher.should_except_termination = True  # type: ignore
-        initial = pendulum.datetime(2021, 1, 1, tz="UTC")
-        with pendulum_freeze_time(initial):
+        initial = create_utc_datetime(2021, 1, 1)
+        with freeze_time(initial):
             too_long_run = create_run_for_test(
                 instance,
                 job_name="foo",
                 status=DagsterRunStatus.STARTING,
                 tags={MAX_RUNTIME_SECONDS_TAG: "500"},
             )
-        started_time = initial.add(seconds=1)
-        with pendulum_freeze_time(started_time):
+        started_time = initial + datetime.timedelta(seconds=1)
+        with freeze_time(started_time):
             report_started_event(instance, too_long_run, started_time.timestamp())
 
         too_long_record = instance.get_run_record_by_id(too_long_run.run_id)
@@ -393,8 +394,8 @@ def test_long_running_termination_failure(
         workspace = workspace_context.create_request_context()
         run_launcher = cast(TestRunLauncher, instance.run_launcher)
 
-        eval_time = started_time.add(seconds=501)
-        with pendulum_freeze_time(eval_time):
+        eval_time = started_time + datetime.timedelta(seconds=501)
+        with freeze_time(eval_time):
             # Enough runtime has elapsed for too_long_run to hit its maximum runtime so a
             # termination event should be triggered.
             monitor_started_run(instance, workspace, too_long_record, logger)

@@ -1,7 +1,6 @@
 from typing import Optional
 
 import dagster._check as check
-import pendulum
 import pytest
 from dagster import (
     AssetExecutionContext,
@@ -42,8 +41,12 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import assert_namedtuple_lists_equal, raise_exception_on_warnings
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._core.test_utils import (
+    assert_namedtuple_lists_equal,
+    freeze_time,
+    raise_exception_on_warnings,
+)
+from dagster._seven import create_datetime, parse_with_timezone
 
 
 @pytest.fixture(autouse=True)
@@ -291,7 +294,7 @@ def test_output_context_asset_partitions_time_window():
     class MyIOManager(IOManager):
         def handle_output(self, context, _obj):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+                parse_with_timezone("2021-06-06"), parse_with_timezone("2021-06-07")
             )
 
         def load_input(self, context):
@@ -314,12 +317,12 @@ def test_input_context_asset_partitions_time_window():
     class MyIOManager(IOManager):
         def handle_output(self, context, _obj):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+                parse_with_timezone("2021-06-06"), parse_with_timezone("2021-06-07")
             )
 
         def load_input(self, context):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+                parse_with_timezone("2021-06-06"), parse_with_timezone("2021-06-07")
             )
 
     @asset(partitions_def=partitions_def)
@@ -329,7 +332,7 @@ def test_input_context_asset_partitions_time_window():
     @asset(partitions_def=partitions_def)
     def downstream_asset(context, upstream_asset):
         assert context.asset_partitions_time_window_for_input("upstream_asset") == TimeWindow(
-            pendulum.parse("2021-06-06"), pendulum.parse("2021-06-07")
+            parse_with_timezone("2021-06-06"), parse_with_timezone("2021-06-07")
         )
         assert upstream_asset is None
 
@@ -695,12 +698,12 @@ def test_multipartitioned_asset_partitions_time_window():
     class CustomIOManager(IOManager):
         def handle_output(self, context: OutputContext, obj):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+                parse_with_timezone("2023-01-01"), parse_with_timezone("2023-01-02")
             )
 
         def load_input(self, context: InputContext):
             assert context.asset_partitions_time_window == TimeWindow(
-                pendulum.parse("2023-01-01"), pendulum.parse("2023-01-02")
+                parse_with_timezone("2023-01-01"), parse_with_timezone("2023-01-02")
             )
 
     assert materialize(
@@ -752,7 +755,7 @@ def test_error_on_nonexistent_upstream_partition():
     def downstream_asset(context, upstream_asset):
         return upstream_asset + 1
 
-    with pendulum_freeze_time(create_pendulum_time(2020, 1, 2, 10, 0)):
+    with freeze_time(create_datetime(2020, 1, 2, 10, 0)):
         with pytest.raises(
             DagsterInvariantViolationError,
             match="invalid partition keys",

@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
 
 import mock
-import pendulum
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -45,11 +44,12 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
+    freeze_time,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._seven import get_current_datetime_in_utc, parse_with_timezone
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -116,7 +116,7 @@ class ScenarioSpec:
     """A construct for declaring and modifying a desired Definitions object."""
 
     asset_specs: Sequence[Union[AssetSpec, AssetSpecWithPartitionsDef, MultiAssetSpec]]
-    current_time: datetime.datetime = field(default_factory=lambda: pendulum.now("UTC"))
+    current_time: datetime.datetime = field(default_factory=lambda: get_current_datetime_in_utc())
     sensors: Sequence[SensorDefinition] = field(default_factory=list)
     additional_repo_specs: Sequence["ScenarioSpec"] = field(default_factory=list)
 
@@ -180,7 +180,7 @@ class ScenarioSpec:
 
     def with_current_time(self, time: Union[str, datetime.datetime]) -> "ScenarioSpec":
         if isinstance(time, str):
-            time = pendulum.parse(time)
+            time = parse_with_timezone(time)
         return dataclasses.replace(self, current_time=time)
 
     def with_current_time_advanced(self, **kwargs) -> "ScenarioSpec":
@@ -245,7 +245,7 @@ class ScenarioState:
     def asset_graph(self) -> AssetGraph:
         return self.scenario_spec.asset_graph
 
-    def with_current_time(self, time: str) -> Self:
+    def with_current_time(self, time: Union[str, datetime.datetime]) -> Self:
         return dataclasses.replace(self, scenario_spec=self.scenario_spec.with_current_time(time))
 
     def with_current_time_advanced(self, **kwargs) -> Self:
@@ -267,7 +267,7 @@ class ScenarioState:
         status: DagsterRunStatus,
     ) -> Self:
         run_id = make_new_run_id()
-        with pendulum_freeze_time(self.current_time):
+        with freeze_time(self.current_time):
             job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
                 asset_keys=list(asset_keys)
             )
@@ -308,7 +308,7 @@ class ScenarioState:
             # fake current_time on the scenario state
             return (self.current_time + (datetime.datetime.now() - start)).timestamp()
 
-        with pendulum_freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
+        with freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.scenario_spec.assets,
@@ -322,7 +322,7 @@ class ScenarioState:
         return dataclasses.replace(
             self,
             scenario_spec=self.scenario_spec.with_current_time(
-                pendulum.from_timestamp(test_time_fn())
+                datetime.datetime.fromtimestamp(test_time_fn(), tz=datetime.timezone.utc)
             ),
         )
 

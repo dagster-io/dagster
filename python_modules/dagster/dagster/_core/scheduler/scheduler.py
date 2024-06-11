@@ -17,7 +17,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven import get_current_datetime_in_utc
+from dagster._seven import get_current_timestamp
 from dagster._utils import mkdir_p
 
 
@@ -87,7 +87,7 @@ class Scheduler(abc.ABC):
 
         new_instigator_data = ScheduleInstigatorData(
             external_schedule.cron_schedule,
-            get_current_datetime_in_utc().timestamp(),
+            get_current_timestamp(),
         )
 
         if not stored_state:

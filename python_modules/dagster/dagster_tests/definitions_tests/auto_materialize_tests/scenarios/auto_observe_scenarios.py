@@ -1,6 +1,5 @@
 import datetime
 
-import pendulum
 from dagster import (
     DataVersion,
     DataVersionsByPartition,
@@ -10,6 +9,7 @@ from dagster import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._seven import create_utc_datetime
 
 from ..base_scenario import AssetReconciliationScenario, run_request
 
@@ -75,10 +75,10 @@ auto_observe_scenarios = {
             [],
             [asset1],
             expected_run_requests=[run_request(asset_keys=["asset1"])],
-            current_time=pendulum.parse("2020-01-01 00:00"),
+            current_time=create_utc_datetime(2020, 1, 1),
         ),
         expected_run_requests=[run_request(asset_keys=["asset1"])],
-        current_time=pendulum.parse("2020-01-01 00:00") + datetime.timedelta(minutes=35),
+        current_time=create_utc_datetime(2020, 1, 1) + datetime.timedelta(minutes=35),
     ),
     "auto_observe_two_assets": AssetReconciliationScenario(
         [],

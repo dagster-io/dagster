@@ -3,8 +3,6 @@ import sys
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, cast
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.event_api import EventLogCursor
@@ -18,6 +16,7 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExecuteStepArgs
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from ..base import Executor
@@ -226,7 +225,7 @@ class StepDelegatingExecutor(Executor):
 
                         running_steps[step.key] = step
 
-                last_check_step_health_time = pendulum.now("UTC")
+                last_check_step_health_time = get_current_datetime_in_utc()
 
                 # Order of events is important here. During an interation, we call handle_event, then get_steps_to_execute,
                 # then is_complete. get_steps_to_execute updates the state of ActiveExecution, and without it
@@ -298,7 +297,7 @@ class StepDelegatingExecutor(Executor):
                     # process skips from failures or uncovered inputs
                     list(active_execution.plan_events_iterator(plan_context))
 
-                    curr_time = pendulum.now("UTC")
+                    curr_time = get_current_datetime_in_utc()
                     if (
                         curr_time - last_check_step_health_time
                     ).total_seconds() >= self._check_step_health_interval_seconds:

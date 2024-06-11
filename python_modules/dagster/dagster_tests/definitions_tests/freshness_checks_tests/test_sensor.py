@@ -4,7 +4,6 @@ import datetime
 import logging  # noqa: F401; used by mock in string form
 import time
 
-import pendulum
 import pytest
 from dagster import AssetCheckKey, AssetKey, DagsterInstance, asset
 from dagster._check import CheckError
@@ -27,8 +26,9 @@ from dagster._core.definitions.run_request import RunRequest, SkipReason
 from dagster._core.definitions.sensor_definition import build_sensor_context
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
+from dagster._core.test_utils import freeze_time
 from dagster._core.utils import make_new_run_id
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._seven import get_current_datetime_in_utc
 
 
 def test_params() -> None:
@@ -60,9 +60,7 @@ def test_params() -> None:
         build_sensor_for_freshness_checks(freshness_checks=check, minimum_interval_seconds=-1)
 
 
-def test_sensor_multi_asset_different_states(
-    instance: DagsterInstance, pendulum_aware_report_dagster_event: None
-) -> None:
+def test_sensor_multi_asset_different_states(instance: DagsterInstance) -> None:
     """Test the case where we have multiple assets in the same multi asset in different states. Ensure that the sensor
     handles each state correctly.
     """
@@ -82,8 +80,8 @@ def test_sensor_multi_asset_different_states(
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
-    freeze_time = pendulum.now("UTC")
-    with pendulum_freeze_time(freeze_time):
+    frozen_time = get_current_datetime_in_utc()
+    with freeze_time(frozen_time):
         instance.report_runless_asset_event(
             AssetCheckEvaluation(
                 asset_key=AssetKey("failed_eval"),
@@ -99,7 +97,7 @@ def test_sensor_multi_asset_different_states(
                 passed=True,
                 metadata={
                     FRESH_UNTIL_METADATA_KEY: FloatMetadataValue(
-                        freeze_time.subtract(minutes=5).timestamp()
+                        (frozen_time - datetime.timedelta(minutes=5)).timestamp()
                     )
                 },
             )
@@ -111,7 +109,7 @@ def test_sensor_multi_asset_different_states(
                 passed=True,
                 metadata={
                     FRESH_UNTIL_METADATA_KEY: FloatMetadataValue(
-                        freeze_time.add(minutes=5).timestamp()
+                        (frozen_time + datetime.timedelta(minutes=5)).timestamp()
                     )
                 },
             )
@@ -144,8 +142,8 @@ def test_sensor_evaluation_planned(instance: DagsterInstance) -> None:
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
-    freeze_time = pendulum.now("UTC")
-    with pendulum_freeze_time(freeze_time):
+    frozen_time = get_current_datetime_in_utc()
+    with freeze_time(frozen_time):
         instance.event_log_storage.store_event(
             EventLogEntry(
                 error_info=None,
@@ -172,9 +170,7 @@ def test_sensor_evaluation_planned(instance: DagsterInstance) -> None:
         assert context.cursor is None
 
 
-def test_sensor_cursor_recovery(
-    instance: DagsterInstance, pendulum_aware_report_dagster_event: None
-) -> None:
+def test_sensor_cursor_recovery(instance: DagsterInstance) -> None:
     """Test the case where we have a cursor to evaluate from."""
 
     @multi_asset(
@@ -192,11 +188,13 @@ def test_sensor_cursor_recovery(
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
-    freeze_time = pendulum.now("UTC")
+    frozen_time = get_current_datetime_in_utc()
     out_of_date_metadata = {
-        FRESH_UNTIL_METADATA_KEY: FloatMetadataValue(freeze_time.subtract(minutes=5).timestamp())
+        FRESH_UNTIL_METADATA_KEY: FloatMetadataValue(
+            (frozen_time - datetime.timedelta(minutes=5)).timestamp()
+        )
     }
-    with pendulum_freeze_time(freeze_time):
+    with freeze_time(frozen_time):
         instance.report_runless_asset_event(
             AssetCheckEvaluation(
                 asset_key=AssetKey("a"),
