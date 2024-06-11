@@ -338,6 +338,9 @@ class ReconstructableJob(
             self._hash = hash_collection(self)
         return self._hash
 
+    def get_container_image(self) -> Optional[str]:
+        return self.repository.container_image
+
 
 def reconstructable(target: Callable[..., "JobDefinition"]) -> ReconstructableJob:
     """Create a :py:class:`~dagster._core.definitions.reconstructable.ReconstructableJob` from a

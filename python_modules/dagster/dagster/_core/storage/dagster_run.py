@@ -480,6 +480,11 @@ class DagsterRun(
     def tags_for_tick_id(tick_id: str) -> Mapping[str, str]:
         return {TICK_ID_TAG: tick_id}
 
+    def get_container_image(self) -> Optional[str]:
+        if self.job_code_origin and self.job_code_origin.repository_origin:
+            return self.job_code_origin.repository_origin.container_image
+        return None
+
 
 class RunsFilter(
     NamedTuple(

@@ -53,6 +53,9 @@ class IJob(ABC):
     def resolved_op_selection(self) -> Optional[AbstractSet[str]]:
         return set(self.op_selection) if self.op_selection else None
 
+    def get_container_image(self) -> Optional[str]:
+        pass
+
 
 class InMemoryJob(IJob):
     def __init__(
@@ -94,3 +97,6 @@ class InMemoryJob(IJob):
     @property
     def asset_check_selection(self) -> Optional[AbstractSet[AssetCheckKey]]:
         return self._job_def.asset_check_selection
+
+    def get_container_image(self) -> Optional[None]:
+        return None

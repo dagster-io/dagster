@@ -674,6 +674,7 @@ def _get_execution_plan_from_run(
         and job.resolved_op_selection == dagster_run.resolved_op_selection
         and job.asset_selection == dagster_run.asset_selection
         and job.asset_check_selection == dagster_run.asset_check_selection
+        and job.get_container_image() == dagster_run.get_container_image()
     ):
         return ExecutionPlan.rebuild_from_snapshot(
             dagster_run.job_name,
