@@ -86,14 +86,15 @@ class InstigationLogger(logging.Logger):
         log_key: Optional[Sequence[str]] = None,
         instance: Optional[DagsterInstance] = None,
         repository_name: Optional[str] = None,
-        name: Optional[str] = None,
+        instigator_name: Optional[str] = None,
         level: int = logging.NOTSET,
+        logger_name: str = "dagster",
     ):
-        super().__init__(name="dagster", level=coerce_valid_log_level(level))
+        super().__init__(name=logger_name, level=coerce_valid_log_level(level))
         self._log_key = log_key
         self._instance = instance
         self._repository_name = repository_name
-        self._name = name
+        self._instigator_name = instigator_name
         self._exit_stack = ExitStack()
         self._capture_handler = None
         self.addHandler(DispatchingLogHandler([create_console_logger("dagster", logging.INFO)]))
@@ -118,18 +119,18 @@ class InstigationLogger(logging.Logger):
         self._exit_stack.close()
 
     def _annotate_record(self, record: logging.LogRecord) -> logging.LogRecord:
-        if self._repository_name and self._name:
+        if self._repository_name and self._instigator_name:
             message = record.getMessage()
             setattr(
                 record,
                 LOG_RECORD_METADATA_ATTR,
                 {
                     "repository_name": self._repository_name,
-                    "name": self._name,
+                    "name": self._instigator_name,
                     "orig_message": message,
                 },
             )
-            record.msg = " - ".join([self._repository_name, self._name, message])
+            record.msg = " - ".join([self._repository_name, self._instigator_name, message])
             record.args = tuple()
         return record
 

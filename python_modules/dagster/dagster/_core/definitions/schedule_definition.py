@@ -339,7 +339,7 @@ class ScheduleEvaluationContext:
                     InstigationLogger(
                         self._log_key,
                         repository_name=self._repository_name,
-                        name=self._schedule_name,
+                        instigator_name=self._schedule_name,
                     )
                 )
             else:
@@ -348,7 +348,7 @@ class ScheduleEvaluationContext:
                         self._log_key,
                         self.instance,
                         repository_name=self._repository_name,
-                        name=self._schedule_name,
+                        instigator_name=self._schedule_name,
                     )
                 )
 

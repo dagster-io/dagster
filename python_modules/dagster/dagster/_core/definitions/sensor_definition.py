@@ -418,7 +418,7 @@ class SensorEvaluationContext:
                 InstigationLogger(
                     self._log_key,
                     repository_name=self._repository_name,
-                    name=self._sensor_name,
+                    instigator_name=self._sensor_name,
                 )
             )
             return cast(logging.Logger, self._logger)
@@ -428,7 +428,7 @@ class SensorEvaluationContext:
                 self._log_key,
                 self.instance,
                 repository_name=self._repository_name,
-                name=self._sensor_name,
+                instigator_name=self._sensor_name,
             )
         )
         return cast(logging.Logger, self._logger)

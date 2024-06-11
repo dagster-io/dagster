@@ -25,7 +25,8 @@ def _get_instigation_logger_if_log_storage_enabled(
             log_key,
             instance,
             repository_name=None,
-            name=backfill.backfill_id,
+            instigator_name=backfill.backfill_id,
+            logger_name=default_logger.name,
         ) as _logger:
             backfill_logger = cast(logging.Logger, _logger)
             yield backfill_logger
