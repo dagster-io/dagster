@@ -51,7 +51,7 @@ export const JobsPageContent = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -145,6 +145,8 @@ export const JobsPageContent = () => {
     return <OverviewJobsTable repos={filteredBySearch} />;
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <>
       <Box
@@ -157,7 +159,7 @@ export const JobsPageContent = () => {
             icon="search"
             value={searchValue}
             rightElement={
-              loading ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+              showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
             }
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by job name…"

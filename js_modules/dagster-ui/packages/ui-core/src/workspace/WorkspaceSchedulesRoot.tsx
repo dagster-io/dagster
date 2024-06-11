@@ -26,6 +26,7 @@ import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
 // Reuse this reference to distinguish no sensors case from data is still loading case;
 const NO_DATA_EMPTY_ARR: any[] = [];
@@ -57,7 +58,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     },
   );
   useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSchedulesQuery');
-  const {data} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
@@ -176,6 +177,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     );
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <WorkspaceHeader
@@ -196,6 +199,11 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
             }}
             placeholder="Filter by schedule name…"
             style={{width: '340px'}}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading schedules…" />
+              ) : undefined
+            }
           />
         </Box>
         <Tooltip

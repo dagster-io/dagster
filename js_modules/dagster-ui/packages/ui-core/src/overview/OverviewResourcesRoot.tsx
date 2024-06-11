@@ -50,7 +50,7 @@ export const OverviewResourcesRoot = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewResourcesQuery');
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -71,7 +71,7 @@ export const OverviewResourcesRoot = () => {
     );
   }, [cachedData, data, visibleRepos]);
 
-  const showSearchSpinner = workspaceLoading && !repoCount && loading && !data;
+  const loading = !data && queryLoading && workspaceLoading;
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -87,7 +87,7 @@ export const OverviewResourcesRoot = () => {
   }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
-    if (showSearchSpinner) {
+    if (loading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -143,6 +143,8 @@ export const OverviewResourcesRoot = () => {
     return <OverviewResourcesTable repos={filteredBySearch} />;
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <OverviewPageHeader tab="resources" refreshState={refreshState} />
@@ -164,7 +166,7 @@ export const OverviewResourcesRoot = () => {
           style={{width: '340px'}}
         />
       </Box>
-      {showSearchSpinner && !repoCount ? (
+      {loading && !repoCount ? (
         <Box padding={64}>
           <Spinner purpose="page" />
         </Box>

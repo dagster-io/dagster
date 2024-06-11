@@ -26,6 +26,7 @@ import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
 // Reuse this reference to distinguish no sensors case from data is still loading case;
 const NO_DATA_EMPTY_ARR: any[] = [];
@@ -57,7 +58,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     },
   );
   useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSensorsQuery');
-  const {data} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
@@ -176,6 +177,8 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     );
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <WorkspaceHeader
@@ -193,6 +196,11 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by sensor name…"
             style={{width: '340px'}}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading sensors…" />
+              ) : undefined
+            }
           />
         </Box>
         <Tooltip

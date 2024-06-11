@@ -61,7 +61,7 @@ export const OverviewSchedules = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSchedulesQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
@@ -166,10 +166,10 @@ export const OverviewSchedules = () => {
   const viewerHasAnyInstigationPermission = allPermissionedScheduleKeys.length > 0;
   const checkedCount = checkedSchedules.length;
 
-  const showSearchSpinner = workspaceLoading && !repoCount && loading && !data;
+  const loading = workspaceLoading && !repoCount && queryLoading && !data;
 
   const content = () => {
-    if (showSearchSpinner) {
+    if (loading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -239,6 +239,8 @@ export const OverviewSchedules = () => {
       />
     );
   };
+
+  const showSearchSpinner = queryLoading && !data;
 
   return (
     <>

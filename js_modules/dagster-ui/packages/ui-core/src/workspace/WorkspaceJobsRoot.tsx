@@ -17,6 +17,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {usePageLoadTrace} from '../performance';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
 const NO_REPOS_EMPTY_ARR: any[] = [];
 
@@ -43,7 +44,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       variables: {selector},
     },
   );
-  const {data} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -119,6 +120,8 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     return <VirtualizedJobTable repoAddress={repoAddress} jobs={filteredBySearch} />;
   };
 
+  const showSearchSpinner = !data && queryLoading;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <WorkspaceHeader
@@ -134,6 +137,9 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Filter by job name…"
           style={{width: '340px'}}
+          rightElement={
+            showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+          }
         />
       </Box>
       {loading && !data ? (
