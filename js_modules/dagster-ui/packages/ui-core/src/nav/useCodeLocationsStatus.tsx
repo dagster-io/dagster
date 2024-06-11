@@ -138,9 +138,12 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     // to have finished loading so quickly, but go ahead and indicate that the location has
     // been added, then reload the workspace.
     if (currentEntries.length > previousEntries.length && !currentlyLoading.length) {
-      const previousMap: {[id: string]: true} = previousEntries.reduce(
-        (accum, {id}) => ({...accum, [id]: true}),
-        {},
+      const previousMap = previousEntries.reduce(
+        (accum, {id}) => {
+          accum[id] = true;
+          return accum;
+        },
+        {} as Record<string, true>,
       );
 
       // Count the number of new code locations.
