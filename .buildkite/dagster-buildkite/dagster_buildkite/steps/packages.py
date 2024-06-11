@@ -349,6 +349,9 @@ EXAMPLE_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         "examples/quickstart_snowflake",
         pytest_tox_factors=["pypi"],
     ),
+    PackageSpec(
+        "examples/experimental/dagster-blueprints",
+    ),
 ]
 
 
@@ -641,9 +644,6 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
             "old_kubernetes",
         ],
         pytest_extra_cmds=k8s_extra_cmds,
-    ),
-    PackageSpec(
-        "examples/experimental/dagster-blueprints",
     ),
     PackageSpec(
         "python_modules/libraries/dagster-mlflow",
