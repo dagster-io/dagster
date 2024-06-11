@@ -45,9 +45,13 @@ export const BackfillTerminationDialog = ({backfill, onClose, onComplete}: Props
     );
     return (
       unfinishedPartitions?.reduce(
-        (accum, partition) =>
-          partition && partition.runId ? {...accum, [partition.runId]: true} : accum,
-        {},
+        (accum, partition) => {
+          if (partition && partition.runId) {
+            accum[partition.runId] = true;
+          }
+          return accum;
+        },
+        {} as Record<string, boolean>,
       ) || {}
     );
   }, [backfill, data]);
