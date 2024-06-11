@@ -29,6 +29,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
+from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -113,23 +114,38 @@ class DeleteDynamicPartitionsRequest(
         )
 
 
+# @whitelist_for_serdes
+# class NotABackfillRequest(  # TODO - decide on a new name
+#     NamedTuple(  # TODO - should this use the new dagster model?
+#         "_NotABackfillRequest",
+#         [
+#             ("asset_graph_subset", AssetGraphSubset),
+#             ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+#             ("title", PublicAttr[Optional[str]]),
+#             ("description", PublicAttr[Optional[str]]),
+#         ],
+#     )
+# ):
+#     @property
+#     def asset_keys(self) -> AbstractSet[AssetKey]:
+#         return self.asset_graph_subset.asset_keys
+
+#     # TODO - maybe a from_asset_key_partition_key method?
+
+
 @whitelist_for_serdes
-class NotABackfillRequest(  # TODO - decide on a new name
-    NamedTuple(  # TODO - should this use the new dagster model?
-        "_NotABackfillRequest",
-        [
-            ("asset_graph_subset", AssetGraphSubset),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
-            ("title", PublicAttr[Optional[str]]),
-            ("description", PublicAttr[Optional[str]]),
-        ],
-    )
-):
+@dagster_model
+class NotABackfillRequest:
+    asset_graph_subset: AssetGraphSubset
+    tags: Optional[Mapping[str, str]]
+    title: Optional[str]
+    description: Optional[str]
+
+    # TODO - maybe a from_asset_key_partition_key method? or override __new__ to take in asset_key_partition_keys
+
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return self.asset_graph_subset.asset_keys
-
-    # TODO - maybe a from_asset_key_partition_key method?
 
 
 @whitelist_for_serdes
