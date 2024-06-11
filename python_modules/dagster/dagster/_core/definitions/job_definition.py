@@ -26,7 +26,7 @@ from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
 from dagster._core.definitions.dependency import Node, NodeHandle, NodeInputHandle, NodeInvocation
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
@@ -406,17 +406,12 @@ class JobDefinition(IHasInternalInit):
         return None if not self.partitioned_config else self.partitioned_config.partitions_def
 
     @cached_property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
-        from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
-
+    def backfill_policy(self) -> BackfillPolicy:
         executable_nodes = {self.asset_layer.get(k) for k in self.asset_layer.executable_asset_keys}
         backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
-        if not self.name.startswith(ASSET_BASE_JOB_PREFIX):
-            check.invariant(
-                len(backfill_policies) <= 1,
-                "All assets in non-asset base job a job must have the same backfill policy.",
-            )
-        return next(iter(backfill_policies), None)
+
+        # normalize null backfill policy to explicit multi_run(1) policy
+        return resolve_backfill_policy(backfill_policies)
 
     @property
     def hook_defs(self) -> AbstractSet[HookDefinition]:
