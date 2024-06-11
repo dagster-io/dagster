@@ -59,6 +59,8 @@ export const LiveDataRefreshButton = ({
   );
 };
 
+export const REFRESHING_DATA = `Refreshing data…`;
+
 const TimeFromNowWithSeconds = ({timestamp}: {timestamp: number}) => {
   const [text, setText] = useState(dayjs(timestamp).fromNow(true));
   useEffect(() => {
@@ -69,5 +71,5 @@ const TimeFromNowWithSeconds = ({timestamp}: {timestamp: number}) => {
       clearInterval(interval);
     };
   }, [timestamp]);
-  return <>{text === '0s' ? 'Refreshing data…' : `Data is at most ${text} old`}</>;
+  return <>{text === '0s' ? REFRESHING_DATA : `Data is at most ${text} old`}</>;
 };

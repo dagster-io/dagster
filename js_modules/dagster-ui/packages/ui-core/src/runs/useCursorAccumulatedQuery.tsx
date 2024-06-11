@@ -4,29 +4,27 @@ import {useEffect, useMemo, useState} from 'react';
 
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 
-type FetchState = {
+type FetchResult<DataType, CursorType, ErrorType> = {
+  data: DataType[];
   hasMore: boolean;
-  cursor: string | null | undefined;
+  cursor: CursorType | undefined;
+  error: ErrorType | undefined;
 };
 
 type FetcherFunction<DataType, CursorType, ErrorType> = (
   cursor: CursorType | undefined,
-) => Promise<{
-  data: DataType[];
-  hasMore: boolean;
-  cursor: CursorType | undefined;
-  error: ErrorType;
-}>;
+) => Promise<FetchResult<DataType, CursorType, ErrorType>>;
 
-class PaginatingDataFetcher<DataType, CursorType, ErrorType> {
+class AccumulatingDataFetcher<DataType, CursorType, ErrorType> {
+  private fetchData: FetcherFunction<DataType, CursorType, ErrorType>;
+  private onData: (data: DataType[]) => void;
+  private onError?: (error: ErrorType) => void;
+
   private hasMoreData = true;
   private dataSoFar: DataType[] = [];
   private currentCursor: CursorType | undefined = undefined;
   private fetchPromise?: Promise<void>;
-  private fetchData: FetcherFunction<DataType, CursorType, ErrorType>;
   private stopped: boolean = false;
-  private onData: (data: DataType[]) => void;
-  private onError?: (error: ErrorType) => void;
 
   constructor({
     fetchData,
@@ -42,18 +40,23 @@ class PaginatingDataFetcher<DataType, CursorType, ErrorType> {
     this.onError = onError;
   }
 
-  async fetch() {
+  fetch = async () => {
     if (this.fetchPromise) {
       return await this.fetchPromise;
     }
     this.fetchPromise = new Promise(async (res) => {
+      // make at least one request
+      this.hasMoreData = true;
+
+      // continue requesting with updated cursors + accumulating data until
+      // stop() is called or hasMore=false.
       while (this.hasMoreData && !this.stopped) {
         const {cursor, hasMore, data, error} = await this.fetchData(this.currentCursor);
-        if (error) {
-          this.onError?.(error);
+        if (this.stopped) {
           break;
         }
-        if (this.stopped) {
+        if (error) {
+          this.onError?.(error);
           break;
         }
         this.currentCursor = cursor;
@@ -68,52 +71,48 @@ class PaginatingDataFetcher<DataType, CursorType, ErrorType> {
     const result = await this.fetchPromise!;
     this.fetchPromise = undefined;
     return result;
-  }
+  };
 
-  stop() {
+  stop = () => {
     this.stopped = true;
-  }
+  };
 }
 
 export function useCursorAccumulatedQuery<
   TQuery,
-  TVars extends OperationVariables & {cursor?: string | null},
-  U,
+  TVars extends OperationVariables & {cursor?: CursorType},
+  DataType,
+  ErrorType = unknown,
+  CursorType = TVars['cursor'],
 >({
   query,
   variables,
-  getResultArray,
-  getNextFetchState,
+  getResult,
 }: {
   query: DocumentNode;
   variables: Omit<TVars, 'cursor'>;
-  getResultArray: (result: TQuery | undefined) => U[];
-  getNextFetchState: (result: TQuery | undefined) => FetchState;
+  getResult: (responseData: TQuery) => FetchResult<DataType, CursorType, ErrorType>;
 }) {
-  const [fetched, setFetched] = useState<U[] | null>(null);
-  const [error, setError] = useState<any>(null);
+  const [fetched, setFetched] = useState<DataType[] | null>(null);
+  const [error, setError] = useState<ErrorType | null>(null);
   const client = useApolloClient();
 
-  const {fetch, stop} = useMemo(() => {
-    return new PaginatingDataFetcher({
+  const {stop, fetch} = useMemo(() => {
+    return new AccumulatingDataFetcher({
       fetchData: async (cursor) => {
         const resp = await client.query<TQuery, TVars>({
           variables: {...variables, cursor} as TVars,
           query,
         });
-
-        // Todo align this with the data fetcher better
-        return {...getNextFetchState(resp.data), data: getResultArray(resp.data), error: null};
+        return getResult(resp.data);
       },
       onData: setFetched,
       onError: setError,
     });
-  }, [client, getNextFetchState, getResultArray, query, variables]);
+  }, [client, query, variables, getResult]);
 
   useEffect(() => {
-    return () => {
-      stop();
-    };
+    return stop;
   }, [stop]);
 
   const refreshState = useRefreshAtInterval({
