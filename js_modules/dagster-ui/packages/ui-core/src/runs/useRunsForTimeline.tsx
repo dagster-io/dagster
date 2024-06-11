@@ -302,7 +302,7 @@ export const useRunsForTimeline = ({
     };
   }>({jobInfo: {}, runsByJobKey: {}});
   const {runsByJobKey, jobInfo} = useMemo(() => {
-    if (completedRunsQueryData.loading && !ongoingRunsData) {
+    if (loading) {
       // While we're loading data just keep returning the last result so that we're not
       // re-rendering 24+ times while we populate the cache asynchronously via our batching/chunking.
       return previousRunsByJobKey.current;
@@ -532,7 +532,7 @@ export const useRunsForTimeline = ({
         (async () => {
           // If the the time range is in the past then future ticks are not visible on the timeline
           if (_end > Date.now() && lastFetchRef.current.future < Date.now() - 60 * 1000) {
-            await fetchFutureTicks();
+            fetchFutureTicks();
           }
         })(),
         fetchCompletedRunsQueryData(),

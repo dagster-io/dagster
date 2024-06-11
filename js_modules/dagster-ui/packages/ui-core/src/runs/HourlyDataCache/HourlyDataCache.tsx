@@ -79,6 +79,7 @@ export class HourlyDataCache<T> {
           return;
         }
         this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+        this.indexedDBCache.set('TESTING<<SMFUANFIANIGNINAINGINAI', {} as any, defaultOptions);
       });
     }
   }
