@@ -28,12 +28,14 @@ from dagster._core.definitions.run_request import (
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     InstigatorType,
+    NotABackfillRequest,
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
@@ -50,6 +52,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
@@ -150,6 +153,9 @@ class SensorLaunchContext(AbstractContextManager):
 
     def add_run_info(self, run_id: Optional[str] = None, run_key: Optional[str] = None) -> None:
         self._tick = self._tick.with_run_info(run_id, run_key)
+
+    def add_not_a_backfill_info(self, backfill_id: str) -> None:
+        self._tick = self._tick.with_not_a_backfill_info(backfill_id)
 
     def add_log_key(self, log_key: Sequence[str]) -> None:
         self._tick = self._tick.with_log_key(log_key)
@@ -639,7 +645,7 @@ def _evaluate_sensor(
         _handle_dynamic_partitions_requests(
             sensor_runtime_data.dynamic_partitions_requests, instance, context
         )
-    if not sensor_runtime_data.run_requests:
+    if not sensor_runtime_data.run_requests and not sensor_runtime_data.not_a_backfill_request:
         if sensor_runtime_data.dagster_run_reactions:
             _handle_run_reactions(
                 sensor_runtime_data.dagster_run_reactions,
@@ -663,16 +669,19 @@ def _evaluate_sensor(
 
         yield
     else:
-        yield from _handle_run_requests(
-            run_requests=sensor_runtime_data.run_requests,
-            cursor=sensor_runtime_data.cursor,
-            context=context,
-            instance=instance,
-            external_sensor=external_sensor,
-            workspace_process_context=workspace_process_context,
-            submit_threadpool_executor=submit_threadpool_executor,
-            sensor_debug_crash_flags=sensor_debug_crash_flags,
-        )
+        if sensor_runtime_data.run_requests:
+            yield from _handle_run_requests(
+                run_requests=sensor_runtime_data.run_requests,
+                cursor=sensor_runtime_data.cursor,
+                context=context,
+                instance=instance,
+                external_sensor=external_sensor,
+                workspace_process_context=workspace_process_context,
+                submit_threadpool_executor=submit_threadpool_executor,
+                sensor_debug_crash_flags=sensor_debug_crash_flags,
+            )
+        if sensor_runtime_data.not_a_backfill_request:
+            _handle_backfill_requests(sensor_runtime_data.not_a_backfill_request, instance, context)
 
 
 def _handle_dynamic_partitions_requests(
@@ -790,6 +799,26 @@ def _handle_run_reactions(
                 cursor=cursor,
                 origin_run_id=origin_run_id,
             )
+
+
+def _handle_backfill_requests(
+    not_a_backfill_request: NotABackfillRequest,
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+) -> None:
+    backfill_id = make_new_backfill_id()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_graph_subset(
+            backfill_id=backfill_id,
+            dynamic_partitions_store=instance,
+            backfill_timestamp=pendulum.now("UTC").timestamp(),
+            asset_graph_subset=not_a_backfill_request.asset_graph_subset,
+            tags=not_a_backfill_request.tags or {},
+            title=not_a_backfill_request.title,
+            description=not_a_backfill_request.description,
+        )
+    )
+    context.add_not_a_backfill_info(backfill_id=backfill_id)
 
 
 def _handle_run_requests(

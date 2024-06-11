@@ -352,6 +352,9 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
             )
         )
 
+    def with_not_a_backfill_info(self, backfill_id: str) -> "InstigatorTick":
+        return self._replace(tick_data=self.tick_data.with_not_a_backfill_info(backfill_id))
+
     @property
     def instigator_origin_id(self) -> str:
         return self.tick_data.instigator_origin_id
@@ -383,6 +386,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def run_ids(self) -> Sequence[str]:
         return self.tick_data.run_ids
+
+    @property
+    def backfill_ids(self) -> Sequence[str]:
+        return self.tick_data.backfill_ids
 
     @property
     def run_keys(self) -> Sequence[str]:
@@ -507,6 +514,7 @@ class TickData(
             ("run_requests", Optional[Sequence[RunRequest]]),  # run requests created by the tick
             ("auto_materialize_evaluation_id", Optional[int]),
             ("reserved_run_ids", Optional[Sequence[str]]),
+            ("backfill_ids", Sequence[str]),
         ],
     )
 ):
@@ -540,6 +548,7 @@ class TickData(
         reserved_run_ids (Optional[Sequence[str]]): A list of run IDs to use for each of the
             run_requests. Used to ensure that if the tick fails partway through, we don't create
             any duplicate runs for the tick. Currently only used by AUTO_MATERIALIZE ticks.
+        backfill_ids (Optional[Sequence[str]]): A list of backfill ID created by tihs tick.
     """
 
     def __new__(
@@ -565,6 +574,7 @@ class TickData(
         run_requests: Optional[Sequence[RunRequest]] = None,
         auto_materialize_evaluation_id: Optional[int] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
+        backfill_ids: Optional[Sequence[str]] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         check.opt_list_param(log_key, "log_key", of_type=str)
@@ -593,6 +603,7 @@ class TickData(
             run_requests=check.opt_sequence_param(run_requests, "run_requests"),
             auto_materialize_evaluation_id=auto_materialize_evaluation_id,
             reserved_run_ids=check.opt_sequence_param(reserved_run_ids, "reserved_run_ids"),
+            backfill_ids=check.opt_sequence_param(backfill_ids, "backfill_ids", str),
         )
 
     def with_status(
@@ -608,6 +619,13 @@ class TickData(
                 },
                 kwargs,
             )
+        )
+
+    def with_not_a_backfill_info(self, backfill_id: str) -> "TickData":
+        return self._replace(
+            backfill_ids=[*self.backfill_ids, backfill_id]
+            if backfill_id not in self.backfill_ids
+            else self.backfill_ids
         )
 
     def with_run_info(

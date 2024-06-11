@@ -58,6 +58,7 @@ from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
+    NotABackfillRequest,
     RunRequest,
     SensorResult,
     SkipReason,
@@ -442,13 +443,14 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult]],
+    Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult, NotABackfillRequest]],
     Sequence[RunRequest],
     SkipReason,
     RunRequest,
     DagsterRunReaction,
     SensorResult,
     None,
+    NotABackfillRequest,
 ]
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
@@ -789,6 +791,7 @@ class SensorDefinition(IHasInternalInit):
 
         skip_message: Optional[str] = None
         run_requests: List[RunRequest] = []
+        not_a_backfill_request: Optional[NotABackfillRequest] = None
         dagster_run_reactions: List[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
@@ -799,7 +802,10 @@ class SensorDefinition(IHasInternalInit):
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            item = check.inst(result[0], (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
+            item = check.inst(
+                result[0],
+                (SkipReason, RunRequest, DagsterRunReaction, SensorResult, NotABackfillRequest),
+            )
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
@@ -808,6 +814,7 @@ class SensorDefinition(IHasInternalInit):
                     if item.skip_reason
                     else (None if run_requests else "Sensor function returned an empty result")
                 )
+                not_a_backfill_request = item.not_a_backfill_request
 
                 _check_dynamic_partitions_requests(
                     item.dynamic_partitions_requests or [],
@@ -827,6 +834,8 @@ class SensorDefinition(IHasInternalInit):
                 run_requests = [item]
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            elif isinstance(item, NotABackfillRequest):
+                not_a_backfill_request = item
             elif isinstance(item, DagsterRunReaction):
                 dagster_run_reactions = (
                     [cast(DagsterRunReaction, item)] if isinstance(item, DagsterRunReaction) else []
@@ -879,6 +888,7 @@ class SensorDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events,
+            not_a_backfill_request=not_a_backfill_request,
         )
 
     def has_loadable_targets(self) -> bool:
@@ -1027,6 +1037,7 @@ class SensorExecutionData(
                 "asset_events",
                 Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]],
             ),
+            ("not_a_backfill_request", Optional[NotABackfillRequest]),
         ],
     )
 ):
@@ -1045,6 +1056,7 @@ class SensorExecutionData(
         asset_events: Optional[
             Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
         ] = None,
+        not_a_backfill_request: Optional[NotABackfillRequest] = None,
     ):
         check.opt_sequence_param(run_requests, "run_requests", RunRequest)
         check.opt_str_param(skip_message, "skip_message")
@@ -1061,6 +1073,8 @@ class SensorExecutionData(
             "asset_events",
             (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
+        check.opt_inst_param(not_a_backfill_request, "not_a_backfill_request", NotABackfillRequest)
+        # TODO - add check for not having backfill request and run requests or skip reason
         check.invariant(
             not (run_requests and skip_message), "Found both skip data and run request data"
         )
@@ -1073,6 +1087,7 @@ class SensorExecutionData(
             log_key=log_key,
             dynamic_partitions_requests=dynamic_partitions_requests,
             asset_events=asset_events or [],
+            not_a_backfill_request=not_a_backfill_request,
         )
 
 
@@ -1094,13 +1109,13 @@ def wrap_sensor_evaluation(
         raw_evaluation_result = fn(**context_param, **resource_args_populated)
 
         def check_returned_scalar(scalar):
-            if isinstance(scalar, (SkipReason, RunRequest, SensorResult)):
+            if isinstance(scalar, (SkipReason, RunRequest, SensorResult, NotABackfillRequest)):
                 return scalar
             elif scalar is not None:
                 raise Exception(
                     f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason or "
-                    "RunRequest objects."
+                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason, "
+                    "RunRequest or NotABackfill objects."
                 )
 
         if inspect.isgenerator(raw_evaluation_result):
