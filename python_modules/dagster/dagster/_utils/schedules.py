@@ -22,6 +22,9 @@ CRON_RANGES = ((0, 59), (0, 23), (1, 31), (1, 12), (0, 7), (0, 59))
 CRON_STEP_SEARCH_REGEX = re.compile(r"^([^-]+)-([^-/]+)(/(\d+))?$")
 INT_REGEX = re.compile(r"^\d+$")
 
+# hours in which it is possible that a time might be ambigious or not exist due to daylight savings time
+DAYLIGHT_SAVINGS_HOURS = {1, 2, 3}
+
 
 class CroniterShim(_croniter):
     """Lightweight shim to enable caching certain values that may be calculated many times."""
@@ -87,7 +90,7 @@ def _apply_fold(date: datetime.datetime) -> datetime.datetime:
     Never call this with datetimes that could be non-existant. datetime_ambiguous will return true
     but folding them will leave them non-existant.
     """  # noqa: D415
-    if date.fold == 0 and datetime_ambiguous(date):
+    if date.fold == 0 and date.hour in DAYLIGHT_SAVINGS_HOURS and datetime_ambiguous(date):
         return date.replace(fold=1)
     return date
 
@@ -95,7 +98,7 @@ def _apply_fold(date: datetime.datetime) -> datetime.datetime:
 def apply_post_transition(
     date: datetime.datetime,
 ) -> datetime.datetime:
-    if not datetime_exists(date):
+    if date.hour in DAYLIGHT_SAVINGS_HOURS and not datetime_exists(date):
         # If we fall on a non-existant time (e.g. between 2 and 3AM during a DST transition)
         # advance to the end of the window, which does exist - match behavior described in the docs:
         # https://docs.dagster.io/concepts/partitions-schedules-sensors/schedules#execution-time-and-daylight-savings-time)
