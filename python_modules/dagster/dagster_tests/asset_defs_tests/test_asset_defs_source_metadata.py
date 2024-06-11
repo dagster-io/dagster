@@ -120,7 +120,7 @@ def test_asset_code_origins_source_control() -> None:
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
-        git_file_path_mapping=AnchorBasedFilePathMappingFn(
+        file_path_mapping=AnchorBasedFilePathMappingFn(
             local_file_anchor=Path(GIT_ROOT_PATH), file_anchor_path_in_repository=""
         ),
     )
@@ -176,7 +176,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
-        git_file_path_mapping=lambda file_path: "override.py"
+        file_path_mapping=lambda file_path: "override.py"
         if os.fspath(file_path).endswith("module_with_assets.py")
         else os.path.normpath(os.path.relpath(file_path, GIT_ROOT_PATH)),
     )

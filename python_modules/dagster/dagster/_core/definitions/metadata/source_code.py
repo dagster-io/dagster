@@ -173,10 +173,10 @@ class AnchorBasedFilePathMappingFn(NamedTuple):
 
 def convert_local_path_to_git_path(
     base_git_url: str,
-    git_file_path_mapping_fn: FilePathMappingFn,
+    file_path_mapping_fn: FilePathMappingFn,
     local_path: LocalFileCodeReference,
 ) -> UrlCodeReference:
-    source_file_from_repo_root = git_file_path_mapping_fn(Path(local_path.file_path))
+    source_file_from_repo_root = file_path_mapping_fn(Path(local_path.file_path))
     line_number_suffix = f"#L{local_path.line_number}" if local_path.line_number else ""
 
     return UrlCodeReference(
@@ -187,7 +187,7 @@ def convert_local_path_to_git_path(
 
 def _convert_local_path_to_git_path_single_definition(
     base_git_url: str,
-    git_file_path_mapping_fn: FilePathMappingFn,
+    file_path_mapping_fn: FilePathMappingFn,
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -209,7 +209,7 @@ def _convert_local_path_to_git_path_single_definition(
         sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
             convert_local_path_to_git_path(
                 base_git_url,
-                git_file_path_mapping_fn,
+                file_path_mapping_fn,
                 source,
             )
             if isinstance(source, LocalFileCodeReference)
@@ -242,7 +242,7 @@ def link_to_git(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
     git_url: str,
     git_branch: str,
-    git_file_path_mapping: FilePathMappingFn,
+    file_path_mapping: FilePathMappingFn,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
@@ -255,7 +255,7 @@ def link_to_git(
         git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
         git_branch (str): The branch in the source control system, such as "master".
-        git_file_path_mapping (FilePathMappingFn):
+        file_path_mapping (FilePathMappingFn):
             Specifies the mapping between local file paths and their corresponding paths in a source control repository.
             Simple usage is to provide a `AnchorBasedFilePathMappingFn` instance, which specifies an anchor file in the
             repository and the corresponding local file path, which is extrapolated to all other local file paths.
@@ -269,7 +269,7 @@ def link_to_git(
                         with_source_code_references([my_dbt_assets]),
                         git_url="https://github.com/dagster-io/dagster",
                         git_branch="master",
-                        git_file_path_mapping=AnchorBasedFilePathMappingFn(
+                        file_path_mapping=AnchorBasedFilePathMappingFn(
                             local_file_anchor=Path(__file__),
                             file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
                         ),
@@ -289,7 +289,7 @@ def link_to_git(
     return [
         _convert_local_path_to_git_path_single_definition(
             base_git_url=git_url,
-            git_file_path_mapping_fn=git_file_path_mapping,
+            file_path_mapping_fn=file_path_mapping,
             assets_def=assets_def,
         )
         for assets_def in assets_defs
