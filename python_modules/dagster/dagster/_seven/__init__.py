@@ -7,9 +7,9 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, tzinfo
 from types import ModuleType
-from typing import Any, Callable, List, Sequence, Type
+from typing import Any, Callable, List, Sequence, Type, Union
 
 from dateutil import parser
 from typing_extensions import TypeGuard
@@ -142,6 +142,17 @@ def _mockable_get_current_timestamp():
 def get_current_timestamp():
     # Like time.time() but can be mocked in tests by freeze_time()
     return _mockable_get_current_timestamp()
+
+
+def datetime_from_timestamp(timestamp: float, tz: Union[str, tzinfo] = timezone.utc) -> datetime:
+    if not tz:
+        tzinfo = timezone.utc
+    elif isinstance(tz, str):
+        tzinfo = timezone_from_string(tz)
+    else:
+        tzinfo = tz
+
+    return datetime.fromtimestamp(timestamp, tz=tzinfo)
 
 
 def create_datetime(year, month, day, *args, **kwargs):

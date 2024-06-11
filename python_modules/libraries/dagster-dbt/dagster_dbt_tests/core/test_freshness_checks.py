@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Dict
 
 import pytest
@@ -11,7 +12,6 @@ from dagster._core.definitions.asset_check_factories.utils import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.metadata.metadata_value import JsonMetadataValue
-from dagster._seven.compat import pendulum
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.freshness_builder import build_freshness_checks_from_dbt_assets
 
@@ -47,7 +47,7 @@ def test_dbt_time_partition_freshness_checks(
 ) -> None:
     @dbt_assets(
         manifest=test_time_partition_freshness_manifest,
-        partitions_def=DailyPartitionsDefinition(start_date=pendulum.PendulumDateTime(2021, 1, 1)),
+        partitions_def=DailyPartitionsDefinition(start_date=datetime(2021, 1, 1)),
     )
     def my_dbt_assets(): ...
 
@@ -132,14 +132,14 @@ def test_time_partition_multiple_assets_defs(
     @dbt_assets(
         manifest=test_time_partition_freshness_manifest_multiple_assets_defs,
         select="customers",
-        partitions_def=DailyPartitionsDefinition(start_date=pendulum.PendulumDateTime(2021, 1, 1)),
+        partitions_def=DailyPartitionsDefinition(start_date=datetime(2021, 1, 1)),
     )
     def my_dbt_assets(): ...
 
     @dbt_assets(
         manifest=test_time_partition_freshness_manifest_multiple_assets_defs,
         select="orders",
-        partitions_def=DailyPartitionsDefinition(start_date=pendulum.PendulumDateTime(2021, 1, 1)),
+        partitions_def=DailyPartitionsDefinition(start_date=datetime(2021, 1, 1)),
     )
     def my_dbt_assets2(): ...
 
@@ -190,7 +190,7 @@ def test_mixed_freshness(test_dagster_dbt_mixed_freshness_manifest: Dict[str, An
     @dbt_assets(
         manifest=test_dagster_dbt_mixed_freshness_manifest,
         select="orders",
-        partitions_def=DailyPartitionsDefinition(start_date=pendulum.PendulumDateTime(2021, 1, 1)),
+        partitions_def=DailyPartitionsDefinition(start_date=datetime(2021, 1, 1)),
     )
     def my_dbt_assets2(): ...
 

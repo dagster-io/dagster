@@ -2,7 +2,6 @@ import os
 import sys
 import tempfile
 
-import pendulum
 import pytest
 from botocore.exceptions import ClientError
 from dagster import DagsterEventType, job, op
@@ -15,6 +14,7 @@ from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
+from dagster._seven import get_current_datetime_in_utc
 from dagster_aws.s3 import S3ComputeLogManager
 
 ensure_dagster_tests_import()
@@ -205,7 +205,7 @@ def test_prefix_filter(mock_s3_bucket):
 
 
 def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
-    evaluation_time = pendulum.now()
+    evaluation_time = get_current_datetime_in_utc()
     s3_prefix = "foo/bar/"  # note the trailing slash
 
     with tempfile.TemporaryDirectory() as temp_dir:

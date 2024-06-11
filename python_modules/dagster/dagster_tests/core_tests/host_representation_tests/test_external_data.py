@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Sequence
 
-import pendulum
 import pytest
 from dagster import (
     AssetKey,
@@ -47,6 +46,8 @@ from dagster._core.remote_representation.external_data import (
     external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_value, serialize_value, unpack_value
+from dagster._seven import create_datetime, create_utc_datetime
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
@@ -160,7 +161,7 @@ def test_asset_with_single_run_backfill_policy():
 def test_asset_with_multi_run_backfill_policy():
     partitions_def_data = ExternalTimeWindowPartitionsDefinitionData(
         cron_schedule="5 13 * * 0",
-        start=pendulum.instance(datetime(year=2022, month=5, day=5), tz="US/Central").timestamp(),
+        start=create_datetime(year=2022, month=5, day=5, tz="US/Central").timestamp(),
         timezone="US/Central",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         end_offset=1,
@@ -1141,10 +1142,7 @@ def test_back_compat_external_sensor():
 def _check_partitions_def_equal(
     p1: TimeWindowPartitionsDefinition, p2: TimeWindowPartitionsDefinition
 ):
-    assert (
-        pendulum.instance(p1.start, tz=p1.timezone).timestamp()
-        == pendulum.instance(p2.start, tz=p2.timezone).timestamp()
-    )
+    assert p1.start.timestamp() == p2.start.timestamp()
     assert p1.timezone == p2.timezone
     assert p1.fmt == p2.fmt
     assert p1.end_offset == p2.end_offset
@@ -1156,8 +1154,10 @@ def test_back_compat_external_time_window_partitions_def():
 
     external = ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=ScheduleType.WEEKLY,
-        start=pendulum.instance(start, tz="US/Central").timestamp(),
-        timezone="US/Central",
+        start=datetime(
+            year=2022, month=5, day=5, tzinfo=timezone_from_string("Europe/Berlin")
+        ).timestamp(),
+        timezone="Europe/Berlin",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         end_offset=1,
         minute_offset=5,
@@ -1169,7 +1169,7 @@ def test_back_compat_external_time_window_partitions_def():
         TimeWindowPartitionsDefinition(
             schedule_type=ScheduleType.WEEKLY,
             start=start,
-            timezone="US/Central",
+            timezone="Europe/Berlin",
             fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
             end_offset=1,
             minute_offset=5,
@@ -1265,9 +1265,7 @@ def test_external_time_window_valid_partition_key():
     )
     assert (
         external_partitions_def.get_partitions_definition().start.timestamp()
-        == pendulum.instance(
-            datetime.strptime("2023-03-11-15:00", "%Y-%m-%d-%H:%M"), tz="UTC"
-        ).timestamp()
+        == create_utc_datetime(2023, 3, 11, 15).timestamp()
     )
 
 

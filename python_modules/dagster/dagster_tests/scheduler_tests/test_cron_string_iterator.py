@@ -1,9 +1,9 @@
 import calendar
+import datetime
 
-import pendulum
 import pytest
 from dagster._seven import create_datetime
-from dagster._seven.compat.pendulum import to_timezone
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils.schedules import (
     _croniter_string_iterator,
     cron_string_iterator,
@@ -468,7 +468,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
     # Starting 1 second after each time produces the next tick
 
     for i in range(len(times) - 1):
-        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
+        orig_start_timestamp = times[i].astimezone(datetime.timezone.utc).timestamp()
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
 
@@ -488,7 +488,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
             assert (
                 next_time.timestamp() == times[j].timestamp()
-            ), f"Expected ({pendulum.from_timestamp(orig_start_timestamp, tz=execution_timezone)}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+            ), f"Expected ({datetime.datetime.from_timestamp(orig_start_timestamp, tz=timezone_from_string(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
             prev_time = next_time
 
         start_timestamp = orig_start_timestamp + 1
@@ -517,7 +517,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({pendulum.from_timestamp(start_timestamp, tz=execution_timezone)}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=timezone_from_string(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
 
                 prev_time = next_time
 
@@ -532,7 +532,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 def test_reversed_dst_transition_advances(execution_timezone, cron_string, times, force_croniter):
     times = list(reversed(times))
     for i in range(len(times) - 1):
-        orig_start_timestamp = to_timezone(times[i], "UTC").timestamp()
+        orig_start_timestamp = times[i].astimezone(datetime.timezone.utc).timestamp()
 
         # first start from the timestamp that's exactly on the interval -
         # verify that it first returns the passed in timestamp, then advances
@@ -578,7 +578,7 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({pendulum.from_timestamp(start_timestamp, tz=execution_timezone)}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=timezone_from_string(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
 
                 prev_time = next_time
 
