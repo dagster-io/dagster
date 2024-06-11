@@ -65,6 +65,13 @@ export class HourlyDataCache<T> {
   private saveTimeout?: ReturnType<typeof setTimeout>;
   private registeredUnload: boolean = false;
   private async saveCacheToIndexedDB() {
+    if (typeof jest !== undefined) {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+      return;
+    }
     clearTimeout(this.saveTimeout);
     this.saveTimeout = setTimeout(() => {
       if (!this.indexedDBCache) {
