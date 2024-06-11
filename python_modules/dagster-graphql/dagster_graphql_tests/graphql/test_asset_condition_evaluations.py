@@ -3,7 +3,6 @@ from typing import Any, Mapping, Optional, Sequence
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
-import pendulum
 from dagster import AssetKey, RunRequest
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -36,7 +35,9 @@ from dagster._daemon.asset_daemon import (
     asset_daemon_cursor_to_instigator_serialized_cursor,
 )
 from dagster._serdes.serdes import serialize_value
+from dagster._seven import get_current_datetime_in_utc
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
+from dateutil.relativedelta import relativedelta
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -91,7 +92,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         )
         assert len(result.data["autoMaterializeTicks"]) == 0
 
-        now = pendulum.now("UTC")
+        now = get_current_datetime_in_utc()
         end_timestamp = now.timestamp() + 20
 
         success_1 = _create_tick(
@@ -110,14 +111,14 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         success_2 = _create_tick(
             graphql_context.instance,
             TickStatus.SUCCESS,
-            now.subtract(days=1, hours=1).timestamp(),
+            (now - relativedelta(days=1, hours=1)).timestamp(),
             evaluation_id=2,
         )
 
         _create_tick(
             graphql_context.instance,
             TickStatus.SKIPPED,
-            now.subtract(days=2, hours=1).timestamp(),
+            (now - relativedelta(days=2, hours=1)).timestamp(),
             evaluation_id=1,
         )
 

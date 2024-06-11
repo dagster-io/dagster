@@ -1,7 +1,6 @@
 # pyright: reportPrivateImportUsage=false
 from typing import Iterator, Optional, Sequence
 
-import pendulum
 import pytest
 from dagster import define_asset_job
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
@@ -14,6 +13,7 @@ from dagster._core.definitions.metadata import TimestampMetadataValue
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
+from dagster._seven import get_current_timestamp
 
 
 @pytest.fixture(name="instance")
@@ -76,7 +76,7 @@ def add_new_event(
     metadata = (
         {
             "dagster/last_updated_timestamp": TimestampMetadataValue(
-                pendulum.now("UTC").timestamp() if not override_timestamp else override_timestamp
+                get_current_timestamp() if not override_timestamp else override_timestamp
             )
         }
         if not is_materialization
