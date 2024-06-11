@@ -28,7 +28,7 @@ from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.test_utils import freeze_time
 from dagster._core.utils import make_new_run_id
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 
 
 def test_params() -> None:
@@ -80,7 +80,7 @@ def test_sensor_multi_asset_different_states(instance: DagsterInstance) -> None:
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
-    frozen_time = get_current_datetime_in_utc()
+    frozen_time = get_current_datetime()
     with freeze_time(frozen_time):
         instance.report_runless_asset_event(
             AssetCheckEvaluation(
@@ -142,7 +142,7 @@ def test_sensor_evaluation_planned(instance: DagsterInstance) -> None:
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
-    frozen_time = get_current_datetime_in_utc()
+    frozen_time = get_current_datetime()
     with freeze_time(frozen_time):
         instance.event_log_storage.store_event(
             EventLogEntry(
@@ -188,7 +188,7 @@ def test_sensor_cursor_recovery(instance: DagsterInstance) -> None:
         assets=[my_asset], lower_bound_delta=datetime.timedelta(minutes=10)
     )
 
-    frozen_time = get_current_datetime_in_utc()
+    frozen_time = get_current_datetime()
     out_of_date_metadata = {
         FRESH_UNTIL_METADATA_KEY: FloatMetadataValue(
             (frozen_time - datetime.timedelta(minutes=5)).timestamp()

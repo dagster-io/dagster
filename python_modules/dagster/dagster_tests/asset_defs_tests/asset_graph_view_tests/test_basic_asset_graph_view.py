@@ -3,7 +3,7 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
 from dagster._core.instance import DagsterInstance
-from dagster._seven import create_datetime
+from dagster._time import create_datetime
 
 
 def test_basic_construction_and_identity() -> None:

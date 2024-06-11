@@ -14,7 +14,7 @@ from dagster._core.storage.db_io_manager import (
     TableSlice,
 )
 from dagster._core.types.dagster_type import resolve_dagster_type
-from dagster._seven import create_datetime
+from dagster._time import create_datetime
 
 resource_config = {
     "database": "database_abc",

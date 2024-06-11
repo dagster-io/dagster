@@ -18,7 +18,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
@@ -1117,7 +1117,7 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
         )
     )
 
-    now = datetime.datetime.now(tz=timezone_from_string("US/Central"))
+    now = datetime.datetime.now(tz=get_timezone("US/Central"))
     one = now - datetime.timedelta(days=2) - datetime.timedelta(hours=1)
     with freeze_time(one):
         _create_tick(graphql_context)
@@ -1245,7 +1245,7 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         )
     )
 
-    now = datetime.datetime.now(tz=timezone_from_string("US/Central"))
+    now = datetime.datetime.now(tz=get_timezone("US/Central"))
     with freeze_time(now):
         _create_tick(graphql_context)  # create a success tick
 

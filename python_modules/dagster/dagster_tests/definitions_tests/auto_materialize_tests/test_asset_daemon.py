@@ -37,7 +37,7 @@ from dagster._daemon.asset_daemon import (
     set_auto_materialize_paused,
 )
 from dagster._serdes.serdes import serialize_value
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
@@ -737,7 +737,7 @@ def test_custom_purge() -> None:
     with get_daemon_instance(
         extra_overrides={"retention": {"auto_materialize": {"purge_after_days": {"skipped": 2}}}},
     ) as instance:
-        freeze_datetime = get_current_datetime_in_utc()
+        freeze_datetime = get_current_datetime()
 
         _create_tick(
             instance, TickStatus.SKIPPED, (freeze_datetime - datetime.timedelta(days=8)).timestamp()

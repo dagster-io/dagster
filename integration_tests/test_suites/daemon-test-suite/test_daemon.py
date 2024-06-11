@@ -7,7 +7,7 @@ from dagster._daemon.controller import (
     DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
     all_daemons_healthy,
 )
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from utils import start_daemon
 
 
@@ -19,7 +19,7 @@ def test_heartbeat():
             time.sleep(5)
             assert all_daemons_healthy(instance) is True
 
-        frozen_datetime = get_current_datetime_in_utc() + datetime.timedelta(
+        frozen_datetime = get_current_datetime() + datetime.timedelta(
             seconds=DEFAULT_HEARTBEAT_INTERVAL_SECONDS
             + DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS
             + 5

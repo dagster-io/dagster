@@ -23,7 +23,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindow, get_tim
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import get_multidimensional_partition_tag
 from dagster._core.test_utils import instance_for_test
-from dagster._seven import create_datetime
+from dagster._time import create_datetime
 
 DATE_FORMAT = "%Y-%m-%d"
 

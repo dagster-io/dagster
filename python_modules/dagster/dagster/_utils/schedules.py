@@ -12,8 +12,8 @@ from dateutil.tz import datetime_ambiguous, datetime_exists
 
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
-from dagster._seven.compat.datetime import timezone_from_string
 from dagster._seven.compat.pendulum import pendulum_create_timezone
+from dagster._time import get_timezone
 
 # Monthly schedules with 29-31 won't reliably run every month
 MAX_DAY_OF_MONTH_WITH_GUARANTEED_MONTHLY_INTERVAL = 28
@@ -684,7 +684,7 @@ def cron_string_iterator(
 
     if known_schedule_type:
         start_datetime = datetime.datetime.fromtimestamp(
-            start_timestamp, tz=timezone_from_string(execution_timezone)
+            start_timestamp, tz=get_timezone(execution_timezone)
         )
 
         if start_offset == 0 and _is_simple_cron(cron_string, start_datetime):
@@ -751,9 +751,7 @@ def _croniter_string_iterator(
     start_offset: int = 0,
 ):
     timezone = pendulum_create_timezone(timezone_str)
-    start_datetime = datetime.datetime.fromtimestamp(
-        start_timestamp, timezone_from_string(timezone_str)
-    )
+    start_datetime = datetime.datetime.fromtimestamp(start_timestamp, get_timezone(timezone_str))
     reverse_cron = _timezone_aware_cron_iter(cron_string, start_datetime, ascending=not ascending)
     next_date = None
     check.invariant(start_offset <= 0)

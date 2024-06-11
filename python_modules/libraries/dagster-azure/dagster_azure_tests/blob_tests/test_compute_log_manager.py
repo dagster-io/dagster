@@ -14,7 +14,7 @@ from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 ensure_dagster_tests_import()
@@ -183,7 +183,7 @@ def test_prefix_filter(mock_create_blob_client, storage_account, container, cred
 def test_get_log_keys_for_log_key_prefix(
     mock_create_blob_client, storage_account, container, credential
 ):
-    evaluation_time = get_current_datetime_in_utc()
+    evaluation_time = get_current_datetime()
     blob_prefix = "foo/bar/"  # note the trailing slash
     fake_client = FakeBlobServiceClient(storage_account)
     mock_create_blob_client.return_value = fake_client

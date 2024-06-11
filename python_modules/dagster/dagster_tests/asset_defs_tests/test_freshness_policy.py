@@ -4,7 +4,7 @@ import pytest
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._seven import create_datetime
+from dagster._time import create_datetime
 
 
 @pytest.mark.parametrize(

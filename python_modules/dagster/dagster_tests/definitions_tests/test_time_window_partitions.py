@@ -31,7 +31,7 @@ from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import freeze_time
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven import create_datetime, create_utc_datetime, parse_with_timezone
+from dagster._time import create_datetime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -39,15 +39,15 @@ DATE_FORMAT = "%Y-%m-%d"
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, parse_with_timezone(start)),
-        cast(datetime, parse_with_timezone(end)),
+        cast(datetime, parse_time_string(start)),
+        cast(datetime, parse_time_string(end)),
     )
 
 
 def persisted_time_window(start: str, end: str) -> PersistedTimeWindow:
     return PersistedTimeWindow(
-        TimestampWithTimezone(parse_with_timezone(start).timestamp(), "UTC"),
-        TimestampWithTimezone(parse_with_timezone(end).timestamp(), "UTC"),
+        TimestampWithTimezone(parse_time_string(start).timestamp(), "UTC"),
+        TimestampWithTimezone(parse_time_string(end).timestamp(), "UTC"),
     )
 
 
@@ -59,16 +59,16 @@ def test_daily_partitions():
     partitions_def = my_partitioned_config.partitions_def
     assert partitions_def == DailyPartitionsDefinition(start_date="2021-05-05")
     assert partitions_def.get_next_partition_key("2021-05-05") == "2021-05-06"
-    assert partitions_def.get_last_partition_key(parse_with_timezone("2021-05-06")) == "2021-05-05"
+    assert partitions_def.get_last_partition_key(parse_time_string("2021-05-06")) == "2021-05-05"
     assert (
         partitions_def.get_last_partition_key(
-            parse_with_timezone("2021-05-06") + timedelta(minutes=1)
+            parse_time_string("2021-05-06") + timedelta(minutes=1)
         )
         == "2021-05-05"
     )
     assert (
         partitions_def.get_last_partition_key(
-            parse_with_timezone("2021-05-07") - timedelta(minutes=1)
+            parse_time_string("2021-05-07") - timedelta(minutes=1)
         )
         == "2021-05-05"
     )
@@ -749,7 +749,7 @@ def test_invalid_get_partition_keys_in_range():
 
 def test_twice_daily_partitions():
     partitions_def = TimeWindowPartitionsDefinition(
-        start=parse_with_timezone("2021-05-05"),
+        start=parse_time_string("2021-05-05"),
         cron_schedule="0 0,11 * * *",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     )
@@ -774,7 +774,7 @@ def test_twice_daily_partitions():
 
 def test_start_not_aligned():
     partitions_def = TimeWindowPartitionsDefinition(
-        start=parse_with_timezone("2021-05-05"),
+        start=parse_time_string("2021-05-05"),
         cron_schedule="0 7 * * *",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     )
@@ -1389,7 +1389,7 @@ def test_invalid_cron_schedule():
     # creating a new partition definition with an invalid cron schedule should raise an error
     with pytest.raises(DagsterInvalidDefinitionError):
         TimeWindowPartitionsDefinition(
-            start=parse_with_timezone("2021-05-05"),
+            start=parse_time_string("2021-05-05"),
             cron_schedule="0 -24 * * *",
             fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         )
@@ -1555,7 +1555,7 @@ def test_get_partition_keys_not_in_subset_empty_subset() -> None:
     time_windows_subset = TimeWindowPartitionsSubset(
         partitions_def, num_partitions=0, included_time_windows=[]
     )
-    with freeze_time(create_utc_datetime(2023, 1, 1)):
+    with freeze_time(create_datetime(2023, 1, 1)):
         assert time_windows_subset.get_partition_keys_not_in_subset(partitions_def) == []
 
 

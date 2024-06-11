@@ -15,7 +15,7 @@ from dagster._core.storage.event_log import SqliteEventLogStorage
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster_gcp.gcs import GCSComputeLogManager
 from google.cloud import storage
 
@@ -280,7 +280,7 @@ def test_prefix_filter(gcs_bucket):
 
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = GCSComputeLogManager(bucket=gcs_bucket, prefix=gcs_prefix, local_dir=temp_dir)
-        time_str = get_current_datetime_in_utc().strftime("%Y_%m_%d__%H_%M_%S")
+        time_str = get_current_datetime().strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
         with manager.open_log_stream(log_key, ComputeIOType.STDERR) as write_stream:
             write_stream.write("hello hello")
@@ -297,7 +297,7 @@ def test_prefix_filter(gcs_bucket):
 
 @pytest.mark.integration
 def test_get_log_keys_for_log_key_prefix(gcs_bucket):
-    evaluation_time = get_current_datetime_in_utc()
+    evaluation_time = get_current_datetime()
     gcs_prefix = "foo/bar/"  # note the trailing slash
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -344,7 +344,7 @@ def test_get_log_keys_for_log_key_prefix(gcs_bucket):
 def test_storage_download_url_fallback(gcs_bucket):
     with tempfile.TemporaryDirectory() as temp_dir:
         manager = GCSComputeLogManager(bucket=gcs_bucket, local_dir=temp_dir)
-        time_str = get_current_datetime_in_utc().strftime("%Y_%m_%d__%H_%M_%S")
+        time_str = get_current_datetime().strftime("%Y_%m_%d__%H_%M_%S")
         log_key = ["arbitrary", "log", "key", time_str]
 
         orig_blob_fn = manager._bucket.blob  # noqa: SLF001

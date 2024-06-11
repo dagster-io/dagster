@@ -8,15 +8,15 @@ from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     fetch_flattened_time_window_ranges,
 )
-from dagster._seven import parse_with_timezone
+from dagster._time import parse_time_string
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
     return TimeWindow(
-        cast(datetime, parse_with_timezone(start)),
-        cast(datetime, parse_with_timezone(end)),
+        cast(datetime, parse_time_string(start)),
+        cast(datetime, parse_time_string(end)),
     )
 
 
