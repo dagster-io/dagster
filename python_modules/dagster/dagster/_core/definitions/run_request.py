@@ -427,6 +427,10 @@ class SensorResult(
         [
             ("run_requests", Optional[Sequence[RunRequest]]),
             ("skip_reason", Optional[SkipReason]),
+            (
+                "not_a_backfill_request",
+                Optional[NotABackfillRequest],
+            ),  # TODO - decide on a new name
             ("cursor", Optional[str]),
             (
                 "dynamic_partitions_requests",
@@ -448,6 +452,9 @@ class SensorResult(
             of run requests to be executed.
         skip_reason (Optional[Union[str, SkipReason]]): A skip message indicating why sensor
             evaluation was skipped.
+        not_a_backfill_request (Optional[NotABackfillRequest]): (Experimental) A request to materialize a
+            given set of assets and partitions. The Dagster system will determine which runs to launch
+            to fulfill this request.
         cursor (Optional[str]): The cursor value for this sensor, which will be provided on the
             context for the next sensor evaluation.
         dynamic_partitions_requests (Optional[Sequence[Union[DeleteDynamicPartitionsRequest,
@@ -468,6 +475,7 @@ class SensorResult(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_reason: Optional[Union[str, SkipReason]] = None,
+        not_a_backfill_request: Optional[NotABackfillRequest] = None,  # TODO - decide on a new name
         cursor: Optional[str] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
@@ -482,6 +490,19 @@ class SensorResult(
                 "both run_requests and skip_reason"
             )
 
+        # TODO - better way to do all this checking
+        if skip_reason and not_a_backfill_request:
+            check.failed(
+                "Expected a single skip reason or a not_a_backfill request: received values for "
+                "both not_a_backfill_request and skip_reason"
+            )
+
+        if not_a_backfill_request and len(run_requests if run_requests else []) > 0:
+            check.failed(
+                "Expected a single not_a_backfill request or one or more run requests: received values for "
+                "both run_requests and not_a_backfill_request"
+            )
+
         skip_reason = check.opt_inst_param(skip_reason, "skip_reason", (SkipReason, str))
         if isinstance(skip_reason, str):
             skip_reason = SkipReason(skip_reason)
@@ -490,6 +511,9 @@ class SensorResult(
             cls,
             run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
             skip_reason=skip_reason,
+            not_a_backfill_request=check.opt_inst_param(
+                not_a_backfill_request, "not_a_backfill_request", NotABackfillRequest
+            ),
             cursor=check.opt_str_param(cursor, "cursor"),
             dynamic_partitions_requests=check.opt_sequence_param(
                 dynamic_partitions_requests,
