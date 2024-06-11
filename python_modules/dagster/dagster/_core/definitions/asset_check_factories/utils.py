@@ -98,7 +98,7 @@ def ensure_no_duplicate_asset_checks(
     )
 
 
-def retrieve_latest_record(
+def retrieve_last_update_record(
     instance: DagsterInstance,
     asset_key: AssetKey,
     partition_key: Optional[str],
@@ -106,6 +106,18 @@ def retrieve_latest_record(
     """Retrieve the latest materialization or observation record for the given asset.
 
     If the asset is partitioned, the latest record for the latest partition will be returned.
+
+    There are a few weird edge cases to consider here:
+        - Note that this may not be the latest record overall. We only look for the latest materialization
+        and the latest observation, and return the latest of those two records that we
+        can successfully parse. Take for example, the scenario where we have a materialization, and two
+        obserations after that. If the latest observation is not parseable, we will return the materialization,
+        even though there might be a more recent observation that we can parse. The reason we do
+        this is to avoid an expensive query into the long-tail history of the asset. Retrieving the
+        latest record of a particular type is cheap. Retrieving the latest N records is not.
+        - If the asset has never been materialized and the latest observation is missing
+        `dagster/last_updated_timestamp` metadata, we will return None.
+
     """
     materializations = instance.fetch_materializations(
         records_filter=AssetRecordsFilter(
@@ -120,10 +132,16 @@ def retrieve_latest_record(
         limit=1,
     )
     if materializations.records and observations.records:
-        return max(
-            materializations.records[0],
-            observations.records[0],
-            key=lambda record: retrieve_timestamp_from_record(record),
+        mat_timestamp = retrieve_timestamp_from_record(materializations.records[0])
+        obs_timestamp = retrieve_timestamp_from_record(observations.records[0])
+        if not obs_timestamp:
+            return materializations.records[0]
+        if not mat_timestamp:
+            return observations.records[0]
+        return (
+            materializations.records[0]
+            if mat_timestamp > obs_timestamp
+            else observations.records[0]
         )
     else:
         return (
@@ -135,12 +153,17 @@ def retrieve_latest_record(
         )
 
 
-def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> float:
+def retrieve_timestamp_from_record(asset_record: EventLogRecord) -> Optional[float]:
     """Retrieve the timestamp from the given materialization or observation record."""
     check.inst_param(asset_record, "asset_record", EventLogRecord)
     if asset_record.event_log_entry.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION:
         return asset_record.timestamp
     else:
+        # If the asset observation does not have a last updated timestamp, return None.
+        if not asset_record.asset_observation or not asset_record.asset_observation.metadata.get(
+            LAST_UPDATED_TIMESTAMP_METADATA_KEY
+        ):
+            return None
         metadata = check.not_none(asset_record.asset_observation).metadata
         value = metadata[LAST_UPDATED_TIMESTAMP_METADATA_KEY].value
         check.invariant(
