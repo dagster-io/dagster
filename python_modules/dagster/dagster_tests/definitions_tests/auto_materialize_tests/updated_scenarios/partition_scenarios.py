@@ -394,8 +394,9 @@ partition_scenarios = [
         .with_asset_properties(
             keys=["B"],
             partitions_def=hourly_partitions_def._replace(
-                start=TimestampWithTimezone.from_pendulum_time(
-                    time_partitions_start_datetime + datetime.timedelta(hours=1)
+                start=TimestampWithTimezone(
+                    (time_partitions_start_datetime + datetime.timedelta(hours=1)).timestamp(),
+                    hourly_partitions_def.timezone,
                 )
             ),
         )
@@ -516,8 +517,9 @@ partition_scenarios = [
         .with_current_time_advanced(days=5)
         .with_asset_properties(
             partitions_def=hourly_partitions_def._replace(
-                start=TimestampWithTimezone.from_pendulum_time(
-                    time_partitions_start_datetime + datetime.timedelta(days=5)
+                start=TimestampWithTimezone(
+                    (time_partitions_start_datetime + datetime.timedelta(days=5)).timestamp(),
+                    hourly_partitions_def.timezone,
                 )
             )
         )
@@ -686,8 +688,9 @@ partition_scenarios = [
         initial_spec=three_assets_in_sequence.with_asset_properties(
             keys=["A"],
             partitions_def=daily_partitions_def._replace(
-                start=TimestampWithTimezone.from_pendulum_time(
-                    time_partitions_start_datetime + datetime.timedelta(days=4)
+                start=TimestampWithTimezone(
+                    (time_partitions_start_datetime + datetime.timedelta(days=4)).timestamp(),
+                    daily_partitions_def.timezone,
                 )
             ),
         )

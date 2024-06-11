@@ -4,7 +4,6 @@ from datetime import datetime
 from itertools import count
 from typing import Any, List, Optional
 
-import pendulum
 import pytest
 from dagster import (
     ConfigMapping,
@@ -40,6 +39,7 @@ from dagster._core.errors import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._loggers import json_console_logger
+from dagster._seven import parse_with_timezone
 
 
 def get_ops():
@@ -970,7 +970,7 @@ def test_job_partitions_def():
         assert context.has_partition_key
         assert context.partition_key == "2020-01-01"
         assert context.partition_time_window == TimeWindow(
-            pendulum.parse("2020-01-01"), pendulum.parse("2020-01-02")
+            parse_with_timezone("2020-01-01"), parse_with_timezone("2020-01-02")
         )
 
     @graph
