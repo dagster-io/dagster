@@ -62,11 +62,32 @@ export class HourlyDataCache<T> {
     return await this.loadPromise;
   }
 
+  private saveTimeout?: ReturnType<typeof setTimeout>;
+  private registeredUnload: boolean = false;
   private async saveCacheToIndexedDB() {
-    if (!this.indexedDBCache) {
+    if (typeof jest !== undefined) {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
       return;
     }
-    await this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+    clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(() => {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+    }, 10000);
+    if (!this.registeredUnload) {
+      this.registeredUnload = true;
+      window.addEventListener('beforeunload', () => {
+        if (!this.indexedDBCache) {
+          return;
+        }
+        this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+      });
+    }
   }
 
   public async clearOldEntries() {
@@ -79,7 +100,6 @@ export class HourlyDataCache<T> {
         this.cache.delete(ts);
       }
     }
-    await this.saveCacheToIndexedDB();
   }
 
   /**

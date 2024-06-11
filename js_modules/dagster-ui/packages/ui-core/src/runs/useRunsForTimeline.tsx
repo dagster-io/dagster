@@ -363,7 +363,7 @@ export const useRunsForTimeline = ({
     const current = {jobInfo, runsByJobKey: map};
     previousRunsByJobKey.current = current;
     return current;
-  }, [completedRuns, ongoingRunsData, loading]);
+  }, [loading, ongoingRunsData, completedRuns]);
 
   const jobsWithCompletedRunsAndOngoingRuns = useMemo(() => {
     const jobs: Record<string, TimelineJob> = {};
@@ -512,7 +512,7 @@ export const useRunsForTimeline = ({
   const lastFetchRef = useRef({ongoing: 0, future: 0});
   const lastRangeMs = useRef([0, 0] as readonly [number, number]);
   if (Math.abs(lastRangeMs.current[0] - rangeMs[0]) > 30000) {
-    lastFetchRef.current = {ongoing: 0, future: 0};
+    lastFetchRef.current.future = 0;
   }
   lastRangeMs.current = rangeMs;
 
@@ -528,9 +528,10 @@ export const useRunsForTimeline = ({
             lastFetchRef.current.ongoing = Date.now();
           }
         })(),
-        // Only fetch future ticks on a minute
+        // Only fetch future ticks once a minute
         (async () => {
-          if (lastFetchRef.current.future < Date.now() - 60 * 1000) {
+          // If the the time range is in the past then future ticks are not visible on the timeline
+          if (_end > Date.now() && lastFetchRef.current.future < Date.now() - 60 * 1000) {
             fetchFutureTicks();
           }
         })(),
@@ -539,7 +540,7 @@ export const useRunsForTimeline = ({
       if (loadId === fetchIdRef.current) {
         setLoading(false);
       }
-    }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
+    }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData, _end]),
     intervalMs: refreshInterval,
     leading: true,
   });
