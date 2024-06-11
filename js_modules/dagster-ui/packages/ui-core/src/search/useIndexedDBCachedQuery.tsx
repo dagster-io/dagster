@@ -13,6 +13,7 @@ export const KEY_PREFIX = 'indexdbQueryCache:';
 export class CacheManager<TQuery> {
   private cache: ReturnType<typeof cache<string, CacheData<TQuery>>>;
   private key: string;
+  private current?: CacheData<TQuery>;
 
   constructor(key: string) {
     this.key = `${KEY_PREFIX}${key}`;
@@ -20,9 +21,13 @@ export class CacheManager<TQuery> {
   }
 
   async get(version: number): Promise<TQuery | null> {
+    if (this.current) {
+      return this.current.data;
+    }
     if (await this.cache.has('cache')) {
       const {value} = await this.cache.get('cache');
       if (value && version === value.version) {
+        this.current = value;
         return value.data;
       }
     }
@@ -30,6 +35,12 @@ export class CacheManager<TQuery> {
   }
 
   async set(data: TQuery, version: number): Promise<void> {
+    if (
+      JSON.stringify(this.current?.data) === JSON.stringify(data) &&
+      this.current?.version === version
+    ) {
+      return;
+    }
     return this.cache.set('cache', {data, version}, {expiry: new Date('3030-01-01')});
   }
 
@@ -134,6 +145,7 @@ export function useGetData() {
       });
 
       const {data} = queryResult;
+
       await cacheManager.set(data, version);
 
       const onFetchedHandlers = state.onFetched;
