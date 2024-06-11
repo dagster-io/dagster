@@ -363,7 +363,7 @@ export const useRunsForTimeline = ({
     const current = {jobInfo, runsByJobKey: map};
     previousRunsByJobKey.current = current;
     return current;
-  }, [completedRunsQueryData.loading, ongoingRunsData, completedRuns]);
+  }, [loading, ongoingRunsData, completedRuns]);
 
   const jobsWithCompletedRunsAndOngoingRuns = useMemo(() => {
     const jobs: Record<string, TimelineJob> = {};
