@@ -51,7 +51,7 @@ export const JobsPageContent = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -72,7 +72,9 @@ export const JobsPageContent = () => {
     );
   }, [cachedData, data, visibleRepos]);
 
-  useBlockTraceUntilTrue('OverviewJobs', !!data || !workspaceLoading);
+  const loading = !!data || !workspaceLoading;
+
+  useBlockTraceUntilTrue('OverviewJobs', !loading);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -88,7 +90,7 @@ export const JobsPageContent = () => {
   }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
-    if (loading && !data) {
+    if (loading && !data && !cachedData) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -143,7 +145,7 @@ export const JobsPageContent = () => {
     return <OverviewJobsTable repos={filteredBySearch} />;
   };
 
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+  const showSearchSpinner = workspaceLoading && !repoCount && loading && !data;
 
   return (
     <>

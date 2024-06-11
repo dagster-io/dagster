@@ -43,7 +43,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       variables: {selector},
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data} = queryResultOverview;
 
   useLayoutEffect(() => {
     if (!loading) {
@@ -66,7 +66,8 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     return NO_REPOS_EMPTY_ARR;
   }, [data, repo]);
 
-  useBlockTraceUntilTrue('WorkspaceJobs', jobs !== NO_REPOS_EMPTY_ARR);
+  const loading = jobs === NO_REPOS_EMPTY_ARR;
+  useBlockTraceUntilTrue('WorkspaceJobs', !loading);
 
   const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();

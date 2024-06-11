@@ -166,8 +166,10 @@ export const OverviewSchedules = () => {
   const viewerHasAnyInstigationPermission = allPermissionedScheduleKeys.length > 0;
   const checkedCount = checkedSchedules.length;
 
+  const showSearchSpinner = workspaceLoading && !repoCount && loading && !data;
+
   const content = () => {
-    if (loading && !data) {
+    if (showSearchSpinner) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -237,8 +239,6 @@ export const OverviewSchedules = () => {
       />
     );
   };
-
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
 
   return (
     <>

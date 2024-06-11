@@ -215,8 +215,10 @@ export const OverviewSensors = () => {
   const viewerHasAnyInstigationPermission = allPermissionedSensorKeys.length > 0;
   const checkedCount = checkedSensors.length;
 
+  const showSearchSpinner = workspaceLoading && !repoCount && loading && !data;
+
   const content = () => {
-    if (loading && !data) {
+    if (showSearchSpinner) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -286,8 +288,6 @@ export const OverviewSensors = () => {
       />
     );
   };
-
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
 
   return (
     <>
