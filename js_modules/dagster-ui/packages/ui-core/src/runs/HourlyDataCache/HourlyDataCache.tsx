@@ -63,6 +63,7 @@ export class HourlyDataCache<T> {
   }
 
   private saveTimeout?: ReturnType<typeof setTimeout>;
+  private registeredUnload: boolean = false;
   private async saveCacheToIndexedDB() {
     clearTimeout(this.saveTimeout);
     this.saveTimeout = setTimeout(() => {
@@ -71,6 +72,15 @@ export class HourlyDataCache<T> {
       }
       this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
     }, 10000);
+    if (!this.registeredUnload) {
+      this.registeredUnload = true;
+      window.addEventListener('beforeunload', () => {
+        if (!this.indexedDBCache) {
+          return;
+        }
+        this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+      });
+    }
   }
 
   public async clearOldEntries() {
