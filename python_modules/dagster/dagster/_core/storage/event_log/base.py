@@ -606,3 +606,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         partition: Optional[str] = None,
     ) -> Optional[PlannedMaterializationInfo]:
         raise NotImplementedError()
+
+    @abstractmethod
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        raise NotImplementedError()

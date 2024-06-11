@@ -318,10 +318,14 @@ def _synthesize_events(
     return events, result
 
 
-def _store_materialization_events(storage, ops_fn, instance, run_id):
-    events, _ = _synthesize_events(lambda: ops_fn(), instance=instance, run_id=run_id)
+def _synthesize_and_store_events(storage, ops_fn, run_id, instance=None):
+    events, _ = _synthesize_events(ops_fn, run_id, instance=instance)
     for event in events:
         storage.store_event(event)
+
+
+def _store_materialization_events(storage, ops_fn, instance, run_id):
+    _synthesize_and_store_events(storage, ops_fn, run_id, instance=instance)
     last_materialization = storage.get_event_records(
         EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION),
         limit=1,
@@ -5902,3 +5906,193 @@ class TestEventLogStorage:
                 f"{MULTIDIMENSIONAL_PARTITION_PREFIX}foo": "test_multidimensional_partition",
             }
         ]
+
+    def test_previous_observation_data_versions(self, storage, instance):
+        asset_key = AssetKey(["one"])
+        partitions = ["1", "2", "3"]
+
+        def _observe_partition(partition, data_version):
+            yield AssetObservation(
+                asset_key=asset_key,
+                partition=partition,
+                tags={"dagster/data_version": data_version},
+            )
+
+        def _observe(data_version):
+            for partition in partitions:
+                yield from _observe_partition(partition, data_version)
+
+        @op
+        def observe_foo():
+            yield from _observe("foo")
+            yield Output(1)
+
+        @op
+        def observe_bar():
+            yield from _observe("bar")
+            yield Output(1)
+
+        @op
+        def observe_foo_bar():
+            yield from _observe_partition("1", "bar")
+            yield from _observe_partition("2", "bar")
+            yield from _observe_partition("3", "foo")
+            yield Output(1)
+
+        def _get_last_storage_id(storage):
+            return (
+                storage.fetch_observations(asset_key, limit=1, ascending=False)
+                .records[0]
+                .storage_id
+            )
+
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for i in range(3)]
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _synthesize_and_store_events(storage, lambda: observe_foo(), run_id_1)
+
+            after_one = _get_last_storage_id(storage)
+
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=-1
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_one
+                )
+                == set()
+            )
+
+            # change some of the partitions
+            _synthesize_and_store_events(storage, lambda: observe_foo_bar(), run_id_2)
+            after_two = _get_last_storage_id(storage)
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_one
+            ) == {
+                "1",
+                "2",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_two
+                )
+                == set()
+            )
+
+            # change the remaining partition
+            _synthesize_and_store_events(storage, lambda: observe_bar(), run_id_3)
+            after_three = _get_last_storage_id(storage)
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_one
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_two
+            ) == {"3"}
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_three
+                )
+                == set()
+            )
+
+    def test_previous_materialization_data_versions(self, storage, instance):
+        asset_key = AssetKey(["one"])
+        partitions = ["1", "2", "3"]
+
+        def _materialize_partition(partition, data_version):
+            yield AssetMaterialization(
+                asset_key=asset_key,
+                partition=partition,
+                tags={"dagster/data_version": data_version},
+            )
+
+        def _materialize(data_version):
+            for partition in partitions:
+                yield from _materialize_partition(partition, data_version)
+
+        @op
+        def materialize_foo():
+            yield from _materialize("foo")
+            yield Output(1)
+
+        @op
+        def materialize_bar():
+            yield from _materialize("bar")
+            yield Output(1)
+
+        @op
+        def materialize_foo_bar():
+            yield from _materialize_partition("1", "bar")
+            yield from _materialize_partition("2", "bar")
+            yield from _materialize_partition("3", "foo")
+            yield Output(1)
+
+        def _get_last_storage_id(storage):
+            return (
+                storage.fetch_materializations(asset_key, limit=1, ascending=False)
+                .records[0]
+                .storage_id
+            )
+
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for i in range(3)]
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _synthesize_and_store_events(storage, lambda: materialize_foo(), run_id_1)
+
+            after_one = _get_last_storage_id(storage)
+
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=-1
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_one
+                )
+                == set()
+            )
+
+            # change some of the partitions
+            _synthesize_and_store_events(storage, lambda: materialize_foo_bar(), run_id_2)
+            after_two = _get_last_storage_id(storage)
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_one
+            ) == {
+                "1",
+                "2",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_two
+                )
+                == set()
+            )
+
+            # change the remaining partition
+            _synthesize_and_store_events(storage, lambda: materialize_bar(), run_id_3)
+            after_three = _get_last_storage_id(storage)
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_one
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_two
+            ) == {"3"}
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_three
+                )
+                == set()
+            )
