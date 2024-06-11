@@ -463,7 +463,11 @@ def get_and_update_asset_status_cache_value(
         stored_cache_value=stored_cache_value if use_cached_value else None,
         asset_record=asset_record,
     )
-    if updated_cache_value is not None and updated_cache_value != stored_cache_value:
+    if (
+        updated_cache_value is not None
+        and instance.event_log_storage.can_write_asset_status_cache()
+        and updated_cache_value != stored_cache_value
+    ):
         instance.update_asset_cached_status_data(asset_key, updated_cache_value)
 
     return updated_cache_value

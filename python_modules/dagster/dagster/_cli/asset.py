@@ -182,7 +182,7 @@ def asset_wipe_cache_command(key, **cli_args):
     noprompt = cli_args.get("noprompt")
 
     with get_instance_for_cli() as instance:
-        if instance.can_cache_asset_status_data() is False:
+        if instance.can_read_asset_status_cache() is False:
             raise click.UsageError(
                 "Error, the instance does not support caching asset status. Wiping the cache is not"
                 " supported."

@@ -1079,7 +1079,7 @@ def test_1_0_17_add_cached_status_data_column():
         assert get_current_alembic_version(db_path) == "958a9495162d"
         assert "cached_status_data" not in set(get_sqlite3_columns(db_path, "asset_keys"))
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            assert instance.can_cache_asset_status_data() is False
+            assert instance.can_read_asset_status_cache() is False
             instance.upgrade()
             assert "cached_status_data" in set(get_sqlite3_columns(db_path, "asset_keys"))
 
