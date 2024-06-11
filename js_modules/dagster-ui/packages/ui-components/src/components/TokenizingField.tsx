@@ -188,11 +188,12 @@ export const TokenizingField = ({
       // Suggest providers (eg: `pipeline:`) so users can discover the search space
 
       suggestionsArr = filteredSuggestionProviders
-        .reduce(
-          (accum: Suggestion[], s) =>
-            s.token ? [...accum, {text: `${s.token}:`, final: false}] : accum,
-          [],
-        )
+        .reduce((accum: Suggestion[], s) => {
+          if (s.token) {
+            accum.push({text: `${s.token}:`, final: false});
+          }
+          return accum;
+        }, [])
         .filter((s) => matchesTypedText(lastPart, s));
 
       // Suggest value completions so users can type "airline_" without the "pipeline"

@@ -30,7 +30,7 @@ from dagster._daemon.monitoring.run_monitoring import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven import create_utc_datetime
+from dagster._time import create_datetime
 from typing_extensions import Self
 
 
@@ -286,7 +286,7 @@ def test_long_running_termination(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext, logger: Logger
 ):
     with environ({"DAGSTER_TEST_RUN_HEALTH_CHECK_RESULT": "healthy"}):
-        initial = create_utc_datetime(2021, 1, 1)
+        initial = create_datetime(2021, 1, 1)
         with freeze_time(initial):
             too_long_run = create_run_for_test(
                 instance,
@@ -374,7 +374,7 @@ def test_long_running_termination_failure(
             instance.run_launcher.should_fail_termination = True  # type: ignore
         else:
             instance.run_launcher.should_except_termination = True  # type: ignore
-        initial = create_utc_datetime(2021, 1, 1)
+        initial = create_datetime(2021, 1, 1)
         with freeze_time(initial):
             too_long_run = create_run_for_test(
                 instance,

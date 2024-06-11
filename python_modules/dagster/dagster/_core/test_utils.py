@@ -63,9 +63,8 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven import create_datetime
-from dagster._seven.compat.datetime import timezone_from_string
 from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import create_datetime, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -313,7 +312,7 @@ def new_cwd(path: str) -> Iterator[None]:
 
 def today_at_midnight(timezone_name="UTC") -> "DateTime":
     check.str_param(timezone_name, "timezone_name")
-    tzinfo = timezone_from_string(timezone_name)
+    tzinfo = get_timezone(timezone_name)
     now = datetime.datetime.now(tz=tzinfo)
     return create_datetime(now.year, now.month, now.day, tz=timezone_name)
 
@@ -758,8 +757,8 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
     new_pendulum_dt = pendulum.from_timestamp(new_timestamp, "UTC")
 
     with unittest.mock.patch(
-        "dagster._seven._mockable_get_current_datetime_in_utc", return_value=new_dt
+        "dagster._time._mockable_get_current_datetime", return_value=new_dt
     ), unittest.mock.patch(
-        "dagster._seven._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+        "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
     ), pendulum_freeze_time(new_pendulum_dt):
         yield

@@ -17,7 +17,7 @@ from dagster._core.definitions.partition import (
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._core.instance import DagsterInstance
-from dagster._seven import create_datetime
+from dagster._time import create_datetime
 
 
 def _tw(asset_slice: AssetSlice) -> TimeWindow:

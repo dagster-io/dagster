@@ -46,7 +46,7 @@ from dagster._core.errors import (
 from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
 from dagster._core.execution.context.invocation import DirectOpExecutionContext, build_asset_context
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
-from dagster._seven import create_datetime
+from dagster._time import create_datetime
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

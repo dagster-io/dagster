@@ -1,8 +1,7 @@
 from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
-from dagster._seven import create_utc_datetime
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import create_datetime, get_timezone
 from dateutil.relativedelta import relativedelta
 
 from .test_run_status_sensors import instance_with_single_code_location_multiple_repos_with_sensors
@@ -11,8 +10,8 @@ from .test_sensor_run import a_source_asset, evaluate_sensors, validate_tick
 
 def test_monitor_source_asset_sensor(executor):
     """Tests a multi asset sensor that monitors an asset in another repo."""
-    freeze_datetime = create_utc_datetime(year=2019, month=2, day=27).astimezone(
-        timezone_from_string("US/Central")
+    freeze_datetime = create_datetime(year=2019, month=2, day=27).astimezone(
+        get_timezone("US/Central")
     )
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,

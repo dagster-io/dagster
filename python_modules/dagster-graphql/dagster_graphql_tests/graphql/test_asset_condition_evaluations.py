@@ -35,7 +35,7 @@ from dagster._daemon.asset_daemon import (
     asset_daemon_cursor_to_instigator_serialized_cursor,
 )
 from dagster._serdes.serdes import serialize_value
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 from dateutil.relativedelta import relativedelta
 
@@ -92,7 +92,7 @@ class TestAutoMaterializeTicks(ExecutingGraphQLContextTestMatrix):
         )
         assert len(result.data["autoMaterializeTicks"]) == 0
 
-        now = get_current_datetime_in_utc()
+        now = get_current_datetime()
         end_timestamp = now.timestamp() + 20
 
         success_1 = _create_tick(

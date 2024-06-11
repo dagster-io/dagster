@@ -143,7 +143,7 @@ export const OverviewResourcesRoot = () => {
     return <OverviewResourcesTable repos={filteredBySearch} />;
   };
 
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+  const showSearchSpinner = queryLoading && !data;
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>

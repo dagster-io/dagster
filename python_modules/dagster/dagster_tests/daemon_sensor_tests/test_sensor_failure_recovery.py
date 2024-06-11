@@ -16,8 +16,8 @@ from dagster._core.test_utils import (
 )
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
-from dagster._seven import IS_WINDOWS, create_utc_datetime
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._seven import IS_WINDOWS
+from dagster._time import create_datetime, get_timezone
 from dateutil.relativedelta import relativedelta
 
 from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
@@ -56,9 +56,9 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
 @pytest.mark.parametrize("crash_location", ["TICK_CREATED", "TICK_HELD"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_before_run_created(crash_location, crash_signal, instance, external_repo):
-    frozen_datetime = create_utc_datetime(
+    frozen_datetime = create_datetime(
         year=2019, month=2, day=28, hour=0, minute=0, second=1
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("simple_sensor")
         instance.add_instigator_state(
@@ -134,9 +134,9 @@ def test_failure_before_run_created(crash_location, crash_signal, instance, exte
 def test_failure_after_run_created_before_run_launched(
     crash_location, crash_signal, instance, external_repo
 ):
-    frozen_datetime = create_utc_datetime(
+    frozen_datetime = create_datetime(
         year=2019, month=2, day=28, hour=0, minute=0, second=0
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(
@@ -198,14 +198,14 @@ def test_failure_after_run_created_before_run_launched(
 @pytest.mark.parametrize("crash_location", ["RUN_LAUNCHED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
 def test_failure_after_run_launched(crash_location, crash_signal, instance, external_repo):
-    frozen_datetime = create_utc_datetime(
+    frozen_datetime = create_datetime(
         year=2019,
         month=2,
         day=28,
         hour=0,
         minute=0,
         second=0,
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
     with freeze_time(frozen_datetime):
         external_sensor = external_repo.get_external_sensor("run_key_sensor")
         instance.add_instigator_state(

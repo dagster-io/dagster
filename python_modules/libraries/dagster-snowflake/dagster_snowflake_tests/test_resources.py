@@ -20,7 +20,7 @@ from dagster._check import CheckError
 from dagster._core.definitions.metadata import FloatMetadataValue
 from dagster._core.definitions.observe import observe
 from dagster._core.test_utils import environ
-from dagster._seven import get_current_timestamp
+from dagster._time import get_current_timestamp
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
 
 from .utils import create_mock_connector

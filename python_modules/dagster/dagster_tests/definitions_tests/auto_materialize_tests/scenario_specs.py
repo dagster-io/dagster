@@ -14,7 +14,7 @@ from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._seven import parse_with_timezone
+from dagster._time import parse_time_string
 
 from .scenario_state import MultiAssetSpec, ScenarioSpec
 
@@ -27,7 +27,7 @@ two_partitions_def = StaticPartitionsDefinition(["1", "2"])
 three_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
 time_partitions_start_str = "2013-01-05"
-time_partitions_start_datetime = parse_with_timezone(time_partitions_start_str)
+time_partitions_start_datetime = parse_time_string(time_partitions_start_str)
 hourly_partitions_def = HourlyPartitionsDefinition(start_date=time_partitions_start_str + "-00:00")
 daily_partitions_def = DailyPartitionsDefinition(start_date=time_partitions_start_str)
 time_multipartitions_def = MultiPartitionsDefinition(

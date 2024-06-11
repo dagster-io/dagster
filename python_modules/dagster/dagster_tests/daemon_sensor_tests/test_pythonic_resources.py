@@ -48,8 +48,7 @@ from dagster._core.test_utils import create_test_daemon_workspace_context, freez
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven import create_utc_datetime
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import create_datetime, get_timezone
 from dateutil.relativedelta import relativedelta
 
 from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
@@ -416,14 +415,14 @@ def test_resources(
     sensor_name,
 ) -> None:
     assert not is_in_cm
-    freeze_datetime = create_utc_datetime(
+    freeze_datetime = create_datetime(
         year=2019,
         month=2,
         day=27,
         hour=23,
         minute=59,
         second=59,
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
 
     with freeze_time(freeze_datetime):
         base_run_count = 0
@@ -480,14 +479,14 @@ def test_resources_freshness_policy_sensor(
     sensor_name,
 ) -> None:
     assert not is_in_cm
-    freeze_datetime = create_utc_datetime(
+    freeze_datetime = create_datetime(
         year=2019,
         month=2,
         day=27,
         hour=23,
         minute=59,
         second=59,
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
@@ -552,14 +551,14 @@ def test_resources_run_status_sensor(
 ) -> None:
     assert not is_in_cm
 
-    freeze_datetime = create_utc_datetime(
+    freeze_datetime = create_datetime(
         year=2019,
         month=2,
         day=27,
         hour=23,
         minute=59,
         second=59,
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):
@@ -630,14 +629,14 @@ def test_resources_run_failure_sensor(
 ) -> None:
     assert not is_in_cm
 
-    freeze_datetime = create_utc_datetime(
+    freeze_datetime = create_datetime(
         year=2019,
         month=2,
         day=27,
         hour=23,
         minute=59,
         second=59,
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
     original_time = freeze_datetime
 
     with freeze_time(freeze_datetime):

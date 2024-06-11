@@ -56,7 +56,7 @@ from dagster._serdes.serdes import (
     pack_value,
     serialize_value,
 )
-from dagster._seven import get_current_timestamp
+from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
 

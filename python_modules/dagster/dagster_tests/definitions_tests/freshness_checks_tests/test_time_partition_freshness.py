@@ -31,8 +31,7 @@ from dagster._core.definitions.time_window_partitions import (
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import freeze_time
-from dagster._seven import create_utc_datetime
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import create_datetime, get_timezone
 from dagster._utils.env import environ
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -43,9 +42,7 @@ def test_params() -> None:
     """Test definition-time errors and parameter validation for the check builder."""
 
     @asset(
-        partitions_def=DailyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        )
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_partitioned_asset():
         pass
@@ -70,9 +67,7 @@ def test_params() -> None:
     )
 
     @asset(
-        partitions_def=DailyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        )
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def other_partitioned_asset():
         pass
@@ -120,9 +115,7 @@ def test_params() -> None:
             "b": AssetOut(),
         },
         can_subset=True,
-        partitions_def=DailyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        ),
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0)),
     )
     def my_multi_asset(context):
         pass
@@ -183,9 +176,7 @@ def test_params() -> None:
         )
 
     @asset(
-        partitions_def=DailyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        )
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_other_partitioned_asset():
         pass
@@ -213,13 +204,13 @@ def test_result_cron_param(
     instance: DagsterInstance,
 ) -> None:
     """Move time forward and backward, with a freshness check parameterized with a cron, and ensure that the check passes and fails as expected."""
-    partitions_def = DailyPartitionsDefinition(start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0))
+    partitions_def = DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
 
     @asset(partitions_def=partitions_def)
     def my_asset():
         pass
 
-    start_time = create_utc_datetime(2021, 1, 3, 1, 0, 0)  # 2021-01-03 at 01:00:00
+    start_time = create_datetime(2021, 1, 3, 1, 0, 0)  # 2021-01-03 at 01:00:00
 
     check = build_time_partition_freshness_checks(
         assets=[my_asset],
@@ -246,7 +237,7 @@ def test_result_cron_param(
                     }
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    create_utc_datetime(2021, 1, 2, 9, 0, 0).timestamp()
+                    create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
         )
@@ -277,13 +268,13 @@ def test_result_cron_param(
             description_match="Asset is currently fresh",
             metadata_match={
                 "dagster/fresh_until_timestamp": TimestampMetadataValue(
-                    create_utc_datetime(2021, 1, 3, 9, 0, 0).timestamp()
+                    create_datetime(2021, 1, 3, 9, 0, 0).timestamp()
                 ),
                 "dagster/freshness_params": JsonMetadataValue(
                     {"timezone": "UTC", "deadline_cron": "0 9 * * *"}
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    create_utc_datetime(2021, 1, 2, 9, 0, 0).timestamp()
+                    create_datetime(2021, 1, 2, 9, 0, 0).timestamp()
                 ),
             },
         )
@@ -372,7 +363,7 @@ def test_invalid_runtime_assets(
 def test_observations(
     instance: DagsterInstance,
 ) -> None:
-    partitions_def = DailyPartitionsDefinition(start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0))
+    partitions_def = DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
 
     @asset(partitions_def=partitions_def)
     def my_asset():
@@ -384,9 +375,9 @@ def test_observations(
         timezone="UTC",  # 09:00 UTC
     )[0]
 
-    with freeze_time(create_utc_datetime(2021, 1, 3, 1, 0, 0)):
+    with freeze_time(create_datetime(2021, 1, 3, 1, 0, 0)):
         add_new_event(instance, my_asset.key, "2021-01-01", is_materialization=False)
-    with freeze_time(create_utc_datetime(2021, 1, 3, 1, 0, 1)):
+    with freeze_time(create_datetime(2021, 1, 3, 1, 0, 1)):
         assert_check_result(
             my_asset,
             instance,
@@ -411,9 +402,7 @@ def test_differing_timezones(
 ) -> None:
     """Test the interplay between the three different timezones: the timezone of the cron, the timezone of the asset, and the timezone of the running process."""
     partitions_def = DailyPartitionsDefinition(
-        start_date=datetime.datetime(
-            2020, 1, 1, 0, 0, 0, tzinfo=timezone_from_string("America/Chicago")
-        ),
+        start_date=datetime.datetime(2020, 1, 1, 0, 0, 0, tzinfo=get_timezone("America/Chicago")),
         timezone="America/Chicago",
     )
 
@@ -429,9 +418,7 @@ def test_differing_timezones(
 
     # Start in a neutral hour in all timezones, such that the cron is on the same tick for all, and add a new event. expect the check to pass.
     # Current time is 2021-01-03 at 01:00:00 in America/Chicago, 2021-01-03 at 02:00:00 in America/New_York, and 2021-01-03 at 00:00:00 in America/Los_Angeles
-    freeze_datetime = datetime.datetime(
-        2021, 1, 3, 1, 0, 0, tzinfo=timezone_from_string("America/Chicago")
-    )
+    freeze_datetime = datetime.datetime(2021, 1, 3, 1, 0, 0, tzinfo=get_timezone("America/Chicago"))
     with freeze_time(freeze_datetime):
         add_new_event(instance, my_chicago_asset.key, "2021-01-01")
     freeze_datetime = freeze_datetime + datetime.timedelta(seconds=1)
@@ -502,18 +489,14 @@ def test_subset_freshness_checks(instance: DagsterInstance):
     """
 
     @asset(
-        partitions_def=DailyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        )
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_asset():
         pass
 
     # Test multiple different partition defs
     @asset(
-        partitions_def=HourlyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        )
+        partitions_def=HourlyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_other_asset():
         pass
@@ -559,14 +542,12 @@ def test_subset_freshness_checks(instance: DagsterInstance):
 
 def test_observation_descriptions(instance: DagsterInstance) -> None:
     @asset(
-        partitions_def=DailyPartitionsDefinition(
-            start_date=create_utc_datetime(2020, 1, 1, 0, 0, 0)
-        )
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
     )
     def my_asset():
         pass
 
-    start_time = create_utc_datetime(
+    start_time = create_datetime(
         2021, 1, 3, 9, 0, 1
     )  # 2021-01-03 at 09:00:00. We expect the 2021-01-02 partition to be fresh.
 
@@ -575,7 +556,7 @@ def test_observation_descriptions(instance: DagsterInstance) -> None:
         deadline_cron="0 9 * * *",
     )[0]
     # First, create an event that is outside of the allowed time window.
-    with freeze_time(create_utc_datetime(2021, 1, 1, 1, 0, 0)):
+    with freeze_time(create_datetime(2021, 1, 1, 1, 0, 0)):
         add_new_event(instance, my_asset.key, is_materialization=False, partition_key="2021-01-01")
     # Asset is in an unknown state since we haven't had any observation events during this time window.
     with freeze_time(start_time):

@@ -78,7 +78,7 @@ from dagster._core.test_utils import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._daemon.asset_daemon import AssetDaemon
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
@@ -256,7 +256,7 @@ class AssetReconciliationScenario(
             pytest.skip("requires respect_materialization_data_versions to be True")
         assert not self.code_locations, "setting code_locations not supported for sensor tests"
 
-        test_time = self.current_time or get_current_datetime_in_utc()
+        test_time = self.current_time or get_current_datetime()
 
         with freeze_time(test_time):
 
@@ -435,7 +435,7 @@ class AssetReconciliationScenario(
             not self.active_backfill_targets
         ), "setting active_backfill_targets not supported for daemon tests"
 
-        test_time = self.current_time or get_current_datetime_in_utc()
+        test_time = self.current_time or get_current_datetime()
 
         with freeze_time(test_time) if self.current_time else contextlib.nullcontext():
             if self.cursor_from is not None:
@@ -688,7 +688,7 @@ def observable_source_asset_def(
 ):
     def _data_version() -> DataVersion:
         return (
-            DataVersion(str(get_current_datetime_in_utc().minute // minutes_to_change))
+            DataVersion(str(get_current_datetime().minute // minutes_to_change))
             if minutes_to_change
             else DataVersion(str(random.random()))
         )

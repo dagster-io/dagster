@@ -23,8 +23,7 @@ from dagster._core.test_utils import create_test_daemon_workspace_context, freez
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
-from dagster._seven import create_utc_datetime, get_current_datetime_in_utc
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import create_datetime, get_current_datetime, get_timezone
 from dateutil.relativedelta import relativedelta
 
 from .test_scheduler_run import evaluate_schedules, validate_tick, wait_for_all_runs_to_start
@@ -173,14 +172,14 @@ def test_resources(
     external_repo_struct_resources,
     schedule_name,
 ) -> None:
-    freeze_datetime = create_utc_datetime(
+    freeze_datetime = create_datetime(
         year=2019,
         month=2,
         day=27,
         hour=23,
         minute=59,
         second=59,
-    ).astimezone(timezone_from_string("US/Central"))
+    ).astimezone(get_timezone("US/Central"))
 
     with freeze_time(freeze_datetime):
         external_schedule = external_repo_struct_resources.get_external_schedule(schedule_name)
@@ -194,7 +193,7 @@ def test_resources(
     freeze_datetime = freeze_datetime + relativedelta(seconds=30)
 
     with freeze_time(freeze_datetime):
-        evaluate_schedules(workspace_context_struct_resources, None, get_current_datetime_in_utc())
+        evaluate_schedules(workspace_context_struct_resources, None, get_current_datetime())
         wait_for_all_runs_to_start(instance)
 
         ticks: Sequence[InstigatorTick] = instance.get_ticks(
@@ -207,7 +206,7 @@ def test_resources(
         run = next(iter(instance.get_runs()))
         assert ticks[0].run_keys == ["foo"]
 
-        expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+        expected_datetime = create_datetime(year=2019, month=2, day=28)
         validate_tick(
             ticks[0],
             external_schedule,

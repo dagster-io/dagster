@@ -2,8 +2,7 @@ import calendar
 import datetime
 
 import pytest
-from dagster._seven import create_datetime
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import create_datetime, get_timezone
 from dagster._utils.schedules import (
     _croniter_string_iterator,
     cron_string_iterator,
@@ -488,7 +487,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
             assert (
                 next_time.timestamp() == times[j].timestamp()
-            ), f"Expected ({datetime.datetime.from_timestamp(orig_start_timestamp, tz=timezone_from_string(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+            ), f"Expected ({datetime.datetime.from_timestamp(orig_start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
             prev_time = next_time
 
         start_timestamp = orig_start_timestamp + 1
@@ -517,7 +516,7 @@ def test_dst_transition_advances(execution_timezone, cron_string, times, force_c
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=timezone_from_string(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
 
                 prev_time = next_time
 
@@ -578,7 +577,7 @@ def test_reversed_dst_transition_advances(execution_timezone, cron_string, times
 
                 assert (
                     next_time.timestamp() == times[j].timestamp()
-                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=timezone_from_string(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
+                ), f"Expected ({datetime.datetime.from_timestamp(start_timestamp, tz=get_timezone(execution_timezone))}) to advance from {prev_time} to {times[j]}, got {next_time} (Difference: {next_time.timestamp() - times[j].timestamp()})"
 
                 prev_time = next_time
 

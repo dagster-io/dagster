@@ -17,7 +17,8 @@ from dagster._core.test_utils import (
     freeze_time,
     get_crash_signals,
 )
-from dagster._seven import IS_WINDOWS, create_utc_datetime, get_current_datetime_in_utc
+from dagster._seven import IS_WINDOWS
+from dagster._time import create_datetime, get_current_datetime
 from dagster._utils import DebugCrashFlags, get_terminate_signal
 from dateutil.relativedelta import relativedelta
 
@@ -62,7 +63,7 @@ def _test_launch_scheduled_runs_in_subprocess(
                     evaluate_schedules(
                         workspace_context,
                         executor,
-                        get_current_datetime_in_utc(),
+                        get_current_datetime(),
                         debug_crash_flags=debug_crash_flags,
                     )
         finally:
@@ -157,7 +158,7 @@ def test_failure_recovery_after_run_created(
 ):
     # Verify that if the scheduler crashes or is interrupted after a run is created,
     # it will just re-launch the already-created run when it runs again
-    initial_datetime = create_utc_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+    initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with freeze_time(freeze_datetime):
@@ -244,7 +245,7 @@ def test_failure_recovery_after_tick_success(
     crash_signal: Signals,
     executor: ThreadPoolExecutor,
 ):
-    initial_datetime = create_utc_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
+    initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with freeze_time(freeze_datetime):
@@ -327,7 +328,7 @@ def test_failure_recovery_between_multi_runs(
     crash_signal: Signals,
     executor: ThreadPoolExecutor,
 ):
-    initial_datetime = create_utc_datetime(year=2019, month=2, day=28, hour=0, minute=0, second=0)
+    initial_datetime = create_datetime(year=2019, month=2, day=28, hour=0, minute=0, second=0)
     freeze_datetime = initial_datetime
     external_schedule = external_repo.get_external_schedule("multi_run_schedule")
     with freeze_time(freeze_datetime):

@@ -80,8 +80,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
     const repoLocation = locationEntry.locationOrLoadError;
     const repos = repoLocation.repositories;
-    return [
-      ...accum,
+    accum.push(
       ...repos.reduce((inner, repo) => {
         const {
           name: repoName,
@@ -175,7 +174,8 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
           ...allResources,
         ];
       }, [] as SearchResult[]),
-    ];
+    );
+    return accum;
   }, [] as SearchResult[]);
 
   return allEntries;

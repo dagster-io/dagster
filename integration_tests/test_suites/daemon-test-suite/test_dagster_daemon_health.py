@@ -14,7 +14,7 @@ from dagster._daemon.controller import (
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -27,7 +27,7 @@ def test_healthy():
             },
         }
     ) as instance:
-        init_time = get_current_datetime_in_utc()
+        init_time = get_current_datetime()
 
         heartbeat_interval_seconds = 1
 
@@ -48,7 +48,7 @@ def test_healthy():
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-                now = get_current_datetime_in_utc()
+                now = get_current_datetime()
                 if all_daemons_healthy(
                     instance,
                     curr_time_seconds=now.timestamp(),
@@ -97,7 +97,7 @@ def test_healthy_with_different_daemons():
                     },
                 }
             ) as other_instance:
-                now = get_current_datetime_in_utc()
+                now = get_current_datetime()
                 assert not all_daemons_healthy(other_instance, curr_time_seconds=now.timestamp())
                 assert not all_daemons_live(other_instance, curr_time_seconds=now.timestamp())
 
@@ -117,14 +117,14 @@ def test_thread_die_daemon(monkeypatch):
 
         heartbeat_interval_seconds = 1
 
-        init_time = get_current_datetime_in_utc()
+        init_time = get_current_datetime()
         with daemon_controller_from_instance(
             instance,
             workspace_load_target=EmptyWorkspaceTarget(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-                now = get_current_datetime_in_utc()
+                now = get_current_datetime()
 
                 status = get_daemon_statuses(
                     instance,
@@ -212,7 +212,7 @@ def test_error_daemon(monkeypatch):
 
         gen_daemons = lambda instance: [SensorDaemon(instance.get_sensor_settings())]
 
-        init_time = get_current_datetime_in_utc()
+        init_time = get_current_datetime()
         with environ({"DAGSTER_DAEMON_CORE_LOOP_EXCEPTION_SLEEP_INTERVAL": "1"}):
             with daemon_controller_from_instance(
                 instance,
@@ -222,7 +222,7 @@ def test_error_daemon(monkeypatch):
                 error_interval_seconds=10,
             ) as controller:
                 while True:
-                    now = get_current_datetime_in_utc()
+                    now = get_current_datetime()
 
                     if get_daemon_statuses(
                         instance,
@@ -294,10 +294,10 @@ def test_error_daemon(monkeypatch):
                 # Once the sensor no longer raises errors, they should return to 0 once
                 # enough time passes
                 should_raise_errors = False
-                init_time = get_current_datetime_in_utc()
+                init_time = get_current_datetime()
 
                 while True:
-                    now = get_current_datetime_in_utc()
+                    now = get_current_datetime()
 
                     status = get_daemon_statuses(
                         instance,
@@ -331,7 +331,7 @@ def test_multiple_error_daemon(monkeypatch):
 
         monkeypatch.setattr(SensorDaemon, "core_loop", run_loop_error)
 
-        init_time = get_current_datetime_in_utc()
+        init_time = get_current_datetime()
 
         heartbeat_interval_seconds = 1
 
@@ -341,7 +341,7 @@ def test_multiple_error_daemon(monkeypatch):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-                now = get_current_datetime_in_utc()
+                now = get_current_datetime()
 
                 if all_daemons_live(
                     instance, heartbeat_interval_seconds=heartbeat_interval_seconds
@@ -369,7 +369,7 @@ def test_warn_multiple_daemons(capsys):
     from dagster._daemon.daemon import SensorDaemon
 
     with instance_for_test() as instance:
-        init_time = get_current_datetime_in_utc()
+        init_time = get_current_datetime()
 
         heartbeat_interval_seconds = 1
 
@@ -379,7 +379,7 @@ def test_warn_multiple_daemons(capsys):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ):
             while True:
-                now = get_current_datetime_in_utc()
+                now = get_current_datetime()
 
                 if all_daemons_live(
                     instance, heartbeat_interval_seconds=heartbeat_interval_seconds
@@ -395,7 +395,7 @@ def test_warn_multiple_daemons(capsys):
 
             capsys.readouterr()
 
-        init_time = get_current_datetime_in_utc()
+        init_time = get_current_datetime()
 
         status = get_daemon_statuses(
             instance,
@@ -412,7 +412,7 @@ def test_warn_multiple_daemons(capsys):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ):
             while True:
-                now = get_current_datetime_in_utc()
+                now = get_current_datetime()
 
                 status = get_daemon_statuses(
                     instance,
@@ -447,10 +447,10 @@ def test_warn_multiple_daemons(capsys):
             ):
                 # Wait for heartbeats while two controllers are running at once and there will
                 # be a warning
-                init_time = get_current_datetime_in_utc()
+                init_time = get_current_datetime()
 
                 while True:
-                    now = get_current_datetime_in_utc()
+                    now = get_current_datetime()
 
                     captured = capsys.readouterr()
                     if "Another SENSOR daemon is still sending heartbeats" in captured.out:
@@ -475,7 +475,7 @@ def test_workspace_refresh_failed(monkeypatch, caplog):
             instance,
             workspace_load_target=EmptyWorkspaceTarget(),
         ) as controller:
-            last_workspace_update_time = get_current_datetime_in_utc()
+            last_workspace_update_time = get_current_datetime()
 
             controller.check_workspace_freshness(last_workspace_update_time.timestamp())
             # doesn't try to refresh yet

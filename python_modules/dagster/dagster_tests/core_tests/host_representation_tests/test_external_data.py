@@ -46,8 +46,7 @@ from dagster._core.remote_representation.external_data import (
     external_time_window_partitions_definition_from_def,
 )
 from dagster._serdes import deserialize_value, serialize_value, unpack_value
-from dagster._seven import create_datetime, create_utc_datetime
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._time import create_datetime, get_timezone
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 
@@ -1154,9 +1153,7 @@ def test_back_compat_external_time_window_partitions_def():
 
     external = ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=ScheduleType.WEEKLY,
-        start=datetime(
-            year=2022, month=5, day=5, tzinfo=timezone_from_string("Europe/Berlin")
-        ).timestamp(),
+        start=datetime(year=2022, month=5, day=5, tzinfo=get_timezone("Europe/Berlin")).timestamp(),
         timezone="Europe/Berlin",
         fmt=DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
         end_offset=1,
@@ -1265,7 +1262,7 @@ def test_external_time_window_valid_partition_key():
     )
     assert (
         external_partitions_def.get_partitions_definition().start.timestamp()
-        == create_utc_datetime(2023, 3, 11, 15).timestamp()
+        == create_datetime(2023, 3, 11, 15).timestamp()
     )
 
 

@@ -21,7 +21,7 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import freeze_time
-from dagster._seven import create_utc_datetime
+from dagster._time import create_datetime
 from dagster._utils.security import non_secure_md5_hash_str
 from dateutil.relativedelta import relativedelta
 
@@ -149,7 +149,7 @@ def test_different_event_types(use_materialization: bool, instance: DagsterInsta
     def my_asset():
         pass
 
-    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
+    start_time = create_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
     with freeze_time(
@@ -169,7 +169,7 @@ def test_observation_descriptions(instance: DagsterInstance) -> None:
     def my_asset():
         pass
 
-    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
+    start_time = create_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
     check = build_last_update_freshness_checks(
@@ -236,7 +236,7 @@ def test_check_result_cron(
     def my_asset():
         pass
 
-    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
+    start_time = create_datetime(2021, 1, 1, 1, 0, 0)
     deadline_cron = "0 0 * * *"  # Every day at midnight.
     timezone = "UTC"
     lower_bound_delta = datetime.timedelta(minutes=10)
@@ -268,17 +268,17 @@ def test_check_result_cron(
                 ),
                 "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
                     value=(
-                        create_utc_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
+                        create_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
                     ).timestamp()
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    value=create_utc_datetime(2021, 1, 1, 0, 0, 0).timestamp()
+                    value=create_datetime(2021, 1, 1, 0, 0, 0).timestamp()
                 ),
             },
         )
 
     # Add an event outside of the allowed time window. Check fails.
-    lower_bound = create_utc_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
+    lower_bound = create_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
     with freeze_time(lower_bound - datetime.timedelta(minutes=1)):
         add_new_event(instance, my_asset.key)
     with freeze_time(freeze_datetime):
@@ -308,13 +308,13 @@ def test_check_result_cron(
                     value=(lower_bound + datetime.timedelta(minutes=1)).timestamp()
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    value=create_utc_datetime(2021, 1, 1, 0, 0, 0).timestamp()
+                    value=create_datetime(2021, 1, 1, 0, 0, 0).timestamp()
                 ),
                 "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
                     value=lower_bound.timestamp()
                 ),
                 "dagster/fresh_until_timestamp": TimestampMetadataValue(
-                    value=create_utc_datetime(2021, 1, 2, 0, 0, 0).timestamp()
+                    value=create_datetime(2021, 1, 2, 0, 0, 0).timestamp()
                 ),
             },
         )
@@ -327,7 +327,7 @@ def test_check_result_cron(
 
     # Again, go back in time, and add an event within the time window we're checking.
     with freeze_time(
-        create_utc_datetime(2021, 1, 2, 0, 0, 0)
+        create_datetime(2021, 1, 2, 0, 0, 0)
         - datetime.timedelta(minutes=10)
         + datetime.timedelta(minutes=1)
     ):
@@ -348,7 +348,7 @@ def test_check_result_bound_only(
     def my_asset():
         pass
 
-    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
+    start_time = create_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
     check = build_last_update_freshness_checks(
@@ -380,7 +380,7 @@ def test_check_result_bound_only(
         )
 
     # Add an event outside of the allowed time window. Check fails.
-    lower_bound = create_utc_datetime(2021, 1, 1, 0, 50, 0)
+    lower_bound = create_datetime(2021, 1, 1, 0, 50, 0)
     with freeze_time(lower_bound - datetime.timedelta(minutes=1)):
         add_new_event(instance, my_asset.key)
     with freeze_time(freeze_datetime):
