@@ -510,11 +510,6 @@ export const useRunsForTimeline = ({
   }, [unsortedJobs]);
 
   const lastFetchRef = useRef({ongoing: 0, future: 0});
-  const lastRangeMs = useRef([0, 0] as readonly [number, number]);
-  if (Math.abs(lastRangeMs.current[0] - rangeMs[0]) > 30000) {
-    lastFetchRef.current = {ongoing: 0, future: 0};
-  }
-  lastRangeMs.current = rangeMs;
 
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
