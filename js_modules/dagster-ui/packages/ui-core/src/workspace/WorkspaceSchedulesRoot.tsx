@@ -64,11 +64,11 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
   const anySearch = sanitizedSearch.length > 0;
 
   const schedules = useMemo(() => {
-    if (repo) {
-      return repo.repository.schedules;
-    }
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.schedules;
+    }
+    if (repo) {
+      return repo.repository.schedules;
     }
     return NO_DATA_EMPTY_ARR;
   }, [data, repo]);

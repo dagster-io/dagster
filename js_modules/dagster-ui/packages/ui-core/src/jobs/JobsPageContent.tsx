@@ -72,7 +72,7 @@ export const JobsPageContent = () => {
     );
   }, [cachedData, data, visibleRepos]);
 
-  const loading = !!data || !workspaceLoading;
+  const loading = !data && workspaceLoading;
 
   useBlockTraceUntilTrue('OverviewJobs', !loading);
 
@@ -90,7 +90,7 @@ export const JobsPageContent = () => {
   }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
-    if (loading && !data && !cachedData) {
+    if (loading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>

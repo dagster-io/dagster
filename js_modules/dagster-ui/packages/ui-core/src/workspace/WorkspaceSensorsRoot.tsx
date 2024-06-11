@@ -64,11 +64,11 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
   const anySearch = sanitizedSearch.length > 0;
 
   const sensors = useMemo(() => {
-    if (repo) {
-      return repo.repository.sensors;
-    }
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.sensors;
+    }
+    if (repo) {
+      return repo.repository.sensors;
     }
     return NO_DATA_EMPTY_ARR;
   }, [repo, data]);

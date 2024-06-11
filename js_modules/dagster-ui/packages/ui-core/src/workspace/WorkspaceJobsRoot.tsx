@@ -51,11 +51,11 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   const anySearch = sanitizedSearch.length > 0;
 
   const jobs = useMemo(() => {
-    if (repo) {
-      return repo.repository.pipelines;
-    }
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
+    }
+    if (repo) {
+      return repo.repository.pipelines;
     }
     return NO_REPOS_EMPTY_ARR;
   }, [data, repo]);
