@@ -518,7 +518,6 @@ export const useRunsForTimeline = ({
   lastRangeMs.current = rangeMs;
 
   const ongoingRunsDataRef = useUpdatingRef(ongoingRunsData);
-  const _endRef = useUpdatingRef(_end);
 
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
