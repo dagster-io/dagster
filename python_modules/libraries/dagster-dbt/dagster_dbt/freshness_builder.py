@@ -5,6 +5,7 @@ from dagster import (
     AssetsDefinition,
     _check as check,
 )
+from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
@@ -31,6 +32,7 @@ from .asset_utils import (
 )
 
 
+@experimental
 def build_freshness_checks_from_dbt_assets(
     *,
     dbt_assets: Sequence[AssetsDefinition],
