@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime
 from itertools import groupby
 from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
@@ -7,6 +8,7 @@ from dagster._annotations import deprecated
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.backfill_policy import resolve_backfill_policy
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -186,25 +188,25 @@ class UnresolvedAssetJobDefinition(
         nodes_by_backfill_policy = dict(
             groupby((n for n in executable_nodes if n.is_partitioned), lambda n: n.backfill_policy)
         )
+        backfill_policy = resolve_backfill_policy(nodes_by_backfill_policy.keys())
+
         if len(nodes_by_backfill_policy) > 1:
             keys_by_backfill_policy = {
                 bp: [n.key.to_user_string() for n in nodes]
                 for bp, nodes in nodes_by_backfill_policy.items()
             }
-            raise DagsterInvalidDefinitionError(
-                f"Asset job {self.name} materializes assets with varying BackfillPolicies. All assets"
-                f" in a job must share the same BackfillPolicy. Found multiple backfill policies:\n\n{keys_by_backfill_policy}"
+            warnings.warn(
+                f"Asset job {self.name} materializes assets with varying BackfillPolicies."
+                f" Using backfill policy with minimum `max_partitions_per_run`: {backfill_policy}."
+                f"\n\nFound multiple backfill policies:\n\n{keys_by_backfill_policy}"
             )
 
         # Error if a PartitionedConfig is defined and any target asset has a backfill policy that
         # materializes anything other than a single partition per run. This is because
         # PartitionedConfig is a function that maps single partition keys to run config, so it's
         # behavior is undefined for multiple-partition runs.
-        backfill_policy = next(iter(nodes_by_backfill_policy.keys()), None)
-        if (
-            backfill_policy
-            and backfill_policy.max_partitions_per_run != 1
-            and isinstance(self.config, PartitionedConfig)
+        if backfill_policy.max_partitions_per_run != 1 and isinstance(
+            self.config, PartitionedConfig
         ):
             raise DagsterInvalidDefinitionError(
                 f"Asset job {self.name} materializes an asset with a BackfillPolicy targeting multiple partitions per run,"

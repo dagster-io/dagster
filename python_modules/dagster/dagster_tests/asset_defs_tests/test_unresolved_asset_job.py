@@ -832,15 +832,22 @@ def test_backfill_policy():
     @asset
     def qux(): ...
 
+    @asset(partitions_def=partitions_def)
+    def pux(): ...
+
     assert create_test_asset_job([foo, bar]).backfill_policy == BackfillPolicy.single_run()
     # Unpartitioned assets won't affect backfill policy
-    assert create_test_asset_job([qux]).backfill_policy is None
+    assert create_test_asset_job([qux]).backfill_policy == BackfillPolicy.multi_run(1)
+    # Null policy normalized to multi_run(1)
+    assert create_test_asset_job([qux]).backfill_policy == BackfillPolicy.multi_run(1)
     assert create_test_asset_job([foo, bar, qux]).backfill_policy == BackfillPolicy.single_run()
     assert create_test_asset_job([baz]).backfill_policy == BackfillPolicy.multi_run(2)
 
-    # different backfill policies
-    with pytest.raises(DagsterInvalidDefinitionError, match="BackfillPolicy"):
-        create_test_asset_job([foo, bar, baz])
+    # different backfill policies-- use minimum max_partitions_per_run
+    with pytest.warns(Warning, match="materializes assets with varying BackfillPolicies"):
+        assert create_test_asset_job(
+            [foo, bar, baz, pux]
+        ).backfill_policy == BackfillPolicy.multi_run(1)
 
     # can't do PartitionedConfig for single-run backfills
     with pytest.raises(DagsterInvalidDefinitionError, match="PartitionedConfig"):
