@@ -467,7 +467,6 @@ describe('useRunsForTimeline', () => {
       mockPaginatedRuns({cursor: '1-2', result: thirdPageResult}),
       mockOngoingRuns({limit: 1}),
       mockOngoingRuns({limit: 1, results: [], cursor: '2'}),
-      mockFutureTicks(interval[0], interval[1]),
     ];
 
     const mockCbs = mocks.map(getMockResultFn);
