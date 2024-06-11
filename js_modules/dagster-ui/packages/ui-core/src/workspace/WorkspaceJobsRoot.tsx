@@ -17,6 +17,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {usePageLoadTrace} from '../performance';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 
 const NO_REPOS_EMPTY_ARR: any[] = [];
 
@@ -43,13 +44,7 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
       variables: {selector},
     },
   );
-  const {data, loading} = queryResultOverview;
-
-  useLayoutEffect(() => {
-    if (!loading) {
-      trace.endTrace();
-    }
-  }, [loading, trace]);
+  const {data, loading: queryLoading} = queryResultOverview;
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
@@ -57,16 +52,23 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   const anySearch = sanitizedSearch.length > 0;
 
   const jobs = useMemo(() => {
-    if (repo) {
-      return repo.repository.pipelines;
-    }
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.pipelines;
+    }
+    if (repo) {
+      return repo.repository.pipelines;
     }
     return NO_REPOS_EMPTY_ARR;
   }, [data, repo]);
 
-  useBlockTraceUntilTrue('WorkspaceJobs', jobs !== NO_REPOS_EMPTY_ARR);
+  const loading = jobs === NO_REPOS_EMPTY_ARR;
+
+  useLayoutEffect(() => {
+    if (!loading) {
+      trace.endTrace();
+    }
+  }, [loading, trace]);
+  useBlockTraceUntilTrue('WorkspaceJobs', !loading);
 
   const filteredBySearch = useMemo(() => {
     const searchToLower = sanitizedSearch.toLocaleLowerCase();
@@ -118,6 +120,8 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
     return <VirtualizedJobTable repoAddress={repoAddress} jobs={filteredBySearch} />;
   };
 
+  const showSearchSpinner = !data && queryLoading;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <WorkspaceHeader
@@ -133,6 +137,9 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Filter by job name…"
           style={{width: '340px'}}
+          rightElement={
+            showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+          }
         />
       </Box>
       {loading && !data ? (

@@ -103,7 +103,7 @@ export const OverviewSensors = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
 
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSensorsQuery');
 
@@ -215,8 +215,9 @@ export const OverviewSensors = () => {
   const viewerHasAnyInstigationPermission = allPermissionedSensorKeys.length > 0;
   const checkedCount = checkedSensors.length;
 
+  const loading = workspaceLoading && queryLoading && !data;
   const content = () => {
-    if (loading && !data) {
+    if (loading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -287,7 +288,7 @@ export const OverviewSensors = () => {
     );
   };
 
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+  const showSearchSpinner = queryLoading && !data;
 
   return (
     <>
@@ -337,7 +338,7 @@ export const OverviewSensors = () => {
           {activeFiltersJsx}
         </Box>
       ) : null}
-      {loading && !repoCount ? (
+      {loading ? (
         <Box padding={64}>
           <Spinner purpose="page" />
         </Box>

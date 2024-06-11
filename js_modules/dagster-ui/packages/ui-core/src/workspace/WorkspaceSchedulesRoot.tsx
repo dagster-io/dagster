@@ -3,6 +3,7 @@ import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-
 import {useMemo} from 'react';
 
 import {VirtualizedScheduleTable} from './VirtualizedScheduleTable';
+import {useRepository} from './WorkspaceContext';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -25,9 +26,15 @@ import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
+
+// Reuse this reference to distinguish no sensors case from data is still loading case;
+const NO_DATA_EMPTY_ARR: any[] = [];
 
 export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Schedules: ${repoName}`);
@@ -51,7 +58,7 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     },
   );
   useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSchedulesQuery');
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
@@ -61,8 +68,13 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.schedules;
     }
-    return [];
-  }, [data]);
+    if (repo) {
+      return repo.repository.schedules;
+    }
+    return NO_DATA_EMPTY_ARR;
+  }, [data, repo]);
+
+  const loading = NO_DATA_EMPTY_ARR === schedules;
 
   const {state: runningState} = runningStateFilter;
   const filteredByRunningState = useMemo(() => {
@@ -165,6 +177,8 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
     );
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <WorkspaceHeader
@@ -185,6 +199,11 @@ export const WorkspaceSchedulesRoot = ({repoAddress}: {repoAddress: RepoAddress}
             }}
             placeholder="Filter by schedule name…"
             style={{width: '340px'}}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading schedules…" />
+              ) : undefined
+            }
           />
         </Box>
         <Tooltip
