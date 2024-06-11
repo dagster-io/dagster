@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     List,
     Mapping,
@@ -17,6 +18,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import NormalizedTags, normalize_tags
@@ -109,6 +111,25 @@ class DeleteDynamicPartitionsRequest(
             partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
             partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
         )
+
+
+@whitelist_for_serdes
+class NotABackfillRequest(  # TODO - decide on a new name
+    NamedTuple(  # TODO - should this use the new dagster model?
+        "_NotABackfillRequest",
+        [
+            ("asset_graph_subset", AssetGraphSubset),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("title", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[Optional[str]]),
+        ],
+    )
+):
+    @property
+    def asset_keys(self) -> AbstractSet[AssetKey]:
+        return self.asset_graph_subset.asset_keys
+
+    # TODO - maybe a from_asset_key_partition_key method?
 
 
 @whitelist_for_serdes
