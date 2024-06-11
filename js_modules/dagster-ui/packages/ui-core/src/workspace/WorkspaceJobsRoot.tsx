@@ -45,12 +45,6 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   );
   const {data} = queryResultOverview;
 
-  useLayoutEffect(() => {
-    if (!loading) {
-      trace.endTrace();
-    }
-  }, [loading, trace]);
-
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
@@ -67,6 +61,12 @@ export const WorkspaceJobsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => 
   }, [data, repo]);
 
   const loading = jobs === NO_REPOS_EMPTY_ARR;
+
+  useLayoutEffect(() => {
+    if (!loading) {
+      trace.endTrace();
+    }
+  }, [loading, trace]);
   useBlockTraceUntilTrue('WorkspaceJobs', !loading);
 
   const filteredBySearch = useMemo(() => {
