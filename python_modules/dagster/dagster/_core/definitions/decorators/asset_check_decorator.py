@@ -181,7 +181,7 @@ def asset_check(
 
         asset_key = AssetKey.from_coercible_or_definition(asset)
 
-        additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps) or []])
+        additional_dep_keys = set([dep.asset_key for dep in make_asset_deps(additional_deps)])
         named_in_by_asset_key = _build_asset_check_named_ins(
             resolved_name,
             asset_key,
