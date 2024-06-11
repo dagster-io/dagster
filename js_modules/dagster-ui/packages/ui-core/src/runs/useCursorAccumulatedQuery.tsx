@@ -1,7 +1,6 @@
-import {useApolloClient} from '@apollo/client';
+import {OperationVariables, useApolloClient} from '@apollo/client';
 import {DocumentNode} from 'graphql';
-import {useEffect, useRef, useState} from 'react';
-import {EventEmitter} from 'ws';
+import {useEffect, useMemo, useState} from 'react';
 
 import {useRefreshAtInterval} from '../app/QueryRefresh';
 
@@ -19,41 +18,56 @@ type FetcherFunction<DataType, CursorType, ErrorType> = (
   error: ErrorType;
 }>;
 
-class PaginatingDataFetcher<DataType, CursorType, ErrorType> extends EventEmitter {
+class PaginatingDataFetcher<DataType, CursorType, ErrorType> {
   private hasMoreData = true;
   private dataSoFar: DataType[] = [];
   private currentCursor: CursorType | undefined = undefined;
-  private stopped: boolean = false;
+  private fetchPromise?: Promise<void>;
   private fetchData: FetcherFunction<DataType, CursorType, ErrorType>;
+  private stopped: boolean = false;
+  private onData: (data: DataType[]) => void;
+  private onError?: (error: ErrorType) => void;
 
-  constructor(fetchData: FetcherFunction<DataType, CursorType, ErrorType>) {
-    super();
+  constructor({
+    fetchData,
+    onData,
+    onError,
+  }: {
+    fetchData: FetcherFunction<DataType, CursorType, ErrorType>;
+    onData: (data: DataType[]) => void;
+    onError?: (error: ErrorType) => void;
+  }) {
     this.fetchData = fetchData;
+    this.onData = onData;
+    this.onError = onError;
   }
 
-  async start() {
-    if (this.stopped) {
-      throw new Error('PaginatingDataFetcher cannot be restarted');
+  async fetch() {
+    if (this.fetchPromise) {
+      return await this.fetchPromise;
     }
-    this.emit('status-change', true);
-
-    while (this.hasMoreData) {
-      const {cursor, hasMore, data, error} = await this.fetchData(this.currentCursor);
-      if (error) {
-        this.emit('status-change', false);
-        throw error;
+    this.fetchPromise = new Promise(async (res) => {
+      while (this.hasMoreData && !this.stopped) {
+        const {cursor, hasMore, data, error} = await this.fetchData(this.currentCursor);
+        if (error) {
+          this.onError?.(error);
+          break;
+        }
+        if (this.stopped) {
+          break;
+        }
+        this.currentCursor = cursor;
+        this.hasMoreData = hasMore;
+        if (data.length > 0) {
+          this.dataSoFar = this.dataSoFar.concat(data);
+          this.onData(this.dataSoFar);
+        }
       }
-      if (this.stopped) {
-        break;
-      }
-      this.currentCursor = cursor;
-      this.hasMoreData = hasMore;
-      if (data.length > 0) {
-        this.dataSoFar = this.dataSoFar.concat(data);
-        this.emit('data', this.dataSoFar);
-      }
-    }
-    this.emit('status-change', false);
+      res();
+    });
+    const result = await this.fetchPromise!;
+    this.fetchPromise = undefined;
+    return result;
   }
 
   stop() {
@@ -61,7 +75,11 @@ class PaginatingDataFetcher<DataType, CursorType, ErrorType> extends EventEmitte
   }
 }
 
-export function useCursorAccumulatedQuery<T, TVars extends {cursor?: string | null}, U>({
+export function useCursorAccumulatedQuery<
+  TQuery,
+  TVars extends OperationVariables & {cursor?: string | null},
+  U,
+>({
   query,
   variables,
   getResultArray,
@@ -69,43 +87,40 @@ export function useCursorAccumulatedQuery<T, TVars extends {cursor?: string | nu
 }: {
   query: DocumentNode;
   variables: Omit<TVars, 'cursor'>;
-  getResultArray: (result: T | undefined) => U[];
-  getNextFetchState: (result: T | undefined) => FetchState | null;
+  getResultArray: (result: TQuery | undefined) => U[];
+  getNextFetchState: (result: TQuery | undefined) => FetchState;
 }) {
   const [fetched, setFetched] = useState<U[] | null>(null);
-  const [fetching, setFetching] = useState(false);
+  const [error, setError] = useState<any>(null);
   const client = useApolloClient();
 
-  const refresh = useRef<() => Promise<void>>(() => Promise.resolve());
-  const refreshState = useRefreshAtInterval({
-    refresh: refresh.current,
-    enabled: !fetching,
-    intervalMs: 10000,
-  });
+  const {fetch, stop} = useMemo(() => {
+    return new PaginatingDataFetcher({
+      fetchData: async (cursor) => {
+        const resp = await client.query<TQuery, TVars>({
+          variables: {...variables, cursor} as TVars,
+          query,
+        });
+
+        // Todo align this with the data fetcher better
+        return {...getNextFetchState(resp.data), data: getResultArray(resp.data), error: null};
+      },
+      onData: setFetched,
+      onError: setError,
+    });
+  }, [client, getNextFetchState, getResultArray, query, variables]);
 
   useEffect(() => {
-    const fetcher = new PaginatingDataFetcher(async (cursor: string | undefined) => {
-      const resp = await client.query<T, TVars>({
-        variables: {...variables, cursor},
-        query,
-      });
-
-      // Todo align this with the data fetcher better
-      return {...getNextFetchState(resp.data), data: getResultArray(resp.data), error: null};
-    });
-
-    refresh.current = () => fetcher.start();
-    fetcher.on('data', setFetched);
-    fetcher.on('status-change', setFetching);
-    fetcher.on('finish', () => setFetching(false));
-    void fetcher.start();
     return () => {
-      fetcher.removeAllListeners('data');
-      fetcher.removeAllListeners('status-change');
-      fetcher.removeAllListeners('finish');
-      fetcher.stop();
+      stop();
     };
-  }, [query, client, variables, getResultArray, getNextFetchState]);
+  }, [stop]);
 
-  return {fetched, refreshState};
+  const refreshState = useRefreshAtInterval({
+    refresh: fetch,
+    intervalMs: 10000,
+    leading: true,
+  });
+
+  return {fetched, error, refreshState};
 }
