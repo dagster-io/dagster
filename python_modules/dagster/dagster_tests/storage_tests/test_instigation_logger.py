@@ -9,8 +9,3 @@ def test_gets_correct_logger():
 
     instigation_logger = InstigationLogger(logger_name=custom_logger_name)
     assert instigation_logger.name == custom_logger_name
-
-    # name parameter is passed to metadata
-    instigation_logger = InstigationLogger(name="bar", logger_name=custom_logger_name)
-    assert instigation_logger.name == custom_logger_name
-    assert instigation_logger._name == "bar"  # noqa: SLF001
