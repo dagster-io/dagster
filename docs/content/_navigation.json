@@ -1197,11 +1197,11 @@
       },
       {
         "title": "Migration Guides",
-        "path": "/guides/migration-guides",
+        "path": "/guides/migrations",
         "children": [
           {
             "title": "Migrating Airflow to Dagster",
-            "path": "/guides/migration-guides/migrating-airflow-to-dagster"
+            "path": "/guides/migrations/migrating-airflow-to-dagster"
           }
         ]
       }
