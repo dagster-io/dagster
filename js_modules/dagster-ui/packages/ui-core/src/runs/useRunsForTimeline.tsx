@@ -20,6 +20,7 @@ import {AppContext} from '../app/AppContext';
 import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
@@ -516,6 +517,9 @@ export const useRunsForTimeline = ({
   }
   lastRangeMs.current = rangeMs;
 
+  const ongoingRunsDataRef = useUpdatingRef(ongoingRunsData);
+  const _endRef = useUpdatingRef(_end);
+
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
       const loadId = ++fetchIdRef.current;
@@ -524,8 +528,12 @@ export const useRunsForTimeline = ({
         // Only fetch ongoing runs once every 30 seconds
         (async () => {
           if (lastFetchRef.current.ongoing < Date.now() - 30 * 1000) {
-            await fetchOngoingRunsQueryData();
+            const promise = fetchOngoingRunsQueryData();
             lastFetchRef.current.ongoing = Date.now();
+            if (!ongoingRunsDataRef.current) {
+              // Only block "loading" if we haven't fetched ongoing runs before.
+              await promise;
+            }
           }
         })(),
         // Only fetch future ticks on a minute
@@ -540,7 +548,13 @@ export const useRunsForTimeline = ({
       if (loadId === fetchIdRef.current) {
         setLoading(false);
       }
-    }, [fetchCompletedRunsQueryData, fetchFutureTicks, fetchOngoingRunsQueryData]),
+    }, [
+      fetchCompletedRunsQueryData,
+      fetchFutureTicks,
+      fetchOngoingRunsQueryData,
+      _end,
+      ongoingRunsDataRef,
+    ]),
     intervalMs: refreshInterval,
     leading: true,
   });
