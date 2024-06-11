@@ -223,7 +223,8 @@ const RunWithData = ({
     ? logsFilter.logQuery
         .filter((v) => v.token && v.token === 'query')
         .reduce((accum, v) => {
-          return [...accum, ...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name)];
+          accum.push(...filterByQuery(runtimeGraph, v.value).all.map((n) => n.name));
+          return accum;
         }, [] as string[])
     : [];
 

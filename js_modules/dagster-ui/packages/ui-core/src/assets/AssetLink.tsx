@@ -14,7 +14,14 @@ export const AssetLink = (props: {
   const linkUrl = url ? url : assetDetailsPathForKey({path});
   const assetPath =
     path
-      .reduce((accum, elem, ii) => [...accum, ii > 0 ? ' / ' : '', elem], [] as string[])
+      .reduce((accum, elem, ii) => {
+        if (ii > 0) {
+          accum.push(' / ');
+        }
+        accum.push(elem);
+        return accum;
+      }, [] as string[])
+
       .join('') + (isGroup ? '/' : '');
 
   return (

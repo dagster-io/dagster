@@ -276,7 +276,8 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         }
         const repositoryLocation = locationEntry.locationOrLoadError;
         const reposForLocation = repoLocationToRepos(repositoryLocation);
-        return [...accum, ...reposForLocation];
+        accum.push(...reposForLocation);
+        return accum;
       }, [] as DagsterRepoOption[]),
 
       // Sort by repo location, then by repo
