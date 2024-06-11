@@ -1849,13 +1849,30 @@ class EvalContext(NamedTuple):
     local_ns: dict
 
     @staticmethod
-    def capture_from_frame(depth: int) -> "EvalContext":
+    def capture_from_frame(
+        depth: int,
+        *,
+        add_to_local_ns: Optional[Mapping[str, Any]] = None,
+    ) -> "EvalContext":
+        """Capture the global and local namespaces via the stack frame.
+
+        Args:
+            depth: which stack frame to reference, with depth 0 being the callsite.
+            add_to_local_ns: A mapping of additional values to update the local namespace with.
+
+        """
         ctx_frame = sys._getframe(depth + 1)  # noqa # surprisingly not costly
 
+        # copy to not mess up frame data
+        global_ns = ctx_frame.f_globals.copy()
+        local_ns = ctx_frame.f_locals.copy()
+
+        if add_to_local_ns:
+            local_ns.update(add_to_local_ns)
+
         return EvalContext(
-            # copy to not mess up frame data
-            ctx_frame.f_globals.copy(),
-            ctx_frame.f_locals.copy(),
+            global_ns=global_ns,
+            local_ns=local_ns,
         )
 
     def update_from_frame(self, depth: int):
