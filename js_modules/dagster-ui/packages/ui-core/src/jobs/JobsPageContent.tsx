@@ -145,8 +145,6 @@ export const JobsPageContent = () => {
     return <OverviewJobsTable repos={filteredBySearch} />;
   };
 
-  const showSearchSpinner = workspaceLoading && !repoCount && loading && !data;
-
   return (
     <>
       <Box
@@ -159,7 +157,7 @@ export const JobsPageContent = () => {
             icon="search"
             value={searchValue}
             rightElement={
-              showSearchSpinner ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
+              loading ? <SearchInputSpinner tooltipContent="Loading jobs…" /> : undefined
             }
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by job name…"
