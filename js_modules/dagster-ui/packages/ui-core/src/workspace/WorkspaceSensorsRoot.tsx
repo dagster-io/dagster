@@ -3,6 +3,7 @@ import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-
 import {useMemo} from 'react';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
+import {useRepository} from './WorkspaceContext';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -26,8 +27,13 @@ import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 
+// Reuse this reference to distinguish no sensors case from data is still loading case;
+const NO_DATA_EMPTY_ARR: any[] = [];
+
 export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Sensors: ${repoName}`);
@@ -51,18 +57,23 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     },
   );
   useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSensorsQuery');
-  const {data, loading} = queryResultOverview;
+  const {data} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
 
   const sensors = useMemo(() => {
+    if (repo) {
+      return repo.repository.sensors;
+    }
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.sensors;
     }
-    return [];
-  }, [data]);
+    return NO_DATA_EMPTY_ARR;
+  }, [repo, data]);
+
+  const loading = NO_DATA_EMPTY_ARR === sensors;
 
   const {state: runningState} = runningStateFilter;
   const filteredByRunningState = useMemo(() => {
