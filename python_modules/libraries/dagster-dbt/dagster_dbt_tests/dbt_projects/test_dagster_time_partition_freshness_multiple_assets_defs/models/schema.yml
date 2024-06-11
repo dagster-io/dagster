@@ -34,7 +34,7 @@ models:
         freshness_check:
           deadline_cron: "0 0 * * *"
           severity: "ERROR"
-    
+
   - name: orders
     description: This table has basic information about orders, as well as some derived facts based on payments
 
