@@ -1,8 +1,8 @@
+import datetime
 import os
 import sys
 import time
 
-import pendulum
 import pytest
 from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.scheduler.instigation import (
@@ -11,9 +11,11 @@ from dagster._core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
 )
+from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._seven import create_utc_datetime
+from dagster._seven.compat.datetime import timezone_from_string
 from dagster._utils import Counter, traced_counter
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.test.utils import (
@@ -335,10 +337,14 @@ def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_cas
 
     if starting_case == "on_tick_time":
         # Starting timestamp falls exactly on the timestamp of a tick
-        start_timestamp = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+        start_timestamp = datetime.datetime(
+            2019, 2, 27, tzinfo=timezone_from_string("US/Central")
+        ).timestamp()
     else:
         # Starting timestamp is offset from tick times
-        start_timestamp = create_pendulum_time(2019, 2, 26, hour=1, tz="US/Central").timestamp()
+        start_timestamp = datetime.datetime(
+            2019, 2, 26, hour=1, tzinfo=timezone_from_string("US/Central")
+        ).timestamp()
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -354,11 +360,11 @@ def test_get_potential_ticks_starting_at_tick_time(graphql_context, starting_cas
     assert result.data["scheduleOrError"]["name"] == "timezone_schedule"
     assert len(result.data["scheduleOrError"]["potentialTickTimestamps"]) == 5
     assert result.data["scheduleOrError"]["potentialTickTimestamps"] == [
-        create_pendulum_time(2019, 2, 25, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 2, 26, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 2, 28, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp(),
+        datetime.datetime(2019, 2, 25, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 2, 26, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 2, 27, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 2, 28, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 3, 1, tzinfo=timezone_from_string("US/Central")).timestamp(),
     ]
 
 
@@ -534,7 +540,9 @@ def test_get_single_schedule_definition(graphql_context):
 
     schedule_selector = infer_schedule_selector(context, "timezone_schedule")
 
-    future_ticks_start_time = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+    future_ticks_start_time = datetime.datetime(
+        2019, 2, 27, tzinfo=timezone_from_string("US/Central")
+    ).timestamp()
 
     result = execute_dagster_graphql(
         context,
@@ -552,15 +560,15 @@ def test_get_single_schedule_definition(graphql_context):
     timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
 
     assert timestamps == [
-        create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 2, 28, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp(),
+        datetime.datetime(2019, 2, 27, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 2, 28, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 3, 1, tzinfo=timezone_from_string("US/Central")).timestamp(),
     ]
 
     cursor = future_ticks["cursor"]
 
     assert future_ticks["cursor"] == (
-        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp() + 1
+        datetime.datetime(2019, 3, 1, tzinfo=timezone_from_string("US/Central")).timestamp() + 1
     )
 
     result = execute_dagster_graphql(
@@ -576,9 +584,9 @@ def test_get_single_schedule_definition(graphql_context):
     timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
 
     assert timestamps == [
-        create_pendulum_time(2019, 3, 2, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 3, 3, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 3, 4, tz="US/Central").timestamp(),
+        datetime.datetime(2019, 3, 2, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 3, 3, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 3, 4, tzinfo=timezone_from_string("US/Central")).timestamp(),
     ]
 
 
@@ -672,7 +680,7 @@ def test_next_tick_bad_schedule(graphql_context):
 
 def test_unloadable_schedule(graphql_context):
     instance = graphql_context.instance
-    initial_datetime = create_pendulum_time(
+    initial_datetime = create_utc_datetime(
         year=2019,
         month=2,
         day=27,
@@ -688,13 +696,13 @@ def test_unloadable_schedule(graphql_context):
         InstigatorStatus.RUNNING,
         ScheduleInstigatorData(
             "0 0 * * *",
-            pendulum.now("UTC").timestamp(),
+            time.time(),
         ),
     )
 
     stopped_origin = _get_unloadable_schedule_origin("unloadable_stopped")
 
-    with pendulum_freeze_time(initial_datetime):
+    with freeze_time(initial_datetime):
         instance.add_instigator_state(running_instigator_state)
 
         instance.add_instigator_state(
@@ -704,7 +712,7 @@ def test_unloadable_schedule(graphql_context):
                 InstigatorStatus.STOPPED,
                 ScheduleInstigatorData(
                     "0 0 * * *",
-                    pendulum.now("UTC").timestamp(),
+                    time.time(),
                 ),
             )
         )
@@ -727,7 +735,9 @@ def test_unloadable_schedule(graphql_context):
 def test_future_ticks_until(graphql_context):
     schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule")
 
-    future_ticks_start_time = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+    future_ticks_start_time = datetime.datetime(
+        2019, 2, 27, tzinfo=timezone_from_string("US/Central")
+    ).timestamp()
 
     # Start a single schedule, future tick run requests only available for running schedules
     start_result = execute_dagster_graphql(
@@ -740,8 +750,12 @@ def test_future_ticks_until(graphql_context):
         == InstigatorStatus.RUNNING.value
     )
 
-    future_ticks_start_time = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
-    future_ticks_end_time = create_pendulum_time(2019, 3, 2, tz="US/Central").timestamp()
+    future_ticks_start_time = datetime.datetime(
+        2019, 2, 27, tzinfo=timezone_from_string("US/Central")
+    ).timestamp()
+    future_ticks_end_time = datetime.datetime(
+        2019, 3, 2, tzinfo=timezone_from_string("US/Central")
+    ).timestamp()
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -761,9 +775,9 @@ def test_future_ticks_until(graphql_context):
     timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
 
     assert timestamps == [
-        create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 2, 28, tz="US/Central").timestamp(),
-        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp(),
+        datetime.datetime(2019, 2, 27, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 2, 28, tzinfo=timezone_from_string("US/Central")).timestamp(),
+        datetime.datetime(2019, 3, 1, tzinfo=timezone_from_string("US/Central")).timestamp(),
     ]
 
 

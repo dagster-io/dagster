@@ -3,7 +3,6 @@
 import datetime
 import json
 
-import pendulum
 import pytest
 from dagster import asset
 from dagster._check import CheckError
@@ -21,8 +20,10 @@ from dagster._core.definitions.metadata import JsonMetadataValue, TimestampMetad
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.instance import DagsterInstance
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._core.test_utils import freeze_time
+from dagster._seven import create_utc_datetime
 from dagster._utils.security import non_secure_md5_hash_str
+from dateutil.relativedelta import relativedelta
 
 from .conftest import add_new_event, assert_check_result
 
@@ -141,21 +142,21 @@ def test_params() -> None:
     [True, False],
     ids=["materialization", "observation"],
 )
-def test_different_event_types(
-    pendulum_aware_report_dagster_event: None, use_materialization: bool, instance: DagsterInstance
-) -> None:
+def test_different_event_types(use_materialization: bool, instance: DagsterInstance) -> None:
     """Test that the freshness check works with different event types."""
 
     @asset
     def my_asset():
         pass
 
-    start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
+    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
-    with pendulum_freeze_time(start_time.subtract(minutes=(lower_bound_delta.seconds // 60) - 1)):
+    with freeze_time(
+        start_time - datetime.timedelta(minutes=(lower_bound_delta.seconds // 60) - 1)
+    ):
         add_new_event(instance, my_asset.key, is_materialization=use_materialization)
-    with pendulum_freeze_time(start_time):
+    with freeze_time(start_time):
         check = build_last_update_freshness_checks(
             assets=[my_asset],
             lower_bound_delta=lower_bound_delta,
@@ -163,14 +164,12 @@ def test_different_event_types(
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
-def test_observation_descriptions(
-    pendulum_aware_report_dagster_event: None, instance: DagsterInstance
-) -> None:
+def test_observation_descriptions(instance: DagsterInstance) -> None:
     @asset
     def my_asset():
         pass
 
-    start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
+    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
     check = build_last_update_freshness_checks(
@@ -178,12 +177,12 @@ def test_observation_descriptions(
         lower_bound_delta=lower_bound_delta,
     )[0]
     # First, create an event that is outside of the allowed time window.
-    with pendulum_freeze_time(
-        start_time.subtract(seconds=int(lower_bound_delta.total_seconds() + 1))
+    with freeze_time(
+        start_time - datetime.timedelta(seconds=int(lower_bound_delta.total_seconds() + 1))
     ):
         add_new_event(instance, my_asset.key, is_materialization=False)
     # Check fails, and the description should reflect that we don't know the current state of the asset.
-    with pendulum_freeze_time(start_time):
+    with freeze_time(start_time):
         assert_check_result(
             my_asset,
             instance,
@@ -198,8 +197,8 @@ def test_observation_descriptions(
             instance,
             my_asset.key,
             is_materialization=False,
-            override_timestamp=start_time.subtract(
-                seconds=int(lower_bound_delta.total_seconds() + 1)
+            override_timestamp=(
+                start_time - datetime.timedelta(seconds=int(lower_bound_delta.total_seconds() + 1))
             ).timestamp(),
         )
         assert_check_result(
@@ -216,7 +215,7 @@ def test_observation_descriptions(
             instance,
             my_asset.key,
             is_materialization=False,
-            override_timestamp=start_time.subtract(minutes=9).timestamp(),
+            override_timestamp=(start_time - datetime.timedelta(minutes=9)).timestamp(),
         )
         assert_check_result(
             my_asset,
@@ -229,7 +228,6 @@ def test_observation_descriptions(
 
 
 def test_check_result_cron(
-    pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
 ) -> None:
     """Move time forward and backward, with a freshness check parameterized with a cron, and ensure that the check passes and fails as expected."""
@@ -238,7 +236,7 @@ def test_check_result_cron(
     def my_asset():
         pass
 
-    start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
+    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
     deadline_cron = "0 0 * * *"  # Every day at midnight.
     timezone = "UTC"
     lower_bound_delta = datetime.timedelta(minutes=10)
@@ -251,7 +249,7 @@ def test_check_result_cron(
     )[0]
 
     freeze_datetime = start_time
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # With no events, check fails.
         assert_check_result(
             my_asset,
@@ -269,28 +267,28 @@ def test_check_result_cron(
                     }
                 ),
                 "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC")
-                    .subtract(minutes=10)
-                    .timestamp()
+                    value=(
+                        create_utc_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
+                    ).timestamp()
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                    value=create_utc_datetime(2021, 1, 1, 0, 0, 0).timestamp()
                 ),
             },
         )
 
     # Add an event outside of the allowed time window. Check fails.
-    lower_bound = pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").subtract(minutes=10)
-    with pendulum_freeze_time(lower_bound.subtract(minutes=1)):
+    lower_bound = create_utc_datetime(2021, 1, 1, 0, 0, 0) - datetime.timedelta(minutes=10)
+    with freeze_time(lower_bound - datetime.timedelta(minutes=1)):
         add_new_event(instance, my_asset.key)
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, False)
 
     # Go back in time and add an event within cron-lower_bound_delta.
-    with pendulum_freeze_time(lower_bound.add(minutes=1)):
+    with freeze_time(lower_bound + datetime.timedelta(minutes=1)):
         add_new_event(instance, my_asset.key)
     # Now we expect the check to pass.
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_asset,
             instance,
@@ -307,38 +305,39 @@ def test_check_result_cron(
                     }
                 ),
                 "dagster/last_updated_timestamp": TimestampMetadataValue(
-                    value=lower_bound.add(minutes=1).timestamp()
+                    value=(lower_bound + datetime.timedelta(minutes=1)).timestamp()
                 ),
                 "dagster/latest_cron_tick_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 1, 0, 0, 0, tz="UTC").timestamp()
+                    value=create_utc_datetime(2021, 1, 1, 0, 0, 0).timestamp()
                 ),
                 "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
                     value=lower_bound.timestamp()
                 ),
                 "dagster/fresh_until_timestamp": TimestampMetadataValue(
-                    value=pendulum.datetime(2021, 1, 2, 0, 0, 0, tz="UTC").timestamp()
+                    value=create_utc_datetime(2021, 1, 2, 0, 0, 0).timestamp()
                 ),
             },
         )
 
     # Advance a full day. By now, we would expect a new event to have been added.
     # Since that is not the case, we expect the check to fail.
-    freeze_datetime = freeze_datetime.add(days=1)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(days=1)
+    with freeze_time(freeze_datetime):
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, False)
 
     # Again, go back in time, and add an event within the time window we're checking.
-    with pendulum_freeze_time(
-        pendulum.datetime(2021, 1, 2, 0, 0, 0, tz="UTC").subtract(minutes=10).add(minutes=1)
+    with freeze_time(
+        create_utc_datetime(2021, 1, 2, 0, 0, 0)
+        - datetime.timedelta(minutes=10)
+        + datetime.timedelta(minutes=1)
     ):
         add_new_event(instance, my_asset.key)
     # Now we expect the check to pass.
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
 def test_check_result_bound_only(
-    pendulum_aware_report_dagster_event: None,
     instance: DagsterInstance,
 ) -> None:
     """Move time forward and backward, with a freshness check parameterized with only a
@@ -349,7 +348,7 @@ def test_check_result_bound_only(
     def my_asset():
         pass
 
-    start_time = pendulum.datetime(2021, 1, 1, 1, 0, 0, tz="UTC")
+    start_time = create_utc_datetime(2021, 1, 1, 1, 0, 0)
     lower_bound_delta = datetime.timedelta(minutes=10)
 
     check = build_last_update_freshness_checks(
@@ -358,7 +357,7 @@ def test_check_result_bound_only(
     )[0]
 
     freeze_datetime = start_time
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # With no events, check fails.
         assert_check_result(
             my_asset,
@@ -375,24 +374,24 @@ def test_check_result_bound_only(
                     }
                 ),
                 "dagster/freshness_lower_bound_timestamp": TimestampMetadataValue(
-                    start_time.subtract(minutes=10).timestamp()
+                    (start_time - datetime.timedelta(minutes=10)).timestamp()
                 ),
             },
         )
 
     # Add an event outside of the allowed time window. Check fails.
-    lower_bound = pendulum.datetime(2021, 1, 1, 0, 50, 0, tz="UTC")
-    with pendulum_freeze_time(lower_bound.subtract(minutes=1)):
+    lower_bound = create_utc_datetime(2021, 1, 1, 0, 50, 0)
+    with freeze_time(lower_bound - datetime.timedelta(minutes=1)):
         add_new_event(instance, my_asset.key)
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, False)
 
     # Go back in time and add an event within the allowed time window.
-    update_time = lower_bound.add(minutes=1)
-    with pendulum_freeze_time(update_time):
+    update_time = lower_bound + datetime.timedelta(minutes=1)
+    with freeze_time(update_time):
         add_new_event(instance, my_asset.key)
     # Now we expect the check to pass.
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         assert_check_result(
             my_asset,
             instance,
