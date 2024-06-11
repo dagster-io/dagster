@@ -227,19 +227,19 @@ describe('HourlyDataCache with IndexedDB', () => {
   });
 
   it('should clear old entries from the cache and save to IndexedDB', async () => {
-    const eightDaysAgo = Date.now() / 1000 - 8 * 24 * 60 * 60;
-    const sixDaysAgo = Date.now() / 1000 - 6 * 24 * 60 * 60;
+    const twoDaysAgo = Date.now() / 1000 - 2 * 24 * 60 * 60;
+    const halfADayAgo = Date.now() / 1000 - 0.5 * 24 * 60 * 60;
 
     mockedCache.has.mockResolvedValue(true);
     mockedCache.get.mockResolvedValue({
       value: new Map([
         [
-          Math.floor(eightDaysAgo / ONE_HOUR_S),
-          [{start: eightDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
+          Math.floor(twoDaysAgo / twoDaysAgo),
+          [{start: twoDaysAgo, end: twoDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
         ],
         [
-          Math.floor(sixDaysAgo / ONE_HOUR_S),
-          [{start: sixDaysAgo, end: eightDaysAgo + ONE_HOUR_S, data: [1, 2, 3]}],
+          Math.floor(halfADayAgo / ONE_HOUR_S),
+          [{start: halfADayAgo, end: halfADayAgo + ONE_HOUR_S, data: [1, 2, 3]}],
         ],
       ]),
     });
@@ -248,7 +248,7 @@ describe('HourlyDataCache with IndexedDB', () => {
 
     await cache.loadCacheFromIndexedDB();
 
-    expect(cache.getHourData(sixDaysAgo)).toEqual([1, 2, 3]);
-    expect(cache.getHourData(eightDaysAgo)).toEqual([]);
+    expect(cache.getHourData(halfADayAgo)).toEqual([1, 2, 3]);
+    expect(cache.getHourData(twoDaysAgo)).toEqual([]);
   });
 });

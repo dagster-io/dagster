@@ -70,7 +70,7 @@ export class HourlyDataCache<T> {
   }
 
   public async clearOldEntries() {
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const oneWeekAgo = Date.now() - 1 * 24 * 60 * 60 * 1000;
     const hour = Math.floor(oneWeekAgo / (ONE_HOUR_S * 1000));
 
     await this.loadCacheFromIndexedDB();

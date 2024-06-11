@@ -528,7 +528,7 @@ export const useRunsForTimeline = ({
             lastFetchRef.current.ongoing = Date.now();
           }
         })(),
-        // Only fetch future ticks on a minute
+        // Only fetch future ticks once a minute
         (async () => {
           // If the the time range is in the past then future ticks are not visible on the timeline
           if (_end > Date.now() && lastFetchRef.current.future < Date.now() - 60 * 1000) {
