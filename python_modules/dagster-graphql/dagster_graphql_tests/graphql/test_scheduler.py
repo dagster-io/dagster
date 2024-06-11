@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 
 import pendulum
 import pytest
@@ -12,7 +13,6 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils import Counter, traced_counter
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
@@ -367,7 +367,7 @@ def test_schedule_dry_run(graphql_context):
 
     schedule_selector = infer_schedule_selector(context, "provide_config_schedule")
 
-    timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+    timestamp = time.time()
     result = execute_dagster_graphql(
         context,
         SCHEDULE_DRY_RUN_MUTATION,
@@ -391,7 +391,7 @@ def test_schedule_dry_run_errors(graphql_context):
 
     schedule_selector = infer_schedule_selector(context, "always_error")
 
-    timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+    timestamp = time.time()
     result = execute_dagster_graphql(
         context,
         SCHEDULE_DRY_RUN_MUTATION,
@@ -417,7 +417,7 @@ def test_dry_run_nonexistent_schedule(graphql_context):
 
     unknown_instigator_selector = infer_schedule_selector(context, "schedule_doesnt_exist")
 
-    timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+    timestamp = time.time()
     with pytest.raises(UserFacingGraphQLError, match="GrapheneScheduleNotFoundError"):
         execute_dagster_graphql(
             context,
@@ -627,7 +627,7 @@ def test_ticks_from_timestamp(graphql_context):
     schedule_selector = infer_schedule_selector(graphql_context, "past_tick_schedule")
 
     # get schedule past ticks
-    cur_timestamp = get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
+    cur_timestamp = time.time()
     result = execute_dagster_graphql(
         graphql_context,
         GET_SCHEDULE_QUERY,

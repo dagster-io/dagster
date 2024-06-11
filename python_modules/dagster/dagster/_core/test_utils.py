@@ -1,8 +1,10 @@
 import asyncio
+import datetime
 import os
 import re
 import sys
 import time
+import unittest.mock
 import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -61,7 +63,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -475,9 +477,6 @@ def get_crash_signals() -> Sequence[Signals]:
     return [get_terminate_signal()]
 
 
-_mocked_system_timezone: Dict[str, Optional[str]] = {"timezone": None}
-
-
 # Test utility for creating a test workspace for a function
 class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(
@@ -740,3 +739,24 @@ def create_test_asset_job(
         jobs=[define_asset_job(name, selection, **kwargs)],
         resources=resources,
     ).get_job_def(name)
+
+
+@contextmanager
+def freeze_time(new_now: Union[datetime.datetime, float]):
+    new_dt = (
+        new_now
+        if isinstance(new_now, datetime.datetime)
+        else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
+    )
+
+    new_timestamp = new_dt.timestamp()
+
+    # Remove once pendulum is out of the picture
+    new_pendulum_dt = pendulum.from_timestamp(new_timestamp, "UTC")
+
+    with unittest.mock.patch(
+        "dagster._seven._mockable_get_current_datetime_in_utc", return_value=new_dt
+    ), unittest.mock.patch(
+        "dagster._seven._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+    ), pendulum_freeze_time(new_pendulum_dt):
+        yield

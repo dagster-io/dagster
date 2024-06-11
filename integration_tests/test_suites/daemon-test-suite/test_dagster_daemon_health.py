@@ -1,9 +1,10 @@
 import time
+from datetime import timedelta
 
 import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ, freeze_time, instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
@@ -14,7 +15,7 @@ from dagster._daemon.controller import (
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -477,28 +478,29 @@ def test_workspace_refresh_failed(monkeypatch, caplog):
             instance,
             workspace_load_target=EmptyWorkspaceTarget(),
         ) as controller:
-            last_workspace_update_time = pendulum.now("UTC")
+            last_workspace_update_time = get_current_datetime_in_utc()
 
-            controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+            controller.check_workspace_freshness(last_workspace_update_time.timestamp())
             # doesn't try to refresh yet
             assert not any(
                 "Daemon controller failed to refresh workspace." in str(record)
                 for record in caplog.records
             )
 
-            with pendulum_freeze_time(
-                last_workspace_update_time.add(seconds=(RELOAD_WORKSPACE_INTERVAL + 1))
+            with freeze_time(
+                last_workspace_update_time + timedelta(seconds=(RELOAD_WORKSPACE_INTERVAL + 1)),
             ):
-                controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+                controller.check_workspace_freshness(last_workspace_update_time.timestamp())
                 # refresh fails, it logs but doesn't throw
                 assert any(
                     "Daemon controller failed to refresh workspace." in str(record)
                     for record in caplog.records
                 )
 
-            with pendulum_freeze_time(
-                last_workspace_update_time.add(seconds=(DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE + 1))
+            with freeze_time(
+                last_workspace_update_time
+                + timedelta(seconds=(DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE + 1)),
             ):
                 # now it throws
                 with pytest.raises(Exception, match="Failed to load a location"):
-                    controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+                    controller.check_workspace_freshness(last_workspace_update_time.timestamp())
