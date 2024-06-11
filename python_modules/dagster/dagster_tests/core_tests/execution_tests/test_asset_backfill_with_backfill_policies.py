@@ -24,7 +24,12 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._core.test_utils import freeze_time
-from dagster._seven import get_current_datetime_in_utc, get_current_timestamp, parse_with_timezone
+from dagster._seven import (
+    create_datetime,
+    get_current_datetime_in_utc,
+    get_current_timestamp,
+    parse_with_timezone,
+)
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
     execute_asset_backfill_iteration_consume_generator,
@@ -1054,7 +1059,7 @@ def test_run_request_partition_order():
         asset_selection=[foo.key, foo_child.key],
         dynamic_partitions_store=MagicMock(),
         all_partitions=False,
-        backfill_start_timestamp=pendulum.datetime(2023, 10, 7, 0, 0, 0).timestamp(),
+        backfill_start_timestamp=create_datetime(2023, 10, 7, 0, 0, 0).timestamp(),
     )
 
     result = execute_asset_backfill_iteration_consume_generator(

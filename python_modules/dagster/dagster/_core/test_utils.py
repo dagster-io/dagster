@@ -63,7 +63,9 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._seven import create_datetime
+from dagster._seven.compat.datetime import timezone_from_string
+from dagster._seven.compat.pendulum import pendulum_freeze_time
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -311,8 +313,9 @@ def new_cwd(path: str) -> Iterator[None]:
 
 def today_at_midnight(timezone_name="UTC") -> "DateTime":
     check.str_param(timezone_name, "timezone_name")
-    now = pendulum.now(timezone_name)
-    return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
+    tzinfo = timezone_from_string(timezone_name)
+    now = datetime.datetime.now(tz=tzinfo)
+    return create_datetime(now.year, now.month, now.day, tz=timezone_name)
 
 
 from dagster._core.storage.runs import SqliteRunStorage

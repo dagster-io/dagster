@@ -1,9 +1,9 @@
-import pendulum
 from dagster import AssetDep, Definitions, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
 from dagster._core.instance import DagsterInstance
+from dagster._seven import create_datetime
 
 
 def test_basic_construction_and_identity() -> None:
@@ -12,7 +12,7 @@ def test_basic_construction_and_identity() -> None:
 
     defs = Definitions([an_asset])
     instance = DagsterInstance.ephemeral()
-    effective_dt = pendulum.datetime(2020, 1, 1)
+    effective_dt = create_datetime(2020, 1, 1)
     last_event_id = 928348343
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance, effective_dt, last_event_id)
 
