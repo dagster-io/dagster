@@ -532,7 +532,7 @@ export const useRunsForTimeline = ({
         (async () => {
           // If the the time range is in the past then future ticks are not visible on the timeline
           if (_end > Date.now() && lastFetchRef.current.future < Date.now() - 60 * 1000) {
-            fetchFutureTicks();
+            await fetchFutureTicks();
           }
         })(),
         fetchCompletedRunsQueryData(),
