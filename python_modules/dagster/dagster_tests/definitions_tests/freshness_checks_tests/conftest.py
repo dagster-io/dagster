@@ -13,7 +13,7 @@ from dagster._core.definitions.metadata import TimestampMetadataValue
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
-from dagster._seven import get_current_timestamp
+from dagster._time import get_current_timestamp
 
 
 @pytest.fixture(name="instance")

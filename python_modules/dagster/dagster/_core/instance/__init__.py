@@ -70,7 +70,7 @@ from dagster._core.storage.tags import (
     RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
-from dagster._seven import get_current_datetime_in_utc, get_current_timestamp
+from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
@@ -1232,7 +1232,7 @@ class DagsterInstance(DynamicPartitionsStore):
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
                 tags = {
                     **tags,
-                    AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat(),
+                    AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat(),
                 }
 
         check.invariant(

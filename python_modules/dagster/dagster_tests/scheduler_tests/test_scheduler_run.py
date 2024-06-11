@@ -63,13 +63,8 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._scheduler.scheduler import ScheduleIterationTimes, launch_scheduled_runs
-from dagster._seven import (
-    create_utc_datetime,
-    get_current_datetime_in_utc,
-    get_current_timestamp,
-    wait_for_process,
-)
-from dagster._seven.compat.datetime import timezone_from_string
+from dagster._seven import wait_for_process
+from dagster._time import create_datetime, get_current_datetime, get_current_timestamp, get_timezone
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
@@ -328,7 +323,7 @@ def many_requests_schedule(context):
 def define_multi_run_schedule():
     def gen_runs(context):
         if not context.scheduled_execution_time:
-            date = get_current_datetime_in_utc() - relativedelta(days=1)
+            date = get_current_datetime() - relativedelta(days=1)
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
@@ -351,7 +346,7 @@ def define_multi_run_schedule():
 )
 def multi_run_list_schedule(context):
     if not context.scheduled_execution_time:
-        date = get_current_datetime_in_utc() - relativedelta(days=1)
+        date = get_current_datetime() - relativedelta(days=1)
     else:
         date = context.scheduled_execution_time - relativedelta(days=1)
 
@@ -364,7 +359,7 @@ def multi_run_list_schedule(context):
 def define_multi_run_schedule_with_missing_run_key():
     def gen_runs(context):
         if not context.scheduled_execution_time:
-            date = get_current_datetime_in_utc() - relativedelta(days=1)
+            date = get_current_datetime() - relativedelta(days=1)
         else:
             date = context.scheduled_execution_time - relativedelta(days=1)
 
@@ -658,14 +653,14 @@ def wait_for_all_runs_to_start(instance, timeout=10):
 
 
 def feb_27_2019_one_second_to_midnight() -> datetime.datetime:
-    return create_utc_datetime(
-        year=2019, month=2, day=27, hour=23, minute=59, second=59
-    ).astimezone(timezone_from_string("US/Central"))
+    return create_datetime(year=2019, month=2, day=27, hour=23, minute=59, second=59).astimezone(
+        get_timezone("US/Central")
+    )
 
 
 def feb_27_2019_start_of_day() -> datetime.datetime:
-    return create_utc_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0).astimezone(
-        timezone_from_string("US/Central")
+    return create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0).astimezone(
+        get_timezone("US/Central")
     )
 
 
@@ -731,7 +726,7 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert instance.get_runs_count() == 0
 
@@ -741,7 +736,7 @@ def test_error_load_code_location(instance: DagsterInstance, executor: ThreadPoo
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
             assert len(ticks) == 0
@@ -786,7 +781,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
             assert len(instance.all_instigator_state()) == 0
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             # No runs, but the job state is updated to set a checkpoing
             assert instance.get_runs_count() == 0
@@ -848,7 +843,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert instance.get_runs_count() == 1
 
@@ -865,7 +860,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
@@ -879,11 +874,11 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
             validate_run_started(
                 instance,
                 next(iter(instance.get_runs())),
-                execution_time=create_utc_datetime(2019, 2, 28),
+                execution_time=create_datetime(2019, 2, 28),
             )
 
             # Verify idempotence
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 1
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 1
@@ -891,7 +886,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 2
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 2
@@ -907,7 +902,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
                 load_error=SerializableErrorInfo("error", [], "error"),
             )
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 2
             assert len(instance.all_instigator_state()) == 1
@@ -918,7 +913,7 @@ def test_status_in_code_schedule(instance: DagsterInstance, executor: ThreadPool
         EmptyWorkspaceTarget(), instance
     ) as empty_workspace_ctx:
         with freeze_time(freeze_datetime):
-            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime_in_utc())
+            evaluate_schedules(empty_workspace_ctx, executor, get_current_datetime())
             ticks = instance.get_ticks(always_running_origin.get_id(), running_schedule.selector_id)
             assert len(ticks) == 2
             assert len(instance.all_instigator_state()) == 0
@@ -957,7 +952,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
         freeze_datetime = freeze_datetime + relativedelta(days=2)
         with freeze_time(freeze_datetime):
             # Traveling two more days in the future before running results in two new ticks
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             ticks = instance.get_ticks(
                 never_running_origin.get_id(), not_running_schedule.selector_id
@@ -983,7 +978,7 @@ def test_change_default_status(instance: DagsterInstance, executor: ThreadPoolEx
             )
             instance.add_instigator_state(schedule_state)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             ticks = instance.get_ticks(
                 never_running_origin.get_id(), not_running_schedule.selector_id
@@ -1043,7 +1038,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            evaluate_schedules(full_workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(full_workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 0
 
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
@@ -1054,7 +1049,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(full_workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(full_workspace_context, executor, get_current_datetime())
 
             assert (
                 instance.get_runs_count() == 4
@@ -1079,7 +1074,7 @@ def test_repository_namespacing(instance: DagsterInstance, executor):
                 get_current_timestamp(),
             )
 
-            evaluate_schedules(full_workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(full_workspace_context, executor, get_current_datetime())
             assert instance.get_runs_count() == 4  # still 4
             ticks = instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
             assert len(ticks) == 1
@@ -1111,7 +1106,7 @@ def test_stale_request_context(
             launch_scheduled_runs(
                 workspace_context,
                 get_default_daemon_logger("SchedulerDaemon"),
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 iteration_times=iteration_times,
                 threadpool_executor=executor,
                 scheduler_run_futures=futures,
@@ -1164,7 +1159,7 @@ def test_launch_failure(
             exploding_ctx = workspace_context.copy_for_test_instance(scheduler_instance)
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(exploding_ctx, executor, get_current_datetime_in_utc())
+            evaluate_schedules(exploding_ctx, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
 
@@ -1216,11 +1211,11 @@ def test_schedule_mutation(
 
     assert schedule_one.selector_id == schedule_two.selector_id
 
-    freeze_datetime = create_utc_datetime(year=2023, month=2, day=1)
+    freeze_datetime = create_datetime(year=2023, month=2, day=1)
     with freeze_time(freeze_datetime):
         # start the schedule at 12:00 AM, it is scheduled to go at 2:00 AM
         instance.start_schedule(schedule_one)
-        evaluate_schedules(workspace_one, executor, get_current_datetime_in_utc())
+        evaluate_schedules(workspace_one, executor, get_current_datetime())
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(origin_one.get_id(), schedule_one.selector_id)
         assert len(ticks) == 0
@@ -1228,7 +1223,7 @@ def test_schedule_mutation(
     freeze_datetime = freeze_datetime + relativedelta(hours=1, minutes=59)
     with freeze_time(freeze_datetime):
         # now check the schedule at 1:59 AM, where the schedule is not to fire until 2:00 AM
-        evaluate_schedules(workspace_one, executor, get_current_datetime_in_utc())
+        evaluate_schedules(workspace_one, executor, get_current_datetime())
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(origin_one.get_id(), schedule_one.selector_id)
         assert len(ticks) == 0
@@ -1238,14 +1233,14 @@ def test_schedule_mutation(
         # Now change the schedule to be at 1:00 AM.  It should not generate a tick because we last
         # evaluated at 1:59AM and it is now 2:00 AM. We expect the new schedule to wait until
         # tomorrow to create a new tick.
-        evaluate_schedules(workspace_two, executor, get_current_datetime_in_utc())
+        evaluate_schedules(workspace_two, executor, get_current_datetime())
         assert instance.get_runs_count() == 0
         ticks = instance.get_ticks(origin_two.get_id(), schedule_two.selector_id)
         assert len(ticks) == 0
 
     freeze_datetime = freeze_datetime + relativedelta(hours=23)
     with freeze_time(freeze_datetime):
-        evaluate_schedules(workspace_two, executor, get_current_datetime_in_utc())
+        evaluate_schedules(workspace_two, executor, get_current_datetime())
         assert instance.get_runs_count() == 1
         ticks = instance.get_ticks(origin_two.get_id(), schedule_two.selector_id)
         assert len(ticks) == 1
@@ -1280,7 +1275,7 @@ class TestSchedulerRun:
 
             # launch_scheduled_runs does nothing before the first tick
             iteration_times = evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc()
+                workspace_context, executor, get_current_datetime()
             )
 
             assert len(iteration_times) == 1
@@ -1304,7 +1299,7 @@ class TestSchedulerRun:
             new_iteration_times = evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 iteration_times=iteration_times,
             )
 
@@ -1331,7 +1326,7 @@ class TestSchedulerRun:
             )
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
@@ -1345,7 +1340,7 @@ class TestSchedulerRun:
             validate_run_started(
                 scheduler_instance,
                 next(iter(scheduler_instance.get_runs())),
-                execution_time=create_utc_datetime(2019, 2, 28),
+                execution_time=create_datetime(2019, 2, 28),
             )
 
             # Verify idempotence
@@ -1353,7 +1348,7 @@ class TestSchedulerRun:
             assert new_iteration_times == evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 iteration_times=new_iteration_times,
             )
 
@@ -1370,7 +1365,7 @@ class TestSchedulerRun:
             assert new_iteration_times == evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 iteration_times=new_iteration_times,
             )
 
@@ -1388,7 +1383,7 @@ class TestSchedulerRun:
             new_iteration_times = evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 iteration_times=new_iteration_times,
             )
             assert new_iteration_times
@@ -1400,7 +1395,7 @@ class TestSchedulerRun:
             )
             assert (
                 new_iteration_times[external_schedule.selector_id].next_iteration_timestamp
-                > freeze_datetime.timestamp() + 3600
+                >= freeze_datetime.timestamp() + 3600
             )
 
             assert scheduler_instance.get_runs_count() == 2
@@ -1414,7 +1409,7 @@ class TestSchedulerRun:
             assert new_iteration_times == evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 iteration_times=new_iteration_times,
             )
             assert scheduler_instance.get_runs_count() == 2
@@ -1463,7 +1458,7 @@ class TestSchedulerRun:
             freeze_datetime = freeze_datetime + relativedelta(seconds=2)
 
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1490,7 +1485,7 @@ class TestSchedulerRun:
                     instigator_name="simple_schedule",
                     instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
-                    timestamp=(get_current_datetime_in_utc() - relativedelta(days=3)).timestamp(),
+                    timestamp=(get_current_datetime() - relativedelta(days=3)).timestamp(),
                     selector_id=external_schedule.selector_id,
                 )
             )
@@ -1500,7 +1495,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -1519,7 +1514,7 @@ class TestSchedulerRun:
         external_schedule = external_repo.get_external_schedule("simple_schedule")
         schedule_origin = external_schedule.get_external_origin()
 
-        evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+        evaluate_schedules(workspace_context, executor, get_current_datetime())
         assert scheduler_instance.get_runs_count() == 0
 
         ticks = scheduler_instance.get_ticks(
@@ -1541,14 +1536,12 @@ class TestSchedulerRun:
         external_repo = code_location.get_repository("the_repo")
         external_schedule = external_repo.get_external_schedule("simple_schedule_no_timezone")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
 
         with freeze_time(initial_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
 
@@ -1558,7 +1551,7 @@ class TestSchedulerRun:
 
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=27)
+            expected_datetime = create_datetime(year=2019, month=2, day=27)
 
             validate_tick(
                 ticks[0],
@@ -1576,7 +1569,7 @@ class TestSchedulerRun:
             )
 
             # Verify idempotence
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -1593,13 +1586,11 @@ class TestSchedulerRun:
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        freeze_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1618,7 +1609,7 @@ class TestSchedulerRun:
             )
 
             # Idempotency (tick does not retry)
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1638,7 +1629,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1666,14 +1657,12 @@ class TestSchedulerRun:
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        freeze_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
             evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc(), max_tick_retries=2
+                workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
 
             assert scheduler_instance.get_runs_count() == 0
@@ -1693,10 +1682,10 @@ class TestSchedulerRun:
             )
 
             evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc(), max_tick_retries=2
+                workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
             evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc(), max_tick_retries=2
+                workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
 
             assert scheduler_instance.get_runs_count() == 0
@@ -1716,7 +1705,7 @@ class TestSchedulerRun:
             )
 
             evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc(), max_tick_retries=2
+                workspace_context, executor, get_current_datetime(), max_tick_retries=2
             )
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1736,7 +1725,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1769,9 +1758,7 @@ class TestSchedulerRun:
             schedule_name = "passes_on_retry_schedule_async"
         external_schedule = external_repo.get_external_schedule(schedule_name)
         schedule_origin = external_schedule.get_external_origin()
-        freeze_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
@@ -1780,7 +1767,7 @@ class TestSchedulerRun:
 
         with freeze_time(freeze_datetime):
             iteration_times = evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc(), max_tick_retries=1
+                workspace_context, executor, get_current_datetime(), max_tick_retries=1
             )
 
             assert len(iteration_times) == 1
@@ -1812,7 +1799,7 @@ class TestSchedulerRun:
             new_iteration_times = evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 max_tick_retries=1,
                 iteration_times=iteration_times,
             )
@@ -1846,7 +1833,7 @@ class TestSchedulerRun:
         expected_schedule_time = expected_schedule_time + relativedelta(days=1)
         with freeze_time(freeze_datetime):
             evaluate_schedules(
-                workspace_context, executor, get_current_datetime_in_utc(), max_tick_retries=1
+                workspace_context, executor, get_current_datetime(), max_tick_retries=1
             )
 
             assert scheduler_instance.get_runs_count() == 2
@@ -1874,7 +1861,7 @@ class TestSchedulerRun:
     ):
         external_schedule = external_repo.get_external_schedule("bad_should_execute_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = create_utc_datetime(
+        initial_datetime = create_datetime(
             year=2019,
             month=2,
             day=27,
@@ -1885,7 +1872,7 @@ class TestSchedulerRun:
         with freeze_time(initial_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1918,7 +1905,7 @@ class TestSchedulerRun:
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -1944,13 +1931,11 @@ class TestSchedulerRun:
     ):
         external_schedule = external_repo.get_external_schedule("wrong_config_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        freeze_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        freeze_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(freeze_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
 
@@ -1978,13 +1963,11 @@ class TestSchedulerRun:
     ):
         external_schedule = external_repo.get_external_schedule("default_config_schedule")
         schedule_origin = external_schedule.get_external_origin()
-        initial_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(initial_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
 
@@ -2024,13 +2007,11 @@ class TestSchedulerRun:
         external_schedule = external_repo.get_external_schedule(
             "static_partitioned_asset1_schedule"
         )
-        initial_datetime = create_utc_datetime(
-            year=2019, month=2, day=27, hour=0, minute=0, second=0
-        )
+        initial_datetime = create_datetime(year=2019, month=2, day=27, hour=0, minute=0, second=0)
         with freeze_time(initial_datetime):
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 3
 
@@ -2071,7 +2052,7 @@ class TestSchedulerRun:
             )
             scheduler_instance.add_instigator_state(unloadable_schedule_state)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2110,7 +2091,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            new_now = get_current_datetime_in_utc()
+            new_now = get_current_datetime()
             evaluate_schedules(workspace_context, executor, new_now)
 
             assert scheduler_instance.get_runs_count() == 3
@@ -2179,7 +2160,7 @@ class TestSchedulerRun:
             # Start schedule exactly at midnight
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -2220,7 +2201,7 @@ class TestSchedulerRun:
 
         initial_datetime = freeze_datetime + relativedelta(seconds=1)
         with freeze_time(initial_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
 
@@ -2259,7 +2240,7 @@ class TestSchedulerRun:
 
         initial_datetime = freeze_datetime + relativedelta(seconds=1)
         with freeze_time(initial_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
 
@@ -2277,9 +2258,9 @@ class TestSchedulerRun:
         external_repo: ExternalRepository,
         executor: ThreadPoolExecutor,
     ):
-        freeze_datetime = create_utc_datetime(
+        freeze_datetime = create_datetime(
             year=2019, month=2, day=27, hour=23, minute=59, second=59
-        ).astimezone(timezone_from_string("US/Central"))
+        ).astimezone(get_timezone("US/Central"))
 
         with freeze_time(freeze_datetime):
             external_schedule = external_repo.get_external_schedule("simple_schedule")
@@ -2307,7 +2288,7 @@ class TestSchedulerRun:
 
         initial_datetime = freeze_datetime + relativedelta(seconds=1)
         with freeze_time(initial_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
 
@@ -2334,7 +2315,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
@@ -2352,7 +2333,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(hours=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 3
 
@@ -2386,7 +2367,7 @@ class TestSchedulerRun:
 
         # No new runs should be launched
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
 
             ticks = scheduler_instance.get_ticks(
@@ -2396,7 +2377,7 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 1
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2409,7 +2390,7 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                create_utc_datetime(year=2019, month=2, day=28),
+                create_datetime(year=2019, month=2, day=28),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
             )
@@ -2417,13 +2398,13 @@ class TestSchedulerRun:
             validate_run_started(
                 scheduler_instance,
                 next(iter(scheduler_instance.get_runs())),
-                execution_time=create_utc_datetime(year=2019, month=2, day=28),
+                execution_time=create_datetime(year=2019, month=2, day=28),
                 partition_time=None,
             )
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2436,7 +2417,7 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                create_utc_datetime(year=2019, month=3, day=1),
+                create_datetime(year=2019, month=3, day=1),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
             )
@@ -2444,12 +2425,12 @@ class TestSchedulerRun:
             validate_run_started(
                 scheduler_instance,
                 next(iter(scheduler_instance.get_runs())),
-                execution_time=create_utc_datetime(year=2019, month=3, day=1),
+                execution_time=create_datetime(year=2019, month=3, day=1),
             )
 
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 3
 
             wait_for_all_runs_to_start(scheduler_instance)
@@ -2462,7 +2443,7 @@ class TestSchedulerRun:
             validate_tick(
                 ticks[0],
                 external_schedule,
-                create_utc_datetime(year=2019, month=3, day=1, hour=12),
+                create_datetime(year=2019, month=3, day=1, hour=12),
                 TickStatus.SUCCESS,
                 [next(iter(scheduler_instance.get_runs())).run_id],
             )
@@ -2470,14 +2451,14 @@ class TestSchedulerRun:
             validate_run_started(
                 scheduler_instance,
                 next(iter(scheduler_instance.get_runs())),
-                execution_time=create_utc_datetime(year=2019, month=3, day=1, hour=12),
+                execution_time=create_datetime(year=2019, month=3, day=1, hour=12),
                 partition_time=None,
             )
 
         # No new runs should be launched
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 3
 
             ticks = scheduler_instance.get_ticks(
@@ -2506,7 +2487,7 @@ class TestSchedulerRun:
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2515,14 +2496,14 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
             )
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             runs = scheduler_instance.get_runs()
             validate_tick(
@@ -2536,14 +2517,14 @@ class TestSchedulerRun:
             wait_for_all_runs_to_start(scheduler_instance)
             runs = scheduler_instance.get_runs()
             validate_run_started(
-                scheduler_instance, runs[0], execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, runs[0], execution_time=create_datetime(2019, 2, 28)
             )
             validate_run_started(
-                scheduler_instance, runs[1], execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, runs[1], execution_time=create_datetime(2019, 2, 28)
             )
 
             # Verify idempotence
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2554,7 +2535,7 @@ class TestSchedulerRun:
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
             # Traveling one more day in the future before running results in a tick
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 4
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2584,7 +2565,7 @@ class TestSchedulerRun:
             assert len(ticks) == 0
 
             # launch_scheduled_runs does nothing before the first tick
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2593,14 +2574,14 @@ class TestSchedulerRun:
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
             )
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             runs = scheduler_instance.get_runs()
             validate_tick(
@@ -2614,14 +2595,14 @@ class TestSchedulerRun:
             wait_for_all_runs_to_start(scheduler_instance)
             runs = scheduler_instance.get_runs()
             validate_run_started(
-                scheduler_instance, runs[0], execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, runs[0], execution_time=create_datetime(2019, 2, 28)
             )
             validate_run_started(
-                scheduler_instance, runs[1], execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, runs[1], execution_time=create_datetime(2019, 2, 28)
             )
 
             # Verify idempotence
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 2
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2632,7 +2613,7 @@ class TestSchedulerRun:
         freeze_datetime = freeze_datetime + relativedelta(days=1)
         with freeze_time(freeze_datetime):
             # Traveling one more day in the future before running results in a tick
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 4
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2657,7 +2638,7 @@ class TestSchedulerRun:
             schedule_origin = external_schedule.get_external_origin()
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
                 schedule_origin.get_id(), external_schedule.selector_id
@@ -2692,7 +2673,7 @@ class TestSchedulerRun:
             freeze_datetime = freeze_datetime + relativedelta(seconds=2)
 
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -2716,7 +2697,7 @@ class TestSchedulerRun:
 
             scheduler_instance.start_schedule(external_schedule)
 
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 0
             ticks = scheduler_instance.get_ticks(
@@ -2753,7 +2734,7 @@ class TestSchedulerRun:
             evaluate_schedules(
                 workspace_context,
                 executor,
-                get_current_datetime_in_utc(),
+                get_current_datetime(),
                 submit_executor=submit_executor,
             )
 
@@ -2792,12 +2773,12 @@ class TestSchedulerRun:
             )
 
             # launch_scheduled_runs does nothing before the first tick
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             scheduler_instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -2805,7 +2786,7 @@ class TestSchedulerRun:
             )
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
@@ -2820,7 +2801,7 @@ class TestSchedulerRun:
             assert run.asset_selection == {AssetKey("asset1")}
 
             validate_run_started(
-                scheduler_instance, run, execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2840,7 +2821,7 @@ class TestSchedulerRun:
         # never materialized so all assets stale
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             wait_for_all_runs_to_start(scheduler_instance)
             schedule_run = next(
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
@@ -2848,7 +2829,7 @@ class TestSchedulerRun:
             assert schedule_run is not None
             assert schedule_run.asset_selection == {AssetKey("asset1"), AssetKey("asset2")}
             validate_run_started(
-                scheduler_instance, schedule_run, execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, schedule_run, execution_time=create_datetime(2019, 2, 28)
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2870,7 +2851,7 @@ class TestSchedulerRun:
         # assets previously materialized so we expect empy set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             wait_for_all_runs_to_start(scheduler_instance)
             schedule_run = next(
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
@@ -2896,7 +2877,7 @@ class TestSchedulerRun:
         # assets previously materialized so we expect empy set
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             wait_for_all_runs_to_start(scheduler_instance)
             schedule_run = next(
                 (r for r in scheduler_instance.get_runs() if r.job_name == "asset_job"), None
@@ -2904,7 +2885,7 @@ class TestSchedulerRun:
             assert schedule_run is not None
             assert schedule_run.asset_selection == {AssetKey("asset2")}
             validate_run_started(
-                scheduler_instance, schedule_run, execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, schedule_run, execution_time=create_datetime(2019, 2, 28)
             )
 
     @pytest.mark.parametrize("executor", get_schedule_executors())
@@ -2923,12 +2904,12 @@ class TestSchedulerRun:
             )
 
             # launch_scheduled_runs does nothing before the first tick
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
             scheduler_instance.get_ticks(schedule_origin.get_id(), external_schedule.selector_id)
 
         freeze_datetime = freeze_datetime + relativedelta(seconds=2)
         with freeze_time(freeze_datetime):
-            evaluate_schedules(workspace_context, executor, get_current_datetime_in_utc())
+            evaluate_schedules(workspace_context, executor, get_current_datetime())
 
             assert scheduler_instance.get_runs_count() == 1
             ticks = scheduler_instance.get_ticks(
@@ -2936,7 +2917,7 @@ class TestSchedulerRun:
             )
             assert len(ticks) == 1
 
-            expected_datetime = create_utc_datetime(year=2019, month=2, day=28)
+            expected_datetime = create_datetime(year=2019, month=2, day=28)
 
             validate_tick(
                 ticks[0],
@@ -2951,5 +2932,5 @@ class TestSchedulerRun:
             assert run.asset_selection == {AssetKey("source_asset")}
 
             validate_run_started(
-                scheduler_instance, run, execution_time=create_utc_datetime(2019, 2, 28)
+                scheduler_instance, run, execution_time=create_datetime(2019, 2, 28)
             )

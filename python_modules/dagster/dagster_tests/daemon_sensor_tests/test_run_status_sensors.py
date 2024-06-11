@@ -28,7 +28,7 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dateutil.relativedelta import relativedelta
 
 from .conftest import create_workspace_load_target
@@ -133,7 +133,7 @@ def test_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("my_job_success_sensor")
         instance.start_sensor(success_sensor)
@@ -255,7 +255,7 @@ def test_run_failure_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
         instance.start_sensor(failure_sensor)
@@ -311,7 +311,7 @@ def test_run_failure_sensor_that_fails(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor(
             "my_run_failure_sensor_that_itself_fails"
@@ -387,7 +387,7 @@ def test_run_failure_sensor_filtered(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
         instance.start_sensor(failure_sensor)
@@ -483,7 +483,7 @@ def test_run_failure_sensor_overfetch(
         with create_test_daemon_workspace_context(
             workspace_load_target=create_workspace_load_target(), instance=instance
         ) as workspace_context:
-            freeze_datetime = get_current_datetime_in_utc()
+            freeze_datetime = get_current_datetime()
             with freeze_time(freeze_datetime):
                 failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
                 instance.start_sensor(failure_sensor)
@@ -645,7 +645,7 @@ def sql_event_log_storage_config_fn(temp_dir: str):
     [default_storage_config_fn, sqlite_storage_config_fn],
 )
 def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
@@ -746,7 +746,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
 def test_run_failure_sensor_empty_run_records(
     storage_config_fn, executor: Optional[ThreadPoolExecutor]
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
@@ -813,7 +813,7 @@ def test_run_failure_sensor_empty_run_records(
 
 
 def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -898,7 +898,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
 
 def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -983,7 +983,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
 
 def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -1080,7 +1080,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 def test_cross_code_location_job_selector_on_defs_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -1227,7 +1227,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
 
 def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -1354,7 +1354,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
 
 def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
@@ -1412,7 +1412,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
 
 
 def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
@@ -1505,7 +1505,7 @@ def test_partitioned_job_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("partitioned_pipeline_success_sensor")
         instance.start_sensor(success_sensor)
@@ -1566,7 +1566,7 @@ def test_partitioned_job_run_status_sensor(
 
 
 def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with instance_with_sensors() as (
         instance,
         workspace_context,
@@ -1629,7 +1629,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
 
 
 def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
@@ -1692,7 +1692,7 @@ def test_logging_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = get_current_datetime_in_utc()
+    freeze_datetime = get_current_datetime()
     with freeze_time(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("logging_status_sensor")
         instance.start_sensor(success_sensor)

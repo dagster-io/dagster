@@ -27,7 +27,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -326,7 +326,7 @@ class TestScheduleStorage:
 
         assert not tick.end_timestamp
 
-        freeze_datetime = get_current_datetime_in_utc()
+        freeze_datetime = get_current_datetime()
 
         with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
@@ -351,7 +351,7 @@ class TestScheduleStorage:
         tick = storage.create_tick(self.build_schedule_tick(current_time))
         assert not tick.end_timestamp
 
-        freeze_datetime = get_current_datetime_in_utc()
+        freeze_datetime = get_current_datetime()
 
         with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(TickStatus.SKIPPED)
@@ -375,7 +375,7 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        freeze_datetime = get_current_datetime_in_utc()
+        freeze_datetime = get_current_datetime()
 
         with freeze_time(freeze_datetime):
             updated_tick = tick.with_status(
@@ -551,7 +551,7 @@ class TestScheduleStorage:
 
     def test_get_sensor_tick(self, storage):
         assert storage
-        now = get_current_datetime_in_utc()
+        now = get_current_datetime()
         five_days_ago = (now - relativedelta(days=5)).timestamp()
         four_days_ago = (now - relativedelta(days=4)).timestamp()
         one_day_ago = (now - relativedelta(days=1)).timestamp()
@@ -646,7 +646,7 @@ class TestScheduleStorage:
         if not self.can_purge():
             pytest.skip("Storage cannot purge")
 
-        now = get_current_datetime_in_utc()
+        now = get_current_datetime()
         five_minutes_ago = (now - relativedelta(minutes=5)).timestamp()
         four_minutes_ago = (now - relativedelta(minutes=4)).timestamp()
         one_minute_ago = (now - relativedelta(minutes=1)).timestamp()
@@ -956,7 +956,7 @@ class TestScheduleStorage:
         )
 
         storage.purge_asset_evaluations(
-            before=(get_current_datetime_in_utc() - relativedelta(hours=10)).timestamp()
+            before=(get_current_datetime() - relativedelta(hours=10)).timestamp()
         )
 
         res = storage.get_auto_materialize_asset_evaluations(
@@ -965,7 +965,7 @@ class TestScheduleStorage:
         assert len(res) == 1
 
         storage.purge_asset_evaluations(
-            before=(get_current_datetime_in_utc() + relativedelta(minutes=10)).timestamp()
+            before=(get_current_datetime() + relativedelta(minutes=10)).timestamp()
         )
 
         res = storage.get_auto_materialize_asset_evaluations(

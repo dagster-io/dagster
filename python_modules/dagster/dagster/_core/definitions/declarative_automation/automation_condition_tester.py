@@ -16,7 +16,7 @@ from dagster._core.definitions.declarative_automation.automation_condition_evalu
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.instance import DagsterInstance
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 
 
 class EvaluateAutomationConditionsResult:
@@ -106,7 +106,7 @@ def evaluate_automation_conditions(
     asset_graph_view = AssetGraphView.for_test(
         defs=defs,
         instance=instance,
-        effective_dt=evaluation_time or get_current_datetime_in_utc(),
+        effective_dt=evaluation_time or get_current_datetime(),
         last_event_id=instance.event_log_storage.get_maximum_record_id(),
     )
     asset_graph = defs.get_asset_graph()

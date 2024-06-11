@@ -23,11 +23,11 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
 )
 from dagster._core.test_utils import freeze_time
-from dagster._seven import (
+from dagster._time import (
     create_datetime,
-    get_current_datetime_in_utc,
+    get_current_datetime,
     get_current_timestamp,
-    parse_with_timezone,
+    parse_time_string,
 )
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
@@ -85,7 +85,7 @@ def test_asset_backfill_not_all_asset_have_backfill_policy():
 
 
 def test_asset_backfill_parent_and_children_have_different_backfill_policy():
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
@@ -131,7 +131,7 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
 
 
 def test_asset_backfill_parent_and_children_have_same_backfill_policy():
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(backfill_policy=BackfillPolicy.single_run())
@@ -200,7 +200,7 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
     """Tests that when a backfill contains multiple backfill policies, we still group assets with the
     same backfill policy in a single run.
     """
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.multi_run(10))
@@ -292,7 +292,7 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
 
 
 def test_asset_backfill_return_single_run_request_for_partitioned():
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
 
     @asset(partitions_def=daily_partitions_def, backfill_policy=BackfillPolicy.single_run())
@@ -334,7 +334,7 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
 
 
 def test_asset_backfill_return_multiple_run_request_for_partitioned():
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition(
         "2023-01-01", end_date="2023-08-11"
     )
@@ -382,7 +382,7 @@ def test_asset_backfill_status_count_with_backfill_policies():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     weekly_partitions_def = WeeklyPartitionsDefinition("2023-01-01")
 
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     num_of_daily_partitions = daily_partitions_def.get_num_partitions(time_now)
     num_of_weekly_partitions = weekly_partitions_def.get_num_partitions(time_now)
 
@@ -466,7 +466,7 @@ def test_backfill_run_contains_more_than_one_asset():
     upstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     downstream_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-02")
 
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
     upstream_num_of_partitions = upstream_partitions_def.get_num_partitions(time_now)
     downstream_num_of_partitions = downstream_partitions_def.get_num_partitions(time_now)
 
@@ -644,9 +644,9 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
-        test_time = parse_with_timezone("2023-03-04T00:00:00")
+        test_time = parse_time_string("2023-03-04T00:00:00")
     else:
-        test_time = get_current_datetime_in_utc()
+        test_time = get_current_datetime()
 
     @asset(
         name="upstream_a",
@@ -712,9 +712,9 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
     if same_partitions:
         # time at which there will be an identical set of partitions for the downstream asset
-        test_time = parse_with_timezone("2023-03-04T00:00:00")
+        test_time = parse_time_string("2023-03-04T00:00:00")
     else:
-        test_time = get_current_datetime_in_utc()
+        test_time = get_current_datetime()
 
     @asset(
         name="upstream_a",
@@ -787,7 +787,7 @@ def test_assets_backfill_with_partition_mapping_run_to_complete(same_partitions)
 
 def test_assets_backfill_with_partition_mapping_without_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
 
     @asset(
         name="upstream_a",
@@ -848,7 +848,7 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
 
 def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
 
     @asset(
         name="upstream_a",
@@ -901,7 +901,7 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
 
 def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
 
     @asset(
         name="upstream_a",
@@ -964,7 +964,7 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
 
 def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy():
     daily_partitions_def: DailyPartitionsDefinition = DailyPartitionsDefinition("2023-01-01")
-    test_time = parse_with_timezone("2023-03-10T00:00:00")
+    test_time = parse_time_string("2023-03-10T00:00:00")
 
     @asset(
         name="upstream_a",
@@ -1080,7 +1080,7 @@ def test_run_request_partition_order():
 def test_single_run_backfill_full_execution(
     batch_size: int, throw_store_event_batch_error: bool, capsys, monkeypatch
 ):
-    time_now = get_current_datetime_in_utc()
+    time_now = get_current_datetime()
 
     partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
 

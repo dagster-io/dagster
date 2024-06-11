@@ -15,7 +15,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.concurrency import execute_concurrency_slots_iteration
-from dagster._seven import create_utc_datetime
+from dagster._time import create_datetime
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def test_global_concurrency_release(
     logger: Logger,
 ):
     instance.event_log_storage.set_concurrency_slots("foo", 1)
-    freeze_datetime = create_utc_datetime(
+    freeze_datetime = create_datetime(
         year=2023,
         month=2,
         day=27,

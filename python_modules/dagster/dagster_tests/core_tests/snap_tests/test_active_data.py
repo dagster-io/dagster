@@ -15,7 +15,7 @@ from dagster._core.snap.job_snapshot import create_job_snapshot_id
 from dagster._core.test_utils import in_process_test_workspace, instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_pp
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 
 
 @op
@@ -64,7 +64,7 @@ def test_external_repository_data(snapshot):
         job_partition_set_data.external_partitions_data, ExternalTimeWindowPartitionsDefinitionData
     )
 
-    now = get_current_datetime_in_utc()
+    now = get_current_datetime()
 
     assert (
         job_partition_set_data.external_partitions_data.get_partitions_definition().get_partition_keys(

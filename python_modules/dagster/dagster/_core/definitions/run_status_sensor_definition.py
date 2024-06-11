@@ -38,7 +38,8 @@ from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, Runs
 from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import JSONDecodeError, parse_with_timezone
+from dagster._seven import JSONDecodeError
+from dagster._time import parse_time_string
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
@@ -728,7 +729,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     records_filter=RunStatusChangeRecordsFilter(
                         event_type=cast(RunStatusChangeEventType, event_type),
                         after_timestamp=cast(
-                            datetime, parse_with_timezone(sensor_cursor.update_timestamp)
+                            datetime, parse_time_string(sensor_cursor.update_timestamp)
                         ).timestamp(),
                     ),
                     ascending=True,

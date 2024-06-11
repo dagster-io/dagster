@@ -16,7 +16,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._grpc.types import ExternalScheduleExecutionArgs
 from dagster._serdes import deserialize_value
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime
 
 from .utils import get_bar_repo_handle
 
@@ -119,7 +119,7 @@ def test_external_schedule_execution_deserialize_error():
 def test_include_execution_time_grpc():
     with instance_for_test() as instance:
         with get_bar_repo_handle(instance) as repository_handle:
-            execution_time = get_current_datetime_in_utc()
+            execution_time = get_current_datetime()
 
             execution_data = sync_get_external_schedule_execution_data_ephemeral_grpc(
                 instance,

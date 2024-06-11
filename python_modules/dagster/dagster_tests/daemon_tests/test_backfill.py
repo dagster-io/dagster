@@ -66,7 +66,8 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._seven import IS_WINDOWS, get_current_timestamp, get_system_temp_directory
+from dagster._seven import IS_WINDOWS, get_system_temp_directory
+from dagster._time import get_current_timestamp
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 

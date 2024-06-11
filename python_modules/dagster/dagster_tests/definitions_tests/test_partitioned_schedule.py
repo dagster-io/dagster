@@ -26,13 +26,13 @@ from dagster._core.definitions.time_window_partitions import (
     weekly_partitioned_config,
 )
 from dagster._core.test_utils import freeze_time
-from dagster._seven import create_utc_datetime, parse_with_timezone
+from dagster._time import create_datetime, parse_time_string
 
 DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(parse_with_timezone(start), parse_with_timezone(end))
+    return TimeWindow(parse_time_string(start), parse_time_string(end))
 
 
 def schedule_for_partitioned_config(
@@ -390,7 +390,7 @@ def test_empty_partitions():
 
 
 def test_future_tick():
-    with freeze_time(create_utc_datetime(2022, 2, 28)):
+    with freeze_time(create_datetime(2022, 2, 28)):
 
         @daily_partitioned_config(start_date="2021-05-05")
         def my_partitioned_config(start, end):

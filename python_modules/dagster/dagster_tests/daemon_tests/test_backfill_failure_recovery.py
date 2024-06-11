@@ -14,7 +14,8 @@ from dagster._core.test_utils import (
 )
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._seven import IS_WINDOWS, create_utc_datetime
+from dagster._seven import IS_WINDOWS
+from dagster._time import create_datetime
 
 from .conftest import workspace_load_target
 
@@ -22,7 +23,7 @@ spawn_ctx = multiprocessing.get_context("spawn")
 
 
 def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
-    execution_datetime = create_utc_datetime(
+    execution_datetime = create_datetime(
         year=2021,
         month=2,
         day=17,
