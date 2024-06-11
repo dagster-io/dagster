@@ -510,6 +510,11 @@ export const useRunsForTimeline = ({
   }, [unsortedJobs]);
 
   const lastFetchRef = useRef({ongoing: 0, future: 0});
+  const lastRangeMs = useRef([0, 0] as readonly [number, number]);
+  if (Math.abs(lastRangeMs.current[0] - rangeMs[0]) > 30000) {
+    lastFetchRef.current.future = 0;
+  }
+  lastRangeMs.current = rangeMs;
 
   const refreshState = useRefreshAtInterval({
     refresh: useCallback(async () => {
@@ -525,7 +530,8 @@ export const useRunsForTimeline = ({
         })(),
         // Only fetch future ticks on a minute
         (async () => {
-          if (lastFetchRef.current.future < Date.now() - 60 * 1000) {
+          // If the end of this time range isn't past "Now" then future ticks are not visible on the timeline
+          if (_end > Date.now() && lastFetchRef.current.future < Date.now() - 60 * 1000) {
             fetchFutureTicks();
           }
         })(),
