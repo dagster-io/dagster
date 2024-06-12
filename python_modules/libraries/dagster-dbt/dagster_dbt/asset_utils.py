@@ -430,13 +430,11 @@ def default_metadata_from_dbt_resource_props(
             ]
         )
 
-    relation_name = (
-        dbt_resource_props["database"]
-        + "."
-        + dbt_resource_props["schema"]
-        + "."
-        + dbt_resource_props["alias"]
-    )
+    relation_name = ".".join([
+        dbt_resource_props["database"],
+        dbt_resource_props["schema"],
+        dbt_resource_props["alias"],
+    ])
 
     return {
         **TableMetadataSet(
