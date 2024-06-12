@@ -80,6 +80,8 @@ import tensorflow from './optag-images/tensorflow.svg';
 import vercel from './optag-images/vercel.svg';
 import weights_and_biases from './optag-images/weights_and_biases.svg';
 import xgboost from './optag-images/xgboost.svg';
+import mongodb from './optag-images/mongodb.svg';
+import sqlserver from './optag-images/sqlserver.svg';
 
 export interface IOpTag {
   label: string;
@@ -548,6 +550,16 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     color: null,
     icon: huggingface,
     content: 'Hugging Face',
+  },
+  sqlserver: {
+    color: null,
+    icon: sqlserver,
+    content: 'Microsoft SQL Server',
+  },
+  mongodb: {
+    color: null,
+    icon: mongodb,
+    content: 'MongoDB',
   },
   expand: {color: '#D7A540', content: 'Expand'},
 };
