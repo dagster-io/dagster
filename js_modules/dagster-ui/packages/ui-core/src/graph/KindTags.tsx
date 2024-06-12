@@ -8,8 +8,14 @@ import {
   linkToAssetTableWithStorageKindFilter,
 } from '../search/useGlobalSearch';
 
-export const isCanonicalComputeKindTag = (tag: DefinitionTag) => tag.key === 'dagster/compute_kind';
-export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === 'dagster/storage_kind';
+export const LEGACY_COMPUTE_KIND_TAG = 'kind';
+export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
+export const STORAGE_KIND_TAG = 'dagster/storage_kind';
+
+// Older code servers may be using the legacy compute kind tag, so we need to check for both
+export const isCanonicalComputeKindTag = (tag: DefinitionTag) =>
+  tag.key === COMPUTE_KIND_TAG || tag.key === LEGACY_COMPUTE_KIND_TAG;
+export const isCanonicalStorageKindTag = (tag: DefinitionTag) => tag.key === STORAGE_KIND_TAG;
 export const buildStorageKindTag = (storageKind: string): DefinitionTag =>
   buildDefinitionTag({key: 'dagster/storage_kind', value: storageKind});
 
