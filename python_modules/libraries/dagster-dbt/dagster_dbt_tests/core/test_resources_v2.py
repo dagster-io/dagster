@@ -466,12 +466,12 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
 
     project = DbtProject(
         project_dir=test_jaffle_shop_path, state_path=Path("state", testrun_uid)
-    ).prepared()
+    )
     dbt = DbtCliResource(project_dir=project)
 
     dbt.cli(["--quiet", "parse"], target_path=project.target_path).wait()
 
-    @dbt_assets(manifest=project.manifest_path)
+    @dbt_assets(manifest=project.prepared().manifest_path)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
 
