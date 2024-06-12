@@ -1072,6 +1072,43 @@ def test_run_request_partition_order():
     ]
 
 
+def test_max_partitions_per_range_1_sets_run_request_partition_key():
+    @asset(
+        partitions_def=DailyPartitionsDefinition("2023-10-01"),
+        backfill_policy=BackfillPolicy.multi_run(1),
+    )
+    def foo():
+        pass
+
+    asset_graph = get_asset_graph({"repo1": [foo]})
+
+    asset_backfill_data = AssetBackfillData.from_asset_partitions(
+        asset_graph=asset_graph,
+        partition_names=[
+            "2023-10-05",
+            "2023-10-06",
+        ],
+        asset_selection=[foo.key],
+        dynamic_partitions_store=MagicMock(),
+        all_partitions=False,
+        backfill_start_timestamp=create_datetime(2023, 10, 7, 0, 0, 0).timestamp(),
+    )
+
+    result = execute_asset_backfill_iteration_consume_generator(
+        "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
+    )
+
+    assert [run_request.partition_key for run_request in result.run_requests] == [
+        "2023-10-05",
+        "2023-10-06",
+    ]
+
+    assert [run_request.partition_key_range for run_request in result.run_requests] == [
+        PartitionKeyRange("2023-10-05", "2023-10-05"),
+        PartitionKeyRange("2023-10-06", "2023-10-06"),
+    ]
+
+
 # 0 turns off batching
 # 2 will require multiple batches to fulfill the backfill
 # 10 will require a single to fulfill the backfill
