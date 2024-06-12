@@ -16,7 +16,6 @@ from dagster._core.definitions.metadata import (
     MetadataValue,
     normalize_metadata,
 )
-from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 from dagster._serdes import whitelist_for_serdes
 
 from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
@@ -263,12 +262,6 @@ class OpDefSnap(
         required_resource_keys: Sequence[str],
         config_field_snap: Optional[ConfigFieldSnap],
     ):
-        # Backcompat for legacy system tags. Older code servers may report the compute kind under
-        # the legacy tag. Code servers running versions after deprecation of the legacy tag may
-        # have both the legacy and current tag set.
-        if LEGACY_COMPUTE_KIND_TAG in tags and COMPUTE_KIND_TAG not in tags:
-            tags = {COMPUTE_KIND_TAG: tags[LEGACY_COMPUTE_KIND_TAG], **tags}
-
         return super(OpDefSnap, cls).__new__(
             cls,
             required_resource_keys=check.sequence_param(
