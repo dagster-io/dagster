@@ -44,7 +44,9 @@ import meltano from './optag-images/meltano.svg';
 import metabase from './optag-images/metabase.svg';
 import mlflow from './optag-images/mlflow.svg';
 import modal from './optag-images/modal.svg';
+import mongodb from './optag-images/mongodb.svg';
 import teams from './optag-images/msteams.svg';
+import mysql from './optag-images/mysql.svg';
 import noteable from './optag-images/noteable.svg';
 import notion from './optag-images/notion.svg';
 import numpy from './optag-images/numpy.svg';
@@ -72,6 +74,7 @@ import slack from './optag-images/slack.svg';
 import sling from './optag-images/sling.svg';
 import snowflake from './optag-images/snowflake.svg';
 import sql from './optag-images/sql.svg';
+import sqlserver from './optag-images/sqlserver.svg';
 import stitch from './optag-images/stitch.svg';
 import stripe from './optag-images/stripe.svg';
 import tableau from './optag-images/tableau.svg';
@@ -80,8 +83,6 @@ import tensorflow from './optag-images/tensorflow.svg';
 import vercel from './optag-images/vercel.svg';
 import weights_and_biases from './optag-images/weights_and_biases.svg';
 import xgboost from './optag-images/xgboost.svg';
-import mongodb from './optag-images/mongodb.svg';
-import sqlserver from './optag-images/sqlserver.svg';
 
 export interface IOpTag {
   label: string;
@@ -233,9 +234,14 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     reversed: true,
   },
   postgres: {
-    color: '#136FBA',
+    color: null,
     icon: postgres,
     content: 'Postgres',
+  },
+  postgresql: {
+    color: null,
+    icon: postgres,
+    content: 'PostgreSQL',
   },
   stripe: {
     color: '#635BFF',
@@ -287,6 +293,11 @@ export const KNOWN_TAGS: Record<string, KnownTag> = {
     color: '#0194E2',
     icon: mlflow,
     content: 'ML Flow',
+  },
+  mysql: {
+    color: null,
+    icon: mysql,
+    content: 'MySQL',
   },
   greatexpectations: {
     color: '#FF6310',
