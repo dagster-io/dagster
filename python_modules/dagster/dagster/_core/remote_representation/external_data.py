@@ -1134,8 +1134,18 @@ class ResourceJobUsageEntry(NamedTuple):
 
 
 @whitelist_for_serdes
+class BlobSchema(NamedTuple):
+    """Representation of a JSON schema."""
+
+    schema: object
+
+
+@whitelist_for_serdes
 class ExternalBlueprintManager(NamedTuple):
+    """Data related to a BlueprintManager attached to Definitions."""
+
     name: str
+    schema: Optional[BlobSchema]
 
 
 @whitelist_for_serdes
@@ -1548,6 +1558,7 @@ def external_repository_data_from_def(
     defer_snapshots: bool = False,
 ) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
+    from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader
 
     jobs = repository_def.get_all_jobs()
     if defer_snapshots:
@@ -1645,8 +1656,13 @@ def external_repository_data_from_def(
             key=lambda rd: rd.name,
         ),
         external_blueprint_managers=[
-            ExternalBlueprintManager(name=manager_name)
-            for manager_name, _manager in repository_def.get_blueprint_managers().items()
+            ExternalBlueprintManager(
+                name=manager_name,
+                schema=BlobSchema(schema=manager.model_json_schema())
+                if isinstance(manager, YamlBlueprintsLoader)
+                else None,
+            )
+            for manager_name, manager in repository_def.get_blueprint_managers().items()
         ],
         external_asset_checks=external_asset_checks_from_defs(jobs),
         metadata=repository_def.metadata,

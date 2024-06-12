@@ -57,6 +57,7 @@ from .external_data import (
     EnvVarConsumer,
     ExternalAssetCheck,
     ExternalAssetNode,
+    ExternalBlueprintManager,
     ExternalJobData,
     ExternalJobRef,
     ExternalPresetData,
@@ -152,6 +153,9 @@ class ExternalRepository:
 
     def get_external_schedule(self, schedule_name: str) -> "ExternalSchedule":
         return self._external_schedules[schedule_name]
+
+    def get_external_blueprint_managers(self) -> Sequence["ExternalBlueprintManager"]:
+        return self.external_repository_data.external_blueprint_managers or []
 
     def get_external_schedules(self) -> Sequence["ExternalSchedule"]:
         return list(self._external_schedules.values())

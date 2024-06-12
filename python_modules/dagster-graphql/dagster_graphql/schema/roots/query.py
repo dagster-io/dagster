@@ -1,3 +1,4 @@
+import json
 from typing import Any, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
@@ -16,6 +17,8 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.workspace.permissions import Permissions
 
@@ -107,6 +110,12 @@ from ..backfill import (
     GrapheneBulkActionStatus,
     GraphenePartitionBackfillOrError,
     GraphenePartitionBackfillsOrError,
+)
+from ..blueprint_managers import (
+    GrapheneBlueprintManager,
+    GrapheneBlueprintManagersList,
+    GrapheneBlueprintManagersListOrError,
+    GrapheneJsonSchema,
 )
 from ..external import (
     GrapheneRepositoriesOrError,
@@ -259,6 +268,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneResourceDetailsListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the top level resources.",
+    )
+
+    blueprintManagersOrError = graphene.Field(
+        graphene.NonNull(GrapheneBlueprintManagersListOrError),
+        repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
+        description="Retrieve all the blueprint managers.",
     )
 
     utilizedEnvVarsOrError = graphene.Field(
@@ -672,6 +687,35 @@ class GrapheneQuery(graphene.ObjectType):
             graphene_info,
             RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
         )
+
+    @capture_error
+    def resolve_blueprintManagersOrError(self, graphene_info: ResolveInfo, **kwargs):
+        repository_selector: RepositorySelector = RepositorySelector.from_graphql_input(
+            kwargs.get("repositorySelector")
+        )
+
+        print(graphene_info)
+
+        location: CodeLocation = graphene_info.context.get_code_location(
+            repository_selector.location_name
+        )
+        repository: ExternalRepository = location.get_repository(
+            repository_selector.repository_name
+        )
+        external_blueprint_managers = repository.get_external_blueprint_managers()
+
+        results = [
+            GrapheneBlueprintManager(
+                id=blueprint_manager.name,
+                name=blueprint_manager.name,
+                schema=GrapheneJsonSchema(schema=json.dumps(blueprint_manager.schema.schema))
+                if blueprint_manager.schema
+                else None,
+            )
+            for blueprint_manager in external_blueprint_managers
+        ]
+
+        return GrapheneBlueprintManagersList(results=results)
 
     @capture_error
     def resolve_utilizedEnvVarsOrError(self, graphene_info: ResolveInfo, **kwargs):
