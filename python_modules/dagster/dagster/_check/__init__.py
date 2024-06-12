@@ -2011,7 +2011,8 @@ def build_check_call_str(
         else:
             return name  # no-op
     else:
-        if origin is Annotated and args:
+        # 3.9+: origin is Annotated, 3.8: origin == args[0]
+        if (origin is Annotated and args) or (len(args) == 1 and args[0] == origin):
             return build_check_call_str(args[0], f"{name}", eval_ctx)
 
         pair_left, pair_right = _container_pair_args(args, eval_ctx)
