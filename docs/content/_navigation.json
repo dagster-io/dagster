@@ -741,7 +741,7 @@
   {
     "title": "Open Source Deployment",
     "icon": "Deployment",
-    "path": "/deployment/open-source",
+    "path": "/deployment",
     "children": [
       {
         "title": "Overview and architecture",
