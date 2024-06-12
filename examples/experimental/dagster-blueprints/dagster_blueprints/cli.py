@@ -6,7 +6,7 @@ import sys
 import zipfile
 from importlib import import_module
 from pathlib import Path
-from typing import List, Mapping, Optional
+from typing import List, Mapping, Optional, Sequence
 
 import click
 from dagster import _check as check
@@ -203,10 +203,11 @@ def recommend_yaml_extension() -> None:
 
 
 def install_yaml_schema_extension(
-    dot_vscode_path: Path, yaml_dirs: List[Path], schema_paths: List[Path]
+    dot_vscode_path: Path, yaml_dirs: Sequence[Path], schema_paths: Sequence[Path]
 ) -> None:
-    """Builds a VS Code extension which provides the Red Hat YAML extension with the JSON schema files which
-    correspond to the YAML files in the provided directory.
+    """Builds a VS Code extension which associates the built JSON schema files with YAML
+    files in the provided directory, provided that the user has the Red Hat YAML extension
+    already installed.
     """
     extension_working_dir = dot_vscode_path / "dagster-blueprint-schema"
     extension_package_json_path = extension_working_dir / "package.json"
@@ -214,7 +215,7 @@ def install_yaml_schema_extension(
     template_package_json_path = Path(__file__).parent / "vscode_extension_package.json"
     template_package_json = json.loads(template_package_json_path.read_text())
     template_package_json["contributes"]["yamlValidation"] = [
-        {"fileMatch": f"{yaml_dir}/**/*.yaml", "url": f"{schema_path}"}
+        {"fileMatch": f"{yaml_dir}/**/*.y*ml", "url": f"{schema_path}"}
         for yaml_dir, schema_path in zip(yaml_dirs, schema_paths)
     ]
 
@@ -233,6 +234,7 @@ def install_yaml_schema_extension(
     except subprocess.CalledProcessError:
         click.echo("No existing dagster.dagster-blueprint-schema extension to uninstall.")
     run_vscode_cli_command(["--install-extension", os.fspath(extension_zip_path.resolve())])
+    click.echo("Successfully installed Dagster Blueprint schema extension.")
 
 
 def main():
