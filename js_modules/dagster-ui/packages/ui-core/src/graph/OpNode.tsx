@@ -3,6 +3,7 @@ import {Colors, FontFamily, Icon} from '@dagster-io/ui-components';
 import * as React from 'react';
 import styled from 'styled-components';
 
+import {COMPUTE_KIND_TAG} from './KindTags';
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {IOpTag, OpTags} from './OpTags';
 import {OpLayout} from './asyncGraphLayout';
@@ -99,7 +100,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
     const tags: IOpTag[] = [];
 
-    const kind = metadata.find((m) => m.key === 'kind');
+    const kind = metadata.find((m) => m.key === COMPUTE_KIND_TAG);
     const composite = definition.__typename === 'CompositeSolidDefinition';
 
     if (kind) {

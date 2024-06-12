@@ -11,6 +11,7 @@ from dagster._core.remote_representation.historical import HistoricalJob
 from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
 from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -385,10 +386,18 @@ class ISolidDefinitionMixin:
         self._solid_def_snap = represented_pipeline.get_node_def_snap(solid_def_name)
 
     def resolve_metadata(self, _graphene_info):
-        return [
-            GrapheneMetadataItemDefinition(key=item[0], value=item[1])
-            for item in self._solid_def_snap.tags.items()
-        ]
+        metadata_items = []
+        for key, val in self._solid_def_snap.tags.items():
+            metadata_items.append(GrapheneMetadataItemDefinition(key=key, value=val))
+            # Backcompat for legacy system tags. Older code servers may report the compute kind under
+            # the legacy tag. Code servers running versions after deprecation of the legacy tag may
+            # have both the legacy and current tag set. We can't patch this at the Snap level
+            # because the host process will complain about mismatched snap IDs
+            if key == LEGACY_COMPUTE_KIND_TAG and COMPUTE_KIND_TAG not in self._solid_def_snap.tags:
+                metadata_items.append(
+                    GrapheneMetadataItemDefinition(key=COMPUTE_KIND_TAG, value=val)
+                )
+        return metadata_items
 
     @property
     def solid_def_name(self) -> str:
