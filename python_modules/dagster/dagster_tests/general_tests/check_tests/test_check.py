@@ -3,7 +3,7 @@ import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
 import pytest
@@ -1512,6 +1512,42 @@ def test_opt_iterable():
 
     with pytest.raises(CheckError, match="Member of iterable mismatches type"):
         check.opt_iterable_param(["atr", None], "nonedoesntcount", of_type=str)
+
+
+def test_is_iterable() -> None:
+    assert check.is_iterable([]) == []
+    assert check.is_iterable((1, 2)) == tuple([1, 2])
+    assert check.is_iterable("foo") == "foo"  # str is iterable
+    assert check.is_iterable({"a": 1}) == {"a": 1}  # dict is iterable
+
+    assert check.is_iterable([1, "str"]) == [1, "str"]
+
+    with pytest.raises(CheckError):
+        check.is_iterable([1, "str"], of_type=int)
+
+    with pytest.raises(CheckError):
+        check.is_iterable([1, "str"], of_type=str)
+
+    with pytest.raises(CheckError):
+        check.is_iterable(None)
+
+    with pytest.raises(CheckError):
+        check.is_iterable(1)
+
+
+def test_is_iterable_typing() -> None:
+    def returns_iterable_of_int_but_typed_any() -> Any:
+        return [1, 2]
+
+    def returns_iterable_of_t() -> Iterable[int]:
+        any_typed = returns_iterable_of_int_but_typed_any()
+        retval = check.is_iterable(any_typed, of_type=str)
+        # That the type: ignore is necessary is proof that
+        # is_iterable flows type information correctly
+        return retval  # type: ignore
+
+    # meaningless assert. The test is show the typechecker working
+    assert returns_iterable_of_t
 
 
 # ###################################################################################################

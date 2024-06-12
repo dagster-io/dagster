@@ -1233,6 +1233,20 @@ def opt_nullable_iterable_param(
     return iterable_param(obj, param_name, of_type, additional_message)
 
 
+def is_iterable(
+    obj: object,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
+    additional_message: Optional[str] = None,
+) -> Iterable[T]:
+    # short-circuit for common collections
+    # separate if statement to make that explicit
+    if not isinstance(obj, (list, tuple)):
+        if not isinstance(obj, Iterable):
+            raise _type_mismatch_error(obj, list, additional_message)
+
+    return obj if not of_type else _check_iterable_items(obj, of_type, "iterable")
+
+
 # ########################
 # ##### SET
 # ########################
