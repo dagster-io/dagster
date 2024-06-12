@@ -18,7 +18,7 @@ def shared_project_dir():
 
 @pytest.fixture(scope="function")
 def project_dir(shared_project_dir):
-    manifest_path = DbtProject(shared_project_dir).prepared().manifest_path
+    manifest_path = DbtProject(shared_project_dir).manifest_path
     if manifest_path.exists():
         manifest_path.unlink()
     yield shared_project_dir
