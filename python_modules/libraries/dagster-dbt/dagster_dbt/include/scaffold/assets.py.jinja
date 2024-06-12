@@ -8,7 +8,7 @@ from .constants import dbt_manifest_path
 {% endif %}
 
 {% if use_experimental_dbt_project -%}
-@dbt_assets(manifest={{ dbt_project_name }}.manifest_path)
+@dbt_assets(manifest={{ dbt_project_name }}.prepared().manifest_path)
 {% else -%}
 @dbt_assets(manifest=dbt_manifest_path)
 {% endif -%}
