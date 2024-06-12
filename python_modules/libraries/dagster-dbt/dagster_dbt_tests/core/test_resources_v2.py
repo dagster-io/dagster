@@ -521,7 +521,9 @@ def test_dbt_adapter(dbt: DbtCliResource) -> None:
 
 
 def test_dbt_adapter_with_profile_vars(dbt_with_profile_vars: DbtCliResource) -> None:
-    assert dbt_with_profile_vars.cli(["build"]).adapter
+    assert dbt_with_profile_vars.cli(
+        ["build", '--vars={"duckdb_dbfile_path": "target/local.duckdb", "jaffle_schema": "dev"}']
+    ).adapter
 
 
 def test_custom_subclass():
