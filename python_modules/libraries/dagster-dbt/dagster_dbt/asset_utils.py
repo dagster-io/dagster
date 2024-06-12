@@ -430,19 +430,27 @@ def default_metadata_from_dbt_resource_props(
             ]
         )
 
-    # all nodes should have these props defined, but just in case
-    relation_identifier = dbt_resource_props.get("relation_name")
+    relation_name: Optional[str] = None
 
-    metadata: Dict[str, Any] = {}
-    if column_schema or relation_identifier:
-        metadata = {
-            **TableMetadataSet(
-                column_schema=column_schema,
-                relation_identifier=relation_identifier,
-            ),
-        }
+    if (
+        "database" in dbt_resource_props
+        and "schema" in dbt_resource_props
+        and "alias" in dbt_resource_props
+    ):
+        relation_name = ".".join(
+            [
+                dbt_resource_props["database"],
+                dbt_resource_props["schema"],
+                dbt_resource_props["alias"],
+            ]
+        )
 
-    return metadata
+    return {
+        **TableMetadataSet(
+            column_schema=column_schema,
+            relation_identifier=relation_name,
+        ),
+    }
 
 
 def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
