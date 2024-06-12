@@ -21,7 +21,7 @@ from .version import __version__
 
 
 def infer_vscode_path(base_path: Path) -> Optional[str]:
-    """Utility which attempts to find the VS Code workspace folder by looking for a `.vscode` directory in the current
+    """Utility which attempts to find the VS Code workspace root folder by looking for a `.vscode` directory in the current
     directory or any of its parents.
     """
     while base_path != base_path.parent:
@@ -107,7 +107,7 @@ def generate_schema(
 @click.option(
     "--vscode-folder-path",
     type=click.STRING,
-    help="Path to the VS Code workspace folder. If not provided, attempts to find the .vscode directory in the current directory or any of its parents.",
+    help="Path to the VS Code workspace root folder. If not provided, attempts to find the .vscode directory in the current directory or any of its parents.",
 )
 def configure_vscode(loader_module: Optional[str] = None, vscode_folder_path: Optional[str] = None):
     loaders = load_blueprints_loaders_from_module_path_or_infer(loader_module)
