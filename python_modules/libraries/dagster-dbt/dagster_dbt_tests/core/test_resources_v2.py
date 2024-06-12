@@ -464,9 +464,7 @@ def test_dbt_cli_default_selection(
 def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -> None:
     monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
 
-    project = DbtProject(
-        project_dir=test_jaffle_shop_path, state_path=Path("state", testrun_uid)
-    )
+    project = DbtProject(project_dir=test_jaffle_shop_path, state_path=Path("state", testrun_uid))
     dbt = DbtCliResource(project_dir=project)
 
     dbt.cli(["--quiet", "parse"], target_path=project.target_path).wait()
