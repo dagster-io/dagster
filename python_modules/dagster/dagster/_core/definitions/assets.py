@@ -6,6 +6,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -1242,6 +1243,21 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         merged_attrs = merge_dicts(self.get_attributes_dict(), replaced_attributes)
         return self.__class__.dagster_internal_init(**merged_attrs)
+
+    def map_asset_specs(self, fn: Callable[[AssetSpec], AssetSpec]) -> "AssetsDefinition":
+        mapped_specs = []
+        for spec in self.specs:
+            mapped_spec = fn(spec)
+            if mapped_spec.key != spec.key:
+                raise DagsterInvalidDefinitionError(
+                    f"Asset key {spec.key.to_user_string()} was changed to "
+                    f"{mapped_spec.key.to_user_string()}. Mapping function must not change keys."
+                )
+            mapped_specs.append(mapped_spec)
+
+        return self.__class__.dagster_internal_init(
+            **{**self.get_attributes_dict(), "specs": mapped_specs}
+        )
 
     def _subset_graph_backed_asset(
         self,
