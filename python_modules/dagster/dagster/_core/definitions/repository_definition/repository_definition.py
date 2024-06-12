@@ -39,6 +39,8 @@ from .repository_data import CachingRepositoryData, RepositoryData
 from .valid_definitions import RepositoryListDefinition as RepositoryListDefinition
 
 if TYPE_CHECKING:
+    from dagster_blueprints.blueprint_manager import BlueprintManager
+
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
@@ -142,6 +144,9 @@ class RepositoryDefinition:
 
     def get_top_level_resources(self) -> Mapping[str, ResourceDefinition]:
         return self._repository_data.get_top_level_resources()
+
+    def get_blueprint_managers(self) -> Mapping[str, "BlueprintManager"]:
+        return self._repository_data.get_blueprint_managers()
 
     def get_env_vars_by_top_level_resource(self) -> Mapping[str, AbstractSet[str]]:
         return self._repository_data.get_env_vars_by_top_level_resource()

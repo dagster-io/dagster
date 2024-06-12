@@ -31,11 +31,14 @@ from .caching_index import CacheingDefinitionIndex
 from .valid_definitions import RepositoryListDefinition
 
 if TYPE_CHECKING:
+    from dagster_blueprints.blueprint_manager import BlueprintManager
+
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
     from dagster._core.definitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
     )
+
 
 T = TypeVar("T")
 Resolvable = Callable[[], T]
@@ -47,6 +50,9 @@ class RepositoryData(ABC):
     subclass :py:class:`RepositoryData` for fine-grained control over access to and lazy creation
     of repository members.
     """
+
+    @abstractmethod
+    def get_blueprint_managers(self) -> Mapping[str, "BlueprintManager"]: ...
 
     @abstractmethod
     def get_resource_key_mapping(self) -> Mapping[int, str]:
@@ -229,6 +235,7 @@ class CachingRepositoryData(RepositoryData):
         unresolved_partitioned_asset_schedules: Mapping[
             str, "UnresolvedPartitionedAssetScheduleDefinition"
         ],
+        blueprint_managers: Mapping[str, "BlueprintManager"],
     ):
         """Constructs a new CachingRepositoryData object.
 
@@ -255,7 +262,10 @@ class CachingRepositoryData(RepositoryData):
                 belonging to a repository.
             top_level_resources (Mapping[str, ResourceDefinition]): A dict of top-level
                 resource keys to defintions, for resources which should be displayed in the UI.
+            blueprint_managers (Mapping[str, BlueprintManager]): A dict of blueprint managers keyed by name.
         """
+        from dagster_blueprints.blueprint_manager import BlueprintManager
+
         from dagster._core.definitions import AssetsDefinition
 
         check.mapping_param(jobs, "jobs", key_type=str, value_type=(JobDefinition, FunctionType))
@@ -334,6 +344,10 @@ class CachingRepositoryData(RepositoryData):
         # load all sensors to force validation
         self._sensors.get_all_definitions()
 
+        self._resource_managers = check.dict_param(
+            blueprint_managers, "blueprint_managers", key_type=str, value_type=BlueprintManager
+        )
+
         self._all_jobs = None
 
     def _resolve_partitioned_asset_schedule_lambda(
@@ -397,6 +411,9 @@ class CachingRepositoryData(RepositoryData):
 
     def get_resource_key_mapping(self) -> Mapping[int, str]:
         return self._resource_key_mapping
+
+    def get_blueprint_managers(self) -> Mapping[str, "BlueprintManager"]:
+        return self._resource_managers
 
     def get_job_names(self) -> Sequence[str]:
         """Get the names of all jobs in the repository.

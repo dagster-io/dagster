@@ -88,6 +88,7 @@
 -e python_modules/libraries/dagster-twilio/
 -e python_modules/libraries/dagster-wandb[dev]
 -e python_modules/libraries/dagstermill/
+-e examples/experimental/dagster-blueprints/
 
 ### OTHER
 pandas_gbq  # (quickstart_gcp)

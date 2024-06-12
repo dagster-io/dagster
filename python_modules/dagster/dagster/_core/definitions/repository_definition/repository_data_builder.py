@@ -162,6 +162,8 @@ def build_caching_repository_data_from_list(
     top_level_resources: Optional[Mapping[str, ResourceDefinition]] = None,
     resource_key_mapping: Optional[Mapping[int, str]] = None,
 ) -> CachingRepositoryData:
+    from dagster_blueprints.blueprint_manager import BlueprintManager
+
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
         UnresolvedPartitionedAssetScheduleDefinition,
@@ -182,6 +184,8 @@ def build_caching_repository_data_from_list(
     source_assets: List[SourceAsset] = []
     asset_checks_defs: List[AssetChecksDefinition] = []
     partitions_defs: Set[PartitionsDefinition] = set()
+    blueprint_managers: Dict[str, BlueprintManager] = {}
+
     for definition in repository_definitions:
         if isinstance(definition, JobDefinition):
             if (
@@ -261,6 +265,8 @@ def build_caching_repository_data_from_list(
         elif isinstance(definition, SourceAsset):
             source_assets.append(definition)
             asset_keys.add(definition.key)
+        elif isinstance(definition, BlueprintManager):
+            blueprint_managers[definition.get_name()] = definition
         else:
             check.failed(f"Unexpected repository entry {definition}")
 
@@ -356,6 +362,7 @@ def build_caching_repository_data_from_list(
         utilized_env_vars=utilized_env_vars,
         resource_key_mapping=resource_key_mapping or {},
         unresolved_partitioned_asset_schedules=unresolved_partitioned_asset_schedules,
+        blueprint_managers=blueprint_managers,
     )
 
 
@@ -419,6 +426,7 @@ def build_caching_repository_data_from_dict(
         utilized_env_vars={},
         resource_key_mapping={},
         unresolved_partitioned_asset_schedules={},
+        blueprint_managers={},
     )
 
 

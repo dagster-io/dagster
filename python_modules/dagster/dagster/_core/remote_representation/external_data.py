@@ -123,6 +123,7 @@ class ExternalRepositoryData(
             ("external_asset_checks", Optional[Sequence["ExternalAssetCheck"]]),
             ("metadata", Optional[MetadataMapping]),
             ("utilized_env_vars", Optional[Mapping[str, Sequence["EnvVarConsumer"]]]),
+            ("external_blueprint_managers", Optional[Sequence["ExternalBlueprintManager"]]),
         ],
     )
 ):
@@ -139,6 +140,7 @@ class ExternalRepositoryData(
         external_asset_checks: Optional[Sequence["ExternalAssetCheck"]] = None,
         metadata: Optional[MetadataMapping] = None,
         utilized_env_vars: Optional[Mapping[str, Sequence["EnvVarConsumer"]]] = None,
+        external_blueprint_managers: Optional[Sequence["ExternalBlueprintManager"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -180,6 +182,11 @@ class ExternalRepositoryData(
                 utilized_env_vars,
                 "utilized_env_vars",
                 key_type=str,
+            ),
+            external_blueprint_managers=check.opt_nullable_sequence_param(
+                external_blueprint_managers,
+                "external_blueprint_managers",
+                of_type=ExternalBlueprintManager,
             ),
         )
 
@@ -1127,6 +1134,11 @@ class ResourceJobUsageEntry(NamedTuple):
 
 
 @whitelist_for_serdes
+class ExternalBlueprintManager(NamedTuple):
+    name: str
+
+
+@whitelist_for_serdes
 class ExternalResourceData(
     NamedTuple(
         "_ExternalResourceData",
@@ -1632,6 +1644,10 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
+        external_blueprint_managers=[
+            ExternalBlueprintManager(name=manager_name)
+            for manager_name, _manager in repository_def.get_blueprint_managers().items()
+        ],
         external_asset_checks=external_asset_checks_from_defs(jobs),
         metadata=repository_def.metadata,
         utilized_env_vars={

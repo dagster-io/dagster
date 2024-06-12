@@ -43,6 +43,8 @@ from .sensor_definition import SensorDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
+    from dagster_blueprints.blueprint_manager import BlueprintManager
+
     from dagster._core.storage.asset_value_loader import AssetValueLoader
 
 
@@ -62,6 +64,7 @@ def create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+    blueprint_managers: Optional[Iterable["BlueprintManager"]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     """Create a named repository using the same arguments as :py:class:`Definitions`. In older
     versions of Dagster, repositories were the mechanism for organizing assets, schedules, sensors,
@@ -97,6 +100,7 @@ def create_repository_using_definitions_args(
         executor=executor,
         loggers=loggers,
         asset_checks=asset_checks,
+        blueprint_managers=blueprint_managers,
     )
 
 
@@ -251,6 +255,7 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+    blueprint_managers: Optional[Iterable["BlueprintManager"]] = None,
 ) -> RepositoryDefinition:
     executor_def = (
         executor
@@ -295,6 +300,7 @@ def _create_repository_using_definitions_args(
             *(schedules_with_resources),
             *(sensors_with_resources),
             *(jobs_with_resources),
+            *(blueprint_managers or []),
         ]
 
     return created_repo
@@ -361,6 +367,10 @@ class Definitions:
             Default loggers for jobs. Individual jobs
             can define their own loggers by setting them explictly.
 
+        blueprint_managers (Optional[Iterable[BlueprintManager]]):
+            List of blueprint managers. Blueprint managers are used to load and manage
+            a set of Blueprints, which are then converted to definitions.
+
     Example usage:
 
     .. code-block:: python
@@ -410,6 +420,7 @@ class Definitions:
     _executor: Optional[Union[ExecutorDefinition, Executor]]
     _loggers: Mapping[str, LoggerDefinition]
     _asset_checks: Iterable[AssetChecksDefinition]
+    _blueprint_managers: Iterable["BlueprintManager"]
 
     def __init__(
         self,
@@ -425,7 +436,10 @@ class Definitions:
         executor: Optional[Union[ExecutorDefinition, Executor]] = None,
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
+        blueprint_managers: Optional[Iterable["BlueprintManager"]] = None,
     ):
+        from dagster_blueprints.blueprint_manager import BlueprintManager
+
         self._assets = check.opt_iterable_param(
             assets,
             "assets",
@@ -453,6 +467,9 @@ class Definitions:
         self._loggers = check.opt_mapping_param(
             loggers, "loggers", key_type=str, value_type=LoggerDefinition
         )
+        self._blueprint_managers = check.opt_iterable_param(
+            blueprint_managers, "blueprint_managers", BlueprintManager
+        )
 
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
@@ -464,11 +481,16 @@ class Definitions:
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            blueprint_managers=blueprint_managers,
         )
 
     @property
     def assets(self) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
         return self._assets
+
+    @property
+    def blueprint_managers(self) -> Iterable["BlueprintManager"]:
+        return self._blueprint_managers
 
     @property
     def schedules(
@@ -649,6 +671,7 @@ class Definitions:
         sensors = []
         jobs = []
         asset_checks = []
+        blueprint_managers = []
 
         resources = {}
         resource_key_indexes: Dict[str, int] = {}
@@ -663,6 +686,7 @@ class Definitions:
             schedules.extend(def_set.schedules or [])
             sensors.extend(def_set.sensors or [])
             jobs.extend(def_set.jobs or [])
+            blueprint_managers.extend(def_set.blueprint_managers)
 
             for resource_key, resource_value in (def_set.resources or {}).items():
                 if resource_key in resources:
@@ -700,6 +724,7 @@ class Definitions:
             executor=executor,
             loggers=loggers,
             asset_checks=asset_checks,
+            blueprint_managers=blueprint_managers,
         )
 
     @public

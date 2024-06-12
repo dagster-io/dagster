@@ -97,6 +97,9 @@ class BlueprintManager(ABC):
     @abstractmethod
     def load_blueprints(self) -> Sequence[Blueprint]: ...
 
+    def get_defs(self) -> Definitions:
+        return load_defs_from_blueprint_manager(self)
+
 
 def load_defs_from_blueprint_manager(manager: BlueprintManager) -> Definitions:
     """Load Dagster definitions from a BlueprintManager object.

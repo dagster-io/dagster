@@ -10,6 +10,8 @@ from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
+    from dagster_blueprints.blueprint_manager import BlueprintManager
+
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.definitions.partitioned_schedule import (
@@ -40,6 +42,7 @@ RepositoryListDefinition: TypeAlias = Union[
     SourceAsset,
     UnresolvedAssetJobDefinition,
     "UnresolvedPartitionedAssetScheduleDefinition",
+    "BlueprintManager",
 ]
 
 PendingRepositoryListDefinition: TypeAlias = Union[

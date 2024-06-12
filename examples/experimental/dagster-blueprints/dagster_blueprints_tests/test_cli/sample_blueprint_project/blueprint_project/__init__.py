@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from dagster import asset
+from dagster import Definitions, asset
 from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
 from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader
 
@@ -20,4 +20,12 @@ loader = YamlBlueprintsLoader(
 )
 other_loader = YamlBlueprintsLoader(
     path=Path(__file__).parent / "other_blueprints", per_file_blueprint_type=SimpleAssetBlueprint
+)
+
+defs = Definitions.merge(
+    loader.get_defs(),
+    other_loader.get_defs(),
+    Definitions(
+        blueprint_managers=[loader, other_loader],
+    ),
 )
