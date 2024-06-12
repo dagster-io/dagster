@@ -449,7 +449,7 @@ def create_assets_def_from_fn_and_decorator_args(
             decorator_name="@asset",
         )
 
-        builder = DecoratorAssetsDefinitionBuilder.from_asset_outs(
+        builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
             fn=fn,
             op_name=out_asset_key.to_python_identifier(),
             asset_in_map=builder_args.asset_in_map,
@@ -616,7 +616,7 @@ def multi_asset(
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        builder = DecoratorAssetsDefinitionBuilder.from_args(args=args, fn=fn)
+        builder = DecoratorAssetsDefinitionBuilder.for_multi_asset(args=args, fn=fn)
 
         check.invariant(
             len(builder.overlapping_output_names) == 0,
