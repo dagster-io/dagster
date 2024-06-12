@@ -69,16 +69,8 @@ def _attach_code_references_to_definitions(
             }
 
         new_assets_defs.append(
-            AssetsDefinition.dagster_internal_init(
-                **{
-                    **assets_def.get_attributes_dict(),
-                    **{
-                        "specs": [
-                            spec._replace(metadata=new_metadata_by_key[spec.key])
-                            for spec in assets_def.specs
-                        ]
-                    },
-                }
+            assets_def.map_asset_specs(
+                lambda spec: spec._replace(metadata=new_metadata_by_key[spec.key])
             )
         )
     return defs._replace(assets=new_assets_defs)

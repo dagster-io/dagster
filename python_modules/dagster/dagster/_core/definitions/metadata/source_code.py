@@ -130,15 +130,8 @@ def _with_code_source_single_definition(
                 ),
             }
 
-    return AssetsDefinition.dagster_internal_init(
-        **{
-            **assets_def.get_attributes_dict(),
-            **{
-                "specs": [
-                    spec._replace(metadata=metadata_by_key[spec.key]) for spec in assets_def.specs
-                ]
-            },
-        }
+    return assets_def.map_asset_specs(
+        lambda spec: spec._replace(metadata=metadata_by_key[spec.key])
     )
 
 
@@ -197,15 +190,8 @@ def _convert_local_path_to_source_control_path_single_definition(
             ),
         }
 
-    return AssetsDefinition.dagster_internal_init(
-        **{
-            **assets_def.get_attributes_dict(),
-            **{
-                "specs": [
-                    spec._replace(metadata=metadata_by_key[spec.key]) for spec in assets_def.specs
-                ]
-            },
-        }
+    return assets_def.map_asset_specs(
+        lambda spec: spec._replace(metadata=metadata_by_key[spec.key])
     )
 
 
