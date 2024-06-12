@@ -213,15 +213,15 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     assets_def_resource_defs: Mapping[str, ResourceDefinition]
     backfill_policy: Optional[BackfillPolicy]
     can_subset: bool
-    check_specs: Sequence[AssetCheckSpec]
+    check_specs_by_output_name: Mapping[str, AssetCheckSpec]
     code_version: Optional[str]
     compute_kind: Optional[str]
     config_schema: Optional[UserConfigSchema]
     decorator_name: str
-    description: Optional[str]
     group_name: Optional[str]
     name: Optional[str]
     op_def_resource_defs: Mapping[str, ResourceDefinition]
+    op_description: Optional[str]
     op_tags: Optional[Mapping[str, Any]]
     partitions_def: Optional[PartitionsDefinition]
     required_resource_keys: AbstractSet[str]
@@ -229,6 +229,10 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     retry_policy: Optional[RetryPolicy]
     specs: Sequence[AssetSpec]
     upstream_asset_deps: Optional[Iterable[AssetDep]]
+
+    @property
+    def check_specs(self) -> Sequence[AssetCheckSpec]:
+        return list(self.check_specs_by_output_name.values())
 
 
 class DecoratorAssetsDefinitionBuilder:
@@ -465,7 +469,7 @@ class DecoratorAssetsDefinitionBuilder:
 
     @cached_property
     def check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
-        return create_check_specs_by_output_name(self.args.check_specs)
+        return self.args.check_specs_by_output_name
 
     @cached_property
     def check_outs_by_output_name(self) -> Mapping[str, Out]:
@@ -522,10 +526,10 @@ class DecoratorAssetsDefinitionBuilder:
             decorator_name=self.args.decorator_name,
         )
 
-    def _create_op_definition(self) -> OpDefinition:
+    def create_op_definition(self) -> OpDefinition:
         return _Op(
             name=self.op_name,
-            description=self.args.description,
+            description=self.args.op_description,
             ins=self.ins_by_input_names,
             out=self.combined_outs_by_output_name,
             required_resource_keys=self.required_resource_keys,
@@ -542,7 +546,7 @@ class DecoratorAssetsDefinitionBuilder:
         return AssetsDefinition.dagster_internal_init(
             keys_by_input_name=self.asset_keys_by_input_names,
             keys_by_output_name=self.asset_keys_by_output_name,
-            node_def=self._create_op_definition(),
+            node_def=self.create_op_definition(),
             partitions_def=self.args.partitions_def,
             can_subset=self.args.can_subset,
             resource_defs=self.args.assets_def_resource_defs,
@@ -608,7 +612,10 @@ def validate_and_assign_output_names_to_check_specs(
 def create_check_specs_by_output_name(
     check_specs: Optional[Sequence[AssetCheckSpec]],
 ) -> Mapping[str, AssetCheckSpec]:
-    checks_by_output_name = {spec.get_python_identifier(): spec for spec in check_specs or []}
+    checks_by_output_name = {
+        spec.get_python_identifier(): spec
+        for spec in check.opt_sequence_param(check_specs, "check_specs", of_type=AssetCheckSpec)
+    }
     if check_specs and len(checks_by_output_name) != len(check_specs):
         duplicates = {
             item: count

@@ -48,6 +48,7 @@ from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilderArgs,
     build_named_ins,
     build_named_outs,
+    create_check_specs_by_output_name,
 )
 
 
@@ -405,10 +406,8 @@ def create_assets_def_from_fn_and_decorator_args(
     with disable_dagster_warnings():
         builder_args = DecoratorAssetsDefinitionBuilderArgs(
             name=args.name,
-            description=args.description,
-            check_specs=check.opt_list_param(
-                args.check_specs, "check_specs", of_type=AssetCheckSpec
-            ),
+            op_description=args.description,
+            check_specs_by_output_name=create_check_specs_by_output_name(args.check_specs),
             group_name=args.group_name,
             partitions_def=args.partitions_def,
             retry_policy=args.retry_policy,
@@ -579,9 +578,9 @@ def multi_asset(
 
     args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
-        description=description,
+        op_description=description,
         specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
-        check_specs=check.opt_list_param(check_specs, "check_specs", of_type=AssetCheckSpec),
+        check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
         asset_out_map=check.opt_mapping_param(outs, "outs", key_type=str, value_type=AssetOut),
         upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
             deps=deps, non_argument_deps=non_argument_deps
