@@ -72,7 +72,7 @@ Once Dagster+ finishes importing the project, move onto the next step.
 The file structure of the repository will change the first time a project is deployed using Dagster+. For dbt projects, a few things will happen:
 
 - **A [`dagster_cloud.yaml` file](/dagster-plus/managing-deployments/dagster-cloud-yaml) will be created.** This file defines the project as a Dagster+ code location.
-- **GitHub Action files will be created in `.github/workflows`.** These files, named `branch_deployments.yml` and `deploy.yml`, manage the deployments of the repository.
+- **A few `.yml` files, used for CI/CD, will be created in `.github/workflows`.** [These files](/dagster-plus/references/ci-cd-file-reference), named `branch_deployments.yml` and `deploy.yml`, manage the deployments of the repository.
 - **For dbt-only projects being deployed for the first time**, Dagster+ will create a new Dagster project in the repository using the [`dagster-dbt scaffold`](/integrations/dbt/reference#scaffolding-a-dagster-project-from-a-dbt-project) command. This will result in a Dagster project that matches the dbt project. For example, a dbt project named `my_dbt_project` will contain a Dagster project in `my_dbt_project/my_dbt_project` after the process completes. Refer to the [Dagster project files reference](/guides/understanding-dagster-project-files) to learn more about the files in a Dagster project.
 
 **Use the following tabs** to see how the repository will change for a [dbt-only project](#dbt-only-projects) and a [dbt and Dagster project](#dbt-and-dagster-projects) being deployed for the first time.
@@ -112,7 +112,7 @@ When the Dagster+ deployment process completes, the repository will now look lik
 ## after Dagster+ deployment
 
 my_dbt_project
-├── .github                                                ## GitHub Action files
+├── .github                                                ## CI/CD files
 │   ├── workflows
 │   │   ├── branch_deployments.yml
 │   │   ├── deploy.yml
@@ -154,7 +154,7 @@ After the Dagster+ changes, a dbt and Dagster project will include the files req
 ## after Dagster+ deployment
 
 my_dbt_and_dagster_project
-├── .github                                                ## GitHub Action files
+├── .github                                                ## CI/CD files
 │   ├── workflows
 │   │   ├── branch_deployments.yml
 │   │   ├── deploy.yml
@@ -181,6 +181,50 @@ my_dbt_and_dagster_project
 
 </TabItem>
 </TabGroup>
+
+---
+
+## Step 3: Update the CI/CD files
+
+<Note>
+  <strong>Heads up!</strong> Skip this step if you imported a{" "}
+  <strong>dbt-only project</strong>.
+</Note>
+
+The last step is to update the [CI/CD files](/dagster-plus/references/ci-cd-file-reference) in the repository. When you import a dbt project intp Dagster+ using the **Import a Dagster project** option, you'll need to add a few steps to allow the dbt project to deploy successfully.
+
+1. In your Dagster project, locate the `.github/workflows` directory.
+
+2. Open the `deploy.yml` file.
+
+3. Locate the `Checkout for Python Executable Deploy` step, which should be on or near line 38.
+
+4. After this step, add the following:
+
+   ```yaml
+   - name: Parse dbt project and package with Dagster project
+     if: steps.prerun.outputs.result == 'pex-deploy'
+     run: |
+       pip install pip --upgrade
+       pip install <ADAPTERS>               ## Add dbt adapters here, ex: dbt-duckdb
+       cd <PROJECT_REPOSITORY>/dbt          ## Replace with the dbt project directory
+       dbt deps
+       dbt parse
+     shell: bash
+   ```
+
+   When you add this step, you'll need to:
+
+   - **Add any [adapters](https://docs.getdbt.com/docs/connect-adapters) used by dbt**. In this example, we're using `dbt-duckdb`.
+   - **Add the location of your dbt project directory** to the `cd` command. In this example, our project is in the `/dbt` directory.
+
+5. Save the changes.
+
+6. Open the `branch_deployments.yml` file and repeat steps 3 - 5.
+
+7. Commit the changes to the repository.
+
+Once the new step is pushed to the remote, GitHub will automatically try to run a new job using the updated workflow.
 
 ---
 
@@ -212,6 +256,10 @@ For an end-to-end example, from the project creation to the deployment to Dagste
   <ArticleListItem
     title="dagster_cloud.yaml reference"
     href="/dagster-plus/managing-deployments/dagster-cloud-yaml"
+  ></ArticleListItem>
+  <ArticleListItem
+    title="Dagster+ CI/CD file reference"
+    href="/dagster-plus/references/ci-cd-file-reference"
   ></ArticleListItem>
   <ArticleListItem
     title="Dagster project files"
