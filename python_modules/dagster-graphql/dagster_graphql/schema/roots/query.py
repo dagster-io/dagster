@@ -1,4 +1,3 @@
-import json
 from typing import Any, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
@@ -9,6 +8,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.selector import (
+    BlueprintManagerSelector,
     InstigatorSelector,
     RepositorySelector,
     ResourceSelector,
@@ -113,9 +113,9 @@ from ..backfill import (
 )
 from ..blueprint_managers import (
     GrapheneBlueprintManager,
+    GrapheneBlueprintManagerOrError,
     GrapheneBlueprintManagersList,
     GrapheneBlueprintManagersListOrError,
-    GrapheneJsonSchema,
 )
 from ..external import (
     GrapheneRepositoriesOrError,
@@ -129,6 +129,7 @@ from ..inputs import (
     GrapheneAssetBackfillPreviewParams,
     GrapheneAssetGroupSelector,
     GrapheneAssetKeyInput,
+    GrapheneBlueprintManagerSelector,
     GrapheneGraphSelector,
     GrapheneInstigationSelector,
     GraphenePipelineSelector,
@@ -268,6 +269,12 @@ class GrapheneQuery(graphene.ObjectType):
         graphene.NonNull(GrapheneResourceDetailsListOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
         description="Retrieve all the top level resources.",
+    )
+
+    blueprintManagerOrError = graphene.Field(
+        graphene.NonNull(GrapheneBlueprintManagerOrError),
+        blueprintManagerSelector=graphene.NonNull(GrapheneBlueprintManagerSelector),
+        description="Retrieve a blueprint manager by name.",
     )
 
     blueprintManagersOrError = graphene.Field(
@@ -689,12 +696,24 @@ class GrapheneQuery(graphene.ObjectType):
         )
 
     @capture_error
+    def resolve_blueprintManagerOrError(self, graphene_info: ResolveInfo, **kwargs):
+        blueprint_manager_selector = BlueprintManagerSelector.from_graphql_input(
+            kwargs.get("blueprintManagerSelector")
+        )
+
+        location = graphene_info.context.get_code_location(blueprint_manager_selector.location_name)
+        repository = location.get_repository(blueprint_manager_selector.repository_name)
+        blueprint_manager = repository.get_external_blueprint_manager(
+            blueprint_manager_selector.blueprint_manager_name
+        )
+
+        return GrapheneBlueprintManager(blueprint_manager)
+
+    @capture_error
     def resolve_blueprintManagersOrError(self, graphene_info: ResolveInfo, **kwargs):
         repository_selector: RepositorySelector = RepositorySelector.from_graphql_input(
             kwargs.get("repositorySelector")
         )
-
-        print(graphene_info)
 
         location: CodeLocation = graphene_info.context.get_code_location(
             repository_selector.location_name
@@ -705,13 +724,7 @@ class GrapheneQuery(graphene.ObjectType):
         external_blueprint_managers = repository.get_external_blueprint_managers()
 
         results = [
-            GrapheneBlueprintManager(
-                id=blueprint_manager.name,
-                name=blueprint_manager.name,
-                schema=GrapheneJsonSchema(schema=json.dumps(blueprint_manager.schema.schema))
-                if blueprint_manager.schema
-                else None,
-            )
+            GrapheneBlueprintManager(blueprint_manager)
             for blueprint_manager in external_blueprint_managers
         ]
 

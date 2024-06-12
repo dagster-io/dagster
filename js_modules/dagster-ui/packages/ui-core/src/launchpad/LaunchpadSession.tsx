@@ -6,7 +6,7 @@ import {
   ButtonLink,
   Checkbox,
   Colors,
-  ConfigEditorHandle,
+  BlueprintConfigEditorHandle,
   ConfigEditorHelp,
   ConfigEditorHelpContext,
   Dialog,
@@ -200,7 +200,7 @@ const LaunchpadSession = (props: LaunchpadSessionProps) => {
   useBlockTraceUntilTrue('Permissions', loading);
 
   const mounted = React.useRef<boolean>(false);
-  const editor = React.useRef<ConfigEditorHandle | null>(null);
+  const editor = React.useRef<BlueprintConfigEditorHandle | null>(null);
   const previewCounter = React.useRef(0);
 
   const {isJob} = pipeline;

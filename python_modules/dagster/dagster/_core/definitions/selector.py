@@ -1,4 +1,4 @@
-from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
@@ -208,6 +208,27 @@ class ResourceSelector(NamedTuple):
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             resource_name=graphql_data["resourceName"],
+        )
+
+
+class BlueprintManagerSelector(NamedTuple):
+    location_name: str
+    repository_name: str
+    blueprint_manager_name: str
+
+    def to_graphql_input(self) -> Mapping[str, Any]:
+        return {
+            "repositoryLocationName": self.location_name,
+            "repositoryName": self.repository_name,
+            "blueprintManagerName": self.blueprint_manager_name,
+        }
+
+    @staticmethod
+    def from_graphql_input(graphql_data) -> "BlueprintManagerSelector":
+        return BlueprintManagerSelector(
+            location_name=graphql_data["repositoryLocationName"],
+            repository_name=graphql_data["repositoryName"],
+            blueprint_manager_name=graphql_data["blueprintManagerName"],
         )
 
 

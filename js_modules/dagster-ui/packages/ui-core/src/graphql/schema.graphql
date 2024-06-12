@@ -3201,6 +3201,10 @@ type Query {
   ): SchedulesOrError!
   topLevelResourceDetailsOrError(resourceSelector: ResourceSelector!): ResourceDetailsOrError!
   allTopLevelResourceDetailsOrError(repositorySelector: RepositorySelector!): ResourcesOrError!
+  blueprintManagerOrError(
+    blueprintManagerSelector: BlueprintManagerSelector!
+  ): BlueprintManagerOrError!
+  blueprintManagersOrError(repositorySelector: RepositorySelector!): BlueprintManagersListOrError!
   utilizedEnvVarsOrError(repositorySelector: RepositorySelector!): EnvVarWithConsumersOrError!
   sensorOrError(sensorSelector: SensorSelector!): SensorOrError!
   sensorsOrError(
@@ -3347,6 +3351,30 @@ union ResourcesOrError = ResourceDetailsList | RepositoryNotFoundError | PythonE
 
 type ResourceDetailsList {
   results: [ResourceDetails!]!
+}
+
+union BlueprintManagerOrError = BlueprintManager | PythonError
+
+type BlueprintManager {
+  id: String!
+  name: String!
+  schema: JsonSchema
+}
+
+type JsonSchema {
+  schema: String!
+}
+
+input BlueprintManagerSelector {
+  repositoryName: String!
+  repositoryLocationName: String!
+  blueprintManagerName: String!
+}
+
+union BlueprintManagersListOrError = BlueprintManagersList | PythonError
+
+type BlueprintManagersList {
+  results: [BlueprintManager!]!
 }
 
 union EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError

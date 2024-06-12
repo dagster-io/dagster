@@ -154,8 +154,21 @@ class ExternalRepository:
     def get_external_schedule(self, schedule_name: str) -> "ExternalSchedule":
         return self._external_schedules[schedule_name]
 
+    @property
+    @cached_method
+    def _external_blueprint_managers(self) -> Dict[str, "ExternalBlueprintManager"]:
+        return {
+            external_blueprint_manager.name: external_blueprint_manager
+            for external_blueprint_manager in (
+                self.external_repository_data.external_blueprint_managers or []
+            )
+        }
+
     def get_external_blueprint_managers(self) -> Sequence["ExternalBlueprintManager"]:
         return self.external_repository_data.external_blueprint_managers or []
+
+    def get_external_blueprint_manager(self, name: str) -> "ExternalBlueprintManager":
+        return self._external_blueprint_managers[name]
 
     def get_external_schedules(self) -> Sequence["ExternalSchedule"]:
         return list(self._external_schedules.values())

@@ -15,6 +15,7 @@ import {repoAddressFromPath} from './repoAddressFromPath';
 import {workspacePathFromAddress} from './workspacePath';
 import {Route} from '../app/Route';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
+import {BlueprintManagerRoot} from '../blueprints/BlueprintManagerRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ResourceRoot} from '../resources/ResourceRoot';
 import {WorkspaceResourcesRoot} from '../resources/WorkspaceResourcesRoot';
@@ -118,6 +119,9 @@ const RepoRouteContainer = () => {
       </Route>
       <Route path="/locations/:repoPath/resources/:resourceName">
         <ResourceRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/locations/:repoPath/blueprint-managers/:blueprintManagerName">
+        <BlueprintManagerRoot repoAddress={addressForPath} />
       </Route>
       <Route path={['/locations/:repoPath/asset-groups/:groupName/list(/?.*)']}>
         <AssetGroupRoot repoAddress={addressForPath} tab="list" />

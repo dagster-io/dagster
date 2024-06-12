@@ -1,14 +1,44 @@
 {
-  "title": "ParsingModel[SimpleAssetBlueprint]",
-  "$ref": "#/definitions/SimpleAssetBlueprint",
+  "title": "ParsingModel[Union[SimpleAssetBlueprint, OtherAssetBlueprint]]",
+  "anyOf": [
+    {
+      "$ref": "#/definitions/SimpleAssetBlueprint"
+    },
+    {
+      "$ref": "#/definitions/OtherAssetBlueprint"
+    }
+  ],
   "definitions": {
     "SimpleAssetBlueprint": {
       "title": "SimpleAssetBlueprint",
-      "description": "A blob of user-provided, structured metadata that specifies a set of Dagster definitions,\nlike assets, jobs, schedules, sensors, resources, or asset checks.\n\nBase class for user-provided types. Users override and provide:\n- The set of fields\n- A build_defs implementation that generates Dagster Definitions from field values",
+      "description": "Defines a simple asset blueprint.",
       "type": "object",
       "properties": {
         "key": {
           "title": "Key",
+          "description": "The key of the asset blueprint.",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "description": "The description of the asset blueprint",
+          "default": "Test",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "OtherAssetBlueprint": {
+      "title": "OtherAssetBlueprint",
+      "description": "Baz",
+      "type": "object",
+      "properties": {
+        "key": {
+          "title": "Key",
+          "description": "The key of the asset blueprint 2.",
           "type": "string"
         }
       },

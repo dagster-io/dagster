@@ -705,6 +705,28 @@ export enum BackfillPolicyType {
   SINGLE_RUN = 'SINGLE_RUN',
 }
 
+export type BlueprintManager = {
+  __typename: 'BlueprintManager';
+  id: Scalars['String']['output'];
+  name: Scalars['String']['output'];
+  schema: Maybe<JsonSchema>;
+};
+
+export type BlueprintManagerOrError = BlueprintManager | PythonError;
+
+export type BlueprintManagerSelector = {
+  blueprintManagerName: Scalars['String']['input'];
+  repositoryLocationName: Scalars['String']['input'];
+  repositoryName: Scalars['String']['input'];
+};
+
+export type BlueprintManagersList = {
+  __typename: 'BlueprintManagersList';
+  results: Array<BlueprintManager>;
+};
+
+export type BlueprintManagersListOrError = BlueprintManagersList | PythonError;
+
 export type BoolMetadataEntry = MetadataEntry & {
   __typename: 'BoolMetadataEntry';
   boolValue: Maybe<Scalars['Boolean']['output']>;
@@ -2150,6 +2172,11 @@ export type JsonMetadataEntry = MetadataEntry & {
   description: Maybe<Scalars['String']['output']>;
   jsonString: Scalars['String']['output'];
   label: Scalars['String']['output'];
+};
+
+export type JsonSchema = {
+  __typename: 'JsonSchema';
+  schema: Scalars['String']['output'];
 };
 
 export type LaunchBackfillMutation = {
@@ -3670,6 +3697,8 @@ export type Query = {
   autoMaterializeAssetEvaluationsOrError: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeEvaluationsForEvaluationId: Maybe<AutoMaterializeAssetEvaluationRecordsOrError>;
   autoMaterializeTicks: Array<InstigationTick>;
+  blueprintManagerOrError: BlueprintManagerOrError;
+  blueprintManagersOrError: BlueprintManagersListOrError;
   canBulkTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   capturedLogsMetadata: CapturedLogsMetadata;
@@ -3794,6 +3823,14 @@ export type QueryAutoMaterializeTicksArgs = {
   dayRange?: InputMaybe<Scalars['Int']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   statuses?: InputMaybe<Array<InstigationTickStatus>>;
+};
+
+export type QueryBlueprintManagerOrErrorArgs = {
+  blueprintManagerSelector: BlueprintManagerSelector;
+};
+
+export type QueryBlueprintManagersOrErrorArgs = {
+  repositorySelector: RepositorySelector;
 };
 
 export type QueryCapturedLogsArgs = {
@@ -6855,6 +6892,57 @@ export const buildBackfillPolicy = (
   };
 };
 
+export const buildBlueprintManager = (
+  overrides?: Partial<BlueprintManager>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BlueprintManager'} & BlueprintManager => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BlueprintManager');
+  return {
+    __typename: 'BlueprintManager',
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'et',
+    name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'voluptas',
+    schema:
+      overrides && overrides.hasOwnProperty('schema')
+        ? overrides.schema!
+        : relationshipsToOmit.has('JsonSchema')
+        ? ({} as JsonSchema)
+        : buildJsonSchema({}, relationshipsToOmit),
+  };
+};
+
+export const buildBlueprintManagerSelector = (
+  overrides?: Partial<BlueprintManagerSelector>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): BlueprintManagerSelector => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BlueprintManagerSelector');
+  return {
+    blueprintManagerName:
+      overrides && overrides.hasOwnProperty('blueprintManagerName')
+        ? overrides.blueprintManagerName!
+        : 'repellendus',
+    repositoryLocationName:
+      overrides && overrides.hasOwnProperty('repositoryLocationName')
+        ? overrides.repositoryLocationName!
+        : 'voluptatem',
+    repositoryName:
+      overrides && overrides.hasOwnProperty('repositoryName') ? overrides.repositoryName! : 'esse',
+  };
+};
+
+export const buildBlueprintManagersList = (
+  overrides?: Partial<BlueprintManagersList>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BlueprintManagersList'} & BlueprintManagersList => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BlueprintManagersList');
+  return {
+    __typename: 'BlueprintManagersList',
+    results: overrides && overrides.hasOwnProperty('results') ? overrides.results! : [],
+  };
+};
+
 export const buildBoolMetadataEntry = (
   overrides?: Partial<BoolMetadataEntry>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -9157,6 +9245,18 @@ export const buildJsonMetadataEntry = (
       overrides && overrides.hasOwnProperty('description') ? overrides.description! : 'et',
     jsonString: overrides && overrides.hasOwnProperty('jsonString') ? overrides.jsonString! : 'qui',
     label: overrides && overrides.hasOwnProperty('label') ? overrides.label! : 'ut',
+  };
+};
+
+export const buildJsonSchema = (
+  overrides?: Partial<JsonSchema>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'JsonSchema'} & JsonSchema => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('JsonSchema');
+  return {
+    __typename: 'JsonSchema',
+    schema: overrides && overrides.hasOwnProperty('schema') ? overrides.schema! : 'quos',
   };
 };
 
@@ -11804,6 +11904,18 @@ export const buildQuery = (
       overrides && overrides.hasOwnProperty('autoMaterializeTicks')
         ? overrides.autoMaterializeTicks!
         : [],
+    blueprintManagerOrError:
+      overrides && overrides.hasOwnProperty('blueprintManagerOrError')
+        ? overrides.blueprintManagerOrError!
+        : relationshipsToOmit.has('BlueprintManager')
+        ? ({} as BlueprintManager)
+        : buildBlueprintManager({}, relationshipsToOmit),
+    blueprintManagersOrError:
+      overrides && overrides.hasOwnProperty('blueprintManagersOrError')
+        ? overrides.blueprintManagersOrError!
+        : relationshipsToOmit.has('BlueprintManagersList')
+        ? ({} as BlueprintManagersList)
+        : buildBlueprintManagersList({}, relationshipsToOmit),
     canBulkTerminate:
       overrides && overrides.hasOwnProperty('canBulkTerminate')
         ? overrides.canBulkTerminate!

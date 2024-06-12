@@ -266,6 +266,18 @@ class GrapheneResourceSelector(graphene.InputObjectType):
         name = "ResourceSelector"
 
 
+class GrapheneBlueprintManagerSelector(graphene.InputObjectType):
+    repositoryName = graphene.NonNull(graphene.String)
+    repositoryLocationName = graphene.NonNull(graphene.String)
+    blueprintManagerName = graphene.NonNull(graphene.String)
+
+    class Meta:
+        description = (
+            """This type represents the fields necessary to identify a blueprint manager."""
+        )
+        name = "BlueprintManagerSelector"
+
+
 class GrapheneExecutionMetadata(graphene.InputObjectType):
     tags = graphene.List(graphene.NonNull(GrapheneExecutionTag))
     rootRunId = graphene.String(
