@@ -878,18 +878,21 @@ def opt_list_elem(
     return _check_iterable_items(value, of_type, "list")
 
 
+TTypeOrTupleOfTTypes = Union[Type[T], Tuple[Type[T], ...]]
+
+
 def is_list(
     obj: object,
-    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_type: Optional[TTypeOrTupleOfTTypes[T]] = None,
     additional_message: Optional[str] = None,
-) -> List:
+) -> List[T]:
     if not isinstance(obj, list):
         raise _type_mismatch_error(obj, list, additional_message)
 
     if not of_type:
         return obj
 
-    return _check_iterable_items(obj, of_type, "list")
+    return list(_check_iterable_items(obj, of_type, "list"))
 
 
 # ########################

@@ -57,10 +57,11 @@ def execute_query(
     if "errors" in result_dict:
         result_dict_errors = check.list_elem(result_dict, "errors", of_type=Exception)
         result_errors = check.is_list(result.errors, of_type=Exception)
-        check.invariant(len(result_dict_errors) == len(result_errors))  #
+        check.invariant(len(result_dict_errors) == len(result_errors))
         for python_error, error_dict in zip(result_errors, result_dict_errors):
-            if hasattr(python_error, "original_error") and python_error.original_error:
-                error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)
+            # Typing errors caught by making is_list typed -- schrockn 2024-06-09
+            if hasattr(python_error, "original_error") and python_error.original_error:  # type: ignore
+                error_dict["stack_trace"] = get_stack_trace_array(python_error.original_error)  # type: ignore
 
     return result_dict
 
