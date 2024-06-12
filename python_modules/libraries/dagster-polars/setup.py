@@ -47,7 +47,7 @@ setup(
         "gcp": ["dagster-gcp>=0.19.5"],
         "test": [
             "pytest>=7.3.1,<8.0.0",
-            "hypothesis>=6.89.0",
+            "hypothesis[zoneinfo]>=6.89.0",
             "deepdiff>=6.3.0",
             "pytest-cases>=3.6.14",
         ],
