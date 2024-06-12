@@ -56,7 +56,6 @@ from dagster._core.execution.plan.compute import execute_core_compute
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster._core.execution.resolve_versions import resolve_step_output_versions
 from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils import iterate_with_context
@@ -550,9 +549,7 @@ def _type_check_and_store_output(
         step_context.step_output_metadata_capture[step_output_handle] = output.metadata
 
     version = (
-        resolve_step_output_versions(
-            step_context.job_def, step_context.execution_plan, step_context.resolved_run_config
-        ).get(step_output_handle)
+        step_context.execution_plan.known_state.step_output_versions.get(step_output_handle)
         if MEMOIZED_RUN_TAG in step_context.job.get_definition().tags
         else None
     )

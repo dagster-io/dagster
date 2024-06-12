@@ -30,7 +30,6 @@ from dagster._core.execution.resolve_versions import join_and_hash, resolve_conf
 from dagster._core.storage.input_manager import input_manager
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
-from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.test_utils import instance_for_test
 
 
@@ -139,10 +138,10 @@ def test_memoized_plan_no_memoized_results():
         versioned_job = versioned_job_factory()
         memoized_plan = create_execution_plan(versioned_job, instance_ref=instance.get_ref())
 
-        assert set(memoized_plan.step_keys_to_execute) == {
+        assert memoized_plan.step_keys_to_execute == [
             "versioned_op_no_input",
             "versioned_op_takes_input",
-        }
+        ]
 
 
 def test_memoized_plan_memoized_results():
@@ -151,11 +150,15 @@ def test_memoized_plan_memoized_results():
 
         versioned_job = versioned_job_factory(manager)
         plan = create_execution_plan(versioned_job, instance_ref=instance.get_ref())
-        resolved_run_config = ResolvedRunConfig.build(versioned_job)
+        assert plan.step_keys_to_execute == [
+            "versioned_op_no_input",
+            "versioned_op_takes_input",
+        ]
 
         # Affix a memoized value to the output
         step_output_handle = StepOutputHandle("versioned_op_no_input", "result")
         step_output_version = plan.get_version_for_step_output_handle(step_output_handle)
+
         manager.values[
             (
                 step_output_handle.step_key,
@@ -164,12 +167,7 @@ def test_memoized_plan_memoized_results():
             )
         ] = 4
 
-        memoized_plan = plan.build_memoized_plan(
-            versioned_job,
-            resolved_run_config,
-            instance=None,
-            selected_step_keys=None,
-        )
+        memoized_plan = create_execution_plan(versioned_job, instance_ref=instance.get_ref())
 
         assert memoized_plan.step_keys_to_execute == ["versioned_op_takes_input"]
 
@@ -436,12 +434,8 @@ def test_memoized_inner_op():
                 step_output_version,
             )
         ] = 4
-        memoized_plan = unmemoized_plan.build_memoized_plan(
-            wrap_job,
-            ResolvedRunConfig.build(wrap_job),
-            instance=None,
-            selected_step_keys=None,
-        )
+        memoized_plan = create_execution_plan(wrap_job, instance_ref=instance.get_ref())
+
         assert len(memoized_plan.step_keys_to_execute) == 0
 
 

@@ -103,7 +103,7 @@ def create_valid_pipeline_run(
             else None
         ),
         run_config=execution_params.run_config,
-        step_keys_to_execute=step_keys_to_execute,
+        step_keys_to_execute=external_execution_plan.execution_plan_snapshot.step_keys_to_execute,
         tags=tags,
         root_run_id=execution_params.execution_metadata.root_run_id,
         parent_run_id=execution_params.execution_metadata.parent_run_id,
