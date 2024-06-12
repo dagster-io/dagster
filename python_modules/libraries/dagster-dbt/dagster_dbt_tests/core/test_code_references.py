@@ -26,7 +26,7 @@ def test_basic_attach_code_references(test_jaffle_shop_manifest: Dict[str, Any])
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(enable_code_references=True)
         ),
-        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)).prepared(),
+        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
     def my_dbt_assets(): ...
 
@@ -65,7 +65,7 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(enable_code_references=True)
         ),
-        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)).prepared(),
+        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
     def my_dbt_assets(): ...
 
@@ -91,7 +91,7 @@ def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any
         dagster_dbt_translator=DagsterDbtTranslator(
             settings=DagsterDbtTranslatorSettings(enable_code_references=True)
         ),
-        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)).prepared(),
+        project=DbtProject(project_dir=os.fspath(test_jaffle_shop_path)),
     )
     def my_dbt_assets(): ...
 
