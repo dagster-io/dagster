@@ -59,6 +59,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._model import dagster_model
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -86,6 +87,17 @@ if TYPE_CHECKING:
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
+@dagster_model
+class AssetsDefinitionComputeInfo:
+    """Represents the computation behind an AssetsDefinition."""
+
+    node_def: NodeDefinition
+    keys_by_input_name: Mapping[str, AssetKey]
+    keys_by_output_name: Mapping[str, AssetKey]
+    backfill_policy: Optional[BackfillPolicy]
+    can_subset: bool
+
+
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
 
@@ -106,21 +118,18 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         "owners_by_key",
     }
 
-    _node_def: Optional[NodeDefinition]
-    _keys_by_input_name: Mapping[str, AssetKey]
-    _keys_by_output_name: Mapping[str, AssetKey]
     _partitions_def: Optional[PartitionsDefinition]
     # partition mappings are also tracked inside the AssetSpecs, but this enables faster access by
     # upstream asset key
     _partition_mappings: Mapping[AssetKey, PartitionMapping]
     _resource_defs: Mapping[str, ResourceDefinition]
     _selected_asset_keys: AbstractSet[AssetKey]
-    _can_subset: bool
-    _backfill_policy: Optional[BackfillPolicy]
+
     _selected_asset_check_keys: AbstractSet[AssetCheckKey]
     _is_subset: bool
 
     _specs_by_key: Mapping[AssetKey, AssetSpec]
+    _compute_info: Optional[AssetsDefinitionComputeInfo]
 
     @experimental_param(param="specs")
     def __init__(
@@ -181,20 +190,36 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             check.invariant(
                 not can_subset, "node_def is None, so backfill_policy must not be provided"
             )
+            self._compute_info = None
+        else:
+            self._compute_info = AssetsDefinitionComputeInfo(
+                node_def=node_def,
+                keys_by_input_name=check.opt_mapping_param(
+                    keys_by_input_name,
+                    "keys_by_input_name",
+                    key_type=str,
+                    value_type=AssetKey,
+                ),
+                keys_by_output_name=check.opt_mapping_param(
+                    keys_by_output_name,
+                    "keys_by_output_name",
+                    key_type=str,
+                    value_type=AssetKey,
+                ),
+                can_subset=can_subset,
+                backfill_policy=check.opt_inst_param(
+                    backfill_policy, "backfill_policy", BackfillPolicy
+                ),
+            )
+
+        check_specs_by_output_name = check.opt_mapping_param(
+            check_specs_by_output_name,
+            "check_specs_by_output_name",
+            key_type=str,
+            value_type=AssetCheckSpec,
+        )
 
         self._node_def = node_def
-        self._keys_by_input_name = check.opt_mapping_param(
-            keys_by_input_name,
-            "keys_by_input_name",
-            key_type=str,
-            value_type=AssetKey,
-        )
-        self._keys_by_output_name = check.opt_mapping_param(
-            keys_by_output_name,
-            "keys_by_output_name",
-            key_type=str,
-            value_type=AssetKey,
-        )
 
         self._check_specs_by_output_name = check.opt_mapping_param(
             check_specs_by_output_name,
@@ -207,12 +232,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs")
-        )
-
-        self._can_subset = can_subset
-
-        self._backfill_policy = check.opt_inst_param(
-            backfill_policy, "backfill_policy", BackfillPolicy
         )
 
         if self._partitions_def is None:
@@ -242,7 +261,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             resolved_specs = specs
 
         else:
-            all_asset_keys = set(self._keys_by_output_name.values())
+            compute_info_not_none = check.not_none(
+                self._compute_info, "If specs are not provided, a node_def must be provided"
+            )
+            all_asset_keys = set(compute_info_not_none.keys_by_output_name.values())
 
             if asset_deps:
                 check.invariant(
@@ -256,7 +278,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if partition_mappings:
                 _validate_partition_mappings(
                     partition_mappings=partition_mappings,
-                    input_asset_keys=set(self._keys_by_input_name.values()),
+                    input_asset_keys=set(compute_info_not_none.keys_by_input_name.values()),
                     all_asset_keys=all_asset_keys,
                 )
 
@@ -264,7 +286,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
             resolved_specs = _asset_specs_from_attr_key_params(
                 all_asset_keys=all_asset_keys,
-                keys_by_input_name=self._keys_by_input_name,
+                keys_by_input_name=compute_info_not_none.keys_by_input_name,
                 deps_by_asset_key=asset_deps,
                 partition_mappings=partition_mappings,
                 tags_by_key=tags_by_key,
@@ -349,19 +371,20 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if spec.key in self._selected_asset_check_keys
         }
 
-        _validate_self_deps(
-            input_keys=[
-                key
-                # filter out the special inputs which are used for cases when a multi-asset is
-                # subsetted, as these are not the same as self-dependencies and are never loaded
-                # in the same step that their corresponding output is produced
-                for input_name, key in self._keys_by_input_name.items()
-                if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
-            ],
-            output_keys=self._selected_asset_keys,
-            partition_mappings=self._partition_mappings,
-            partitions_def=self._partitions_def,
-        )
+        if self._compute_info:
+            _validate_self_deps(
+                input_keys=[
+                    key
+                    # filter out the special inputs which are used for cases when a multi-asset is
+                    # subsetted, as these are not the same as self-dependencies and are never loaded
+                    # in the same step that their corresponding output is produced
+                    for input_name, key in self._compute_info.keys_by_input_name.items()
+                    if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
+                ],
+                output_keys=self._selected_asset_keys,
+                partition_mappings=self._partition_mappings,
+                partitions_def=self._partitions_def,
+            )
 
     def dagster_internal_init(
         *,
@@ -769,7 +792,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         asset keys in a given computation (as opposed to being required to materialize all asset
         keys).
         """
-        return self._can_subset
+        return self._compute_info.can_subset if self._compute_info else False
 
     @property
     def specs(self) -> Iterable[AssetSpec]:
@@ -849,7 +872,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check.invariant(
             len(self.keys) == 1,
             "Tried to retrieve asset key from an assets definition with multiple asset keys: "
-            + ", ".join([str(ak.to_string()) for ak in self._keys_by_output_name.values()]),
+            + ", ".join([str(ak.to_string()) for ak in self.keys]),
         )
 
         return next(iter(self.keys))
@@ -883,19 +906,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         AssetsDefinition.
         """
         # the input asset keys that are directly upstream of a selected asset key
-        upstream_keys = {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
-        input_keys = set(self._keys_by_input_name.values())
-        return upstream_keys.intersection(input_keys)
+        return {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
 
     @property
-    def node_keys_by_output_name(self) -> Mapping[str, AssetKey]:
+    def node_keys_by_output_name(self) -> Optional[Mapping[str, AssetKey]]:
         """AssetKey for each output on the underlying NodeDefinition."""
-        return self._keys_by_output_name
+        return self._compute_info.keys_by_output_name if self._compute_info else None
 
     @property
-    def node_keys_by_input_name(self) -> Mapping[str, AssetKey]:
+    def node_keys_by_input_name(self) -> Optional[Mapping[str, AssetKey]]:
         """AssetKey for each input on the underlying NodeDefinition."""
-        return self._keys_by_input_name
+        return self._compute_info.keys_by_input_name if self._compute_info else None
 
     @property
     def node_check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
@@ -990,7 +1011,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
-        return self._backfill_policy
+        return self._compute_info.backfill_policy if self._compute_info else None
 
     @public
     @property

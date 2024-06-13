@@ -514,7 +514,7 @@ def build_node_deps(
         )
 
         # connect each input of this AssetsDefinition to the proper upstream node
-        for input_name, upstream_asset_key in inputs_map.items():
+        for input_name, upstream_asset_key in (inputs_map or {}).items():
             # ignore self-deps
             if upstream_asset_key in assets_def.keys:
                 continue

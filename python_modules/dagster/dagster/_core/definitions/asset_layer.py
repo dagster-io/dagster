@@ -425,7 +425,7 @@ class AssetLayer(NamedTuple):
             for key in assets_def.keys:
                 asset_deps[key] = assets_def.asset_deps[key]
 
-            for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
+            for input_name, input_asset_key in (assets_def.node_keys_by_input_name or {}).items():
                 input_handle = NodeInputHandle(node_handle, input_name)
                 asset_key_by_input[input_handle] = input_asset_key
                 # resolve graph input to list of op inputs that consume it
@@ -433,8 +433,7 @@ class AssetLayer(NamedTuple):
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = input_asset_key
 
-
-            for output_name, asset_key in assets_def.node_keys_by_output_name.items():
+            for output_name, asset_key in (assets_def.node_keys_by_output_name or {}).items():
                 # resolve graph output to the op output it comes from
                 inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
                     output_name, handle=node_handle
