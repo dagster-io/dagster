@@ -53,7 +53,6 @@ export const useCodeLocationPageFilters = () => {
     getStringValue: (value) => value,
     state: filters.status,
     onStateChanged: (values) => {
-      console.log({values});
       setFilters({status: Array.from(values)});
     },
     matchType: 'all-of',
