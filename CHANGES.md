@@ -1,5 +1,37 @@
 # Changelog
 
+# 1.7.10 (core)/ 0.23.10 (libraries)
+
+### New
+
+- Performance improvements when rendering the asset graph while runs are in progress.
+- A new API `build_freshness_checks_for_dbt_assets` which allows users to parameterize freshness checks entirely within dbt. Check out the API docs for more: https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dbt-dagster-dbt.
+- Asset search results now display compute and storage kind icons.
+- Asset jobs where the underlying assets have multiple backfill policies will no longer fail at definition time. Instead, the backfill policy for the job will use the minimum `max_partitions_per_run` from the job’s constituent assets.
+- [dagstermill] `asset_tags` can now be specified when building dagstermill assets
+- [dagster-embedded-elt] Custom asset tags can be applied to Sling assets via the `DagsterSlingTranslator`
+- [dagster-embedded-elt] dlt assets now automatically have `dagster/storage_kind` tags attached
+
+### Bugfixes
+
+- `tags` passed to `outs` in `graph_multi_asset` now get correctly propagated to the resulting assets.
+- [ui] Fixed an issue in the where when multiple runs were started at the same time to materialize the same asset, the most recent one was not always shown as in progress in the asset graph in the Dagster UI.
+- The “newly updated” auto-materialize rule will now respond to either new observations or materializations for observable assets.
+- `build_metadata_bounds_checks` now no longer errors when targeting metadata keys that have special characters.
+
+### Documentation
+
+- The [Schedule concept docs](https://docs.dagster.io/concepts/automation/schedules) got a revamp! Specifically, we:
+  - Updated the Schedule concept page to be a “jumping off” point for all-things scheduling, including a high-level look at how schedules work, their benefits, and what you need to know before diving in
+  - Added some basic how-to guides for [automating assets](https://docs.dagster.io/concepts/automation/schedules/automating-assets-schedules-jobs) and [ops](https://docs.dagster.io/concepts/automation/schedules/automating-ops-schedules-jobs) using schedules
+  - Added a [reference of schedule-focused examples](https://docs.dagster.io/concepts/automation/schedules/examples)
+  - Added dedicated guides for common schedule uses, including creating p[artitioned schedules](https://docs.dagster.io/concepts/automation/schedules/partitioned-schedules), [customizing executing timezones](https://docs.dagster.io/concepts/automation/schedules/customizing-executing-timezones), [testing](https://docs.dagster.io/concepts/automation/schedules/testing), and [troubleshooting](https://docs.dagster.io/concepts/automation/schedules/troubleshooting)
+
+### Dagster Plus
+
+- [experimental] The backfill daemon can now store logs and display them in the UI for increased visibility into the daemon’s behavior. Please contact Dagster Labs if you are interested in piloting this experimental feature.
+- Added a `--read-only` flag to the `dagster-cloud ci branch-deployment` CLI command, which returns the current branch deployment name for the current code repository branch without update the status of the branch deployment.
+
 # 1.7.9 (core) / 0.23.9 (libraries)
 
 ### New
