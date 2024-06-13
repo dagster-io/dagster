@@ -243,6 +243,14 @@ class DbtProject(IHaveNew):
     def prepared(self) -> "DbtProject":
         """Execute the preparation process for a dbt project and return the DbtProject object when complete.
 
+        By default, the preparation process for DbtProject is the following:
+            * During development, pull the dependencies and reload the manifest at run time to pick up any changes.
+            * When deploying, expect a manifest that was created at build time to reduce start-up time.
+
+        The preparation process is ensured by `self.manifest_preparer`.
+
+        If this method returns successfully, `self.manifest_path` will point to a loadable manifest file.
+
         Returns:
             DbtProject: The current representation of the dbt project.
 
