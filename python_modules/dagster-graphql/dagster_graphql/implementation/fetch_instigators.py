@@ -4,6 +4,7 @@ import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
+from dagster._core.remote_representation.external import CompoundID
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
@@ -15,8 +16,9 @@ if TYPE_CHECKING:
     )
 
 
-def get_instigator_state_or_error(
-    graphene_info: "ResolveInfo", selector: InstigatorSelector
+def get_instigator_state_by_selector(
+    graphene_info: "ResolveInfo",
+    selector: InstigatorSelector,
 ) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
 
@@ -42,6 +44,39 @@ def get_instigator_state_or_error(
         return GrapheneInstigationStateNotFoundError(selector.name)
 
     return GrapheneInstigationState(current_state)
+
+
+def get_instigation_state_by_id(
+    graphene_info: "ResolveInfo",
+    instigator_id: CompoundID,
+):
+    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
+
+    state = graphene_info.context.instance.get_instigator_state(
+        origin_id=instigator_id.external_origin_id,
+        selector_id=instigator_id.selector_id,
+    )
+    if state is None:
+        return GrapheneInstigationStateNotFoundError(instigator_id.to_string())
+
+    return GrapheneInstigationState(state)
+
+
+def get_instigation_states_by_repository_id(
+    graphene_info: "ResolveInfo",
+    repository_id: CompoundID,
+):
+    from dagster_graphql.schema.instigation import (
+        GrapheneInstigationState,
+        GrapheneInstigationStates,
+    )
+
+    states = graphene_info.context.instance.all_instigator_state(
+        repository_origin_id=repository_id.external_origin_id,
+        repository_selector_id=repository_id.selector_id,
+    )
+
+    return GrapheneInstigationStates(results=[GrapheneInstigationState(state) for state in states])
 
 
 def get_tick_log_events(graphene_info: "ResolveInfo", tick) -> "GrapheneInstigationEventConnection":

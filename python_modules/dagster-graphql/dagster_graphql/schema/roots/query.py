@@ -17,6 +17,7 @@ from dagster._core.definitions.selector import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
+from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.workspace.permissions import Permissions
 
@@ -60,7 +61,11 @@ from ...implementation.fetch_assets import (
     get_assets,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
-from ...implementation.fetch_instigators import get_instigator_state_or_error
+from ...implementation.fetch_instigators import (
+    get_instigation_state_by_id,
+    get_instigation_states_by_repository_id,
+    get_instigator_state_by_selector,
+)
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
     get_job_or_error,
@@ -134,6 +139,7 @@ from ..inputs import (
 from ..instance import GrapheneInstance
 from ..instigation import (
     GrapheneInstigationStateOrError,
+    GrapheneInstigationStatesOrError,
     GrapheneInstigationStatus,
     GrapheneInstigationTick,
     GrapheneInstigationTickStatus,
@@ -283,10 +289,19 @@ class GrapheneQuery(graphene.ObjectType):
 
     instigationStateOrError = graphene.Field(
         graphene.NonNull(GrapheneInstigationStateOrError),
-        instigationSelector=graphene.NonNull(GrapheneInstigationSelector),
+        instigationSelector=graphene.Argument(GrapheneInstigationSelector),
+        id=graphene.Argument(graphene.String),
         description=(
             "Retrieve the state for a schedule or sensor by its location name, repository name, and"
             " schedule/sensor name."
+        ),
+    )
+
+    instigationStatesOrError = graphene.Field(
+        graphene.NonNull(GrapheneInstigationStatesOrError),
+        repositoryID=graphene.NonNull(graphene.String),
+        description=(
+            "Retrieve the state for a group of instigators (schedule/sensor) by their containing repository id."
         ),
     )
 
@@ -708,10 +723,36 @@ class GrapheneQuery(graphene.ObjectType):
 
     @capture_error
     def resolve_instigationStateOrError(
-        self, graphene_info: ResolveInfo, instigationSelector: GrapheneInstigationSelector
+        self,
+        graphene_info: ResolveInfo,
+        *,
+        instigationSelector: Optional[GrapheneInstigationSelector] = None,
+        id: Optional[str] = None,
     ):
-        return get_instigator_state_or_error(
-            graphene_info, InstigatorSelector.from_graphql_input(instigationSelector)
+        if id:
+            return get_instigation_state_by_id(
+                graphene_info,
+                CompoundID.from_string(id),
+            )
+        elif instigationSelector:
+            return get_instigator_state_by_selector(
+                graphene_info,
+                InstigatorSelector.from_graphql_input(instigationSelector),
+            )
+        else:
+            raise DagsterInvariantViolationError(
+                "Must pass either id or instigationSelector (but not both)."
+            )
+
+    @capture_error
+    def resolve_instigationStatesOrError(
+        self,
+        graphene_info: ResolveInfo,
+        repositoryID: str,
+    ):
+        return get_instigation_states_by_repository_id(
+            graphene_info,
+            CompoundID.from_string(repositoryID),
         )
 
     @capture_error
