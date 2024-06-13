@@ -66,7 +66,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
     previousErroredLocationEntries.current = erroredLocationEntries;
   } else {
     // We need preserve the previous reference to avoid firing the error layout effect more than necessary.
-    // This is due to their being multiple updates to `data` to locations being fetched individually
+    // This is due to their being multiple updates to `data` due to locations being fetched individually
     // and each updating `data` as they come in.
     erroredLocationEntries = previousErroredLocationEntries.current;
   }
