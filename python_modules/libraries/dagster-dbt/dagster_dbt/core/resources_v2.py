@@ -363,7 +363,7 @@ class DbtCliEventMessage:
                         "This test was included in Dagster's asset check"
                         " selection, and was likely executed due to dbt indirect selection."
                     )
-                    logger.warn(message)
+                    logger.warning(message)
 
                 yield from self._yield_observation_events_for_test(
                     dagster_dbt_translator=dagster_dbt_translator,

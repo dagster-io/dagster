@@ -23,7 +23,7 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.definitions.tags import StorageKindTagSet
-from dagster._utils.warnings import experimental_warning
+from dagster._utils.warnings import suppress_dagster_warnings
 
 from dagster_dbt.dbt_project import DbtProject
 
@@ -54,6 +54,7 @@ DUPLICATE_ASSET_KEY_ERROR_MESSAGE = (
 )
 
 
+@suppress_dagster_warnings
 def dbt_assets(
     *,
     manifest: DbtManifestParam,
@@ -550,9 +551,6 @@ def get_dbt_multi_asset_args(
             parent_unique_ids_for_asset_key.add(parent_unique_id)
             parent_resource_types_for_asset_key.add(dbt_parent_resource_props["resource_type"])
 
-            if parent_partition_mapping:
-                experimental_warning("DagsterDbtTranslator.get_partition_mapping")
-
             # Add this parent as an internal dependency
             output_internal_deps.add(parent_asset_key)
 
@@ -570,8 +568,6 @@ def get_dbt_multi_asset_args(
             dbt_parent_resource_props=dbt_resource_props,
         )
         if self_partition_mapping and has_self_dependency(dbt_resource_props):
-            experimental_warning("+meta.dagster.has_self_dependency")
-
             deps.add(
                 AssetDep(
                     asset=asset_key,
