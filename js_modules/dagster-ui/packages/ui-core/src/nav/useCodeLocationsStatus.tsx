@@ -93,7 +93,6 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         icon: 'check_circle',
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [erroredLocationEntries, loading, onClickViewButton]);
 
   useLayoutEffect(() => {
@@ -133,7 +132,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
             <div>Definitions reloaded</div>
             <ViewCodeLocationsButton
               onClick={() => {
-                onClickViewButton(['Loaded']);
+                onClickViewButton([]);
               }}
             />
           </Box>
@@ -223,7 +222,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
             {toastContent()}
             <ViewCodeLocationsButton
               onClick={() => {
-                onClickViewButton(['Loaded']);
+                onClickViewButton([]);
               }}
             />
           </Box>
@@ -256,7 +255,7 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
             )}
             <ViewCodeLocationsButton
               onClick={() => {
-                onClickViewButton(['Updating']);
+                onClickViewButton([]);
               }}
             />
           </Box>
@@ -293,8 +292,6 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
 
   return null;
 };
-
-const alreadyViewingCodeLocations = () => document.location.pathname.endsWith('/locations');
 
 const ViewCodeLocationsButton = ({onClick}: {onClick: () => void}) => {
   return (
