@@ -20,11 +20,7 @@ from dagster import (
 from dagster._check import ParameterCheckError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.external_asset import external_assets_from_specs
@@ -316,9 +312,6 @@ def test_input_name_matches_output_name():
             execution_type=AssetExecutionType.UNEXECUTABLE,
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
         ExternalAssetNode(
             asset_key=AssetKey("something"),
@@ -781,9 +774,6 @@ def test_source_asset_with_op():
             depended_by=[ExternalAssetDependedBy(AssetKey("bar"))],
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
     ]
 
@@ -805,9 +795,6 @@ def test_unused_source_asset():
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -818,9 +805,6 @@ def test_unused_source_asset():
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
         ),
     ]
 
@@ -850,9 +834,6 @@ def test_used_source_asset():
             job_names=[],
             group_name=DEFAULT_GROUP_NAME,
             is_source=True,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
             tags={"biz": "baz"},
         ),
         ExternalAssetNode(
@@ -1283,9 +1264,6 @@ def test_external_assets_def_to_external_asset_graph():
             dependencies=[],
             depended_by=[ExternalAssetDependedBy(downstream_asset_key=AssetKey("asset2"))],
             execution_type=AssetExecutionType.UNEXECUTABLE,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
             group_name=DEFAULT_GROUP_NAME,
         ),
         ExternalAssetNode(
@@ -1293,9 +1271,6 @@ def test_external_assets_def_to_external_asset_graph():
             dependencies=[ExternalAssetDependency(upstream_asset_key=AssetKey(["asset1"]))],
             depended_by=[],
             execution_type=AssetExecutionType.UNEXECUTABLE,
-            metadata={
-                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.UNEXECUTABLE.value
-            },
             group_name=DEFAULT_GROUP_NAME,
         ),
     ]
