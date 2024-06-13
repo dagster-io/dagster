@@ -68,6 +68,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   const [loading, setLoading] = React.useState(true);
 
   const getData = useGetData();
+  const getCachedData = useGetCachedData();
 
   const fetch = useCallback(
     async (bypassCache = false) => {
@@ -87,7 +88,16 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   );
 
   React.useEffect(() => {
-    fetch();
+    getCachedData<TQuery>({key, version}).then((data) => {
+      if (data) {
+        setData(data);
+        setLoading(false);
+      }
+    });
+  }, [key, version, getCachedData]);
+
+  React.useEffect(() => {
+    fetch(true);
   }, [fetch]);
 
   return {
