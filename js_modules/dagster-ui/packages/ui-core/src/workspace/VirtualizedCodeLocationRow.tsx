@@ -17,13 +17,16 @@ import {workspacePathFromAddress} from './workspacePath';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {HeaderCell, HeaderRow, RowCell} from '../ui/VirtualizedTable';
 
+export type CodeLocationRowStatusType = 'Failed' | 'Updating' | 'Loaded' | 'Loading';
+
 export type CodeLocationRowType =
   | {
       type: 'repository';
       codeLocation: WorkspaceLocationNodeFragment;
       repository: WorkspaceRepositoryFragment;
+      status: CodeLocationRowStatusType;
     }
-  | {type: 'error'; node: WorkspaceLocationNodeFragment};
+  | {type: 'error'; node: WorkspaceLocationNodeFragment; status: CodeLocationRowStatusType};
 
 const TEMPLATE_COLUMNS = '3fr 1fr 1fr 240px 160px';
 
