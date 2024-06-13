@@ -388,6 +388,37 @@ def test_observations(
         )
 
 
+def test_materialization_and_observation(instance: DagsterInstance) -> None:
+    """Test that freshness check works when latest event is an observation, but it has no last_updated_time."""
+
+    @asset(
+        partitions_def=DailyPartitionsDefinition(start_date=create_datetime(2020, 1, 1, 0, 0, 0))
+    )
+    def my_asset():
+        pass
+
+    check = build_time_partition_freshness_checks(
+        assets=[my_asset],
+        deadline_cron="0 9 * * *",
+        timezone="UTC",  # 09:00 UTC
+    )[0]
+
+    with freeze_time(create_datetime(2021, 1, 3, 1, 0, 0)):
+        add_new_event(instance, my_asset.key, "2021-01-01", is_materialization=True)
+        add_new_event(
+            instance, my_asset.key, "2021-01-02", is_materialization=False, include_metadata=False
+        )
+    with freeze_time(create_datetime(2021, 1, 3, 1, 0, 1)):
+        assert_check_result(
+            my_asset,
+            instance,
+            [check],
+            AssetCheckSeverity.WARN,
+            True,
+            description_match="Asset is currently fresh",
+        )
+
+
 @pytest.fixture
 def new_york_time() -> Iterator[None]:
     with environ({"TZ": "America/New_York"}):

@@ -1515,6 +1515,7 @@ class DbtCliResource(ConfigurableResource):
 
         return adapter
 
+    @public
     def get_defer_args(self) -> Sequence[str]:
         """Build the defer arguments for the dbt CLI command, using the supplied state directory.
         If no state directory is supplied, or the state directory does not have a manifest for.
@@ -1528,6 +1529,7 @@ class DbtCliResource(ConfigurableResource):
 
         return ["--defer", "--defer-state", self.state_path]
 
+    @public
     def get_state_args(self) -> Sequence[str]:
         """Build the state arguments for the dbt CLI command, using the supplied state directory.
         If no state directory is supplied, or the state directory does not have a manifest for.
