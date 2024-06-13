@@ -1089,8 +1089,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def is_executable(self) -> bool:
         return self.execution_type != AssetExecutionType.UNEXECUTABLE
 
-    def get_partition_mapping_for_input(self, input_name: str) -> Optional[PartitionMapping]:
-        return self._partition_mappings.get(self._keys_by_input_name[input_name])
+    def get_partition_mapping_for_dep(self, dep_key: AssetKey) -> Optional[PartitionMapping]:
+        return self._partition_mappings.get(dep_key)
 
     def infer_partition_mapping(
         self, upstream_asset_key: AssetKey, upstream_partitions_def: Optional[PartitionsDefinition]
