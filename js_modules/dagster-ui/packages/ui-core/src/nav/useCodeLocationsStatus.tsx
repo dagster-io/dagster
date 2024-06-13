@@ -61,6 +61,15 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
         icon: 'check_circle',
       });
     }
+
+    const anyLoading = Object.values(data).some(
+      (entry) =>
+        entry.__typename === 'WorkspaceLocationEntry' &&
+        entry.loadStatus === RepositoryLocationLoadStatus.LOADING,
+    );
+    if (!anyLoading) {
+      setShowSpinner(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, onClickViewButton]);
 
