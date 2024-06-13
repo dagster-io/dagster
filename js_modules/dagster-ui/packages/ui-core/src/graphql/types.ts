@@ -705,8 +705,27 @@ export enum BackfillPolicyType {
   SINGLE_RUN = 'SINGLE_RUN',
 }
 
+export type Blob = {
+  __typename: 'Blob';
+  value: Scalars['String']['output'];
+};
+
+export type Blueprint = {
+  __typename: 'Blueprint';
+  blob: Maybe<Blob>;
+  id: Scalars['String']['output'];
+  key: BlueprintKey;
+};
+
+export type BlueprintKey = {
+  __typename: 'BlueprintKey';
+  identifierWithinManager: Scalars['String']['output'];
+  managerName: Scalars['String']['output'];
+};
+
 export type BlueprintManager = {
   __typename: 'BlueprintManager';
+  blueprints: Array<Blueprint>;
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
   schema: Maybe<JsonSchema>;
@@ -6892,6 +6911,59 @@ export const buildBackfillPolicy = (
   };
 };
 
+export const buildBlob = (
+  overrides?: Partial<Blob>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Blob'} & Blob => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Blob');
+  return {
+    __typename: 'Blob',
+    value: overrides && overrides.hasOwnProperty('value') ? overrides.value! : 'non',
+  };
+};
+
+export const buildBlueprint = (
+  overrides?: Partial<Blueprint>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'Blueprint'} & Blueprint => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('Blueprint');
+  return {
+    __typename: 'Blueprint',
+    blob:
+      overrides && overrides.hasOwnProperty('blob')
+        ? overrides.blob!
+        : relationshipsToOmit.has('Blob')
+        ? ({} as Blob)
+        : buildBlob({}, relationshipsToOmit),
+    id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'praesentium',
+    key:
+      overrides && overrides.hasOwnProperty('key')
+        ? overrides.key!
+        : relationshipsToOmit.has('BlueprintKey')
+        ? ({} as BlueprintKey)
+        : buildBlueprintKey({}, relationshipsToOmit),
+  };
+};
+
+export const buildBlueprintKey = (
+  overrides?: Partial<BlueprintKey>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'BlueprintKey'} & BlueprintKey => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('BlueprintKey');
+  return {
+    __typename: 'BlueprintKey',
+    identifierWithinManager:
+      overrides && overrides.hasOwnProperty('identifierWithinManager')
+        ? overrides.identifierWithinManager!
+        : 'cumque',
+    managerName:
+      overrides && overrides.hasOwnProperty('managerName') ? overrides.managerName! : 'voluptatem',
+  };
+};
+
 export const buildBlueprintManager = (
   overrides?: Partial<BlueprintManager>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -6900,6 +6972,7 @@ export const buildBlueprintManager = (
   relationshipsToOmit.add('BlueprintManager');
   return {
     __typename: 'BlueprintManager',
+    blueprints: overrides && overrides.hasOwnProperty('blueprints') ? overrides.blueprints! : [],
     id: overrides && overrides.hasOwnProperty('id') ? overrides.id! : 'et',
     name: overrides && overrides.hasOwnProperty('name') ? overrides.name! : 'voluptas',
     schema:

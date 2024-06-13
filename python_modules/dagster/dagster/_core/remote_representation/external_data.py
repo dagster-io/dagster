@@ -1154,7 +1154,7 @@ class BlueprintKey(NamedTuple):
     """Uniquely identifies a blueprint within a code location."""
 
     manager_name: str
-    identifier_within_manager: object
+    identifier_within_manager: str
 
 
 @whitelist_for_serdes

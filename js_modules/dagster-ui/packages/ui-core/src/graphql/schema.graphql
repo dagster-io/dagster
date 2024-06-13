@@ -3359,10 +3359,26 @@ type BlueprintManager {
   id: String!
   name: String!
   schema: JsonSchema
+  blueprints: [Blueprint!]!
 }
 
 type JsonSchema {
   schema: String!
+}
+
+type Blueprint {
+  id: String!
+  key: BlueprintKey!
+  blob: Blob
+}
+
+type BlueprintKey {
+  managerName: String!
+  identifierWithinManager: String!
+}
+
+type Blob {
+  value: String!
 }
 
 input BlueprintManagerSelector {

@@ -230,6 +230,16 @@ const BLUEPRINT_MANAGER_ROOT_QUERY = gql`
         schema {
           schema
         }
+        blueprints {
+          id
+          key {
+            managerName
+            identifierWithinManager
+          }
+          blob {
+            value
+          }
+        }
       }
       ...PythonErrorFragment
     }

@@ -14,6 +14,12 @@ export type BlueprintManagerRootQuery = {
         id: string;
         name: string;
         schema: {__typename: 'JsonSchema'; schema: string} | null;
+        blueprints: Array<{
+          __typename: 'Blueprint';
+          id: string;
+          key: {__typename: 'BlueprintKey'; managerName: string; identifierWithinManager: string};
+          blob: {__typename: 'Blob'; value: string} | null;
+        }>;
       }
     | {
         __typename: 'PythonError';
