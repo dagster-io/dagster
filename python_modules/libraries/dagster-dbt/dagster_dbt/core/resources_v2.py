@@ -6,7 +6,7 @@ import signal
 import subprocess
 import sys
 import uuid
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
@@ -59,6 +59,7 @@ from dbt.adapters.base.impl import BaseAdapter, BaseColumn
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
+from dbt.config.utils import parse_cli_vars
 from dbt.contracts.results import NodeStatus, TestStatus
 from dbt.flags import get_flags, set_from_args
 from dbt.node_types import NodeType
@@ -1444,7 +1445,7 @@ class DbtCliResource(ConfigurableResource):
 
         return current_target_path.joinpath(path)
 
-    def _initialize_adapter(self) -> BaseAdapter:
+    def _initialize_adapter(self, cli_vars) -> BaseAdapter:
         if not IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
             from dbt_common.context import set_invocation_context
 
@@ -1455,8 +1456,8 @@ class DbtCliResource(ConfigurableResource):
         set_from_args(Namespace(profiles_dir=profiles_dir), None)
         flags = get_flags()
 
-        profile = load_profile(self.project_dir, {}, self.profile, self.target)
-        project = load_project(self.project_dir, False, profile, {})
+        profile = load_profile(self.project_dir, cli_vars, self.profile, self.target)
+        project = load_project(self.project_dir, False, profile, cli_vars)
         config = RuntimeConfig.from_parts(project, profile, flags)
 
         # these flags are required for the adapter to be able to look up
@@ -1750,7 +1751,7 @@ class DbtCliResource(ConfigurableResource):
         if self.target:
             profile_args += ["--target", self.target]
 
-        args = [
+        full_dbt_args = [
             self.dbt_executable,
             *self.global_config_flags,
             *args,
@@ -1765,14 +1766,15 @@ class DbtCliResource(ConfigurableResource):
         adapter: Optional[BaseAdapter] = None
         with pushd(self.project_dir):
             try:
-                adapter = self._initialize_adapter()
+                cli_vars = parse_cli_vars_from_args(args)
+                adapter = self._initialize_adapter(cli_vars)
 
             except:
                 # defer exceptions until they can be raised in the runtime context of the invocation
                 pass
 
             return DbtCliInvocation.run(
-                args=args,
+                args=full_dbt_args,
                 env=env,
                 manifest=manifest,
                 dagster_dbt_translator=dagster_dbt_translator,
@@ -1782,6 +1784,15 @@ class DbtCliResource(ConfigurableResource):
                 context=context,
                 adapter=adapter,
             )
+
+
+def parse_cli_vars_from_args(args: Sequence[str]) -> Dict[str, Any]:
+    parser = ArgumentParser(description="Parse cli vars from dbt command")
+    parser.add_argument("--vars")
+    var_args, _ = parser.parse_known_args(args)
+    if not var_args.vars:
+        return {}
+    return parse_cli_vars(var_args.vars)
 
 
 def _get_subset_selection_for_context(
