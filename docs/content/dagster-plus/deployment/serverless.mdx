@@ -306,10 +306,19 @@ After changing the deployment type, you will need to update your code locations'
 
 Unlike Hybrid, Serverless Deployments on Dagster+ require direct access to your data, secrets and source code.
 
-- Dagster+ Serverless does not provide persistent storage. Ephemeral storage is deleted when a run concludes.
 - Secrets and source code are built into the image directly. Images are stored in a per-customer container registry with restricted access.
 - User code is securely sandboxed using modern container sandboxing techniques.
 - All production access is governed by industry-standard best practices which are regularly audited.
+
+### IO Management on Serverless
+
+<Warning>
+If you are a Serverless customer who is working on personally identifiable information (PII), private health information (PHI), has signed a business association agreement (BAA), or are otherwise working with data subject to GDPR or other such regulations, you must not use the default IO manager.
+</Warning> 
+
+In Serverless, code that uses the default [IO Manager](/concepts/io-management/io-managers#built-in-io-managers) is automatically adjusted to save data in Dagster Plus managed storage. This automatic change is useful because the default file system in Serverless is ephemeral which means the default IO manager would not work as expected. However, this automatic change means potentially sensitive data is being stored, not just processed or orchestrated, by Dagster Plus. To avoid this behavior:
+- Use an IO manager that stores data in your infrastructure
+- Write code that does not use an IO manager
 
 ---
 
