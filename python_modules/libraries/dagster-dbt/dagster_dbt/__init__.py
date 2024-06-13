@@ -29,7 +29,11 @@ from .dagster_dbt_translator import (
     KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
 )
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
-from .dbt_project import DbtProject as DbtProject
+from .dbt_project import (
+    DagsterDbtManifestPreparer as DagsterDbtManifestPreparer,
+    DbtManifestPreparer as DbtManifestPreparer,
+    DbtProject as DbtProject
+)
 from .errors import (
     DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
     DagsterDbtCliUnexpectedOutputError as DagsterDbtCliUnexpectedOutputError,
