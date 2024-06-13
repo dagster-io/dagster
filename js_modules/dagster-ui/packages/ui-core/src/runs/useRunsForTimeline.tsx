@@ -406,6 +406,7 @@ export const useRunsForTimeline = ({
     if (!workspaceOrError || workspaceOrError.__typename === 'PythonError' || _end < Date.now()) {
       return jobsWithCompletedRunsAndOngoingRunsValues;
     }
+    const addedAdHocJobs = new Set();
     const jobs: TimelineJob[] = [];
     for (const locationEntry of workspaceOrError.locationEntries) {
       if (
@@ -449,6 +450,13 @@ export const useRunsForTimeline = ({
 
           const isAdHoc = isHiddenAssetGroupJob(pipeline.name);
           const jobKey = makeJobKey(repoAddress, pipeline.name);
+
+          if (isAdHoc) {
+            if (addedAdHocJobs.has(jobKey)) {
+              continue;
+            }
+            addedAdHocJobs.add(jobKey);
+          }
 
           const jobName = isAdHoc ? 'Ad hoc materializations' : pipeline.name;
 
@@ -553,7 +561,9 @@ export const useRunsForTimeline = ({
 };
 
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) =>
-  `${jobName}-${repoAddressAsHumanString(repoAddress)}`;
+  `${isHiddenAssetGroupJob(jobName) ? '__adhoc__' : jobName}-${repoAddressAsHumanString(
+    repoAddress,
+  )}`;
 
 const RUN_TIMELINE_FRAGMENT = gql`
   fragment RunTimelineFragment on Run {
