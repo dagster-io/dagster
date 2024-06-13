@@ -217,6 +217,16 @@ def test_report_asset_check_endpoint(instance: DagsterInstance, test_client: Tes
     evaluation = _assert_stored_check_eval(instance, my_asset_key, my_check)
     assert evaluation.passed
 
+    response = test_client.post(
+        f"/report_asset_check/{my_asset_key}?passed=false&check_name={my_check}",
+        json={"metadata": "im_just_a_string"},
+    )
+    assert response.status_code == 400
+    assert (
+        'Error constructing AssetCheckEvaluation: Param "metadata" is not a dict'
+        in response.json()["error"]
+    )
+
 
 def test_report_asset_check_evaluation_apis_consistent(
     instance: DagsterInstance, test_client: TestClient
