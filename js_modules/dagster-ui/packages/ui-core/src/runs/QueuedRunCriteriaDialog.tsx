@@ -11,6 +11,7 @@ import {
   Tag,
   Tooltip,
 } from '@dagster-io/ui-components';
+import isPlainObject from 'lodash/isPlainObject';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import * as yaml from 'yaml';
@@ -66,7 +67,10 @@ const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
       return limits.filter(
         (limit) =>
           limit.key in runTagMap &&
-          (limit.value === undefined || limit.value === runTagMap[limit.key]),
+          (limit.value === undefined ||
+            limit.value === runTagMap[limit.key] ||
+            // can be {"applyLimitPerUniqueValue": bool}
+            isPlainObject(limit.value)),
       );
     } catch (err) {
       return undefined;
@@ -119,7 +123,9 @@ const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
                         </td>
                         <td>
                           <Tag interactive>
-                            {limit.value !== undefined ? `${limit.key}=${limit.value}` : limit.key}
+                            {limit.value !== undefined
+                              ? `${limit.key}=${JSON.stringify(limit.value)}` // might be obj so stringify
+                              : limit.key}
                           </Tag>
                         </td>
                       </tr>
