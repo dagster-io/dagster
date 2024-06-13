@@ -164,6 +164,32 @@ def test_different_event_types(use_materialization: bool, instance: DagsterInsta
         assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
 
 
+def test_materialization_and_observation(instance: DagsterInstance) -> None:
+    """Test that freshness check works when latest event is an observation, but it has no last_updated_time."""
+
+    @asset
+    def my_asset():
+        pass
+
+    start_time = create_datetime(2021, 1, 1, 1, 0, 0)
+    lower_bound_delta = datetime.timedelta(minutes=10)
+
+    with freeze_time(
+        start_time - datetime.timedelta(minutes=(lower_bound_delta.seconds // 60) - 1)
+    ):
+        # Add two events, one materialization and one observation. The observation event has no last_updated_time.
+        add_new_event(instance, my_asset.key, is_materialization=True)
+        add_new_event(instance, my_asset.key, is_materialization=False, include_metadata=False)
+
+    with freeze_time(start_time):
+        # Check data freshness, and expect it to pass.
+        check = build_last_update_freshness_checks(
+            assets=[my_asset],
+            lower_bound_delta=lower_bound_delta,
+        )[0]
+        assert_check_result(my_asset, instance, [check], AssetCheckSeverity.WARN, True)
+
+
 def test_observation_descriptions(instance: DagsterInstance) -> None:
     @asset
     def my_asset():

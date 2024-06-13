@@ -35,7 +35,7 @@ from ..utils import (
     ensure_no_duplicate_assets,
     freshness_multi_asset_check,
     get_last_updated_timestamp,
-    retrieve_latest_record,
+    retrieve_last_update_record,
 )
 
 
@@ -162,7 +162,7 @@ def _build_freshness_multi_check(
             expected_partition_key = partitions_def.get_partition_key_range_for_time_window(
                 last_completed_time_window
             ).start
-            latest_record = retrieve_latest_record(
+            latest_record = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=expected_partition_key
             )
             passed = latest_record is not None
@@ -174,7 +174,7 @@ def _build_freshness_multi_check(
 
             # Allows us to distinguish between the case where the asset has never been
             # observed/materialized, and the case where this partition in particular is missing
-            latest_record_any_partition = retrieve_latest_record(
+            latest_record_any_partition = retrieve_last_update_record(
                 instance=context.instance, asset_key=asset_key, partition_key=None
             )
 
