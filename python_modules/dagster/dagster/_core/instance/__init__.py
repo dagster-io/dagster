@@ -124,6 +124,7 @@ if TYPE_CHECKING:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+    from dagster._core.execution.plan.state import RunReexecutionInfo
     from dagster._core.execution.stats import RunStepKeyStatsSnapshot
     from dagster._core.launcher import RunLauncher
     from dagster._core.remote_representation import (
@@ -3230,3 +3231,16 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def backfill_log_storage_enabled(self) -> bool:
         return False
+
+    def get_reexecution_info(self, run_id: str) -> "RunReexecutionInfo":
+        from dagster._core.errors import DagsterRunNotFoundError
+        from dagster._core.execution.plan.state import RunReexecutionInfo
+
+        run = self.get_run_by_id(run_id)
+        if not run:
+            raise DagsterRunNotFoundError(
+                f"Could not load run {run_id} for re-execution",
+                invalid_run_id=run_id,
+            )
+
+        return RunReexecutionInfo.build_from_logs(self, run)

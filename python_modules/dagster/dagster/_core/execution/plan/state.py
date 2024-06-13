@@ -188,16 +188,16 @@ class KnownExecutionState(
                 "Cannot reexecute from failure a run that is not failed or canceled",
             )
 
-        steps_to_retry, known_state = _derive_state_from_logs(instance, parent_run)
-        return steps_to_retry, known_state.update_for_step_selection(steps_to_retry)
+        reexecution_info = instance.get_reexecution_info(parent_run.run_id)
+        return reexecution_info.retry_steps, reexecution_info.known_state
 
     @staticmethod
     def build_for_reexecution(
         instance: DagsterInstance,
         parent_run: DagsterRun,
     ) -> "KnownExecutionState":
-        _, known_state = _derive_state_from_logs(instance, parent_run)
-        return known_state
+        reexecution_info = instance.get_reexecution_info(parent_run.run_id)
+        return reexecution_info.known_state
 
 
 TrackingDict: TypeAlias = Dict[str, Set["StepHandleUnion"]]
@@ -434,3 +434,19 @@ def _derive_state_from_logs(
         ready_outputs=None,
         parent_state=parent_state,
     )
+
+
+@whitelist_for_serdes
+class RunReexecutionInfo(
+    NamedTuple(
+        "_RunReexecutionInfo",
+        [
+            ("retry_steps", Sequence[str]),
+            ("known_state", KnownExecutionState),
+        ],
+    )
+):
+    @staticmethod
+    def build_from_logs(instance: DagsterInstance, run: DagsterRun) -> "RunReexecutionInfo":
+        steps_to_retry, known_state = _derive_state_from_logs(instance, run)
+        return RunReexecutionInfo(steps_to_retry, known_state)
