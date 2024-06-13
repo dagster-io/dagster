@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.definitions.asset_definition import AssetDefinition
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
@@ -543,20 +544,42 @@ class DecoratorAssetsDefinitionBuilder:
         )(self.fn)
 
     def create_assets_definition(self) -> AssetsDefinition:
-        return AssetsDefinition.dagster_internal_init(
-            keys_by_input_name=self.asset_keys_by_input_names,
-            keys_by_output_name=self.asset_keys_by_output_name,
-            node_def=self.create_op_definition(),
-            partitions_def=self.args.partitions_def,
-            can_subset=self.args.can_subset,
-            resource_defs=self.args.assets_def_resource_defs,
-            backfill_policy=self.args.backfill_policy,
-            check_specs_by_output_name=self.check_specs_by_output_name,
-            specs=self.specs,
-            is_subset=False,
-            selected_asset_keys=None,  # not a subset so this is None
-            selected_asset_check_keys=None,  # not a subset so this is none
-        )
+        if len(self.specs) == 1 and len(self.check_specs_by_output_name) == 0:
+            spec = self.specs[0]
+            return AssetDefinition.dagster_internal_init(
+                key=next(iter(self.asset_keys_by_output_name.values())),
+                keys_by_input_name=self.asset_keys_by_input_names,
+                node_def=self.create_op_definition(),
+                partitions_def=self.args.partitions_def,
+                resource_defs=self.args.assets_def_resource_defs,
+                backfill_policy=self.args.backfill_policy,
+                output_name=next(iter(self.asset_keys_by_output_name.keys())),
+                deps=spec.deps,
+                description=spec.description,
+                metadata=spec.metadata,
+                group_name=spec.group_name,
+                skippable=spec.skippable,
+                code_version=spec.code_version,
+                auto_materialize_policy=spec.auto_materialize_policy,
+                freshness_policy=spec.freshness_policy,
+                owners=spec.owners,
+                tags=spec.tags,
+            )
+        else:
+            return AssetsDefinition.dagster_internal_init(
+                keys_by_input_name=self.asset_keys_by_input_names,
+                keys_by_output_name=self.asset_keys_by_output_name,
+                node_def=self.create_op_definition(),
+                partitions_def=self.args.partitions_def,
+                can_subset=self.args.can_subset,
+                resource_defs=self.args.assets_def_resource_defs,
+                backfill_policy=self.args.backfill_policy,
+                check_specs_by_output_name=self.check_specs_by_output_name,
+                specs=self.specs,
+                is_subset=False,
+                selected_asset_keys=None,  # not a subset so this is None
+                selected_asset_check_keys=None,  # not a subset so this is none
+            )
 
     @cached_property
     def specs(self) -> Sequence[AssetSpec]:
