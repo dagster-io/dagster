@@ -3209,11 +3209,7 @@ type Query {
     repositorySelector: RepositorySelector!
     sensorStatus: InstigationStatus
   ): SensorsOrError!
-  instigationStateOrError(
-    instigationSelector: InstigationSelector
-    id: String
-  ): InstigationStateOrError!
-  instigationStatesOrError(repositoryID: String!): InstigationStatesOrError!
+  instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
   partitionSetsOrError(
     repositorySelector: RepositorySelector!
     pipelineName: String!

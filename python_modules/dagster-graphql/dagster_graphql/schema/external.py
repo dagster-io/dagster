@@ -298,25 +298,13 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_schedules(self, _graphene_info: ResolveInfo):
         return sorted(
-            [
-                GrapheneSchedule(
-                    schedule,
-                    self._batch_loader.get_schedule_state(schedule.name),
-                    self._batch_loader,
-                )
-                for schedule in self._repository.get_external_schedules()
-            ],
+            [GrapheneSchedule(schedule) for schedule in self._repository.get_external_schedules()],
             key=lambda schedule: schedule.name,
         )
 
     def resolve_sensors(self, _graphene_info: ResolveInfo, sensorType: Optional[SensorType] = None):
         return [
-            GrapheneSensor(
-                sensor,
-                self._repository,
-                self._batch_loader.get_sensor_state(sensor.name),
-                self._batch_loader,
-            )
+            GrapheneSensor(sensor, self._repository)
             for sensor in sorted(
                 self._repository.get_external_sensors(), key=lambda sensor: sensor.name
             )

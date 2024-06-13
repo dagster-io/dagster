@@ -1,7 +1,7 @@
 from collections import defaultdict
 from enum import Enum
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
 
 from dagster import (
     DagsterInstance,
@@ -16,16 +16,10 @@ from dagster._core.remote_representation.external_data import (
     ExternalAssetDependency,
     ExternalAssetNode,
 )
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
 from dagster._core.workspace.context import WorkspaceRequestContext
 
 
 class RepositoryDataType(Enum):
-    JOB_RUNS = "job_runs"
-    SCHEDULE_RUNS = "schedule_runs"
-    SENSOR_RUNS = "sensor_runs"
-    SCHEDULE_STATES = "schedule_states"
-    SENSOR_STATES = "sensor_states"
     SCHEDULE_TICKS = "schedule_ticks"
     SENSOR_TICKS = "sensor_ticks"
 
@@ -65,25 +59,7 @@ class RepositoryScopedBatchLoader:
 
         fetched: Dict[str, List[Any]] = defaultdict(list)
 
-        if data_type == RepositoryDataType.SCHEDULE_STATES:
-            schedule_states = self._instance.all_instigator_state(
-                repository_origin_id=self._repository.get_external_origin_id(),
-                repository_selector_id=self._repository.selector_id,
-                instigator_type=InstigatorType.SCHEDULE,
-            )
-            for state in schedule_states:
-                fetched[state.name].append(state)
-
-        elif data_type == RepositoryDataType.SENSOR_STATES:
-            sensor_states = self._instance.all_instigator_state(
-                repository_origin_id=self._repository.get_external_origin_id(),
-                repository_selector_id=self._repository.selector_id,
-                instigator_type=InstigatorType.SENSOR,
-            )
-            for state in sensor_states:
-                fetched[state.name].append(state)
-
-        elif data_type == RepositoryDataType.SCHEDULE_TICKS:
+        if data_type == RepositoryDataType.SCHEDULE_TICKS:
             if self._instance.supports_batch_tick_queries:
                 selector_ids = [
                     schedule.selector_id for schedule in self._repository.get_external_schedules()
@@ -122,16 +98,6 @@ class RepositoryScopedBatchLoader:
 
         self._data[data_type] = fetched
         self._limits[data_type] = limit
-
-    def get_schedule_state(self, schedule_name: str) -> Optional[InstigatorState]:
-        check.invariant(self._repository.has_external_schedule(schedule_name))
-        states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
-        return states[0] if states else None
-
-    def get_sensor_state(self, sensor_name: str) -> Optional[InstigatorState]:
-        check.invariant(self._repository.has_external_sensor(sensor_name))
-        states = self._get(RepositoryDataType.SENSOR_STATES, sensor_name, 1)
-        return states[0] if states else None
 
     def get_sensor_ticks(self, origin_id: str, selector_id: str, limit: int) -> Sequence[Any]:
         check.invariant(

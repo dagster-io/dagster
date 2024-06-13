@@ -15,6 +15,7 @@ from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
+    InstigatorStatus,
     InstigatorTick,
     InstigatorType,
     ScheduleInstigatorData,
@@ -558,13 +559,14 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     hasStartPermission = graphene.NonNull(graphene.Boolean)
     hasStopPermission = graphene.NonNull(graphene.Boolean)
+    canReset = graphene.NonNull(graphene.Boolean)
 
     class Meta:
         name = "InstigationState"
 
     def __init__(
         self,
-        instigator_state,
+        instigator_state: InstigatorState,
         batch_loader=None,
     ):
         self._instigator_state = check.inst_param(
@@ -711,6 +713,9 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_runningCount(self, _graphene_info: ResolveInfo):
         return 1 if self._instigator_state.is_running else 0
+
+    def resolve_canReset(self, _graphene_info: ResolveInfo) -> bool:
+        return bool(self._instigator_state.status != InstigatorStatus.DECLARED_IN_CODE)
 
 
 class GrapheneInstigationStates(graphene.ObjectType):

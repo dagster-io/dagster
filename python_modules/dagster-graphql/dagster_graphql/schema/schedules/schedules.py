@@ -5,10 +5,7 @@ import dagster._check as check
 import graphene
 from dagster import DefaultScheduleStatus
 from dagster._core.remote_representation import ExternalSchedule
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._time import get_current_timestamp
-
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from ..errors import (
     GraphenePythonError,
@@ -18,7 +15,6 @@ from ..errors import (
 from ..instigation import (
     GrapheneDryRunInstigationTick,
     GrapheneDryRunInstigationTicks,
-    GrapheneInstigationState,
     GrapheneInstigationStatus,
 )
 from ..util import ResolveInfo, non_null_list
@@ -34,8 +30,6 @@ class GrapheneSchedule(graphene.ObjectType):
     execution_timezone = graphene.Field(graphene.String)
     description = graphene.String()
     defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
-    canReset = graphene.NonNull(graphene.Boolean)
-    scheduleState = graphene.NonNull(GrapheneInstigationState)
     partition_set = graphene.Field("dagster_graphql.schema.partition_sets.GraphenePartitionSet")
     futureTicks = graphene.NonNull(
         GrapheneDryRunInstigationTicks,
@@ -59,21 +53,10 @@ class GrapheneSchedule(graphene.ObjectType):
     def __init__(
         self,
         external_schedule: ExternalSchedule,
-        schedule_state: Optional[InstigatorState],
-        batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
-
-        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
-        # that instantiates multiple schedules
-        self._batch_loader = check.opt_inst_param(
-            batch_loader, "batch_loader", RepositoryScopedBatchLoader
-        )
-
-        self._stored_state = schedule_state
-        self._schedule_state = self._external_schedule.get_current_instigator_state(schedule_state)
 
         super().__init__(
             name=external_schedule.name,
@@ -101,15 +84,6 @@ class GrapheneSchedule(graphene.ObjectType):
             return GrapheneInstigationStatus.RUNNING
         elif default_schedule_status == DefaultScheduleStatus.STOPPED:
             return GrapheneInstigationStatus.STOPPED
-
-    def resolve_canReset(self, _graphene_info: ResolveInfo):
-        return bool(
-            self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
-        )
-
-    def resolve_scheduleState(self, _graphene_info: ResolveInfo):
-        # forward the batch run loader to the instigation state, which provides the schedule runs
-        return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
     def resolve_partition_set(self, graphene_info: ResolveInfo):
         from ..partition_sets import GraphenePartitionSet
