@@ -735,6 +735,19 @@
       {
         "title": "dagster-plus CLI",
         "path": "/dagster-plus/managing-deployments/dagster-plus-cli"
+      },
+      {
+        "title": "References",
+        "children": [
+          {
+            "title": "CI/CD files",
+            "path": "/dagster-plus/references/ci-cd-file-reference"
+          },
+          {
+            "title": "dagster_cloud.yaml",
+            "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          }
+        ]
       }
     ]
   },
