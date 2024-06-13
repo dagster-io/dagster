@@ -8,7 +8,7 @@ from pydantic import Field
 
 
 class OtherAssetBlueprint(Blueprint):
-    """Baz"""
+    """Baz."""
 
     key: str = Field(..., description="The key of the asset blueprint 2.")
 

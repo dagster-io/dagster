@@ -18,6 +18,11 @@ from .blueprint import Blueprint, BlueprintDefinitions
 from .blueprint_manager import BlueprintManager, attach_code_references_to_definitions
 
 
+def _attach_blob_to_blueprint(blueprint: Blueprint, blob: str) -> Blueprint:
+    object.__setattr__(blueprint, "_blob", blob)
+    return blueprint
+
+
 def load_blueprints_from_yaml(
     *,
     path: Union[Path, str],
@@ -54,7 +59,7 @@ def load_blueprints_from_yaml(
 
         # flatten the list of blueprints from all files
         blueprints = [
-            blueprint
+            _attach_blob_to_blueprint(blueprint, file_path.read_text())
             for file_path in file_paths
             for blueprint in parse_yaml_file_to_pydantic_sequence(
                 args[0], file_path.read_text(), str(file_path)
@@ -63,10 +68,13 @@ def load_blueprints_from_yaml(
 
     else:
         blueprints = [
-            parse_yaml_file_to_pydantic(
-                cast(Type[Blueprint], per_file_blueprint_type),
+            _attach_blob_to_blueprint(
+                parse_yaml_file_to_pydantic(
+                    cast(Type[Blueprint], per_file_blueprint_type),
+                    file_path.read_text(),
+                    str(file_path),
+                ),
                 file_path.read_text(),
-                str(file_path),
             )
             for file_path in file_paths
         ]

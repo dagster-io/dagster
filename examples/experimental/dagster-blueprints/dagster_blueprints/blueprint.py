@@ -131,6 +131,8 @@ class Blueprint(DagsterModel, ABC, HasSourcePositionAndKeyPath):
     - A build_defs implementation that generates Dagster Definitions from field values
     """
 
+    _blob: Optional[str] = None
+
     @abstractmethod
     def build_defs(self) -> BlueprintDefinitions:
         raise NotImplementedError()
@@ -154,3 +156,10 @@ class Blueprint(DagsterModel, ABC, HasSourcePositionAndKeyPath):
             raise DagsterBuildDefinitionsFromConfigError(
                 f"Error when building definitions from config with type {cls_name} at {source_pos}"
             ) from e
+
+    def get_identifier(self) -> str:
+        return f"{self.source_file_name}:{self.source_position.start.line}"
+
+    @property
+    def blob(self) -> Optional[str]:
+        return self._blob

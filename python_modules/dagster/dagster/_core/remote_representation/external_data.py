@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Iterable,
@@ -102,6 +103,9 @@ from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo
+
+if TYPE_CHECKING:
+    from dagster_blueprints.blueprint import Blueprint
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
@@ -1141,11 +1145,32 @@ class BlobSchema(NamedTuple):
 
 
 @whitelist_for_serdes
+class Blob(NamedTuple):
+    value: object
+
+
+@whitelist_for_serdes
+class BlueprintKey(NamedTuple):
+    """Uniquely identifies a blueprint within a code location."""
+
+    manager_name: str
+    identifier_within_manager: object
+
+
+@whitelist_for_serdes
+class ExternalBlueprint(NamedTuple):
+    key: BlueprintKey
+    blob: Optional[Blob]
+
+
+@whitelist_for_serdes
 class ExternalBlueprintManager(NamedTuple):
     """Data related to a BlueprintManager attached to Definitions."""
 
     name: str
     schema: Optional[BlobSchema]
+
+    blueprints: List[ExternalBlueprint]
 
 
 @whitelist_for_serdes
@@ -1553,6 +1578,13 @@ def _get_resource_job_usage(job_defs: Sequence[JobDefinition]) -> ResourceJobUsa
     return resource_job_usage_map
 
 
+def build_external_blueprint(manager_name: str, blueprint: "Blueprint") -> ExternalBlueprint:
+    return ExternalBlueprint(
+        key=BlueprintKey(manager_name, blueprint.get_identifier()),
+        blob=Blob(value=blueprint.blob),
+    )
+
+
 def external_repository_data_from_def(
     repository_def: RepositoryDefinition,
     defer_snapshots: bool = False,
@@ -1661,6 +1693,10 @@ def external_repository_data_from_def(
                 schema=BlobSchema(schema=manager.model_json_schema())
                 if isinstance(manager, YamlBlueprintsLoader)
                 else None,
+                blueprints=[
+                    build_external_blueprint(manager_name, blueprint)
+                    for blueprint in manager.load_blueprints()
+                ],
             )
             for manager_name, manager in repository_def.get_blueprint_managers().items()
         ],
