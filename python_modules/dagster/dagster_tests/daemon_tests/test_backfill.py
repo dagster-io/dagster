@@ -1459,13 +1459,19 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_no_runs_
         "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
         side_effect=raise_code_unreachable_error,
     ):
-        assert all(
-            not error
+        errors = [
+            error
             for error in list(
                 execute_backfill_iteration(
                     workspace_context, get_default_daemon_logger("BackfillDaemon")
                 )
             )
+            if error
+        ]
+        assert len(errors) == 1
+        assert (
+            "Unable to reach the code server. Backfill will resume once the code server is available"
+            in str(errors[0])
         )
 
     assert instance.get_runs_count() == 0
@@ -1553,24 +1559,34 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
         "dagster._core.execution.submit_asset_runs._get_job_execution_data_from_run_request",
         side_effect=raise_code_unreachable_error_on_second_call,
     ):
-        assert all(
-            not error
+        errors = [
+            error
             for error in list(
                 execute_backfill_iteration(
                     workspace_context, get_default_daemon_logger("BackfillDaemon")
                 )
             )
+            if error
+        ]
+        assert len(errors) == 1
+        assert (
+            "Unable to reach the code server. Backfill will resume once the code server is available"
+            in str(errors[0])
         )
 
     assert instance.get_runs_count() == 1
     updated_backfill = instance.get_backfill(backfill_id)
+
     assert updated_backfill
     assert updated_backfill.asset_backfill_data
+
+    # backfill has the updated data that it will have once the runs finish submitting
+    assert len(updated_backfill.asset_backfill_data.in_progress_run_requests or []) == 2
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
-        == 1
+        == 2
     )
-    assert not updated_backfill.asset_backfill_data.requested_runs_for_target_roots
+    assert updated_backfill.asset_backfill_data.requested_runs_for_target_roots
 
     # Execute backfill iteration again, confirming that the remaining partition for asset_f is requested again
     assert all(
@@ -1591,6 +1607,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
         == 2
     )
+    assert updated_backfill.asset_backfill_data.requested_runs_for_target_roots
 
 
 def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(

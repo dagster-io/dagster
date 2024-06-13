@@ -3,8 +3,13 @@ import sys
 from contextlib import contextmanager
 from typing import Iterable, Mapping, Optional, Sequence, cast
 
+import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
+from dagster._core.execution.asset_backfill import (
+    DagsterBackfillFailedError,
+    execute_asset_backfill_iteration,
+)
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -33,6 +38,9 @@ def _get_instigation_logger_if_log_storage_enabled(
 
     else:
         yield default_logger
+
+
+MAX_BACKFILL_RETRIES = 3
 
 
 def execute_backfill_iteration(
@@ -90,13 +98,54 @@ def execute_backfill_jobs(
                         debug_crash_flags,
                         instance,
                     )
-            except Exception:
-                error_info = DaemonErrorCapture.on_exception(
-                    sys.exc_info(),
-                    logger=backfill_logger,
-                    log_message=f"Backfill failed for {backfill.backfill_id}",
-                )
-                instance.update_backfill(
-                    backfill.with_status(BulkActionStatus.FAILED).with_error(error_info)
-                )
+            except Exception as e:
+                if (
+                    backfill.is_asset_backfill
+                    and backfill.status == BulkActionStatus.REQUESTED
+                    and backfill.failure_count < MAX_BACKFILL_RETRIES
+                    and not isinstance(e, (check.CheckError, DagsterBackfillFailedError))
+                ):
+                    backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
+                    if isinstance(
+                        e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
+                    ):
+                        try:
+                            raise Exception(
+                                "Unable to reach the code server. Backfill will resume once the code server is available."
+                            ) from e
+                        except:
+                            error_info = DaemonErrorCapture.on_exception(
+                                sys.exc_info(),
+                                logger=backfill_logger,
+                                log_message=f"Backfill failed for {backfill.backfill_id} due to unreachable code server and will retry",
+                            )
+                            instance.update_backfill(
+                                backfill.with_status(BulkActionStatus.REQUESTED).with_error(
+                                    error_info  # Make sure UI can still display error info on a requested backfill
+                                )
+                            )
+                    else:
+                        error_info = DaemonErrorCapture.on_exception(
+                            sys.exc_info(),
+                            logger=backfill_logger,
+                            log_message=f"Backfill failed for {backfill.backfill_id} and will retry.",
+                        )
+                        instance.update_backfill(
+                            backfill.with_status(BulkActionStatus.REQUESTED)
+                            .with_error(
+                                error_info  # Make sure UI can still display error info on a requested backfill
+                            )
+                            .with_failure_count(backfill.failure_count + 1)
+                        )
+                else:
+                    error_info = DaemonErrorCapture.on_exception(
+                        sys.exc_info(),
+                        logger=backfill_logger,
+                        log_message=f"Backfill failed for {backfill.backfill_id}",
+                    )
+                    instance.update_backfill(
+                        backfill.with_status(BulkActionStatus.FAILED)
+                        .with_error(error_info)
+                        .with_failure_count(backfill.failure_count + 1)
+                    )
                 yield error_info

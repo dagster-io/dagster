@@ -31,6 +31,7 @@ class BulkActionStatus(Enum):
     FAILED = "FAILED"
     CANCELING = "CANCELING"
     CANCELED = "CANCELED"
+    #    RETRYING = "RETRYING"
 
     @staticmethod
     def from_graphql_input(graphql_str):
@@ -59,6 +60,7 @@ class PartitionBackfill(
             # only used by asset backfills
             ("serialized_asset_backfill_data", Optional[str]),
             ("asset_backfill_data", Optional[AssetBackfillData]),
+            ("failure_count", int),
         ],
     ),
 ):
@@ -79,6 +81,7 @@ class PartitionBackfill(
         reexecution_steps: Optional[Sequence[str]] = None,
         serialized_asset_backfill_data: Optional[str] = None,
         asset_backfill_data: Optional[AssetBackfillData] = None,
+        failure_count: Optional[int] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -122,6 +125,8 @@ class PartitionBackfill(
             asset_backfill_data=check.opt_inst_param(
                 asset_backfill_data, "asset_backfill_data", AssetBackfillData
             ),
+            # TODO MOVE THE RUN REQUESTS AND RUN IDS HERE RATHER THAN ASSET BACKFILL DATA
+            failure_count=check.opt_int_param(failure_count, "failure_count", 0),
         )
 
     @property
@@ -335,6 +340,9 @@ class PartitionBackfill(
             title=self.title,
             description=self.description,
         )
+
+    def with_failure_count(self, new_failure_count: int):
+        return self._replace(failure_count=new_failure_count)
 
     def with_error(self, error):
         check.opt_inst_param(error, "error", SerializableErrorInfo)

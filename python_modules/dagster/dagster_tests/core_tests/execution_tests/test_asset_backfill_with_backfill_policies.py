@@ -123,11 +123,13 @@ def test_asset_backfill_parent_and_children_have_different_backfill_policy():
         asset_graph=asset_graph,
         instance=DagsterInstance.ephemeral(),
     )
-    assert result1.backfill_data != backfill_data
-    assert len(result1.run_requests) == 1
+    assert result1 != backfill_data
+    assert len(result1.in_progress_run_requests) == 1
     # The first iteration of backfill should only create run request for the upstream asset since
     # the downstream does not have same backfill policy as the upstream.
-    assert result1.run_requests[0].asset_selection == [upstream_daily_partitioned_asset.key]
+    assert result1.in_progress_run_requests[0].asset_selection == [
+        upstream_daily_partitioned_asset.key
+    ]
 
 
 def test_asset_backfill_parent_and_children_have_same_backfill_policy():
@@ -174,10 +176,10 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy():
         asset_graph=asset_graph,
         instance=DagsterInstance.ephemeral(),
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == 2
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == 2
 
-    for run_request in result.run_requests:
+    for run_request in result.in_progress_run_requests:
         if run_request.tags.__contains__(ASSET_PARTITION_RANGE_START_TAG):
             # single run request for partitioned asset, both parent and the children somce they share same
             # partitions def and backfill policy
@@ -247,10 +249,10 @@ def test_asset_backfill_parent_and_children_have_same_backfill_policy_but_third_
         asset_graph=asset_graph,
         instance=DagsterInstance.ephemeral(),
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == 2
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == 2
 
-    for run_request in result.run_requests:
+    for run_request in result.in_progress_run_requests:
         if upstream_daily_partitioned_asset.key in run_request.asset_selection:
             assert downstream_daily_partitioned_asset.key in run_request.asset_selection
             assert has_different_backfill_policy.key not in run_request.asset_selection
@@ -285,10 +287,10 @@ def test_asset_backfill_return_single_run_request_for_non_partitioned():
         asset_graph=asset_graph,
         instance=DagsterInstance.ephemeral(),
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == 1
-    assert result.run_requests[0].partition_key is None
-    assert result.run_requests[0].tags == {"dagster/backfill": backfill_id}
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == 1
+    assert result.in_progress_run_requests[0].partition_key is None
+    assert result.in_progress_run_requests[0].tags == {"dagster/backfill": backfill_id}
 
 
 def test_asset_backfill_return_single_run_request_for_partitioned():
@@ -323,12 +325,14 @@ def test_asset_backfill_return_single_run_request_for_partitioned():
         asset_graph=asset_graph,
         instance=DagsterInstance.ephemeral(),
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == 1
-    assert result.run_requests[0].partition_key is None
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-01-01"
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == 1
+    assert result.in_progress_run_requests[0].partition_key is None
     assert (
-        result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG)
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-01-01"
+    )
+    assert (
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG)
         == daily_partitions_def.get_partition_keys(time_now)[-1]
     )
 
@@ -368,12 +372,14 @@ def test_asset_backfill_return_multiple_run_request_for_partitioned():
         asset_graph=asset_graph,
         instance=DagsterInstance.ephemeral(),
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == math.ceil(num_of_daily_partitions / 7)
-    assert result.run_requests[0].partition_key is None
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-01-01"
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == math.ceil(num_of_daily_partitions / 7)
+    assert result.in_progress_run_requests[0].partition_key is None
     assert (
-        result.run_requests[-1].tags.get(ASSET_PARTITION_RANGE_END_TAG)
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-01-01"
+    )
+    assert (
+        result.in_progress_run_requests[-1].tags.get(ASSET_PARTITION_RANGE_END_TAG)
         == daily_partitions_def.get_partition_keys(time_now)[-1]
     )
 
@@ -591,17 +597,17 @@ def test_dynamic_partitions_multi_run_backfill_policy():
         asset_graph=asset_graph,
         instance=instance,
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == 2
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == 2
     assert any(
         run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
         and run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "foo"
-        for run_request in result.run_requests
+        for run_request in result.in_progress_run_requests
     )
     assert any(
         run_request.tags.get(ASSET_PARTITION_RANGE_START_TAG) == "bar"
         and run_request.tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
-        for run_request in result.run_requests
+        for run_request in result.in_progress_run_requests
     )
 
 
@@ -633,10 +639,10 @@ def test_dynamic_partitions_single_run_backfill_policy():
         asset_graph=asset_graph,
         instance=instance,
     )
-    assert result.backfill_data != backfill_data
-    assert len(result.run_requests) == 1
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
+    assert result != backfill_data
+    assert len(result.in_progress_run_requests) == 1
+    assert result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "foo"
+    assert result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "bar"
 
 
 @pytest.mark.parametrize("same_partitions", [True, False])
@@ -696,15 +702,22 @@ def test_assets_backfill_with_partition_mapping(same_partitions):
             asset_graph=asset_graph,
             instance=instance,
         )
-    assert len(result.run_requests) == 1
+    assert len(result.in_progress_run_requests) == 1
 
     if same_partitions:
-        assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
+        assert set(result.in_progress_run_requests[0].asset_selection) == {
+            upstream_a.key,
+            downstream_b.key,
+        }
     else:
-        assert set(result.run_requests[0].asset_selection) == {upstream_a.key}
+        assert set(result.in_progress_run_requests[0].asset_selection) == {upstream_a.key}
 
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-01"
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-03"
+    assert (
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-01"
+    )
+    assert (
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-03"
+    )
 
 
 @pytest.mark.parametrize("same_partitions", [True, False])
@@ -833,9 +846,9 @@ def test_assets_backfill_with_partition_mapping_without_backfill_policy():
         asset_graph=asset_graph,
         instance=instance,
     )
-    assert len(result.run_requests) == 2
+    assert len(result.in_progress_run_requests) == 2
 
-    for run_request in result.run_requests:
+    for run_request in result.in_progress_run_requests:
         # b should not be materialized in the same run as a
         if run_request.partition_key == "2023-03-02":
             assert set(run_request.asset_selection) == {upstream_a.key}
@@ -896,7 +909,7 @@ def test_assets_backfill_with_partition_mapping_with_one_partition_multi_run_bac
         asset_graph=asset_graph,
         instance=instance,
     )
-    assert len(result.run_requests) == 2
+    assert len(result.in_progress_run_requests) == 2
 
 
 def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_backfill_policy():
@@ -955,9 +968,9 @@ def test_assets_backfill_with_partition_mapping_with_multi_partitions_multi_run_
         asset_graph=asset_graph,
         instance=instance,
     )
-    assert len(result.run_requests) == 4
+    assert len(result.in_progress_run_requests) == 4
 
-    for run_request in result.run_requests:
+    for run_request in result.in_progress_run_requests:
         # there is no parallel runs for downstream_b before upstream_a's targeted partitions are materialized
         assert set(run_request.asset_selection) == {upstream_a.key}
 
@@ -1020,10 +1033,17 @@ def test_assets_backfill_with_partition_mapping_with_single_run_backfill_policy(
             instance=instance,
         )
 
-    assert len(result.run_requests) == 1
-    assert set(result.run_requests[0].asset_selection) == {upstream_a.key, downstream_b.key}
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-02"
-    assert result.run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-09"
+    assert len(result.in_progress_run_requests) == 1
+    assert set(result.in_progress_run_requests[0].asset_selection) == {
+        upstream_a.key,
+        downstream_b.key,
+    }
+    assert (
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == "2023-03-02"
+    )
+    assert (
+        result.in_progress_run_requests[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == "2023-03-09"
+    )
 
 
 def test_run_request_partition_order():
@@ -1065,7 +1085,7 @@ def test_run_request_partition_order():
         "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
     )
 
-    assert [run_request.partition_key_range for run_request in result.run_requests] == [
+    assert [run_request.partition_key_range for run_request in result.in_progress_run_requests] == [
         PartitionKeyRange("2023-10-01", "2023-10-02"),
         PartitionKeyRange("2023-10-03", "2023-10-04"),
         PartitionKeyRange("2023-10-05", "2023-10-06"),
@@ -1098,12 +1118,12 @@ def test_max_partitions_per_range_1_sets_run_request_partition_key():
         "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
     )
 
-    assert [run_request.partition_key for run_request in result.run_requests] == [
+    assert [run_request.partition_key for run_request in result.in_progress_run_requests] == [
         "2023-10-05",
         "2023-10-06",
     ]
 
-    assert [run_request.partition_key_range for run_request in result.run_requests] == [
+    assert [run_request.partition_key_range for run_request in result.in_progress_run_requests] == [
         PartitionKeyRange("2023-10-05", "2023-10-05"),
         PartitionKeyRange("2023-10-06", "2023-10-06"),
     ]
