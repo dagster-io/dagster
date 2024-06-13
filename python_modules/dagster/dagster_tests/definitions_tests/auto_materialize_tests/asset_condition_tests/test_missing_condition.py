@@ -1,12 +1,14 @@
-from dagster import SchedulingCondition
+from dagster import AutomationCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def
-from .asset_condition_scenario import AssetConditionScenarioState
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_missing_unpartitioned() -> None:
-    state = AssetConditionScenarioState(one_asset, asset_condition=SchedulingCondition.missing())
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.missing()
+    )
 
     state, result = state.evaluate("A")
     assert result.true_subset.size == 1
@@ -17,8 +19,8 @@ def test_missing_unpartitioned() -> None:
 
 
 def test_missing_partitioned() -> None:
-    state = AssetConditionScenarioState(
-        one_asset, asset_condition=SchedulingCondition.missing()
+    state = AutomationConditionScenarioState(
+        one_asset, automation_condition=AutomationCondition.missing()
     ).with_asset_properties(partitions_def=two_partitions_def)
 
     state, result = state.evaluate("A")

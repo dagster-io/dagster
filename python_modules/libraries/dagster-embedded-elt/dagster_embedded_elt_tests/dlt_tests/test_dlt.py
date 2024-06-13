@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any, Mapping, Optional
 
+import dlt
 import duckdb
 from dagster import (
     AssetExecutionContext,
@@ -124,6 +125,27 @@ def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):
         resources={"dlt_pipeline_resource": DagsterDltResource()},
     )
     assert res.success
+
+
+def test_example_pipeline_storage_kind(dlt_pipeline: Pipeline):
+    for destination_type in ("duckdb", "snowflake", "bigquery"):
+        destination_pipeline = dlt.pipeline(
+            pipeline_name="my_test_destination",
+            dataset_name="example",
+            destination=destination_type,
+        )
+
+        @dlt_assets(dlt_source=pipeline(), dlt_pipeline=destination_pipeline)
+        def example_pipeline_assets(
+            context: AssetExecutionContext, dlt_pipeline_resource: DagsterDltResource
+        ): ...
+
+        for key in example_pipeline_assets.asset_and_check_keys:
+            if isinstance(key, AssetKey):
+                assert (
+                    example_pipeline_assets.tags_by_key[key].get("dagster/storage_kind")
+                    == destination_type
+                )
 
 
 def test_example_pipeline_subselection(dlt_pipeline: Pipeline) -> None:

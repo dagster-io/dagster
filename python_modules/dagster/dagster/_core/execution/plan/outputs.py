@@ -1,10 +1,7 @@
 from typing import Mapping, NamedTuple, Optional
 
 import dagster._check as check
-from dagster._core.definitions import (
-    AssetMaterialization,
-    NodeHandle,
-)
+from dagster._core.definitions import AssetMaterialization, NodeHandle
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (

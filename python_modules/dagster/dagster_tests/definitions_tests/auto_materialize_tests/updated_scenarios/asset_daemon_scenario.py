@@ -2,27 +2,11 @@ import dataclasses
 import itertools
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    cast,
-)
+from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, cast
 
 import dagster._check as check
-from dagster import (
-    AssetKey,
-    DagsterInstance,
-    RunRequest,
-    RunsFilter,
-)
-from dagster._core.definitions.asset_daemon_context import (
-    AssetDaemonContext,
-)
+from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
@@ -33,7 +17,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluationData,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )
@@ -47,7 +31,7 @@ from dagster._core.remote_representation.origin import (
 )
 from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import wait_for_futures
+from dagster._core.test_utils import freeze_time, wait_for_futures
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
@@ -57,7 +41,6 @@ from dagster._daemon.asset_daemon import (
     get_current_evaluation_id,
 )
 from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import pendulum_freeze_time
 
 from ..base_scenario import run_request
 from ..scenario_state import ScenarioSpec, ScenarioState, get_code_location_origin
@@ -170,6 +153,9 @@ class AssetDaemonScenarioState(ScenarioState):
             respect_materialization_data_versions=False,
             logger=self.logger,
         ).evaluate()
+        check.is_list(new_run_requests, of_type=RunRequest)
+        check.inst(new_cursor, AssetDaemonCursor)
+        check.is_list(new_evaluations, of_type=AssetConditionEvaluation)
 
         # make sure these run requests are available on the instance
         for request in new_run_requests:
@@ -266,7 +252,7 @@ class AssetDaemonScenarioState(ScenarioState):
         self.logger.critical(f"EVALUATING TICK {label or self.tick_index}")
         self.logger.critical("********************************")
 
-        with pendulum_freeze_time(self.current_time):
+        with freeze_time(self.current_time):
             if self.is_daemon:
                 (
                     new_run_requests,

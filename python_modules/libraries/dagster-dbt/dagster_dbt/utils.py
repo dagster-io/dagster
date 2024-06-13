@@ -1,15 +1,5 @@
 from argparse import Namespace
-from typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import AbstractSet, Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union
 
 import dateutil
 from dagster import (
@@ -286,6 +276,16 @@ def select_unique_ids_from_manifest(
             if manifest_json.get("saved_queries")
             else {}
         ),
+        **(
+            {
+                "unit_tests": {
+                    unique_id: _DictShim(info)
+                    for unique_id, info in manifest_json["unit_tests"].items()
+                },
+            }
+            if manifest_json.get("unit_tests")
+            else {}
+        ),
     )
     child_map = manifest_json["child_map"]
 
@@ -321,6 +321,7 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
         **manifest["metrics"],
         **manifest.get("semantic_models", {}),
         **manifest.get("saved_queries", {}),
+        **manifest.get("unit_tests", {}),
     }
 
 

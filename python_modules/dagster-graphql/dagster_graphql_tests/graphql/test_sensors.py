@@ -1,16 +1,11 @@
+import datetime
 import os
 import sys
 
-import pendulum
 import pytest
 from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
-from dagster._core.remote_representation import (
-    InProcessCodeLocationOrigin,
-    RemoteRepositoryOrigin,
-)
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -18,12 +13,12 @@ from dagster._core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster._core.test_utils import SingleThreadPoolExecutor, wait_for_futures
+from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
@@ -35,6 +30,7 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+from dateutil.relativedelta import relativedelta
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -1121,17 +1117,17 @@ def test_sensor_tick_range(graphql_context: WorkspaceRequestContext):
         )
     )
 
-    now = pendulum.now("US/Central")
-    one = now.subtract(days=2).subtract(hours=1)
-    with pendulum_freeze_time(one):
+    now = datetime.datetime.now(tz=get_timezone("US/Central"))
+    one = now - datetime.timedelta(days=2) - datetime.timedelta(hours=1)
+    with freeze_time(one):
         _create_tick(graphql_context)
 
-    two = now.subtract(days=1).subtract(hours=1)
-    with pendulum_freeze_time(two):
+    two = now - relativedelta(days=1) - datetime.timedelta(hours=1)
+    with freeze_time(two):
         _create_tick(graphql_context)
 
-    three = now.subtract(hours=1)
-    with pendulum_freeze_time(three):
+    three = now - datetime.timedelta(hours=1)
+    with freeze_time(three):
         _create_tick(graphql_context)
 
     result = execute_dagster_graphql(
@@ -1249,8 +1245,8 @@ def test_sensor_ticks_filtered(graphql_context: WorkspaceRequestContext):
         )
     )
 
-    now = pendulum.now("US/Central")
-    with pendulum_freeze_time(now):
+    now = datetime.datetime.now(tz=get_timezone("US/Central"))
+    with freeze_time(now):
         _create_tick(graphql_context)  # create a success tick
 
     # create a started tick

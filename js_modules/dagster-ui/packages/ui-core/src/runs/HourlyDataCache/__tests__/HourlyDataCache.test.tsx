@@ -130,7 +130,7 @@ describe('HourlyDataCache Subscriptions', () => {
     cache.addData(0, ONE_HOUR_S, [1, 2, 3]);
 
     const callback = jest.fn();
-    cache.subscribe(0, callback);
+    cache.subscribe(1, callback);
 
     expect(callback).toHaveBeenCalledWith([1, 2, 3]);
   });

@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Dict
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
@@ -9,9 +10,7 @@ from dagster_databricks._test_utils import (
     temp_dbfs_script,
     upload_dagster_pipes_whl,
 )
-from dagster_databricks.pipes import (
-    PipesDatabricksClient,
-)
+from dagster_databricks.pipes import PipesDatabricksClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
@@ -21,11 +20,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 def script_fn():
     import sys
 
-    from dagster_pipes import (
-        PipesDbfsContextLoader,
-        PipesDbfsMessageWriter,
-        open_dagster_pipes,
-    )
+    from dagster_pipes import PipesDbfsContextLoader, PipesDbfsMessageWriter, open_dagster_pipes
 
     with open_dagster_pipes(
         context_loader=PipesDbfsContextLoader(),
@@ -50,27 +45,37 @@ CLUSTER_DEFAULTS = {
 TASK_KEY = "DAGSTER_PIPES_TASK"
 
 
-def _make_submit_task(
+def make_submit_task_dict(
     script_path: str, dagster_pipes_whl_path: str, forward_logs: bool
-) -> jobs.SubmitTask:
+) -> Dict[str, object]:
     cluster_settings = CLUSTER_DEFAULTS.copy()
     if forward_logs:
         cluster_settings["cluster_log_conf"] = {
             "dbfs": {"destination": "dbfs:/cluster-logs"},
         }
+    return {
+        "new_cluster": cluster_settings,
+        "libraries": [
+            # {"whl": DAGSTER_PIPES_WHL_PATH},
+            {"whl": dagster_pipes_whl_path},
+        ],
+        "task_key": TASK_KEY,
+        "spark_python_task": {
+            "python_file": f"dbfs:{script_path}",
+            "source": jobs.Source.WORKSPACE,
+        },
+    }
+
+
+def make_submit_task(
+    script_path: str, dagster_pipes_whl_path: str, forward_logs: bool
+) -> jobs.SubmitTask:
     return jobs.SubmitTask.from_dict(
-        {
-            "new_cluster": cluster_settings,
-            "libraries": [
-                # {"whl": DAGSTER_PIPES_WHL_PATH},
-                {"whl": dagster_pipes_whl_path},
-            ],
-            "task_key": TASK_KEY,
-            "spark_python_task": {
-                "python_file": f"dbfs:{script_path}",
-                "source": jobs.Source.WORKSPACE,
-            },
-        }
+        make_submit_task_dict(
+            script_path=script_path,
+            dagster_pipes_whl_path=dagster_pipes_whl_path,
+            forward_logs=forward_logs,
+        )
     )
 
 
@@ -83,7 +88,7 @@ def test_pipes_client(capsys, databricks_client: WorkspaceClient, forward_logs: 
     def number_x(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
         with upload_dagster_pipes_whl(databricks_client) as dagster_pipes_whl_path:
             with temp_dbfs_script(databricks_client, script_fn=script_fn) as script_path:
-                task = _make_submit_task(script_path, dagster_pipes_whl_path, forward_logs)
+                task = make_submit_task(script_path, dagster_pipes_whl_path, forward_logs)
                 return pipes_client.run(
                     task=task,
                     context=context,
@@ -112,7 +117,7 @@ def test_pipes_client(capsys, databricks_client: WorkspaceClient, forward_logs: 
 def test_nonexistent_entry_point(databricks_client: WorkspaceClient):  # noqa: F811
     @asset
     def fake(context: AssetExecutionContext, pipes_client: PipesDatabricksClient):
-        task = _make_submit_task("/fake/fake", "/fake/fake", forward_logs=False)
+        task = make_submit_task("/fake/fake", "/fake/fake", forward_logs=False)
         return pipes_client.run(task=task, context=context).get_results()
 
     with pytest.raises(DagsterPipesExecutionError, match=r"Cannot read the python file"):

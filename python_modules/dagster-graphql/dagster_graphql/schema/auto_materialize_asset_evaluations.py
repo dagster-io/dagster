@@ -2,11 +2,9 @@ from typing import Optional, Sequence, Tuple
 
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeDecisionType,
-)
-from dagster._core.definitions.declarative_scheduling.legacy.rule_condition import RuleCondition
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
+from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
     AssetSubsetWithMetadata,
 )

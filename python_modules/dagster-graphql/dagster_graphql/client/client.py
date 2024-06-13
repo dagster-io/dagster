@@ -9,6 +9,7 @@ from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.definitions.utils import normalize_tags
 from gql import Client, gql
 from gql.transport import Transport
+from gql.transport.exceptions import TransportServerError
 from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
@@ -103,6 +104,12 @@ class DagsterGraphQLClient:
     def _execute(self, query: str, variables: Optional[Dict[str, Any]] = None):
         try:
             return self._client.execute(gql(query), variable_values=variables)
+        except TransportServerError as exc:
+            raise DagsterGraphQLClientError(
+                f"Server error with code {exc.code}\nand message {exc}\n"
+                f"occured during execution of query \n{query}\n with variables"
+                f" \n{variables}\n"
+            ) from exc
         except Exception as exc:  # catch generic Exception from the gql client
             raise DagsterGraphQLClientError(
                 f"Exception occured during execution of query \n{query}\n with variables"

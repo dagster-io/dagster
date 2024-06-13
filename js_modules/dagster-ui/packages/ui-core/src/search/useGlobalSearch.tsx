@@ -17,8 +17,8 @@ import {CloudOSSContext} from '../app/CloudOSSContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {displayNameForAssetKey, isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {assetDetailsPathForKey} from '../assets/assetDetailsPathForKey';
-import {buildStorageKindTag} from '../graph/KindTags';
-import {DefinitionTag} from '../graphql/types';
+import {buildStorageKindTag, isCanonicalStorageKindTag} from '../graph/KindTags';
+import {DefinitionTag, buildDefinitionTag} from '../graphql/types';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoPathForHuman} from '../workspace/buildRepoAddress';
 import {repoAddressAsURLString} from '../workspace/repoAddressAsString';
@@ -80,8 +80,7 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
 
     const repoLocation = locationEntry.locationOrLoadError;
     const repos = repoLocation.repositories;
-    return [
-      ...accum,
+    accum.push(
       ...repos.reduce((inner, repo) => {
         const {
           name: repoName,
@@ -175,7 +174,8 @@ const primaryDataToSearchResults = (input: {data?: SearchPrimaryQuery}) => {
           ...allResources,
         ];
       }, [] as SearchResult[]),
-    ];
+    );
+    return accum;
   }, [] as SearchResult[]);
 
   return allEntries;
@@ -192,20 +192,24 @@ const secondaryDataToSearchResults = (
 
   const {nodes} = data.assetsOrError;
 
-  const assets = nodes
+  const assets: SearchResult[] = nodes
     .filter(({definition}) => definition !== null)
-    .map(({key, definition}) => {
-      return {
-        label: displayNameForAssetKey(key),
-        href: assetDetailsPathForKey(key),
-        segments: key.path,
-        description: `Asset in ${buildRepoPathForHuman(
-          definition!.repository.name,
-          definition!.repository.location.name,
-        )}`,
-        type: SearchResultType.Asset,
-      };
-    });
+    .map(({key, definition}) => ({
+      label: displayNameForAssetKey(key),
+      description: `Asset in ${buildRepoPathForHuman(
+        definition!.repository.name,
+        definition!.repository.location.name,
+      )}`,
+      href: assetDetailsPathForKey(key),
+      type: SearchResultType.Asset,
+      tags: definition!.tags
+        .filter(isCanonicalStorageKindTag)
+        .concat(
+          definition!.computeKind
+            ? buildDefinitionTag({key: 'dagster/compute_kind', value: definition!.computeKind})
+            : [],
+        ),
+    }));
 
   if (!includeAssetFilters) {
     return [...assets];
@@ -341,6 +345,9 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
     version: SEARCH_PRIMARY_DATA_VERSION,
   });
 
+  // Delete old database from before the prefix, remove this at some point
+  indexedDB.deleteDatabase('indexdbQueryCache:SearchPrimary');
+
   const {
     data: secondaryData,
     fetch: fetchSecondaryData,
@@ -350,6 +357,9 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
     key: `${localCacheIdPrefix}/SearchSecondary`,
     version: SEARCH_SECONDARY_DATA_VERSION,
   });
+
+  // Delete old database from before the prefix, remove this at some point
+  indexedDB.deleteDatabase('indexdbQueryCache:SearchSecondary');
 
   const consumeBufferEffect = useCallback(
     async (buffer: React.MutableRefObject<IndexBuffer | null>, search: WorkerSearchResult) => {
@@ -393,9 +403,20 @@ export const useGlobalSearch = ({includeAssetFilters}: {includeAssetFilters: boo
   const secondarySearchBuffer = useRef<IndexBuffer | null>(null);
 
   const initialize = useCallback(() => {
-    fetchPrimaryData();
-    fetchSecondaryData();
-  }, [fetchPrimaryData, fetchSecondaryData]);
+    if (!primaryData && !primaryDataLoading) {
+      fetchPrimaryData();
+    }
+    if (!secondaryData && !secondaryDataLoading) {
+      fetchSecondaryData();
+    }
+  }, [
+    fetchPrimaryData,
+    fetchSecondaryData,
+    primaryData,
+    primaryDataLoading,
+    secondaryData,
+    secondaryDataLoading,
+  ]);
 
   const searchIndex = useCallback(
     (

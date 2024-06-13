@@ -2,9 +2,7 @@ import re
 
 import pytest
 import responses
-from dagster import (
-    Failure,
-)
+from dagster import Failure
 from dagster_airbyte import AirbyteCloudResource, AirbyteOutput, AirbyteState
 
 

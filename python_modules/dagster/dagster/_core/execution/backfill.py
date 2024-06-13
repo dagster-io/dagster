@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
-import pendulum
-
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
@@ -160,6 +158,10 @@ class PartitionBackfill(
             return None
 
         return self.partition_set_origin.partition_set_name
+
+    @property
+    def log_storage_prefix(self) -> Sequence[str]:
+        return ["backfill", self.backfill_id]
 
     @property
     def user(self) -> Optional[str]:
@@ -410,7 +412,7 @@ class PartitionBackfill(
             asset_selection=asset_selection,
             dynamic_partitions_store=dynamic_partitions_store,
             all_partitions=all_partitions,
-            backfill_start_time=pendulum.from_timestamp(backfill_timestamp, tz="UTC"),
+            backfill_start_timestamp=backfill_timestamp,
         )
         return cls(
             backfill_id=backfill_id,
@@ -440,7 +442,7 @@ class PartitionBackfill(
         asset_backfill_data = AssetBackfillData.from_partitions_by_assets(
             asset_graph=asset_graph,
             dynamic_partitions_store=dynamic_partitions_store,
-            backfill_start_time=pendulum.from_timestamp(backfill_timestamp, tz="UTC"),
+            backfill_start_timestamp=backfill_timestamp,
             partitions_by_assets=partitions_by_assets,
         )
         return cls(

@@ -35,6 +35,7 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
+import {RunsFilter} from '../graphql/types';
 import {usePortalSlot} from '../hooks/usePortalSlot';
 import {usePageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
@@ -43,13 +44,7 @@ import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 const PAGE_SIZE = 25;
 
-export const RunsRoot = () => {
-  useTrackPageView();
-  const trace = usePageLoadTrace('RunsRoot');
-
-  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
-  const filter = runsFilterForSearchTokens(filterTokens);
-
+export function usePaginatedRunsTableRuns(filter: RunsFilter) {
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
     RunsRootQueryVariables
@@ -72,6 +67,17 @@ export const RunsRoot = () => {
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
+  return {queryResult, paginationProps};
+}
+
+export const RunsRoot = () => {
+  useTrackPageView();
+  const trace = usePageLoadTrace('RunsRoot');
+
+  const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
+  const filter = runsFilterForSearchTokens(filterTokens);
+  const {queryResult, paginationProps} = usePaginatedRunsTableRuns(filter);
+
   useBlockTraceOnQueryResult(queryResult, 'RunsRootQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);

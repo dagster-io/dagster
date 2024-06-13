@@ -24,12 +24,18 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const OverviewResourcesRoot = () => {
   useTrackPageView();
   useDocumentTitle('Overview | Resources');
 
-  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},
@@ -44,17 +50,28 @@ export const OverviewResourcesRoot = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewResourcesQuery');
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   // Batch up the data and bucket by repo.
   const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(data).filter(({repoAddress}) =>
+    const cachedEntries = Object.values(cachedData).filter(
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
+    );
+    const workspaceOrError = data?.workspaceOrError;
+    const entries =
+      workspaceOrError?.__typename === 'Workspace'
+        ? workspaceOrError.locationEntries
+        : cachedEntries;
+    return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, visibleRepos]);
+  }, [cachedData, data, visibleRepos]);
+
+  const loading = !data && queryLoading && workspaceLoading;
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
   const anySearch = sanitizedSearch.length > 0;
@@ -70,7 +87,7 @@ export const OverviewResourcesRoot = () => {
   }, [repoBuckets, sanitizedSearch]);
 
   const content = () => {
-    if (loading && !data) {
+    if (loading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -126,7 +143,7 @@ export const OverviewResourcesRoot = () => {
     return <OverviewResourcesTable repos={filteredBySearch} />;
   };
 
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+  const showSearchSpinner = queryLoading && !data;
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
@@ -165,12 +182,15 @@ type RepoBucket = {
   resources: ResourceEntryFragment[];
 };
 
-const buildBuckets = (data?: OverviewResourcesQuery): RepoBucket[] => {
-  if (data?.workspaceOrError.__typename !== 'Workspace') {
-    return [];
-  }
-
-  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
+const buildBuckets = (
+  locationEntries:
+    | Extract<
+        OverviewResourcesQuery['workspaceOrError'],
+        {__typename: 'Workspace'}
+      >['locationEntries']
+    | Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
+): RepoBucket[] => {
+  const entries = locationEntries.map((entry) => entry.locationOrLoadError);
   const buckets = [];
 
   for (const entry of entries) {

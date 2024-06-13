@@ -4,8 +4,13 @@ import {useSetRecoilState} from 'recoil';
 
 import {currentPageAtom} from './analytics';
 
-export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
-  const {render, children, component: Component} = props;
+type Props = ComponentProps<typeof ReactRouterRoute> & {
+  // Set to true if this route nests other routes below it.
+  isNestingRoute?: boolean;
+};
+
+export const Route = memo((props: Props) => {
+  const {render, children, isNestingRoute, component: Component} = props;
 
   const renderFn = useMemo(() => {
     if (!render) {
@@ -44,18 +49,22 @@ export const Route = memo((props: ComponentProps<typeof ReactRouterRoute>) => {
   }
   return (
     <ReactRouterRoute {...props}>
-      <Wrapper>{children}</Wrapper>
+      <Wrapper isNestingRoute={isNestingRoute}>{children}</Wrapper>
     </ReactRouterRoute>
   );
 });
 
-const Wrapper = memo(({children}: {children: ReactNode}) => {
-  const {path} = useRouteMatch();
+const Wrapper = memo(
+  ({children, isNestingRoute}: {children: ReactNode; isNestingRoute?: boolean}) => {
+    const {path} = useRouteMatch();
 
-  const setCurrentPage = useSetRecoilState(currentPageAtom);
-  useLayoutEffect(() => {
-    setCurrentPage(({specificPath}) => ({specificPath, path}));
-  }, [path, setCurrentPage]);
+    const setCurrentPage = useSetRecoilState(currentPageAtom);
+    useLayoutEffect(() => {
+      if (path !== '*' && !isNestingRoute) {
+        setCurrentPage(({specificPath}) => ({specificPath, path}));
+      }
+    }, [path, isNestingRoute, setCurrentPage]);
 
-  return children;
-});
+    return children;
+  },
+);

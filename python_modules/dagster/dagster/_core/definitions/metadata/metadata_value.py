@@ -1,16 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Union,
-)
+from typing import Any, Callable, Generic, Mapping, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import Self, TypeVar
 
@@ -20,9 +11,7 @@ from dagster._annotations import PublicAttr, experimental, public
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    PackableValue,
-)
+from dagster._serdes.serdes import PackableValue
 
 from .table import (  # re-exported
     TableColumn as TableColumn,

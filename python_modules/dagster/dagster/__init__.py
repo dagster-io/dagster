@@ -20,6 +20,7 @@ sys.meta_path.insert(
             "dagster.loggers": "dagster._loggers",
             "dagster.serdes": "dagster._serdes",
             "dagster.seven": "dagster._seven",
+            "dagster.time": "dagster._time",
             "dagster.utils": "dagster._utils",
             # Added in 1.3.4 for backcompat when `_core.storage.pipeline_run` was renamed to
             # `_core.storage.dagster_run`. This was necessary because some docs (incorrectly)
@@ -162,9 +163,10 @@ from dagster._core.definitions.data_version import (
     DataVersion as DataVersion,
     DataVersionsByPartition as DataVersionsByPartition,
 )
-from dagster._core.definitions.declarative_scheduling import (
+from dagster._core.definitions.declarative_automation import (
     AssetCondition as AssetCondition,
-    SchedulingCondition as SchedulingCondition,
+    AutomationCondition as AutomationCondition,
+    evaluate_automation_conditions as evaluate_automation_conditions,
 )
 from dagster._core.definitions.decorators.asset_check_decorator import (
     asset_check as asset_check,
@@ -352,9 +354,7 @@ from dagster._core.definitions.repository_definition import (
     RepositoryData as RepositoryData,
     RepositoryDefinition as RepositoryDefinition,
 )
-from dagster._core.definitions.resource_annotation import (
-    ResourceParam as ResourceParam,
-)
+from dagster._core.definitions.resource_annotation import ResourceParam as ResourceParam
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition as ResourceDefinition,
     make_values_resource as make_values_resource,
@@ -612,9 +612,7 @@ from dagster._serdes.serdes import (
     deserialize_value as deserialize_value,
     serialize_value as serialize_value,
 )
-from dagster._utils import (
-    file_relative_path as file_relative_path,
-)
+from dagster._utils import file_relative_path as file_relative_path
 from dagster._utils.alert import (
     make_email_on_run_failure_sensor as make_email_on_run_failure_sensor,
 )

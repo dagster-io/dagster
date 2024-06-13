@@ -35,8 +35,8 @@ from dagster import (
     _check as check,
     define_asset_job,
 )
-from dagster._core.definitions.decorators.asset_decorator import (
-    _validate_and_assign_output_names_to_check_specs,
+from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
+    validate_and_assign_output_names_to_check_specs,
 )
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._utils.merger import merge_dicts
@@ -364,6 +364,17 @@ def get_manifest_and_translator_from_dbt_assets(
     return manifest_wrapper.manifest, dagster_dbt_translator
 
 
+def get_asset_keys_to_resource_props(
+    manifest: Mapping[str, Any],
+    translator: "DagsterDbtTranslator",
+) -> Mapping[AssetKey, Mapping[str, Any]]:
+    return {
+        translator.get_asset_key(node): node
+        for node in manifest["nodes"].values()
+        if node["resource_type"] in ASSET_RESOURCE_TYPES
+    }
+
+
 ###################
 # DEFAULT FUNCTIONS
 ###################
@@ -405,24 +416,41 @@ def default_asset_key_fn(dbt_resource_props: Mapping[str, Any]) -> AssetKey:
 def default_metadata_from_dbt_resource_props(
     dbt_resource_props: Mapping[str, Any],
 ) -> Mapping[str, Any]:
-    metadata: Dict[str, Any] = {}
+    column_schema = None
     columns = dbt_resource_props.get("columns", {})
     if len(columns) > 0:
-        return dict(
-            TableMetadataSet(
-                column_schema=TableSchema(
-                    columns=[
-                        TableColumn(
-                            name=column_name,
-                            type=column_info.get("data_type") or "?",
-                            description=column_info.get("description"),
-                        )
-                        for column_name, column_info in columns.items()
-                    ]
+        column_schema = TableSchema(
+            columns=[
+                TableColumn(
+                    name=column_name,
+                    type=column_info.get("data_type") or "?",
+                    description=column_info.get("description"),
                 )
-            )
+                for column_name, column_info in columns.items()
+            ]
         )
-    return metadata
+
+    relation_name: Optional[str] = None
+
+    if (
+        "database" in dbt_resource_props
+        and "schema" in dbt_resource_props
+        and "alias" in dbt_resource_props
+    ):
+        relation_name = ".".join(
+            [
+                dbt_resource_props["database"],
+                dbt_resource_props["schema"],
+                dbt_resource_props["alias"],
+            ]
+        )
+
+    return {
+        **TableMetadataSet(
+            column_schema=column_schema,
+            relation_identifier=relation_name,
+        ),
+    }
 
 
 def default_group_from_dbt_resource_props(dbt_resource_props: Mapping[str, Any]) -> Optional[str]:
@@ -812,7 +840,7 @@ def get_asset_deps(
 
     check_specs_by_output_name = cast(
         Dict[str, AssetCheckSpec],
-        _validate_and_assign_output_names_to_check_specs(
+        validate_and_assign_output_names_to_check_specs(
             list(check_specs_by_key.values()), list(asset_outs.keys())
         ),
     )

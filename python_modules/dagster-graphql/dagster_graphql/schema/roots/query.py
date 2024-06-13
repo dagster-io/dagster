@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
+from typing import Any, List, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
@@ -16,10 +16,7 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
-from dagster._core.scheduler.instigation import (
-    InstigatorStatus,
-    InstigatorType,
-)
+from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
@@ -62,9 +59,7 @@ from ...implementation.fetch_assets import (
     get_assets,
 )
 from ...implementation.fetch_backfills import get_backfill, get_backfills
-from ...implementation.fetch_instigators import (
-    get_instigator_state_or_error,
-)
+from ...implementation.fetch_instigators import get_instigator_state_or_error
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
     get_job_or_error,
@@ -92,10 +87,7 @@ from ...implementation.fetch_schedules import (
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.fetch_ticks import get_instigation_ticks
-from ...implementation.loader import (
-    CrossRepoAssetDependedByLoader,
-    StaleStatusLoader,
-)
+from ...implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import (
     capture_error,
@@ -149,10 +141,7 @@ from ..logs.compute_logs import (
     GrapheneCapturedLogsMetadata,
     from_captured_log_data,
 )
-from ..partition_sets import (
-    GraphenePartitionSetOrError,
-    GraphenePartitionSetsOrError,
-)
+from ..partition_sets import GraphenePartitionSetOrError, GraphenePartitionSetsOrError
 from ..permissions import GraphenePermission
 from ..pipelines.config_result import GraphenePipelineConfigValidationResult
 from ..pipelines.pipeline import GrapheneEventConnectionOrError, GrapheneRunOrError
@@ -1074,22 +1063,12 @@ class GrapheneQuery(graphene.ObjectType):
     def resolve_assetsLatestInfo(
         self, graphene_info: ResolveInfo, assetKeys: Sequence[GrapheneAssetKeyInput]
     ):
-        asset_keys = set(AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys)
-
-        results = get_asset_nodes(graphene_info, asset_keys)
-
-        # Filter down to requested asset keys
-        # Build mapping of asset key to the step keys required to generate the asset
-        step_keys_by_asset: Dict[AssetKey, Sequence[str]] = {
-            node.external_asset_node.asset_key: node.external_asset_node.op_names
-            for node in results
-            if node.assetKey in asset_keys
-        }
+        asset_keys = [AssetKey.from_graphql_input(asset_key) for asset_key in assetKeys]
 
         asset_record_loader = graphene_info.context.asset_record_loader
         asset_record_loader.add_asset_keys(asset_keys)
 
-        return get_assets_latest_info(graphene_info, step_keys_by_asset, asset_record_loader)
+        return get_assets_latest_info(graphene_info, asset_keys, asset_record_loader)
 
     @capture_error
     def resolve_logsForRun(

@@ -2,17 +2,7 @@ import json
 from collections import defaultdict
 from enum import Enum
 from pprint import pformat
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Tuple, Union, overload
 
 import polars as pl
 from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext

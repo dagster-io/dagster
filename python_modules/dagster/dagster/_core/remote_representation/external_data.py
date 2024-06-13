@@ -53,9 +53,7 @@ from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     AssetExecutionType,
 )
-from dagster._core.definitions.assets import (
-    AssetsDefinition,
-)
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
@@ -99,12 +97,10 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.snap import JobSnapshot
 from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.utils import is_valid_email
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import (
-    FieldSerializer,
-    is_whitelisted_for_serdes_object,
-)
+from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"
@@ -1748,7 +1744,7 @@ def external_asset_nodes_from_defs(
             op_names = sorted([str(handle) for handle in node_handles])
             op_name = graph_name or next(iter(op_names), None) or node_def.name
             job_names = sorted([jd.name for jd in job_defs_by_asset_key[key]])
-            compute_kind = node_def.tags.get("kind")
+            compute_kind = node_def.tags.get(COMPUTE_KIND_TAG)
             node_definition_name = node_def.name
 
             # Confusingly, the `name` field sometimes mismatches the `name` field on the

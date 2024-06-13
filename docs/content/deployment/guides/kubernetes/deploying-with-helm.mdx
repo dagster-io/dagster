@@ -158,7 +158,7 @@ By default, the webserver launches runs via the <PyObject module="dagster_k8s" o
 </TabItem>
 <TabItem name="Daemon">
 
-The [daemon](/deployment/dagster-daemon) periodically checks the runs table in PostgreSQL for runs that are ready to be launched. The daemon also submits runs from [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
+The [daemon](/deployment/dagster-daemon) periodically checks the runs table in PostgreSQL for runs that are ready to be launched. The daemon also submits runs from [schedules](/concepts/automation/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
 The daemon launches runs via the <PyObject module="dagster_k8s" object="K8sRunLauncher" />, creating a run worker [job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) with the image specified in the user code deployment.
 

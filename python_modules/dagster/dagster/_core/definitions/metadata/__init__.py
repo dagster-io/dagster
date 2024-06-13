@@ -1,17 +1,6 @@
 import os
 from datetime import datetime
-from typing import (
-    Any,
-    Dict,
-    Generic,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Union,
-    cast,
-)
+from typing import Any, Dict, Generic, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias, TypeVar
 
@@ -27,10 +16,7 @@ from dagster._serdes.serdes import (
     WhitelistMap,
     pack_value,
 )
-from dagster._utils.warnings import (
-    deprecation_warning,
-    normalize_renamed_param,
-)
+from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 from .metadata_set import (
     NamespacedMetadataSet as NamespacedMetadataSet,

@@ -13,9 +13,7 @@ from dagster import (
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.events import (
-    DagsterEvent,
-)
+from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.execution.api import (
     create_execution_plan,

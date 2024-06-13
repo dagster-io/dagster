@@ -27,11 +27,9 @@ import dagster._check as check
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.definitions.utils import normalize_tags
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import ExternalSchedule
 from dagster._core.remote_representation.code_location import CodeLocation
@@ -60,8 +58,6 @@ from dagster._utils.log import default_date_format_string
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
-
     from dagster._daemon.daemon import DaemonIterator
 
 
@@ -262,7 +258,7 @@ def execute_scheduler_iteration_loop(
 def launch_scheduled_runs(
     workspace_process_context: IWorkspaceProcessContext,
     logger: logging.Logger,
-    end_datetime_utc: "DateTime",
+    end_datetime_utc: datetime.datetime,
     iteration_times: Dict[str, ScheduleIterationTimes],
     threadpool_executor: Optional[ThreadPoolExecutor] = None,
     submit_threadpool_executor: Optional[ThreadPoolExecutor] = None,
@@ -624,6 +620,7 @@ def launch_scheduled_runs_for_schedule_iterator(
                     logger,
                     external_schedule,
                     schedule_time,
+                    timezone_str,
                     tick_context,
                     submit_threadpool_executor,
                     schedule_debug_crash_flags,
@@ -786,6 +783,7 @@ def _schedule_runs_at_time(
     logger: logging.Logger,
     external_schedule: ExternalSchedule,
     schedule_time: datetime.datetime,
+    timezone_str: str,
     tick_context: _ScheduleLaunchContext,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
@@ -799,7 +797,10 @@ def _schedule_runs_at_time(
         instance=instance,
         repository_handle=repository_handle,
         schedule_name=external_schedule.name,
-        scheduled_execution_time=schedule_time,
+        scheduled_execution_time=TimestampWithTimezone(
+            schedule_time.timestamp(),
+            timezone_str,
+        ),
         log_key=tick_context.log_key,
     )
     yield None

@@ -1,16 +1,6 @@
 import os
 from pathlib import Path
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    FrozenSet,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-)
+from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetCheckKey,
@@ -33,9 +23,7 @@ from dagster._core.definitions.metadata.source_code import (
     LocalFileCodeReference,
 )
 from dagster._core.definitions.tags import StorageKindTagSet
-from dagster._utils.warnings import (
-    experimental_warning,
-)
+from dagster._utils.warnings import experimental_warning
 
 from dagster_dbt.dbt_project import DbtProject
 

@@ -1,27 +1,14 @@
-from typing import (
-    TYPE_CHECKING,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from dagster import (
-    _check as check,
-)
+from dagster import _check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.declarative_scheduling.serialized_objects import (
+from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecord,
-)
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import PrintFn

@@ -89,7 +89,7 @@ export const ContentRoot = memo(() => {
           <Route path="/settings">
             <SettingsRoot />
           </Route>
-          <Route path="*">
+          <Route path="*" isNestingRoute>
             <FallthroughRoot />
           </Route>
         </Switch>

@@ -20,9 +20,7 @@ from dagster._core.pipes.client import (
     PipesMessageReader,
     PipesParams,
 )
-from dagster._core.pipes.context import (
-    PipesMessageHandler,
-)
+from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
     extract_message_or_forward_to_stdout,

@@ -10,7 +10,6 @@ from enum import Enum
 from gzip import GzipFile
 from typing import NamedTuple, Optional, Union
 
-import pendulum
 import pytest
 import sqlalchemy as db
 from dagster import (
@@ -18,6 +17,7 @@ from dagster import (
     AssetMaterialization,
     Output,
     _check as check,
+    asset,
     file_relative_path,
     job,
     op,
@@ -37,12 +37,17 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log.migration import migrate_event_log_data
 from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+from dagster._core.storage.tags import (
+    COMPUTE_KIND_TAG,
+    LEGACY_COMPUTE_KIND_TAG,
+    REPOSITORY_LABEL_TAG,
+)
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.serdes import (
@@ -52,6 +57,7 @@ from dagster._serdes.serdes import (
     pack_value,
     serialize_value,
 )
+from dagster._time import get_current_timestamp
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.test import copy_directory
 
@@ -974,7 +980,7 @@ def test_add_bulk_actions_columns():
                     from_failure=False,
                     reexecution_steps=None,
                     tags=None,
-                    backfill_timestamp=pendulum.now().timestamp(),
+                    backfill_timestamp=get_current_timestamp(),
                 )
             )
             unmigrated_row_count = instance._run_storage.fetchone(
@@ -1289,3 +1295,28 @@ def test_known_execution_state_step_output_version_serialization() -> None:
     ]
 
     assert deserialize_value(serialized, KnownExecutionState) == known_state
+
+
+def test_legacy_compute_kind_tag_backcompat() -> None:
+    legacy_tags = {LEGACY_COMPUTE_KIND_TAG: "foo"}
+    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
+
+        @asset(op_tags=legacy_tags)
+        def legacy_asset():
+            pass
+
+        assert legacy_asset.op.tags[COMPUTE_KIND_TAG] == "foo"
+
+    with pytest.warns(DeprecationWarning, match="Legacy compute kind tag"):
+
+        @op(tags=legacy_tags)
+        def legacy_op():
+            pass
+
+        assert legacy_op.tags[COMPUTE_KIND_TAG] == "foo"
+
+    legacy_snap_path = file_relative_path(__file__, "1_7_9_kind_op_job_snap.gz")
+    legacy_snap = deserialize_value(
+        GzipFile(legacy_snap_path, mode="r").read().decode("utf-8"), JobSnapshot
+    )
+    assert create_snapshot_id(legacy_snap) == "8db90f128b7eaa5c229bdde372e39d5cbecdc7e4"

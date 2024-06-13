@@ -1,9 +1,7 @@
 from airflow.plugins_manager import AirflowPlugin
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .dagster_asset_factory import (
-    load_assets_from_airflow_dag as load_assets_from_airflow_dag,
-)
+from .dagster_asset_factory import load_assets_from_airflow_dag as load_assets_from_airflow_dag
 from .dagster_factory import (
     make_dagster_definitions_from_airflow_dag_bag as make_dagster_definitions_from_airflow_dag_bag,
     make_dagster_definitions_from_airflow_dags_path as make_dagster_definitions_from_airflow_dags_path,

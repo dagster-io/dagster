@@ -17,11 +17,12 @@ from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     PartitionKeysTimeWindowPartitionsSubset,
-    TimeWindow,
+    PersistedTimeWindow,
     TimeWindowPartitionsSubset,
 )
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._time import create_datetime
 
 partitions_defs = [
     None,
@@ -104,11 +105,13 @@ def test_operations(
             DailyPartitionsDefinition("2020-01-01"),
             num_partitions=2,
             included_time_windows=[
-                TimeWindow(
-                    start=create_pendulum_time(2020, 1, 1), end=create_pendulum_time(2020, 1, 2)
+                PersistedTimeWindow(
+                    start=TimestampWithTimezone(create_datetime(2020, 1, 1).timestamp(), "UTC"),
+                    end=TimestampWithTimezone(create_datetime(2020, 1, 2).timestamp(), "UTC"),
                 ),
-                TimeWindow(
-                    start=create_pendulum_time(2020, 1, 4), end=create_pendulum_time(2020, 1, 5)
+                PersistedTimeWindow(
+                    start=TimestampWithTimezone(create_datetime(2020, 1, 4).timestamp(), "UTC"),
+                    end=TimestampWithTimezone(create_datetime(2020, 1, 5).timestamp(), "UTC"),
                 ),
             ],
         ),

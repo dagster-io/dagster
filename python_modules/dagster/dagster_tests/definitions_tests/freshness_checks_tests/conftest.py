@@ -1,12 +1,8 @@
 # pyright: reportPrivateImportUsage=false
-import logging
 from typing import Iterator, Optional, Sequence
 
-import pendulum
 import pytest
-from dagster import (
-    define_asset_job,
-)
+from dagster import define_asset_job
 from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
@@ -14,48 +10,16 @@ from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.metadata import TimestampMetadataValue
-from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
-from mock import patch
+from dagster._time import get_current_timestamp
 
 
 @pytest.fixture(name="instance")
 def instance_fixture() -> Iterator[DagsterInstance]:
     with instance_for_test() as instance:
         yield instance
-
-
-@pytest.fixture(name="pendulum_aware_report_dagster_event")
-def pendulum_aware_report_dagster_event_fixture() -> Iterator[None]:
-    def pendulum_aware_report_dagster_event(
-        self,
-        dagster_event,
-        run_id,
-        log_level=logging.INFO,
-    ) -> None:
-        """If pendulum.test() is active, intercept event log records to have a timestamp no greater than the frozen time.
-
-        This works best if you have a frozen time that is far in the past, so the decision to use the frozen time is clear.
-        """
-        event_record = EventLogEntry(
-            user_message="",
-            level=log_level,
-            job_name=dagster_event.job_name,
-            run_id=run_id,
-            error_info=None,
-            timestamp=pendulum.now("UTC").timestamp(),
-            step_key=dagster_event.step_key,
-            dagster_event=dagster_event,
-        )
-        self.handle_new_event(event_record)
-
-    with patch(
-        "dagster._core.instance.DagsterInstance.report_dagster_event",
-        pendulum_aware_report_dagster_event,
-    ):
-        yield
 
 
 def execute_check_for_asset(
@@ -112,7 +76,7 @@ def add_new_event(
     metadata = (
         {
             "dagster/last_updated_timestamp": TimestampMetadataValue(
-                pendulum.now("UTC").timestamp() if not override_timestamp else override_timestamp
+                get_current_timestamp() if not override_timestamp else override_timestamp
             )
         }
         if not is_materialization

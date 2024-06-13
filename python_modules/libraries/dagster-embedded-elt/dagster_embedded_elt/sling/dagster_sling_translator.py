@@ -2,12 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Optional
 
-from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    FreshnessPolicy,
-    MetadataValue,
-)
+from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
 from dagster._annotations import public
 
 
@@ -172,6 +167,10 @@ class DagsterSlingTranslator:
     @public
     def get_metadata(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
         return {"stream_config": MetadataValue.json(stream_definition.get("config", {}))}
+
+    @public
+    def get_tags(self, stream_definition: Mapping[str, Any]) -> Mapping[str, Any]:
+        return {}
 
     @public
     def get_group_name(self, stream_definition: Mapping[str, Any]) -> Optional[str]:

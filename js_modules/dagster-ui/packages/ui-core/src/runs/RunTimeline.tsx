@@ -46,6 +46,15 @@ const MIN_DATE_WIDTH_PCT = 10;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
 
+export const CONSTANTS = {
+  ROW_HEIGHT,
+  DATE_TIME_HEIGHT,
+  TIME_HEADER_HEIGHT,
+  ONE_HOUR_MSEC,
+  EMPTY_STATE_HEIGHT,
+  LEFT_SIDE_SPACE_ALLOTTED,
+};
+
 export type TimelineRun = {
   id: string;
   status: RunStatus | 'SCHEDULED';
@@ -69,11 +78,11 @@ type RowType =
 interface Props {
   loading?: boolean;
   jobs: TimelineJob[];
-  range: [number, number];
+  rangeMs: [number, number];
 }
 
 export const RunTimeline = (props: Props) => {
-  const {loading = false, jobs, range} = props;
+  const {loading = false, jobs, rangeMs} = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const {
     viewport: {width},
@@ -81,17 +90,22 @@ export const RunTimeline = (props: Props) => {
   } = useViewport();
 
   const now = Date.now();
-  const [_, end] = range;
+  const [_, end] = rangeMs;
   const includesTicks = now <= end;
 
-  const buckets = jobs.reduce(
-    (accum, job) => {
-      const {repoAddress} = job;
-      const repoKey = repoAddressAsURLString(repoAddress);
-      const jobsForRepo = accum[repoKey] || [];
-      return {...accum, [repoKey]: [...jobsForRepo, job]};
-    },
-    {} as Record<string, TimelineJob[]>,
+  const buckets = React.useMemo(
+    () =>
+      jobs.reduce(
+        (accum, job) => {
+          const {repoAddress} = job;
+          const repoKey = repoAddressAsURLString(repoAddress);
+          accum[repoKey] = accum[repoKey] || [];
+          accum[repoKey]!.push(job);
+          return accum;
+        },
+        {} as Record<string, TimelineJob[]>,
+      ),
+    [jobs],
   );
 
   const allKeys = Object.keys(buckets);
@@ -112,9 +126,11 @@ export const RunTimeline = (props: Props) => {
 
         flat.push({type: 'header', repoAddress, jobCount: bucket.length});
         if (expandedKeys.includes(repoKey)) {
-          bucket.forEach((job) => {
-            flat.push({type: 'job', repoAddress, job});
-          });
+          bucket
+            .sort((a, b) => COMMON_COLLATOR.compare(a.jobName, b.jobName))
+            .forEach((job) => {
+              flat.push({type: 'job', repoAddress, job});
+            });
         }
       });
 
@@ -160,7 +176,7 @@ export const RunTimeline = (props: Props) => {
         Jobs
       </Box>
       <div style={{position: 'relative'}}>
-        <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={anyJobs ? height : 0} />
+        <TimeDividers interval={ONE_HOUR_MSEC} rangeMs={rangeMs} height={anyJobs ? height : 0} />
       </div>
       {repoOrder.length ? (
         <div style={{overflow: 'hidden', position: 'relative'}}>
@@ -193,7 +209,7 @@ export const RunTimeline = (props: Props) => {
                     key={key}
                     height={size}
                     top={start}
-                    range={range}
+                    rangeMs={rangeMs}
                     width={width}
                   />
                 );
@@ -319,7 +335,9 @@ type TimeMarker = {
 interface TimeDividersProps {
   height: number;
   interval: number;
-  range: [number, number];
+  rangeMs: [number, number];
+  annotations?: {label: string; ms: number}[];
+  now?: number;
 }
 
 const dateTimeOptions: Intl.DateTimeFormatOptions = {
@@ -335,13 +353,18 @@ const dateTimeOptionsWithTimezone: Intl.DateTimeFormatOptions = {
   timeZoneName: 'short',
 };
 
+const timeOnlyOptionsWithMinute: Intl.DateTimeFormatOptions = {
+  hour: 'numeric',
+  minute: 'numeric',
+};
+
 const timeOnlyOptions: Intl.DateTimeFormatOptions = {
   hour: 'numeric',
 };
 
-const TimeDividers = (props: TimeDividersProps) => {
-  const {interval, range, height} = props;
-  const [start, end] = range;
+export const TimeDividers = (props: TimeDividersProps) => {
+  const {interval, rangeMs, annotations, height, now: _now} = props;
+  const [start, end] = rangeMs;
   const formatDateTime = useFormatDateTime();
 
   const dateMarkers: DateMarker[] = React.useMemo(() => {
@@ -392,7 +415,10 @@ const TimeDividers = (props: TimeDividersProps) => {
       .map((_, ii) => {
         const time = firstMarker + ii * interval;
         const date = new Date(time);
-        const label = formatDateTime(date, timeOnlyOptions).replace(' ', '');
+        const label =
+          interval < ONE_HOUR_MSEC
+            ? formatDateTime(date, timeOnlyOptionsWithMinute).replace(' ', '')
+            : formatDateTime(date, timeOnlyOptions).replace(' ', '');
         return {
           label,
           key: date.toString(),
@@ -402,8 +428,8 @@ const TimeDividers = (props: TimeDividersProps) => {
       .filter((marker) => marker.left > 0);
   }, [end, start, interval, formatDateTime]);
 
-  const now = Date.now();
-  const nowLeft = `${(((now - start) / (end - start)) * 100).toPrecision(3)}%`;
+  const now = _now || Date.now();
+  const msToLeft = (ms: number) => `${(((ms - start) / (end - start)) * 100).toPrecision(3)}%`;
 
   return (
     <DividerContainer style={{height: `${height}px`, top: `-${DATE_TIME_HEIGHT}px`}}>
@@ -436,12 +462,28 @@ const TimeDividers = (props: TimeDividersProps) => {
         ))}
         {now >= start && now <= end ? (
           <>
-            <NowMarker style={{left: nowLeft}}>Now</NowMarker>
+            <TimlineMarker style={{left: msToLeft(now)}}>Now</TimlineMarker>
             <DividerLine
-              style={{left: nowLeft, backgroundColor: Colors.accentPrimary(), zIndex: 1}}
+              style={{left: msToLeft(now), backgroundColor: Colors.accentPrimary(), zIndex: 1}}
             />
           </>
         ) : null}
+        {(annotations || [])
+          .filter((annotation) => annotation.ms >= start && annotation.ms <= end)
+          .map((annotation) => (
+            <React.Fragment key={annotation.label}>
+              <TimlineMarker style={{left: msToLeft(annotation.ms)}}>
+                {annotation.label}
+              </TimlineMarker>
+              <DividerLine
+                style={{
+                  left: msToLeft(annotation.ms),
+                  backgroundColor: Colors.accentPrimary(),
+                  zIndex: 1,
+                }}
+              />
+            </React.Fragment>
+          ))}
       </DividerLines>
     </DividerContainer>
   );
@@ -511,14 +553,14 @@ const DividerLine = styled.div`
   width: 1px;
 `;
 
-const NowMarker = styled.div`
+const TimlineMarker = styled.div`
   background-color: ${Colors.accentPrimary()};
   border-radius: 1px;
   color: ${Colors.accentReversed()};
   cursor: default;
   font-size: 10px;
   line-height: 12px;
-  margin-left: -12px;
+  transform: translate(-50%, 0);
   padding: 1px 4px;
   position: absolute;
   top: -14px;
@@ -532,16 +574,16 @@ const RunTimelineRow = ({
   job,
   top,
   height,
-  range,
+  rangeMs,
   width: containerWidth,
 }: {
   job: TimelineJob;
   top: number;
   height: number;
-  range: [number, number];
+  rangeMs: [number, number];
   width: number;
 }) => {
-  const [start, end] = range;
+  const [start, end] = rangeMs;
   const width = containerWidth - LEFT_SIDE_SPACE_ALLOTTED;
   const {runs} = job;
 
@@ -564,7 +606,7 @@ const RunTimelineRow = ({
   }
 
   return (
-    <Row $height={height} $start={top}>
+    <TimelineRowContainer $height={height} $start={top}>
       <JobName>
         <Icon name={job.jobType === 'asset' ? 'asset' : 'job'} />
         <div style={{width: LABEL_WIDTH}}>
@@ -610,11 +652,11 @@ const RunTimelineRow = ({
           );
         })}
       </RunChunks>
-    </Row>
+    </TimelineRowContainer>
   );
 };
 
-const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
+export const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
   const {loading, includesTicks} = props;
 
   const content = () => {
@@ -661,7 +703,7 @@ const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) =
 
 type RowProps = {$height: number; $start: number};
 
-const Row = styled.div.attrs<RowProps>(({$height, $start}) => ({
+export const TimelineRowContainer = styled.div.attrs<RowProps>(({$height, $start}) => ({
   style: {
     height: `${$height}px`,
     transform: `translateY(${$start}px)`,
@@ -699,7 +741,7 @@ const JobName = styled.div`
   width: ${LEFT_SIDE_SPACE_ALLOTTED}px;
 `;
 
-const RunChunks = styled.div`
+export const RunChunks = styled.div`
   flex: 1;
   position: relative;
   height: ${ROW_HEIGHT}px;
@@ -710,7 +752,7 @@ interface ChunkProps {
   $multiple: boolean;
 }
 
-const RunChunk = styled.div<ChunkProps>`
+export const RunChunk = styled.div<ChunkProps>`
   align-items: center;
   background: ${({$background}) => $background};
   border-radius: 1px;

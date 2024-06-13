@@ -6,10 +6,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from .decorators.schedule_decorator import schedule
 from .job_definition import JobDefinition
 from .multi_dimensional_partitions import MultiPartitionsDefinition
-from .partition import (
-    PartitionsDefinition,
-    StaticPartitionsDefinition,
-)
+from .partition import PartitionsDefinition, StaticPartitionsDefinition
 from .run_request import RunRequest, SkipReason
 from .schedule_definition import (
     DefaultScheduleStatus,

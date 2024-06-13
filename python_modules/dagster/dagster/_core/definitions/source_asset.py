@@ -54,9 +54,7 @@ from dagster._core.errors import (
 from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.decorators.op_decorator import (
-        DecoratedOpFunction,
-    )
+    from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import disable_dagster_warnings
@@ -78,9 +76,7 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
         DecoratedOpFunction,
         is_context_provided,
     )
-    from dagster._core.execution.context.compute import (
-        OpExecutionContext,
-    )
+    from dagster._core.execution.context.compute import OpExecutionContext
 
     check.not_none(source_asset.observe_fn, "Must be an observable source asset")
     assert source_asset.observe_fn  # for type checker
@@ -225,9 +221,7 @@ class SourceAsset(ResourceAddable):
         _required_resource_keys: Optional[AbstractSet[str]] = None,
         # Add additional fields to with_resources and with_group below
     ):
-        from dagster._core.execution.build_resources import (
-            wrap_resources_for_execution,
-        )
+        from dagster._core.execution.build_resources import wrap_resources_for_execution
 
         self.key = AssetKey.from_coercible(key)
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)

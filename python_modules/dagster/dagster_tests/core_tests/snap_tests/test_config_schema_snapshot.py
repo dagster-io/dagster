@@ -1,15 +1,4 @@
-from dagster import (
-    Array,
-    Enum,
-    EnumValue,
-    Field,
-    Noneable,
-    ScalarUnion,
-    Selector,
-    Shape,
-    job,
-    op,
-)
+from dagster import Array, Enum, EnumValue, Field, Noneable, ScalarUnion, Selector, Shape, job, op
 from dagster._config import ConfigTypeKind, Map, resolve_to_config_type
 from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
 from dagster._core.definitions.job_definition import JobDefinition
@@ -19,11 +8,7 @@ from dagster._core.snap import (
     snap_from_config_type,
 )
 from dagster._core.types.dagster_type import DagsterType
-from dagster._serdes import (
-    deserialize_value,
-    serialize_pp,
-    serialize_value,
-)
+from dagster._serdes import deserialize_value, serialize_pp, serialize_value
 
 
 def snap_from_dagster_type(dagster_type: DagsterType) -> ConfigTypeSnap:

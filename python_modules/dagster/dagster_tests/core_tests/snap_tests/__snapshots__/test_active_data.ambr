@@ -1132,7 +1132,10 @@
     "external_partition_set_datas": [
       {
         "__class__": "ExternalPartitionSetData",
-        "backfill_policy": null,
+        "backfill_policy": {
+          "__class__": "BackfillPolicy",
+          "max_partitions_per_run": 1
+        },
         "external_partitions_data": {
           "__class__": "ExternalTimeWindowPartitionsDefinitionData",
           "cron_schedule": "15 0 * * *",

@@ -168,10 +168,11 @@ class DagsterDltResource(ConfigurableResource):
                     if dlt_source_resource
                 ]
             )
+
         # https://github.com/dagster-io/dagster/issues/21022
-        if context.has_partition_key:
-            last_partition_key = context.partition_keys[-1]
-            dlt_pipeline.pipeline_name += f"_{last_partition_key}"
+        if isinstance(context, AssetExecutionContext):
+            if context.assets_def.partitions_def is not None:
+                dlt_pipeline.pipeline_name += f"_{context.partition_key}"
 
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 

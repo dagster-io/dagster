@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from dagster import Config, In, Nothing, Out, Output, op
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from pydantic import Field
 
 from ..utils import generate_materializations
@@ -49,7 +50,7 @@ class DbtCloudRunOpConfig(Config):
     required_resource_keys={"dbt_cloud"},
     ins={"start_after": In(Nothing)},
     out=Out(DbtCloudOutput, description="Parsed output from running the dbt Cloud job."),
-    tags={"kind": "dbt_cloud"},
+    tags={COMPUTE_KIND_TAG: "dbt_cloud"},
 )
 def dbt_cloud_run_op(context, config: DbtCloudRunOpConfig):
     """Initiates a run for a dbt Cloud job, then polls until the run completes. If the job

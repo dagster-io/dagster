@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Callable, List, Optional
 from unittest.mock import MagicMock
 
-import pendulum
 import pytest
 from dagster import (
     AssetIn,
@@ -36,16 +35,14 @@ from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.errors import (
-    DagsterDefinitionChangedDeserializationError,
-)
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.external_data import (
     external_asset_checks_from_defs,
     external_asset_nodes_from_defs,
 )
-from dagster._core.test_utils import instance_for_test
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time
+from dagster._core.test_utils import freeze_time, instance_for_test
+from dagster._time import create_datetime, get_current_datetime
 
 
 def to_external_asset_graph(assets, asset_checks=None) -> BaseAssetGraph:
@@ -110,7 +107,7 @@ def test_get_children_partitions_unpartitioned_parent_partitioned_child(
     def child(parent): ...
 
     with instance_for_test() as instance:
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime()
 
         asset_graph = asset_graph_from_assets([parent, child])
 
@@ -143,7 +140,7 @@ def test_get_parent_partitions_unpartitioned_child_partitioned_parent(
     def child(parent): ...
 
     with instance_for_test() as instance:
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime()
 
         asset_graph = asset_graph_from_assets([parent, child])
         expected_asset_partitions = {
@@ -175,7 +172,7 @@ def test_get_children_partitions_fan_out(asset_graph_from_assets: Callable[..., 
 
     asset_graph = asset_graph_from_assets([parent, child])
     with instance_for_test() as instance:
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime()
 
         expected_asset_partitions = {
             AssetKeyPartitionKey(child.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -212,7 +209,7 @@ def test_get_parent_partitions_fan_in(
     asset_graph = asset_graph_from_assets([parent, child])
 
     with instance_for_test() as instance:
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime()
 
         expected_asset_partitions = {
             AssetKeyPartitionKey(parent.key, f"2022-01-03-{str(hour).zfill(2)}:00")
@@ -250,9 +247,9 @@ def test_get_parent_partitions_non_default_partition_mapping(
 
     asset_graph = asset_graph_from_assets([parent, child])
 
-    with pendulum_freeze_time(create_pendulum_time(year=2022, month=1, day=3, hour=4)):
+    with freeze_time(create_datetime(year=2022, month=1, day=3, hour=4)):
         with instance_for_test() as instance:
-            current_time = pendulum.now("UTC")
+            current_time = get_current_datetime()
 
             expected_asset_partitions = {AssetKeyPartitionKey(parent.key, "2022-01-02")}
             mapped_partitions_result = asset_graph.get_parents_partitions(
@@ -330,7 +327,7 @@ def test_custom_unsupported_partition_mapping():
     external_asset_graph = to_external_asset_graph([parent, child])
 
     with instance_for_test() as instance:
-        current_time = pendulum.now("UTC")
+        current_time = get_current_datetime()
 
         assert internal_asset_graph.get_parents_partitions(
             instance, current_time, child.key, "2"
@@ -472,7 +469,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset1_subset,
             condition_fn=include_all,
-            current_time=pendulum.now("UTC"),
+            current_time=get_current_datetime(),
         )
         == initial_asset1_subset | corresponding_asset3_subset
     )
@@ -485,7 +482,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset1_subset,
             condition_fn=include_none,
-            current_time=pendulum.now("UTC"),
+            current_time=get_current_datetime(),
         )
         == AssetGraphSubset()
     )
@@ -498,7 +495,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset1_subset,
             condition_fn=exclude_asset3,
-            current_time=pendulum.now("UTC"),
+            current_time=get_current_datetime(),
         )
         == initial_asset1_subset
     )
@@ -514,7 +511,7 @@ def test_bfs_filter_asset_subsets(asset_graph_from_assets: Callable[..., BaseAss
             dynamic_partitions_store=MagicMock(),
             initial_subset=initial_asset0_subset,
             condition_fn=exclude_asset2,
-            current_time=pendulum.now("UTC"),
+            current_time=get_current_datetime(),
         )
         == initial_asset0_subset | initial_asset1_subset | corresponding_asset3_subset
     )
@@ -572,7 +569,7 @@ def test_bfs_filter_asset_subsets_different_mappings(
                 partitions_subsets_by_asset_key={asset0.key: initial_subset},
             ),
             condition_fn=include_all,
-            current_time=pendulum.now("UTC"),
+            current_time=get_current_datetime(),
         )
         == expected_asset_graph_subset
     )

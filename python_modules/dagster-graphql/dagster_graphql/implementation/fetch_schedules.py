@@ -1,3 +1,4 @@
+import time
 from typing import TYPE_CHECKING, Optional, Sequence, Set
 
 import dagster._check as check
@@ -9,16 +10,11 @@ from dagster._core.definitions.selector import (
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from dagster_graphql.schema.util import ResolveInfo
 
 from .loader import RepositoryScopedBatchLoader
-from .utils import (
-    UserFacingGraphQLError,
-    assert_permission,
-    assert_permission_for_location,
-)
+from .utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
 
 if TYPE_CHECKING:
     from ..schema.instigation import GrapheneDryRunInstigationTick
@@ -226,9 +222,7 @@ def get_schedule_next_tick(
         return None
 
     external_schedule = repository.get_external_schedule(schedule_state.name)
-    time_iter = external_schedule.execution_time_iterator(
-        get_timestamp_from_utc_datetime(get_current_datetime_in_utc())
-    )
+    time_iter = external_schedule.execution_time_iterator(time.time())
 
     next_timestamp = next(time_iter).timestamp()
     return GrapheneDryRunInstigationTick(external_schedule.schedule_selector, next_timestamp)

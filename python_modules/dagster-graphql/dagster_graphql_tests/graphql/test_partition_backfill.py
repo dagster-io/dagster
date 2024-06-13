@@ -18,10 +18,7 @@ from dagster._core.execution.asset_backfill import (
     execute_asset_backfill_iteration,
     execute_asset_backfill_iteration_inner,
 )
-from dagster._core.execution.backfill import (
-    BulkActionStatus,
-    PartitionBackfill,
-)
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
@@ -235,11 +232,11 @@ def _execute_asset_backfill_iteration_no_side_effects(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
             instance_queryer=CachingInstanceQueryer(
-                graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_time
+                graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
             run_tags=backfill.tags,
-            backfill_start_time=asset_backfill_data.backfill_start_time,
+            backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
             pass

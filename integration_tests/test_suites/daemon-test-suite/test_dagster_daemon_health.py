@@ -1,9 +1,9 @@
 import time
+from datetime import timedelta
 
-import pendulum
 import pytest
 from dagster import DagsterInvariantViolationError
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.test_utils import environ, freeze_time, instance_for_test
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
@@ -14,7 +14,7 @@ from dagster._daemon.controller import (
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import get_current_datetime
 from dagster._utils.error import SerializableErrorInfo
 
 
@@ -27,18 +27,18 @@ def test_healthy():
             },
         }
     ) as instance:
-        init_time = pendulum.now("UTC")
+        init_time = get_current_datetime()
 
         heartbeat_interval_seconds = 1
 
         assert not all_daemons_healthy(
             instance,
-            curr_time_seconds=init_time.float_timestamp,
+            curr_time_seconds=init_time.timestamp(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         )
         assert not all_daemons_live(
             instance,
-            curr_time_seconds=init_time.float_timestamp,
+            curr_time_seconds=init_time.timestamp(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         )
 
@@ -48,21 +48,21 @@ def test_healthy():
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-                now = pendulum.now("UTC")
+                now = get_current_datetime()
                 if all_daemons_healthy(
                     instance,
-                    curr_time_seconds=now.float_timestamp,
+                    curr_time_seconds=now.timestamp(),
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                 ) and all_daemons_live(
                     instance,
-                    curr_time_seconds=now.float_timestamp,
+                    curr_time_seconds=now.timestamp(),
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                 ):
                     controller.check_daemon_threads()
                     controller.check_daemon_heartbeats()
 
                     beyond_tolerated_time = (
-                        now.float_timestamp + DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS + 1
+                        now.timestamp() + DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS + 1
                     )
 
                     assert not all_daemons_healthy(
@@ -97,11 +97,9 @@ def test_healthy_with_different_daemons():
                     },
                 }
             ) as other_instance:
-                now = pendulum.now("UTC")
-                assert not all_daemons_healthy(
-                    other_instance, curr_time_seconds=now.float_timestamp
-                )
-                assert not all_daemons_live(other_instance, curr_time_seconds=now.float_timestamp)
+                now = get_current_datetime()
+                assert not all_daemons_healthy(other_instance, curr_time_seconds=now.timestamp())
+                assert not all_daemons_live(other_instance, curr_time_seconds=now.timestamp())
 
 
 def test_thread_die_daemon(monkeypatch):
@@ -119,19 +117,19 @@ def test_thread_die_daemon(monkeypatch):
 
         heartbeat_interval_seconds = 1
 
-        init_time = pendulum.now("UTC")
+        init_time = get_current_datetime()
         with daemon_controller_from_instance(
             instance,
             workspace_load_target=EmptyWorkspaceTarget(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-                now = pendulum.now("UTC")
+                now = get_current_datetime()
 
                 status = get_daemon_statuses(
                     instance,
                     [SchedulerDaemon.daemon_type()],
-                    now.float_timestamp,
+                    now.timestamp(),
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                 )[SchedulerDaemon.daemon_type()]
 
@@ -214,7 +212,7 @@ def test_error_daemon(monkeypatch):
 
         gen_daemons = lambda instance: [SensorDaemon(instance.get_sensor_settings())]
 
-        init_time = pendulum.now("UTC")
+        init_time = get_current_datetime()
         with environ({"DAGSTER_DAEMON_CORE_LOOP_EXCEPTION_SLEEP_INTERVAL": "1"}):
             with daemon_controller_from_instance(
                 instance,
@@ -224,7 +222,7 @@ def test_error_daemon(monkeypatch):
                 error_interval_seconds=10,
             ) as controller:
                 while True:
-                    now = pendulum.now("UTC")
+                    now = get_current_datetime()
 
                     if get_daemon_statuses(
                         instance,
@@ -239,7 +237,7 @@ def test_error_daemon(monkeypatch):
                         status = get_daemon_statuses(
                             instance,
                             [SensorDaemon.daemon_type()],
-                            now.float_timestamp,
+                            now.timestamp(),
                             heartbeat_interval_seconds=heartbeat_interval_seconds,
                         )[SensorDaemon.daemon_type()]
 
@@ -257,13 +255,13 @@ def test_error_daemon(monkeypatch):
                                 assert not get_daemon_statuses(
                                     instance,
                                     [SensorDaemon.daemon_type()],
-                                    curr_time_seconds=now.float_timestamp,
+                                    curr_time_seconds=now.timestamp(),
                                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                                 )[SensorDaemon.daemon_type()].healthy
                                 assert get_daemon_statuses(
                                     instance,
                                     [SensorDaemon.daemon_type()],
-                                    curr_time_seconds=now.float_timestamp,
+                                    curr_time_seconds=now.timestamp(),
                                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                                     ignore_errors=True,
                                 )[SensorDaemon.daemon_type()].healthy
@@ -273,7 +271,7 @@ def test_error_daemon(monkeypatch):
                                 status = get_daemon_statuses(
                                     instance,
                                     [SensorDaemon.daemon_type()],
-                                    now.float_timestamp,
+                                    now.timestamp(),
                                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                                 )[SensorDaemon.daemon_type()]
 
@@ -296,15 +294,15 @@ def test_error_daemon(monkeypatch):
                 # Once the sensor no longer raises errors, they should return to 0 once
                 # enough time passes
                 should_raise_errors = False
-                init_time = pendulum.now("UTC")
+                init_time = get_current_datetime()
 
                 while True:
-                    now = pendulum.now("UTC")
+                    now = get_current_datetime()
 
                     status = get_daemon_statuses(
                         instance,
                         [SensorDaemon.daemon_type()],
-                        now.float_timestamp,
+                        now.timestamp(),
                         heartbeat_interval_seconds=heartbeat_interval_seconds,
                     )[SensorDaemon.daemon_type()]
 
@@ -333,7 +331,7 @@ def test_multiple_error_daemon(monkeypatch):
 
         monkeypatch.setattr(SensorDaemon, "core_loop", run_loop_error)
 
-        init_time = pendulum.now("UTC")
+        init_time = get_current_datetime()
 
         heartbeat_interval_seconds = 1
 
@@ -343,7 +341,7 @@ def test_multiple_error_daemon(monkeypatch):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ) as controller:
             while True:
-                now = pendulum.now("UTC")
+                now = get_current_datetime()
 
                 if all_daemons_live(
                     instance, heartbeat_interval_seconds=heartbeat_interval_seconds
@@ -353,7 +351,7 @@ def test_multiple_error_daemon(monkeypatch):
                     controller.check_daemon_heartbeats()
 
                     status = get_daemon_statuses(
-                        instance, [SensorDaemon.daemon_type()], now.float_timestamp
+                        instance, [SensorDaemon.daemon_type()], now.timestamp()
                     )[SensorDaemon.daemon_type()]
 
                     if status.healthy is False and len(status.last_heartbeat.errors) == 2:
@@ -371,7 +369,7 @@ def test_warn_multiple_daemons(capsys):
     from dagster._daemon.daemon import SensorDaemon
 
     with instance_for_test() as instance:
-        init_time = pendulum.now("UTC")
+        init_time = get_current_datetime()
 
         heartbeat_interval_seconds = 1
 
@@ -381,7 +379,7 @@ def test_warn_multiple_daemons(capsys):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ):
             while True:
-                now = pendulum.now("UTC")
+                now = get_current_datetime()
 
                 if all_daemons_live(
                     instance, heartbeat_interval_seconds=heartbeat_interval_seconds
@@ -397,12 +395,12 @@ def test_warn_multiple_daemons(capsys):
 
             capsys.readouterr()
 
-        init_time = pendulum.now("UTC")
+        init_time = get_current_datetime()
 
         status = get_daemon_statuses(
             instance,
             [SensorDaemon.daemon_type()],
-            now.float_timestamp,
+            now.timestamp(),
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         )[SensorDaemon.daemon_type()]
         last_heartbeat_time = status.last_heartbeat.timestamp
@@ -414,12 +412,12 @@ def test_warn_multiple_daemons(capsys):
             heartbeat_interval_seconds=heartbeat_interval_seconds,
         ):
             while True:
-                now = pendulum.now("UTC")
+                now = get_current_datetime()
 
                 status = get_daemon_statuses(
                     instance,
                     [SensorDaemon.daemon_type()],
-                    now.float_timestamp,
+                    now.timestamp(),
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                 )[SensorDaemon.daemon_type()]
 
@@ -436,7 +434,7 @@ def test_warn_multiple_daemons(capsys):
             status = get_daemon_statuses(
                 instance,
                 [SensorDaemon.daemon_type()],
-                now.float_timestamp,
+                now.timestamp(),
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
             )[SensorDaemon.daemon_type()]
             last_heartbeat_time = status.last_heartbeat.timestamp
@@ -449,10 +447,10 @@ def test_warn_multiple_daemons(capsys):
             ):
                 # Wait for heartbeats while two controllers are running at once and there will
                 # be a warning
-                init_time = pendulum.now("UTC")
+                init_time = get_current_datetime()
 
                 while True:
-                    now = pendulum.now("UTC")
+                    now = get_current_datetime()
 
                     captured = capsys.readouterr()
                     if "Another SENSOR daemon is still sending heartbeats" in captured.out:
@@ -477,28 +475,29 @@ def test_workspace_refresh_failed(monkeypatch, caplog):
             instance,
             workspace_load_target=EmptyWorkspaceTarget(),
         ) as controller:
-            last_workspace_update_time = pendulum.now("UTC")
+            last_workspace_update_time = get_current_datetime()
 
-            controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+            controller.check_workspace_freshness(last_workspace_update_time.timestamp())
             # doesn't try to refresh yet
             assert not any(
                 "Daemon controller failed to refresh workspace." in str(record)
                 for record in caplog.records
             )
 
-            with pendulum_freeze_time(
-                last_workspace_update_time.add(seconds=(RELOAD_WORKSPACE_INTERVAL + 1))
+            with freeze_time(
+                last_workspace_update_time + timedelta(seconds=(RELOAD_WORKSPACE_INTERVAL + 1)),
             ):
-                controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+                controller.check_workspace_freshness(last_workspace_update_time.timestamp())
                 # refresh fails, it logs but doesn't throw
                 assert any(
                     "Daemon controller failed to refresh workspace." in str(record)
                     for record in caplog.records
                 )
 
-            with pendulum_freeze_time(
-                last_workspace_update_time.add(seconds=(DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE + 1))
+            with freeze_time(
+                last_workspace_update_time
+                + timedelta(seconds=(DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE + 1)),
             ):
                 # now it throws
                 with pytest.raises(Exception, match="Failed to load a location"):
-                    controller.check_workspace_freshness(last_workspace_update_time.float_timestamp)
+                    controller.check_workspace_freshness(last_workspace_update_time.timestamp())

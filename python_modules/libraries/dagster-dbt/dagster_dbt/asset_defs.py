@@ -42,12 +42,10 @@ from dagster._core.definitions.events import (
 )
 from dagster._core.definitions.metadata import RawMetadataMapping, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.warnings import (
-    deprecation_warning,
-    normalize_renamed_param,
-)
+from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
 
 from dagster_dbt.asset_utils import (
     default_asset_key_fn,
@@ -309,7 +307,7 @@ def _get_dbt_op(
 ):
     @op(
         name=op_name,
-        tags={"kind": "dbt"},
+        tags={COMPUTE_KIND_TAG: "dbt"},
         ins=ins,
         out=outs,
         required_resource_keys={dbt_resource_key},

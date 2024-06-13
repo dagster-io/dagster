@@ -16,13 +16,8 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster._core.definitions.partition import (
-    PartitionsDefinition,
-    PartitionsSubset,
-)
-from dagster._core.errors import (
-    DagsterDefinitionChangedDeserializationError,
-)
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes.serdes import (
     NamedTupleSerializer,

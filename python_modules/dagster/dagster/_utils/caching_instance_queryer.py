@@ -27,10 +27,7 @@ from dagster._core.definitions.data_version import (
     extract_data_version_from_entry,
 )
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    PartitionsDefinition,
-    PartitionsSubset,
-)
+from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
     get_time_partition_key,
@@ -268,15 +265,25 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             ),
             before_storage_id=before_cursor,
         )
+
+        # For observable assets, we fetch the most recent observation and materialization and return
+        # whichever is more recent. For non-observable assets, we just fetch the most recent
+        # materialization.
+        materialization_records = self.instance.fetch_materializations(
+            records_filter, ascending=False, limit=1
+        ).records
         if self.asset_graph.get(asset_partition.asset_key).is_observable:
-            records = self.instance.fetch_observations(
+            observation_records = self.instance.fetch_observations(
                 records_filter, ascending=False, limit=1
             ).records
+            all_records = sorted(
+                [*materialization_records, *observation_records],
+                key=lambda x: x.timestamp,
+                reverse=True,
+            )
         else:
-            records = self.instance.fetch_materializations(
-                records_filter, ascending=False, limit=1
-            ).records
-        return next(iter(records), None)
+            all_records = materialization_records
+        return next(iter(all_records), None)
 
     @cached_method
     def _get_latest_materialization_or_observation_storage_ids_by_asset_partition(
@@ -597,19 +604,17 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Finds asset partitions of the given child whose parents have been materialized since
         latest_storage_id.
         """
-        child_asset = self.asset_graph.get(child_asset_key)
-        if not child_asset.parent_keys:
-            return set(), latest_storage_id
-
-        child_time_partitions_def = get_time_partitions_def(child_asset.partitions_def)
-
-        child_asset_partitions_with_updated_parents = set()
-
         max_storage_ids = [
             self.get_latest_materialization_or_observation_storage_id(
                 AssetKeyPartitionKey(child_asset_key)
             )
         ]
+        child_asset = self.asset_graph.get(child_asset_key)
+        if not child_asset.parent_keys:
+            return set(), max(filter(None, [latest_storage_id, *max_storage_ids]), default=None)
+
+        child_time_partitions_def = get_time_partitions_def(child_asset.partitions_def)
+        child_asset_partitions_with_updated_parents = set()
         for parent_asset_key in self.asset_graph.get(child_asset_key).parent_keys:
             # ignore non-existent parents
             if not self.asset_graph.has(parent_asset_key):

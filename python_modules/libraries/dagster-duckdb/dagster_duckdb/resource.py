@@ -54,7 +54,10 @@ class DuckDBResource(ConfigurableResource):
             kwargs={
                 "database": self.database,
                 "read_only": False,
-                "config": self.connection_config,
+                "config": {
+                    "custom_user_agent": "dagster",
+                    **self.connection_config,
+                },
             },
             max_retries=10,
         )

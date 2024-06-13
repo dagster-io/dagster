@@ -22,28 +22,15 @@ from dagster import (
     op,
     reconstructable,
 )
-from dagster._core.definitions.dependency import (
-    DependencyMapping,
-    DependencyStructure,
-    OpNode,
-)
-from dagster._core.definitions.graph_definition import (
-    create_adjacency_lists,
-)
+from dagster._core.definitions.dependency import DependencyMapping, DependencyStructure, OpNode
+from dagster._core.definitions.graph_definition import create_adjacency_lists
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvariantViolationError
 from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import (
-    instance_for_test,
-)
-from dagster._core.utility_ops import (
-    create_op_with_deps,
-    create_root_op,
-    create_stub_op,
-    input_set,
-)
+from dagster._core.test_utils import instance_for_test
+from dagster._core.utility_ops import create_op_with_deps, create_root_op, create_stub_op, input_set
 from dagster._core.workspace.load import location_origin_from_python_file
 
 # protected members

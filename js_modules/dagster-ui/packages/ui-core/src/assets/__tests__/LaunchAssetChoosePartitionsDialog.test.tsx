@@ -12,15 +12,15 @@ import {
   buildDimensionPartitionKeys,
   buildMultiPartitionStatuses,
   buildPartitionDefinition,
-  buildWorkspace,
 } from '../../graphql/types';
 import {CREATE_PARTITION_MUTATION} from '../../partitions/CreatePartitionDialog';
 import {
   AddDynamicPartitionMutation,
   AddDynamicPartitionMutationVariables,
 } from '../../partitions/types/CreatePartitionDialog.types';
-import {buildWorkspaceContextMockedResponse} from '../../runs/__fixtures__/RunsFilterInput.fixtures';
 import {buildMutationMock, buildQueryMock, getMockResultFn} from '../../testing/mocking';
+import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {LaunchAssetChoosePartitionsDialog} from '../LaunchAssetChoosePartitionsDialog';
 import {
@@ -29,7 +29,7 @@ import {
 } from '../types/usePartitionHealthData.types';
 import {PARTITION_HEALTH_QUERY} from '../usePartitionHealthData';
 
-const workspaceMock = buildWorkspaceContextMockedResponse(buildWorkspace({}));
+const workspaceMocks = buildWorkspaceMocks([]);
 
 describe('launchAssetChoosePartitionsDialog', () => {
   it('Adding a dynamic partition when multiple assets selected', async () => {
@@ -92,21 +92,23 @@ describe('launchAssetChoosePartitionsDialog', () => {
             assetASecondQueryMock,
             assetBSecondQueryMock,
             addPartitionMock,
-            workspaceMock,
+            ...workspaceMocks,
           ]}
         >
-          <LaunchAssetChoosePartitionsDialog
-            open={true}
-            setOpen={(_open: boolean) => {}}
-            repoAddress={buildRepoAddress('test', 'test')}
-            target={{
-              jobName: '__ASSET_JOB_0',
-              partitionSetName: '__ASSET_JOB_0_partition_set',
-              type: 'job',
-            }}
-            assets={[assetA, assetB]}
-            upstreamAssetKeys={[]}
-          />
+          <WorkspaceProvider>
+            <LaunchAssetChoosePartitionsDialog
+              open={true}
+              setOpen={(_open: boolean) => {}}
+              repoAddress={buildRepoAddress('test', 'test')}
+              target={{
+                jobName: '__ASSET_JOB_0',
+                partitionSetName: '__ASSET_JOB_0_partition_set',
+                type: 'job',
+              }}
+              assets={[assetA, assetB]}
+              upstreamAssetKeys={[]}
+            />
+          </WorkspaceProvider>
         </MockedProvider>
       </MemoryRouter>,
     );

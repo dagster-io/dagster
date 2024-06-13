@@ -253,6 +253,9 @@ builtins-ignorelist = ["id"]
 # (`foo`) into a single statement.
 combine-as-imports = true
 
+# In cases where imports are automatically removed, allows the imports to be automatically collapsed
+split-on-trailing-comma = false
+
 # Imports of the form `from foo import bar as baz` show one `import bar as baz`
 # per line. Useful for __init__.py files that just re-export symbols.
 force-wrap-aliases = true

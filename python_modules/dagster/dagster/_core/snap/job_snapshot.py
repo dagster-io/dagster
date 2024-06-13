@@ -23,9 +23,7 @@ from dagster._config import (
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_definition import (
-    JobDefinition,
-)
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataValue,
@@ -33,26 +31,14 @@ from dagster._core.definitions.metadata import (
     normalize_metadata,
 )
 from dagster._core.utils import toposort_flatten
-from dagster._serdes import (
-    create_snapshot_id,
-    deserialize_value,
-    whitelist_for_serdes,
-)
+from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
 
 from .config_types import build_config_schema_snapshot
 from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
-from .dep_snapshot import (
-    DependencyStructureSnapshot,
-    build_dep_structure_snapshot_from_graph_def,
-)
+from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
 from .mode import ModeDefSnap, build_mode_def_snap
-from .node import (
-    GraphDefSnap,
-    NodeDefsSnapshot,
-    OpDefSnap,
-    build_node_defs_snapshot,
-)
+from .node import GraphDefSnap, NodeDefsSnapshot, OpDefSnap, build_node_defs_snapshot
 
 
 def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:

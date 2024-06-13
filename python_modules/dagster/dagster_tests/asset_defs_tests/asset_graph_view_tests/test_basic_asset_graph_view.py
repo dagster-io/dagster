@@ -1,9 +1,9 @@
-import pendulum
 from dagster import AssetDep, Definitions, asset
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
 from dagster._core.instance import DagsterInstance
+from dagster._time import create_datetime
 
 
 def test_basic_construction_and_identity() -> None:
@@ -12,7 +12,7 @@ def test_basic_construction_and_identity() -> None:
 
     defs = Definitions([an_asset])
     instance = DagsterInstance.ephemeral()
-    effective_dt = pendulum.datetime(2020, 1, 1)
+    effective_dt = create_datetime(2020, 1, 1)
     last_event_id = 928348343
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance, effective_dt, last_event_id)
 
@@ -47,15 +47,16 @@ def test_slice_traversal_static_partitions() -> None:
 
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance)
     assert (
-        asset_graph_view_t0.get_asset_slice(up_numbers.key).compute_partition_keys() == number_keys
+        asset_graph_view_t0.get_asset_slice(asset_key=up_numbers.key).compute_partition_keys()
+        == number_keys
     )
     assert (
-        asset_graph_view_t0.get_asset_slice(down_letters.key).compute_partition_keys()
+        asset_graph_view_t0.get_asset_slice(asset_key=down_letters.key).compute_partition_keys()
         == letter_keys
     )
 
     # from full up to down
-    up_slice = asset_graph_view_t0.get_asset_slice(up_numbers.key)
+    up_slice = asset_graph_view_t0.get_asset_slice(asset_key=up_numbers.key)
     assert up_slice.compute_partition_keys() == {"1", "2", "3"}
     assert up_slice.compute_child_slice(down_letters.key).compute_partition_keys() == {
         "a",
@@ -64,7 +65,7 @@ def test_slice_traversal_static_partitions() -> None:
     }
 
     # from full up to down
-    down_slice = asset_graph_view_t0.get_asset_slice(down_letters.key)
+    down_slice = asset_graph_view_t0.get_asset_slice(asset_key=down_letters.key)
     assert down_slice.compute_partition_keys() == {"a", "b", "c"}
     assert down_slice.compute_parent_slice(up_numbers.key).compute_partition_keys() == {
         "1",
@@ -96,9 +97,9 @@ def test_only_partition_keys() -> None:
     asset_graph_view_t0 = AssetGraphView.for_test(defs, instance)
 
     assert asset_graph_view_t0.get_asset_slice(
-        up_numbers.key
+        asset_key=up_numbers.key
     ).compute_intersection_with_partition_keys({"1", "2"}).compute_partition_keys() == {"1", "2"}
 
     assert asset_graph_view_t0.get_asset_slice(
-        up_numbers.key
+        asset_key=up_numbers.key
     ).compute_intersection_with_partition_keys({"3"}).compute_partition_keys() == set(["3"])

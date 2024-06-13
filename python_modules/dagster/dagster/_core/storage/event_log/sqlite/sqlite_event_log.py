@@ -44,10 +44,7 @@ from dagster._core.storage.sql import (
 )
 from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.sqlite import create_db_conn_string
-from dagster._serdes import (
-    ConfigurableClass,
-    ConfigurableClassData,
-)
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._utils import mkdir_p

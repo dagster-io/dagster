@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Iterable, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._annotations import experimental, public
 from dagster._serdes import whitelist_for_serdes
+from dagster._utils.warnings import disable_dagster_warnings
 
 
 class BackfillPolicyType(Enum):
@@ -80,3 +81,29 @@ class BackfillPolicy(
             return BackfillPolicyType.MULTI_RUN
         else:
             return BackfillPolicyType.SINGLE_RUN
+
+    def __str__(self):
+        return (
+            "BackfillPolicy.single_run()"
+            if self.policy_type == BackfillPolicyType.SINGLE_RUN
+            else (f"BackfillPolicy.multi_run(max_partitions_per_run={self.max_partitions_per_run})")
+        )
+
+
+# In situations where multiple backfill policies are specified, call this to resolve a canonical
+# policy, which is the policy with the minimum max_partitions_per_run.
+def resolve_backfill_policy(
+    backfill_policies: Iterable[Optional[BackfillPolicy]],
+) -> BackfillPolicy:
+    policy = next(iter(sorted(backfill_policies, key=_backfill_policy_sort_key)), None)
+    with disable_dagster_warnings():
+        return policy or BackfillPolicy.multi_run(1)
+
+
+def _backfill_policy_sort_key(bp: Optional[BackfillPolicy]) -> float:
+    if bp is None:  # equivalent to max_partitions_per_run=1
+        return 1
+    elif bp.max_partitions_per_run is None:
+        return float("inf")
+    else:
+        return bp.max_partitions_per_run

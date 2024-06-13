@@ -7,11 +7,7 @@ from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.workspace.permissions import Permissions
 
 from ..external import get_external_job_or_raise
-from ..utils import (
-    ExecutionMetadata,
-    ExecutionParams,
-    assert_permission_for_location,
-)
+from ..utils import ExecutionMetadata, ExecutionParams, assert_permission_for_location
 from .run_lifecycle import create_valid_pipeline_run
 
 if TYPE_CHECKING:
@@ -49,7 +45,7 @@ def do_launch(
     external_job = get_external_job_or_raise(graphene_info, execution_params.selector)
     code_location = graphene_info.context.get_code_location(execution_params.selector.location_name)
     dagster_run = create_valid_pipeline_run(
-        graphene_info, external_job, execution_params, code_location
+        graphene_info.context, external_job, execution_params, code_location
     )
 
     return graphene_info.context.instance.submit_run(

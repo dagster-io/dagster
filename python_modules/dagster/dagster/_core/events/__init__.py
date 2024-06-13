@@ -50,15 +50,8 @@ from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._serdes import (
-    NamedTupleSerializer,
-    whitelist_for_serdes,
-)
-from dagster._serdes.serdes import (
-    EnumSerializer,
-    UnpackContext,
-    is_whitelisted_for_serdes_object,
-)
+from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.timing import format_duration
 

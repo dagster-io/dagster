@@ -91,9 +91,7 @@ from dagster._core.remote_representation.origin import (
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecordStatus,
-)
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
 from dagster._core.storage.event_log.base import EventLogStorage
 from dagster._core.storage.event_log.migration import (
@@ -651,8 +649,23 @@ class TestEventLogStorage:
             storage.store_event(create_test_event_log_record(str(2), run_id=other_run_id))
             storage.store_event(create_test_event_log_record("D", run_id=test_run_id))
 
-            result = storage.get_records_for_run(test_run_id, ascending=True)
-            storage_ids = [r.storage_id for r in result.records]
+            desc_result = storage.get_records_for_run(test_run_id, ascending=False)
+            assert [r.event_log_entry.user_message for r in desc_result.records] == [
+                "D",
+                "C",
+                "B",
+                "A",
+            ]
+
+            asc_result = storage.get_records_for_run(test_run_id, ascending=True)
+            assert [r.event_log_entry.user_message for r in asc_result.records] == [
+                "A",
+                "B",
+                "C",
+                "D",
+            ]
+
+            storage_ids = [r.storage_id for r in asc_result.records]
             assert len(storage_ids) == 4
 
             def _cursor(storage_id: int):
@@ -2535,6 +2548,11 @@ class TestEventLogStorage:
             asset_keys = storage.get_asset_keys(cursor='["b", "y"]', limit=1)
             assert len(asset_keys) == 1
             assert asset_keys[0].to_string() == '["b", "z"]'
+
+            # pagination still works even if the key is not in the list
+            asset_keys = storage.get_asset_keys(cursor='["b", "w"]', limit=1)
+            assert len(asset_keys) == 1
+            assert asset_keys[0].to_string() == '["b", "x"]'
 
             # prefix filter
             asset_keys = storage.get_asset_keys(prefix=["b"])

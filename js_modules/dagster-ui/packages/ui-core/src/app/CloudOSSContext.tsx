@@ -8,6 +8,7 @@ type FeatureContext = {
   canSeeToggleScheduleAction: boolean;
   canSeeToggleSensorAction: boolean;
   canSeeExecuteChecksAction: boolean;
+  canSeeBackfillCoordinatorLogs: boolean;
 };
 
 export const CloudOSSContext = React.createContext<{
@@ -23,6 +24,7 @@ export const CloudOSSContext = React.createContext<{
     canSeeToggleSensorAction: true,
     canSeeWipeMaterializationAction: true,
     canSeeExecuteChecksAction: true,
+    canSeeBackfillCoordinatorLogs: false,
   },
   onViewChange: () => {},
   useAugmentSearchResults: () => (results) => results,

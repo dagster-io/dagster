@@ -197,14 +197,35 @@ Which is pretty neat.
 Which is also pretty neat.
 
 ## Images
-We've got a tag that handles making sure images are pretty, optimized, and accessible.
+In the old MDX way of doing things, images were a bit of a pain. You had to either manually specify the height and width of the image or run a script (`make MDX-format`) to do it for you.
 
-`{% image src="/images/some-image.png" width=300 height=200 alt="Text for screenreaders. Usually you want to describe things here." /%}`
+Document preprocessors like this have a number of issues such as being slow, error-prone, and making edits to the docs more difficult. 
 
-<!-- {% image src="/images/concepts/assets/asset-activity-observation.png" width=300 height=200 alt="Text for screenreaders. Usually you want to describe things here." /%} -->
+To that end, I've opted to extended the default markdoc image node to automatically determine the height and width of the image during the transform step and use that to instantiate the image using the `Next/Image` component. Doing this allows us to retain the benefits of our current make script approach while also preserving the easy authoring experience of vanilla markdown.
+
+So, the default way to use images is like this:
+
+`![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png)`
+
+and outputs like this:
+
+![Alt Text Goes Here](/images/concepts/assets/asset-activity-observation.png)
+
+The default markdown syntax is effectively the same as using this tag manually: `{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}`
+
+Which yields this:
+
+{% image src="/images/concepts/assets/asset-activity-observation.png" alt="Text go here" /%}
+
+You can also specify the width and height of the image like this:
+
+`{% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}`
+
+Which yields this:
 
 {% image src="/images/concepts/assets/asset-activity-observation.png" width=1758 height=1146 alt="Text go here" /%}
 
+The cool part about all of this is that it removes the need to run `make MDX-format` for images as it handles assigning a size to the image as part of page rendering rather than as a batch text-preprocess that gets performed on the docs.
 
 ## Badges : Inline
 
@@ -245,7 +266,7 @@ _Italic_
 [Links](/docs/nodes)
 
 Vanilla markdown images work, but we should really be using the image tag because it optimizes the images, makes them more accessible, and handles resizing them for us.
-![Images](/images/concepts/assets/asset-activity-observation.png)
+<!-- ![Images](/images/concepts/assets/asset-activity-observation.png) -->
 
 Lists
 - Item 1

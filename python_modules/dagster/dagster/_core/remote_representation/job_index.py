@@ -3,11 +3,7 @@ from typing import Any, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
-from dagster._core.snap import (
-    DependencyStructureIndex,
-    JobSnapshot,
-    create_job_snapshot_id,
-)
+from dagster._core.snap import DependencyStructureIndex, JobSnapshot, create_job_snapshot_id
 from dagster._core.snap.dagster_types import DagsterTypeSnap
 from dagster._core.snap.mode import ModeDefSnap
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
@@ -31,12 +27,6 @@ class JobIndex:
         self.parent_job_snapshot = check.opt_inst_param(
             parent_job_snapshot, "parent_job_snapshot", JobSnapshot
         )
-
-        if self.job_snapshot.lineage_snapshot:
-            check.invariant(
-                self.parent_job_snapshot is not None,
-                "Can not create JobIndex for job_snapshot with lineage without parent_job_snapshot",
-            )
 
         node_def_snaps: Sequence[Union[OpDefSnap, GraphDefSnap]] = [
             *job_snapshot.node_defs_snapshot.op_def_snaps,

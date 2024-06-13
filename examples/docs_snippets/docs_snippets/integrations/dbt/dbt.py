@@ -5,6 +5,7 @@ MANIFEST_PATH = ""
 
 def scope_compile_dbt_manifest(manifest):
     # start_compile_dbt_manifest
+    """✅ This is recommended!"""
     import os
     from pathlib import Path
 
@@ -27,6 +28,29 @@ def scope_compile_dbt_manifest(manifest):
     else:
         dbt_manifest_path = dbt_project_dir.joinpath("target", "manifest.json")
     # end_compile_dbt_manifest
+
+
+def scope_troubleshooting_dbt_manifest(manifest):
+    # start_troubleshooting_dbt_manifest
+    """❌ This is not recommended."""
+    import os
+    from pathlib import Path
+
+    from dagster_dbt import DbtCliResource
+
+    dbt_project_dir = Path(__file__).joinpath("..", "..", "..").resolve()
+    dbt = DbtCliResource(project_dir=os.fspath(dbt_project_dir))
+
+    # A manifest will always be created at runtime.
+    dbt_manifest_path = (
+        dbt.cli(
+            ["--quiet", "parse"],
+            target_path=Path("target"),
+        )
+        .wait()
+        .target_path.joinpath("manifest.json")
+    )
+    # end_troubleshooting_dbt_manifest
 
 
 def scope_schedule_assets_dbt_only(manifest):
@@ -189,6 +213,24 @@ def scope_custom_asset_key_dagster_dbt_translator():
         yield from dbt.cli(["build"], context=context).stream()
 
     # end_custom_asset_key_dagster_dbt_translator
+
+
+def scope_fetch_row_count() -> None:
+    # start_fetch_row_count
+    from pathlib import Path
+    from dagster import AssetKey, AssetExecutionContext
+    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+    from typing import Any, Mapping
+
+    manifest_path = Path("path/to/dbt_project/target/manifest.json")
+
+    @dbt_assets(
+        manifest=manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
+
+    # end_fetch_row_count
 
 
 def scope_custom_group_name_dagster_dbt_translator():

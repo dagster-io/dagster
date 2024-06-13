@@ -49,13 +49,12 @@ from dagster._core.definitions.resource_requirement import (
 )
 from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.utils import normalize_group_name
+from dagster._core.definitions.utils import normalize_group_name, validate_asset_owner
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.utils import is_valid_email
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -184,40 +183,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             value_type=AssetCheckSpec,
         )
 
-        all_asset_keys = set(keys_by_output_name.values())
-
         self._partitions_def = partitions_def
-        if partition_mappings:
-            _validate_partition_mappings(
-                partition_mappings=partition_mappings,
-                input_asset_keys=set(keys_by_input_name.values()),
-                all_asset_keys=all_asset_keys,
-            )
 
-        if asset_deps:
-            check.invariant(
-                set(asset_deps.keys()) == all_asset_keys,
-                "The set of asset keys with dependencies specified in the asset_deps argument must "
-                "equal the set of asset keys produced by this AssetsDefinition. \n"
-                f"asset_deps keys: {set(asset_deps.keys())} \n"
-                f"expected keys: {all_asset_keys}",
-            )
         self._resource_defs = wrap_resources_for_execution(
             check.opt_mapping_param(resource_defs, "resource_defs")
         )
-
-        self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
-            all_asset_keys=all_asset_keys,
-            all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
-            selected_asset_keys=selected_asset_keys,
-            selected_asset_check_keys=selected_asset_check_keys,
-        )
-
-        self._check_specs_by_key = {
-            spec.key: spec
-            for spec in self._check_specs_by_output_name.values()
-            if spec.key in self._selected_asset_check_keys
-        }
 
         self._can_subset = can_subset
 
@@ -252,6 +222,24 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             resolved_specs = specs
 
         else:
+            all_asset_keys = set(keys_by_output_name.values())
+
+            if asset_deps:
+                check.invariant(
+                    set(asset_deps.keys()) == all_asset_keys,
+                    "The set of asset keys with dependencies specified in the asset_deps argument must "
+                    "equal the set of asset keys produced by this AssetsDefinition. \n"
+                    f"asset_deps keys: {set(asset_deps.keys())} \n"
+                    f"expected keys: {all_asset_keys}",
+                )
+
+            if partition_mappings:
+                _validate_partition_mappings(
+                    partition_mappings=partition_mappings,
+                    input_asset_keys=set(keys_by_input_name.values()),
+                    all_asset_keys=all_asset_keys,
+                )
+
             resolved_specs = _asset_specs_from_attr_key_params(
                 all_asset_keys=all_asset_keys,
                 keys_by_input_name=keys_by_input_name,
@@ -283,6 +271,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             # highly unfortunate. See commentary in @multi_asset's call to dagster_internal_init.
             description = spec.description or output_def.description or node_def.description
             code_version = spec.code_version or output_def.code_version
+            skippable = not output_def.is_required
 
             check.invariant(
                 not (
@@ -300,12 +289,27 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     code_version=code_version,
                     metadata=metadata,
                     description=description,
+                    skippable=skippable,
                 )
             )
+
+        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
         self._partition_mappings = get_partition_mappings_from_deps(
             {}, [dep for spec in normalized_specs for dep in spec.deps], node_def.name
         )
+        self._selected_asset_keys, self._selected_asset_check_keys = _resolve_selections(
+            all_asset_keys=self._specs_by_key.keys(),
+            all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
+            selected_asset_keys=selected_asset_keys,
+            selected_asset_check_keys=selected_asset_check_keys,
+        )
+
+        self._check_specs_by_key = {
+            spec.key: spec
+            for spec in self._check_specs_by_output_name.values()
+            if spec.key in self._selected_asset_check_keys
+        }
 
         _validate_self_deps(
             input_keys=[
@@ -320,8 +324,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             partition_mappings=self._partition_mappings,
             partitions_def=self._partitions_def,
         )
-
-        self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
     def dagster_internal_init(
         *,
@@ -596,9 +598,9 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         check_specs: Optional[Sequence[AssetCheckSpec]] = None,
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
-        from dagster._core.definitions.decorators.asset_decorator import (
-            _assign_output_names_to_check_specs,
+        from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
             _validate_check_specs_target_relevant_asset_keys,
+            create_check_specs_by_output_name,
         )
 
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)
@@ -630,7 +632,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
 
-        check_specs_by_output_name = _assign_output_names_to_check_specs(check_specs)
+        check_specs_by_output_name = create_check_specs_by_output_name(check_specs)
 
         keys_by_output_name = _infer_keys_by_output_names(
             node_def, keys_by_output_name or {}, check_specs_by_output_name
@@ -1086,10 +1088,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def with_attributes(
         self,
         *,
-        output_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        input_asset_key_replacements: Optional[Mapping[AssetKey, AssetKey]] = None,
-        group_names_by_key: Optional[Mapping[AssetKey, str]] = None,
-        tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]] = None,
+        output_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
+        input_asset_key_replacements: Mapping[AssetKey, AssetKey] = {},
+        group_names_by_key: Mapping[AssetKey, str] = {},
+        tags_by_key: Mapping[AssetKey, Mapping[str, str]] = {},
         freshness_policy: Optional[
             Union[FreshnessPolicy, Mapping[AssetKey, FreshnessPolicy]]
         ] = None,
@@ -1097,27 +1099,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             Union[AutoMaterializePolicy, Mapping[AssetKey, AutoMaterializePolicy]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
-        check_specs_by_output_name: Optional[Mapping[str, AssetCheckSpec]] = None,
-        selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]] = None,
     ) -> "AssetsDefinition":
-        output_asset_key_replacements = check.opt_mapping_param(
-            output_asset_key_replacements,
-            "output_asset_key_replacements",
-            key_type=AssetKey,
-            value_type=AssetKey,
-        )
-        input_asset_key_replacements = check.opt_mapping_param(
-            input_asset_key_replacements,
-            "input_asset_key_replacements",
-            key_type=AssetKey,
-            value_type=AssetKey,
-        )
-        group_names_by_key = check.opt_mapping_param(
-            group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
-        )
-
-        backfill_policy = check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
-
         conflicts_by_attr_name: Dict[str, Set[AssetKey]] = defaultdict(set)
         replaced_specs = []
 
@@ -1177,6 +1159,24 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 f" {', '.join(asset_key.to_user_string() for asset_key in conflicting_asset_keys)}"
             )
 
+        check_specs_by_output_name = {
+            output_name: check_spec._replace(
+                asset_key=output_asset_key_replacements.get(
+                    check_spec.asset_key, check_spec.asset_key
+                )
+            )
+            for output_name, check_spec in self.node_check_specs_by_output_name.items()
+        }
+
+        selected_asset_check_keys = {
+            check_key._replace(
+                asset_key=output_asset_key_replacements.get(
+                    check_key.asset_key, check_key.asset_key
+                )
+            )
+            for check_key in self.check_keys
+        }
+
         replaced_attributes = dict(
             keys_by_input_name={
                 input_name: input_asset_key_replacements.get(key, key)
@@ -1191,12 +1191,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             },
             backfill_policy=backfill_policy if backfill_policy else self.backfill_policy,
             is_subset=self.is_subset,
-            check_specs_by_output_name=check_specs_by_output_name
-            if check_specs_by_output_name
-            else self._check_specs_by_output_name,
-            selected_asset_check_keys=selected_asset_check_keys
-            if selected_asset_check_keys
-            else self._selected_asset_check_keys,
+            check_specs_by_output_name=check_specs_by_output_name,
+            selected_asset_check_keys=selected_asset_check_keys,
             specs=replaced_specs,
         )
 
@@ -1377,6 +1373,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 output_name, NodeHandle(self.node_def.name, parent=None)
             )[0]
             key = self._keys_by_output_name[output_name]
+            spec = self.specs_by_key[key]
 
             return SourceAsset(
                 key=key,
@@ -1385,8 +1382,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 description=output_def.description,
                 resource_defs=self.resource_defs,
                 partitions_def=self.partitions_def,
-                group_name=self.group_names_by_key[key],
-                tags=self.tags_by_key.get(key),
+                group_name=spec.group_name,
+                tags=spec.tags,
             )
 
     def get_io_manager_key_for_asset_key(self, key: AssetKey) -> str:
@@ -1424,10 +1421,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @cached_property
     def unique_id(self) -> str:
-        """A unique identifier for the AssetsDefinition that's stable across processes."""
-        return non_secure_md5_hash_str(
-            (json.dumps(sorted(self.keys) + sorted(self.check_keys))).encode("utf-8")
-        )
+        return unique_id_from_asset_and_check_keys(self.keys, self.check_keys)
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()
@@ -1676,7 +1670,7 @@ def _asset_specs_from_attr_key_params(
 
         with disable_dagster_warnings():
             result.append(
-                AssetSpec(
+                AssetSpec.dagster_internal_init(
                     key=key,
                     description=validated_descriptions_by_key.get(key),
                     metadata=validated_metadata_by_key.get(key),
@@ -1687,6 +1681,9 @@ def _asset_specs_from_attr_key_params(
                     group_name=validated_group_names_by_key.get(key),
                     code_version=validated_code_versions_by_key.get(key),
                     deps=dep_objs,
+                    # Value here is irrelevant, because it will be replaced by value from
+                    # NodeDefinition
+                    skippable=False,
                 )
             )
 
@@ -1747,14 +1744,6 @@ def get_self_dep_time_window_partition_mapping(
     return None
 
 
-def validate_asset_owner(owner: str, key: AssetKey) -> None:
-    if not is_valid_email(owner) and not (owner.startswith("team:") and len(owner) > 5):
-        raise DagsterInvalidDefinitionError(
-            f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
-            "name prefixed with 'team:'."
-        )
-
-
 def get_partition_mappings_from_deps(
     partition_mappings: Dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
 ) -> Mapping[AssetKey, PartitionMapping]:
@@ -1775,3 +1764,17 @@ def get_partition_mappings_from_deps(
             )
 
     return partition_mappings
+
+
+def unique_id_from_asset_and_check_keys(
+    asset_keys: Iterable[AssetKey], check_keys: Iterable[AssetCheckKey]
+) -> str:
+    """Generate a unique ID from the provided asset keys.
+
+    This is useful for generating op names that don't have collisions.
+    """
+    sorted_asset_key_strs = sorted(asset_key.to_string() for asset_key in asset_keys)
+    sorted_check_key_strs = sorted(str(check_key) for check_key in check_keys)
+    return non_secure_md5_hash_str(
+        json.dumps(sorted_asset_key_strs + sorted_check_key_strs).encode("utf-8")
+    )[:8]

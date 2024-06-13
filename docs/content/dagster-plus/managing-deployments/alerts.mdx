@@ -79,10 +79,15 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         <strong>Run alert</strong>
       </td>
       <td>
-        Triggers on job run success or failure; may optionally include a set of
-        configured tags. If an alert policy has no configured tags, all jobs
-        will be eligible for that alert. Otherwise, only jobs that contain all
-        the tags for a given alert policy are eligible for that alert.
+        Triggers on job run success, failure, or time limit exceeded; may
+        optionally include a set of configured tags. If an alert policy has no
+        configured tags, all jobs will be eligible for that alert. Otherwise,
+        only jobs that contain all the tags for a given alert policy are
+        eligible for that alert.
+        <br />
+        Each newly created organization starts with a long-running run alert
+        policy, which sends an email to the email address used to create the
+        organization when a job run exceeds 24 hours.
       </td>
     </tr>
     <tr>
@@ -137,6 +142,23 @@ Alert policies are configured on a **per-deployment basis**. This means, for exa
         <strong>Note</strong>: Alerts are sent only when the threshold is first crossed,
         and will not be sent again until the value returns to expected levels. Insights
         data may become available up to 24 hours after run completion.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Credit budget alert (self-serve plans only)</strong>{" "}
+        <Experimental />
+      </td>
+      <td>
+        <strong>
+          This feature is currently only available for Dagster+ self-serve plans
+          (Solo and Starter).
+        </strong>{" "}
+        Sends a notification when your organization has reached the monthly
+        credit limit.
+        <br />
+        Each newly created organization starts with an alert policy of this
+        type, directed at the email address used to create the organization.
       </td>
     </tr>
   </tbody>

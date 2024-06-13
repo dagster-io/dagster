@@ -555,12 +555,14 @@ def test_partitions(mocker, dbt_cloud, dbt_cloud_service):
 
 @responses.activate
 @pytest.mark.parametrize(
-    "dbt_materialization_command_options",
-    [
-        "",
-        "--selector xyz",
-    ],
-    ids=["no selector", "with selector"],
+    "dbt_materialization_command_subsetting_options",
+    ["", "--selector xyz", "--select subdir_schema/least_caloric -s=sort_by_calories"],
+    ids=["no selector", "with selector", "with --select args"],
+)
+@pytest.mark.parametrize(
+    "dbt_materialization_command_non_subsetting_options",
+    ["", "--target dev"],
+    ids=["without non-selection commands", "with non-selection commands"],
 )
 @pytest.mark.parametrize(
     "asset_selection, expected_dbt_asset_names",
@@ -590,14 +592,15 @@ def test_subsetting(
     mocker,
     dbt_cloud,
     dbt_cloud_service,
-    dbt_materialization_command_options,
+    dbt_materialization_command_subsetting_options,
+    dbt_materialization_command_non_subsetting_options,
     asset_selection,
     expected_dbt_asset_names,
 ):
     dbt_materialization_command = "dbt build"
-    full_dbt_materialization_command = (
-        f"{dbt_materialization_command} {dbt_materialization_command_options}".strip()
-    )
+    # Core command should not be changed by dagster
+    core_dbt_materialization_command = f"{dbt_materialization_command} {dbt_materialization_command_non_subsetting_options}".strip()
+    full_dbt_materialization_command = f"{core_dbt_materialization_command} {dbt_materialization_command_subsetting_options}".strip()
     _add_dbt_cloud_job_responses(
         dbt_cloud_service=dbt_cloud_service,
         dbt_commands=[full_dbt_materialization_command],
@@ -649,7 +652,7 @@ def test_subsetting(
         cause=f"Materializing software-defined assets in Dagster run {result.run_id[:8]}",
         steps_override=[
             (
-                f"{dbt_materialization_command} {dbt_filter_option}".strip()
+                f"{core_dbt_materialization_command} {dbt_filter_option}".strip()
                 if dbt_filter_option
                 else full_dbt_materialization_command
             )

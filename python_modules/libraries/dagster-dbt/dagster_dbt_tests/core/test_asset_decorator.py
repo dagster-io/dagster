@@ -27,16 +27,20 @@ from dagster import (
 from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.asset_decorator import DUPLICATE_ASSET_KEY_ERROR_MESSAGE, dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
+from dbt.version import __version__ as dbt_version
+from packaging import version
 
 from ..dbt_projects import (
     test_dbt_alias_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
+    test_dbt_unit_tests_path,
     test_meta_config_path,
 )
 
@@ -343,7 +347,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets.op.tags == {
         **op_tags,
-        "kind": "dbt",
+        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "fqn:*",
     }
 
@@ -352,7 +356,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets_with_select.op.tags == {
         **op_tags,
-        "kind": "dbt",
+        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "raw_customers+",
     }
 
@@ -361,7 +365,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets_with_exclude.op.tags == {
         **op_tags,
-        "kind": "dbt",
+        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "fqn:*",
         "dagster_dbt/exclude": "raw_customers+",
     }
@@ -376,7 +380,7 @@ def test_op_tags(test_jaffle_shop_manifest: Dict[str, Any]):
 
     assert my_dbt_assets_with_select_and_exclude.op.tags == {
         **op_tags,
-        "kind": "dbt",
+        COMPUTE_KIND_TAG: "dbt",
         "dagster_dbt/select": "raw_customers+",
         "dagster_dbt/exclude": "customers",
     }
@@ -884,6 +888,22 @@ def test_dbt_with_semantic_models(test_dbt_semantic_models_manifest: Dict[str, A
     result = materialize(
         [my_dbt_assets],
         resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_semantic_models_path))},
+    )
+    assert result.success
+
+
+@pytest.mark.skipif(
+    version.parse(dbt_version) < version.parse("1.8.0"),
+    reason="dbt unit test support is only available in `dbt-core>=1.8.0`",
+)
+def test_dbt_with_unit_tests(test_dbt_unit_tests_manifest: Dict[str, Any]) -> None:
+    @dbt_assets(manifest=test_dbt_unit_tests_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from dbt.cli(["build"], context=context).stream()
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_dbt_unit_tests_path))},
     )
     assert result.success
 

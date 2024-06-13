@@ -3,9 +3,6 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Opti
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.declarative_scheduling.scheduling_condition import (
-    SchedulingCondition,
-)
 from dagster._serdes.serdes import (
     NamedTupleSerializer,
     UnpackContext,
@@ -17,6 +14,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_rule import (
         AutoMaterializeRule,
         AutoMaterializeRuleSnapshot,
+    )
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
     )
 
 
@@ -65,7 +65,7 @@ class AutoMaterializePolicy(
         [
             ("rules", FrozenSet["AutoMaterializeRule"]),
             ("max_materializations_per_minute", Optional[int]),
-            ("asset_condition", Optional[SchedulingCondition]),
+            ("asset_condition", Optional["AutomationCondition"]),
         ],
     )
 ):
@@ -128,7 +128,7 @@ class AutoMaterializePolicy(
         cls,
         rules: AbstractSet["AutoMaterializeRule"],
         max_materializations_per_minute: Optional[int] = 1,
-        asset_condition: Optional[SchedulingCondition] = None,
+        asset_condition: Optional["AutomationCondition"] = None,
     ):
         from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
@@ -158,7 +158,9 @@ class AutoMaterializePolicy(
 
     @property
     def materialize_rules(self) -> AbstractSet["AutoMaterializeRule"]:
-        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
+        from dagster._core.definitions.auto_materialize_rule_evaluation import (
+            AutoMaterializeDecisionType,
+        )
 
         return {
             rule
@@ -168,29 +170,31 @@ class AutoMaterializePolicy(
 
     @property
     def skip_rules(self) -> AbstractSet["AutoMaterializeRule"]:
-        from dagster._core.definitions.auto_materialize_rule import AutoMaterializeDecisionType
+        from dagster._core.definitions.auto_materialize_rule_evaluation import (
+            AutoMaterializeDecisionType,
+        )
 
         return {
             rule for rule in self.rules if rule.decision_type == AutoMaterializeDecisionType.SKIP
         }
 
     @staticmethod
-    def from_asset_condition(asset_condition: SchedulingCondition) -> "AutoMaterializePolicy":
-        return AutoMaterializePolicy.from_scheduling_condition(asset_condition)
+    def from_asset_condition(asset_condition: "AutomationCondition") -> "AutoMaterializePolicy":
+        return AutoMaterializePolicy.from_automation_condition(asset_condition)
 
     @staticmethod
-    def from_scheduling_condition(
-        scheduling_condition: SchedulingCondition,
+    def from_automation_condition(
+        automation_condition: "AutomationCondition",
     ) -> "AutoMaterializePolicy":
         """Constructs an AutoMaterializePolicy which will materialize an asset partition whenever
-        the provided scheduling_condition evaluates to True.
+        the provided automation_condition evaluates to True.
 
         Args:
-            scheduling_condition (SchedulingCondition): The condition which determines whether an asset
+            automation_condition (AutomationCondition): The condition which determines whether an asset
                 partition should be materialized.
         """
         return AutoMaterializePolicy(
-            rules=set(), max_materializations_per_minute=None, asset_condition=scheduling_condition
+            rules=set(), max_materializations_per_minute=None, asset_condition=automation_condition
         )
 
     @public
@@ -293,14 +297,10 @@ class AutoMaterializePolicy(
     def rule_snapshots(self) -> Sequence["AutoMaterializeRuleSnapshot"]:
         return [rule.to_snapshot() for rule in self.rules]
 
-    def to_scheduling_condition(self) -> SchedulingCondition:
+    def to_automation_condition(self) -> "AutomationCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
         from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from .declarative_scheduling.operators.boolean_operators import (
-            AndAssetCondition,
-            NotAssetCondition,
-            OrAssetCondition,
-        )
+        from .declarative_automation import AndAssetCondition, NotAssetCondition, OrAssetCondition
 
         if self.asset_condition is not None:
             return self.asset_condition

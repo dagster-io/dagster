@@ -7,14 +7,7 @@ from urllib.parse import urlparse
 
 import pytest
 import sqlalchemy as db
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    Output,
-    job,
-    op,
-)
+from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
 from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DagsterInstance

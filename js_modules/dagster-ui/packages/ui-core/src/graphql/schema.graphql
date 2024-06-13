@@ -2122,6 +2122,7 @@ enum SensorType {
   MULTI_ASSET
   FRESHNESS_POLICY
   AUTO_MATERIALIZE
+  AUTOMATION
   UNKNOWN
 }
 
@@ -2785,6 +2786,7 @@ type PartitionBackfill {
   tags: [PipelineTag!]!
   title: String
   description: String
+  logEvents(cursor: String): InstigationEventConnection!
 }
 
 enum BulkActionStatus {
@@ -3644,6 +3646,11 @@ type Mutation {
     partitionsDefName: String!
     repositorySelector: RepositorySelector!
   ): AddDynamicPartitionResult!
+  deleteDynamicPartitions(
+    partitionKeys: [String!]!
+    partitionsDefName: String!
+    repositorySelector: RepositorySelector!
+  ): DeleteDynamicPartitionsResult!
   setAutoMaterializePaused(paused: Boolean!): Boolean!
   setConcurrencyLimit(concurrencyKey: String!, limit: Int!): Boolean!
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
@@ -3717,6 +3724,15 @@ union AddDynamicPartitionResult =
 type AddDynamicPartitionSuccess {
   partitionsDefName: String!
   partitionKey: String!
+}
+
+union DeleteDynamicPartitionsResult =
+    DeleteDynamicPartitionsSuccess
+  | UnauthorizedError
+  | PythonError
+
+type DeleteDynamicPartitionsSuccess {
+  partitionsDefName: String!
 }
 
 type Subscription {

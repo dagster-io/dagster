@@ -15,9 +15,7 @@ from dagster_dbt import DbtProject
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from ..dbt_projects import (
-    test_jaffle_shop_path,
-)
+from ..dbt_projects import test_jaffle_shop_path
 
 JAFFLE_SHOP_ROOT_PATH = os.path.normpath(test_jaffle_shop_path)
 
@@ -76,7 +74,7 @@ def test_with_source_code_references_wrapper(test_jaffle_shop_manifest: Dict[str
     assets = defs.get_asset_graph().all_asset_keys
 
     for asset_key in assets:
-        asset_metadata = defs.get_assets_def(asset_key).metadata_by_key[asset_key]
+        asset_metadata = defs.get_assets_def(asset_key).specs_by_key[asset_key].metadata
         assert "dagster/code_references" in asset_metadata
 
         references = asset_metadata["dagster/code_references"].code_references
@@ -109,7 +107,7 @@ def test_link_to_source_control_wrapper(test_jaffle_shop_manifest: Dict[str, Any
     assets = defs.get_asset_graph().all_asset_keys
 
     for asset_key in assets:
-        asset_metadata = defs.get_assets_def(asset_key).metadata_by_key[asset_key]
+        asset_metadata = defs.get_assets_def(asset_key).specs_by_key[asset_key].metadata
         assert "dagster/code_references" in asset_metadata
 
         references = asset_metadata["dagster/code_references"].code_references

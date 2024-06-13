@@ -5,7 +5,6 @@ import unittest
 from datetime import datetime, timedelta
 from typing import Optional
 
-import pendulum
 import pytest
 from dagster import _seven, job, op
 from dagster._core.definitions import GraphDefinition
@@ -24,11 +23,7 @@ from dagster._core.remote_representation import (
 )
 from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.snap import create_job_snapshot_id
-from dagster._core.storage.dagster_run import (
-    DagsterRun,
-    DagsterRunStatus,
-    RunsFilter,
-)
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.event_log import InMemoryEventLogStorage
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
@@ -43,12 +38,13 @@ from dagster._core.storage.tags import (
     ROOT_RUN_ID_TAG,
     RUN_FAILURE_REASON_TAG,
 )
+from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
-from dagster._seven.compat.pendulum import create_pendulum_time, pendulum_freeze_time, to_timezone
+from dagster._time import create_datetime
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -741,6 +737,60 @@ class TestRunStorage:
         run = _get_run_by_id(storage, one)
         assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.RUN_EXCEPTION.value
 
+    def test_get_run_records(self, storage):
+        assert storage
+        [one, two, three] = [make_new_run_id() for _ in range(3)]
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=three, job_name="some_pipeline", status=DagsterRunStatus.STARTED
+            )
+        )
+        storage.handle_run_event(
+            three,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                job_name="some_pipeline",
+            ),
+        )
+        storage.handle_run_event(
+            two,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                job_name="some_pipeline",
+            ),
+        )
+        storage.handle_run_event(
+            one,
+            DagsterEvent(
+                message="a message",
+                event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
+                job_name="some_pipeline",
+            ),
+        )
+
+        def _run_ids(records):
+            return [record.dagster_run.run_id for record in records]
+
+        assert _run_ids(storage.get_run_records()) == [three, two, one]
+        assert _run_ids(storage.get_run_records(ascending=True)) == [one, two, three]
+        assert _run_ids(storage.get_run_records(cursor=two)) == [one]
+        assert _run_ids(storage.get_run_records(cursor=two, ascending=True)) == [three]
+        assert _run_ids(storage.get_run_records(limit=1)) == [three]
+        assert _run_ids(storage.get_run_records(cursor=three, limit=1)) == [two]
+        assert _run_ids(storage.get_run_records(cursor=one, limit=1, ascending=True)) == [two]
+
     def test_fetch_records_by_update_timestamp(self, storage):
         assert storage
         self._skip_in_memory(storage)
@@ -1226,7 +1276,7 @@ class TestRunStorage:
 
         # test insert
         added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000).float_timestamp,
+            timestamp=1000.0,
             daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
@@ -1238,7 +1288,7 @@ class TestRunStorage:
 
         # test update
         second_added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(2000).float_timestamp,
+            timestamp=2000.0,
             daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
@@ -1255,7 +1305,7 @@ class TestRunStorage:
             pytest.skip("storage cannot delete")
 
         added_heartbeat = DaemonHeartbeat(
-            timestamp=pendulum.from_timestamp(1000).float_timestamp,
+            timestamp=1000.0,
             daemon_type=SensorDaemon.daemon_type(),
             daemon_id=None,
             errors=[],
@@ -1275,7 +1325,7 @@ class TestRunStorage:
             partition_names=["a", "b", "c"],
             from_failure=False,
             tags={},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=time.time(),
         )
         storage.add_backfill(one)
         assert len(storage.get_backfills()) == 1
@@ -1446,11 +1496,9 @@ class TestRunStorage:
                     run_launcher=SyncInMemoryRunLauncher(),
                 )
 
-            freeze_datetime = to_timezone(
-                create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
-            )
+            freeze_datetime = create_datetime(2019, 11, 2, 0, 0, 0)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 result = my_job.execute_in_process(instance=instance)
                 records = instance.get_run_records(filters=RunsFilter(run_ids=[result.run_id]))
                 assert len(records) == 1

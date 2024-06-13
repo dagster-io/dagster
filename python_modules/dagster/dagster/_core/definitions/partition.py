@@ -3,9 +3,7 @@ import hashlib
 import json
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from datetime import (
-    datetime,
-)
+from datetime import datetime
 from enum import Enum
 from typing import (
     AbstractSet,
@@ -37,9 +35,7 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils import xor
 from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import (
-    normalize_renamed_param,
-)
+from dagster._utils.warnings import normalize_renamed_param
 
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -942,6 +938,10 @@ def cron_schedule_from_schedule_type_and_offsets(
 class PartitionsSubset(ABC, Generic[T_str]):
     """Represents a subset of the partitions within a PartitionsDefinition."""
 
+    @property
+    def is_empty(self) -> bool:
+        return len(list(self.get_partition_keys())) == 0
+
     @abstractmethod
     def get_partition_keys_not_in_subset(
         self,
@@ -978,7 +978,7 @@ class PartitionsSubset(ABC, Generic[T_str]):
         )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
-        if self is other:
+        if self is other or other.is_empty:
             return self
         # Anything | AllPartitionsSubset = AllPartitionsSubset
         if isinstance(other, AllPartitionsSubset):
@@ -988,6 +988,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
             return self.empty_subset()
+        if other.is_empty:
+            return self
         # Anything - AllPartitionsSubset = Empty
         if isinstance(other, AllPartitionsSubset):
             return self.empty_subset()
@@ -998,6 +1000,8 @@ class PartitionsSubset(ABC, Generic[T_str]):
     def __and__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         if self is other:
             return self
+        if other.is_empty:
+            return other
         # Anything & AllPartitionsSubset = Anything
         if isinstance(other, AllPartitionsSubset):
             return self
@@ -1232,6 +1236,10 @@ class AllPartitionsSubset(
             current_time=current_time,
         )
 
+    @property
+    def is_empty(self) -> bool:
+        return False
+
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> Sequence[str]:
         check.param_invariant(current_time is None, "current_time")
         return self.partitions_def.get_partition_keys(
@@ -1276,8 +1284,15 @@ class AllPartitionsSubset(
         return other
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
+        from .time_window_partitions import (
+            BaseTimeWindowPartitionsSubset,
+            TimeWindowPartitionsSubset,
+        )
+
         if self == other:
             return self.partitions_def.empty_subset()
+        elif isinstance(other, BaseTimeWindowPartitionsSubset):
+            return TimeWindowPartitionsSubset.from_all_partitions_subset(self) - other
         return self.partitions_def.empty_subset().with_partition_keys(
             set(self.get_partition_keys()).difference(set(other.get_partition_keys()))
         )

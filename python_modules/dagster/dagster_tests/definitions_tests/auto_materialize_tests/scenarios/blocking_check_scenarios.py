@@ -1,11 +1,7 @@
 from dagster import AssetCheckResult, AutoMaterializePolicy, asset, asset_check
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 
-from ..base_scenario import (
-    AssetReconciliationScenario,
-    run,
-    run_request,
-)
+from ..base_scenario import AssetReconciliationScenario, run, run_request
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager())

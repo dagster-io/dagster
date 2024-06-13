@@ -18,41 +18,28 @@ from typing import (
     overload,
 )
 
-import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import (
-    Resources,
-    ScopedResourcesBuilder,
-)
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
-from dagster._core.event_api import (
-    RunStatusChangeEventType,
-    RunStatusChangeRecordsFilter,
-)
-from dagster._core.events import (
-    PIPELINE_RUN_STATUS_TO_EVENT_TYPE,
-    DagsterEvent,
-    DagsterEventType,
-)
+from dagster._core.event_api import RunStatusChangeEventType, RunStatusChangeRecordsFilter
+from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._serdes import (
-    serialize_value,
-    whitelist_for_serdes,
-)
+from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
+from dagster._time import parse_time_string
 from dagster._utils import utc_datetime_from_timestamp
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
@@ -199,9 +186,7 @@ class RunStatusSensorContext:
 
     @property
     def resources(self) -> Resources:
-        from dagster._core.definitions.scoped_resources_builder import (
-            IContainsGenerator,
-        )
+        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
         from dagster._core.execution.build_resources import build_resources
 
         if not self._resources:
@@ -744,7 +729,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     records_filter=RunStatusChangeRecordsFilter(
                         event_type=cast(RunStatusChangeEventType, event_type),
                         after_timestamp=cast(
-                            datetime, pendulum.parse(sensor_cursor.update_timestamp)
+                            datetime, parse_time_string(sensor_cursor.update_timestamp)
                         ).timestamp(),
                     ),
                     ascending=True,

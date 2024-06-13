@@ -8,6 +8,7 @@ from dagster import (
     op,
 )
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from databricks.sdk.service import jobs
 from pydantic import Field
 
@@ -103,7 +104,7 @@ def create_databricks_run_now_op(
     @op(
         ins={"start_after": In(Nothing)},
         required_resource_keys={databricks_resource_key},
-        tags={"kind": "databricks"},
+        tags={COMPUTE_KIND_TAG: "databricks"},
         name=name,
     )
     def _databricks_run_now_op(context: OpExecutionContext, config: DatabricksRunNowOpConfig):
@@ -215,7 +216,7 @@ def create_databricks_submit_run_op(
     @op(
         ins={"start_after": In(Nothing)},
         required_resource_keys={databricks_resource_key},
-        tags={"kind": "databricks"},
+        tags={COMPUTE_KIND_TAG: "databricks"},
         name=name,
     )
     def _databricks_submit_run_op(

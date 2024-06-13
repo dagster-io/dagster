@@ -1,3 +1,4 @@
+import time
 from typing import TYPE_CHECKING, Optional, Sequence, Set
 
 import dagster._check as check
@@ -9,16 +10,11 @@ from dagster._core.scheduler.instigation import (
     SensorInstigatorData,
 )
 from dagster._core.workspace.permissions import Permissions
-from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from dagster_graphql.schema.util import ResolveInfo
 
 from .loader import RepositoryScopedBatchLoader
-from .utils import (
-    UserFacingGraphQLError,
-    assert_permission,
-    assert_permission_for_location,
-)
+from .utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick
@@ -216,7 +212,7 @@ def get_sensor_next_tick(
     latest_tick = ticks[0]
 
     next_timestamp = latest_tick.timestamp + external_sensor.min_interval_seconds
-    if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
+    if next_timestamp < time.time():
         return None
     return GrapheneDryRunInstigationTick(external_sensor.sensor_selector, next_timestamp)
 

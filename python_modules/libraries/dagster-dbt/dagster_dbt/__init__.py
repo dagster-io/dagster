@@ -35,6 +35,9 @@ from .errors import (
     DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
     DagsterDbtError as DagsterDbtError,
 )
+from .freshness_builder import (
+    build_freshness_checks_from_dbt_assets as build_freshness_checks_from_dbt_assets,
+)
 from .version import __version__ as __version__
 
 # isort: split

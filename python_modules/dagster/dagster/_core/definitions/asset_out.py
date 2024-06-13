@@ -141,7 +141,7 @@ class AssetOut(
 
     def to_spec(self, key: AssetKey, deps: Sequence[AssetDep]) -> AssetSpec:
         with disable_dagster_warnings():
-            return AssetSpec(
+            return AssetSpec.dagster_internal_init(
                 key=key,
                 metadata=self.metadata,
                 description=self.description,

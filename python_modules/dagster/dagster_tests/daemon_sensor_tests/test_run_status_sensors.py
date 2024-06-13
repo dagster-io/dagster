@@ -4,7 +4,6 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
 
-import pendulum
 import pytest
 from dagster import (
     DagsterRunStatus,
@@ -13,9 +12,7 @@ from dagster import (
 )
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
-from dagster._core.definitions.sensor_definition import (
-    SensorType,
-)
+from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
@@ -25,12 +22,14 @@ from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
 from dagster._core.test_utils import (
     create_test_daemon_workspace_context,
     environ,
+    freeze_time,
     instance_for_test,
 )
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import get_current_datetime
+from dateutil.relativedelta import relativedelta
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
@@ -134,8 +133,8 @@ def test_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = pendulum.now()
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = get_current_datetime()
+    with freeze_time(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("my_job_success_sensor")
         instance.start_sensor(success_sensor)
 
@@ -163,10 +162,10 @@ def test_run_status_sensor(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         time.sleep(1)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
@@ -177,9 +176,9 @@ def test_run_status_sensor(
         wait_for_all_runs_to_finish(instance)
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.FAILURE
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should not fire the success sensor, should fire the started sensro
         evaluate_sensors(workspace_context, executor)
 
@@ -205,7 +204,7 @@ def test_run_status_sensor(
             TickStatus.SUCCESS,
         )
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
@@ -216,11 +215,11 @@ def test_run_status_sensor(
         wait_for_all_runs_to_finish(instance)
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.SUCCESS
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
     caplog.clear()
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should fire the success sensor and the started sensor
         evaluate_sensors(workspace_context, executor)
 
@@ -256,8 +255,8 @@ def test_run_failure_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = pendulum.now()
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = get_current_datetime()
+    with freeze_time(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
         instance.start_sensor(failure_sensor)
 
@@ -274,10 +273,10 @@ def test_run_failure_sensor(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         time.sleep(1)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
@@ -288,9 +287,9 @@ def test_run_failure_sensor(
         wait_for_all_runs_to_finish(instance)
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.FAILURE
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should fire the failure sensor
         evaluate_sensors(workspace_context, executor)
 
@@ -312,8 +311,8 @@ def test_run_failure_sensor_that_fails(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = pendulum.now()
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = get_current_datetime()
+    with freeze_time(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor(
             "my_run_failure_sensor_that_itself_fails"
         )
@@ -332,10 +331,10 @@ def test_run_failure_sensor_that_fails(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         time.sleep(1)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
@@ -346,9 +345,9 @@ def test_run_failure_sensor_that_fails(
         wait_for_all_runs_to_finish(instance)
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.FAILURE
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should fire the failure sensor and fail
         evaluate_sensors(workspace_context, executor)
 
@@ -365,8 +364,8 @@ def test_run_failure_sensor_that_fails(
         )
 
     # Next tick skips again
-    freeze_datetime = freeze_datetime.add(seconds=60)
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+    with freeze_time(freeze_datetime):
         # should fire the failure sensor and fail
         evaluate_sensors(workspace_context, executor)
 
@@ -388,8 +387,8 @@ def test_run_failure_sensor_filtered(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = pendulum.now()
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = get_current_datetime()
+    with freeze_time(freeze_datetime):
         failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
         instance.start_sensor(failure_sensor)
 
@@ -406,10 +405,10 @@ def test_run_failure_sensor_filtered(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         time.sleep(1)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job_2")
         run = instance.create_run_for_job(
             failure_job_2,
@@ -420,9 +419,9 @@ def test_run_failure_sensor_filtered(
         wait_for_all_runs_to_finish(instance)
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.FAILURE
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should not fire the failure sensor (filtered to failure job)
         evaluate_sensors(workspace_context, executor)
 
@@ -437,10 +436,10 @@ def test_run_failure_sensor_filtered(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         time.sleep(1)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("failure_job")
         run = instance.create_run_for_job(
             failure_job,
@@ -452,9 +451,9 @@ def test_run_failure_sensor_filtered(
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.FAILURE
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should not fire the failure sensor (filtered to failure job)
         evaluate_sensors(workspace_context, executor)
 
@@ -484,8 +483,8 @@ def test_run_failure_sensor_overfetch(
         with create_test_daemon_workspace_context(
             workspace_load_target=create_workspace_load_target(), instance=instance
         ) as workspace_context:
-            freeze_datetime = pendulum.now()
-            with pendulum_freeze_time(freeze_datetime):
+            freeze_datetime = get_current_datetime()
+            with freeze_time(freeze_datetime):
                 failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor_filtered")
                 instance.start_sensor(failure_sensor)
 
@@ -502,10 +501,10 @@ def test_run_failure_sensor_overfetch(
                     TickStatus.SKIPPED,
                 )
 
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 time.sleep(1)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 matching_runs = []
                 non_matching_runs = []
 
@@ -532,9 +531,9 @@ def test_run_failure_sensor_overfetch(
 
                     matching_runs.append(run)
 
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # should fire the failure sensor (filtered to failure job)
                 evaluate_sensors(workspace_context, executor)
 
@@ -575,8 +574,8 @@ def test_run_failure_sensor_overfetch(
                     == last_non_matching_run_storage_records[0].storage_id
                 )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
-            with pendulum_freeze_time(freeze_datetime):
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
+            with freeze_time(freeze_datetime):
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
@@ -646,7 +645,7 @@ def sql_event_log_storage_config_fn(temp_dir: str):
     [default_storage_config_fn, sqlite_storage_config_fn],
 )
 def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
@@ -654,7 +653,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
             external_repo,
         ):
             # start sensor
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
@@ -671,10 +670,10 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     TickStatus.SKIPPED,
                 )
 
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 time.sleep(1)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 external_job = external_repo.get_full_external_job("hanging_job")
                 # start run 1
                 run1 = instance.create_run_for_job(
@@ -683,7 +682,7 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run1.run_id, workspace_context.create_request_context())
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 # start run 2
                 run2 = instance.create_run_for_job(
                     hanging_job,
@@ -691,16 +690,16 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                     job_code_origin=external_job.get_python_origin(),
                 )
                 instance.submit_run(run2.run_id, workspace_context.create_request_context())
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 # fail run 2
                 instance.report_run_failed(run2)
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 run = instance.get_runs()[0]
                 assert run.status == DagsterRunStatus.FAILURE
                 assert run.run_id == run2.run_id
 
             # check sensor
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # should fire for run 2
                 evaluate_sensors(workspace_context, executor)
 
@@ -718,14 +717,14 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
                 assert ticks[0].origin_run_ids[0] == run2.run_id
 
             # fail run 1
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # fail run 2
                 instance.report_run_failed(run1)
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 time.sleep(1)
 
             # check sensor
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # should fire for run 1
                 evaluate_sensors(workspace_context, executor)
 
@@ -747,14 +746,14 @@ def test_run_status_sensor_interleave(storage_config_fn, executor: Optional[Thre
 def test_run_failure_sensor_empty_run_records(
     storage_config_fn, executor: Optional[ThreadPoolExecutor]
 ):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_with_sensors(overrides=storage_config_fn(temp_dir)) as (
             instance,
             workspace_context,
             external_repo,
         ):
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 failure_sensor = external_repo.get_external_sensor("my_run_failure_sensor")
                 instance.start_sensor(failure_sensor)
 
@@ -771,10 +770,10 @@ def test_run_failure_sensor_empty_run_records(
                     TickStatus.SKIPPED,
                 )
 
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 time.sleep(1)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # create a mismatch between event storage and run storage
                 instance.event_log_storage.store_event(
                     EventLogEntry(
@@ -795,9 +794,9 @@ def test_run_failure_sensor_empty_run_records(
                     DagsterEventType.PIPELINE_FAILURE, limit=5000
                 ).records
                 assert len(failure_events) == 1
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 # shouldn't fire the failure sensor due to the mismatch
                 evaluate_sensors(workspace_context, executor)
 
@@ -814,7 +813,7 @@ def test_run_failure_sensor_empty_run_records(
 
 
 def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -847,7 +846,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
         workspace_context = daemon_sensor_defs_location_info.context
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             my_sensor = sensor_repo.get_external_sensor("all_code_locations_run_status_sensor")
             instance.start_sensor(my_sensor)
 
@@ -862,10 +861,10 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_another_job = job_repo.get_full_external_job("another_success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -883,9 +882,9 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
@@ -899,7 +898,7 @@ def test_all_code_locations_run_status_sensor(executor: Optional[ThreadPoolExecu
 
 
 def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -932,7 +931,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
         workspace_context = daemon_sensor_defs_location_info.context
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             my_sensor = sensor_repo.get_external_sensor("all_code_locations_run_failure_sensor")
             instance.start_sensor(my_sensor)
 
@@ -947,10 +946,10 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_another_job = job_repo.get_full_external_job("another_failure_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -968,9 +967,9 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.FAILURE
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [*instance.get_ticks(my_sensor.get_external_origin_id(), my_sensor.selector_id)]
@@ -984,7 +983,7 @@ def test_all_code_location_run_failure_sensor(executor: Optional[ThreadPoolExecu
 
 
 def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -1019,7 +1018,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
         workspace_context = daemon_sensor_defs_location_info.context
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             success_sensor = sensor_repo.get_external_sensor("success_sensor")
             instance.start_sensor(success_sensor)
 
@@ -1038,10 +1037,10 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -1059,9 +1058,9 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -1081,7 +1080,7 @@ def test_cross_code_location_run_status_sensor(executor: Optional[ThreadPoolExec
 def test_cross_code_location_job_selector_on_defs_run_status_sensor(
     executor: Optional[ThreadPoolExecutor],
 ):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -1116,7 +1115,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
         workspace_context = daemon_sensor_defs_location_info.context
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             success_sensor = sensor_repo.get_external_sensor("success_of_another_job_sensor")
             instance.start_sensor(success_sensor)
 
@@ -1135,10 +1134,10 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_success_job = job_repo.get_full_external_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -1156,9 +1155,9 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -1179,13 +1178,13 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
             time.sleep(1)
 
         # now launch the run that is actually being listened to
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_another_success_job = job_repo.get_full_external_job("another_success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -1203,9 +1202,9 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -1228,7 +1227,7 @@ def test_cross_code_location_job_selector_on_defs_run_status_sensor(
 
 
 def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
 
     # we have no good api for compositing load targets so forced to use a workspace file
     workspace_load_target = WorkspaceFileTarget(
@@ -1259,7 +1258,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
         workspace_context = code_location_w_sensor_info.context
 
         # This remainder is largely copied from test_cross_repo_run_status_sensor
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             success_sensor = sensor_repo.get_external_sensor("success_sensor")
             instance.start_sensor(success_sensor)
 
@@ -1278,10 +1277,10 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_success_job = sensor_repo.get_full_external_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -1299,9 +1298,9 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -1317,7 +1316,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
                 TickStatus.SUCCESS,
             )
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_success_job = dupe_job_repo.get_full_external_job("success_job")
 
             # this unfortunate API (create_run_for_job) requires the importation
@@ -1335,9 +1334,9 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
             wait_for_all_runs_to_finish(instance)
             dagster_run = next(iter(instance.get_runs()))
             assert dagster_run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = [
@@ -1355,7 +1354,7 @@ def test_code_location_scoped_run_status_sensor(executor: Optional[ThreadPoolExe
 
 
 def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
@@ -1364,7 +1363,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
         the_repo = repos["the_repo"]
         the_other_repo = repos["the_other_repo"]
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
             instance.start_sensor(cross_repo_sensor)
 
@@ -1381,10 +1380,10 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
@@ -1395,9 +1394,9 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
             assert run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
@@ -1413,7 +1412,7 @@ def test_cross_repo_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
 
 
 def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
@@ -1422,7 +1421,7 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
         the_repo = repos["the_repo"]
         the_other_repo = repos["the_other_repo"]
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             cross_repo_sensor = the_repo.get_external_sensor("cross_repo_job_sensor")
             instance.start_sensor(cross_repo_sensor)
 
@@ -1443,10 +1442,10 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
@@ -1458,9 +1457,9 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
             assert run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
             wait_for_all_runs_to_finish(instance)
 
@@ -1478,9 +1477,9 @@ def test_cross_repo_job_run_status_sensor(executor: Optional[ThreadPoolExecutor]
             run_request_runs = [r for r in instance.get_runs() if r.job_name == "the_other_job"]
             assert len(run_request_runs) == 1
             assert run_request_runs[0].status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             # ensure that the success of the run launched by the sensor doesn't trigger the sensor
             evaluate_sensors(workspace_context, executor)
             wait_for_all_runs_to_finish(instance)
@@ -1506,8 +1505,8 @@ def test_partitioned_job_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = pendulum.now()
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = get_current_datetime()
+    with freeze_time(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("partitioned_pipeline_success_sensor")
         instance.start_sensor(success_sensor)
 
@@ -1526,10 +1525,10 @@ def test_partitioned_job_run_status_sensor(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
         time.sleep(1)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("daily_partitioned_job")
         run = instance.create_run_for_job(
             daily_partitioned_job,
@@ -1542,11 +1541,11 @@ def test_partitioned_job_run_status_sensor(
         assert instance.get_runs_count() == 1
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.SUCCESS
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
     caplog.clear()
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should fire the success sensor
         evaluate_sensors(workspace_context, executor)
 
@@ -1567,7 +1566,7 @@ def test_partitioned_job_run_status_sensor(
 
 
 def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
     with instance_with_sensors() as (
         instance,
         workspace_context,
@@ -1578,7 +1577,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
             the_other_workspace_context,
             the_other_repo,
         ):
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 cross_repo_sensor = the_repo.get_external_sensor("cross_repo_sensor")
                 instance.start_sensor(cross_repo_sensor)
 
@@ -1595,10 +1594,10 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                     TickStatus.SKIPPED,
                 )
 
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
                 time.sleep(1)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 external_job = the_other_repo.get_full_external_job("the_job")
                 run = the_other_instance.create_run_for_job(
                     the_job,
@@ -1611,9 +1610,9 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
                 wait_for_all_runs_to_finish(the_other_instance)
                 run = the_other_instance.get_runs()[0]
                 assert run.status == DagsterRunStatus.SUCCESS
-                freeze_datetime = freeze_datetime.add(seconds=60)
+                freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-            with pendulum_freeze_time(freeze_datetime):
+            with freeze_time(freeze_datetime):
                 evaluate_sensors(workspace_context, executor)
 
                 ticks = instance.get_ticks(
@@ -1630,7 +1629,7 @@ def test_different_instance_run_status_sensor(executor: Optional[ThreadPoolExecu
 
 
 def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
-    freeze_datetime = pendulum.now()
+    freeze_datetime = get_current_datetime()
     with instance_with_single_code_location_multiple_repos_with_sensors() as (
         instance,
         workspace_context,
@@ -1639,7 +1638,7 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
         the_repo = repos["the_repo"]
         the_other_repo = repos["the_other_repo"]
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             instance_sensor = the_repo.get_external_sensor("instance_sensor")
             instance.start_sensor(instance_sensor)
 
@@ -1656,10 +1655,10 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
                 TickStatus.SKIPPED,
             )
 
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
             time.sleep(1)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             external_job = the_other_repo.get_full_external_job("the_job")
             run = instance.create_run_for_job(
                 the_job,
@@ -1670,9 +1669,9 @@ def test_instance_run_status_sensor(executor: Optional[ThreadPoolExecutor]):
             wait_for_all_runs_to_finish(instance)
             run = instance.get_runs()[0]
             assert run.status == DagsterRunStatus.SUCCESS
-            freeze_datetime = freeze_datetime.add(seconds=60)
+            freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-        with pendulum_freeze_time(freeze_datetime):
+        with freeze_time(freeze_datetime):
             evaluate_sensors(workspace_context, executor)
 
             ticks = instance.get_ticks(
@@ -1693,8 +1692,8 @@ def test_logging_run_status_sensor(
     workspace_context: WorkspaceProcessContext,
     external_repo: ExternalRepository,
 ):
-    freeze_datetime = pendulum.now()
-    with pendulum_freeze_time(freeze_datetime):
+    freeze_datetime = get_current_datetime()
+    with freeze_time(freeze_datetime):
         success_sensor = external_repo.get_external_sensor("logging_status_sensor")
         instance.start_sensor(success_sensor)
 
@@ -1711,9 +1710,9 @@ def test_logging_run_status_sensor(
             TickStatus.SKIPPED,
         )
 
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         external_job = external_repo.get_full_external_job("foo_job")
         run = instance.create_run_for_job(
             foo_job,
@@ -1724,9 +1723,9 @@ def test_logging_run_status_sensor(
         wait_for_all_runs_to_finish(instance)
         run = instance.get_runs()[0]
         assert run.status == DagsterRunStatus.SUCCESS
-        freeze_datetime = freeze_datetime.add(seconds=60)
+        freeze_datetime = freeze_datetime + relativedelta(seconds=60)
 
-    with pendulum_freeze_time(freeze_datetime):
+    with freeze_time(freeze_datetime):
         # should fire the success sensor and the started sensor
         evaluate_sensors(workspace_context, executor)
 

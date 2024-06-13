@@ -1,8 +1,11 @@
 import datetime
 
-import pendulum
 from dagster import AssetSpec, MultiPartitionKey, StaticPartitionsDefinition
 from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
 from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.partition_mapping import StaticPartitionMapping
@@ -11,6 +14,7 @@ from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
+from dagster._time import parse_time_string
 
 from .scenario_state import MultiAssetSpec, ScenarioSpec
 
@@ -23,7 +27,7 @@ two_partitions_def = StaticPartitionsDefinition(["1", "2"])
 three_partitions_def = StaticPartitionsDefinition(["1", "2", "3"])
 
 time_partitions_start_str = "2013-01-05"
-time_partitions_start_datetime = pendulum.parse(time_partitions_start_str)
+time_partitions_start_datetime = parse_time_string(time_partitions_start_str)
 hourly_partitions_def = HourlyPartitionsDefinition(start_date=time_partitions_start_str + "-00:00")
 daily_partitions_def = DailyPartitionsDefinition(start_date=time_partitions_start_str)
 time_multipartitions_def = MultiPartitionsDefinition(
@@ -39,6 +43,17 @@ self_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=
 # BASIC STATES
 ##############
 one_asset = ScenarioSpec(asset_specs=[AssetSpec("A")])
+
+one_observable_asset = ScenarioSpec(
+    [
+        AssetSpec(
+            "A",
+            metadata={
+                SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value
+            },
+        )
+    ]
+)
 
 two_assets_in_sequence = ScenarioSpec(
     asset_specs=[AssetSpec("A"), AssetSpec("B", deps=["A"])],

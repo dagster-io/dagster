@@ -188,3 +188,19 @@ def test_two_assets():
     check_eval = check_evals_by_key[my_other_asset.key]
     assert not check_eval.passed
     assert check_eval.description == "Value `-5` is less than 1"
+
+
+def test_name_special_chars() -> None:
+    checks = build_metadata_bounds_checks(
+        assets=[my_asset], metadata_key="dagster/row_count", min_value=1, max_value=10
+    )
+    assert len(checks) == 1
+    assert len(list(checks[0].check_specs)) == 1
+    assert next(iter(checks[0].check_specs)).name == "dagster_row_count_bounds_check"
+
+    checks = build_metadata_bounds_checks(
+        assets=[my_asset], metadata_key="my key with spaces", min_value=1, max_value=10
+    )
+    assert len(checks) == 1
+    assert len(list(checks[0].check_specs)) == 1
+    assert next(iter(checks[0].check_specs)).name == "my_key_with_spaces_bounds_check"

@@ -7,10 +7,7 @@ from dagster import (
     IOManager,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.data_version import (
-    DataVersion,
-    extract_data_version_from_entry,
-)
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import TextMetadataValue

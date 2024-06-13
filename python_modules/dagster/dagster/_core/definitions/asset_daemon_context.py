@@ -24,11 +24,10 @@ from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, Temp
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.time_window_partitions import (
-    get_time_partitions_def,
-)
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
 
 from ... import PartitionKeyRange
@@ -37,10 +36,7 @@ from .asset_daemon_cursor import AssetDaemonCursor
 from .auto_materialize_rule import AutoMaterializeRule
 from .backfill_policy import BackfillPolicy, BackfillPolicyType
 from .base_asset_graph import BaseAssetGraph
-from .declarative_scheduling.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionEvaluationState,
-)
+from .declarative_automation.serialized_objects import AssetConditionEvaluation
 from .partition import PartitionsDefinition, ScheduleType
 
 if TYPE_CHECKING:
@@ -107,8 +103,7 @@ class AssetDaemonContext:
         self._asset_graph_view = AssetGraphView(
             temporal_context=TemporalContext(
                 effective_dt=self.instance_queryer.evaluation_time,
-                # TODO: we should eventually pass in an explicit last_event_id
-                last_event_id=None,
+                last_event_id=instance.event_log_storage.get_maximum_record_id(),
             ),
             stale_resolver=stale_resolver,
         )
@@ -120,9 +115,6 @@ class AssetDaemonContext:
         self._auto_observe_asset_keys = auto_observe_asset_keys or set()
         self._respect_materialization_data_versions = respect_materialization_data_versions
         self._logger = logger
-
-        # cache data before the tick starts
-        self.prefetch()
 
     @property
     def logger(self) -> logging.Logger:
@@ -153,20 +145,6 @@ class AssetDaemonContext:
         return self._auto_materialize_asset_keys
 
     @property
-    def auto_materialize_asset_keys_and_parents(self) -> AbstractSet[AssetKey]:
-        return {
-            parent
-            for asset_key in self.auto_materialize_asset_keys
-            for parent in self.asset_graph.get(asset_key).parent_keys
-        } | self.auto_materialize_asset_keys
-
-    @property
-    def asset_records_to_prefetch(self) -> Sequence[AssetKey]:
-        return [
-            key for key in self.auto_materialize_asset_keys_and_parents if self.asset_graph.has(key)
-        ]
-
-    @property
     def respect_materialization_data_versions(self) -> bool:
         return self._respect_materialization_data_versions
 
@@ -174,30 +152,18 @@ class AssetDaemonContext:
     def auto_materialize_run_tags(self) -> Mapping[str, str]:
         return self._materialize_run_tags or {}
 
-    def prefetch(self) -> None:
-        """Pre-populate the cached values here to avoid situations in which the new latest_storage_id
-        value is calculated using information that comes in after the set of asset partitions with
-        new parent materializations is calculated, as this can result in materializations being
-        ignored if they happen between the two calculations.
-        """
-        self._logger.info(
-            f"Prefetching asset records for {len(self.asset_records_to_prefetch)} records."
-        )
-        self.instance_queryer.prefetch_asset_records(self.asset_records_to_prefetch)
-        self._logger.info("Done prefetching asset records.")
-
     def get_asset_condition_evaluations(
         self,
-    ) -> Tuple[Sequence[AssetConditionEvaluationState], AbstractSet[AssetKeyPartitionKey]]:
+    ) -> Tuple[Sequence[AutomationResult], AbstractSet[AssetKeyPartitionKey]]:
         """Returns a mapping from asset key to the AutoMaterializeAssetEvaluation for that key, a
         sequence of new per-asset cursors, and the set of all asset partitions that should be
         materialized or discarded this tick.
         """
-        from .declarative_scheduling.scheduling_condition_evaluator import (
-            SchedulingConditionEvaluator,
+        from .declarative_automation.automation_condition_evaluator import (
+            AutomationConditionEvaluator,
         )
 
-        evaluator = SchedulingConditionEvaluator(
+        evaluator = AutomationConditionEvaluator(
             asset_graph=self.asset_graph,
             asset_keys=self.auto_materialize_asset_keys,
             asset_graph_view=self.asset_graph_view,
@@ -225,7 +191,7 @@ class AssetDaemonContext:
             else []
         )
 
-        evaluation_state, to_request = self.get_asset_condition_evaluations()
+        results, to_request = self.get_asset_condition_evaluations()
 
         run_requests = [
             *build_run_requests(
@@ -236,11 +202,22 @@ class AssetDaemonContext:
             *auto_observe_run_requests,
         ]
 
+        # only record evaluation results where something changed
+        updated_evaluations = []
+        for result in results:
+            previous_cursor = self.cursor.get_previous_condition_cursor(result.asset_key)
+            if (
+                previous_cursor is None
+                or previous_cursor.result_value_hash != result.value_hash
+                or not result.true_slice.is_empty
+            ):
+                updated_evaluations.append(result.serializable_evaluation)
+
         return (
             run_requests,
             self.cursor.with_updates(
                 evaluation_id=self._evaluation_id,
-                evaluation_state=evaluation_state,
+                condition_cursors=[result.get_new_cursor() for result in results],
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
@@ -248,14 +225,7 @@ class AssetDaemonContext:
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),
-            # only record evaluation results where something changed
-            [
-                es.previous_evaluation
-                for es in evaluation_state
-                if not es.previous_evaluation.equivalent_to_stored_evaluation(
-                    self.cursor.get_previous_evaluation(es.asset_key)
-                )
-            ],
+            updated_evaluations,
         )
 
 
@@ -451,7 +421,8 @@ def _build_run_request_for_partition_key_range(
         ASSET_PARTITION_RANGE_START_TAG: partition_range_start,
         ASSET_PARTITION_RANGE_END_TAG: partition_range_end,
     }
-    return RunRequest(asset_selection=asset_keys, tags=tags)
+    partition_key = partition_range_start if partition_range_start == partition_range_end else None
+    return RunRequest(asset_selection=asset_keys, partition_key=partition_key, tags=tags)
 
 
 def get_auto_observe_run_requests(

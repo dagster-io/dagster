@@ -403,7 +403,7 @@ class PartitionsByAssetSelector(
         }
 
     @staticmethod
-    def from_graphql_input(graphql_data):
+    def from_graphql_input(graphql_data) -> "PartitionsByAssetSelector":
         asset_key = graphql_data["assetKey"]
         partitions = graphql_data.get("partitions")
         return PartitionsByAssetSelector(

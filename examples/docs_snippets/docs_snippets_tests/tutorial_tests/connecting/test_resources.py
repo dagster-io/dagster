@@ -5,9 +5,7 @@ from docs_snippets.tutorial.connecting import (
     connecting_with_config,
     connecting_with_envvar,
 )
-from docs_snippets.tutorial.connecting.resources import (
-    DataGeneratorResource,
-)
+from docs_snippets.tutorial.connecting.resources import DataGeneratorResource
 
 
 def test_definitions_with_resources():

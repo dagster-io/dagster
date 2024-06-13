@@ -7,18 +7,29 @@ export const ONE_HOUR_S = 60 * 60;
 type Subscription<T> = (data: T[]) => void;
 
 export const defaultOptions = {
-  expiry: new Date('3000-01-01'), // never expire,
+  expiry: new Date('3030-01-01'), // never expire,
 };
+
 export class HourlyDataCache<T> {
   private cache: Map<number, Array<TimeWindow<T>>> = new Map();
   private subscriptions: Array<{hour: number; callback: Subscription<T>}> = [];
-  private indexedDBCache?: ReturnType<typeof cache<'hourlyData', typeof this.cache>>;
+  private indexedDBCache?: ReturnType<typeof cache<string, typeof this.cache>>;
+  private indexedDBKey: string;
 
-  constructor(id?: string | false) {
+  /**
+   * @param id A unique ID for the hourly data cache in this deployment
+   * @param [keyPrefix=''] A unique key identifying the timeline view [incorporating filters, etc.]
+   */
+  constructor(id?: string | false, keyPrefix = '', keyMaxCount = 1) {
+    this.indexedDBKey = keyPrefix ? `${keyPrefix}-hourlyData` : 'hourlyData';
+
+    // Delete old database from before the prefix, remove this at some point
+    indexedDB.deleteDatabase('HourlyDataCache:useRunsForTimeline');
+
     if (id) {
-      this.indexedDBCache = cache<'hourlyData', typeof this.cache>({
+      this.indexedDBCache = cache<string, typeof this.cache>({
         dbName: `HourlyDataCache:${id}`,
-        maxCount: 1, // We only store 1 entry
+        maxCount: keyMaxCount,
       });
       this.loadCacheFromIndexedDB();
       this.clearOldEntries();
@@ -38,11 +49,11 @@ export class HourlyDataCache<T> {
       if (!this.indexedDBCache) {
         return;
       }
-      if (!(await this.indexedDBCache.has('hourlyData'))) {
+      if (!(await this.indexedDBCache.has(this.indexedDBKey))) {
         res();
         return;
       }
-      const cachedData = await this.indexedDBCache.get('hourlyData');
+      const cachedData = await this.indexedDBCache.get(this.indexedDBKey);
       if (cachedData) {
         this.cache = new Map(cachedData.value);
       }
@@ -51,11 +62,32 @@ export class HourlyDataCache<T> {
     return await this.loadPromise;
   }
 
+  private saveTimeout?: ReturnType<typeof setTimeout>;
+  private registeredUnload: boolean = false;
   private async saveCacheToIndexedDB() {
-    if (!this.indexedDBCache) {
+    if (typeof jest !== 'undefined') {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
       return;
     }
-    await this.indexedDBCache.set('hourlyData', this.cache, defaultOptions);
+    clearTimeout(this.saveTimeout);
+    this.saveTimeout = setTimeout(() => {
+      if (!this.indexedDBCache) {
+        return;
+      }
+      this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+    }, 10000);
+    if (!this.registeredUnload) {
+      this.registeredUnload = true;
+      window.addEventListener('beforeunload', () => {
+        if (!this.indexedDBCache) {
+          return;
+        }
+        this.indexedDBCache.set(this.indexedDBKey, this.cache, defaultOptions);
+      });
+    }
   }
 
   public async clearOldEntries() {
@@ -68,7 +100,6 @@ export class HourlyDataCache<T> {
         this.cache.delete(ts);
       }
     }
-    await this.saveCacheToIndexedDB();
   }
 
   /**
@@ -221,7 +252,7 @@ export class HourlyDataCache<T> {
    * @param callback - The callback function to notify when new data is added.
    */
   subscribe(ts: number, callback: Subscription<T>) {
-    const startHour = Math.ceil(ts / ONE_HOUR_S);
+    const startHour = Math.floor(ts / ONE_HOUR_S);
     const sub = {hour: startHour, callback};
     this.subscriptions.push(sub);
     this.notifyExistingData(startHour, callback);

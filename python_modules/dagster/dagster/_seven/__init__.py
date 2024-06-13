@@ -7,11 +7,9 @@ import sys
 import threading
 import time
 from contextlib import contextmanager
-from datetime import datetime, timezone
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
-import pendulum
 from typing_extensions import TypeGuard
 
 from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
@@ -122,20 +120,6 @@ def is_module_available(module_name: str) -> bool:
 
 def builtin_print() -> str:
     return "builtins.print"
-
-
-def get_current_datetime_in_utc() -> Any:
-    return pendulum.now("UTC")
-
-
-def get_timestamp_from_utc_datetime(utc_datetime: datetime) -> float:
-    if isinstance(utc_datetime, PendulumDateTime):
-        return utc_datetime.timestamp()
-
-    if utc_datetime.tzinfo != timezone.utc:
-        raise Exception("Must pass in a UTC timezone to compute UNIX timestamp")
-
-    return utc_datetime.timestamp()
 
 
 def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:

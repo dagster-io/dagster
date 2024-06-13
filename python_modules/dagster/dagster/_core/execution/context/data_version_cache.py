@@ -9,12 +9,7 @@ in the user_context module.
 
 from dataclasses import dataclass
 from hashlib import sha256
-from typing import (
-    Dict,
-    List,
-    Optional,
-    Sequence,
-)
+from typing import Dict, List, Optional, Sequence
 
 import dagster._check as check
 from dagster._core.definitions.data_version import (
@@ -25,9 +20,7 @@ from dagster._core.definitions.data_version import (
 from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.data_version import (
-        DataVersion,
-    )
+    from dagster._core.definitions.data_version import DataVersion
     from dagster._core.event_api import EventLogRecord
     from dagster._core.events import DagsterEventType
     from dagster._core.storage.event_log.base import AssetRecord
@@ -99,9 +92,7 @@ class DataVersionCache:
         self.is_external_input_asset_version_info_loaded = True
 
     def _fetch_input_asset_version_info(self, asset_keys: Sequence[AssetKey]) -> None:
-        from dagster._core.definitions.data_version import (
-            extract_data_version_from_entry,
-        )
+        from dagster._core.definitions.data_version import extract_data_version_from_entry
 
         asset_records_by_key = self._fetch_asset_records(asset_keys)
         for key in asset_keys:
@@ -195,9 +186,7 @@ class DataVersionCache:
     def _get_partitions_data_version_from_keys(
         self, key: AssetKey, partition_keys: Sequence[str]
     ) -> "DataVersion":
-        from dagster._core.definitions.data_version import (
-            DataVersion,
-        )
+        from dagster._core.definitions.data_version import DataVersion
         from dagster._core.events import DagsterEventType
 
         # TODO: this needs to account for observations also

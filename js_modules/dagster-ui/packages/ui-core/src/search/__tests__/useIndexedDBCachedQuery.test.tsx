@@ -24,6 +24,7 @@ jest.mock('idb-lru-cache', () => {
     has: jest.fn(),
     get: jest.fn(),
     set: jest.fn(),
+    delete: jest.fn(),
   };
   return {
     cache: jest.fn(() => mockedCache),

@@ -1,12 +1,6 @@
 import json
 
-from dagster import (
-    AssetKey,
-    AssetRecordsFilter,
-    RunRequest,
-    SensorDefinition,
-    sensor,
-)
+from dagster import AssetKey, AssetRecordsFilter, RunRequest, SensorDefinition, sensor
 
 
 def make_hn_tables_updated_sensor(job) -> SensorDefinition:

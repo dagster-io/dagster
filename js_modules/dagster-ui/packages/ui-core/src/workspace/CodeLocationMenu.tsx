@@ -138,9 +138,13 @@ const CodeLocationConfig = ({
   displayMetadata: WorkspaceRepositoryLocationNode['displayMetadata'];
 }) => {
   const yamlString = useMemo(() => {
-    const kvPairs = displayMetadata.reduce((accum, item) => {
-      return {...accum, [item.key]: item.value};
-    }, {});
+    const kvPairs = displayMetadata.reduce(
+      (accum, item) => {
+        accum[item.key] = item.value;
+        return accum;
+      },
+      {} as Record<string, string>,
+    );
     return yaml.stringify(kvPairs);
   }, [displayMetadata]);
 

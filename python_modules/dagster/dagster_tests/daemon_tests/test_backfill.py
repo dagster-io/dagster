@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import string
@@ -6,7 +7,6 @@ import time
 
 import dagster._check as check
 import mock
-import pendulum
 import pytest
 from dagster import (
     AllPartitionMapping,
@@ -24,6 +24,7 @@ from dagster import (
     Nothing,
     Out,
     StaticPartitionMapping,
+    _seven,
     asset,
     daily_partitioned_config,
     define_asset_job,
@@ -33,9 +34,7 @@ from dagster import (
     op,
     repository,
 )
-from dagster._core.definitions import (
-    StaticPartitionsDefinition,
-)
+from dagster._core.definitions import StaticPartitionsDefinition
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKeyPartitionKey
@@ -45,9 +44,7 @@ from dagster._core.definitions.selector import (
     PartitionsByAssetSelector,
     PartitionsSelector,
 )
-from dagster._core.errors import (
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation import (
@@ -55,6 +52,8 @@ from dagster._core.remote_representation import (
     InProcessCodeLocationOrigin,
     RemoteRepositoryOrigin,
 )
+from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
@@ -62,17 +61,13 @@ from dagster._core.storage.tags import (
     BACKFILL_ID_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._core.test_utils import (
-    environ,
-    step_did_not_run,
-    step_failed,
-    step_succeeded,
-)
+from dagster._core.test_utils import environ, step_did_not_run, step_failed, step_succeeded
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._seven import IS_WINDOWS, get_system_temp_directory
+from dagster._time import get_current_timestamp
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
@@ -487,7 +482,7 @@ def test_simple_backfill(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -520,7 +515,7 @@ def test_canceled_backfill(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -558,7 +553,7 @@ def test_failure_backfill(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -607,7 +602,7 @@ def test_failure_backfill(
             from_failure=True,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
 
@@ -662,7 +657,7 @@ def test_partial_backfill(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -709,7 +704,7 @@ def test_partial_backfill(
             from_failure=False,
             reexecution_steps=["step_one"],
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
@@ -752,7 +747,7 @@ def test_large_backfill(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -773,7 +768,7 @@ def test_unloadable_backfill(instance, workspace_context):
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -797,7 +792,7 @@ def test_unloadable_backfill_retry(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="retry_backfill",
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -856,7 +851,7 @@ def test_backfill_from_partitioned_job(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
     assert instance.get_runs_count() == 0
@@ -891,7 +886,7 @@ def test_backfill_with_asset_selection(
             from_failure=False,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
         )
     )
@@ -931,7 +926,7 @@ def test_pure_asset_backfill_with_multiple_assets_selected(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="backfill_with_multiple_assets_selected",
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -996,7 +991,7 @@ def test_pure_asset_backfill(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="backfill_with_asset_selection",
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -1061,7 +1056,7 @@ def test_backfill_from_failure_for_subselection(
             from_failure=True,
             reexecution_steps=None,
             tags=None,
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
         )
     )
 
@@ -1086,7 +1081,7 @@ def test_asset_backfill_cancellation(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -1147,7 +1142,7 @@ def test_asset_backfill_submit_runs_in_chunks(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=target_partitions,
             dynamic_partitions_store=instance,
@@ -1187,7 +1182,7 @@ def test_asset_backfill_mid_iteration_cancel(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=target_partitions,
         dynamic_partitions_store=instance,
@@ -1255,7 +1250,7 @@ def test_asset_backfill_forcible_mark_as_canceled_during_canceling_iteration(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=["2023-01-01"],
         dynamic_partitions_store=instance,
@@ -1327,7 +1322,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=target_partitions,
         dynamic_partitions_store=instance,
@@ -1440,7 +1435,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_no_runs_
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=target_partitions,
         dynamic_partitions_store=instance,
@@ -1521,7 +1516,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=target_partitions,
         dynamic_partitions_store=instance,
@@ -1610,7 +1605,7 @@ def test_fail_backfill_when_runs_completed_but_partitions_marked_as_in_progress(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=target_partitions,
         dynamic_partitions_store=instance,
@@ -1688,7 +1683,7 @@ def _get_abcd_job_backfill(external_repo: ExternalRepository, job_name: str) -> 
         from_failure=False,
         reexecution_steps=None,
         tags=None,
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
     )
 
 
@@ -1765,7 +1760,7 @@ def test_asset_backfill_with_single_run_backfill_policy(
     backfill = PartitionBackfill.from_partitions_by_assets(
         backfill_id=backfill_id,
         asset_graph=asset_graph,
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         tags={},
         dynamic_partitions_store=instance,
         partitions_by_assets=[
@@ -1810,7 +1805,7 @@ def test_asset_backfill_with_multi_run_backfill_policy(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=[asset_with_multi_run_backfill_policy.key],
         partition_names=partitions,
         dynamic_partitions_store=instance,
@@ -1860,7 +1855,7 @@ def test_error_code_location(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -1904,7 +1899,7 @@ def test_raise_error_on_asset_backfill_partitions_defs_changes(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=partition_keys,
         dynamic_partitions_store=instance,
@@ -1956,7 +1951,7 @@ def test_raise_error_on_partitions_defs_removed(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=partition_keys,
         dynamic_partitions_store=instance,
@@ -2003,7 +1998,7 @@ def test_raise_error_on_target_static_partition_removed(
         asset_graph=asset_graph,
         backfill_id="dummy_backfill",
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=partition_keys,
         dynamic_partitions_store=instance,
@@ -2028,7 +2023,7 @@ def test_raise_error_on_target_static_partition_removed(
         asset_graph=asset_graph,
         backfill_id="dummy_backfill_2",
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=["c"],
         dynamic_partitions_store=instance,
@@ -2068,7 +2063,7 @@ def test_partitions_def_changed_backfill_retry_envvar_set(
         asset_graph=asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=asset_selection,
         partition_names=partition_keys,
         dynamic_partitions_store=instance,
@@ -2105,7 +2100,7 @@ def test_asset_backfill_logging(caplog, instance, workspace_context):
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id=backfill_id,
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -2153,7 +2148,7 @@ def test_asset_backfill_asset_graph_out_of_sync_with_workspace(
         asset_graph=location_1_asset_graph,
         backfill_id=backfill_id,
         tags={},
-        backfill_timestamp=pendulum.now().timestamp(),
+        backfill_timestamp=get_current_timestamp(),
         asset_selection=[AssetKey(["hourly_asset"])],
         partition_names=["2023-01-01-00:00"],
         dynamic_partitions_store=instance,
@@ -2221,7 +2216,7 @@ def test_backfill_with_title_and_description(
             asset_graph=workspace_context.create_request_context().asset_graph,
             backfill_id="backfill_with_title",
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_selection=asset_selection,
             partition_names=partition_keys,
             dynamic_partitions_store=instance,
@@ -2281,3 +2276,87 @@ def test_old_dynamic_partitions_job_backfill(
     list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
 
     assert instance.get_runs_count() == 4
+
+
+def test_asset_backfill_logs(
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    external_repo: ExternalRepository,
+):
+    # need to override this method on the instance since it defaults ot False in OSS. When we enable this
+    # feature in OSS we can remove this override
+    def override_backfill_storage_setting(self):
+        return True
+
+    instance.backfill_log_storage_enabled = override_backfill_storage_setting.__get__(
+        instance, DagsterInstance
+    )
+
+    partition_keys = static_partitions.get_partition_keys()
+    asset_selection = [AssetKey("foo"), AssetKey("a1"), AssetKey("bar")]
+    instance.add_backfill(
+        PartitionBackfill.from_asset_partitions(
+            asset_graph=workspace_context.create_request_context().asset_graph,
+            backfill_id="backfill_with_asset_selection",
+            tags={"custom_tag_key": "custom_tag_value"},
+            backfill_timestamp=get_current_timestamp(),
+            asset_selection=asset_selection,
+            partition_names=partition_keys,
+            dynamic_partitions_store=instance,
+            all_partitions=False,
+            title=None,
+            description=None,
+        )
+    )
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill("backfill_with_asset_selection")
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_start(instance, timeout=15)
+    assert instance.get_runs_count() == 3
+    wait_for_all_runs_to_finish(instance, timeout=15)
+
+    os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "20"
+
+    cm = instance.compute_log_manager
+
+    assert isinstance(cm, CapturedLogManager)
+
+    logs, cursor = cm.read_log_lines_for_log_key_prefix(
+        ["backfill", backfill.backfill_id], cursor=None, io_type=ComputeIOType.STDERR
+    )
+    assert cursor is not None
+    assert logs
+    for log_line in logs:
+        if not log_line:
+            continue
+        try:
+            record_dict = _seven.json.loads(log_line)
+        except json.JSONDecodeError:
+            continue
+        assert record_dict.get("msg")
+
+    list(execute_backfill_iteration(workspace_context, get_default_daemon_logger("BackfillDaemon")))
+    backfill = instance.get_backfill("backfill_with_asset_selection")
+    assert backfill
+    assert backfill.status == BulkActionStatus.COMPLETED
+
+    # set num_lines high so we know we get all of the remaining logs
+    os.environ["DAGSTER_CAPTURED_LOG_CHUNK_SIZE"] = "100"
+    logs, cursor = cm.read_log_lines_for_log_key_prefix(
+        ["backfill", backfill.backfill_id], cursor=cursor.to_string(), io_type=ComputeIOType.STDERR
+    )
+
+    assert cursor is not None
+    assert not cursor.has_more_now
+    for log_line in logs:
+        if not log_line:
+            continue
+        try:
+            record_dict = _seven.json.loads(log_line)
+        except json.JSONDecodeError:
+            continue
+        assert record_dict.get("msg")

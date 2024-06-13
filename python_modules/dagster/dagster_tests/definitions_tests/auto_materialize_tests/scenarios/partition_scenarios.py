@@ -8,14 +8,12 @@ from dagster import (
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-)
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._time import create_datetime
 
 from ..base_scenario import (
     AssetEvaluationSpec,
@@ -144,7 +142,7 @@ partition_scenarios = {
                 ),
             },
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        current_time=create_datetime(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
@@ -169,7 +167,7 @@ partition_scenarios = {
             },
             [AssetKey("non_existant_asset")],  # ignored since can't be loaded
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=17),
+        current_time=create_datetime(year=2013, month=1, day=5, hour=17),
         expected_run_requests=[
             run_request(asset_keys=["hourly"], partition_key=partition_key)
             for partition_key in hourly_partitions_def.get_partition_keys_in_range(
@@ -191,7 +189,7 @@ partition_scenarios = {
                 )
             }
         ],
-        current_time=create_pendulum_time(year=2013, month=1, day=7, hour=4),
+        current_time=create_datetime(year=2013, month=1, day=7, hour=4),
         expected_run_requests=[],
     ),
     "partial_run_partitioned": AssetReconciliationScenario(
@@ -227,7 +225,7 @@ partition_scenarios = {
             }
         ],
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        current_time=create_datetime(year=2013, month=1, day=5, hour=5),
         expected_run_requests=[
             run_request(["hourly"], partition_key="2013-01-05-00:00"),
             run_request(["hourly"], partition_key="2013-01-05-01:00"),
@@ -285,7 +283,7 @@ partition_scenarios = {
             }
         ],
         unevaluated_runs=[],
-        current_time=create_pendulum_time(year=2013, month=1, day=5, hour=5),
+        current_time=create_datetime(year=2013, month=1, day=5, hour=5),
         expected_run_requests=[],
         expected_evaluations=[
             AssetEvaluationSpec(

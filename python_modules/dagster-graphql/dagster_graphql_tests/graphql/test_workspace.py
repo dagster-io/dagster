@@ -6,9 +6,7 @@ from unittest import mock
 import pytest
 from dagster import file_relative_path
 from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.remote_representation.feature_flags import (
-    CodeLocationFeatureFlags,
-)
+from dagster._core.remote_representation.feature_flags import CodeLocationFeatureFlags
 from dagster._core.test_utils import environ
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths

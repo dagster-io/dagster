@@ -5,10 +5,7 @@ from dagster._core.execution.backfill import BulkActionStatus
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
-    from ..schema.backfill import (
-        GraphenePartitionBackfill,
-        GraphenePartitionBackfills,
-    )
+    from ..schema.backfill import GraphenePartitionBackfill, GraphenePartitionBackfills
 
 
 def get_backfill(graphene_info: "ResolveInfo", backfill_id: str) -> "GraphenePartitionBackfill":

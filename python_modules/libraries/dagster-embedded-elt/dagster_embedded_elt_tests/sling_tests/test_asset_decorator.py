@@ -13,10 +13,7 @@ from dagster import (
     file_relative_path,
 )
 from dagster._core.definitions.materialize import materialize
-from dagster_embedded_elt.sling import (
-    SlingReplicationParam,
-    sling_assets,
-)
+from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
 
@@ -217,6 +214,25 @@ def test_base_with_meta_config_translator():
         AssetKey(["target", "public", "transactions"])
         in my_sling_assets.auto_materialize_policies_by_key
     )
+
+
+def test_base_with_custom_tags_translator() -> None:
+    replication_config_path = file_relative_path(
+        __file__, "replication_configs/base_with_default_meta/replication.yaml"
+    )
+
+    class CustomSlingTranslator(DagsterSlingTranslator):
+        def get_tags(self, stream_definition):
+            return {"custom_tag": "custom_value"}
+
+    @sling_assets(
+        replication_config=replication_config_path,
+        dagster_sling_translator=CustomSlingTranslator(),
+    )
+    def my_sling_assets(): ...
+
+    for asset_key in my_sling_assets.keys:
+        assert my_sling_assets.tags_by_key[asset_key] == {"custom_tag": "custom_value"}
 
 
 def test_base_with_default_meta_translator():

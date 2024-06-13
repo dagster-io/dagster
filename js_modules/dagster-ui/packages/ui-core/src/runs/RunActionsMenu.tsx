@@ -340,27 +340,42 @@ export const RunBulkActionsMenu = React.memo((props: RunBulkActionsMenuProps) =>
   );
   const terminateableIDs = terminatableRuns.map((r) => r.id);
   const terminateableMap = terminatableRuns.reduce(
-    (accum, run) => ({...accum, [run.id]: run.canTerminate}),
-    {},
+    (accum, run) => {
+      accum[run.id] = run.canTerminate;
+      return accum;
+    },
+    {} as Record<string, boolean>,
   );
 
   const deleteableIDs = selected.map((run) => run.id);
-  const deletionMap = selected.reduce((accum, run) => ({...accum, [run.id]: run.canTerminate}), {});
+  const deletionMap = selected.reduce(
+    (accum, run) => {
+      accum[run.id] = run.canTerminate;
+      return accum;
+    },
+    {} as Record<string, boolean>,
+  );
 
   const reexecuteFromFailureRuns = selected.filter(
     (r) => failedStatuses.has(r?.status) && r.hasReExecutePermission,
   );
   const reexecuteFromFailureMap = reexecuteFromFailureRuns.reduce(
-    (accum, run) => ({...accum, [run.id]: run.id}),
-    {},
+    (accum, run) => {
+      accum[run.id] = run.id;
+      return accum;
+    },
+    {} as Record<string, string>,
   );
 
   const reexecutableRuns = selected.filter(
     (r) => doneStatuses.has(r?.status) && r.hasReExecutePermission,
   );
   const reexecutableMap = reexecutableRuns.reduce(
-    (accum, run) => ({...accum, [run.id]: run.id}),
-    {},
+    (accum, run) => {
+      accum[run.id] = run.id;
+      return accum;
+    },
+    {} as Record<string, string>,
   );
 
   const closeDialogs = () => {

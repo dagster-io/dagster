@@ -2,7 +2,6 @@ import logging
 import logging.config
 import os
 import sys
-import time
 import warnings
 import weakref
 from abc import abstractmethod
@@ -71,14 +70,11 @@ from dagster._core.storage.tags import (
     RUN_FAILURE_REASON_TAG,
 )
 from dagster._serdes import ConfigurableClass
-from dagster._seven import get_current_datetime_in_utc
+from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import PrintFn, is_uuid, traced
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import (
-    deprecation_warning,
-    experimental_warning,
-)
+from dagster._utils.warnings import deprecation_warning, experimental_warning
 
 from .config import (
     DAGSTER_CONFIG_YAML_FILENAME,
@@ -106,9 +102,7 @@ RUNLESS_JOB_NAME = ""
 if TYPE_CHECKING:
     from dagster._core.debug import DebugRunPayload
     from dagster._core.definitions.asset_check_spec import AssetCheckKey
-    from dagster._core.definitions.job_definition import (
-        JobDefinition,
-    )
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryLoadData,
@@ -1238,7 +1232,7 @@ class DagsterInstance(DynamicPartitionsStore):
             if AIRFLOW_EXECUTION_DATE_STR not in tags:
                 tags = {
                     **tags,
-                    AIRFLOW_EXECUTION_DATE_STR: get_current_datetime_in_utc().isoformat(),
+                    AIRFLOW_EXECUTION_DATE_STR: get_current_datetime().isoformat(),
                 }
 
         check.invariant(
@@ -1263,9 +1257,7 @@ class DagsterInstance(DynamicPartitionsStore):
         )
 
         if execution_plan_snapshot:
-            from ..op_concurrency_limits_counter import (
-                compute_run_op_concurrency_info_for_snapshot,
-            )
+            from ..op_concurrency_limits_counter import compute_run_op_concurrency_info_for_snapshot
 
             run_op_concurrency = compute_run_op_concurrency_info_for_snapshot(
                 execution_plan_snapshot
@@ -1369,10 +1361,7 @@ class DagsterInstance(DynamicPartitionsStore):
     ) -> None:
         from dagster._core.definitions.partition import DynamicPartitionsDefinition
         from dagster._core.definitions.partition_key_range import PartitionKeyRange
-        from dagster._core.events import (
-            AssetMaterializationPlannedData,
-            DagsterEvent,
-        )
+        from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent
 
         partition_tag = dagster_run.tags.get(PARTITION_NAME_TAG)
         partition_range_start, partition_range_end = (
@@ -1435,10 +1424,7 @@ class DagsterInstance(DynamicPartitionsStore):
         execution_plan_snapshot: "ExecutionPlanSnapshot",
         asset_job_partitions_def: Optional["PartitionsDefinition"],
     ) -> None:
-        from dagster._core.events import (
-            DagsterEvent,
-            DagsterEventType,
-        )
+        from dagster._core.events import DagsterEvent, DagsterEventType
 
         job_name = dagster_run.job_name
 
@@ -1644,9 +1630,7 @@ class DagsterInstance(DynamicPartitionsStore):
         run_config: Optional[Mapping[str, Any]] = None,
         use_parent_run_tags: bool = False,
     ) -> DagsterRun:
-        from dagster._core.execution.plan.resume_retry import (
-            ReexecutionStrategy,
-        )
+        from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
         from dagster._core.execution.plan.state import KnownExecutionState
         from dagster._core.remote_representation import CodeLocation, ExternalJob
 
@@ -2086,10 +2070,7 @@ class DagsterInstance(DynamicPartitionsStore):
         """
         from dagster._core.event_api import EventLogCursor
         from dagster._core.events import DagsterEventType
-        from dagster._core.storage.event_log.base import (
-            EventRecordsFilter,
-            EventRecordsResult,
-        )
+        from dagster._core.storage.event_log.base import EventRecordsFilter, EventRecordsResult
 
         event_records_filter = (
             EventRecordsFilter(DagsterEventType.ASSET_MATERIALIZATION_PLANNED, records_filter)
@@ -2518,7 +2499,7 @@ class DagsterInstance(DynamicPartitionsStore):
             job_name=dagster_event.job_name,
             run_id=run_id,
             error_info=None,
-            timestamp=time.time(),
+            timestamp=get_current_timestamp(),
             step_key=dagster_event.step_key,
             dagster_event=dagster_event,
         )
@@ -3246,3 +3227,6 @@ class DagsterInstance(DynamicPartitionsStore):
             if self.event_log_storage.supports_asset_checks
             else AssetCheckInstanceSupport.NEEDS_MIGRATION
         )
+
+    def backfill_log_storage_enabled(self) -> bool:
+        return False

@@ -14,6 +14,7 @@ from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
+from dagster._time import get_current_datetime
 from dagster_aws.s3 import S3ComputeLogManager
 
 ensure_dagster_tests_import()
@@ -201,6 +202,47 @@ def test_prefix_filter(mock_s3_bucket):
         s3_object = mock_s3_bucket.Object(key="foo/bar/storage/arbitrary/log/key.err")
         logs = s3_object.get()["Body"].read().decode("utf-8")
         assert logs == "hello hello"
+
+
+def test_get_log_keys_for_log_key_prefix(mock_s3_bucket):
+    evaluation_time = get_current_datetime()
+    s3_prefix = "foo/bar/"  # note the trailing slash
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        manager = S3ComputeLogManager(
+            bucket=mock_s3_bucket.name, prefix=s3_prefix, local_dir=temp_dir, skip_empty_files=True
+        )
+        log_key_prefix = ["test_log_bucket", evaluation_time.strftime("%Y%m%d_%H%M%S")]
+
+        def write_log_file(file_id: int, io_type: ComputeIOType):
+            full_log_key = [*log_key_prefix, f"{file_id}"]
+            with manager.open_log_stream(full_log_key, io_type) as f:
+                f.write("foo")
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert len(log_keys) == 0
+
+    for i in range(4):
+        write_log_file(i, ComputeIOType.STDERR)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
+
+    # write a different file type
+    write_log_file(4, ComputeIOType.STDOUT)
+
+    log_keys = manager.get_log_keys_for_log_key_prefix(log_key_prefix, io_type=ComputeIOType.STDERR)
+    assert sorted(log_keys) == [
+        [*log_key_prefix, "0"],
+        [*log_key_prefix, "1"],
+        [*log_key_prefix, "2"],
+        [*log_key_prefix, "3"],
+    ]
 
 
 class TestS3ComputeLogManager(TestCapturedLogManager):

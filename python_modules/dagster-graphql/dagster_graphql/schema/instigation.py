@@ -3,7 +3,6 @@ from typing import Optional, Union
 
 import dagster._check as check
 import graphene
-import pendulum
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -12,6 +11,7 @@ from dagster._core.definitions.run_request import (
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -23,7 +23,6 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
-from dagster._seven.compat.pendulum import to_timezone
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
@@ -394,14 +393,16 @@ class GrapheneDryRunInstigationTick(graphene.ObjectType):
                 timezone_str = "UTC"
 
             next_tick_datetime = next(external_schedule.execution_time_iterator(self.timestamp))
-            schedule_time = to_timezone(pendulum.instance(next_tick_datetime), timezone_str)
             schedule_data: Union[ScheduleExecutionData, SerializableErrorInfo]
             try:
                 schedule_data = code_location.get_external_schedule_execution_data(
                     instance=graphene_info.context.instance,
                     repository_handle=repository.handle,
                     schedule_name=external_schedule.name,
-                    scheduled_execution_time=schedule_time,
+                    scheduled_execution_time=TimestampWithTimezone(
+                        next_tick_datetime.timestamp(),
+                        timezone_str,
+                    ),
                     log_key=None,
                 )
             except Exception:

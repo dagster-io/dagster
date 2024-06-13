@@ -17,15 +17,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 from dagster._annotations import public
-from dagster._config import (
-    ALL_CONFIG_BUILTINS,
-    ConfigType,
-    Field,
-    Permissive,
-    Selector,
-    Shape,
-)
-from dagster._config.pythonic_config import Config
+from dagster._config import ALL_CONFIG_BUILTINS, ConfigType, Field, Permissive, Selector, Shape
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
@@ -586,6 +578,8 @@ def construct_config_type_dictionary(
 
 
 def _convert_config_classes_inner(configs: Any) -> Any:
+    from dagster._config.pythonic_config import Config
+
     if not isinstance(configs, dict):
         return configs
 

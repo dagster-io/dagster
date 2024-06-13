@@ -4,9 +4,8 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
-import {buildWorkspace} from '../../graphql/types';
-import {buildWorkspaceContextMockedResponse} from '../../runs/__fixtures__/RunsFilterInput.fixtures';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
+import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
 import {
   AssetCatalogGroupTableMock,
@@ -17,7 +16,7 @@ import {
   SingleAssetQueryTrafficDashboard,
 } from '../__fixtures__/AssetTables.fixtures';
 
-const workspaceMock = buildWorkspaceContextMockedResponse(buildWorkspace({}));
+const workspaceMocks = buildWorkspaceMocks([]);
 
 const MOCKS = [
   AssetCatalogTableMock,
@@ -26,7 +25,7 @@ const MOCKS = [
   SingleAssetQueryMaterializedWithLatestRun,
   SingleAssetQueryMaterializedStaleAndLate,
   SingleAssetQueryLastRunFailed,
-  workspaceMock,
+  ...workspaceMocks,
 ];
 
 // This file must be mocked because Jest can't handle `import.meta.url`.

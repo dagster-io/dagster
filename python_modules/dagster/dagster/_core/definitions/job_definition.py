@@ -26,13 +26,8 @@ from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.dependency import (
-    Node,
-    NodeHandle,
-    NodeInputHandle,
-    NodeInvocation,
-)
+from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
+from dagster._core.definitions.dependency import Node, NodeHandle, NodeInputHandle, NodeInvocation
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
@@ -51,10 +46,7 @@ from dagster._core.errors import (
     DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster._core.selector.subset_selector import (
-    AssetSelectionData,
-    OpSelectionData,
-)
+from dagster._core.selector.subset_selector import AssetSelectionData, OpSelectionData
 from dagster._core.storage.io_manager import (
     IOManagerDefinition,
     dagster_maintained_io_manager,
@@ -68,11 +60,7 @@ from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
 from .config import ConfigMapping
-from .dependency import (
-    DependencyMapping,
-    DependencyStructure,
-    OpNode,
-)
+from .dependency import DependencyMapping, DependencyStructure, OpNode
 from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
@@ -418,17 +406,12 @@ class JobDefinition(IHasInternalInit):
         return None if not self.partitioned_config else self.partitioned_config.partitions_def
 
     @cached_property
-    def backfill_policy(self) -> Optional[BackfillPolicy]:
-        from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
-
+    def backfill_policy(self) -> BackfillPolicy:
         executable_nodes = {self.asset_layer.get(k) for k in self.asset_layer.executable_asset_keys}
         backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
-        if not self.name.startswith(ASSET_BASE_JOB_PREFIX):
-            check.invariant(
-                len(backfill_policies) <= 1,
-                "All assets in non-asset base job a job must have the same backfill policy.",
-            )
-        return next(iter(backfill_policies), None)
+
+        # normalize null backfill policy to explicit multi_run(1) policy
+        return resolve_backfill_policy(backfill_policies)
 
     @property
     def hook_defs(self) -> AbstractSet[HookDefinition]:
@@ -784,10 +767,7 @@ class JobDefinition(IHasInternalInit):
     def _get_job_def_for_asset_selection(
         self, selection_data: AssetSelectionData
     ) -> "JobDefinition":
-        from dagster._core.definitions.asset_job import (
-            build_asset_job,
-            get_asset_graph_for_job,
-        )
+        from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
 
         # If a non-null check selection is provided, use that. Otherwise the selection will resolve
         # to all checks matching a selected asset by default.
@@ -1198,9 +1178,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """For non-asset jobs that have some inputs that are fed from assets, constructs an
     AssetLayer that includes these assets as loadables.
     """
-    from dagster._core.definitions.asset_graph import (
-        AssetGraph,
-    )
+    from dagster._core.definitions.asset_graph import AssetGraph
 
     asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
     all_input_assets: List[AssetsDefinition] = []

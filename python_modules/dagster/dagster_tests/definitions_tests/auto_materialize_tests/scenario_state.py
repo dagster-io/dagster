@@ -29,7 +29,7 @@ from dagster import (
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -45,11 +45,12 @@ from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import (
     InProcessTestWorkspaceLoadTarget,
     create_test_daemon_workspace_context,
+    freeze_time,
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._serdes.utils import create_snapshot_id
-from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import parse_time_string
 from typing_extensions import Self
 
 from .base_scenario import run_request
@@ -152,6 +153,7 @@ class ScenarioSpec:
                     "auto_materialize_policy",
                     "freshness_policy",
                     "partitions_def",
+                    "metadata",
                 }
                 assets.append(
                     asset(
@@ -179,7 +181,7 @@ class ScenarioSpec:
 
     def with_current_time(self, time: Union[str, datetime.datetime]) -> "ScenarioSpec":
         if isinstance(time, str):
-            time = pendulum.parse(time)
+            time = parse_time_string(time)
         return dataclasses.replace(self, current_time=time)
 
     def with_current_time_advanced(self, **kwargs) -> "ScenarioSpec":
@@ -244,7 +246,7 @@ class ScenarioState:
     def asset_graph(self) -> AssetGraph:
         return self.scenario_spec.asset_graph
 
-    def with_current_time(self, time: str) -> Self:
+    def with_current_time(self, time: Union[str, datetime.datetime]) -> Self:
         return dataclasses.replace(self, scenario_spec=self.scenario_spec.with_current_time(time))
 
     def with_current_time_advanced(self, **kwargs) -> Self:
@@ -266,7 +268,7 @@ class ScenarioState:
         status: DagsterRunStatus,
     ) -> Self:
         run_id = make_new_run_id()
-        with pendulum_freeze_time(self.current_time):
+        with freeze_time(self.current_time):
             job_def = self.scenario_spec.defs.get_implicit_job_def_for_assets(
                 asset_keys=list(asset_keys)
             )
@@ -307,7 +309,7 @@ class ScenarioState:
             # fake current_time on the scenario state
             return (self.current_time + (datetime.datetime.now() - start)).timestamp()
 
-        with pendulum_freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
+        with freeze_time(self.current_time), mock.patch("time.time", new=test_time_fn):
             for rr in run_requests:
                 materialize(
                     assets=self.scenario_spec.assets,
@@ -324,6 +326,16 @@ class ScenarioState:
                 pendulum.from_timestamp(test_time_fn())
             ),
         )
+
+    def with_reported_materialization(
+        self, asset_key: CoercibleToAssetKey, partition_key: Optional[str] = None
+    ) -> Self:
+        mat = AssetMaterialization(
+            asset_key=asset_key,
+            partition=partition_key,
+        )
+        self.instance.report_runless_asset_event(mat)
+        return self
 
     def _with_runs_with_status(self, status: DagsterRunStatus) -> Self:
         """Create new runs that will run to completion for all existing runs with the given status,

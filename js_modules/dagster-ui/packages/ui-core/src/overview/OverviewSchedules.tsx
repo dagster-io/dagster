@@ -30,9 +30,15 @@ import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
+import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
 
 export const OverviewSchedules = () => {
-  const {allRepos, visibleRepos, loading: workspaceLoading} = useContext(WorkspaceContext);
+  const {
+    allRepos,
+    visibleRepos,
+    loading: workspaceLoading,
+    data: cachedData,
+  } = useContext(WorkspaceContext);
   const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
@@ -55,17 +61,26 @@ export const OverviewSchedules = () => {
       notifyOnNetworkStatusChange: true,
     },
   );
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSchedulesQuery');
 
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const repoBuckets = useMemo(() => {
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(data).filter(({repoAddress}) =>
+    const cachedEntries = Object.values(cachedData).filter(
+      (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
+        location.__typename === 'WorkspaceLocationEntry',
+    );
+    const workspaceOrError = data?.workspaceOrError;
+    const entries =
+      workspaceOrError?.__typename === 'Workspace'
+        ? workspaceOrError.locationEntries
+        : cachedEntries;
+    return buildBuckets(entries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, visibleRepos]);
+  }, [data, cachedData, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
   const filteredBuckets = useMemo(() => {
@@ -151,8 +166,10 @@ export const OverviewSchedules = () => {
   const viewerHasAnyInstigationPermission = allPermissionedScheduleKeys.length > 0;
   const checkedCount = checkedSchedules.length;
 
+  const loading = workspaceLoading && !repoCount && queryLoading && !data;
+
   const content = () => {
-    if (loading && !data) {
+    if (loading) {
       return (
         <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
           <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
@@ -223,7 +240,7 @@ export const OverviewSchedules = () => {
     );
   };
 
-  const showSearchSpinner = (workspaceLoading && !repoCount) || (loading && !data);
+  const showSearchSpinner = queryLoading && !data;
 
   return (
     <>
@@ -293,13 +310,15 @@ type RepoBucket = {
   schedules: {name: string; scheduleState: BasicInstigationStateFragment}[];
 };
 
-const buildBuckets = (data?: OverviewSchedulesQuery): RepoBucket[] => {
-  if (data?.workspaceOrError.__typename !== 'Workspace') {
-    return [];
-  }
-
-  const entries = data.workspaceOrError.locationEntries.map((entry) => entry.locationOrLoadError);
-
+const buildBuckets = (
+  locationEntries:
+    | Extract<
+        OverviewSchedulesQuery['workspaceOrError'],
+        {__typename: 'Workspace'}
+      >['locationEntries']
+    | Extract<WorkspaceLocationNodeFragment, {__typename: 'WorkspaceLocationEntry'}>[],
+): RepoBucket[] => {
+  const entries = locationEntries.map((entry) => entry.locationOrLoadError);
   const buckets = [];
 
   for (const entry of entries) {

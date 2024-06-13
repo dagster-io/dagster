@@ -14,10 +14,7 @@ from dagster._core.definitions.repository_definition.valid_definitions import (
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import (
-    CodeLocationEntry,
-    CodeLocationLoadStatus,
-)
+from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 
 
 @pytest.fixture

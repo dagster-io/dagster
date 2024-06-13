@@ -8,7 +8,7 @@ from sqlalchemy.dialects import sqlite
 
 import dagster._check as check
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.sql import get_current_timestamp
+from dagster._core.storage.sql import get_sql_current_timestamp
 
 
 def get_inspector():
@@ -333,8 +333,8 @@ def create_instigators_table() -> None:
             db.Column("status", db.String(63)),
             db.Column("instigator_type", db.String(63), index=True),
             db.Column("instigator_body", db.Text),
-            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-            db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("create_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
+            db.Column("update_timestamp", db.DateTime, server_default=get_sql_current_timestamp()),
         )
 
     if not has_column("jobs", "selector_id"):

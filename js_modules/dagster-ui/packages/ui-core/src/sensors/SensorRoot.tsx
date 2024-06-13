@@ -131,7 +131,10 @@ export const SensorRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
 
   const {instance} = data;
 
-  if (sensorOrError.sensorType === SensorType.AUTO_MATERIALIZE) {
+  if (
+    sensorOrError.sensorType === SensorType.AUTO_MATERIALIZE ||
+    sensorOrError.sensorType === SensorType.AUTOMATION
+  ) {
     const assetDaemonStatus = instance.daemonHealth.ampDaemonStatus;
     return (
       <Page>

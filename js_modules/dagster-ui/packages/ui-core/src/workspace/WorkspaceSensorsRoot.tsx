@@ -3,6 +3,7 @@ import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-
 import {useMemo} from 'react';
 
 import {VirtualizedSensorTable} from './VirtualizedSensorTable';
+import {useRepository} from './WorkspaceContext';
 import {WorkspaceHeader} from './WorkspaceHeader';
 import {repoAddressAsHumanString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
@@ -25,9 +26,15 @@ import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/Filters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
+import {SearchInputSpinner} from '../ui/SearchInputSpinner';
+
+// Reuse this reference to distinguish no sensors case from data is still loading case;
+const NO_DATA_EMPTY_ARR: any[] = [];
 
 export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) => {
   useTrackPageView();
+
+  const repo = useRepository(repoAddress);
 
   const repoName = repoAddressAsHumanString(repoAddress);
   useDocumentTitle(`Sensors: ${repoName}`);
@@ -51,7 +58,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     },
   );
   useBlockTraceOnQueryResult(queryResultOverview, 'WorkspaceSensorsQuery');
-  const {data, loading} = queryResultOverview;
+  const {data, loading: queryLoading} = queryResultOverview;
   const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
 
   const sanitizedSearch = searchValue.trim().toLocaleLowerCase();
@@ -61,8 +68,13 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     if (data?.repositoryOrError.__typename === 'Repository') {
       return data.repositoryOrError.sensors;
     }
-    return [];
-  }, [data]);
+    if (repo) {
+      return repo.repository.sensors;
+    }
+    return NO_DATA_EMPTY_ARR;
+  }, [repo, data]);
+
+  const loading = NO_DATA_EMPTY_ARR === sensors;
 
   const {state: runningState} = runningStateFilter;
   const filteredByRunningState = useMemo(() => {
@@ -165,6 +177,8 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
     );
   };
 
+  const showSearchSpinner = queryLoading && !data;
+
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
       <WorkspaceHeader
@@ -182,6 +196,11 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
             onChange={(e) => setSearchValue(e.target.value)}
             placeholder="Filter by sensor name…"
             style={{width: '340px'}}
+            rightElement={
+              showSearchSpinner ? (
+                <SearchInputSpinner tooltipContent="Loading sensors…" />
+              ) : undefined
+            }
           />
         </Box>
         <Tooltip

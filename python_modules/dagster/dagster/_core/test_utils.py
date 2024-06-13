@@ -1,8 +1,10 @@
 import asyncio
+import datetime
 import os
 import re
 import sys
 import time
+import unittest.mock
 import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -52,9 +54,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
-from dagster._core.remote_representation.origin import (
-    InProcessCodeLocationOrigin,
-)
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
@@ -63,7 +63,8 @@ from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRe
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import pendulum_freeze_time
+from dagster._time import create_datetime, get_timezone
 from dagster._utils import Counter, get_terminate_signal, traced, traced_counter
 from dagster._utils.log import configure_loggers
 
@@ -311,8 +312,9 @@ def new_cwd(path: str) -> Iterator[None]:
 
 def today_at_midnight(timezone_name="UTC") -> "DateTime":
     check.str_param(timezone_name, "timezone_name")
-    now = pendulum.now(timezone_name)
-    return create_pendulum_time(now.year, now.month, now.day, tz=now.timezone.name)
+    tzinfo = get_timezone(timezone_name)
+    now = datetime.datetime.now(tz=tzinfo)
+    return create_datetime(now.year, now.month, now.day, tz=timezone_name)
 
 
 from dagster._core.storage.runs import SqliteRunStorage
@@ -475,9 +477,6 @@ class TestSecretsLoader(SecretsLoader, ConfigurableClass):
 
 def get_crash_signals() -> Sequence[Signals]:
     return [get_terminate_signal()]
-
-
-_mocked_system_timezone: Dict[str, Optional[str]] = {"timezone": None}
 
 
 # Test utility for creating a test workspace for a function
@@ -742,3 +741,24 @@ def create_test_asset_job(
         jobs=[define_asset_job(name, selection, **kwargs)],
         resources=resources,
     ).get_job_def(name)
+
+
+@contextmanager
+def freeze_time(new_now: Union[datetime.datetime, float]):
+    new_dt = (
+        new_now
+        if isinstance(new_now, datetime.datetime)
+        else datetime.datetime.fromtimestamp(new_now, datetime.timezone.utc)
+    )
+
+    new_timestamp = new_dt.timestamp()
+
+    # Remove once pendulum is out of the picture
+    new_pendulum_dt = pendulum.from_timestamp(new_timestamp, "UTC")
+
+    with unittest.mock.patch(
+        "dagster._time._mockable_get_current_datetime", return_value=new_dt
+    ), unittest.mock.patch(
+        "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
+    ), pendulum_freeze_time(new_pendulum_dt):
+        yield

@@ -9,15 +9,21 @@ from dagster_dbt.core.resources_v2 import DbtCliInvocation
 from .dbt_projects import (
     test_asset_checks_path,
     test_asset_key_exceptions_path,
+    test_dagster_dbt_mixed_freshness_path,
     test_dbt_alias_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
     test_dbt_source_freshness_path,
+    test_dbt_unit_tests_path,
     test_duplicate_source_asset_key_path,
     test_jaffle_shop_path,
+    test_last_update_freshness_multiple_assets_defs_path,
+    test_last_update_freshness_path,
     test_meta_config_path,
     test_metadata_path,
+    test_time_partition_freshness_multiple_assets_defs_path,
+    test_time_partition_freshness_path,
 )
 
 
@@ -128,6 +134,11 @@ def test_dbt_source_freshness_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_dbt_source_freshness_path).get_artifact("manifest.json")
 
 
+@pytest.fixture(name="test_dbt_unit_tests_manifest", scope="session")
+def test_dbt_unit_tests_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dbt_unit_tests_path).get_artifact("manifest.json")
+
+
 @pytest.fixture(name="test_duplicate_source_asset_key_manifest", scope="session")
 def test_duplicate_source_asset_key_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_duplicate_source_asset_key_path).get_artifact(
@@ -138,6 +149,37 @@ def test_duplicate_source_asset_key_manifest_fixture() -> Dict[str, Any]:
 @pytest.fixture(name="test_meta_config_manifest", scope="session")
 def test_meta_config_manifest_fixture() -> Dict[str, Any]:
     return _create_dbt_invocation(test_meta_config_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_last_update_freshness_manifest", scope="session")
+def test_last_update_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_last_update_freshness_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_time_partition_freshness_manifest_multiple_assets_defs", scope="session")
+def test_time_partition_freshness_manifest_fixture_multiple_assets_defs() -> Dict[str, Any]:
+    return _create_dbt_invocation(
+        test_time_partition_freshness_multiple_assets_defs_path
+    ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_last_update_freshness_manifest_multiple_assets_defs", scope="session")
+def test_last_update_freshness_manifest_fixture_multiple_assets_defs() -> Dict[str, Any]:
+    return _create_dbt_invocation(
+        test_last_update_freshness_multiple_assets_defs_path
+    ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_time_partition_freshness_manifest", scope="session")
+def test_time_partition_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_time_partition_freshness_path).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_dagster_dbt_mixed_freshness_manifest", scope="session")
+def test_dagster_dbt_mixed_freshness_manifest_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_dagster_dbt_mixed_freshness_path).get_artifact(
+        "manifest.json"
+    )
 
 
 @pytest.fixture(name="test_metadata_manifest", scope="session")

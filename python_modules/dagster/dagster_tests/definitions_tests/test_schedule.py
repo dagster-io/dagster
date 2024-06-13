@@ -1,8 +1,9 @@
 import warnings
+from datetime import datetime
 
 import pytest
-from dagster import ScheduleDefinition, graph
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster import DagsterInvalidDefinitionError, ScheduleDefinition, build_schedule_context, graph
+from dagster._core.definitions.run_config import RunConfig
 
 
 def test_default_name():
@@ -78,3 +79,42 @@ def test_invalid_tag_keys():
             warning.message
         )
         assert warning.filename.endswith("test_schedule.py")
+
+
+def test_schedule_run_config_obj() -> None:
+    my_schedule = ScheduleDefinition(
+        name="my_schedule",
+        cron_schedule="* * * * *",
+        job_name="test_job",
+        run_config=RunConfig(ops={"foo": "bar"}),
+    )
+
+    execution_time = datetime(year=2019, month=2, day=27)
+    context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
+
+    execution_data = my_schedule.evaluate_tick(context_with_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].run_config["ops"] == {"foo": "bar"}
+
+
+def test_schedule_run_config_obj_fn() -> None:
+    my_schedule = ScheduleDefinition(
+        name="my_schedule",
+        cron_schedule="* * * * *",
+        job_name="test_job",
+        run_config_fn=lambda ctx: RunConfig(
+            ops={"baz": "qux", "time": ctx.scheduled_execution_time}
+        ),
+    )
+
+    execution_time = datetime(year=2019, month=2, day=27)
+    context_with_time = build_schedule_context(scheduled_execution_time=execution_time)
+
+    execution_data = my_schedule.evaluate_tick(context_with_time)
+    assert execution_data.run_requests
+    assert len(execution_data.run_requests) == 1
+    assert execution_data.run_requests[0].run_config["ops"] == {
+        "baz": "qux",
+        "time": execution_time,
+    }

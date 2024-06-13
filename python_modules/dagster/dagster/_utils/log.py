@@ -3,6 +3,7 @@ import logging
 import logging.config
 import sys
 import traceback
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -319,6 +320,14 @@ def configure_loggers(
     }
 
     logging.config.dictConfig(LOGGING_CONFIG)
+
+    # override the default warnings handler as per https://docs.python.org/3/library/warnings.html#warnings.showwarning
+    # to use the same formatting
+    def custom_warning_handler(message, category, filename, lineno, file=None, line=None):
+        log_message = warnings.formatwarning(message, category, filename, lineno, line)
+        logging.getLogger("dagster").warning(log_message)
+
+    warnings.showwarning = custom_warning_handler
 
 
 def create_console_logger(name: str, level: Union[str, int]) -> logging.Logger:
