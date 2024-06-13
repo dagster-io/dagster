@@ -1,12 +1,26 @@
-import {Highlight, themes} from 'prism-react-renderer';
 import Prism from 'prismjs';
 import React from 'react';
-// import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-python';
+
+Prism.manual = true;
 
 // Define possible options for code blocks
 const optionKeys = ['lines', 'startafter', 'endbefore', 'dedent', 'trim'];
 
-export const Fence = (props) => {
-  console.log(props);
-  return <div>Henlo</div>;
+export const Fence = ({children, 'data-language': language}) => {
+  console.log(children, '\n', language);
+  React.useEffect(() => {
+    console.log('highlighting');
+    Prism.highlightAll();
+  }, []);
+
+  return (
+    <div aria-live="polite">
+      <pre className="line-numbers">
+        <code className={`language-${language}`}>
+          {children}
+        </code>
+      </pre>
+    </div>
+  );
 };
