@@ -718,5 +718,15 @@
     "source": "/deployment/open-source",
     "destination": "/deployment",
     "statusCode": 302
+  },
+  {
+    "source": "/integrations/airflow/migrating-to-dagster",
+    "destination": "/guides/migrations/migrating-airflow-to-dagster",
+    "statusCode": 302
+  },
+  {
+    "source": "/deployment/open-source",
+    "destination": "/deployment",
+    "statusCode": 302
   }
 ]

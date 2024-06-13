@@ -884,10 +884,6 @@
             "path": "/integrations/airflow/from-airflow-to-dagster"
           },
           {
-            "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
-          },
-          {
             "title": "Reference",
             "path": "/integrations/airflow/reference"
           }
@@ -1158,10 +1154,11 @@
       },
       {
         "title": "Migrating to Dagster",
+        "path": "/guides/migrations",
         "children": [
           {
             "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
+            "path": "/guides/migrations/migrating-airflow-to-dagster"
           }
         ]
       },
