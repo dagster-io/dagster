@@ -126,8 +126,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def __init__(
         self,
         *,
-        keys_by_input_name: Mapping[str, AssetKey] = {},
-        keys_by_output_name: Mapping[str, AssetKey] = {},
+        keys_by_input_name: Optional[Mapping[str, AssetKey]] = None,
+        keys_by_output_name: Optional[Mapping[str, AssetKey]] = None,
         node_def: Optional[NodeDefinition] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
@@ -168,11 +168,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         if node_def is None:
             check.invariant(
-                len(keys_by_input_name) == 0,
+                not keys_by_input_name,
                 "node_def is None, so keys_by_input_name must be empty",
             )
             check.invariant(
-                len(keys_by_output_name) == 0,
+                not keys_by_output_name,
                 "node_def is None, so keys_by_output_name must be empty",
             )
             check.invariant(
@@ -183,13 +183,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
 
         self._node_def = node_def
-        self._keys_by_input_name = check.mapping_param(
+        self._keys_by_input_name = check.opt_mapping_param(
             keys_by_input_name,
             "keys_by_input_name",
             key_type=str,
             value_type=AssetKey,
         )
-        self._keys_by_output_name = check.mapping_param(
+        self._keys_by_output_name = check.opt_mapping_param(
             keys_by_output_name,
             "keys_by_output_name",
             key_type=str,
@@ -242,7 +242,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             resolved_specs = specs
 
         else:
-            all_asset_keys = set(keys_by_output_name.values())
+            all_asset_keys = set(self._keys_by_output_name.values())
 
             if asset_deps:
                 check.invariant(
@@ -256,7 +256,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if partition_mappings:
                 _validate_partition_mappings(
                     partition_mappings=partition_mappings,
-                    input_asset_keys=set(keys_by_input_name.values()),
+                    input_asset_keys=set(self._keys_by_input_name.values()),
                     all_asset_keys=all_asset_keys,
                 )
 
@@ -264,7 +264,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
             resolved_specs = _asset_specs_from_attr_key_params(
                 all_asset_keys=all_asset_keys,
-                keys_by_input_name=keys_by_input_name,
+                keys_by_input_name=self._keys_by_input_name,
                 deps_by_asset_key=asset_deps,
                 partition_mappings=partition_mappings,
                 tags_by_key=tags_by_key,
@@ -278,7 +278,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
 
         normalized_specs: List[AssetSpec] = []
-        output_names_by_key = {key: name for name, key in keys_by_output_name.items()}
+        output_names_by_key = {key: name for name, key in self._keys_by_output_name.items()}
 
         for spec in resolved_specs:
             if spec.owners:
