@@ -305,11 +305,11 @@ def project_scaffold_command(
 
 def prepare_for_deployment(project: DbtProject) -> None:
     """A method that can be called as part of the deployment process."""
-    if project.manifest_preparer:
+    if project.preparer:
         console.print(
-            f"Preparing project [bold green]{project.project_dir}[/bold green] for deployment with [bold green]{project.manifest_preparer.prepare.__qualname__}[/bold green]."
+            f"Preparing project [bold green]{project.project_dir}[/bold green] for deployment with [bold green]{project.preparer.prepare.__qualname__}[/bold green]."
         )
-        project.manifest_preparer.prepare(project)
+        project.preparer.prepare(project)
         console.print("Project preparation complete.")
 
     if project.packaged_project_dir:
