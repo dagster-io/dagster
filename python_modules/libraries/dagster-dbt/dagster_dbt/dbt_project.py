@@ -152,7 +152,7 @@ class DbtProject(IHaveNew):
 
             from dagster_dbt import DbtProject
 
-            my_project = DbtProject(project_dir=Path("path/to/dbt_project")).prepared()
+            my_project = DbtProject(project_dir=Path("path/to/dbt_project")).prepare()
 
         Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
 
@@ -175,7 +175,7 @@ class DbtProject(IHaveNew):
                 project_dir=Path('path/to/dbt_project'),
                 state_path="target/managed_state",
                 target=get_env(),
-            ).prepared()
+            ).prepare()
 
     """
 
@@ -240,7 +240,7 @@ class DbtProject(IHaveNew):
         )
 
     @public
-    def prepared(self) -> "DbtProject":
+    def prepare(self) -> "DbtProject":
         """Execute the preparation process for a dbt project and return the DbtProject object when complete.
 
         By default, the preparation process for DbtProject is the following:
@@ -264,7 +264,7 @@ class DbtProject(IHaveNew):
                 from dagster import Definitions
                 from dagster_dbt import DbtProject
 
-                my_project = DbtProject(project_dir=Path("path/to/dbt_project")).prepared()
+                my_project = DbtProject(project_dir=Path("path/to/dbt_project")).prepare()
 
                 defs = Definitions(
                     resources={
@@ -284,7 +284,7 @@ class DbtProject(IHaveNew):
                 my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
 
-                @dbt_assets(manifest=my_project.prepared().manifest_path)
+                @dbt_assets(manifest=my_project.prepare().manifest_path)
                 def my_dbt_asset():
                     ...
         """
