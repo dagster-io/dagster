@@ -227,7 +227,7 @@ class DbtProject(IHaveNew):
             dependencies_path.exists() or packages_path.exists()
         ) and not packages_install_path.exists()
 
-        super().__new__(
+        return super().__new__(
             cls,
             project_dir=project_dir,
             target_path=target_path,
