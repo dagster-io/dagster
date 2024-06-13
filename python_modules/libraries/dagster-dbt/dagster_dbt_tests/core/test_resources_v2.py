@@ -25,12 +25,18 @@ from ..dbt_projects import (
     test_dbt_source_freshness_path,
     test_exceptions_path,
     test_jaffle_shop_path,
+    test_jaffle_with_profile_vars_path,
 )
 
 
 @pytest.fixture(name="dbt", scope="module")
 def dbt_fixture() -> DbtCliResource:
     return DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))
+
+
+@pytest.fixture(name="dbt_with_profile_vars", scope="module")
+def dbt_with_profile_vars_fixture() -> DbtCliResource:
+    return DbtCliResource(project_dir=os.fspath(test_jaffle_with_profile_vars_path))
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
@@ -512,6 +518,10 @@ def test_dbt_adapter(dbt: DbtCliResource) -> None:
     assert dbt.cli(["build"]).adapter
     assert dbt.cli(["parse"]).adapter
     assert dbt.cli(["source", "freshness"]).adapter
+
+
+def test_dbt_adapter_with_profile_vars(dbt_with_profile_vars: DbtCliResource) -> None:
+    assert dbt_with_profile_vars.cli(["build"]).adapter
 
 
 def test_custom_subclass():
