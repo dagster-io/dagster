@@ -4813,18 +4813,23 @@ class TestEventLogStorage:
             for field in cache_value._fields:
                 assert getattr(cache_value, field) is not None
 
-            storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
+            if storage.can_write_asset_status_cache():
+                storage.update_asset_cached_status_data(
+                    asset_key=asset_key, cache_values=cache_value
+                )
 
-            assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+                assert _get_cached_status_for_asset(storage, asset_key) == cache_value
 
-            cache_value = AssetStatusCacheValue(
-                latest_storage_id=1,
-                partitions_def_id=None,
-                serialized_materialized_partition_subset=None,
-            )
-            storage.update_asset_cached_status_data(asset_key=asset_key, cache_values=cache_value)
+                cache_value = AssetStatusCacheValue(
+                    latest_storage_id=1,
+                    partitions_def_id=None,
+                    serialized_materialized_partition_subset=None,
+                )
 
-            assert _get_cached_status_for_asset(storage, asset_key) == cache_value
+                storage.update_asset_cached_status_data(
+                    asset_key=asset_key, cache_values=cache_value
+                )
+                assert _get_cached_status_for_asset(storage, asset_key) == cache_value
 
             if self.can_wipe():
                 cache_value = AssetStatusCacheValue(

@@ -588,8 +588,11 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, filter_tags, filter_event_id
         )
 
-    def can_cache_asset_status_data(self) -> bool:
-        return self._storage.event_log_storage.can_cache_asset_status_data()
+    def can_read_asset_status_cache(self) -> bool:
+        return self._storage.event_log_storage.can_read_asset_status_cache()
+
+    def can_write_asset_status_cache(self) -> bool:
+        return self._storage.event_log_storage.can_write_asset_status_cache()
 
     def wipe_asset_cached_status(self, asset_key: "AssetKey") -> None:
         return self._storage.event_log_storage.wipe_asset_cached_status(asset_key)

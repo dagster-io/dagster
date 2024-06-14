@@ -306,8 +306,13 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
         raise NotImplementedError()
 
     @abstractmethod
-    def can_cache_asset_status_data(self) -> bool:
+    def can_read_asset_status_cache(self) -> bool:
+        """Whether the storage can access cached status information for each asset."""
         pass
+
+    @abstractmethod
+    def can_write_asset_status_cache(self) -> bool:
+        """Whether the storage is able to write to that cache."""
 
     @abstractmethod
     def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:

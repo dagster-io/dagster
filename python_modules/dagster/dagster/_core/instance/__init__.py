@@ -1908,8 +1908,8 @@ class DagsterInstance(DynamicPartitionsStore):
     # asset storage
 
     @traced
-    def can_cache_asset_status_data(self) -> bool:
-        return self._event_storage.can_cache_asset_status_data()
+    def can_read_asset_status_cache(self) -> bool:
+        return self._event_storage.can_read_asset_status_cache()
 
     @traced
     def update_asset_cached_status_data(
