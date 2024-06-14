@@ -103,6 +103,11 @@ def test_dbt_cli_failure() -> None:
     assert dbt_cli_invocation.process.returncode == 2
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
 
+    # If the exit code is 0, but error logs were emitted, the invocation is not successful.
+    dbt_cli_invocation.process.returncode = 0
+    assert not dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.get_error()
+
     dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path), target="error_dev")
 
     with pytest.raises(Exception, match="Env var required but not provided: 'DBT_DUCKDB_THREADS'"):
