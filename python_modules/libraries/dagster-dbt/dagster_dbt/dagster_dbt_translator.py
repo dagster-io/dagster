@@ -8,7 +8,7 @@ from dagster import (
     PartitionMapping,
     _check as check,
 )
-from dagster._annotations import public
+from dagster._annotations import experimental, public
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
@@ -125,6 +125,7 @@ class DagsterDbtTranslator:
         return default_asset_key_fn(dbt_resource_props)
 
     @public
+    @experimental(emit_runtime_warning=False)
     def get_partition_mapping(
         self,
         dbt_resource_props: Mapping[str, Any],
@@ -323,6 +324,7 @@ class DagsterDbtTranslator:
         return default_owners_from_dbt_resource_props(dbt_resource_props)
 
     @public
+    @experimental(emit_runtime_warning=False)
     def get_freshness_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[FreshnessPolicy]:
@@ -376,6 +378,7 @@ class DagsterDbtTranslator:
         return default_freshness_policy_fn(dbt_resource_props)
 
     @public
+    @experimental(emit_runtime_warning=False)
     def get_auto_materialize_policy(
         self, dbt_resource_props: Mapping[str, Any]
     ) -> Optional[AutoMaterializePolicy]:
