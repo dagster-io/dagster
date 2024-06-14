@@ -408,7 +408,11 @@ class JobDefinition(IHasInternalInit):
     @cached_property
     def backfill_policy(self) -> BackfillPolicy:
         executable_nodes = {self.asset_layer.get(k) for k in self.asset_layer.executable_asset_keys}
-        backfill_policies = {n.backfill_policy for n in executable_nodes if n.is_partitioned}
+        backfill_policies = {
+            check.not_none(n.backfill_policy, "Unexpected null backfill policy")
+            for n in executable_nodes
+            if n.is_partitioned
+        }
 
         # normalize null backfill policy to explicit multi_run(1) policy
         return resolve_backfill_policy(backfill_policies)

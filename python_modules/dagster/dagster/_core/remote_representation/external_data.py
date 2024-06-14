@@ -58,7 +58,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.backfill_policy import DEFAULT_BACKFILL_POLICY, BackfillPolicy
 from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
 from dagster._core.definitions.dependency import (
     GraphNode,
@@ -1418,6 +1418,10 @@ class ExternalAssetNode(
             # prior to this field being added, all non-source assets must be part of at least one
             # job, and no source assets could be part of any job
             is_source = len(job_names or []) == 0
+
+        # backcompat logic to assign default BackfillPolicy for materializable assets
+        if backfill_policy is None and execution_type == AssetExecutionType.MATERIALIZATION:
+            backfill_policy = DEFAULT_BACKFILL_POLICY
 
         return super(ExternalAssetNode, cls).__new__(
             cls,
