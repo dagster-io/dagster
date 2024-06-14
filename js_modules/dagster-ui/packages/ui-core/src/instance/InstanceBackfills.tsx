@@ -106,6 +106,8 @@ export const InstanceBackfills = () => {
         : [],
   });
 
+  useBlockTraceOnQueryResult(queryResult, 'InstanceBackfillsQuery');
+
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {loading, data} = queryResult;
 
