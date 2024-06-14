@@ -1023,14 +1023,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         self, input_name: str, *, require_valid_partitions: bool = True
     ) -> PartitionsSubset:
         asset_layer = self.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(self.node_handle)
         upstream_asset_key = asset_layer.asset_key_for_input(self.node_handle, input_name)
 
         if upstream_asset_key is not None:
             upstream_asset_partitions_def = asset_layer.get(upstream_asset_key).partitions_def
 
             if upstream_asset_partitions_def is not None:
-                partitions_def = assets_def.partitions_def if assets_def else None
+                partitions_def = asset_layer.get(upstream_asset_key).partitions_def
                 partitions_subset = (
                     partitions_def.empty_subset().with_partition_key_range(
                         partitions_def,
