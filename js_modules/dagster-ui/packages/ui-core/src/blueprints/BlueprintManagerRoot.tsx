@@ -1,13 +1,21 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Alert,
+  Box,
+  Button,
   ButtonLink,
   Colors,
   ConfigEditorWithSchema,
+  Dialog,
+  DialogFooter,
   Group,
   Heading,
+  Icon,
   Page,
   PageHeader,
+  SplitPanelContainer,
+  Subheading,
+  Table,
   Tag,
 } from '@dagster-io/ui-components';
 import {
@@ -26,6 +34,7 @@ import {
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {useTrackPageView} from '../app/analytics';
+import {Blueprint, BlueprintKey} from '../graphql/types';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {Loading} from '../ui/Loading';
@@ -124,6 +133,49 @@ interface Props {
   repoAddress: RepoAddress;
 }
 
+const EditBlueprintDialog = ({
+  isOpen,
+  onClose,
+  configSchema,
+  config,
+  setConfig,
+  title,
+  onSave,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: () => void;
+  configSchema: ConfigSchema | null;
+  config: string;
+  setConfig: (config: string) => void;
+  title: string;
+}) => {
+  return (
+    <Dialog
+      isOpen={isOpen}
+      title={title}
+      onClose={onClose}
+      style={{maxWidth: '90%', minWidth: '70%', width: 1000}}
+    >
+      <ConfigEditorWithSchema
+        onConfigChange={setConfig}
+        config={config}
+        configSchema={configSchema}
+        isLoading={false}
+        identifier="foo"
+      />
+      <DialogFooter topBorder>
+        <Button intent="none" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button intent="primary" onClick={onSave}>
+          Save
+        </Button>
+      </DialogFooter>
+    </Dialog>
+  );
+};
+
 export const BlueprintManagerRoot = (props: Props) => {
   useTrackPageView();
 
@@ -131,6 +183,8 @@ export const BlueprintManagerRoot = (props: Props) => {
   const {blueprintManagerName} = useParams<{blueprintManagerName: string}>();
 
   const [config, setConfig] = useState<string>('');
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorTarget, setEditorTarget] = useState<BlueprintKey | null>(null);
 
   useDocumentTitle(`Blueprint Manager: ${blueprintManagerName}`);
 
@@ -160,6 +214,22 @@ export const BlueprintManagerRoot = (props: Props) => {
     const jsonSchema = JSON.parse(blueprintManager.schema.schema);
     return jsonSchemaToConfigSchema(jsonSchema);
   }, [blueprintManager?.schema]);
+
+  const openEditorForBlueprint = (blueprint: Blueprint) => {
+    setConfig(JSON.parse(blueprint.blob.value));
+    setEditorTarget(blueprint.key);
+    setIsEditorOpen(true);
+  };
+
+  const openEditorForNewBlueprint = () => {
+    setConfig('');
+    setEditorTarget(null);
+    setIsEditorOpen(true);
+  };
+
+  const saveConfig = () => {
+    setIsEditorOpen(false);
+  };
 
   return (
     <Page style={{height: '100%', overflow: 'hidden'}}>
@@ -206,13 +276,95 @@ export const BlueprintManagerRoot = (props: Props) => {
           }
 
           return (
-            <ConfigEditorWithSchema
-              onConfigChange={setConfig}
-              config={config}
-              configSchema={jsonSchemaConfigSchema}
-              isLoading={false}
-              identifier="foo"
-            />
+            <div style={{height: '100%', display: 'flex'}}>
+              <SplitPanelContainer
+                identifier="blueprint-manager-details"
+                firstInitialPercent={50}
+                firstMinSize={400}
+                first={
+                  <Box>
+                    <Box
+                      flex={{
+                        direction: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                      padding={{vertical: 12, horizontal: 16}}
+                    >
+                      <Subheading>{blueprintManager?.blueprints.length} Blueprints</Subheading>
+                      <Button
+                        intent="primary"
+                        icon={<Icon name="add" />}
+                        onClick={() => openEditorForNewBlueprint()}
+                      >
+                        Create new Blueprint
+                      </Button>
+                    </Box>
+                    <Table>
+                      <thead>
+                        <tr>
+                          <th>Blueprint Name</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {blueprintManager?.blueprints.map((blueprint) => {
+                          return (
+                            <tr key={blueprint.id}>
+                              <td>
+                                <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+                                  <Box
+                                    flex={{direction: 'row', alignItems: 'center', gap: 4}}
+                                    style={{maxWidth: '100%'}}
+                                  >
+                                    <Icon name="add_circle" color={Colors.accentBlue()} />
+                                    <div
+                                      style={{
+                                        maxWidth: '100%',
+                                        whiteSpace: 'nowrap',
+                                        fontWeight: 500,
+                                      }}
+                                    >
+                                      {blueprint.key.identifierWithinManager}
+                                    </div>
+                                  </Box>
+                                  <Button
+                                    icon={<Icon name="edit" />}
+                                    onClick={() => openEditorForBlueprint(blueprint)}
+                                  />
+                                </Box>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </Table>
+                    <EditBlueprintDialog
+                      isOpen={isEditorOpen}
+                      onClose={() => setIsEditorOpen(false)}
+                      configSchema={jsonSchemaConfigSchema}
+                      config={config}
+                      setConfig={setConfig}
+                      title={
+                        editorTarget
+                          ? `Edit Blueprint ${editorTarget?.identifierWithinManager}`
+                          : 'Create new Blueprint'
+                      }
+                      onSave={saveConfig}
+                    />
+                  </Box>
+                }
+                second={
+                  <Box padding={{bottom: 48}} style={{overflowY: 'auto'}}>
+                    <Box
+                      flex={{gap: 4, direction: 'column'}}
+                      margin={{left: 24, right: 12, vertical: 16}}
+                    >
+                      <Heading>{blueprintManager?.name}</Heading>
+                    </Box>
+                  </Box>
+                }
+              />
+            </div>
           );
         }}
       </Loading>

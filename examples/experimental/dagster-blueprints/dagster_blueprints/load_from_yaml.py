@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence, Type, Union, cast
 
+import github3
 from dagster import (
     Definitions,
     _check as check,
@@ -127,9 +128,10 @@ class YamlBlueprintsLoader(BlueprintManager):
 
     path: Path
     per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]]
+    name: Optional[str] = None
 
     def get_name(self) -> str:
-        return self.path.name
+        return self.name or self.path.name
 
     def load_blueprints(self) -> Sequence[Blueprint]:
         return load_blueprints_from_yaml(
@@ -139,3 +141,10 @@ class YamlBlueprintsLoader(BlueprintManager):
     def model_json_schema(self) -> Dict[str, Any]:
         """Returns a JSON schema for the model or models that the loader is responsible for loading."""
         return json_schema_from_type(self.per_file_blueprint_type)
+
+    def add_blueprint(self, identifier: object, blob: str) -> None:
+        user_access_token = ""
+        gh = github3.GitHub(token=user_access_token)
+
+        repo = gh.repository("benpankow", "dagster-blueprints")
+        print(repo)
