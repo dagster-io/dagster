@@ -100,6 +100,9 @@ from .types import (
     JobSubsetSnapshotArgs,
     ListRepositoriesResponse,
     LoadableRepositorySymbol,
+    ModifyBlueprintAction,
+    ModifyBlueprintReply,
+    ModifyBlueprintRequest,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
@@ -534,6 +537,41 @@ class DagsterApiServer(DagsterApiServicer):
             serialized_server_utilization_metrics=json.dumps(_UTILIZATION_METRICS)
             if self._enable_metrics
             else "",
+        )
+
+    def ModifyBlueprint(
+        self, request: api_pb2.ModifyBlueprintRequest, _context: grpc.ServicerContext
+    ) -> api_pb2.ModifyBlueprintReply:
+        serializable_error_info = None
+        url = None
+        try:
+            modify_request = deserialize_value(
+                request.serialized_modify_blueprint_request, ModifyBlueprintRequest
+            )
+            definition = self._get_repo_for_origin(modify_request.origin)
+            managers = definition.get_blueprint_managers()
+            manager_key = modify_request.target.manager_name
+            manager = managers.get(manager_key)
+            if not manager:
+                raise DagsterUserCodeUnreachableError(
+                    f"Could not find a blueprint manager with key {manager_key}"
+                )
+
+            if modify_request.action == ModifyBlueprintAction.CREATE:
+                url = manager.add_blueprint(
+                    modify_request.target.identifier_within_manager,
+                    check.not_none(modify_request.blob),
+                )
+            else:
+                raise DagsterUserCodeUnreachableError(f"Unsupported action {modify_request.action}")
+
+        except Exception:
+            serializable_error_info = serializable_error_info_from_exc_info(sys.exc_info())
+
+        return api_pb2.ModifyBlueprintReply(
+            serialized_modify_blueprint_reply=serialize_value(
+                ModifyBlueprintReply(url=url or "", serializable_error_info=serializable_error_info)
+            ),
         )
 
     def StreamingPing(

@@ -17,6 +17,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import serialize_value
+from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .__generated__ import DagsterApiStub, api_pb2
@@ -28,6 +29,8 @@ from .types import (
     ExecutionPlanSnapshotArgs,
     ExternalScheduleExecutionArgs,
     JobSubsetSnapshotArgs,
+    ModifyBlueprintReply,
+    ModifyBlueprintRequest,
     PartitionArgs,
     PartitionNamesArgs,
     PartitionSetExecutionParamArgs,
@@ -581,6 +584,18 @@ class DagsterGrpcClient:
         status_number = response.status
 
         return health_pb2.HealthCheckResponse.ServingStatus.Name(status_number)
+
+    def create_blueprint(self, request: ModifyBlueprintRequest) -> ModifyBlueprintReply:
+        check.inst_param(request, "request", ModifyBlueprintRequest)
+        res = cast(
+            api_pb2.ModifyBlueprintReply,
+            self._query(
+                "ModifyBlueprint",
+                api_pb2.ModifyBlueprintRequest,
+                serialized_modify_blueprint_request=serialize_value(request),
+            ),
+        )
+        return deserialize_value(res.serialized_modify_blueprint_reply, ModifyBlueprintReply)
 
 
 @contextmanager

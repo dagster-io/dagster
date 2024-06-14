@@ -31,6 +31,7 @@ service DagsterApi {
   rpc GetCurrentImage (Empty) returns (GetCurrentImageReply) {}
   rpc GetCurrentRuns (Empty) returns (GetCurrentRunsReply) {}
   rpc ReloadCode (ReloadCodeRequest) returns (ReloadCodeReply) {}
+  rpc ModifyBlueprint (ModifyBlueprintRequest) returns (ModifyBlueprintReply) {}
 }
 
 message Empty {}
@@ -203,4 +204,13 @@ message ReloadCodeRequest {
 
 message ReloadCodeReply {
   string serialized_error = 2;
+}
+
+
+message ModifyBlueprintRequest {
+  string serialized_modify_blueprint_request = 1;
+}
+
+message ModifyBlueprintReply {
+  string serialized_modify_blueprint_reply = 1;
 }

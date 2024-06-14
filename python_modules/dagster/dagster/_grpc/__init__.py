@@ -34,6 +34,8 @@ from .types import (
     ListRepositoriesInput as ListRepositoriesInput,
     ListRepositoriesResponse as ListRepositoriesResponse,
     LoadableRepositorySymbol as LoadableRepositorySymbol,
+    ModifyBlueprintReply as ModifyBlueprintReply,
+    ModifyBlueprintRequest as ModifyBlueprintRequest,
     NotebookPathArgs as NotebookPathArgs,
     PartitionArgs as PartitionArgs,
     PartitionNamesArgs as PartitionNamesArgs,

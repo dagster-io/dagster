@@ -1,4 +1,5 @@
 import base64
+import enum
 import zlib
 from typing import AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence
 
@@ -10,7 +11,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance.ref import InstanceRef
 from dagster._core.origin import JobPythonOrigin, get_python_environment_entry_point
-from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
+from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME, BlueprintKey
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
     RemoteJobOrigin,
@@ -806,6 +807,64 @@ class GetCurrentRunsResult(
         return super(GetCurrentRunsResult, cls).__new__(
             cls,
             current_runs=check.list_param(current_runs, "current_runs", of_type=str),
+            serializable_error_info=check.opt_inst_param(
+                serializable_error_info, "serializable_error_info", SerializableErrorInfo
+            ),
+        )
+
+
+@whitelist_for_serdes
+class ModifyBlueprintAction(enum.Enum):
+    CREATE = "CREATE"
+    DELETE = "DELETE"
+    UPDATE = "UPDATE"
+
+
+@whitelist_for_serdes
+class ModifyBlueprintRequest(
+    NamedTuple(
+        "_ModifyBlueprintRequest",
+        [
+            ("origin", RemoteRepositoryOrigin),
+            ("instance_ref", Optional[InstanceRef]),
+            ("action", ModifyBlueprintAction),
+            ("target", BlueprintKey),
+            ("blob", Optional[str]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        origin: RemoteRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        action: ModifyBlueprintAction,
+        target: BlueprintKey,
+        blob: Optional[str] = None,
+    ):
+        return super(ModifyBlueprintRequest, cls).__new__(
+            cls,
+            origin=check.inst_param(origin, "origin", RemoteRepositoryOrigin),
+            instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            action=check.inst_param(action, "action", ModifyBlueprintAction),
+            target=check.inst_param(target, "target", BlueprintKey),
+            blob=check.opt_str_param(blob, "blob"),
+        )
+
+
+@whitelist_for_serdes
+class ModifyBlueprintReply(
+    NamedTuple(
+        "_ModifyBlueprintResult",
+        [
+            ("url", str),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(cls, url: str, serializable_error_info: Optional[SerializableErrorInfo]):
+        return super(ModifyBlueprintReply, cls).__new__(
+            cls,
+            url=check.str_param(url, "url"),
             serializable_error_info=check.opt_inst_param(
                 serializable_error_info, "serializable_error_info", SerializableErrorInfo
             ),

@@ -2640,6 +2640,7 @@ export type Mutation = {
   __typename: 'Mutation';
   addDynamicPartition: AddDynamicPartitionResult;
   cancelPartitionBackfill: CancelBackfillResult;
+  createBlueprint: Scalars['String']['output'];
   deleteConcurrencyLimit: Scalars['Boolean']['output'];
   deleteDynamicPartitions: DeleteDynamicPartitionsResult;
   deletePipelineRun: DeletePipelineRunResult;
@@ -2683,6 +2684,12 @@ export type MutationAddDynamicPartitionArgs = {
 
 export type MutationCancelPartitionBackfillArgs = {
   backfillId: Scalars['String']['input'];
+};
+
+export type MutationCreateBlueprintArgs = {
+  blob: Scalars['String']['input'];
+  blueprintManagerSelector: BlueprintManagerSelector;
+  identifierWithinManager: Scalars['String']['input'];
 };
 
 export type MutationDeleteConcurrencyLimitArgs = {
@@ -10150,6 +10157,10 @@ export const buildMutation = (
         : relationshipsToOmit.has('CancelBackfillSuccess')
         ? ({} as CancelBackfillSuccess)
         : buildCancelBackfillSuccess({}, relationshipsToOmit),
+    createBlueprint:
+      overrides && overrides.hasOwnProperty('createBlueprint')
+        ? overrides.createBlueprint!
+        : 'repudiandae',
     deleteConcurrencyLimit:
       overrides && overrides.hasOwnProperty('deleteConcurrencyLimit')
         ? overrides.deleteConcurrencyLimit!

@@ -1,13 +1,15 @@
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Union, cast
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.selector import BlueprintManagerSelector
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.nux import get_has_seen_nux, set_nux_seen
 from dagster._core.workspace.permissions import Permissions
 from dagster._daemon.asset_daemon import set_auto_materialize_paused
 
+from dagster_graphql.implementation.blueprint_manager import create_blueprint
 from dagster_graphql.implementation.execution.backfill import (
     cancel_partition_backfill,
     create_and_launch_partition_backfill,
@@ -63,6 +65,7 @@ from ..errors import (
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import (
     GrapheneAssetKeyInput,
+    GrapheneBlueprintManagerSelector,
     GrapheneExecutionParams,
     GrapheneLaunchBackfillParams,
     GrapheneReexecutionParams,
@@ -917,6 +920,30 @@ class GrapheneFreeConcurrencySlotsMutation(graphene.Mutation):
         return True
 
 
+class GrapheneCreateBlueprintMutation(graphene.Mutation):
+    Output = graphene.NonNull(graphene.String)
+
+    class Meta:
+        name = "CreateBlueprintMutation"
+
+    class Arguments:
+        blob = graphene.NonNull(graphene.String)
+        blueprintManagerSelector = graphene.NonNull(GrapheneBlueprintManagerSelector)
+        identifierWithinManager = graphene.NonNull(graphene.String)
+
+    @capture_error
+    def mutate(self, graphene_info, **kwargs) -> str:
+        blueprint_manager_selector = BlueprintManagerSelector.from_graphql_input(
+            kwargs.get("blueprintManagerSelector")
+        )
+        blob = cast(str, kwargs.get("blob"))
+        identifier_within_manager = cast(str, kwargs.get("identifierWithinManager"))
+
+        return create_blueprint(
+            graphene_info, blueprint_manager_selector, identifier_within_manager, blob
+        )
+
+
 class GrapheneFreeConcurrencySlotsForRunMutation(graphene.Mutation):
     """Frees the concurrency slots occupied by a specific run."""
 
@@ -976,3 +1003,5 @@ class GrapheneMutation(graphene.ObjectType):
     deleteConcurrencyLimit = GrapheneDeleteConcurrencyLimitMutation.Field()
     freeConcurrencySlotsForRun = GrapheneFreeConcurrencySlotsForRunMutation.Field()
     freeConcurrencySlots = GrapheneFreeConcurrencySlotsMutation.Field()
+
+    createBlueprint = GrapheneCreateBlueprintMutation.Field()

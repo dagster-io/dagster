@@ -3701,6 +3701,11 @@ type Mutation {
   deleteConcurrencyLimit(concurrencyKey: String!): Boolean!
   freeConcurrencySlotsForRun(runId: String!): Boolean!
   freeConcurrencySlots(runId: String!, stepKey: String): Boolean!
+  createBlueprint(
+    blob: String!
+    blueprintManagerSelector: BlueprintManagerSelector!
+    identifierWithinManager: String!
+  ): String!
 }
 
 input ReexecutionParams {
