@@ -8,8 +8,44 @@ from dagster._core.definitions.metadata.source_code import (
     CodeReferencesMetadataValue,
     LocalFileCodeReference,
 )
+from dagster._core.remote_representation.external_data import BlueprintKey
 
 from .blueprint import Blueprint, BlueprintDefinitions
+
+
+def attach_blueprint_key_to_definitions(
+    blueprint_key: BlueprintKey, defs: BlueprintDefinitions
+) -> BlueprintDefinitions:
+    """Attaches the key of the blueprint to all assets in the output blueprint definitions."""
+    assets_defs = defs.assets or []
+    new_assets_defs = []
+
+    for assets_def in assets_defs:
+        if not isinstance(assets_def, AssetsDefinition):
+            new_assets_defs.append(assets_def)
+            continue
+
+        new_tags_by_key = {}
+        for key in assets_def.tags_by_key.keys():
+            new_tags_by_key[key] = {
+                **assets_def.tags_by_key[key],
+                **{"dagster/blueprint_key": blueprint_key.to_string()},
+            }
+
+        new_assets_defs.append(
+            AssetsDefinition.dagster_internal_init(
+                **{
+                    **assets_def.get_attributes_dict(),
+                    **{
+                        "specs": [
+                            spec._replace(tags=new_tags_by_key[spec.key])
+                            for spec in assets_def.specs
+                        ]
+                    },
+                }
+            )
+        )
+    return defs._replace(assets=new_assets_defs)
 
 
 def attach_code_references_to_definitions(
@@ -114,8 +150,11 @@ def load_defs_from_blueprint_manager(manager: BlueprintManager) -> Definitions:
     blueprints = manager.load_blueprints()
 
     def_sets_with_code_references = [
-        attach_code_references_to_definitions(
-            blueprint, blueprint.build_defs_add_context_to_errors()
+        attach_blueprint_key_to_definitions(
+            BlueprintKey(manager.get_name(), blueprint.get_identifier()),
+            attach_code_references_to_definitions(
+                blueprint, blueprint.build_defs_add_context_to_errors()
+            ),
         )
         for blueprint in blueprints
     ]

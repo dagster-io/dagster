@@ -1156,6 +1156,9 @@ class BlueprintKey(NamedTuple):
     manager_name: str
     identifier_within_manager: str
 
+    def to_string(self):
+        return f"{self.manager_name}:{self.identifier_within_manager}"
+
 
 @whitelist_for_serdes
 class ExternalBlueprint(NamedTuple):

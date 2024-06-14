@@ -60,7 +60,7 @@ import {
   AssetStorageKindTag,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
-import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
+import {CodeReferencesMetadataEntry, DefinitionTag, IntMetadataEntry} from '../graphql/types';
 import {useLaunchPadHooks} from '../launchpad/LaunchpadHooksContext';
 import {isCanonicalRowCountMetadataEntry} from '../metadata/MetadataEntry';
 import {
@@ -79,6 +79,9 @@ import {numberFormatter} from '../ui/formatters';
 import {buildTagString} from '../ui/tagAsString';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
+
+const BLUEPRINT_KEY_TAG = 'dagster/blueprint_key';
+export const isCanonicalBlueprintKeyTag = (tag: DefinitionTag) => tag.key === BLUEPRINT_KEY_TAG;
 
 export const AssetNodeOverview = ({
   assetNode,
@@ -231,7 +234,16 @@ export const AssetNodeOverview = ({
   );
 
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
-  const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
+  const blueprintKeyTag = assetNode.tags?.find(isCanonicalBlueprintKeyTag);
+
+  const [blueprintManagerName, blueprintIdentifier] = blueprintKeyTag?.value.split(':') || [
+    null,
+    null,
+  ];
+
+  const filteredTags = assetNode.tags?.filter(
+    (tag) => !isCanonicalStorageKindTag(tag) && !isCanonicalBlueprintKeyTag(tag),
+  );
   const relationIdentifierMetadata = assetNode.metadataEntries?.find(
     isCanonicalRelationIdentifierEntry,
   );
@@ -251,20 +263,34 @@ export const AssetNodeOverview = ({
         </Tag>
       </AttributeAndValue>
 
-      <AttributeAndValue label="Code location">
-        <Box flex={{direction: 'column'}}>
-          <AssetDefinedInMultipleReposNotice
-            assetKey={assetNode.assetKey}
-            loadedFromRepo={repoAddress}
-          />
-          <RepositoryLink repoAddress={repoAddress} />
-          {location && (
-            <Caption color={Colors.textLighter()}>
-              Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
-            </Caption>
-          )}
-        </Box>
-      </AttributeAndValue>
+      <Box flex={{direction: 'row', justifyContent: 'space-between', gap: 12}}>
+        <AttributeAndValue label="Code location">
+          <Box flex={{direction: 'column'}}>
+            <AssetDefinedInMultipleReposNotice
+              assetKey={assetNode.assetKey}
+              loadedFromRepo={repoAddress}
+            />
+            <RepositoryLink repoAddress={repoAddress} />
+            {location && (
+              <Caption color={Colors.textLighter()}>
+                Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
+              </Caption>
+            )}
+          </Box>
+        </AttributeAndValue>
+        {blueprintKeyTag && (
+          <AttributeAndValue label="Blueprint">
+            <Link
+              to={workspacePathFromAddress(
+                repoAddress,
+                `/blueprint-managers/${blueprintManagerName}`,
+              )}
+            >
+              {blueprintIdentifier}
+            </Link>
+          </AttributeAndValue>
+        )}
+      </Box>
       <AttributeAndValue label="Owners">
         {assetNode.owners &&
           assetNode.owners.length > 0 &&

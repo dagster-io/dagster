@@ -41,7 +41,7 @@ class GrapheneBlueprint(graphene.ObjectType):
         name = "Blueprint"
 
     def __init__(self, blueprint: ExternalBlueprint):
-        self.id = f"{blueprint.key.manager_name}.{blueprint.key.identifier_within_manager}"
+        self.id = blueprint.key.to_string()
         self.key = GrapheneBlueprintKey(
             manager_name=blueprint.key.manager_name,
             identifier_within_manager=blueprint.key.identifier_within_manager,
