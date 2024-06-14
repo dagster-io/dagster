@@ -67,7 +67,6 @@ export const InstanceBackfills = () => {
     InstanceHealthForBackfillsQuery,
     InstanceHealthForBackfillsQueryVariables
   >(INSTANCE_HEALTH_FOR_BACKFILLS_QUERY);
-  useBlockTraceOnQueryResult(queryData, 'InstanceHealthForBackfillsQuery');
 
   const [statusState, setStatusState] = useQueryPersistedState<Set<BulkActionStatus>>({
     encode: (vals) => ({status: vals.size ? Array.from(vals).join(',') : undefined}),
@@ -105,6 +104,7 @@ export const InstanceBackfills = () => {
         ? result.partitionBackfillsOrError.results
         : [],
   });
+  useBlockTraceOnQueryResult(queryResult, 'InstanceBackfillsQuery'); // this is the main page content
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {loading, data} = queryResult;
