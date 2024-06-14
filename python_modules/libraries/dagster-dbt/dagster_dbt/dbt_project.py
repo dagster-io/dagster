@@ -85,7 +85,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
         (
             DbtCliResource(project_dir=project)
-            .cli(["deps", "--quiet"], target_path=project.target_path)
+            .cli(["deps", "--quiet"], target_path=project.output_path)
             .wait()
         )
 
@@ -96,7 +96,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
             DbtCliResource(project_dir=project)
             .cli(
                 self._generate_cli_args,
-                target_path=project.target_path,
+                target_path=project.output_path,
             )
             .wait()
         )
@@ -121,8 +121,9 @@ class DbtProject(IHaveNew):
     Args:
         project_dir (Union[str, Path]):
             The directory of the dbt project.
-        target_path (Union[str, Path]):
+        output_path (Union[str, Path]):
             The path, relative to the project directory, to output artifacts.
+            In a dbt project, it corresponds to the target path.
             Default: "target"
         target (Optional[str]):
             The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
@@ -172,19 +173,19 @@ class DbtProject(IHaveNew):
     """
 
     project_dir: Path
-    target_path: Path
+    output_path: Path
     target: Optional[str]
     manifest_path: Path
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
     has_uninstalled_deps: bool
-    manifest_preparer: DbtManifestPreparer
+    preparer: DbtManifestPreparer
 
     def __new__(
         cls,
         project_dir: Union[Path, str],
         *,
-        target_path: Union[Path, str] = Path("target"),
+        output_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
@@ -199,7 +200,7 @@ class DbtProject(IHaveNew):
 
         manifest_preparer = DagsterDbtManifestPreparer()
 
-        manifest_path = project_dir.joinpath(target_path, "manifest.json")
+        manifest_path = project_dir.joinpath(output_path, "manifest.json")
 
         dependencies_path = project_dir.joinpath("dependencies.yml")
         packages_path = project_dir.joinpath("packages.yml")
@@ -223,13 +224,13 @@ class DbtProject(IHaveNew):
         return super().__new__(
             cls,
             project_dir=project_dir,
-            target_path=target_path,
+            output_path=output_path,
             target=target,
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
-            manifest_preparer=manifest_preparer,
+            preparer=preparer,
         )
 
     @public
