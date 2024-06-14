@@ -2179,7 +2179,7 @@ def test_asset_spec_skippable():
 
 
 def test_construct_assets_definition_no_args() -> None:
-    with pytest.raises(CheckError, match="Must provide node_def if not providing specs"):
+    with pytest.raises(CheckError, match="If specs are not provided, a node_def must be provided"):
         AssetsDefinition()
 
 
