@@ -667,24 +667,12 @@ def _get_execution_plan_from_run(
         else None
     )
 
-    # Rebuild from snapshot if able and selection has not changed
-    if (
-        execution_plan_snapshot is not None
-        and execution_plan_snapshot.can_reconstruct_plan
-        and job.resolved_op_selection == dagster_run.resolved_op_selection
-        and job.asset_selection == dagster_run.asset_selection
-        and job.asset_check_selection == dagster_run.asset_check_selection
-    ):
-        return ExecutionPlan.rebuild_from_snapshot(
-            dagster_run.job_name,
-            execution_plan_snapshot,
-        )
-
     return create_execution_plan(
         job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
+        tags=dagster_run.tags,
         repository_load_data=(
             execution_plan_snapshot.repository_load_data if execution_plan_snapshot else None
         ),

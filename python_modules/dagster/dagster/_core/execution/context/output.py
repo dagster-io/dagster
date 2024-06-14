@@ -824,24 +824,6 @@ def get_output_context(
     )
 
 
-def step_output_version(
-    job_def: "JobDefinition",
-    execution_plan: "ExecutionPlan",
-    resolved_run_config: "ResolvedRunConfig",
-    step_output_handle: "StepOutputHandle",
-) -> Optional[str]:
-    from dagster._core.execution.resolve_versions import resolve_step_output_versions
-
-    step_output_versions = resolve_step_output_versions(
-        job_def, execution_plan, resolved_run_config
-    )
-    return (
-        step_output_versions[step_output_handle]
-        if step_output_handle in step_output_versions
-        else None
-    )
-
-
 @deprecated_param(
     param="metadata",
     breaking_version="2.0",
