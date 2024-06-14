@@ -822,7 +822,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return check.not_none(self._node_def, "This AssetsDefinition has no node_def")
 
     @public
-    @property
+    @cached_property
     def asset_deps(self) -> Mapping[AssetKey, AbstractSet[AssetKey]]:
         """Maps assets that are produced by this definition to assets that they depend on. The
         dependencies can be either "internal", meaning that they refer to other assets that are
