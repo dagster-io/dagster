@@ -578,10 +578,6 @@ class AssetLayer(NamedTuple):
             )
         return next(iter(assets_def.keys_by_output_name.values()))
 
-    def asset_check_specs_for_node(self, node_handle: NodeHandle) -> Sequence[AssetCheckSpec]:
-        assets_def_for_node = self.assets_def_for_node(node_handle)
-        return list(assets_def_for_node.check_specs) if assets_def_for_node else []
-
     def get_spec_for_asset_check(
         self, node_handle: NodeHandle, asset_check_key: AssetCheckKey
     ) -> Optional[AssetCheckSpec]:
