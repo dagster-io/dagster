@@ -42,7 +42,8 @@ def _get_instigation_logger_if_log_storage_enabled(
         yield default_logger
 
 
-MAX_ASSET_BACKFILL_RETRIES = int(os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES", "3"))
+def _get_max_asset_backfill_retries():
+    return int(os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES", "5"))
 
 
 def execute_backfill_iteration(
@@ -111,13 +112,13 @@ def execute_backfill_jobs(
                         instance,
                     )
             except Exception as e:
+                backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
                 if (
                     backfill.is_asset_backfill
                     and backfill.status == BulkActionStatus.REQUESTED
-                    and backfill.failure_count < MAX_ASSET_BACKFILL_RETRIES
+                    and backfill.failure_count < _get_max_asset_backfill_retries()
                     and _is_retryable_asset_backfill_error(e)
                 ):
-                    backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
                     if isinstance(
                         e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)
                     ):
@@ -133,7 +134,7 @@ def execute_backfill_jobs(
                             )
                             instance.update_backfill(
                                 backfill.with_status(BulkActionStatus.REQUESTED).with_error(
-                                    error_info  # Make sure UI can still display error info on a requested backfill
+                                    error_info
                                 )
                             )
                     else:
@@ -144,9 +145,7 @@ def execute_backfill_jobs(
                         )
                         instance.update_backfill(
                             backfill.with_status(BulkActionStatus.REQUESTED)
-                            .with_error(
-                                error_info  # Make sure UI can still display error info on a requested backfill
-                            )
+                            .with_error(error_info)
                             .with_failure_count(backfill.failure_count + 1)
                         )
                 else:

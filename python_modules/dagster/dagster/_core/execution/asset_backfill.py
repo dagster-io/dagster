@@ -883,13 +883,13 @@ def execute_asset_backfill_iteration(
     )
 
     if backfill.status == BulkActionStatus.REQUESTED:
-        if backfill.in_progress_run_requests:
+        if backfill.submitting_run_requests:
             # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
             logger.warn(
-                f"Resuming previous backfill iteration and re-submitting {len(backfill.in_progress_run_requests)} runs."
+                f"Resuming previous backfill iteration and re-submitting {len(backfill.submitting_run_requests)} runs."
             )
             result = AssetBackfillIterationResult(
-                run_requests=backfill.in_progress_run_requests,
+                run_requests=backfill.submitting_run_requests,
                 backfill_data=previous_asset_backfill_data,
                 reserved_run_ids=backfill.reserved_run_ids,
             )
@@ -945,11 +945,15 @@ def execute_asset_backfill_iteration(
                 logger.info("Backfill was canceled mid-iteration, returning")
                 return
 
-            backfill = backfill.with_asset_backfill_data(
-                result.backfill_data,
-                dynamic_partitions_store=instance,
-                asset_graph=asset_graph,
-            ).with_failure_count(0)
+            backfill = (
+                backfill.with_asset_backfill_data(
+                    result.backfill_data,
+                    dynamic_partitions_store=instance,
+                    asset_graph=asset_graph,
+                )
+                .with_submitting_run_requests(result.run_requests, result.reserved_run_ids)
+                .with_failure_count(0)
+            )
 
             instance.update_backfill(backfill)
 
@@ -969,7 +973,7 @@ def execute_asset_backfill_iteration(
         # they have finished, so we don't try to retry them next iteration)
         # Refetch, in case the backfill was canceled in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-        updated_backfill = backfill.with_failure_count(0).with_in_progress_run_requests([], [])
+        updated_backfill = backfill.with_failure_count(0).with_submitting_run_requests([], [])
         if result.backfill_data.is_complete():
             # The asset backfill is complete when all runs to be requested have finished (success,
             # failure, or cancellation). Since the AssetBackfillData object stores materialization states

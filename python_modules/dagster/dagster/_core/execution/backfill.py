@@ -61,7 +61,7 @@ class PartitionBackfill(
             ("serialized_asset_backfill_data", Optional[str]),
             ("asset_backfill_data", Optional[AssetBackfillData]),
             ("failure_count", int),
-            ("in_progress_run_requests", Sequence[RunRequest]),
+            ("submitting_run_requests", Sequence[RunRequest]),
             ("reserved_run_ids", Sequence[str]),
         ],
     ),
@@ -84,7 +84,7 @@ class PartitionBackfill(
         serialized_asset_backfill_data: Optional[str] = None,
         asset_backfill_data: Optional[AssetBackfillData] = None,
         failure_count: Optional[int] = None,
-        in_progress_run_requests: Optional[Sequence[RunRequest]] = None,
+        submitting_run_requests: Optional[Sequence[RunRequest]] = None,
         reserved_run_ids: Optional[Sequence[str]] = None,
     ):
         check.invariant(
@@ -130,8 +130,8 @@ class PartitionBackfill(
                 asset_backfill_data, "asset_backfill_data", AssetBackfillData
             ),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
-            in_progress_run_requests=check.opt_sequence_param(
-                in_progress_run_requests, "in_progress_run_requests", of_type=RunRequest
+            submitting_run_requests=check.opt_sequence_param(
+                submitting_run_requests, "submitting_run_requests", of_type=RunRequest
             ),
             reserved_run_ids=check.opt_sequence_param(
                 reserved_run_ids, "reserved_run_ids", of_type=str
@@ -318,11 +318,11 @@ class PartitionBackfill(
         check.str_param(last_submitted_partition_name, "last_submitted_partition_name")
         return self._replace(last_submitted_partition_name=last_submitted_partition_name)
 
-    def with_in_progress_run_requests(
-        self, in_progress_run_requests: Sequence[RunRequest], reserved_run_ids: Sequence[str]
+    def with_submitting_run_requests(
+        self, submitting_run_requests: Sequence[RunRequest], reserved_run_ids: Sequence[str]
     ) -> "PartitionBackfill":
         return self._replace(
-            in_progress_run_requests=in_progress_run_requests,
+            submitting_run_requests=submitting_run_requests,
             reserved_run_ids=reserved_run_ids,
         )
 
