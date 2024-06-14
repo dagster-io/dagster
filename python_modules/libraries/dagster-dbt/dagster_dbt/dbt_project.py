@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import yaml
-from dagster._annotations import experimental, experimental_param, public
+from dagster._annotations import experimental, public
 from dagster._model import IHaveNew, dagster_model_custom
 from dagster._utils import run_with_concurrent_update_guard
 
@@ -23,29 +23,18 @@ def using_dagster_dev() -> bool:
 
 @experimental
 class DbtManifestPreparer:
-    """The abstract class of a preparer for a DbtProject representation.
+    """A dbt manifest represented by DbtProject."""
 
-    When implemented, this handler should provide an experience of:
-        * The behavior expected during development and at run time, in the `on_load` method.
-        * The implementation of the preparation process, in the `prepare` method.
-    """
-
-    @public
     def on_load(self, project: "DbtProject") -> None:
-        """Invoked in the `prepare` method of DbtProject, when DbtProject is instantiated with this preparer."""
+        """Invoked when DbtProject is instantiated with this preparer."""
 
-    @public
     def prepare(self, project: "DbtProject") -> None:
-        """Called explicitly to prepare the manifest for this project."""
+        """Called explictly to prepare the manifest for this the project."""
 
-    @public
     def using_dagster_dev(self) -> bool:
-        """Returns true if Dagster is running using the `dagster dev` command."""
         return using_dagster_dev()
 
-    @public
     def parse_on_load_opt_in(self) -> bool:
-        """Returns true if the environment variable "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD" is set and true."""
         return bool(os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"))
 
 
@@ -66,19 +55,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
         """
         self._generate_cli_args = generate_cli_args or ["parse", "--quiet"]
 
-    @public
     def on_load(self, project: "DbtProject"):
-        """Handle the preparation process during development and at run time.
-
-        The preparation process is executed if the condition are met,
-        i.e. if the self.using_dagster_dev or self.parse_on_load_opt_in is true.
-
-        This method returns successfully if a loadable manifest file at the expected path.
-
-        Args:
-            project (DbtProject):
-                The dbt project to be prepared.
-        """
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
             self.prepare(project)
             if not project.manifest_path.exists():
@@ -94,18 +71,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
                     f"when deploying'. Ensure manifest.json is created at build time."
                 )
 
-    @public
     def prepare(self, project: "DbtProject") -> None:
-        """Execute the preparation process.
-
-        The preparation process:
-            * pulls and installs the dependencies of the dbt project,
-            * parses the dbt project and created a loadable manifest file.
-
-        Args:
-            project (DbtProject):
-                The dbt project to be prepared.
-        """
         # guard against multiple Dagster processes trying to update this at the same time
         if project.has_uninstalled_deps:
             run_with_concurrent_update_guard(
@@ -125,7 +91,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
         (
             DbtCliResource(project_dir=project)
-            .cli(["deps", "--quiet"], target_path=project.output_path)
+            .cli(["deps", "--quiet"], target_path=project.target_path)
             .wait()
         )
 
@@ -136,14 +102,13 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
             DbtCliResource(project_dir=project)
             .cli(
                 self._generate_cli_args,
-                target_path=project.output_path,
+                target_path=project.target_path,
             )
             .wait()
         )
 
 
 @experimental
-@experimental_param(param="preparer")
 @dagster_model_custom
 class DbtProject(IHaveNew):
     """Representation of a dbt project and related settings that assist with managing manifest.json preparation.
@@ -160,9 +125,8 @@ class DbtProject(IHaveNew):
     Args:
         project_dir (Union[str, Path]):
             The directory of the dbt project.
-        output_path (Union[str, Path]):
+        target_path (Union[str, Path]):
             The path, relative to the project directory, to output artifacts.
-            In a dbt project, it corresponds to the target path.
             Default: "target"
         target (Optional[str]):
             The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
@@ -174,9 +138,8 @@ class DbtProject(IHaveNew):
             like when deploying using PEX.
         state_path (Optional[Union[str, Path]]):
             The path, relative to the project directory, to reference artifacts from another run.
-        preparer (Optional[DbtManifestPreparer]):
-            A object for ensuring that the dbt project is correctly prepared for Dagster.
-            By default, that means ensuring that dependencies and manifest.json are in the right state at
+        manifest_preparer (Optional[DbtManifestPreparer]):
+            A object for ensuring that manifest.json is in the right state at
             the right times.
             Default: DagsterDbtManifestPreparer
 
@@ -217,23 +180,23 @@ class DbtProject(IHaveNew):
     """
 
     project_dir: Path
-    output_path: Path
+    target_path: Path
     target: Optional[str]
     manifest_path: Path
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
     has_uninstalled_deps: bool
-    preparer: DbtManifestPreparer
+    manifest_preparer: DbtManifestPreparer
 
     def __new__(
         cls,
         project_dir: Union[Path, str],
         *,
-        output_path: Union[Path, str] = Path("target"),
+        target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
-        preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
+        manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ):
         project_dir = Path(project_dir)
         if not project_dir.exists():
@@ -243,7 +206,7 @@ class DbtProject(IHaveNew):
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
 
-        manifest_path = project_dir.joinpath(output_path, "manifest.json")
+        manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
         dependencies_path = project_dir.joinpath("dependencies.yml")
         packages_path = project_dir.joinpath("packages.yml")
@@ -267,25 +230,24 @@ class DbtProject(IHaveNew):
         return super().__new__(
             cls,
             project_dir=project_dir,
-            output_path=output_path,
+            target_path=target_path,
             target=target,
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
-            preparer=preparer,
+            manifest_preparer=manifest_preparer,
         )
 
     @public
-    def ensure_prepared(self) -> "DbtProject":
-        """Ensure that the preparation process is executed for a dbt project and
-        return the DbtProject object when complete.
+    def prepare(self) -> "DbtProject":
+        """Execute the preparation process for a dbt project and return the DbtProject object when complete.
 
         By default, the preparation process for DbtProject is the following:
             * During development, pull the dependencies and reload the manifest at run time to pick up any changes.
             * When deploying, expect a manifest that was created at build time to reduce start-up time.
 
-        The preparation process is ensured by `self.preparer`.
+        The preparation process is ensured by `self.manifest_preparer`.
 
         If this method returns successfully, `self.manifest_path` will point to a loadable manifest file.
 
@@ -326,6 +288,6 @@ class DbtProject(IHaveNew):
                 def my_dbt_asset():
                     ...
         """
-        if self.preparer:
-            self.preparer.on_load(self)
+        if self.manifest_preparer:
+            self.manifest_preparer.on_load(self)
         return self
