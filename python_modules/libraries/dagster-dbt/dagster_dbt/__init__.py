@@ -32,7 +32,7 @@ from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManife
 from .dbt_project import (
     DagsterDbtManifestPreparer as DagsterDbtManifestPreparer,
     DbtManifestPreparer as DbtManifestPreparer,
-    DbtProject as DbtProject
+    DbtProject as DbtProject,
 )
 from .errors import (
     DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
