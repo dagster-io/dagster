@@ -361,8 +361,6 @@ class AssetLayer(NamedTuple):
             from a unique input in the underlying graph to the associated AssetKey that it loads from.
         asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo], optional): A mapping
             from a unique output in the underlying graph to the associated AssetOutputInfo.
-        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]], optional): Records the upstream asset
-            keys for each asset key produced by this job.
     """
 
     asset_graph: "AssetGraph"
@@ -370,7 +368,6 @@ class AssetLayer(NamedTuple):
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
     asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
     check_key_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckKey]
-    asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
     dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
     # Used to store the asset key dependencies of op node handles within graph backed assets
     # See AssetLayer.downstream_dep_assets for more information
@@ -400,7 +397,6 @@ class AssetLayer(NamedTuple):
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
-        asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         partition_mappings_by_asset_dep: Dict[Tuple[NodeHandle, AssetKey], "PartitionMapping"] = {}
 
         (
@@ -424,9 +420,6 @@ class AssetLayer(NamedTuple):
         assets_defs_by_check_key: Dict[AssetCheckKey, "AssetsDefinition"] = {}
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
-            for key in assets_def.keys:
-                asset_deps[key] = assets_def.asset_deps[key]
-
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle, input_name)
                 asset_key_by_input[input_handle] = input_asset_key
@@ -529,7 +522,6 @@ class AssetLayer(NamedTuple):
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
             check_key_by_node_output_handle=check_key_by_output,
-            asset_deps=asset_deps,
             assets_defs_by_node_handle=assets_defs_by_node_handle,
             dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
             dep_asset_keys_by_node_output_handle=dep_asset_keys_by_node_output_handle,

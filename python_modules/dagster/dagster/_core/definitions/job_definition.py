@@ -1213,7 +1213,6 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         assets_defs_by_node_handle={},
         asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
         asset_info_by_node_output_handle={},
-        asset_deps={},
         dependency_node_handles_by_asset_key={},
         dep_asset_keys_by_node_output_handle={},
         partition_mappings_by_asset_dep={},
