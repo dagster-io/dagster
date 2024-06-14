@@ -1,15 +1,17 @@
 import logging
+import os
 import sys
 from contextlib import contextmanager
 from typing import Iterable, Mapping, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
-from dagster._core.execution.asset_backfill import (
-    DagsterBackfillFailedError,
-    execute_asset_backfill_iteration,
+from dagster._core.errors import (
+    DagsterCodeLocationLoadError,
+    DagsterError,
+    DagsterUserCodeUnreachableError,
 )
+from dagster._core.execution.asset_backfill import execute_asset_backfill_iteration
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.execution.job_backfill import execute_job_backfill_iteration
 from dagster._core.workspace.context import IWorkspaceProcessContext
@@ -40,7 +42,7 @@ def _get_instigation_logger_if_log_storage_enabled(
         yield default_logger
 
 
-MAX_BACKFILL_RETRIES = 3
+MAX_ASSET_BACKFILL_RETRIES = int(os.getenv("DAGSTER_MAX_ASSET_BACKFILL_RETRIES", "3"))
 
 
 def execute_backfill_iteration(
@@ -63,6 +65,16 @@ def execute_backfill_iteration(
     yield from execute_backfill_jobs(
         workspace_process_context, logger, backfill_jobs, debug_crash_flags
     )
+
+
+def _is_retryable_asset_backfill_error(e: Exception):
+    # Retry on issues reaching or loading user code
+    if isinstance(e, (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError)):
+        return True
+
+    # Framework errors and check errors are assumed to be invariants that are not
+    # transient or retryable
+    return not isinstance(e, (DagsterError, check.CheckError))
 
 
 def execute_backfill_jobs(
@@ -102,8 +114,8 @@ def execute_backfill_jobs(
                 if (
                     backfill.is_asset_backfill
                     and backfill.status == BulkActionStatus.REQUESTED
-                    and backfill.failure_count < MAX_BACKFILL_RETRIES
-                    and not isinstance(e, (check.CheckError, DagsterBackfillFailedError))
+                    and backfill.failure_count < MAX_ASSET_BACKFILL_RETRIES
+                    and _is_retryable_asset_backfill_error(e)
                 ):
                     backfill = check.not_none(instance.get_backfill(backfill.backfill_id))
                     if isinstance(

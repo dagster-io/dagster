@@ -6,6 +6,7 @@ from dagster._core.definitions import AssetKey
 from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.utils import check_valid_title
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.execution.bulk_actions import BulkActionType
@@ -31,7 +32,6 @@ class BulkActionStatus(Enum):
     FAILED = "FAILED"
     CANCELING = "CANCELING"
     CANCELED = "CANCELED"
-    #    RETRYING = "RETRYING"
 
     @staticmethod
     def from_graphql_input(graphql_str):
@@ -61,6 +61,8 @@ class PartitionBackfill(
             ("serialized_asset_backfill_data", Optional[str]),
             ("asset_backfill_data", Optional[AssetBackfillData]),
             ("failure_count", int),
+            ("in_progress_run_requests", Sequence[RunRequest]),
+            ("reserved_run_ids", Sequence[str]),
         ],
     ),
 ):
@@ -82,6 +84,8 @@ class PartitionBackfill(
         serialized_asset_backfill_data: Optional[str] = None,
         asset_backfill_data: Optional[AssetBackfillData] = None,
         failure_count: Optional[int] = None,
+        in_progress_run_requests: Optional[Sequence[RunRequest]] = None,
+        reserved_run_ids: Optional[Sequence[str]] = None,
     ):
         check.invariant(
             not (asset_selection and reexecution_steps),
@@ -125,8 +129,13 @@ class PartitionBackfill(
             asset_backfill_data=check.opt_inst_param(
                 asset_backfill_data, "asset_backfill_data", AssetBackfillData
             ),
-            # TODO MOVE THE RUN REQUESTS AND RUN IDS HERE RATHER THAN ASSET BACKFILL DATA
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
+            in_progress_run_requests=check.opt_sequence_param(
+                in_progress_run_requests, "in_progress_run_requests", of_type=RunRequest
+            ),
+            reserved_run_ids=check.opt_sequence_param(
+                reserved_run_ids, "reserved_run_ids", of_type=str
+            ),
         )
 
     @property
@@ -303,42 +312,18 @@ class PartitionBackfill(
 
     def with_status(self, status):
         check.inst_param(status, "status", BulkActionStatus)
-        return PartitionBackfill(
-            status=status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=self.last_submitted_partition_name,
-            error=self.error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=self.serialized_asset_backfill_data,
-            asset_backfill_data=self.asset_backfill_data,
-            title=self.title,
-            description=self.description,
-        )
+        return self._replace(status=status)
 
     def with_partition_checkpoint(self, last_submitted_partition_name):
         check.str_param(last_submitted_partition_name, "last_submitted_partition_name")
-        return PartitionBackfill(
-            status=self.status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=last_submitted_partition_name,
-            error=self.error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=self.serialized_asset_backfill_data,
-            asset_backfill_data=self.asset_backfill_data,
-            title=self.title,
-            description=self.description,
+        return self._replace(last_submitted_partition_name=last_submitted_partition_name)
+
+    def with_in_progress_run_requests(
+        self, in_progress_run_requests: Sequence[RunRequest], reserved_run_ids: Sequence[str]
+    ) -> "PartitionBackfill":
+        return self._replace(
+            in_progress_run_requests=in_progress_run_requests,
+            reserved_run_ids=reserved_run_ids,
         )
 
     def with_failure_count(self, new_failure_count: int):
@@ -346,23 +331,7 @@ class PartitionBackfill(
 
     def with_error(self, error):
         check.opt_inst_param(error, "error", SerializableErrorInfo)
-        return PartitionBackfill(
-            status=self.status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=self.last_submitted_partition_name,
-            error=error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=self.serialized_asset_backfill_data,
-            asset_backfill_data=self.asset_backfill_data,
-            title=self.title,
-            description=self.description,
-        )
+        return self._replace(error=error)
 
     def with_asset_backfill_data(
         self,
@@ -371,26 +340,15 @@ class PartitionBackfill(
         asset_graph: BaseAssetGraph,
     ) -> "PartitionBackfill":
         is_backcompat = self.serialized_asset_backfill_data is not None
-        return PartitionBackfill(
-            status=self.status,
-            backfill_id=self.backfill_id,
-            partition_set_origin=self.partition_set_origin,
-            partition_names=self.partition_names,
-            from_failure=self.from_failure,
-            reexecution_steps=self.reexecution_steps,
-            tags=self.tags,
-            backfill_timestamp=self.backfill_timestamp,
-            last_submitted_partition_name=self.last_submitted_partition_name,
-            error=self.error,
-            asset_selection=self.asset_selection,
-            serialized_asset_backfill_data=asset_backfill_data.serialize(
-                dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
-            )
-            if is_backcompat
-            else None,
-            asset_backfill_data=asset_backfill_data if not is_backcompat else None,
-            title=self.title,
-            description=self.description,
+        return self._replace(
+            serialized_asset_backfill_data=(
+                asset_backfill_data.serialize(
+                    dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
+                )
+                if is_backcompat
+                else None
+            ),
+            asset_backfill_data=(asset_backfill_data if not is_backcompat else None),
         )
 
     @classmethod

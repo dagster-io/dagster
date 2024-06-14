@@ -50,6 +50,7 @@ from dagster._core.definitions.selector import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
+    AssetBackfillIterationResult,
     AssetBackfillStatus,
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
@@ -240,9 +241,9 @@ def _single_backfill_iteration(
         backfill_id, backfill_data, asset_graph, instance
     )
 
-    backfill_data = result
+    backfill_data = result.backfill_data
 
-    for run_request in result.in_progress_run_requests or []:
+    for run_request in result.run_requests:
         asset_keys = run_request.asset_selection
         assert asset_keys is not None
 
@@ -256,7 +257,7 @@ def _single_backfill_iteration(
             partition_key=run_request.partition_key,
             instance=instance,
             failed_asset_keys=[],
-            tags=run_request.tags,
+            tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
         )
 
     return backfill_data
@@ -540,7 +541,7 @@ def execute_asset_backfill_iteration_consume_generator(
     asset_backfill_data: AssetBackfillData,
     asset_graph: RemoteAssetGraph,
     instance: DagsterInstance,
-) -> AssetBackfillData:
+) -> AssetBackfillIterationResult:
     counter = Counter()
     traced_counter.set(counter)
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
@@ -551,11 +552,10 @@ def execute_asset_backfill_iteration_consume_generator(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
-            run_tags={},
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
-            if isinstance(result, AssetBackfillData):
+            if isinstance(result, AssetBackfillIterationResult):
                 assert counter.counts().get("DagsterInstance.get_dynamic_partitions", 0) <= 1
                 return result
 
@@ -585,25 +585,28 @@ def run_backfill_to_completion(
 
     while not backfill_data.is_complete():
         iteration_count += 1
+
         result1 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
             asset_backfill_data=backfill_data,
             asset_graph=asset_graph,
             instance=instance,
         )
+
         # iteration_count += 1
-        assert result1 != backfill_data
+        assert result1.backfill_data != backfill_data
 
         # if nothing changes, nothing should happen in the iteration
         result2 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
-            asset_backfill_data=result1,
+            asset_backfill_data=result1.backfill_data,
             asset_graph=asset_graph,
             instance=instance,
         )
-        assert result2 == result1.with_in_progress_run_requests([], [])
+        assert result2.backfill_data == result1.backfill_data
+        assert result2.run_requests == []
 
-        backfill_data = result2
+        backfill_data = result2.backfill_data
 
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
             assert asset_partition not in fail_and_downstream_asset_partitions
@@ -624,7 +627,7 @@ def run_backfill_to_completion(
                         f" {parent_asset_partition},"
                     )
 
-        for run_request in result1.in_progress_run_requests:
+        for run_request in result1.run_requests:
             asset_keys = run_request.asset_selection
             assert asset_keys is not None
             requested_asset_partitions.update(
@@ -651,7 +654,7 @@ def run_backfill_to_completion(
                     if AssetKeyPartitionKey(asset_key, run_request.partition_key)
                     in fail_asset_partitions
                 ],
-                tags=run_request.tags,
+                tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
             )
 
         assert iteration_count <= len(requested_asset_partitions) + 1
@@ -1687,7 +1690,7 @@ def test_run_request_partition_order():
         "apple", asset_backfill_data, asset_graph, DagsterInstance.ephemeral()
     )
 
-    assert [run_request.partition_key for run_request in result.in_progress_run_requests] == [
+    assert [run_request.partition_key for run_request in result.run_requests] == [
         "2023-10-01",
         "2023-10-02",
         "2023-10-03",

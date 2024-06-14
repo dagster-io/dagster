@@ -65,10 +65,9 @@ from dagster._core.utils import make_new_run_id
 from dagster._core.workspace.context import BaseWorkspaceRequestContext, IWorkspaceProcessContext
 from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import deserialize_value, serialize_value
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .submit_asset_runs import submit_asset_runs_in_chunks
+from .submit_asset_runs import SubmitRunRequestChunkResult, submit_asset_runs_in_chunks
 
 if TYPE_CHECKING:
     from .backfill import PartitionBackfill
@@ -143,8 +142,6 @@ class AssetBackfillData(NamedTuple):
     requested_subset: AssetGraphSubset
     failed_and_downstream_subset: AssetGraphSubset
     backfill_start_time: TimestampWithTimezone
-    in_progress_run_requests: Optional[Sequence[RunRequest]] = None
-    reserved_run_ids: Optional[Sequence[str]] = None
 
     @property
     def backfill_start_timestamp(self) -> float:
@@ -164,14 +161,6 @@ class AssetBackfillData(NamedTuple):
 
     def with_requested_runs_for_target_roots(self, requested_runs_for_target_roots: bool):
         return self._replace(requested_runs_for_target_roots=requested_runs_for_target_roots)
-
-    def with_in_progress_run_requests(
-        self, in_progress_run_requests: Sequence[RunRequest], reserved_run_ids: Sequence[str]
-    ) -> "AssetBackfillData":
-        return self._replace(
-            in_progress_run_requests=in_progress_run_requests,
-            reserved_run_ids=reserved_run_ids,
-        )
 
     def is_complete(self) -> bool:
         """The asset backfill is complete when all runs to be requested have finished (success,
@@ -446,11 +435,6 @@ class AssetBackfillData(NamedTuple):
             ),
             latest_storage_id=storage_dict["latest_storage_id"],
             backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
-            in_progress_run_requests=[
-                deserialize_value(rr, RunRequest)  # double-serialization here is unfortunate
-                for rr in storage_dict.get("in_progress_run_requests")
-            ],
-            reserved_run_ids=storage_dict.get("reserved_run_ids", []),
         )
 
     @classmethod
@@ -603,10 +587,6 @@ class AssetBackfillData(NamedTuple):
             "serialized_failed_subset": self.failed_and_downstream_subset.to_storage_dict(
                 dynamic_partitions_store=dynamic_partitions_store, asset_graph=asset_graph
             ),
-            "in_progress_run_requests": [
-                serialize_value(rr) for rr in (self.in_progress_run_requests or [])
-            ],
-            "reserved_run_ids": [self.reserved_run_ids],
         }
         return json.dumps(storage_dict)
 
@@ -644,6 +624,12 @@ def _get_unloadable_location_names(context: IWorkspace, logger: logging.Logger) 
             unloadable_location_names.append(location_name)
 
     return unloadable_location_names
+
+
+class AssetBackfillIterationResult(NamedTuple):
+    run_requests: Sequence[RunRequest]
+    backfill_data: AssetBackfillData
+    reserved_run_ids: Sequence[str]
 
 
 def _get_requested_asset_partitions_from_run_requests(
@@ -692,67 +678,63 @@ def _submit_runs_and_update_backfill_in_chunks(
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
     backfill_id: str,
-    updated_asset_backfill_data: AssetBackfillData,
-    previous_asset_backfill_data: AssetBackfillData,
+    asset_backfill_iteration_result: AssetBackfillIterationResult,
     asset_graph: RemoteAssetGraph,
-    instance_queryer: CachingInstanceQueryer,
     logger: logging.Logger,
+    run_tags: Mapping[str, str],
+    instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[None]:
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 
-    run_requests = updated_asset_backfill_data.in_progress_run_requests or []
-    submitted_partitions = previous_asset_backfill_data.requested_subset
-
-    # Fetch backfill status
-    backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-    mid_iteration_cancel_requested = backfill.status != BulkActionStatus.REQUESTED
+    run_requests: Sequence[RunRequest] = asset_backfill_iteration_result.run_requests
 
     # Iterate through runs to request, submitting runs in chunks.
     # In between each chunk, check that the backfill is still marked as 'requested',
     # to ensure that no more runs are requested if the backfill is marked as canceled/canceling.
+
+    num_submitted = 0
+
     for submit_run_request_chunk_result in submit_asset_runs_in_chunks(
         run_requests=run_requests,
-        reserved_run_ids=updated_asset_backfill_data.reserved_run_ids,
+        reserved_run_ids=asset_backfill_iteration_result.reserved_run_ids,
         chunk_size=RUN_CHUNK_SIZE,
         instance=instance,
         workspace_process_context=workspace_process_context,
         asset_graph=asset_graph,
         debug_crash_flags={},
         logger=logger,
+        run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
     ):
-        if submit_run_request_chunk_result is None:
-            # allow the daemon to heartbeat
-            yield None
-            continue
+        if isinstance(submit_run_request_chunk_result, SubmitRunRequestChunkResult):
+            num_submitted += len(submit_run_request_chunk_result.chunk_submitted_runs)
 
-        requested_partitions_in_chunk = _get_requested_asset_partitions_from_run_requests(
-            [rr for (rr, _) in submit_run_request_chunk_result.chunk_submitted_runs],
-            asset_graph,
-            instance_queryer,
-        )
-        submitted_partitions = submitted_partitions | AssetGraphSubset.from_asset_partition_set(
-            set(requested_partitions_in_chunk), asset_graph=asset_graph
-        )
+            # Indicates that a chunk has finished
+            # Refetch, in case the backfill was requested for cancellation in the meantime
+            backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+            if backfill.status != BulkActionStatus.REQUESTED:
+                # Move the run requests that we have not gotten to yet out of the requested subset
+                unsubmitted_run_ruquests = run_requests[num_submitted:]
+                unsubmitted_asset_partitions = _get_requested_asset_partitions_from_run_requests(
+                    unsubmitted_run_ruquests,
+                    asset_graph,
+                    instance_queryer,
+                )
 
-        # Refetch, in case the backfill was requested for cancellation in the meantime
-        # Refetch backfill status
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
+                backfill = backfill.with_asset_backfill_data(
+                    asset_backfill_iteration_result.backfill_data.replace_requested_subset(
+                        asset_backfill_iteration_result.backfill_data.requested_subset
+                        - AssetGraphSubset.from_asset_partition_set(
+                            unsubmitted_asset_partitions, asset_graph=asset_graph
+                        )
+                    ),
+                    dynamic_partitions_store=instance,
+                    asset_graph=asset_graph,
+                )
+                instance.update_backfill(backfill)
 
-        if backfill.status != BulkActionStatus.REQUESTED:
-            mid_iteration_cancel_requested = True
-            break
+                break
 
-    if not mid_iteration_cancel_requested:
-        if submitted_partitions != updated_asset_backfill_data.requested_subset:
-            missing_partitions = list(
-                (
-                    updated_asset_backfill_data.requested_subset - submitted_partitions
-                ).iterate_asset_partitions()
-            )
-            check.failed(
-                "Did not submit run requests for all expected partitions. \n\nPartitions not"
-                f" submitted: {missing_partitions}",
-            )
+        yield None
 
     yield None
     return
@@ -901,27 +883,60 @@ def execute_asset_backfill_iteration(
     )
 
     if backfill.status == BulkActionStatus.REQUESTED:
-        if previous_asset_backfill_data.in_progress_run_requests:
+        if backfill.in_progress_run_requests:
+            # interrupted in the middle of executing run requests - re-construct the in-progress iteration result
             logger.warn(
-                f"Resuming previous backfill iteration and re-submitting {len(previous_asset_backfill_data.in_progress_run_requests)} runs."
+                f"Resuming previous backfill iteration and re-submitting {len(backfill.in_progress_run_requests)} runs."
             )
-            # interrupted in the middle of executing run requests - resume
-            updated_asset_backfill_data = previous_asset_backfill_data
+            result = AssetBackfillIterationResult(
+                run_requests=backfill.in_progress_run_requests,
+                backfill_data=previous_asset_backfill_data,
+                reserved_run_ids=backfill.reserved_run_ids,
+            )
         else:
-            # Re-generate the set of run requests to launch
+            # Generate a new set of run requests to launch
             result = None
+            previous_requested_subset = previous_asset_backfill_data.requested_subset
+
             for result in execute_asset_backfill_iteration_inner(
                 backfill_id=backfill.backfill_id,
                 asset_backfill_data=previous_asset_backfill_data,
                 instance_queryer=instance_queryer,
                 asset_graph=asset_graph,
-                run_tags=backfill.tags,
                 backfill_start_timestamp=backfill.backfill_timestamp,
                 logger=logger,
             ):
                 yield None
 
-            updated_asset_backfill_data = cast(AssetBackfillData, result)
+            if not isinstance(result, AssetBackfillIterationResult):
+                check.failed(
+                    "Expected execute_asset_backfill_iteration_inner to return an"
+                    " AssetBackfillIterationResult"
+                )
+
+            requested_partitions = _get_requested_asset_partitions_from_run_requests(
+                result.run_requests,
+                asset_graph,
+                instance_queryer,
+            )
+
+            requested_partitions_subset = (
+                previous_requested_subset
+                | AssetGraphSubset.from_asset_partition_set(
+                    set(requested_partitions), asset_graph=asset_graph
+                )
+            )
+
+            if requested_partitions_subset != result.backfill_data.requested_subset:
+                missing_partitions = list(
+                    (
+                        result.backfill_data.requested_subset - requested_partitions_subset
+                    ).iterate_asset_partitions()
+                )
+                check.failed(
+                    "Did not request runs for all expected partitions. \n\nPartitions not"
+                    f" requested: {missing_partitions}",
+                )
 
             # Write the updated asset backfill data with in progress run requests before we launch anything, for idempotency
             # Make sure we didn't get canceled in the interim
@@ -931,39 +946,31 @@ def execute_asset_backfill_iteration(
                 return
 
             backfill = backfill.with_asset_backfill_data(
-                updated_asset_backfill_data,
+                result.backfill_data,
                 dynamic_partitions_store=instance,
                 asset_graph=asset_graph,
             ).with_failure_count(0)
 
             instance.update_backfill(backfill)
 
-        if updated_asset_backfill_data.in_progress_run_requests:
+        if result.run_requests:
             yield from _submit_runs_and_update_backfill_in_chunks(
                 instance,
                 workspace_process_context,
                 backfill.backfill_id,
-                updated_asset_backfill_data,
-                previous_asset_backfill_data,
+                result,
                 asset_graph,
-                instance_queryer,
                 logger,
+                run_tags=backfill.tags,
+                instance_queryer=instance_queryer,
             )
 
         # Update the backfill with new asset backfill data (without the run requests now that
         # they have finished, so we don't try to retry them next iteration)
-        updated_asset_backfill_data = updated_asset_backfill_data.with_in_progress_run_requests(
-            [], []
-        )
-
         # Refetch, in case the backfill was canceled in the meantime
         backfill = cast(PartitionBackfill, instance.get_backfill(backfill.backfill_id))
-        updated_backfill = backfill.with_asset_backfill_data(
-            updated_asset_backfill_data,
-            dynamic_partitions_store=instance,
-            asset_graph=asset_graph,
-        ).with_failure_count(0)
-        if updated_asset_backfill_data.is_complete():
+        updated_backfill = backfill.with_failure_count(0).with_in_progress_run_requests([], [])
+        if result.backfill_data.is_complete():
             # The asset backfill is complete when all runs to be requested have finished (success,
             # failure, or cancellation). Since the AssetBackfillData object stores materialization states
             # per asset partition, the daemon continues to update the backfill data until all runs have
@@ -975,7 +982,7 @@ def execute_asset_backfill_iteration(
             f"Asset backfill {backfill.backfill_id} completed iteration with status {updated_backfill.status}."
         )
         logger.info(
-            f"Updated asset backfill data for {backfill.backfill_id}: {updated_asset_backfill_data}"
+            f"Updated asset backfill data for {backfill.backfill_id}: {result.backfill_data}"
         )
 
     elif backfill.status == BulkActionStatus.CANCELING:
@@ -1014,7 +1021,7 @@ def execute_asset_backfill_iteration(
 
         if not isinstance(updated_asset_backfill_data, AssetBackfillData):
             check.failed(
-                "Expected get_canceling_asset_backfill_iteration_data to return a AssetBackfillData"
+                "Expected get_canceling_asset_backfill_iteration_data to return an AssetBackfillData"
             )
 
         # Refetch, in case the backfill was forcibly marked as canceled in the meantime
@@ -1193,10 +1200,9 @@ def execute_asset_backfill_iteration_inner(
     asset_backfill_data: AssetBackfillData,
     asset_graph: RemoteAssetGraph,
     instance_queryer: CachingInstanceQueryer,
-    run_tags: Mapping[str, str],
     backfill_start_timestamp: float,
     logger: logging.Logger,
-) -> Iterable[Optional[AssetBackfillData]]:
+) -> Iterable[Optional[AssetBackfillIterationResult]]:
     """Core logic of a backfill iteration. Has no side effects.
 
     Computes which runs should be requested, if any, as well as updated bookkeeping about the status
@@ -1319,7 +1325,6 @@ def execute_asset_backfill_iteration_inner(
         run_requests = build_run_requests_with_backfill_policies(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
-            run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
             dynamic_partitions_store=instance_queryer,
         )
     else:
@@ -1335,7 +1340,7 @@ def execute_asset_backfill_iteration_inner(
         run_requests = build_run_requests(
             asset_partitions=asset_partitions_to_request,
             asset_graph=asset_graph,
-            run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
+            run_tags={},
         )
 
     if request_roots:
@@ -1354,10 +1359,12 @@ def execute_asset_backfill_iteration_inner(
         requested_subset=asset_backfill_data.requested_subset
         | AssetGraphSubset.from_asset_partition_set(set(asset_partitions_to_request), asset_graph),
         backfill_start_time=TimestampWithTimezone(backfill_start_timestamp, "UTC"),
-        in_progress_run_requests=run_requests,
+    )
+    yield AssetBackfillIterationResult(
+        run_requests,
+        updated_asset_backfill_data,
         reserved_run_ids=[make_new_run_id() for _ in range(len(run_requests))],
     )
-    yield updated_asset_backfill_data
 
 
 def can_run_with_parent(

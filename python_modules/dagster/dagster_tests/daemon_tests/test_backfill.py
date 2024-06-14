@@ -1581,7 +1581,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     assert updated_backfill.asset_backfill_data
 
     # backfill has the updated data that it will have once the runs finish submitting
-    assert len(updated_backfill.asset_backfill_data.in_progress_run_requests or []) == 2
+    assert len(updated_backfill.in_progress_run_requests or []) == 2
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
         == 2

@@ -14,7 +14,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.execution.asset_backfill import (
-    AssetBackfillData,
+    AssetBackfillIterationResult,
     execute_asset_backfill_iteration,
     execute_asset_backfill_iteration_inner,
 )
@@ -235,19 +235,19 @@ def _execute_asset_backfill_iteration_no_side_effects(
                 graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
-            run_tags=backfill.tags,
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
             pass
 
-    if not isinstance(result, AssetBackfillData):
+    if not isinstance(result, AssetBackfillIterationResult):
         check.failed(
-            "Expected execute_asset_backfill_iteration_inner to return an" " AssetBackfillData"
+            "Expected execute_asset_backfill_iteration_inner to return an"
+            " AssetBackfillIterationResult"
         )
 
     updated_backfill = backfill.with_asset_backfill_data(
-        cast(AssetBackfillData, result),
+        cast(AssetBackfillIterationResult, result).backfill_data,
         dynamic_partitions_store=graphql_context.instance,
         asset_graph=asset_graph,
     )

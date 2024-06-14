@@ -1,7 +1,18 @@
 import logging
 import sys
 import time
-from typing import AbstractSet, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
+from typing import (
+    AbstractSet,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    cast,
+)
 
 import dagster._check as check
 from dagster._core.definitions.asset_job import is_base_asset_job_name
@@ -304,6 +315,7 @@ def submit_asset_runs_in_chunks(
     asset_graph: RemoteAssetGraph,
     debug_crash_flags: SingleInstigatorDebugCrashFlags,
     logger: logging.Logger,
+    run_tags: Mapping[str, str],
 ) -> Iterator[Optional[SubmitRunRequestChunkResult]]:
     """Submits runs for a sequence of run requests that target asset selections in chunks. Yields
     None after each run is submitted to allow the daemon to heartbeat, and yields a list of tuples
@@ -324,7 +336,12 @@ def submit_asset_runs_in_chunks(
             run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
             submitted_run = submit_asset_run(
                 run_id,
-                run_request,
+                run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        **run_tags,
+                    }
+                ),
                 run_request_idx,
                 instance,
                 workspace_process_context,
