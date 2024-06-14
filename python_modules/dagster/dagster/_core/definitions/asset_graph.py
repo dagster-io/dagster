@@ -184,14 +184,23 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         # Resolve all asset dependencies. An asset dependency is resolved when its key is an
         # AssetKey not subject to any further manipulation.
         resolved_deps = ResolvedAssetDependencies(assets_defs, [])
-        assets_defs = [
-            ad.with_attributes(
-                input_asset_key_replacements={
-                    raw_key: resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
-                    for input_name, raw_key in ad.keys_by_input_name.items()
-                }
-            )
+
+        input_asset_key_replacements = [
+            {
+                raw_key: normalized_key
+                for input_name, raw_key in ad.keys_by_input_name.items()
+                if (
+                    normalized_key := resolved_deps.get_resolved_asset_key_for_input(ad, input_name)
+                )
+                != raw_key
+            }
             for ad in assets_defs
+        ]
+
+        # Only update the assets defs if we're actually replacing input asset keys
+        assets_defs = [
+            ad.with_attributes(input_asset_key_replacements=reps) if reps else ad
+            for ad, reps in zip(assets_defs, input_asset_key_replacements)
         ]
 
         # Create unexecutable external assets definitions for any referenced keys for which no
