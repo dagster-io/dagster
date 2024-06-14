@@ -368,9 +368,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         self._specs_by_key = {spec.key: spec for spec in normalized_specs}
 
         self._partition_mappings = get_partition_mappings_from_deps(
-            {},
-            [dep for spec in normalized_specs for dep in spec.deps],
-            node_def.name if node_def else "external assets",
+            partition_mappings={},
+            deps=[dep for spec in normalized_specs for dep in spec.deps],
         )
 
         self._check_specs_by_key = {
@@ -1833,25 +1832,26 @@ def get_self_dep_time_window_partition_mapping(
 
 
 def get_partition_mappings_from_deps(
-    partition_mappings: Dict[AssetKey, PartitionMapping], deps: Iterable[AssetDep], asset_name: str
+    partition_mappings: Mapping[AssetKey, PartitionMapping], deps: Iterable[AssetDep]
 ) -> Mapping[AssetKey, PartitionMapping]:
     # Add PartitionMappings specified via AssetDeps to partition_mappings dictionary. Error on duplicates
+    result = {**partition_mappings}
     for dep in deps:
         if dep.partition_mapping is None:
             continue
         if partition_mappings.get(dep.asset_key, None) is None:
-            partition_mappings[dep.asset_key] = dep.partition_mapping
+            result[dep.asset_key] = dep.partition_mapping
             continue
-        if partition_mappings[dep.asset_key] == dep.partition_mapping:
+        if result[dep.asset_key] == dep.partition_mapping:
             continue
         else:
             raise DagsterInvalidDefinitionError(
                 f"Two different PartitionMappings for {dep.asset_key} provided for"
-                f" asset {asset_name}. Please use the same PartitionMapping for"
+                f" in the same AssetsDefinition. Please use the same PartitionMapping for"
                 f" {dep.asset_key}."
             )
 
-    return partition_mappings
+    return result
 
 
 def unique_id_from_asset_and_check_keys(

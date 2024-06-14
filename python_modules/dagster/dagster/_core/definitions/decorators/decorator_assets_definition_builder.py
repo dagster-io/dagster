@@ -514,7 +514,6 @@ class DecoratorAssetsDefinitionBuilder:
         return get_partition_mappings_from_deps(
             partition_mappings=partition_mappings,
             deps=self.args.upstream_asset_deps,
-            asset_name=self.op_name,
         )
 
     @cached_property
