@@ -240,7 +240,7 @@ class DbtProject(IHaveNew):
         )
 
     @public
-    def prepare(self) -> "DbtProject":
+    def ensure_prepared(self) -> "DbtProject":
         """Execute the preparation process for a dbt project and return the DbtProject object when complete.
 
         By default, the preparation process for DbtProject is the following:
