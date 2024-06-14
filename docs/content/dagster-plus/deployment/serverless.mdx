@@ -313,16 +313,18 @@ Unlike Hybrid, Serverless Deployments on Dagster+ require direct access to your 
 ### I/O management on Serverless
 
 <Note>
-The default I/O manager cannot be used if you are a Serverless user who:
-<ul>
-<li>Works with personally identifiable information (PII)</li>
-<li>Works with private health information (PHI)</li>
-<li>Has signed a business association agreement (BAA), or</li>
-<li>Are otherwise working with data subject to GDPR or other such regulations</li>
-</ul>
-</Note> 
+  The default I/O manager cannot be used if you are a Serverless user who:
+  <ul>
+    <li>Works with personally identifiable information (PII)</li>
+    <li>Works with private health information (PHI)</li>
+    <li>Has signed a business association agreement (BAA), or</li>
+    <li>
+      Are otherwise working with data subject to GDPR or other such regulations
+    </li>
+  </ul>
+</Note>{" "}
 
-In Serverless, code that uses the default [I/O manager](/concepts/io-management/io-managers#built-in-io-managers) is automatically adjusted to save data in Dagster+ managed storage. This automatic change is useful because the default file system in Serverless is ephemeral, which means the default I/O manager wouldn't work as expected. However, this automatic change means potentially sensitive data is being stored, not just processed or orchestrated, by Dagster+. 
+In Serverless, code that uses the default [I/O manager](/concepts/io-management/io-managers#built-in-io-managers) is automatically adjusted to save data in Dagster+ managed storage. This automatic change is useful because the default file system in Serverless is ephemeral, which means the default I/O manager wouldn't work as expected. However, this automatic change means potentially sensitive data is being stored, not just processed or orchestrated, by Dagster+.
 
 To avoid this behavior, you can:
 
