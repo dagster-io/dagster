@@ -4124,6 +4124,7 @@ export type Repository = {
   allTopLevelResourceDetails: Array<ResourceDetails>;
   assetGroups: Array<AssetGroup>;
   assetNodes: Array<AssetNode>;
+  blueprintManagers: BlueprintManagersList;
   displayMetadata: Array<RepositoryMetadata>;
   id: Scalars['ID']['output'];
   jobs: Array<Job>;
@@ -12429,6 +12430,12 @@ export const buildRepository = (
         : [],
     assetGroups: overrides && overrides.hasOwnProperty('assetGroups') ? overrides.assetGroups! : [],
     assetNodes: overrides && overrides.hasOwnProperty('assetNodes') ? overrides.assetNodes! : [],
+    blueprintManagers:
+      overrides && overrides.hasOwnProperty('blueprintManagers')
+        ? overrides.blueprintManagers!
+        : relationshipsToOmit.has('BlueprintManagersList')
+        ? ({} as BlueprintManagersList)
+        : buildBlueprintManagersList({}, relationshipsToOmit),
     displayMetadata:
       overrides && overrides.hasOwnProperty('displayMetadata') ? overrides.displayMetadata! : [],
     id:

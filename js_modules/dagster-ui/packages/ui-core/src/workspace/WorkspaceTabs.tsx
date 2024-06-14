@@ -38,6 +38,11 @@ export const WorkspaceTabs = <TData extends Record<string, any>>(props: Props<TD
           title="Resources"
           to={workspacePathFromAddress(repoAddress, '/resources')}
         />
+        <TabLink
+          id="blueprint-managers"
+          title="Blueprint managers"
+          to={workspacePathFromAddress(repoAddress, '/blueprint-managers')}
+        />
       </Tabs>
       {refreshState ? (
         <Box padding={{bottom: 8}}>

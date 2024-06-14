@@ -27,6 +27,10 @@ from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoa
 from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader, StaleStatusLoader
+from dagster_graphql.schema.blueprint_managers import (
+    GrapheneBlueprintManager,
+    GrapheneBlueprintManagersList,
+)
 
 from .asset_graph import GrapheneAssetGroup, GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
@@ -247,6 +251,7 @@ class GrapheneRepository(graphene.ObjectType):
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     assetGroups = non_null_list(GrapheneAssetGroup)
     allTopLevelResourceDetails = non_null_list(GrapheneResourceDetails)
+    blueprintManagers = graphene.NonNull(GrapheneBlueprintManagersList)
 
     class Meta:
         name = "Repository"
@@ -407,6 +412,16 @@ class GrapheneRepository(graphene.ObjectType):
             )
             if resource.is_top_level
         ]
+
+    def resolve_blueprintManagers(self, _graphene_info) -> GrapheneBlueprintManagersList:
+        external_blueprint_managers = self._repository.get_external_blueprint_managers()
+
+        results = [
+            GrapheneBlueprintManager(blueprint_manager)
+            for blueprint_manager in external_blueprint_managers
+        ]
+
+        return GrapheneBlueprintManagersList(results=results)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

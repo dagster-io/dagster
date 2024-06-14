@@ -16,6 +16,7 @@ import {workspacePathFromAddress} from './workspacePath';
 import {Route} from '../app/Route';
 import {AssetGroupRoot} from '../assets/AssetGroupRoot';
 import {BlueprintManagerRoot} from '../blueprints/BlueprintManagerRoot';
+import {WorkspaceBlueprintManagersRoot} from '../code-links/WorkspaceBlueprintManagersRoot';
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ResourceRoot} from '../resources/ResourceRoot';
 import {WorkspaceResourcesRoot} from '../resources/WorkspaceResourcesRoot';
@@ -78,6 +79,9 @@ const RepoRouteContainer = () => {
 
   return (
     <Switch>
+      <Route path="/locations/:repoPath/blueprint-managers" exact>
+        <WorkspaceBlueprintManagersRoot repoAddress={addressForPath} />
+      </Route>
       <Route path="/locations/:repoPath/resources" exact>
         <WorkspaceResourcesRoot repoAddress={addressForPath} />
       </Route>

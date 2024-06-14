@@ -2089,6 +2089,7 @@ type Repository {
   displayMetadata: [RepositoryMetadata!]!
   assetGroups: [AssetGroup!]!
   allTopLevelResourceDetails: [ResourceDetails!]!
+  blueprintManagers: BlueprintManagersList!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -2173,6 +2174,36 @@ enum NestedResourceType {
 type JobWithOps {
   job: Job!
   opsUsing: [SolidHandle!]!
+}
+
+type BlueprintManagersList {
+  results: [BlueprintManager!]!
+}
+
+type BlueprintManager {
+  id: String!
+  name: String!
+  schema: JsonSchema
+  blueprints: [Blueprint!]!
+}
+
+type JsonSchema {
+  schema: String!
+}
+
+type Blueprint {
+  id: String!
+  key: BlueprintKey!
+  blob: Blob
+}
+
+type BlueprintKey {
+  managerName: String!
+  identifierWithinManager: String!
+}
+
+type Blob {
+  value: String!
 }
 
 type RepositoryConnection {
@@ -3355,32 +3386,6 @@ type ResourceDetailsList {
 
 union BlueprintManagerOrError = BlueprintManager | PythonError
 
-type BlueprintManager {
-  id: String!
-  name: String!
-  schema: JsonSchema
-  blueprints: [Blueprint!]!
-}
-
-type JsonSchema {
-  schema: String!
-}
-
-type Blueprint {
-  id: String!
-  key: BlueprintKey!
-  blob: Blob
-}
-
-type BlueprintKey {
-  managerName: String!
-  identifierWithinManager: String!
-}
-
-type Blob {
-  value: String!
-}
-
 input BlueprintManagerSelector {
   repositoryName: String!
   repositoryLocationName: String!
@@ -3388,10 +3393,6 @@ input BlueprintManagerSelector {
 }
 
 union BlueprintManagersListOrError = BlueprintManagersList | PythonError
-
-type BlueprintManagersList {
-  results: [BlueprintManager!]!
-}
 
 union EnvVarWithConsumersOrError = EnvVarWithConsumersList | PythonError
 
