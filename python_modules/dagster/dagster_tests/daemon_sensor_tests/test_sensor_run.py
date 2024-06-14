@@ -490,6 +490,9 @@ def my_run_failure_sensor(context):
         step_error_str = step_failure_events[0].event_specific_data.error.to_string()
         assert "womp womp" in step_error_str, step_error_str
 
+    assert context.repository_def is not None
+    assert context.repository_def.has_sensor_def("my_run_failure_sensor")
+
 
 @run_failure_sensor(job_selection=[failure_job])
 def my_run_failure_sensor_filtered(context):
