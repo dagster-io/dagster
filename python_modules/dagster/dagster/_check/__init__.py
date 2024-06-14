@@ -2031,6 +2031,8 @@ def build_check_call_str(
             return f'check.iterable_param({name}, "{name}", {_name(single)})'
         elif origin is collections.abc.Mapping:
             return f'check.mapping_param({name}, "{name}", {_name(pair_left)}, {_name(pair_right)})'
+        elif origin is collections.abc.Set:
+            return f'check.set_param({name}, "{name}", {_name(single)})'
         elif origin in (UnionType, Union):
             # optional
             if pair_right is type(None):
