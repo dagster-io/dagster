@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -17,7 +17,6 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -93,9 +92,22 @@ def _process_user_event(
     step_context: StepExecutionContext, user_event: OpOutputUnion
 ) -> Iterator[OpOutputUnion]:
     if isinstance(user_event, AssetResult):
-        assets_def = _get_assets_def_for_step(step_context, user_event)
-        asset_key = _resolve_asset_result_asset_key(user_event, assets_def)
-        output_name = assets_def.get_output_name_for_asset_key(asset_key)
+        asset_layer = step_context.job_def.asset_layer
+        step_asset_keys = asset_layer.asset_keys_for_node(step_context.node_handle)
+        if not step_asset_keys:
+            raise DagsterInvariantViolationError(
+                f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
+                " AssetsDefinition found."
+            )
+
+        asset_key = _resolve_asset_result_asset_key(user_event, step_asset_keys)
+        if asset_key not in step_asset_keys:
+            raise DagsterInvariantViolationError(
+                f"Yielded {user_event.__class__.__name__} targets asset "
+                f"key '{asset_key.to_user_string()}' that is not selected in the step."
+            )
+
+        output_name = asset_layer.get_output_name_for_asset_key(step_context.node_handle, asset_key)
 
         for check_result in user_event.check_results or []:
             yield from _process_user_event(step_context, check_result)
@@ -139,30 +151,18 @@ def _process_user_event(
         yield user_event
 
 
-def _get_assets_def_for_step(
-    step_context: StepExecutionContext, user_event: OpOutputUnion
-) -> AssetsDefinition:
-    assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
-    if not assets_def:
-        raise DagsterInvariantViolationError(
-            f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
-            " AssetsDefinition found."
-        )
-    return assets_def
-
-
 def _resolve_asset_result_asset_key(
-    asset_result: AssetResult, assets_def: AssetsDefinition
+    asset_result: AssetResult, step_asset_keys: AbstractSet[AssetKey]
 ) -> AssetKey:
     if asset_result.asset_key:
         return asset_result.asset_key
     else:
-        if len(assets_def.keys) != 1:
+        if len(step_asset_keys) != 1:
             raise DagsterInvariantViolationError(
                 f"{asset_result.__class__.__name__} did not include asset_key and it can not be inferred."
-                f" Specify which asset_key, options are: {assets_def.keys}."
+                f" Specify which asset_key, options are: {step_asset_keys}."
             )
-        return assets_def.key
+        return next(iter(step_asset_keys))
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -232,12 +232,13 @@ def _step_output_error_checked_user_event_sequence(
             asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
             if asset_key is not None and asset_key in asset_layer.asset_keys_for_node(node_handle):
                 asset_node = asset_layer.get(asset_key)
-                assets_def = asset_node.assets_def
                 all_dependent_keys = asset_node.child_keys
                 step_local_asset_keys = step_context.get_output_asset_keys()
                 step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
                 for dependent_key in step_local_dependent_keys:
-                    output_name = assets_def.get_output_name_for_asset_key(dependent_key)
+                    output_name = asset_layer.get_output_name_for_asset_key(
+                        step_output.node_handle, dependent_key
+                    )
                     # Need to skip self-dependent assets (possible with partitions)
                     self_dep = dependent_key in asset_node.parent_keys
                     if not self_dep and step_context.has_seen_output(output_name):
