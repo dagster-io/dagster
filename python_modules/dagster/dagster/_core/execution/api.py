@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -742,14 +743,16 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    failed_steps = []
+    failed_steps: List[
+        DagsterEvent
+    ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
             elif event.is_resource_init_failure and event.step_key:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
 
             # Telemetry
             log_dagster_event(event, job_context)
@@ -813,10 +816,12 @@ def job_execution_iterator(
                 error_info=job_exception_info,
             )
         elif failed_steps:
+            failed_step_keys = [event.step_key for event in failed_steps]
             event = DagsterEvent.job_failure(
                 job_context,
-                f"Steps failed: {failed_steps}.",
+                f"Steps failed: {failed_step_keys}.",
                 failure_reason=RunFailureReason.STEP_FAILURE,
+                first_step_failure_event=failed_steps[0],
             )
         else:
             event = DagsterEvent.job_success(job_context)
