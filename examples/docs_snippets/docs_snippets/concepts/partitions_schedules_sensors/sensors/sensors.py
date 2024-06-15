@@ -6,6 +6,7 @@ from dagster import (
     DefaultSensorStatus,
     SkipReason,
     asset,
+    job,
     define_asset_job,
     JobSelector,
     CodeLocationSelector,
@@ -16,68 +17,40 @@ from dagster import (
 )
 
 
-# start_sensor_job_marker
-from dagster import op, job, Config
-
-
-class FileConfig(Config):
-    filename: str
-
-
-@op
-def process_file(context: OpExecutionContext, config: FileConfig):
-    context.log.info(config.filename)
-
-
-@job
-def log_file_job():
-    process_file()
-
-
-# end_sensor_job_marker
-
 MY_DIRECTORY = "./"
 
-# start_directory_sensor_marker
-import os
-from dagster import sensor, RunRequest, RunConfig
-
-
-@sensor(job=log_file_job)
-def my_directory_sensor():
-    for filename in os.listdir(MY_DIRECTORY):
-        filepath = os.path.join(MY_DIRECTORY, filename)
-        if os.path.isfile(filepath):
-            yield RunRequest(
-                run_key=filename,
-                run_config=RunConfig(
-                    ops={"process_file": FileConfig(filename=filename)}
-                ),
-            )
-
-
-# end_directory_sensor_marker
+# start_my_asset_marker
+from dagster import asset
 
 
 @asset
 def my_asset():
-    return 1
+    input_file = "inputfile.csv"
+    # read the data in the input file and write out a derived version
+
+
+# end_my_asset_marker
 
 
 # start_asset_job_sensor_marker
-asset_job = define_asset_job("asset_job", "*")
+from dagster import define_asset_job, sensor, RunRequest, Definitions
 
 
-@sensor(job=asset_job)
-def materializes_asset_sensor():
-    yield RunRequest(...)
+my_job = define_asset_job("my_job", [my_asset])
 
 
+@sensor(job=my_job)
+def my_asset_input_file_sensor():
+    last_modified_time = os.path.getmtime("inputfile.csv")
+    return RunRequest(run_key=str(last_modified_time))
+
+
+defs = Definitions(sensors=[my_asset_input_file_sensor], assets=[my_asset])
 # end_asset_job_sensor_marker
 
 
 # start_running_in_code
-@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=my_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor(): ...
 
 
@@ -85,28 +58,17 @@ def my_running_sensor(): ...
 
 
 # start_sensor_testing_no
-from dagster import validate_run_config
-
-
-@sensor(job=log_file_job)
+@sensor(job=my_job)
 def sensor_to_test():
-    yield RunRequest(
-        run_key="foo",
-        run_config={"ops": {"process_file": {"config": {"filename": "foo"}}}},
-    )
+    yield RunRequest(run_key="foo")
 
 
 def test_sensor():
     for run_request in sensor_to_test():
-        assert validate_run_config(log_file_job, run_request.run_config)
+        assert run_request.run_key == "foo"
 
 
 # end_sensor_testing_no
-
-
-@job
-def my_job():
-    pass
 
 
 # start_interval_sensors_maker
@@ -114,19 +76,22 @@ def my_job():
 
 @sensor(job=my_job, minimum_interval_seconds=30)
 def sensor_A():
-    yield RunRequest(run_key=None, run_config={})
+    yield RunRequest(run_key=None)
 
 
 @sensor(job=my_job, minimum_interval_seconds=45)
 def sensor_B():
-    yield RunRequest(run_key=None, run_config={})
+    yield RunRequest(run_key=None)
 
 
 # end_interval_sensors_maker
 
 
 # start_cursor_sensors_marker
-@sensor(job=log_file_job)
+import os
+
+
+@sensor(job=my_job)
 def my_directory_sensor_cursor(context):
     last_mtime = float(context.cursor) if context.cursor else 0
 
@@ -141,8 +106,7 @@ def my_directory_sensor_cursor(context):
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
             run_key = f"{filename}:{file_mtime}"
-            run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
-            yield RunRequest(run_key=run_key, run_config=run_config)
+            yield RunRequest(run_key=run_key)
             max_mtime = max(max_mtime, file_mtime)
 
     context.update_cursor(str(max_mtime))
@@ -157,14 +121,14 @@ from dagster import build_sensor_context
 def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
     for run_request in my_directory_sensor_cursor(context):
-        assert validate_run_config(log_file_job, run_request.run_config)
+        assert len(run_request.run_key.split(":")) == 2
 
 
 # end_sensor_testing_with_context
 
 
 # start_skip_sensors_marker
-@sensor(job=log_file_job)
+@sensor(job=my_job)
 def my_directory_sensor_with_skip_reasons():
     has_files = False
     for filename in os.listdir(MY_DIRECTORY):
@@ -210,8 +174,8 @@ def get_the_db_connection(_): ...
 
 
 defs = Definitions(
-    jobs=[my_job, log_file_job],
-    sensors=[my_directory_sensor, sensor_A, sensor_B],
+    jobs=[my_job, my_job],
+    sensors=[sensor_A, sensor_B],
 )
 
 

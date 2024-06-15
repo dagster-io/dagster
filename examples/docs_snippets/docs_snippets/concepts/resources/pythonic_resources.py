@@ -733,13 +733,17 @@ def new_resource_testing_with_state_ops() -> None:
 
 
 def new_resource_on_sensor() -> None:
+    from dagster import job
+
+    @job
+    def process_user(): ...
+
     # start_new_resource_on_sensor
     from dagster import (
         sensor,
         RunRequest,
         SensorEvaluationContext,
         ConfigurableResource,
-        job,
         Definitions,
         RunConfig,
     )
@@ -751,9 +755,6 @@ def new_resource_on_sensor() -> None:
 
         def fetch_users(self) -> List[str]:
             return requests.get(self.url).json()
-
-    @job
-    def process_user(): ...
 
     @sensor(job=process_user)
     def process_new_users_sensor(

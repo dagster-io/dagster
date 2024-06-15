@@ -40,63 +40,48 @@ The [Dagster daemon](/deployment/dagster-daemon) runs each sensor evaluation fun
 
 To define a sensor, use the <PyObject object="sensor" decorator /> decorator. The decorated function can optionally have a `context` as the first argument. The context is a <PyObject object="SensorEvaluationContext" />.
 
-Let's say you have a job that logs a filename that is specified in the op configuration of the `process_file` op:
-
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_job_marker endbefore=end_sensor_job_marker
-from dagster import op, job, Config
-
-
-class FileConfig(Config):
-    filename: str
-
-
-@op
-def process_file(context: OpExecutionContext, config: FileConfig):
-    context.log.info(config.filename)
-
-
-@job
-def log_file_job():
-    process_file()
-```
-
-You can write a sensor that watches for new files in a specific directory and yields a `RunRequest` for each new file in the directory. By default, this sensor runs every 30 seconds.
-
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_directory_sensor_marker endbefore=end_directory_sensor_marker
-import os
-from dagster import sensor, RunRequest, RunConfig
-
-
-@sensor(job=log_file_job)
-def my_directory_sensor():
-    for filename in os.listdir(MY_DIRECTORY):
-        filepath = os.path.join(MY_DIRECTORY, filename)
-        if os.path.isfile(filepath):
-            yield RunRequest(
-                run_key=filename,
-                run_config=RunConfig(
-                    ops={"process_file": FileConfig(filename=filename)}
-                ),
-            )
-```
-
-This sensor iterates through all the files in `MY_DIRECTORY` and yields a <PyObject object="RunRequest"/> for each file. Note that despite the `yield` syntax, the function will run to completion before any runs are submitted.
-
-To write a sensor that materializes assets, you can [build a job that materializes assets](/concepts/assets/software-defined-assets#building-jobs-that-materialize-assets):
+Let's say you have an asset definition that takes a file as input:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
-asset_job = define_asset_job("asset_job", "*")
+from dagster import define_asset_job, sensor, RunRequest, Definitions
 
 
-@sensor(job=asset_job)
-def materializes_asset_sensor():
-    yield RunRequest(...)
+my_job = define_asset_job("my_job", [my_asset])
+
+
+@sensor(job=my_job)
+def my_asset_input_file_sensor():
+    last_modified_time = os.path.getmtime("inputfile.csv")
+    return RunRequest(run_key=str(last_modified_time))
+
+
+defs = Definitions(sensors=[my_asset_input_file_sensor], assets=[my_asset])
 ```
+
+You can write a sensor that watches for changes to the input file and requests a run to re-materialize `my_asset` each time it encounters one:
+
+```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_asset_job_sensor_marker endbefore=end_asset_job_sensor_marker
+from dagster import define_asset_job, sensor, RunRequest, Definitions
+
+
+my_job = define_asset_job("my_job", [my_asset])
+
+
+@sensor(job=my_job)
+def my_asset_input_file_sensor():
+    last_modified_time = os.path.getmtime("inputfile.csv")
+    return RunRequest(run_key=str(last_modified_time))
+
+
+defs = Definitions(sensors=[my_asset_input_file_sensor], assets=[my_asset])
+```
+
+By default, this sensor runs every 30 seconds. It checks the last modified time for "inputfile.csv" and returns <PyObject object="RunRequest"/> based on it. Only one run will be launched for each unique value passed to the `run_key` parameter, which means that only one run will be launched each time the file is modified.
 
 Once a sensor is added to a <PyObject object="Definitions" /> object with the job it yields a <PyObject object="RunRequest"/> for, it can be started and will start creating runs. You can start or stop sensors in the Dagster UI, or by setting the default status to `DefaultSensorStatus.RUNNING` in code:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_running_in_code endbefore=end_running_in_code
-@sensor(job=asset_job, default_status=DefaultSensorStatus.RUNNING)
+@sensor(job=my_job, default_status=DefaultSensorStatus.RUNNING)
 def my_running_sensor(): ...
 ```
 
@@ -108,7 +93,7 @@ Once your sensor is started, if you're running a [Dagster daemon](/deployment/da
 
 ## Idempotence and cursors
 
-When instigating runs based on external events, you usually want to run exactly one job run for each event. There are two ways to define your sensors to avoid creating duplicate runs for your events:
+When instigating runs based on external events, you usually want to launch exactly one run for each event. There are two ways to define your sensors to avoid creating duplicate runs for your events:
 
 - [Using a `run_key`](#idempotence-using-run-keys)
 - [Using cursors](#sensor-optimizations-using-cursors)
@@ -118,10 +103,7 @@ When instigating runs based on external events, you usually want to run exactly 
 In the example sensor [in the previous section](#defining-a-sensor), the <PyObject object="RunRequest"/> is constructed with a `run_key`:
 
 ```python
-yield RunRequest(
-    run_key=filename,
-    run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
-)
+yield RunRequest(run_key=str(last_modified_time))
 ```
 
 Dagster guarantees that for a given sensor, at most one run is created for each <PyObject object="RunRequest"/> with a unique `run_key`. If a sensor yields a new run request with a previously used `run_key`, Dagster skips processing the new run request.
@@ -139,10 +121,13 @@ When writing a sensor for such event sources, you can maintain a cursor that lim
 - `cursor` - A cursor field on <PyObject object="SensorEvaluationContext"/> that returns the last persisted cursor value from a previous evaluation
 - `update_cursor` - A method on <PyObject object="SensorEvaluationContext"/> that takes a string to persist and make available to future evaluations
 
-Here is a somewhat contrived example of our directory file sensor using a cursor for updated files:
+Here is a somewhat contrived example of a directory file sensor using a cursor for updated files:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
-@sensor(job=log_file_job)
+import os
+
+
+@sensor(job=my_job)
 def my_directory_sensor_cursor(context):
     last_mtime = float(context.cursor) if context.cursor else 0
 
@@ -157,8 +142,7 @@ def my_directory_sensor_cursor(context):
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
             run_key = f"{filename}:{file_mtime}"
-            run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
-            yield RunRequest(run_key=run_key, run_config=run_config)
+            yield RunRequest(run_key=run_key)
             max_mtime = max(max_mtime, file_mtime)
 
     context.update_cursor(str(max_mtime))
@@ -181,12 +165,12 @@ For example, here are two sensors that specify two different minimum intervals:
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_interval_sensors_maker endbefore=end_interval_sensors_maker
 @sensor(job=my_job, minimum_interval_seconds=30)
 def sensor_A():
-    yield RunRequest(run_key=None, run_config={})
+    yield RunRequest(run_key=None)
 
 
 @sensor(job=my_job, minimum_interval_seconds=45)
 def sensor_B():
-    yield RunRequest(run_key=None, run_config={})
+    yield RunRequest(run_key=None)
 ```
 
 These sensor definitions are short, so they run in less than a second. Therefore, you can expect these sensors to run consistently around every 30 and 45 seconds, respectively.
@@ -202,7 +186,7 @@ For debugging purposes, it's often useful to describe why a sensor might not yie
 For example, here is our directory sensor that now provides a `SkipReason` when no files are encountered:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_skip_sensors_marker endbefore=end_skip_sensors_marker
-@sensor(job=log_file_job)
+@sensor(job=my_job)
 def my_directory_sensor_with_skip_reasons():
     has_files = False
     for filename in os.listdir(MY_DIRECTORY):
@@ -235,7 +219,6 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     ConfigurableResource,
-    job,
     Definitions,
     RunConfig,
 )
@@ -247,9 +230,6 @@ class UsersAPI(ConfigurableResource):
 
     def fetch_users(self) -> List[str]:
         return requests.get(self.url).json()
-
-@job
-def process_user(): ...
 
 @sensor(job=process_user)
 def process_new_users_sensor(
@@ -364,29 +344,26 @@ dagster sensor preview my_sensor_name
 
 ### Via Python
 
-To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor. The config obtained from the returned run requests can be validated using the <PyObject object="validate_run_config" /> function:
+To unit test sensors, you can directly invoke the sensor's Python function. This will return all the run requests yielded by the sensor.
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_testing endbefore=end_sensor_testing
-from dagster import validate_run_config
-
-
-@sensor(job=log_file_job)
+@sensor(job=my_job)
 def sensor_to_test():
-    yield RunRequest(
-        run_key="foo",
-        run_config={"ops": {"process_file": {"config": {"filename": "foo"}}}},
-    )
+    yield RunRequest(run_key="foo")
 
 
 def test_sensor():
     for run_request in sensor_to_test():
-        assert validate_run_config(log_file_job, run_request.run_config)
+        assert run_request.run_key == "foo"
 ```
 
 Notice that since the context argument wasn't used in the sensor, a context object doesn't have to be provided. However, if the context object **is** needed, it can be provided via <PyObject object="build_sensor_context" />. Consider again the `my_directory_sensor_cursor` example:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_cursor_sensors_marker endbefore=end_cursor_sensors_marker
-@sensor(job=log_file_job)
+import os
+
+
+@sensor(job=my_job)
 def my_directory_sensor_cursor(context):
     last_mtime = float(context.cursor) if context.cursor else 0
 
@@ -401,8 +378,7 @@ def my_directory_sensor_cursor(context):
 
             # the run key should include mtime if we want to kick off new runs based on file modifications
             run_key = f"{filename}:{file_mtime}"
-            run_config = {"ops": {"process_file": {"config": {"filename": filename}}}}
-            yield RunRequest(run_key=run_key, run_config=run_config)
+            yield RunRequest(run_key=run_key)
             max_mtime = max(max_mtime, file_mtime)
 
     context.update_cursor(str(max_mtime))
@@ -417,7 +393,7 @@ from dagster import build_sensor_context
 def test_my_directory_sensor_cursor():
     context = build_sensor_context(cursor="0")
     for run_request in my_directory_sensor_cursor(context):
-        assert validate_run_config(log_file_job, run_request.run_config)
+        assert len(run_request.run_key.split(":")) == 2
 ```
 
 #### Testing sensors with resources
