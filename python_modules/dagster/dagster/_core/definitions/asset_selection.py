@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from functools import reduce
 from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
 
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, experimental_param, public
@@ -38,6 +38,13 @@ CoercibleToAssetSelection: TypeAlias = Union[
     Sequence[Union["AssetsDefinition", "SourceAsset"]],
     "AssetSelection",
 ]
+
+
+def is_coercible_to_asset_selection(obj: object) -> TypeGuard[CoercibleToAssetSelection]:
+    return isinstance(obj, (str, AssetSelection)) or (
+        isinstance(obj, Sequence)
+        and all(isinstance(x, (str, AssetKey, AssetsDefinition, SourceAsset)) for x in obj)
+    )
 
 
 class AssetSelection(ABC, DagsterModel):
