@@ -462,10 +462,6 @@ class AssetLayer(NamedTuple):
     def executable_asset_keys(self) -> Iterable[AssetKey]:
         return self.asset_graph.executable_asset_keys
 
-    @property
-    def assets_defs(self) -> Sequence["AssetsDefinition"]:
-        return self.asset_graph.assets_defs
-
     def get(self, asset_key: AssetKey) -> "AssetNode":
         return self.asset_graph.get(asset_key)
 

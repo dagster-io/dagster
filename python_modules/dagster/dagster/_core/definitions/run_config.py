@@ -219,7 +219,10 @@ def get_inputs_field(
             input_field = get_input_manager_input_field(node, inp, resource_defs)
         elif (
             # if you have assets defs, input will be loaded from the source asset
-            asset_layer.assets_defs
+            (
+                asset_layer.asset_graph.executable_asset_keys
+                or asset_layer.asset_graph.asset_check_keys
+            )
             and asset_layer.asset_key_for_input(handle, name)
             and not has_upstream
         ):
