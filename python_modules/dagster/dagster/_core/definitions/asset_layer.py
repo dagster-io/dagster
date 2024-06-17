@@ -485,8 +485,13 @@ class AssetLayer(NamedTuple):
         return self.assets_defs_by_node_handle.get(node_handle)
 
     def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
-        assets_def = self.assets_def_for_node(node_handle)
-        return check.not_none(assets_def).keys
+        assets_def = check.not_none(self.assets_def_for_node(node_handle))
+
+        node_handle_path = node_handle.path
+        sub_handle = (
+            NodeHandle.from_path(node_handle_path[1:]) if len(node_handle_path) > 1 else None
+        )
+        return check.not_none(assets_def.asset_keys_for_node(sub_handle))
 
     def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
         asset_keys = self.asset_keys_for_node(node_handle)
