@@ -329,7 +329,6 @@ class AssetLayer(NamedTuple):
     check_names_by_asset_key_by_node_handle: Mapping[
         NodeHandle, Mapping[AssetKey, AbstractSet[str]]
     ]
-    assets_defs_by_check_key: Mapping[AssetCheckKey, "AssetsDefinition"]
 
     @staticmethod
     def from_graph_and_assets_node_mapping(
@@ -451,7 +450,6 @@ class AssetLayer(NamedTuple):
             dep_asset_keys_by_node_output_handle=dep_asset_keys_by_node_output_handle,
             node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
             check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
-            assets_defs_by_check_key=assets_defs_by_check_key,
         )
 
     @property
