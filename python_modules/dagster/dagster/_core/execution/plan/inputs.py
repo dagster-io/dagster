@@ -142,7 +142,6 @@ class FromLoadableAsset(
         step_context: "StepExecutionContext",
         input_def: InputDefinition,
     ) -> Iterator[object]:
-        from dagster._core.definitions.asset_layer import AssetOutputInfo
         from dagster._core.events import DagsterEvent
         from dagster._core.execution.context.output import OutputContext
 
@@ -174,10 +173,7 @@ class FromLoadableAsset(
             resources=resources,
             artificial_output_context=OutputContext(
                 resources=resources,
-                asset_info=AssetOutputInfo(
-                    key=input_asset_key,
-                    partitions_def=asset_layer.get(input_asset_key).partitions_def,
-                ),
+                asset_key=input_asset_key,
                 name=input_asset_key.path[-1],
                 step_key="none",
                 definition_metadata=asset_layer.get(input_asset_key).metadata,

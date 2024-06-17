@@ -1,6 +1,6 @@
 import inspect
 import warnings
-from typing import AbstractSet, Any, Dict, Iterator, Mapping, Optional, Tuple, Union, cast
+from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -50,7 +50,6 @@ from dagster._core.errors import (
 )
 from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
 from dagster._core.execution.context.compute import enter_execution_context
-from dagster._core.execution.context.output import OutputContext
 from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
 from dagster._core.execution.plan.compute import execute_core_compute
 from dagster._core.execution.plan.inputs import StepInputData
@@ -224,25 +223,22 @@ def _step_output_error_checked_user_event_sequence(
             # contrast, if both A and B are yielded, A should never precede B.
             asset_layer = step_context.job_def.asset_layer
             node_handle = step_context.node_handle
-            asset_info = asset_layer.asset_info_for_output(node_handle, output_def.name)
-            if (
-                asset_info is not None
-                and asset_info.is_required
-                and asset_layer.has(asset_info.key)
-            ):
-                if asset_layer.has(asset_info.key):
-                    assets_def = asset_layer.get(asset_info.key).assets_def
-                    all_dependent_keys = asset_layer.get(asset_info.key).child_keys
+            asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
+            if asset_key is not None:
+                asset_node = asset_layer.get(asset_key)
+                if not asset_node.skippable:
+                    assets_def = asset_node.assets_def
+                    all_dependent_keys = asset_node.child_keys
                     step_local_asset_keys = step_context.get_output_asset_keys()
                     step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
                     for dependent_key in step_local_dependent_keys:
                         output_name = assets_def.get_output_name_for_asset_key(dependent_key)
                         # Need to skip self-dependent assets (possible with partitions)
-                        self_dep = dependent_key in asset_layer.get(asset_info.key).parent_keys
+                        self_dep = dependent_key in asset_node.parent_keys
                         if not self_dep and step_context.has_seen_output(output_name):
                             raise DagsterInvariantViolationError(
                                 f'Asset "{dependent_key.to_user_string()}" was yielded before its'
-                                f' dependency "{asset_info.key.to_user_string()}".Multiassets'
+                                f' dependency "{asset_key.to_user_string()}".Multiassets'
                                 " yielding multiple asset outputs must yield them in topological"
                                 " order."
                             )
@@ -561,27 +557,9 @@ def _type_check_and_store_output(
         yield evt
 
 
-def _asset_key_and_partitions_for_output(
-    output_context: OutputContext,
-) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
-    output_asset_info = output_context.asset_info
-
-    if output_asset_info:
-        if not output_asset_info.is_required:
-            output_context.log.warning(
-                f"Materializing or observing unexpected asset key: {output_asset_info.key}."
-            )
-        return (
-            output_asset_info.key,
-            output_asset_info.partitions_fn(output_context) or set(),
-        )
-
-    return None, set()
-
-
 def _get_output_asset_events(
     asset_key: AssetKey,
-    asset_partitions: AbstractSet[str],
+    asset_partitions: Iterable[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata: Mapping[str, MetadataValue],
@@ -871,7 +849,9 @@ def _log_materialization_or_observation_events_for_asset(
     if SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION in output.metadata:
         return
 
-    asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
+    asset_key = output_context.asset_key if output_context.has_asset_key else None
+    partitions = output_context.asset_partition_keys if output_context.has_asset_partitions else []
+
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(step_context.node_handle)

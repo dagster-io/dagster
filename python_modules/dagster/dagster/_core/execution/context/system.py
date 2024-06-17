@@ -497,8 +497,8 @@ class PlanExecutionContext(IPlanContext):
 def is_step_in_asset_graph_layer(step: ExecutionStep, job_def: JobDefinition) -> bool:
     """Whether this step is aware of the asset graph definition layer inferred by presence of asset info on outputs."""
     for output in step.step_outputs:
-        asset_info = job_def.asset_layer.asset_info_for_output(step.node_handle, output.name)
-        if asset_info is not None:
+        asset_key = job_def.asset_layer.asset_key_for_output(step.node_handle, output.name)
+        if asset_key is not None:
             return True
     return False
 
@@ -976,13 +976,12 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def get_output_asset_keys(self) -> AbstractSet[AssetKey]:
         output_keys: Set[AssetKey] = set()
+        asset_layer = self.job_def.asset_layer
         for step_output in self.step.step_outputs:
-            asset_info = self.job_def.asset_layer.asset_info_for_output(
-                self.node_handle, step_output.name
-            )
-            if asset_info is None or not asset_info.is_required:
+            asset_key = asset_layer.asset_key_for_output(self.node_handle, step_output.name)
+            if asset_key is None or asset_layer.asset_graph.get(asset_key).skippable:
                 continue
-            output_keys.add(asset_info.key)
+            output_keys.add(asset_key)
         return output_keys
 
     def has_asset_partitions_for_input(self, input_name: str) -> bool:
@@ -1082,11 +1081,11 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             )
 
     def _partitions_def_for_output(self, output_name: str) -> Optional[PartitionsDefinition]:
-        asset_info = self.job_def.asset_layer.asset_info_for_output(
+        asset_key = self.job_def.asset_layer.asset_key_for_output(
             node_handle=self.node_handle, output_name=output_name
         )
-        if asset_info:
-            return asset_info.partitions_def
+        if asset_key:
+            return self.job_def.asset_layer.asset_graph.get(asset_key).partitions_def
         else:
             return None
 
