@@ -260,7 +260,15 @@ def _single_backfill_iteration(
             tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
         )
 
-    return backfill_data
+    return backfill_data.with_run_requests_submitted(
+        result.run_requests,
+        asset_graph,
+        instance_queryer=CachingInstanceQueryer(
+            instance=instance,
+            asset_graph=asset_graph,
+            evaluation_time=backfill_data.backfill_start_datetime,
+        ),
+    )
 
 
 def _single_backfill_iteration_create_but_do_not_submit_runs(
@@ -596,17 +604,29 @@ def run_backfill_to_completion(
         # iteration_count += 1
         assert result1.backfill_data != backfill_data
 
-        # if nothing changes, nothing should happen in the iteration
+        instance_queryer = CachingInstanceQueryer(
+            instance=instance,
+            asset_graph=asset_graph,
+            evaluation_time=backfill_data.backfill_start_datetime,
+        )
+
+        backfill_data_with_submitted_runs = result1.backfill_data.with_run_requests_submitted(
+            result1.run_requests,
+            asset_graph,
+            instance_queryer,
+        )
+
+        # once everything that was requested is added to the requested subset, nothing should change if the iteration repeats
         result2 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
-            asset_backfill_data=result1.backfill_data,
+            asset_backfill_data=backfill_data_with_submitted_runs,
             asset_graph=asset_graph,
             instance=instance,
         )
-        assert result2.backfill_data == result1.backfill_data
+        assert result2.backfill_data == backfill_data_with_submitted_runs
         assert result2.run_requests == []
 
-        backfill_data = result2.backfill_data
+        backfill_data = result1.backfill_data
 
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
             assert asset_partition not in fail_and_downstream_asset_partitions

@@ -45,7 +45,10 @@ from dagster._core.definitions.selector import (
     PartitionsSelector,
 )
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.execution.asset_backfill import RUN_CHUNK_SIZE, AssetBackfillData
+from dagster._core.execution.asset_backfill import (
+    AssetBackfillData,
+    get_asset_backfill_run_chunk_size,
+)
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.remote_representation import (
     ExternalRepository,
@@ -72,6 +75,16 @@ from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
+
+
+DEFAULT_CHUNK_SIZE = 5
+
+
+@pytest.fixture
+def set_default_chunk_size():
+    with environ({"DAGSTER_ASSET_BACKFILL_RUN_CHUNK_SIZE": str(DEFAULT_CHUNK_SIZE)}):
+        assert get_asset_backfill_run_chunk_size() == DEFAULT_CHUNK_SIZE
+        yield DEFAULT_CHUNK_SIZE
 
 
 def _failure_flag_file():
@@ -1263,18 +1276,22 @@ def test_asset_backfill_cancellation(
 
 
 # Check run submission at chunk boundary and off of chunk boundary
-@pytest.mark.parametrize("num_partitions", [RUN_CHUNK_SIZE * 2, (RUN_CHUNK_SIZE) + 1])
+@pytest.mark.parametrize("num_partitions", [DEFAULT_CHUNK_SIZE * 2, (DEFAULT_CHUNK_SIZE) + 1])
 def test_asset_backfill_submit_runs_in_chunks(
-    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, num_partitions: int
+    instance: DagsterInstance,
+    workspace_context: WorkspaceProcessContext,
+    num_partitions: int,
+    set_default_chunk_size,
 ):
     asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
 
     target_partitions = daily_partitions_def.get_partition_keys()[0:num_partitions]
     backfill_id = f"backfill_with_{num_partitions}_partitions"
 
+    asset_graph = workspace_context.create_request_context().asset_graph
     instance.add_backfill(
         PartitionBackfill.from_asset_partitions(
-            asset_graph=workspace_context.create_request_context().asset_graph,
+            asset_graph=asset_graph,
             backfill_id=backfill_id,
             tags={},
             backfill_timestamp=get_current_timestamp(),
@@ -1300,16 +1317,26 @@ def test_asset_backfill_submit_runs_in_chunks(
         )
     )
 
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+
+    for asset_key in asset_selection:
+        assert (
+            backfill.get_asset_backfill_data(asset_graph)
+            .requested_subset.get_partitions_subset(asset_key, asset_graph)
+            .get_partition_keys()
+            == target_partitions
+        )
+
     assert instance.get_runs_count() == num_partitions
 
 
 def test_asset_backfill_mid_iteration_cancel(
-    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext, set_default_chunk_size
 ):
     asset_selection = [AssetKey("daily_1"), AssetKey("daily_2")]
     asset_graph = workspace_context.create_request_context().asset_graph
 
-    num_partitions = RUN_CHUNK_SIZE * 2
+    num_partitions = DEFAULT_CHUNK_SIZE * 2
     target_partitions = daily_partitions_def.get_partition_keys()[0:num_partitions]
     backfill_id = f"backfill_with_{num_partitions}_partitions"
 
@@ -1349,14 +1376,14 @@ def test_asset_backfill_mid_iteration_cancel(
                 )
             )
         )
-        assert instance.get_runs_count() == RUN_CHUNK_SIZE
+        assert instance.get_runs_count() == DEFAULT_CHUNK_SIZE
 
     # Check that the requested subset only contains runs that were submitted
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
     updated_asset_backfill_data = check.not_none(backfill.asset_backfill_data)
     assert all(
-        len(partitions_subset) == RUN_CHUNK_SIZE
+        len(partitions_subset) == DEFAULT_CHUNK_SIZE
         for partitions_subset in updated_asset_backfill_data.requested_subset.partitions_subsets_by_asset_key.values()
     )
 
@@ -1370,7 +1397,7 @@ def test_asset_backfill_mid_iteration_cancel(
         )
     )
 
-    assert instance.get_runs_count() == RUN_CHUNK_SIZE
+    assert instance.get_runs_count() == DEFAULT_CHUNK_SIZE
     assert instance.get_runs_count(RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES)) == 0
 
 
@@ -1542,7 +1569,7 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     )
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
-        == 4  # all 4 are still requested, the rest will be re-attempted on next retry
+        == 1
     )
 
     # Execute backfill iteration again, confirming that the two partitions that did not submit runs
@@ -1630,7 +1657,7 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_no_runs_
     assert len(updated_backfill.submitting_run_requests) == 1
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
-        == 1  # requested but still in progress
+        == 0  # chunk did not finish, so requested_subset was not updated
     )
     assert updated_backfill.asset_backfill_data.requested_runs_for_target_roots
 
@@ -1730,11 +1757,11 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     assert updated_backfill
     assert updated_backfill.asset_backfill_data
 
-    # backfill has the updated data that it will have once the runs finish submitting
+    # chunk did not finish so requested_subset did not yet update
     assert len(updated_backfill.submitting_run_requests or []) == 2
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
-        == 2
+        == 0
     )
     assert updated_backfill.asset_backfill_data.requested_runs_for_target_roots
 
@@ -1753,6 +1780,8 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     updated_backfill = instance.get_backfill(backfill_id)
     assert updated_backfill
     assert updated_backfill.asset_backfill_data
+
+    # Chunk finished so requested_subset is now updated
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
         == 2
