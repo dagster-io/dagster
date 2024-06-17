@@ -326,8 +326,6 @@ def submit_asset_runs_in_chunks(
         chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
         retryable_error_raised = False
 
-        logger.debug(f"{chunk_size}, {chunk_start}, {len(run_request_chunk)}")
-
         # submit each run in the chunk
         for chunk_idx, run_request in enumerate(run_request_chunk):
             run_request_idx = chunk_start + chunk_idx
