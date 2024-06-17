@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import yaml
-from dagster._annotations import experimental, public
+from dagster._annotations import experimental, experimental_param, public
 from dagster._model import IHaveNew, dagster_model_custom
 from dagster._utils import run_with_concurrent_update_guard
 
