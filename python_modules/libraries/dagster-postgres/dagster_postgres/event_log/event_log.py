@@ -114,7 +114,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def optimize_for_webserver(self, statement_timeout: int, pool_recycle: int) -> None:
         # When running in dagster-webserver, hold an open connection and set statement_timeout
         kwargs = {
-            "url": self.postgres_url,
             "isolation_level": "AUTOCOMMIT",
             "pool_size": 1,
             "pool_recycle": pool_recycle,
@@ -122,7 +121,7 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         existing_options = self._engine.url.query.get("options")
         if existing_options:
             kwargs["connect_args"] = {"options": existing_options}
-        self._engine = create_engine(**kwargs)
+        self._engine = create_engine(self.postgres_url, **kwargs)
         event.listen(
             self._engine,
             "connect",
