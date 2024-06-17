@@ -296,7 +296,7 @@ export const useRunsForTimeline = ({
 
   const {workspaceOrError} = futureTicksData || {workspaceOrError: undefined};
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const previousRunsByJobKey = useRef<{
     jobInfo: Record<string, {repoAddress: RepoAddress; pipelineName: string; isAdHoc: boolean}>;
