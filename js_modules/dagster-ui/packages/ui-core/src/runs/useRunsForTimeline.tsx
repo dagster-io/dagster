@@ -290,7 +290,7 @@ export const useRunsForTimeline = ({
   }, [startSec, _end, client, showTicks]);
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
-  useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
+  useBlockTraceUntilTrue('CompletedRunTimelineQuery', !completedRunsQueryData.loading);
 
   const {data: futureTicksData} = futureTicksQueryData;
 
