@@ -3,7 +3,7 @@ import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
+from typing import AbstractSet, Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
 
 import dagster._check as check
 import pytest
@@ -1584,6 +1584,7 @@ BUILD_CASES = [
     (Sequence[str], ["a", "b"], [1, 2]),
     (Iterable[str], ["a", "b"], [1, 2]),
     (Set[str], {"a", "b"}, {1, 2}),
+    (AbstractSet[str], {"a", "b"}, {1, 2}),
     (Dict[str, int], {"a": 1}, {1: "a"}),
     (Mapping[str, int], {"a": 1}, {1: "a"}),
     (Optional[int], None, "4"),

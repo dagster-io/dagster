@@ -21,8 +21,9 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, public
+from dagster._annotations import deprecated_param, experimental_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._core.errors import (
@@ -150,6 +151,7 @@ class RunStatusSensorContext:
         resource_defs: Optional[Mapping[str, "ResourceDefinition"]] = None,
         logger: Optional[logging.Logger] = None,
         partition_key: Optional[str] = None,
+        repository_def: Optional[RepositoryDefinition] = None,
         _resources: Optional[Resources] = None,
         _cm_scope_entered: bool = False,
     ) -> None:
@@ -160,6 +162,9 @@ class RunStatusSensorContext:
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._logger: Optional[logging.Logger] = logger or (context.log if context else None)
         self._partition_key = check.opt_str_param(partition_key, "partition_key")
+        self._repository_def = check.opt_inst_param(
+            repository_def, "repository_def", RepositoryDefinition
+        )
 
         # Wait to set resources unless they're accessed
         self._resource_defs = resource_defs
@@ -176,6 +181,7 @@ class RunStatusSensorContext:
             logger=self._logger,
             partition_key=self._partition_key,
             resource_defs=self._resource_defs,
+            repository_def=self._repository_def,
             _resources=self._resources,
             _cm_scope_entered=self._cm_scope_entered,
         )
@@ -183,6 +189,11 @@ class RunStatusSensorContext:
     @property
     def resource_defs(self) -> Optional[Mapping[str, "ResourceDefinition"]]:
         return self._resource_defs
+
+    @property
+    def repository_def(self) -> Optional[RepositoryDefinition]:
+        """Optional[RepositoryDefinition]: The RepositoryDefinition that this sensor resides in."""
+        return self._repository_def
 
     @property
     def resources(self) -> Resources:
@@ -293,6 +304,7 @@ class RunStatusSensorContext:
                 **(self._resource_defs or {}),
                 **wrap_resources_for_execution(resources_dict),
             },
+            repository_def=self._repository_def,
         )
 
 
@@ -333,6 +345,7 @@ class RunFailureSensorContext(RunStatusSensorContext):
         return [cast(DagsterEvent, record.event_log_entry.dagster_event) for record in records]
 
 
+@experimental_param(param="repository_def")
 def build_run_status_sensor_context(
     sensor_name: str,
     dagster_event: DagsterEvent,
@@ -341,6 +354,8 @@ def build_run_status_sensor_context(
     context: Optional[SensorEvaluationContext] = None,
     resources: Optional[Mapping[str, object]] = None,
     partition_key: Optional[str] = None,
+    *,
+    repository_def: Optional[RepositoryDefinition] = None,
 ) -> RunStatusSensorContext:
     """Builds run status sensor context from provided parameters.
 
@@ -355,6 +370,7 @@ def build_run_status_sensor_context(
         dagster_run (DagsterRun): DagsterRun object from running a job
         resources (Optional[Mapping[str, object]]): A dictionary of resources to be made available
             to the sensor.
+        repository_def (Optional[RepositoryDefinition]): The repository that the sensor belongs to.
 
     Examples:
         .. code-block:: python
@@ -383,6 +399,7 @@ def build_run_status_sensor_context(
         resource_defs=wrap_resources_for_execution(resources),
         logger=context.log if context else None,
         partition_key=partition_key,
+        repository_def=repository_def,
     )
 
 
@@ -866,6 +883,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                         resource_defs=context.resource_defs,
                         logger=context.log,
                         partition_key=dagster_run.tags.get("dagster/partition"),
+                        repository_def=context.repository_def,
                     ) as sensor_context, user_code_error_boundary(
                         RunStatusSensorExecutionError,
                         lambda: f'Error occurred during the execution sensor "{name}".',

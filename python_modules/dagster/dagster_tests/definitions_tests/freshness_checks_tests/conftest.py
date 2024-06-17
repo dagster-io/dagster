@@ -71,6 +71,7 @@ def add_new_event(
     partition_key: Optional[str] = None,
     is_materialization: bool = True,
     override_timestamp: Optional[float] = None,
+    include_metadata: bool = True,
 ):
     klass = AssetMaterialization if is_materialization else AssetObservation
     metadata = (
@@ -85,7 +86,7 @@ def add_new_event(
     instance.report_runless_asset_event(
         klass(
             asset_key=asset_key,
-            metadata=metadata,
+            metadata=metadata if include_metadata else None,
             partition=partition_key,
         )
     )

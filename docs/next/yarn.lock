@@ -2341,6 +2341,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/third-parties@npm:^14.2.4":
+  version: 14.2.4
+  resolution: "@next/third-parties@npm:14.2.4"
+  dependencies:
+    third-party-capital: 1.0.20
+  peerDependencies:
+    next: ^13.0.0 || ^14.0.0
+    react: ^18.2.0
+  checksum: 3c5bda0786892927d3e2dc9a30dfc2f43c5118b2ae73b35bbc8321eeaf1431ed511fe0388ca443dd3c7f27fd0b22353e15388292c89d74320cb0b9ecaab32deb
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -4561,6 +4573,7 @@ __metadata:
     "@markdoc/next.js": ^0.2.2
     "@mdx-js/loader": ^1.6.22
     "@next/mdx": ^12.2.2
+    "@next/third-parties": ^14.2.4
     "@tailwindcss/forms": ^0.2.1
     "@tailwindcss/jit": ^0.1.1
     "@tailwindcss/typography": ^0.4.0
@@ -11416,6 +11429,13 @@ __metadata:
   version: 0.2.0
   resolution: "text-table@npm:0.2.0"
   checksum: b6937a38c80c7f84d9c11dd75e49d5c44f71d95e810a3250bd1f1797fc7117c57698204adf676b71497acc205d769d65c16ae8fa10afad832ae1322630aef10a
+  languageName: node
+  linkType: hard
+
+"third-party-capital@npm:1.0.20":
+  version: 1.0.20
+  resolution: "third-party-capital@npm:1.0.20"
+  checksum: ef5eae00bdb82b538b9f628a011fc294cd6f4bafdbb46d88f3d1a72e8c3b9e2cc2a547fdb62bc16bdd847e9da3dac2df676b154c64914f6c90ea15aac6ce0a6a
   languageName: node
   linkType: hard
 

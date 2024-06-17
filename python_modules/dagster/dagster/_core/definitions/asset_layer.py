@@ -361,8 +361,6 @@ class AssetLayer(NamedTuple):
             from a unique input in the underlying graph to the associated AssetKey that it loads from.
         asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo], optional): A mapping
             from a unique output in the underlying graph to the associated AssetOutputInfo.
-        asset_deps (Mapping[AssetKey, AbstractSet[AssetKey]], optional): Records the upstream asset
-            keys for each asset key produced by this job.
     """
 
     asset_graph: "AssetGraph"
@@ -370,12 +368,10 @@ class AssetLayer(NamedTuple):
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
     asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
     check_key_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckKey]
-    asset_deps: Mapping[AssetKey, AbstractSet[AssetKey]]
     dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
     # Used to store the asset key dependencies of op node handles within graph backed assets
     # See AssetLayer.downstream_dep_assets for more information
     dep_asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, Set[AssetKey]]
-    partition_mappings_by_asset_dep: Mapping[Tuple[NodeHandle, AssetKey], "PartitionMapping"]
     node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle]
     check_names_by_asset_key_by_node_handle: Mapping[
         NodeHandle, Mapping[AssetKey, AbstractSet[str]]
@@ -400,8 +396,6 @@ class AssetLayer(NamedTuple):
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
         check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
-        asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
-        partition_mappings_by_asset_dep: Dict[Tuple[NodeHandle, AssetKey], "PartitionMapping"] = {}
 
         (
             dep_node_handles_by_asset_or_check_key,
@@ -424,9 +418,6 @@ class AssetLayer(NamedTuple):
         assets_defs_by_check_key: Dict[AssetCheckKey, "AssetsDefinition"] = {}
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
-            for key in assets_def.keys:
-                asset_deps[key] = assets_def.asset_deps[key]
-
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle, input_name)
                 asset_key_by_input[input_handle] = input_asset_key
@@ -434,12 +425,6 @@ class AssetLayer(NamedTuple):
                 node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = input_asset_key
-
-                partition_mapping = assets_def.get_partition_mapping_for_input(input_name)
-                if partition_mapping is not None:
-                    partition_mappings_by_asset_dep[(node_handle, input_asset_key)] = (
-                        partition_mapping
-                    )
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
@@ -529,11 +514,9 @@ class AssetLayer(NamedTuple):
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_info_by_node_output_handle=asset_info_by_output,
             check_key_by_node_output_handle=check_key_by_output,
-            asset_deps=asset_deps,
             assets_defs_by_node_handle=assets_defs_by_node_handle,
             dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
             dep_asset_keys_by_node_output_handle=dep_asset_keys_by_node_output_handle,
-            partition_mappings_by_asset_dep=partition_mappings_by_asset_dep,
             node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
             check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
             assets_defs_by_check_key=assets_defs_by_check_key,
@@ -578,10 +561,6 @@ class AssetLayer(NamedTuple):
             )
         return next(iter(assets_def.keys_by_output_name.values()))
 
-    def asset_check_specs_for_node(self, node_handle: NodeHandle) -> Sequence[AssetCheckSpec]:
-        assets_def_for_node = self.assets_def_for_node(node_handle)
-        return list(assets_def_for_node.check_specs) if assets_def_for_node else []
-
     def get_spec_for_asset_check(
         self, node_handle: NodeHandle, asset_check_key: AssetCheckKey
     ) -> Optional[AssetCheckSpec]:
@@ -625,7 +604,12 @@ class AssetLayer(NamedTuple):
     def partition_mapping_for_node_input(
         self, node_handle: NodeHandle, upstream_asset_key: AssetKey
     ) -> Optional["PartitionMapping"]:
-        return self.partition_mappings_by_asset_dep.get((node_handle.root, upstream_asset_key))
+        assets_def = self.assets_defs_by_node_handle.get(node_handle)
+        if assets_def is not None:
+            return assets_def.get_partition_mapping_for_dep(upstream_asset_key)
+        else:
+            # Can end up here when a non-asset job has an asset as an input
+            return None
 
     def downstream_dep_assets(self, node_handle: NodeHandle, output_name: str) -> Set[AssetKey]:
         """Given the node handle of an op within a graph-backed asset and an output name,

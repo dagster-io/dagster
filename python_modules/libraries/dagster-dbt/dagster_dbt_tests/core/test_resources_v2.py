@@ -25,12 +25,18 @@ from ..dbt_projects import (
     test_dbt_source_freshness_path,
     test_exceptions_path,
     test_jaffle_shop_path,
+    test_jaffle_with_profile_vars_path,
 )
 
 
 @pytest.fixture(name="dbt", scope="module")
 def dbt_fixture() -> DbtCliResource:
     return DbtCliResource(project_dir=os.fspath(test_jaffle_shop_path))
+
+
+@pytest.fixture(name="dbt_with_profile_vars", scope="module")
+def dbt_with_profile_vars_fixture() -> DbtCliResource:
+    return DbtCliResource(project_dir=os.fspath(test_jaffle_with_profile_vars_path))
 
 
 @pytest.mark.parametrize("global_config_flags", [[], ["--quiet"]])
@@ -96,6 +102,11 @@ def test_dbt_cli_failure() -> None:
     assert dbt_cli_invocation.get_error()
     assert dbt_cli_invocation.process.returncode == 2
     assert dbt_cli_invocation.target_path.joinpath("dbt.log").exists()
+
+    # If the exit code is 0, but error logs were emitted, the invocation is not successful.
+    dbt_cli_invocation.process.returncode = 0
+    assert not dbt_cli_invocation.is_successful()
+    assert dbt_cli_invocation.get_error()
 
     dbt = DbtCliResource(project_dir=os.fspath(test_exceptions_path), target="error_dev")
 
@@ -512,6 +523,12 @@ def test_dbt_adapter(dbt: DbtCliResource) -> None:
     assert dbt.cli(["build"]).adapter
     assert dbt.cli(["parse"]).adapter
     assert dbt.cli(["source", "freshness"]).adapter
+
+
+def test_dbt_adapter_with_profile_vars(dbt_with_profile_vars: DbtCliResource) -> None:
+    assert dbt_with_profile_vars.cli(
+        ["build", '--vars={"duckdb_dbfile_path": "target/local.duckdb", "jaffle_schema": "dev"}']
+    ).adapter
 
 
 def test_custom_subclass():

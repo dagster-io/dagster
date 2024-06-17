@@ -76,7 +76,6 @@ def test_source_asset():
             assert context.asset_key == AssetKey("asset1")
             assert context.upstream_output.asset_key == AssetKey("asset1")
             assert context.upstream_output.definition_metadata["a"] == "b"
-            assert context.upstream_output.name == "result"
             assert context.dagster_type.typing_type == int
             return 5
 

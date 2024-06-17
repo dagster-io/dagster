@@ -1,0 +1,8 @@
+jaffle_shop:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ var('duckdb_dbfile_path') }}"
+      schema: "{{ var('jaffle_schema') }}"
+      threads: 24

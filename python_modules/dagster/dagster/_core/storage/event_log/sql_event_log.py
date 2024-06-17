@@ -1191,7 +1191,7 @@ class SqlEventLogStorage(EventLogStorage):
         self,
         row,
         last_materialization_record: Optional[EventLogRecord],
-        can_cache_asset_status_data: bool,
+        can_read_asset_status_cache: bool,
     ) -> AssetRecord:
         from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
@@ -1206,7 +1206,7 @@ class SqlEventLogStorage(EventLogStorage):
                     asset_details=AssetDetails.from_db_string(row["asset_details"]),
                     cached_status=(
                         AssetStatusCacheValue.from_db_string(row["cached_status_data"])
-                        if can_cache_asset_status_data
+                        if can_read_asset_status_cache
                         else None
                     ),
                     last_planned_materialization_storage_id=None,
@@ -1283,11 +1283,14 @@ class SqlEventLogStorage(EventLogStorage):
                 )
         return results
 
-    def can_cache_asset_status_data(self) -> bool:
+    def can_read_asset_status_cache(self) -> bool:
+        return self.has_asset_key_col("cached_status_data")
+
+    def can_write_asset_status_cache(self) -> bool:
         return self.has_asset_key_col("cached_status_data")
 
     def wipe_asset_cached_status(self, asset_key: AssetKey) -> None:
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             check.inst_param(asset_key, "asset_key", AssetKey)
             with self.index_connection() as conn:
                 conn.execute(
@@ -1303,7 +1306,7 @@ class SqlEventLogStorage(EventLogStorage):
     ) -> Sequence[AssetRecord]:
         rows = self._fetch_asset_rows(asset_keys=asset_keys)
         latest_materialization_records = self._get_latest_materialization_records(rows)
-        can_cache_asset_status_data = self.can_cache_asset_status_data()
+        can_read_asset_status_cache = self.can_read_asset_status_cache()
 
         asset_records: List[AssetRecord] = []
         for row in rows:
@@ -1313,7 +1316,7 @@ class SqlEventLogStorage(EventLogStorage):
                     self._construct_asset_record_from_row(
                         row,
                         latest_materialization_records.get(asset_key),
-                        can_cache_asset_status_data,
+                        can_read_asset_status_cache,
                     )
                 )
 
@@ -1431,7 +1434,7 @@ class SqlEventLogStorage(EventLogStorage):
             AssetKeyTable.c.last_run_id,
             AssetKeyTable.c.asset_details,
         ]
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             columns.extend([AssetKeyTable.c.cached_status_data])
 
         is_partial_query = asset_keys is not None or bool(prefix) or bool(limit) or bool(cursor)
@@ -1511,7 +1514,7 @@ class SqlEventLogStorage(EventLogStorage):
     def update_asset_cached_status_data(
         self, asset_key: AssetKey, cache_values: "AssetStatusCacheValue"
     ) -> None:
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             with self.index_connection() as conn:
                 conn.execute(
                     AssetKeyTable.update()
@@ -1768,7 +1771,7 @@ class SqlEventLogStorage(EventLogStorage):
                     wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
                 )
             )
-        if self.can_cache_asset_status_data():
+        if self.can_read_asset_status_cache():
             values.update(dict(cached_status_data=None))
         return values
 

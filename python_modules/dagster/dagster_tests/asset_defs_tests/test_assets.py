@@ -10,9 +10,11 @@ from dagster import (
     AssetKey,
     AssetOut,
     AssetsDefinition,
+    BackfillPolicy,
     DagsterEventType,
     DailyPartitionsDefinition,
     Definitions,
+    ExperimentalWarning,
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
@@ -2174,3 +2176,36 @@ def test_asset_spec_skippable():
         node_def=op1, keys_by_output_name={"result": AssetKey("asset1")}, keys_by_input_name={}
     )
     assert next(iter(assets_def.specs)).skippable
+
+
+def test_construct_assets_definition_no_args() -> None:
+    with pytest.raises(CheckError, match="If specs are not provided, a node_def must be provided"):
+        AssetsDefinition()
+
+
+def test_construct_assets_definition_without_node_def() -> None:
+    spec = AssetSpec("asset1", tags={"foo": "bar"}, group_name="hello")
+    with pytest.warns(ExperimentalWarning):
+        assets_def = AssetsDefinition(specs=[spec])
+    assert not assets_def.is_executable
+    assert list(assets_def.specs) == [spec]
+
+
+def test_construct_assets_definition_without_node_def_attr_by_keys() -> None:
+    with pytest.raises(CheckError):
+        AssetsDefinition(group_names_by_key={AssetKey("foo"): "foo_group"})
+
+
+def test_construct_assets_definition_without_node_def_with_bad_param_combo() -> None:
+    spec = AssetSpec("asset1", tags={"foo": "bar"}, group_name="hello")
+    with pytest.raises(CheckError):
+        AssetsDefinition(specs=[spec], backfill_policy=BackfillPolicy.single_run())
+
+    with pytest.raises(CheckError):
+        AssetsDefinition(specs=[spec], keys_by_input_name={"input": AssetKey("asset0")})
+
+    with pytest.raises(CheckError):
+        AssetsDefinition(specs=[spec], keys_by_output_name={"result": AssetKey("asset1")})
+
+    with pytest.raises(CheckError):
+        AssetsDefinition(specs=[spec], can_subset=True)

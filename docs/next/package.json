@@ -24,6 +24,7 @@
     "@markdoc/next.js": "^0.2.2",
     "@mdx-js/loader": "^1.6.22",
     "@next/mdx": "^12.2.2",
+    "@next/third-parties": "^14.2.4",
     "@tailwindcss/forms": "^0.2.1",
     "@tailwindcss/typography": "^0.4.0",
     "@types/mdx": "^2.0.2",

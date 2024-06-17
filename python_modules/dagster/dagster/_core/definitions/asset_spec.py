@@ -23,6 +23,12 @@ if TYPE_CHECKING:
 # for externally materialized assets.
 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
+
+# SYSTEM_METADATA_KEY_IO_MANAGER_KEY lives on the metadata of an asset without a node def and
+# determines the io_manager_key that can be used to load it. This is necessary because IO manager
+# keys are otherwise encoded inside OutputDefinitions within NodeDefinitions.
+SYSTEM_METADATA_KEY_IO_MANAGER_KEY = "dagster/io_manager_key"
+
 # SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES lives on the metadata of
 # external assets resulting from a source asset conversion. It contains the
 # `auto_observe_interval_minutes` value from the source asset and is consulted

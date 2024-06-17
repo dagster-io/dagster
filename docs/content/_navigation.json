@@ -735,6 +735,19 @@
       {
         "title": "dagster-plus CLI",
         "path": "/dagster-plus/managing-deployments/dagster-plus-cli"
+      },
+      {
+        "title": "References",
+        "children": [
+          {
+            "title": "CI/CD files",
+            "path": "/dagster-plus/references/ci-cd-file-reference"
+          },
+          {
+            "title": "dagster_cloud.yaml",
+            "path": "/dagster-plus/managing-deployments/dagster-cloud-yaml"
+          }
+        ]
       }
     ]
   },
@@ -869,10 +882,6 @@
           {
             "title": "Learning Dagster from Airflow",
             "path": "/integrations/airflow/from-airflow-to-dagster"
-          },
-          {
-            "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
           },
           {
             "title": "Reference",
@@ -1145,10 +1154,11 @@
       },
       {
         "title": "Migrating to Dagster",
+        "path": "/guides/migrations",
         "children": [
           {
             "title": "Migrating from Airflow",
-            "path": "/integrations/airflow/migrating-to-dagster"
+            "path": "/guides/migrations/migrating-airflow-to-dagster"
           }
         ]
       },

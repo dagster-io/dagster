@@ -7,6 +7,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -667,24 +668,12 @@ def _get_execution_plan_from_run(
         else None
     )
 
-    # Rebuild from snapshot if able and selection has not changed
-    if (
-        execution_plan_snapshot is not None
-        and execution_plan_snapshot.can_reconstruct_plan
-        and job.resolved_op_selection == dagster_run.resolved_op_selection
-        and job.asset_selection == dagster_run.asset_selection
-        and job.asset_check_selection == dagster_run.asset_check_selection
-    ):
-        return ExecutionPlan.rebuild_from_snapshot(
-            dagster_run.job_name,
-            execution_plan_snapshot,
-        )
-
     return create_execution_plan(
         job,
         run_config=dagster_run.run_config,
         step_keys_to_execute=dagster_run.step_keys_to_execute,
         instance_ref=instance.get_ref() if instance.is_persistent else None,
+        tags=dagster_run.tags,
         repository_load_data=(
             execution_plan_snapshot.repository_load_data if execution_plan_snapshot else None
         ),
@@ -754,14 +743,16 @@ def job_execution_iterator(
 
     job_exception_info = None
     job_canceled_info = None
-    failed_steps = []
+    failed_steps: List[
+        DagsterEvent
+    ] = []  # A list of failed steps, with the earliest failure event at the front
     generator_closed = False
     try:
         for event in job_context.executor.execute(job_context, execution_plan):
             if event.is_step_failure:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
             elif event.is_resource_init_failure and event.step_key:
-                failed_steps.append(event.step_key)
+                failed_steps.append(event)
 
             # Telemetry
             log_dagster_event(event, job_context)
@@ -825,10 +816,12 @@ def job_execution_iterator(
                 error_info=job_exception_info,
             )
         elif failed_steps:
+            failed_step_keys = [event.step_key for event in failed_steps]
             event = DagsterEvent.job_failure(
                 job_context,
-                f"Steps failed: {failed_steps}.",
+                f"Steps failed: {failed_step_keys}.",
                 failure_reason=RunFailureReason.STEP_FAILURE,
+                first_step_failure_event=failed_steps[0],
             )
         else:
             event = DagsterEvent.job_success(job_context)

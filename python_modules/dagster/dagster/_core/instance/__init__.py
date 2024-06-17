@@ -1169,12 +1169,8 @@ class DagsterInstance(DynamicPartitionsStore):
                 asset_selection=asset_selection,
                 op_selection=op_selection,
             )
-        step_keys_to_execute = None
 
-        if execution_plan:
-            step_keys_to_execute = execution_plan.step_keys_to_execute
-
-        else:
+        if not execution_plan:
             execution_plan = create_execution_plan(
                 job=job_def,
                 run_config=run_config,
@@ -1191,7 +1187,7 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_selection=asset_selection,
             asset_check_selection=None,
             resolved_op_selection=resolved_op_selection,
-            step_keys_to_execute=step_keys_to_execute,
+            step_keys_to_execute=execution_plan.step_keys_to_execute,
             status=DagsterRunStatus(status) if status else None,
             tags=tags,
             root_run_id=root_run_id,
@@ -1912,8 +1908,8 @@ class DagsterInstance(DynamicPartitionsStore):
     # asset storage
 
     @traced
-    def can_cache_asset_status_data(self) -> bool:
-        return self._event_storage.can_cache_asset_status_data()
+    def can_read_asset_status_cache(self) -> bool:
+        return self._event_storage.can_read_asset_status_cache()
 
     @traced
     def update_asset_cached_status_data(

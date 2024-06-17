@@ -404,7 +404,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         )
         query_result_one = info_result_one.data["pipelineRunOrError"]
         assert query_result_one["__typename"] == "Run"
-        assert query_result_one["stepKeysToExecute"] is None
+        assert query_result_one["stepKeysToExecute"] == ["sum_op", "sum_sq_op"]  # full execution
 
         info_result_two = execute_dagster_graphql_and_finish_runs(
             context, PIPELINE_REEXECUTION_INFO_QUERY, variables={"runId": new_run_id}
@@ -412,8 +412,7 @@ class TestRetryExecution(ExecutingGraphQLContextTestMatrix):
         query_result_two = info_result_two.data["pipelineRunOrError"]
         assert query_result_two["__typename"] == "Run"
         stepKeysToExecute = query_result_two["stepKeysToExecute"]
-        assert stepKeysToExecute is not None
-        snapshot.assert_match(stepKeysToExecute)
+        assert stepKeysToExecute == ["sum_sq_op"]  # selected key
 
     def test_pipeline_reexecution_invalid_step_in_subset(
         self, graphql_context: WorkspaceRequestContext

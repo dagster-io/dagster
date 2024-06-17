@@ -206,7 +206,7 @@ async def handle_report_asset_check_request(
     except Exception as exc:
         return JSONResponse(
             {
-                "error": f"Error constructing AssetMaterialization: {exc}",
+                "error": f"Error constructing AssetCheckEvaluation: {exc}",
             },
             status_code=400,
         )

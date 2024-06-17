@@ -43,7 +43,7 @@ To define a sensor, use the <PyObject object="sensor" decorator /> decorator. Th
 Let's say you have a job that logs a filename that is specified in the op configuration of the `process_file` op:
 
 ```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_sensor_job_marker endbefore=end_sensor_job_marker
-from dagster import op, job, Config
+from dagster import op, job, Config, OpExecutionContext
 
 
 class FileConfig(Config):

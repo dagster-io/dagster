@@ -3068,8 +3068,8 @@ def get_partitioned_asset_repo():
 
 def test_1d_subset_backcompat():
     with instance_for_test() as instance:
-        instance.can_cache_asset_status_data = lambda: False
-        assert instance.can_cache_asset_status_data() is False
+        instance.can_read_asset_status_cache = lambda: False
+        assert instance.can_read_asset_status_cache() is False
 
         with define_out_of_process_context(
             __file__, "get_partitioned_asset_repo", instance
@@ -3151,8 +3151,8 @@ def test_1d_subset_backcompat():
 
 def test_2d_subset_backcompat():
     with instance_for_test() as instance:
-        instance.can_cache_asset_status_data = lambda: False
-        assert instance.can_cache_asset_status_data() is False
+        instance.can_read_asset_status_cache = lambda: False
+        assert instance.can_read_asset_status_cache() is False
 
         with define_out_of_process_context(
             __file__, "get_partitioned_asset_repo", instance
