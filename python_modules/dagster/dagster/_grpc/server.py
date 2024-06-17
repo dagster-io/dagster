@@ -562,6 +562,11 @@ class DagsterApiServer(DagsterApiServicer):
                     modify_request.target.identifier_within_manager,
                     check.not_none(modify_request.blob),
                 )
+            elif modify_request.action == ModifyBlueprintAction.UPDATE:
+                url = manager.update_blueprint(
+                    modify_request.target.identifier_within_manager,
+                    check.not_none(modify_request.blob),
+                )
             else:
                 raise DagsterUserCodeUnreachableError(f"Unsupported action {modify_request.action}")
 

@@ -3706,6 +3706,11 @@ type Mutation {
     blueprintManagerSelector: BlueprintManagerSelector!
     identifierWithinManager: String!
   ): String!
+  updateBlueprint(
+    blob: String!
+    blueprintManagerSelector: BlueprintManagerSelector!
+    identifierWithinManager: String!
+  ): String!
 }
 
 input ReexecutionParams {

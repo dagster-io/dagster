@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useMutation, useQuery} from '@apollo/client';
 import {
   Alert,
   Box,
@@ -8,6 +8,7 @@ import {
   ConfigEditorWithSchema,
   Dialog,
   DialogFooter,
+  ExternalAnchorButton,
   Group,
   Heading,
   Icon,
@@ -17,6 +18,7 @@ import {
   Subheading,
   Table,
   Tag,
+  TextInput,
 } from '@dagster-io/ui-components';
 import {
   ConfigSchema,
@@ -25,11 +27,16 @@ import {
 } from '@dagster-io/ui-components/src/components/configeditor/types/ConfigSchema';
 import React, {useState} from 'react';
 import {useParams} from 'react-router-dom';
+import styled from 'styled-components';
 import {v4 as uuidv4} from 'uuid';
 
 import {
   BlueprintManagerRootQuery,
   BlueprintManagerRootQueryVariables,
+  CreateBlueprintMutation,
+  CreateBlueprintMutationVariables,
+  UpdateBlueprintMutation,
+  UpdateBlueprintMutationVariables,
 } from './types/BlueprintManagerRoot.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
@@ -46,31 +53,73 @@ type JsonSchema = {
   properties: {
     [key: string]: JsonSchema;
   };
+  additionalProperties?: JsonSchema;
   description?: string;
   required?: string[];
 };
 
 const jsonSchemaToConfigSchemaInner = (
   jsonSchema: JsonSchema,
+  definitions: {[name: string]: JsonSchema},
 ): {
   types: ConfigSchema_allConfigTypes[];
   rootKey: string;
 } => {
+  // merge properties and additionalProperties into a single object
+
   console.log(jsonSchema);
-  if (jsonSchema.type === 'object') {
-    const fieldTypesByKey = Object.entries(jsonSchema.properties).reduce(
+
+  if (jsonSchema.additionalProperties && jsonSchema.additionalProperties['$ref']) {
+    const ref = jsonSchema.additionalProperties && jsonSchema.additionalProperties['$ref'];
+    const inner = jsonSchemaToConfigSchemaInner(definitions[ref.split('/').pop()!], definitions);
+
+    const rootKeyUuid = uuidv4();
+    const anyTypeUuid = uuidv4();
+
+    return {
+      types: [
+        {
+          __typename: 'MapConfigType',
+          key: rootKeyUuid,
+          description: jsonSchema.description || null,
+          isSelector: false,
+          keyLabelName: 'key',
+          typeParamKeys: [anyTypeUuid, inner.rootKey],
+        },
+        {
+          __typename: 'RegularConfigType',
+          givenName: 'Any',
+          key: anyTypeUuid,
+          description: '',
+          isSelector: false,
+          typeParamKeys: [],
+        },
+        ...inner.types,
+      ],
+      rootKey: rootKeyUuid,
+    };
+  }
+
+  if (jsonSchema['$ref'] || (jsonSchema['allOf'] && jsonSchema['allOf'].length == 1)) {
+    const ref = jsonSchema['$ref'] || jsonSchema['allOf'][0]['$ref'];
+    return jsonSchemaToConfigSchemaInner(definitions[ref.split('/').pop()!], definitions);
+  }
+
+  const props = {...jsonSchema.properties, ...jsonSchema.additionalProperties};
+  if (jsonSchema.type === 'object' && props) {
+    const fieldTypesByKey = Object.entries(props).reduce(
       (accum, [key, value]) => {
-        accum[key] = jsonSchemaToConfigSchemaInner(value);
+        accum[key] = jsonSchemaToConfigSchemaInner(value, definitions);
         return accum;
       },
       {} as Record<string, {types: ConfigSchema_allConfigTypes[]; rootKey: string}>,
     );
 
-    const fieldEntries = Object.entries(jsonSchema.properties).map(([key, value]) => {
+    const fieldEntries = Object.entries(props).map(([key, value]) => {
       return {
         __typename: 'ConfigTypeField',
         name: key,
-        description: value.description,
+        description: value.description || null,
         isRequired: (jsonSchema.required || []).includes(key),
         configTypeKey: fieldTypesByKey[key]?.rootKey,
         defaultValueAsJson: null,
@@ -115,9 +164,10 @@ const jsonSchemaToConfigSchemaInner = (
 
 const jsonSchemaToConfigSchema = (jsonSchema: any): ConfigSchema => {
   // get first object in jsonSchema.definitions
-  const firstKey = Object.keys(jsonSchema.definitions)[0];
+  const firstKey = jsonSchema['$ref'].split('/').pop();
+
   const firstValue = jsonSchema.definitions[firstKey];
-  const {types, rootKey} = jsonSchemaToConfigSchemaInner(firstValue);
+  const {types, rootKey} = jsonSchemaToConfigSchemaInner(firstValue, jsonSchema.definitions);
 
   return {
     __typename: 'ConfigSchema',
@@ -141,14 +191,24 @@ const EditBlueprintDialog = ({
   setConfig,
   title,
   onSave,
+  loading,
+  createdPRUrl,
+  name,
+  setName,
+  canSetName,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
   configSchema: ConfigSchema | null;
+  name: string;
+  setName: (name: string) => void;
+  canSetName: boolean;
   config: string;
   setConfig: (config: string) => void;
   title: string;
+  createdPRUrl: string | null;
+  loading: boolean;
 }) => {
   return (
     <Dialog
@@ -157,6 +217,21 @@ const EditBlueprintDialog = ({
       onClose={onClose}
       style={{maxWidth: '90%', minWidth: '70%', width: 1000}}
     >
+      <Box flex={{direction: 'column', gap: 4}} margin={{horizontal: 32, top: 16, bottom: 24}}>
+        <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+          <FormLabel htmlFor="key-name" style={{lineHeight: '16px'}}>
+            Name
+          </FormLabel>
+        </Box>
+        <TextInput
+          id="key-name"
+          placeholder="my_blueprint_name"
+          value={name}
+          disabled={!canSetName}
+          onChange={(e) => setName(e.target.value)}
+          style={{width: '100%'}}
+        />
+      </Box>
       <ConfigEditorWithSchema
         onConfigChange={setConfig}
         config={config}
@@ -165,12 +240,23 @@ const EditBlueprintDialog = ({
         identifier="foo"
       />
       <DialogFooter topBorder>
-        <Button intent="none" onClick={onClose}>
-          Cancel
+        <Button intent="none" onClick={onClose} disabled={loading}>
+          {createdPRUrl ? 'Close' : 'Cancel'}
         </Button>
-        <Button intent="primary" onClick={onSave}>
-          Save
-        </Button>
+        {createdPRUrl ? (
+          <ExternalAnchorButton
+            intent="primary"
+            href={createdPRUrl}
+            icon={<Icon name="github" />}
+            rightIcon={<Icon name="open_in_new" />}
+          >
+            Open pull request
+          </ExternalAnchorButton>
+        ) : (
+          <Button intent="primary" onClick={onSave} icon={<Icon name="github" />} loading={loading}>
+            Create pull request
+          </Button>
+        )}
       </DialogFooter>
     </Dialog>
   );
@@ -183,6 +269,7 @@ export const BlueprintManagerRoot = (props: Props) => {
   const {blueprintManagerName} = useParams<{blueprintManagerName: string}>();
 
   const [config, setConfig] = useState<string>('');
+  const [inputName, setInputName] = useState<string>('');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editorTarget, setEditorTarget] = useState<BlueprintKey | null>(null);
 
@@ -201,6 +288,17 @@ export const BlueprintManagerRoot = (props: Props) => {
     },
   );
 
+  const [createBlueprint, createLoading] = useMutation<
+    CreateBlueprintMutation,
+    CreateBlueprintMutationVariables
+  >(CREATE_BLUEPRINT_MUTATION);
+  const [updateBlueprint, updateLoading] = useMutation<
+    UpdateBlueprintMutation,
+    UpdateBlueprintMutationVariables
+  >(UPDATE_BLUEPRINT_MUTATION);
+
+  const [createdPRUrl, setCreatedPRUrl] = useState<string | null>(null);
+
   const blueprintManager =
     queryResult.data?.blueprintManagerOrError.__typename === 'BlueprintManager'
       ? queryResult.data.blueprintManagerOrError
@@ -217,18 +315,40 @@ export const BlueprintManagerRoot = (props: Props) => {
 
   const openEditorForBlueprint = (blueprint: Blueprint) => {
     setConfig(JSON.parse(blueprint.blob.value));
+    setCreatedPRUrl(null);
     setEditorTarget(blueprint.key);
     setIsEditorOpen(true);
   };
 
   const openEditorForNewBlueprint = () => {
     setConfig('');
+    setCreatedPRUrl(null);
     setEditorTarget(null);
     setIsEditorOpen(true);
   };
 
-  const saveConfig = () => {
-    setIsEditorOpen(false);
+  const saveConfig = async () => {
+    //setIsEditorOpen(false);
+
+    if (!editorTarget) {
+      const result = await createBlueprint({
+        variables: {
+          blueprintManagerSelector,
+          blob: config,
+          identifierWithinManager: `${inputName}.yaml`,
+        },
+      });
+      setCreatedPRUrl(result.data?.createBlueprint || null);
+    } else {
+      const result = await updateBlueprint({
+        variables: {
+          blueprintManagerSelector,
+          blob: config,
+          identifierWithinManager: editorTarget?.identifierWithinManager.split(':')[0],
+        },
+      });
+      setCreatedPRUrl(result.data?.updateBlueprint || null);
+    }
   };
 
   return (
@@ -344,11 +464,16 @@ export const BlueprintManagerRoot = (props: Props) => {
                       configSchema={jsonSchemaConfigSchema}
                       config={config}
                       setConfig={setConfig}
+                      loading={createLoading.loading || updateLoading.loading}
+                      createdPRUrl={createdPRUrl}
                       title={
                         editorTarget
                           ? `Edit Blueprint ${editorTarget?.identifierWithinManager}`
                           : 'Create new Blueprint'
                       }
+                      name={editorTarget?.identifierWithinManager.split('.')[0] || inputName}
+                      setName={setInputName}
+                      canSetName={!editorTarget}
                       onSave={saveConfig}
                     />
                   </Box>
@@ -360,6 +485,28 @@ export const BlueprintManagerRoot = (props: Props) => {
                       margin={{left: 24, right: 12, vertical: 16}}
                     >
                       <Heading>{blueprintManager?.name}</Heading>
+                    </Box>
+                    <Box
+                      border="top-and-bottom"
+                      background={Colors.backgroundLight()}
+                      padding={{vertical: 8, horizontal: 24}}
+                      style={{fontSize: '12px', fontWeight: 500}}
+                    >
+                      Description
+                    </Box>
+                    <Box padding={{horizontal: 24, vertical: 16}}>
+                      {blueprintManager?.name === 'ingestion' ? (
+                        <>
+                          Blueprints for ELT syncs using Sling.
+                          <br /> <br />
+                          To create a blueprint, hit the new blueprint button and be prepared to
+                          supply Sling stream config.
+                          <br /> <br />
+                          https://docs.slingdata.io/sling-cli/run/configuration/replication
+                        </>
+                      ) : (
+                        <>Blueprints for Python notebooks for model training.</>
+                      )}
                     </Box>
                   </Box>
                 }
@@ -397,4 +544,36 @@ const BLUEPRINT_MANAGER_ROOT_QUERY = gql`
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
+`;
+
+const CREATE_BLUEPRINT_MUTATION = gql`
+  mutation CreateBlueprintMutation(
+    $blueprintManagerSelector: BlueprintManagerSelector!
+    $blob: String!
+    $identifierWithinManager: String!
+  ) {
+    createBlueprint(
+      blueprintManagerSelector: $blueprintManagerSelector
+      blob: $blob
+      identifierWithinManager: $identifierWithinManager
+    )
+  }
+`;
+
+const UPDATE_BLUEPRINT_MUTATION = gql`
+  mutation UpdateBlueprintMutation(
+    $blueprintManagerSelector: BlueprintManagerSelector!
+    $blob: String!
+    $identifierWithinManager: String!
+  ) {
+    updateBlueprint(
+      blueprintManagerSelector: $blueprintManagerSelector
+      blob: $blob
+      identifierWithinManager: $identifierWithinManager
+    )
+  }
+`;
+
+const FormLabel = styled.label`
+  font-size: 12px;
 `;

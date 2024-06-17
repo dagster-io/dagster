@@ -32,3 +32,19 @@ export type BlueprintManagerRootQuery = {
         }>;
       };
 };
+
+export type CreateBlueprintMutationVariables = Types.Exact<{
+  blueprintManagerSelector: Types.BlueprintManagerSelector;
+  blob: Types.Scalars['String']['input'];
+  identifierWithinManager: Types.Scalars['String']['input'];
+}>;
+
+export type CreateBlueprintMutation = {__typename: 'Mutation'; createBlueprint: string};
+
+export type UpdateBlueprintMutationVariables = Types.Exact<{
+  blueprintManagerSelector: Types.BlueprintManagerSelector;
+  blob: Types.Scalars['String']['input'];
+  identifierWithinManager: Types.Scalars['String']['input'];
+}>;
+
+export type UpdateBlueprintMutation = {__typename: 'Mutation'; updateBlueprint: string};

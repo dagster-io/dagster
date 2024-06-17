@@ -2673,6 +2673,7 @@ export type Mutation = {
   terminatePipelineExecution: TerminateRunResult;
   terminateRun: TerminateRunResult;
   terminateRuns: TerminateRunsResultOrError;
+  updateBlueprint: Scalars['String']['output'];
   wipeAssets: AssetWipeMutationResult;
 };
 
@@ -2827,6 +2828,12 @@ export type MutationTerminateRunArgs = {
 export type MutationTerminateRunsArgs = {
   runIds: Array<Scalars['String']['input']>;
   terminatePolicy?: InputMaybe<TerminateRunPolicy>;
+};
+
+export type MutationUpdateBlueprintArgs = {
+  blob: Scalars['String']['input'];
+  blueprintManagerSelector: BlueprintManagerSelector;
+  identifierWithinManager: Scalars['String']['input'];
 };
 
 export type MutationWipeAssetsArgs = {
@@ -10338,6 +10345,10 @@ export const buildMutation = (
         : relationshipsToOmit.has('PythonError')
         ? ({} as PythonError)
         : buildPythonError({}, relationshipsToOmit),
+    updateBlueprint:
+      overrides && overrides.hasOwnProperty('updateBlueprint')
+        ? overrides.updateBlueprint!
+        : 'ipsum',
     wipeAssets:
       overrides && overrides.hasOwnProperty('wipeAssets')
         ? overrides.wipeAssets!

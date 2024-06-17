@@ -5,6 +5,8 @@ from typing import Any, Dict, Optional, Sequence, Type, Union, cast
 import github3
 from dagster import (
     Definitions,
+)
+from dagster import (
     _check as check,
 )
 from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
@@ -43,12 +45,16 @@ def load_blueprints_from_yaml(
         Sequence[Blueprint]: The loaded blueprints.
     """
     resolved_path = Path(path)
-    check.invariant(resolved_path.exists(), f"No file or directory at path: {resolved_path}")
+    check.invariant(
+        resolved_path.exists(), f"No file or directory at path: {resolved_path}"
+    )
     file_paths: list[Path]
     if resolved_path.is_file():
         file_paths = [resolved_path]
     else:
-        file_paths = list(resolved_path.rglob("*.yaml")) + list(resolved_path.rglob("*.yml"))
+        file_paths = list(resolved_path.rglob("*.yaml")) + list(
+            resolved_path.rglob("*.yml")
+        )
 
     origin = get_origin(per_file_blueprint_type)
     if safe_is_subclass(origin, Sequence):
@@ -60,7 +66,7 @@ def load_blueprints_from_yaml(
 
         # flatten the list of blueprints from all files
         blueprints = [
-            _attach_blob_to_blueprint(blueprint, file_path.read_text())
+            _attach_blob_to_blue
             for file_path in file_paths
             for blueprint in parse_yaml_file_to_pydantic_sequence(
                 args[0], file_path.read_text(), str(file_path)
@@ -142,9 +148,78 @@ class YamlBlueprintsLoader(BlueprintManager):
         """Returns a JSON schema for the model or models that the loader is responsible for loading."""
         return json_schema_from_type(self.per_file_blueprint_type)
 
-    def add_blueprint(self, identifier: object, blob: str) -> None:
-        user_access_token = ""
+    def add_blueprint(self, identifier: object, blob: str) -> str:
+        user_access_token = "xxx"
         gh = github3.GitHub(token=user_access_token)
+        repo = gh.repository("benpankow", "blueprint-ui-demo")
 
-        repo = gh.repository("benpankow", "dagster-blueprints")
-        print(repo)
+        import uuid
+
+        branch_name: str = f"test-{uuid.uuid4().hex[:7]}"
+        repo.create_branch_ref(branch_name, repo.branch(repo.default_branch).commit)
+
+        repo_path = identifier
+        blob = repo.create_blob(content=blob, encoding="utf-8")
+        tree_content = []
+        tree_content.append(
+            {"path": repo_path, "mode": "100644", "type": "blob", "sha": blob}
+        )
+
+        branch = repo.branch(branch_name)
+        tree = repo.create_tree(tree_content, branch.commit.commit.tree.sha)
+        commit = repo.create_commit(
+            message="Add Dagster Cloud deploy actions",
+            tree=tree.sha,
+            parents=[branch.commit.sha],
+        )
+        ref = repo.ref(f"heads/{branch_name}")
+        ref.update(commit.sha)
+
+        pull_request = repo.create_pull(
+            f"Add {identifier} blueprint",
+            base=repo.default_branch,
+            head=branch_name,
+            body=(
+                "This is an automated pull request created by Dagster+ on behalf of the user "
+                "to add a new blueprint to the repository."
+            ),
+        )
+        return pull_request.html_url
+
+    def update_blueprint(self, identifier: object, blob: str) -> str:
+        user_access_token = "xxx"
+        gh = github3.GitHub(token=user_access_token)
+        repo = gh.repository("benpankow", "blueprint-ui-demo")
+
+        import uuid
+
+        branch_name: str = f"test-{uuid.uuid4().hex[:7]}"
+        repo.create_branch_ref(branch_name, repo.branch(repo.default_branch).commit)
+
+        repo_path = identifier
+        blob = repo.create_blob(content=blob, encoding="utf-8")
+        tree_content = []
+        tree_content.append(
+            {"path": repo_path, "mode": "100644", "type": "blob", "sha": blob}
+        )
+
+        branch = repo.branch(branch_name)
+        tree = repo.create_tree(tree_content, branch.commit.commit.tree.sha)
+        commit = repo.create_commit(
+            message="Add Dagster Cloud deploy actions",
+            tree=tree.sha,
+            parents=[branch.commit.sha],
+        )
+        ref = repo.ref(f"heads/{branch_name}")
+        ref.update(commit.sha)
+
+        pull_request = repo.create_pull(
+            f"Add {identifier} blueprint",
+            base=repo.default_branch,
+            head=branch_name,
+            body=(
+                "This is an automated pull request created by Dagster+ on behalf of the user "
+                "to add a new blueprint to the repository."
+            ),
+        )
+        return pull_request.html_url
