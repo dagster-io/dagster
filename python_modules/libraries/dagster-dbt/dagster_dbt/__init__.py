@@ -4,6 +4,7 @@ from .asset_utils import (
     build_schedule_from_dbt_selection as build_schedule_from_dbt_selection,
     default_group_from_dbt_resource_props as default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props as default_metadata_from_dbt_resource_props,
+    generate_external_assets as generate_external_assets,
     get_asset_key_for_model as get_asset_key_for_model,
     get_asset_key_for_source as get_asset_key_for_source,
     get_asset_keys_by_output_name_for_source as get_asset_keys_by_output_name_for_source,

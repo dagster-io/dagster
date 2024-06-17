@@ -11,6 +11,7 @@ from .dbt_projects import (
     test_asset_key_exceptions_path,
     test_dagster_dbt_mixed_freshness_path,
     test_dbt_alias_path,
+    test_dbt_external_source_assets_path,
     test_dbt_model_versions_path,
     test_dbt_python_interleaving_path,
     test_dbt_semantic_models_path,
@@ -187,5 +188,14 @@ def test_metadata_manifest_fixture() -> Dict[str, Any]:
     # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
     return _create_dbt_invocation(
         test_metadata_path,
+        build_project=True,
+    ).get_artifact("manifest.json")
+
+
+@pytest.fixture(name="test_external_source_assets_manifest", scope="session")
+def test_external_source_assets_manifest_fixture() -> Dict[str, Any]:
+    # Prepopulate duckdb with jaffle shop data to support testing individual column metadata.
+    return _create_dbt_invocation(
+        test_dbt_external_source_assets_path,
         build_project=True,
     ).get_artifact("manifest.json")

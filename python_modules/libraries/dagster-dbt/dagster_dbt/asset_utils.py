@@ -1,11 +1,13 @@
 import hashlib
 import textwrap
+from collections import namedtuple
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
     FrozenSet,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -21,6 +23,7 @@ from dagster import (
     AssetKey,
     AssetsDefinition,
     AssetSelection,
+    AssetSpec,
     AutoMaterializePolicy,
     DagsterInvariantViolationError,
     DefaultScheduleStatus,
@@ -34,6 +37,7 @@ from dagster import (
     TableSchema,
     _check as check,
     define_asset_job,
+    external_assets_from_specs,
 )
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     validate_and_assign_output_names_to_check_specs,
@@ -51,6 +55,10 @@ DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"
 DAGSTER_DBT_SELECT_METADATA_KEY = "dagster_dbt/select"
 DAGSTER_DBT_EXCLUDE_METADATA_KEY = "dagster_dbt/exclude"
+
+ExternalAssetParams = namedtuple(
+    "ExternalAssetParams", ["output_name", "source_name", "group_name", "description"]
+)
 
 
 def get_asset_key_for_model(dbt_assets: Sequence[AssetsDefinition], model_name: str) -> AssetKey:
@@ -373,6 +381,44 @@ def get_asset_keys_to_resource_props(
         for node in manifest["nodes"].values()
         if node["resource_type"] in ASSET_RESOURCE_TYPES
     }
+
+
+#############################
+# EXTERNAL ASSETS FOR SOURCES
+#############################
+
+
+def get_external_assets_params(manifest: Mapping[str, Any]) -> Iterator[ExternalAssetParams]:
+    """Scans the dbt manifest.json to find for sources that are intended to be declared as
+    external assets, and get the necessary parameters to create those assets.
+    """
+    for source_props in manifest["sources"].values():
+        dbt_meta = source_props.get("config", {}).get("meta", {}) or source_props.get("meta", {})
+        dagster_meta = dbt_meta.get("dagster", {})
+        if dagster_meta and "external" in dagster_meta:
+            source_name = source_props["source_name"]
+            output_name = dagster_name_fn(source_props)
+            group_name: Optional[str] = dagster_meta.get("group")
+            description = source_props.get("description")
+            yield ExternalAssetParams(output_name, source_name, group_name, description)
+
+
+def generate_external_assets(
+    dbt_assets: Sequence[AssetsDefinition],
+) -> List[AssetsDefinition]:
+    """Creates the required external assets for dbt sources based on the given dbt assets."""
+    external_asset_specs = []
+    manifest, _ = get_manifest_and_translator_from_dbt_assets(dbt_assets)
+    for external_asset_params in get_external_assets_params(manifest):
+        source_name = external_asset_params.source_name
+        output_name = external_asset_params.output_name
+        group_name = external_asset_params.group_name
+        description = external_asset_params.description
+        asset_key = get_asset_keys_by_output_name_for_source(dbt_assets, source_name)[output_name]
+        spec = AssetSpec(key=asset_key, group_name=group_name, description=description)
+        external_asset_specs.append(spec)
+
+    return external_assets_from_specs(external_asset_specs)
 
 
 ###################
