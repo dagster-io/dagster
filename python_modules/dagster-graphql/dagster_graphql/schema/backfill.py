@@ -574,7 +574,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         return GrapheneInstigationEventConnection(
             events=events,
-            cursor=new_cursor.to_string() if new_cursor else None,
+            cursor=new_cursor.to_string() if new_cursor else "",
             hasMore=new_cursor.has_more_now if new_cursor else False,
         )
 
