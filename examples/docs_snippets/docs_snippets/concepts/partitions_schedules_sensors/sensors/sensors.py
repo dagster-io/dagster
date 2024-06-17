@@ -12,12 +12,11 @@ from dagster import (
     DagsterRunStatus,
     run_status_sensor,
     run_failure_sensor,
-    OpExecutionContext,
 )
 
 
 # start_sensor_job_marker
-from dagster import op, job, Config
+from dagster import op, job, Config, OpExecutionContext
 
 
 class FileConfig(Config):
