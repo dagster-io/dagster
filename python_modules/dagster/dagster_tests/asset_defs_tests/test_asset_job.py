@@ -2466,7 +2466,11 @@ def test_subset_does_not_respect_context():
     specified_keys = {AssetKey("start"), AssetKey("c"), AssetKey("final")}
 
     with instance_for_test() as instance:
-        result = job.execute_in_process(instance=instance)
+        with pytest.warns(
+            UserWarning,
+            match="does not correspond to either an AssetsDefinition or a SourceAsset in the asset layer",
+        ):
+            result = job.execute_in_process(instance=instance)
         planned_asset_keys = {
             record.event_log_entry.dagster_event.event_specific_data.asset_key
             for record in instance.get_records_for_run(

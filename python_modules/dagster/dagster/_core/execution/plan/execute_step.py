@@ -874,9 +874,9 @@ def _log_materialization_or_observation_events_for_asset(
     asset_key, partitions = _asset_key_and_partitions_for_output(output_context)
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        if assets_def is not None:
-            execution_type = assets_def.execution_type
+        asset_node = asset_layer.get(asset_key)
+        if asset_node.is_executable:
+            execution_type = asset_node.execution_type
         else:
             # This is a situation that shouldn't really ever occur, but appears to be able to happen
             # when multiple output names point to the same asset key, which also shouldn't occur,
