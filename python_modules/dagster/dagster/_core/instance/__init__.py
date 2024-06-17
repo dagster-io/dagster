@@ -2030,7 +2030,7 @@ class DagsterInstance(DynamicPartitionsStore):
         """Return a list of materialization records stored in the event log storage.
 
         Args:
-            records_filter (Optional[Union[AssetKey, AssetRecordsFilter]]): the filter by which to
+            records_filter (Union[AssetKey, AssetRecordsFilter]): the filter by which to
                 filter event records.
             limit (int): Number of results to get.
             cursor (Optional[str]): Cursor to use for pagination. Defaults to None.
