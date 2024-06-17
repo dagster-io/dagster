@@ -224,24 +224,23 @@ def _step_output_error_checked_user_event_sequence(
             asset_layer = step_context.job_def.asset_layer
             node_handle = step_context.node_handle
             asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
-            if asset_key is not None:
+            if asset_key is not None and asset_key in asset_layer.asset_keys_for_node(node_handle):
                 asset_node = asset_layer.get(asset_key)
-                if not asset_node.skippable:
-                    assets_def = asset_node.assets_def
-                    all_dependent_keys = asset_node.child_keys
-                    step_local_asset_keys = step_context.get_output_asset_keys()
-                    step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
-                    for dependent_key in step_local_dependent_keys:
-                        output_name = assets_def.get_output_name_for_asset_key(dependent_key)
-                        # Need to skip self-dependent assets (possible with partitions)
-                        self_dep = dependent_key in asset_node.parent_keys
-                        if not self_dep and step_context.has_seen_output(output_name):
-                            raise DagsterInvariantViolationError(
-                                f'Asset "{dependent_key.to_user_string()}" was yielded before its'
-                                f' dependency "{asset_key.to_user_string()}".Multiassets'
-                                " yielding multiple asset outputs must yield them in topological"
-                                " order."
-                            )
+                assets_def = asset_node.assets_def
+                all_dependent_keys = asset_node.child_keys
+                step_local_asset_keys = step_context.get_output_asset_keys()
+                step_local_dependent_keys = all_dependent_keys & step_local_asset_keys
+                for dependent_key in step_local_dependent_keys:
+                    output_name = assets_def.get_output_name_for_asset_key(dependent_key)
+                    # Need to skip self-dependent assets (possible with partitions)
+                    self_dep = dependent_key in asset_node.parent_keys
+                    if not self_dep and step_context.has_seen_output(output_name):
+                        raise DagsterInvariantViolationError(
+                            f'Asset "{dependent_key.to_user_string()}" was yielded before its'
+                            f' dependency "{asset_key.to_user_string()}".Multiassets'
+                            " yielding multiple asset outputs must yield them in topological"
+                            " order."
+                        )
 
             step_context.observe_output(output.output_name)
 

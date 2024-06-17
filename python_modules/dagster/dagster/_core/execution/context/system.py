@@ -979,7 +979,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         asset_layer = self.job_def.asset_layer
         for step_output in self.step.step_outputs:
             asset_key = asset_layer.asset_key_for_output(self.node_handle, step_output.name)
-            if asset_key is None or asset_layer.asset_graph.get(asset_key).skippable:
+            if asset_key is None or asset_key not in asset_layer.asset_keys_for_node(
+                self.node_handle
+            ):
                 continue
             output_keys.add(asset_key)
         return output_keys

@@ -179,6 +179,7 @@ class FromLoadableAsset(
                 definition_metadata=asset_layer.get(input_asset_key).metadata,
                 resource_config=resource_config,
                 log_manager=step_context.log,
+                step_context=step_context,
             ),
         )
 

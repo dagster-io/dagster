@@ -82,7 +82,9 @@ def create_step_outputs(
                     is_dynamic=output_def.is_dynamic,
                     is_asset=asset_key is not None,
                     should_materialize=output_def.name in config_output_names,
-                    asset_key=asset_node.key if asset_node and not asset_node.skippable else None,
+                    asset_key=asset_node.key
+                    if asset_node and asset_node.key in asset_layer.asset_keys_for_node(handle)
+                    else None,
                     is_asset_partitioned=bool(asset_node.partitions_def) if asset_node else False,
                     asset_check_key=asset_layer.asset_check_key_for_output(handle, name),
                 ),

@@ -484,14 +484,18 @@ class AssetLayer(NamedTuple):
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.assets_defs_by_node_handle.get(node_handle)
 
-    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+    def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
         assets_def = self.assets_def_for_node(node_handle)
-        if not assets_def or len(assets_def.keys_by_output_name.keys()) > 1:
+        return check.not_none(assets_def).keys
+
+    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+        asset_keys = self.asset_keys_for_node(node_handle)
+        if len(asset_keys) > 1:
             raise DagsterInvariantViolationError(
                 "Cannot call `asset_key_for_node` in a multi_asset with more than one asset."
                 " Multiple asset keys defined."
             )
-        return next(iter(assets_def.keys_by_output_name.values()))
+        return next(iter(asset_keys))
 
     def get_spec_for_asset_check(
         self, node_handle: NodeHandle, asset_check_key: AssetCheckKey

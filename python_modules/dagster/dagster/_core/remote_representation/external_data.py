@@ -1703,7 +1703,7 @@ def external_asset_nodes_from_defs(
         asset_layer = job_def.asset_layer
         asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
         for node_output_handle, asset_key in asset_keys_by_node_output.items():
-            if asset_layer.get(asset_key).skippable:
+            if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
                 continue
             if asset_key not in primary_node_pairs_by_asset_key:
                 primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)

@@ -116,10 +116,6 @@ class AssetNode(BaseAssetNode):
         return self._check_keys
 
     @property
-    def skippable(self) -> bool:
-        return self._spec.skippable
-
-    @property
     def execution_set_asset_keys(self) -> AbstractSet[AssetKey]:
         return (
             {self.key}
