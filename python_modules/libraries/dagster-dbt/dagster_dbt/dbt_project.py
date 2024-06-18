@@ -25,7 +25,7 @@ def using_dagster_dev() -> bool:
 class DbtManifestPreparer:
     """A dbt manifest represented by DbtProject."""
 
-    def on_load(self, project: "DbtProject") -> None:
+    def ensure_prepared(self, project: "DbtProject") -> None:
         """Invoked when DbtProject is instantiated with this preparer."""
 
     def prepare(self, project: "DbtProject") -> None:
@@ -55,7 +55,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
         """
         self._generate_cli_args = generate_cli_args or ["parse", "--quiet"]
 
-    def on_load(self, project: "DbtProject"):
+    def ensure_prepared(self, project: "DbtProject"):
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
             self.prepare(project)
             if not project.manifest_path.exists():
@@ -85,7 +85,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 
         (
             DbtCliResource(project_dir=project)
-            .cli(["deps", "--quiet"], target_path=project.output_path)
+            .cli(["deps", "--quiet"], target_path=project.target_path)
             .wait()
         )
 
@@ -96,7 +96,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
             DbtCliResource(project_dir=project)
             .cli(
                 self._generate_cli_args,
-                target_path=project.output_path,
+                target_path=project.target_path,
             )
             .wait()
         )
@@ -105,25 +105,24 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 @experimental
 @dagster_model_custom
 class DbtProject(IHaveNew):
-    """Representation of a dbt project and related settings that assist
-    with preparing the manifest.json files and the dbt dependencies.
+    """Representation of a dbt project and related settings that assist with managing the project preparation.
 
-
-    Using this helps achieve a setup where:
-    * during development, reload the manifest at run time to pick up any changes.
+    Using this helps achieve a setup where the dbt manifest file
+    and dbt dependencies are available and up-to-date:
+    * during development, pull the dependencies and reload the manifest at run time to pick up any changes.
     * when deployed, expect a manifest that was created at build time to reduce start-up time.
 
     The cli ``dagster-dbt project prepare-for-deployment`` can be used as part of the deployment process to
-    handle manifest.json preparation.
+    handle the project preparation.
 
     This object can be passed directly to :py:class:`~dagster_dbt.DbtCliResource`.
 
     Args:
         project_dir (Union[str, Path]):
             The directory of the dbt project.
-        output_path (Union[str, Path]):
+        target_path (Union[str, Path]):
             The path, relative to the project directory, to output artifacts.
-            In a dbt project, it corresponds to the target path.
+            It corresponds to the target path in dbt.
             Default: "target"
         target (Optional[str]):
             The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
@@ -173,7 +172,7 @@ class DbtProject(IHaveNew):
     """
 
     project_dir: Path
-    output_path: Path
+    target_path: Path
     target: Optional[str]
     manifest_path: Path
     packaged_project_dir: Optional[Path]
@@ -185,7 +184,7 @@ class DbtProject(IHaveNew):
         cls,
         project_dir: Union[Path, str],
         *,
-        output_path: Union[Path, str] = Path("target"),
+        target_path: Union[Path, str] = Path("target"),
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
@@ -200,7 +199,7 @@ class DbtProject(IHaveNew):
 
         manifest_preparer = DagsterDbtManifestPreparer()
 
-        manifest_path = project_dir.joinpath(output_path, "manifest.json")
+        manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
         dependencies_path = project_dir.joinpath("dependencies.yml")
         packages_path = project_dir.joinpath("packages.yml")
@@ -224,7 +223,7 @@ class DbtProject(IHaveNew):
         return super().__new__(
             cls,
             project_dir=project_dir,
-            output_path=output_path,
+            target_path=target_path,
             target=target,
             manifest_path=manifest_path,
             state_path=project_dir.joinpath(state_path) if state_path else None,
