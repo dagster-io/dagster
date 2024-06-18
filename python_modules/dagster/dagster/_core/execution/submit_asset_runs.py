@@ -1,18 +1,7 @@
 import logging
 import sys
 import time
-from typing import (
-    AbstractSet,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    cast,
-)
+from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_job import is_base_asset_job_name
@@ -300,58 +289,3 @@ def submit_asset_run(
     )
 
     return run_to_submit
-
-
-class SubmitRunRequestChunkResult(NamedTuple):
-    chunk_submitted_runs: Sequence[Tuple[RunRequest, DagsterRun]]
-
-
-def submit_asset_runs_in_chunks(
-    run_requests: Sequence[RunRequest],
-    reserved_run_ids: Optional[Sequence[str]],
-    chunk_size: int,
-    instance: DagsterInstance,
-    workspace_process_context: IWorkspaceProcessContext,
-    asset_graph: RemoteAssetGraph,
-    debug_crash_flags: SingleInstigatorDebugCrashFlags,
-    logger: logging.Logger,
-    run_tags: Mapping[str, str],
-) -> Iterator[Optional[SubmitRunRequestChunkResult]]:
-    """Submits runs for a sequence of run requests that target asset selections in chunks. Yields
-    None after each run is submitted to allow the daemon to heartbeat, and yields a list of tuples
-    of the run request and the submitted run after each chunk is submitted to allow the caller to
-    interrupt this process if needed.
-    """
-    if reserved_run_ids is not None:
-        check.invariant(len(run_requests) == len(reserved_run_ids))
-
-    run_request_execution_data_cache = {}
-    for chunk_start in range(0, len(run_requests), chunk_size):
-        run_request_chunk = run_requests[chunk_start : chunk_start + chunk_size]
-        chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
-
-        # submit each run in the chunk
-        for chunk_idx, run_request in enumerate(run_request_chunk):
-            run_request_idx = chunk_start + chunk_idx
-            run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
-            submitted_run = submit_asset_run(
-                run_id,
-                run_request._replace(
-                    tags={
-                        **run_request.tags,
-                        **run_tags,
-                    }
-                ),
-                run_request_idx,
-                instance,
-                workspace_process_context,
-                asset_graph,
-                run_request_execution_data_cache,
-                debug_crash_flags,
-                logger,
-            )
-            chunk_submitted_runs.append((run_request, submitted_run))
-            # allow the daemon to heartbeat while runs are submitted
-            yield None
-
-        yield SubmitRunRequestChunkResult(chunk_submitted_runs)

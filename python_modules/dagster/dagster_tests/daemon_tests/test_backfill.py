@@ -1560,16 +1560,21 @@ def test_asset_backfill_mid_iteration_code_location_unreachable_error(
     assert (
         updated_backfill.failure_count == 0
     )  # because of the nature of the error, failure count not incremented
-    assert len(updated_backfill.submitting_run_requests) == 3
-    assert len(updated_backfill.reserved_run_ids) == 3
+
+    # Runs were still removed off the list of submitting run requests because the error was
+    # caught and the backfill data updated
+    assert len(updated_backfill.submitting_run_requests) == 2
+    assert len(updated_backfill.reserved_run_ids) == 2
     assert updated_backfill.asset_backfill_data
     assert (
         updated_backfill.asset_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets
         == 1
     )
+
+    # Requested subset still updated since the error was caught and the backfill data updated
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
-        == 1
+        == 2
     )
 
     # Execute backfill iteration again, confirming that the two partitions that did not submit runs
@@ -1757,11 +1762,12 @@ def test_asset_backfill_first_iteration_code_location_unreachable_error_some_run
     assert updated_backfill
     assert updated_backfill.asset_backfill_data
 
-    # chunk did not finish so requested_subset did not yet update
-    assert len(updated_backfill.submitting_run_requests or []) == 2
+    # error was caught and the submitting run requests and backfill data were updated with
+    # what was submitted before the failure
+    assert len(updated_backfill.submitting_run_requests or []) == 1
     assert (
         updated_backfill.asset_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets
-        == 0
+        == 1
     )
     assert updated_backfill.asset_backfill_data.requested_runs_for_target_roots
 
