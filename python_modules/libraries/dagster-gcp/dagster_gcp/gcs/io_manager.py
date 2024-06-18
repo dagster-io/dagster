@@ -120,9 +120,10 @@ class GCSPickleIOManager(ConfigurableIOManager):
             resources={
                 "io_manager": GCSPickleIOManager(
                     gcs_bucket="my-cool-bucket",
-                    gcs_prefix="my-cool-prefix"
+                    gcs_prefix="my-cool-prefix",
+                    gcs=GCSResource(project="my-cool-project")
                 ),
-                "gcs": GCSResource(project="my-cool-project")
+
             }
         )
 
