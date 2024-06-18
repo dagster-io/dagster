@@ -152,7 +152,7 @@ class DbtProject(IHaveNew):
 
             from dagster_dbt import DbtProject
 
-            my_project = DbtProject.build_and_ensure_prepared(
+            my_project = DbtProject.create_and_ensure_prepared(
                 project_dir=Path("path/to/dbt_project")
             )
 
@@ -173,7 +173,7 @@ class DbtProject(IHaveNew):
                 return "LOCAL"
 
 
-            dbt_project = DbtProject.build_and_ensure_prepared(
+            dbt_project = DbtProject.create_and_ensure_prepared(
                 project_dir=Path('path/to/dbt_project'),
                 state_path="target/managed_state",
                 target=get_env(),
@@ -243,7 +243,7 @@ class DbtProject(IHaveNew):
 
     @classmethod
     @public
-    def build_and_ensure_prepared(
+    def create_and_ensure_prepared(
         cls,
         project_dir: Union[Path, str],
         *,
@@ -253,7 +253,7 @@ class DbtProject(IHaveNew):
         state_path: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
     ) -> "DbtProject":
-        """Build a DbtProject and ensure that its preparation process is executed.
+        """Create a DbtProject and ensure that its preparation process is executed.
         Return the DbtProject object when completed.
 
         By default, the preparation process ensures that the dbt manifest file
@@ -282,7 +282,7 @@ class DbtProject(IHaveNew):
                 from dagster import Definitions
                 from dagster_dbt import DbtProject
 
-                my_project = DbtProject.build_and_ensure_prepared(
+                my_project = DbtProject.create_and_ensure_prepared(
                     project_dir=Path("path/to/dbt_project")
                 )
 
