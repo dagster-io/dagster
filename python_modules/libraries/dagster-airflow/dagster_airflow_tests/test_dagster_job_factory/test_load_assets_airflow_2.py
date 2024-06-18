@@ -25,16 +25,8 @@ with models.DAG(
         task_id="foo", bash_command="echo foo"
     )
 
-    bar = BashOperator(
-        task_id="bar", bash_command="echo bar"
-    )
-
     biz = BashOperator(
         task_id="biz", bash_command="echo biz"
-    )
-
-    baz = BashOperator(
-        task_id="baz", bash_command="echo baz"
     )
 
 with models.DAG(
@@ -59,8 +51,8 @@ def test_load_assets_from_airflow_dag():
         assets = load_assets_from_airflow_dag(
             dag=asset_dag,
             task_ids_by_asset_key={
-                AssetKey("foo_asset"): {"foo", "bar"},
-                AssetKey("biz_asset"): {"biz", "baz"},
+                AssetKey("foo_asset"): {"foo"},
+                AssetKey("biz_asset"): {"biz"},
             },
             upstream_dependencies_by_asset_key={
                 AssetKey("foo_asset"): {
