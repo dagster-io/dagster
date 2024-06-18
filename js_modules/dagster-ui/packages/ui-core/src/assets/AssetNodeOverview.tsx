@@ -286,7 +286,7 @@ export const AssetNodeOverview = ({
             style={{position: 'relative'}}
             definition={assetNode}
             reduceColor
-            linkToFilter
+            linkToFilteredAssetsTable
           />
         )}
       </AttributeAndValue>
@@ -322,7 +322,7 @@ export const AssetNodeOverview = ({
                 style={{position: 'relative'}}
                 storageKind={storageKindTag.value}
                 reduceColor
-                linkToFilter
+                linkToFilteredAssetsTable
               />
             )}
           </Box>

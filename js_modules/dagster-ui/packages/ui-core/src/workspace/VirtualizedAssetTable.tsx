@@ -21,6 +21,8 @@ interface Props {
   onWipe: (assets: AssetKeyInput[]) => void;
   showRepoColumn: boolean;
   view?: AssetViewType;
+  computeKindFilter?: StaticSetFilter<string>;
+  storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const VirtualizedAssetTable = (props: Props) => {
@@ -33,6 +35,8 @@ export const VirtualizedAssetTable = (props: Props) => {
     onWipe,
     showRepoColumn,
     view = 'flat',
+    computeKindFilter,
+    storageKindFilter,
   } = props;
   const parentRef = React.useRef<HTMLDivElement | null>(null);
   const count = Object.keys(groups).length;
@@ -96,6 +100,8 @@ export const VirtualizedAssetTable = (props: Props) => {
                 checked={checkedDisplayKeys.has(row.displayKey)}
                 onToggleChecked={onToggleFactory(row.displayKey)}
                 onWipe={() => onWipe(wipeableAssets.map((a) => a.key))}
+                computeKindFilter={computeKindFilter}
+                storageKindFilter={storageKindFilter}
               />
             );
           })}

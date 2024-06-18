@@ -211,6 +211,8 @@ export function useAssetGraphExplorerFilters({
   }
 
   return {
+    computeKindTagsFilter: kindTagsFilter,
+    storageKindTagsFilter,
     button,
     filterBar:
       activeFiltersJsx.length || explorerPath ? (

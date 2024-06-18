@@ -141,5 +141,7 @@ export function useAssetCatalogFiltering(
     filterInput,
     isFiltered,
     filtered,
+    computeKindFilter,
+    storageKindFilter,
   };
 }

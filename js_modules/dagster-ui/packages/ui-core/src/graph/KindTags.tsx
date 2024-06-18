@@ -7,6 +7,7 @@ import {
   linkToAssetTableWithComputeKindFilter,
   linkToAssetTableWithStorageKindFilter,
 } from '../search/useGlobalSearch';
+import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 
 export const LEGACY_COMPUTE_KIND_TAG = 'kind';
 export const COMPUTE_KIND_TAG = 'dagster/compute_kind';
@@ -21,8 +22,9 @@ export const buildStorageKindTag = (storageKind: string): DefinitionTag =>
 
 export const AssetComputeKindTag = ({
   definition,
-  linkToFilter: shouldLink,
+  linkToFilteredAssetsTable: shouldLink,
   style,
+  currentPageFilter,
   ...rest
 }: {
   definition: {computeKind: string | null};
@@ -30,7 +32,8 @@ export const AssetComputeKindTag = ({
   reduceColor?: boolean;
   reduceText?: boolean;
   reversed?: boolean;
-  linkToFilter?: boolean;
+  linkToFilteredAssetsTable?: boolean;
+  currentPageFilter?: StaticSetFilter<string>;
 }) => {
   if (!definition.computeKind) {
     return null;
@@ -38,7 +41,11 @@ export const AssetComputeKindTag = ({
   return (
     <Tooltip
       content={
-        shouldLink ? (
+        currentPageFilter ? (
+          <>
+            Filter to <CaptionMono>{definition.computeKind}</CaptionMono> assets
+          </>
+        ) : shouldLink ? (
           <>
             View all <CaptionMono>{definition.computeKind}</CaptionMono> assets
           </>
@@ -52,12 +59,14 @@ export const AssetComputeKindTag = ({
     >
       <OpTags
         {...rest}
-        style={{...style, cursor: shouldLink ? 'pointer' : 'default'}}
+        style={{...style, cursor: shouldLink || currentPageFilter ? 'pointer' : 'default'}}
         tags={[
           {
             label: definition.computeKind,
             onClick:
-              shouldLink && definition.computeKind
+              currentPageFilter && definition.computeKind
+                ? () => currentPageFilter.setState(new Set([definition.computeKind || '']))
+                : shouldLink
                 ? () => {
                     window.location.href = linkToAssetTableWithComputeKindFilter(
                       definition.computeKind || '',
@@ -74,7 +83,8 @@ export const AssetComputeKindTag = ({
 export const AssetStorageKindTag = ({
   storageKind,
   style,
-  linkToFilter: shouldLink,
+  linkToFilteredAssetsTable: shouldLink,
+  currentPageFilter,
   ...rest
 }: {
   storageKind: string;
@@ -82,12 +92,17 @@ export const AssetStorageKindTag = ({
   reduceColor?: boolean;
   reduceText?: boolean;
   reversed?: boolean;
-  linkToFilter?: boolean;
+  linkToFilteredAssetsTable?: boolean;
+  currentPageFilter?: StaticSetFilter<DefinitionTag>;
 }) => {
   return (
     <Tooltip
       content={
-        shouldLink ? (
+        currentPageFilter ? (
+          <>
+            Filter to <CaptionMono>{storageKind}</CaptionMono> assets
+          </>
+        ) : shouldLink ? (
           <>
             View all <CaptionMono>{storageKind}</CaptionMono> assets
           </>
@@ -100,12 +115,14 @@ export const AssetStorageKindTag = ({
       placement="bottom"
     >
       <OpTags
-        style={{...style, cursor: shouldLink ? 'pointer' : 'default'}}
+        style={{...style, cursor: shouldLink || currentPageFilter ? 'pointer' : 'default'}}
         {...rest}
         tags={[
           {
             label: storageKind,
-            onClick: shouldLink
+            onClick: currentPageFilter
+              ? () => currentPageFilter.setState(new Set([buildStorageKindTag(storageKind)]))
+              : shouldLink
               ? () => {
                   window.location.href = linkToAssetTableWithStorageKindFilter(storageKind);
                 }
