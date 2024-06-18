@@ -169,11 +169,6 @@ class DagsterDltResource(ConfigurableResource):
                 ]
             )
 
-        # https://github.com/dagster-io/dagster/issues/21022
-        if isinstance(context, AssetExecutionContext):
-            if context.assets_def.partitions_def is not None:
-                dlt_pipeline.pipeline_name += f"_{context.partition_key}"
-
         load_info = dlt_pipeline.run(dlt_source, **kwargs)
 
         load_info.raise_on_failed_jobs()
