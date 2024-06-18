@@ -285,7 +285,7 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         delta_table_options = context_metadata.get("delta_table_options")
 
         if delta_table_options:
-            context.log.debug("Reading with delta_table_optilns: {delta_table_options}")
+            context.log.debug("Reading with delta_table_options: {delta_table_options}")
 
         ldf = pl.scan_delta(
             str(path),
@@ -311,6 +311,9 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         assert context.upstream_output is not None
         # any partition would work as they all are stored in the same DeltaLake table
         path = self._get_path_without_extension(context)
+        context.log.debug(
+            f"Loading {len(context.asset_partition_keys)} partitions from {path} using {self.__class__.__name__}..."
+        )
         if context.upstream_output.definition_metadata.get("partition_by") and not is_dict_type(
             context.dagster_type.typing_type
         ):
