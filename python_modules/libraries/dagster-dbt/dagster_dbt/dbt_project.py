@@ -152,7 +152,9 @@ class DbtProject(IHaveNew):
 
             from dagster_dbt import DbtProject
 
-            my_project = DbtProject(project_dir=Path("path/to/dbt_project")).ensure_prepared()
+            my_project = DbtProject.build_and_ensure_prepared(
+                project_dir=Path("path/to/dbt_project")
+            )
 
         Creating a DbtProject that changes target based on environment variables and uses manged state artifacts:
 
@@ -171,11 +173,11 @@ class DbtProject(IHaveNew):
                 return "LOCAL"
 
 
-            dbt_project = DbtProject(
+            dbt_project = DbtProject.build_and_ensure_prepared(
                 project_dir=Path('path/to/dbt_project'),
                 state_path="target/managed_state",
                 target=get_env(),
-            ).ensure_prepared()
+            )
 
     """
 
@@ -197,7 +199,7 @@ class DbtProject(IHaveNew):
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
         manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
-    ):
+    ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
             raise DagsterDbtProjectNotFoundError(f"project_dir {project_dir} does not exist.")
@@ -239,24 +241,39 @@ class DbtProject(IHaveNew):
             manifest_preparer=manifest_preparer,
         )
 
+    @classmethod
     @public
-    def ensure_prepared(self) -> "DbtProject":
-        """Ensure that the preparation process is executed for a dbt project and
-        return the DbtProject object when complete.
+    def build_and_ensure_prepared(
+        cls,
+        project_dir: Union[Path, str],
+        *,
+        target_path: Union[Path, str] = Path("target"),
+        target: Optional[str] = None,
+        packaged_project_dir: Optional[Union[Path, str]] = None,
+        state_path: Optional[Union[Path, str]] = None,
+        manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
+    ) -> "DbtProject":
+        """Build a DbtProject and ensure that its preparation process is executed.
+        Return the DbtProject object when completed.
 
-        By default, the preparation process for DbtProject is the following:
+        By default, the preparation process ensures that the dbt manifest file
+        and dbt dependencies are available and up-to-date:
             * During development, pull the dependencies and reload the manifest at run time to pick up any changes.
             * When deploying, expect a manifest that was created at build time to reduce start-up time.
 
-        The preparation process is ensured by `self.manifest_preparer`.
+        By default, if this method returns successfully, `self.manifest_path` will point to a loadable manifest file.
+        This method causes errors:
+            * During development, if the manifest file has not been correctly created by the preparation process.
+            * When deploying, if the manifest file cannot be found at the expected path.
 
-        If this method returns successfully, `self.manifest_path` will point to a loadable manifest file.
+        The preparation process is handled by `self.manifest_preparer`,
+        which is a :py:class:`~dagster_dbt.DagsterDbtManifestPreparer` by default.
 
         Returns:
             DbtProject: The current representation of the dbt project.
 
-        Examples:
-            Preparing a DbtProject on creation:
+        Example:
+            Building and preparing a DbtProject:
 
             .. code-block:: python
 
@@ -265,7 +282,9 @@ class DbtProject(IHaveNew):
                 from dagster import Definitions
                 from dagster_dbt import DbtProject
 
-                my_project = DbtProject(project_dir=Path("path/to/dbt_project")).ensure_prepared()
+                my_project = DbtProject.build_and_ensure_prepared(
+                    project_dir=Path("path/to/dbt_project")
+                )
 
                 defs = Definitions(
                     resources={
@@ -273,22 +292,16 @@ class DbtProject(IHaveNew):
                     },
                     ...
                 )
-
-            Preparing a dbt project on usage:
-
-            .. code-block:: python
-
-                from pathlib import Path
-
-                from dagster_dbt import DbtProject, dbt_assets
-
-                my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
-
-
-                @dbt_assets(manifest=my_project.ensure_prepared().manifest_path)
-                def my_dbt_asset():
-                    ...
         """
-        if self.manifest_preparer:
-            self.manifest_preparer.on_load(self)
-        return self
+        project = cls.__new__(
+            cls,
+            project_dir=project_dir,
+            target_path=target_path,
+            target=target,
+            state_path=state_path,
+            packaged_project_dir=packaged_project_dir,
+            manifest_preparer=manifest_preparer,
+        )
+        if manifest_preparer:
+            manifest_preparer.on_load(project)
+        return project
