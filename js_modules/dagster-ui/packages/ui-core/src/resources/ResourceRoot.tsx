@@ -388,15 +388,18 @@ const ResourceUses = (props: {
               </tr>
             </thead>
             <tbody>
-              {parentResources.map((resource) => {
+              {parentResources.map((ref) => {
                 return (
-                  resource.resource && (
-                    <tr key={resource.name}>
+                  ref.resource && (
+                    <tr key={ref.resource.name}>
                       <td>
                         <ResourceEntry
-                          url={workspacePathFromAddress(repoAddress, `/resources/${resource.name}`)}
-                          name={resourceDisplayName(resource.resource) || ''}
-                          description={resource.resource.description || undefined}
+                          url={workspacePathFromAddress(
+                            repoAddress,
+                            `/resources/${ref.resource.name}`,
+                          )}
+                          name={resourceDisplayName(ref.resource) || ''}
+                          description={ref.resource.description || undefined}
                         />
                       </td>
                     </tr>
