@@ -1,17 +1,16 @@
 import os
 from pathlib import Path
-from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Sequence, Set, Tuple
+from typing import Any, Callable, Dict, FrozenSet, List, Mapping, Optional, Sequence, Set, Tuple
 
 from dagster import (
     AssetCheckKey,
     AssetCheckSpec,
     AssetDep,
     AssetKey,
-    AssetOut,
     AssetsDefinition,
+    AssetSpec,
     BackfillPolicy,
     DagsterInvalidDefinitionError,
-    Nothing,
     PartitionsDefinition,
     RetryPolicy,
     TimeWindowPartitionsDefinition,
@@ -346,7 +345,7 @@ def dbt_assets(
     )
     (
         deps,
-        outs,
+        specs,
         internal_asset_deps,
         check_specs,
     ) = get_dbt_multi_asset_args(
@@ -384,10 +383,8 @@ def dbt_assets(
         backfill_policy = BackfillPolicy.single_run()
 
     return multi_asset(
-        outs=outs,
+        specs=specs,
         name=name,
-        internal_asset_deps=internal_asset_deps,
-        deps=deps,
         required_resource_keys=required_resource_keys,
         compute_kind="dbt",
         partitions_def=partitions_def,
@@ -444,14 +441,9 @@ def get_dbt_multi_asset_args(
     manifest: Mapping[str, Any],
     dagster_dbt_translator: DagsterDbtTranslator,
     project: Optional[DbtProject],
-) -> Tuple[
-    Sequence[AssetDep],
-    Dict[str, AssetOut],
-    Dict[str, Set[AssetKey]],
-    Sequence[AssetCheckSpec],
-]:
+) -> Tuple[Sequence[AssetSpec], Sequence[AssetCheckSpec]]:
     deps: Set[AssetDep] = set()
-    outs: Dict[str, AssetOut] = {}
+    specs: List[AssetSpec] = []
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     check_specs_by_key: Dict[AssetCheckKey, AssetCheckSpec] = {}
 
@@ -496,29 +488,32 @@ def get_dbt_multi_asset_args(
                 project=project,
             )
 
-        outs[output_name] = AssetOut(
-            key=asset_key,
-            dagster_type=Nothing,
-            io_manager_key=io_manager_key,
-            description=dagster_dbt_translator.get_description(dbt_resource_props),
-            is_required=False,
-            metadata=metadata,
-            owners=dagster_dbt_translator.get_owners(
-                {
-                    **dbt_resource_props,
-                    **({"group": dbt_group_resource_props} if dbt_group_resource_props else {}),
-                }
-            ),
-            tags={
-                **(StorageKindTagSet(storage_kind=dbt_adapter_type) if dbt_adapter_type else {}),
-                **dagster_dbt_translator.get_tags(dbt_resource_props),
-            },
-            group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
-            code_version=default_code_version_fn(dbt_resource_props),
-            freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
-            auto_materialize_policy=dagster_dbt_translator.get_auto_materialize_policy(
-                dbt_resource_props
-            ),
+        specs.append(
+            AssetSpec(
+                key=asset_key,
+                io_manager_key=io_manager_key,
+                description=dagster_dbt_translator.get_description(dbt_resource_props),
+                skippable=True,
+                metadata=metadata,
+                owners=dagster_dbt_translator.get_owners(
+                    {
+                        **dbt_resource_props,
+                        **({"group": dbt_group_resource_props} if dbt_group_resource_props else {}),
+                    }
+                ),
+                tags={
+                    **(
+                        StorageKindTagSet(storage_kind=dbt_adapter_type) if dbt_adapter_type else {}
+                    ),
+                    **dagster_dbt_translator.get_tags(dbt_resource_props),
+                },
+                group_name=dagster_dbt_translator.get_group_name(dbt_resource_props),
+                code_version=default_code_version_fn(dbt_resource_props),
+                freshness_policy=dagster_dbt_translator.get_freshness_policy(dbt_resource_props),
+                auto_materialize_policy=dagster_dbt_translator.get_auto_materialize_policy(
+                    dbt_resource_props
+                ),
+            )
         )
 
         test_unique_ids = [
@@ -609,4 +604,4 @@ def get_dbt_multi_asset_args(
             "\n\n".join([DUPLICATE_ASSET_KEY_ERROR_MESSAGE, *error_messages])
         )
 
-    return list(deps), outs, internal_asset_deps, list(check_specs_by_key.values())
+    return specs, list(check_specs_by_key.values())
