@@ -38,7 +38,7 @@ type Asset = AssetTableFragment;
 const groupTableCache = new Map();
 
 const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
-const BATCH_LIMIT = 100000;
+const BATCH_LIMIT = 10000;
 
 export function useAllAssets(groupSelector?: AssetGroupSelector) {
   const client = useApolloClient();

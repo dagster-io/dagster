@@ -78,7 +78,7 @@ export async function fetchPaginatedData<DataType, CursorType, ErrorType>({
     if (error) {
       throw error;
     }
-    dataSoFar.push(...data);
+    dataSoFar.concat(data);
     currentCursor = cursor;
     hasMoreData = hasMore;
   }
