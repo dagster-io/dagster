@@ -268,11 +268,11 @@ class PolarsDeltaIOManager(BasePolarsUPathIOManager):
         if (
             partition_by
             and len(context.asset_partition_keys) > 0
-            and context.upstream_output.asset_info is not None
-            and context.upstream_output.asset_info.partitions_def is not None
+            and context.has_asset_key is not None
+            and context.has_asset_partitions is not None
             and context.asset_partition_keys
             != set(
-                context.upstream_output.asset_info.partitions_def.get_partition_keys(
+                context.upstream_output.asset_partitions_def.get_partition_keys(
                     dynamic_partitions_store=context.instance
                 )
             )

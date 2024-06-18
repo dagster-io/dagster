@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Callable,
     Dict,
     Iterable,
     List,
@@ -12,7 +11,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    cast,
 )
 
 import dagster._check as check
@@ -29,51 +27,6 @@ if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.partition_mapping import PartitionMapping
-    from dagster._core.execution.context.output import OutputContext
-
-    from .partition import PartitionsDefinition
-
-
-class AssetOutputInfo(
-    NamedTuple(
-        "_AssetOutputInfo",
-        [
-            ("key", AssetKey),
-            ("partitions_fn", Callable[["OutputContext"], Optional[AbstractSet[str]]]),
-            ("partitions_def", Optional["PartitionsDefinition"]),
-            ("is_required", bool),
-            ("code_version", Optional[str]),
-        ],
-    )
-):
-    """Defines all of the asset-related information for a given output.
-
-    Args:
-        key (AssetKey): The AssetKey
-        partitions_fn (OutputContext -> Optional[Set[str]], optional): A function which takes the
-            current OutputContext and generates a set of partition names that will be materialized
-            for this asset.
-        partitions_def (PartitionsDefinition, optional): Defines the set of valid partitions
-            for this asset.
-        code_version (Optional[str], optional): The version of the code that generates this asset.
-    """
-
-    def __new__(
-        cls,
-        key: AssetKey,
-        partitions_fn: Optional[Callable[["OutputContext"], Optional[AbstractSet[str]]]] = None,
-        partitions_def: Optional["PartitionsDefinition"] = None,
-        is_required: bool = True,
-        code_version: Optional[str] = None,
-    ):
-        return super().__new__(
-            cls,
-            key=check.inst_param(key, "key", AssetKey),
-            partitions_fn=check.opt_callable_param(partitions_fn, "partitions_fn", lambda _: None),
-            partitions_def=partitions_def,
-            is_required=is_required,
-            code_version=code_version,
-        )
 
 
 def _resolve_output_to_destinations(
@@ -359,14 +312,14 @@ class AssetLayer(NamedTuple):
     Args:
         asset_key_by_node_input_handle (Mapping[NodeInputHandle, AssetOutputInfo], optional): A mapping
             from a unique input in the underlying graph to the associated AssetKey that it loads from.
-        asset_info_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo], optional): A mapping
+        asset_keys_by_node_output_handle (Mapping[NodeOutputHandle, AssetOutputInfo], optional): A mapping
             from a unique output in the underlying graph to the associated AssetOutputInfo.
     """
 
     asset_graph: "AssetGraph"
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"]
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
-    asset_info_by_node_output_handle: Mapping[NodeOutputHandle, AssetOutputInfo]
+    asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, AssetKey]
     check_key_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckKey]
     dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
     # Used to store the asset key dependencies of op node handles within graph backed assets
@@ -394,7 +347,7 @@ class AssetLayer(NamedTuple):
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
-        asset_info_by_output: Dict[NodeOutputHandle, AssetOutputInfo] = {}
+        asset_keys_by_node_output_handle: Dict[NodeOutputHandle, AssetKey] = {}
         check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
 
         (
@@ -435,28 +388,7 @@ class AssetLayer(NamedTuple):
                     check.not_none(inner_node_handle), inner_output_def.name
                 )
 
-                def partitions_fn(context: "OutputContext") -> AbstractSet[str]:
-                    from dagster._core.definitions.partition import PartitionsDefinition
-
-                    if context.has_partition_key:
-                        return {context.partition_key}
-
-                    return set(
-                        cast(
-                            PartitionsDefinition, context.asset_partitions_def
-                        ).get_partition_keys_in_range(
-                            context.asset_partition_key_range,
-                            dynamic_partitions_store=context.step_context.instance,
-                        )
-                    )
-
-                asset_info_by_output[node_output_handle] = AssetOutputInfo(
-                    asset_key,
-                    partitions_fn=partitions_fn if assets_def.partitions_def else None,
-                    partitions_def=assets_def.partitions_def,
-                    is_required=asset_key in assets_def.keys,
-                    code_version=inner_output_def.code_version,
-                )
+                asset_keys_by_node_output_handle[node_output_handle] = asset_key
 
                 asset_key_by_input.update(
                     {
@@ -512,7 +444,7 @@ class AssetLayer(NamedTuple):
         return AssetLayer(
             asset_graph=asset_graph,
             asset_keys_by_node_input_handle=asset_key_by_input,
-            asset_info_by_node_output_handle=asset_info_by_output,
+            asset_keys_by_node_output_handle=asset_keys_by_node_output_handle,
             check_key_by_node_output_handle=check_key_by_output,
             assets_defs_by_node_handle=assets_defs_by_node_handle,
             dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
@@ -543,8 +475,8 @@ class AssetLayer(NamedTuple):
     def node_output_handle_for_asset(self, asset_key: AssetKey) -> NodeOutputHandle:
         matching_handles = [
             handle
-            for handle, asset_info in self.asset_info_by_node_output_handle.items()
-            if asset_info.key == asset_key
+            for handle, handle_asset_key in self.asset_keys_by_node_output_handle.items()
+            if handle_asset_key == asset_key
         ]
         check.invariant(len(matching_handles) == 1)
         return matching_handles[0]
@@ -552,14 +484,18 @@ class AssetLayer(NamedTuple):
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.assets_defs_by_node_handle.get(node_handle)
 
-    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+    def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
         assets_def = self.assets_def_for_node(node_handle)
-        if not assets_def or len(assets_def.keys_by_output_name.keys()) > 1:
+        return check.not_none(assets_def).keys
+
+    def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
+        asset_keys = self.asset_keys_for_node(node_handle)
+        if len(asset_keys) > 1:
             raise DagsterInvariantViolationError(
                 "Cannot call `asset_key_for_node` in a multi_asset with more than one asset."
                 " Multiple asset keys defined."
             )
-        return next(iter(assets_def.keys_by_output_name.values()))
+        return next(iter(asset_keys))
 
     def get_spec_for_asset_check(
         self, node_handle: NodeHandle, asset_check_key: AssetCheckKey
@@ -584,17 +520,8 @@ class AssetLayer(NamedTuple):
             None,
         )
 
-    def asset_info_for_output(
-        self, node_handle: NodeHandle, output_name: str
-    ) -> Optional[AssetOutputInfo]:
-        return self.asset_info_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
-
     def asset_key_for_output(self, node_handle: NodeHandle, output_name: str) -> Optional[AssetKey]:
-        asset_info = self.asset_info_for_output(node_handle, output_name)
-        if asset_info:
-            return asset_info.key
-        else:
-            return None
+        return self.asset_keys_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
 
     def asset_check_key_for_output(
         self, node_handle: NodeHandle, output_name: str
