@@ -21,7 +21,7 @@ import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {isHiddenAssetGroupJob} from '../asset-graph/Utils';
 import {InstigationStatus, RunStatus, RunsFilter} from '../graphql/types';
 import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceOnQueryResult, useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -115,8 +115,13 @@ export const useRunsForTimeline = ({
 
   const {data: ongoingRunsData} = ongoingRunsQueryData;
 
+  const [didLoadCache, setDidLoadCache] = useState(false);
+  useBlockTraceUntilTrue('IndexedDBCache', didLoadCache);
+
   const fetchCompletedRunsQueryData = useCallback(async () => {
     await completedRunsCache.loadCacheFromIndexedDB();
+    setDidLoadCache(true);
+
     return await fetchPaginatedBucketData({
       buckets: buckets
         .filter((bucket) => !completedRunsCache.isCompleteRange(bucket[0], bucket[1]))
@@ -285,13 +290,13 @@ export const useRunsForTimeline = ({
   }, [startSec, _end, client, showTicks]);
 
   useBlockTraceOnQueryResult(ongoingRunsQueryData, 'OngoingRunTimelineQuery');
-  useBlockTraceOnQueryResult(completedRunsQueryData, 'CompletedRunTimelineQuery');
+  useBlockTraceUntilTrue('CompletedRunTimelineQuery', !completedRunsQueryData.loading);
 
   const {data: futureTicksData} = futureTicksQueryData;
 
   const {workspaceOrError} = futureTicksData || {workspaceOrError: undefined};
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const previousRunsByJobKey = useRef<{
     jobInfo: Record<string, {repoAddress: RepoAddress; pipelineName: string; isAdHoc: boolean}>;
