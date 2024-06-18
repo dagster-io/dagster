@@ -36,8 +36,9 @@ export class CacheManager<TQuery> {
 
   async set(data: TQuery, version: number): Promise<void> {
     if (
-      JSON.stringify(this.current?.data) === JSON.stringify(data) &&
-      this.current?.version === version
+      this.current?.data === data ||
+      (JSON.stringify(this.current?.data) === JSON.stringify(data) &&
+        this.current?.version === version)
     ) {
       return;
     }

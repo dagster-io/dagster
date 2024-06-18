@@ -50,6 +50,7 @@ jest.mock('@apollo/client', () => {
 const mock = () =>
   buildQueryMock<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
     query: ASSET_CATALOG_TABLE_QUERY,
+    variableMatcher: () => true,
     data: {
       assetsOrError: buildAssetConnection({
         nodes: AssetCatalogTableMockAssets,
