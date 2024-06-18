@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -14,6 +15,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Union,
     cast,
 )
 
@@ -21,12 +23,13 @@ import pendulum
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.run_request import NotABackfillRequest, RunRequest
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
 
@@ -177,7 +180,11 @@ class AssetDaemonContext:
 
     def evaluate(
         self,
-    ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+    ) -> Tuple[
+        Union[Sequence[RunRequest], NotABackfillRequest],
+        AssetDaemonCursor,
+        Sequence[AssetConditionEvaluation],
+    ]:
         observe_request_timestamp = pendulum.now().timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
@@ -193,14 +200,28 @@ class AssetDaemonContext:
 
         results, to_request = self.get_asset_condition_evaluations()
 
-        run_requests = [
-            *build_run_requests(
-                asset_partitions=to_request,
-                asset_graph=self.asset_graph,
-                run_tags=self.auto_materialize_run_tags,
-            ),
-            *auto_observe_run_requests,
-        ]
+        if (
+            os.getenv("EMIT_BACKFILL_FROM_DA", None) is not None and len(to_request) > 0
+        ):  # TODO - instance method?
+            # TODO - need a better condiiton here to capture the case when we need to skip requesting anything
+            # TODO rename var to something ecompassing backfills and runs
+            run_requests = NotABackfillRequest(
+                asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
+                    to_request, asset_graph=self.asset_graph
+                ),
+                tags=self.auto_materialize_run_tags,
+                title="Backfill from DA",
+                description=None,
+            )
+        else:
+            run_requests = [
+                *build_run_requests(
+                    asset_partitions=to_request,
+                    asset_graph=self.asset_graph,
+                    run_tags=self.auto_materialize_run_tags,
+                ),
+                *auto_observe_run_requests,
+            ]
 
         # only record evaluation results where something changed
         updated_evaluations = []

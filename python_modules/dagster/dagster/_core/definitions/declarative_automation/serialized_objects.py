@@ -132,12 +132,15 @@ class AssetConditionEvaluation(NamedTuple):
 
 @whitelist_for_serdes
 class AssetConditionEvaluationWithRunIds(NamedTuple):
-    """A union of an AssetConditionEvaluation and the set of run IDs that have been launched in
+    """A union of an AssetConditionEvaluation and the set of run IDs or backfill IDs that have been launched in
     response to it.
     """
 
     evaluation: AssetConditionEvaluation
     run_ids: FrozenSet[str]
+    backfill_ids: FrozenSet[str] = (
+        None  # unclear if this needs to be a set - to investigate - also make not optional?
+    )
 
     @property
     def asset_key(self) -> AssetKey:
