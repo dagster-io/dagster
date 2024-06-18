@@ -8,6 +8,7 @@ from dagster import (
     GraphDefinition,
     OutputMapping,
     TimeWindowPartitionsDefinition,
+    _check as check,
 )
 from dagster._core.definitions.graph_definition import create_adjacency_lists
 from dagster._utils.schedules import is_valid_cron_schedule
@@ -144,7 +145,8 @@ def load_assets_from_airflow_dag(
 
         mutated_task_ids_by_asset_key[AssetKey(dag.dag_id)] = leaf_nodes - used_nodes
 
-    for key in task_ids_by_asset_key:
+    for key, task_ids in task_ids_by_asset_key.items():
+        check.invariant(len(task_ids) <= 1, "Each asset key must have no more than one task ID")
         if key not in mutated_task_ids_by_asset_key:
             mutated_task_ids_by_asset_key[key] = set(task_ids_by_asset_key[key])
         else:
