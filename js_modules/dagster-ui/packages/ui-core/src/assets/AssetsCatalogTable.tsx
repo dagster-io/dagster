@@ -26,46 +26,103 @@ import {FIFTEEN_SECONDS, useRefreshAtInterval} from '../app/QueryRefresh';
 import {currentPageAtom} from '../app/analytics';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {AssetGroupSelector} from '../graphql/types';
+import {useUpdatingRef} from '../hooks/useUpdatingRef';
 import {PageLoadTrace} from '../performance';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
-import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
+import {fetchPaginatedData} from '../runs/fetchPaginatedBucketData';
+import {CacheManager} from '../search/useIndexedDBCachedQuery';
 import {LoadingSpinner} from '../ui/Loading';
 
 type Asset = AssetTableFragment;
 
 const groupTableCache = new Map();
 
-export function useAllAssets(groupSelector?: AssetGroupSelector) {
+export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
+const DEFAULT_BATCH_LIMIT = 10000;
+
+export function useAllAssets({
+  batchLimit = DEFAULT_BATCH_LIMIT,
+  groupSelector,
+}: {groupSelector?: AssetGroupSelector; batchLimit?: number} = {}) {
   const client = useApolloClient();
   const [{error, assets}, setErrorAndAssets] = useState<{
     error: PythonErrorFragment | undefined;
     assets: Asset[] | undefined;
   }>({error: undefined, assets: undefined});
 
+  const assetsRef = useUpdatingRef(assets);
+
   const {localCacheIdPrefix} = useContext(AppContext);
 
-  const assetsQuery = useIndexedDBCachedQuery<
-    AssetCatalogTableQuery,
-    AssetCatalogTableQueryVariables
-  >({
-    key: `${localCacheIdPrefix}/allAssets`,
-    query: ASSET_CATALOG_TABLE_QUERY,
-    version: 1,
-  });
-  // Delete old database from before the prefix, remove this at some point
-  indexedDB.deleteDatabase('indexdbQueryCache:allAssets');
+  const cacheManager = useMemo(
+    () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
+    [localCacheIdPrefix],
+  );
 
-  const {data, fetch: fetchAssets} = assetsQuery;
-
-  const assetsOrError = data?.assetsOrError;
   useLayoutEffect(() => {
-    if (assetsOrError) {
-      setErrorAndAssets({
-        error: assetsOrError?.__typename === 'PythonError' ? assetsOrError : undefined,
-        assets: assetsOrError?.__typename === 'AssetConnection' ? assetsOrError.nodes : undefined,
+    cacheManager.get(ASSET_CATALOG_TABLE_QUERY_VERSION).then((data) => {
+      if (data && !assetsRef.current) {
+        setErrorAndAssets({
+          error: undefined,
+          assets: data,
+        });
+      }
+    });
+  }, [cacheManager, assetsRef]);
+
+  const fetchAssets = useCallback(async () => {
+    try {
+      const data = await fetchPaginatedData({
+        async fetchData(cursor: string | undefined) {
+          const {data} = await client.query<
+            AssetCatalogTableQuery,
+            AssetCatalogTableQueryVariables
+          >({
+            query: ASSET_CATALOG_TABLE_QUERY,
+            fetchPolicy: 'no-cache',
+            variables: {
+              cursor,
+              limit: batchLimit,
+            },
+          });
+
+          if (data.assetsOrError.__typename === 'PythonError') {
+            return {
+              data: [],
+              cursor: undefined,
+              hasMore: false,
+              error: data.assetsOrError,
+            };
+          }
+          const assets = data.assetsOrError.nodes;
+          const hasMoreData = assets.length === batchLimit;
+          const nextCursor = hasMoreData ? assets[assets.length - 1]!.id : undefined;
+          return {
+            data: assets,
+            cursor: nextCursor,
+            hasMore: hasMoreData,
+            error: undefined,
+          };
+        },
       });
+      cacheManager.set(data, ASSET_CATALOG_TABLE_QUERY_VERSION);
+      setErrorAndAssets({error: undefined, assets: data});
+    } catch (e: any) {
+      if (e.__typename === 'PythonError') {
+        setErrorAndAssets(({assets}) => ({
+          error: e,
+          assets,
+        }));
+      }
     }
-  }, [assetsOrError]);
+  }, [batchLimit, cacheManager, client]);
+
+  useEffect(() => {
+    fetchAssets();
+  }, [fetchAssets]);
+
+  // Delete old database
+  indexedDB.deleteDatabase(`${localCacheIdPrefix}/allAssets`);
 
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
@@ -124,7 +181,7 @@ export const AssetsCatalogTable = ({
 
   const [view, setView] = useAssetView();
 
-  const {assets, query, error} = useAllAssets(groupSelector);
+  const {assets, query, error} = useAllAssets({groupSelector});
   const {searchPath, filtered, isFiltered, filterButton, filterInput, activeFiltersJsx} =
     useAssetCatalogFiltering(assets, prefixPath);
 
@@ -215,8 +272,8 @@ export const AssetsCatalogTable = ({
 };
 
 export const ASSET_CATALOG_TABLE_QUERY = gql`
-  query AssetCatalogTableQuery {
-    assetsOrError {
+  query AssetCatalogTableQuery($cursor: String, $limit: Int!) {
+    assetsOrError(cursor: $cursor, limit: $limit) {
       ... on AssetConnection {
         nodes {
           id

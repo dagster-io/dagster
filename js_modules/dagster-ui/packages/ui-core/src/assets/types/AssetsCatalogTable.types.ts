@@ -2,7 +2,10 @@
 
 import * as Types from '../../graphql/types';
 
-export type AssetCatalogTableQueryVariables = Types.Exact<{[key: string]: never}>;
+export type AssetCatalogTableQueryVariables = Types.Exact<{
+  cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
+  limit: Types.Scalars['Int']['input'];
+}>;
 
 export type AssetCatalogTableQuery = {
   __typename: 'Query';
