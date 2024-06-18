@@ -5,7 +5,8 @@ import {VirtualizedAssetCatalogHeader, VirtualizedAssetRow} from './VirtualizedA
 import {buildRepoAddress} from './buildRepoAddress';
 import {AssetTableFragment} from '../assets/types/AssetTableFragment.types';
 import {AssetViewType} from '../assets/useAssetView';
-import {AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput, DefinitionTag} from '../graphql/types';
+import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {Container, Inner} from '../ui/VirtualizedTable';
 
 type Row =
