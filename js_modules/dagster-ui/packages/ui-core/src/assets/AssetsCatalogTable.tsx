@@ -37,10 +37,13 @@ type Asset = AssetTableFragment;
 
 const groupTableCache = new Map();
 
-const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
-const BATCH_LIMIT = 10000;
+export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
+const DEFAULT_BATCH_LIMIT = 10000;
 
-export function useAllAssets(groupSelector?: AssetGroupSelector) {
+export function useAllAssets({
+  batchLimit = DEFAULT_BATCH_LIMIT,
+  groupSelector,
+}: {groupSelector?: AssetGroupSelector; batchLimit?: number} = {}) {
   const client = useApolloClient();
   const [{error, assets}, setErrorAndAssets] = useState<{
     error: PythonErrorFragment | undefined;
@@ -79,7 +82,7 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
             fetchPolicy: 'no-cache',
             variables: {
               cursor,
-              limit: BATCH_LIMIT,
+              limit: batchLimit,
             },
           });
 
@@ -92,7 +95,7 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
             };
           }
           const assets = data.assetsOrError.nodes;
-          const hasMoreData = assets.length === BATCH_LIMIT;
+          const hasMoreData = assets.length === batchLimit;
           const nextCursor = hasMoreData ? assets[assets.length - 1]!.id : undefined;
           return {
             data: assets,
@@ -112,7 +115,11 @@ export function useAllAssets(groupSelector?: AssetGroupSelector) {
         }));
       }
     }
-  }, [cacheManager, client]);
+  }, [batchLimit, cacheManager, client]);
+
+  useEffect(() => {
+    fetchAssets();
+  }, [fetchAssets]);
 
   // Delete old database
   indexedDB.deleteDatabase(`${localCacheIdPrefix}/allAssets`);
@@ -174,7 +181,7 @@ export const AssetsCatalogTable = ({
 
   const [view, setView] = useAssetView();
 
-  const {assets, query, error} = useAllAssets(groupSelector);
+  const {assets, query, error} = useAllAssets({groupSelector});
   const {searchPath, filtered, isFiltered, filterButton, filterInput, activeFiltersJsx} =
     useAssetCatalogFiltering(assets, prefixPath);
 
