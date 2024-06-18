@@ -2209,3 +2209,14 @@ def test_construct_assets_definition_without_node_def_with_bad_param_combo() -> 
 
     with pytest.raises(CheckError):
         AssetsDefinition(specs=[spec], can_subset=True)
+
+
+def test_multiple_keys_per_output_name():
+    @op(out={"out1": Out(), "out2": Out()})
+    def op1():
+        pass
+
+    with pytest.raises(CheckError, match="Each asset key should correspond to a single output."):
+        AssetsDefinition(
+            node_def=op1, keys_by_output_name={"out1": AssetKey("a"), "out2": AssetKey("a")}
+        )
