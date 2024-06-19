@@ -9,7 +9,7 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEventType, EngineEventData
+from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -53,7 +53,9 @@ def monitor_starting_run(
 
         logger.info(msg)
 
-        instance.report_run_failed(run, msg)
+        instance.report_run_failed(
+            run, msg, JobFailureData(error=None, failure_reason=RunFailureReason.START_TIMEOUT)
+        )
 
 
 def monitor_canceling_run(

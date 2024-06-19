@@ -2541,7 +2541,7 @@ class DagsterInstance(DynamicPartitionsStore):
         return dagster_event
 
     def report_run_failed(
-        self, dagster_run: DagsterRun, message: Optional[str] = None
+        self, dagster_run: DagsterRun, message: Optional[str] = None, job_failure_data=None
     ) -> "DagsterEvent":
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -2557,6 +2557,7 @@ class DagsterInstance(DynamicPartitionsStore):
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
             job_name=dagster_run.job_name,
             message=message,
+            event_specific_data=job_failure_data,
         )
         self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
