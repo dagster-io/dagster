@@ -14,3 +14,8 @@ class dict_wrapper:
 
     def __init__(self, dictionary):
         self.__dict__ = dictionary
+
+
+TASK_EXECUTE_PLAN_NAME = "execute_plan"
+TASK_EXECUTE_JOB_NAME = "execute_job"
+TASK_RESUME_JOB_NAME = "resume_job"
