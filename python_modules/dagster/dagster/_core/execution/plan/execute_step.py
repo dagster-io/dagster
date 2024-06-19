@@ -1,5 +1,4 @@
 import inspect
-import warnings
 from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
 
 from typing_extensions import TypedDict
@@ -854,20 +853,7 @@ def _log_materialization_or_observation_events_for_asset(
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
         assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        if assets_def is not None:
-            execution_type = assets_def.execution_type
-        else:
-            # This is a situation that shouldn't really ever occur, but appears to be able to happen
-            # when multiple output names point to the same asset key, which also shouldn't occur,
-            # but we don't validate against. If we start validating that each output should
-            # correspond to only one asset, then we can start raising an error here instead of a
-            # warning.
-            warnings.warn(
-                f"Asset key '{asset_key.to_user_string()}' does not correspond to either an "
-                "AssetsDefinition or a SourceAsset in the asset layer. Defaulting to treating it "
-                "as a materializable asset for the purposes or logging events."
-            )
-            execution_type = AssetExecutionType.MATERIALIZATION
+        execution_type = check.not_none(assets_def).execution_type
 
         check.invariant(
             execution_type != AssetExecutionType.UNEXECUTABLE,
