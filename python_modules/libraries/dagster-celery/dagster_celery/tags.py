@@ -6,3 +6,6 @@ DAGSTER_CELERY_RUN_PRIORITY_TAG = "dagster-celery/run_priority"
 
 # Used to select a Celery queue
 DAGSTER_CELERY_QUEUE_TAG = "dagster-celery/queue"
+
+# Used to set the celery task_id for run monitoring
+DAGSTER_CELERY_TASK_ID_TAG = "dagster-celery/task_id"
