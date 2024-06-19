@@ -5,7 +5,6 @@ import 'prismjs/components/prism-python';
 Prism.manual = true;
 
 // Define possible options for code blocks
-const optionKeys = ['lines', 'startafter', 'endbefore', 'dedent', 'trim'];
 
 export const Fence = ({children, 'data-language': language}) => {
   console.log(children, '\n', language);
