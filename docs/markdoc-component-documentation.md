@@ -54,6 +54,14 @@ Code fences
 
 Markdoc doesn't have syntax highlighting out of the box. We're going to need to add that in. When it get's added in, this python code should be beautifully highlighted.
 
+### BASH
+```bash
+python --version
+pip --version
+pip install dagster dagster-webserver
+```
+
+### Python
 ```python
 import random
 
@@ -91,8 +99,41 @@ def magic_8_ball():
 
 if __name__ == "__main__":
     magic_8_ball()
-
 ```
+
+### JSON
+```json
+{
+  "name": "Dagster",
+  "description": "A data orchestrator for machine learning, analytics, and ETL",
+  "version": "0.13.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+  }
+}
+```
+
+### YAML
+```yaml
+name: Dagster
+description: A data orchestrator for machine learning, analytics, and ETL
+version: 0.13.0
+license: Apache-2.0
+repository:
+  type: git
+```
+
+### TOML
+```toml
+[package]
+name = "dagster"
+version = "0.13.0"
+description = "A data orchestrator for machine learning, analytics, and ETL"
+license = "Apache-2.0"
+repository = { type = "git" }
+```
+
 
 # Custom Markdoc Tags
 We've extended markdown with custom tags that let us make the docs richer and more interactive.
