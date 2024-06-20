@@ -951,3 +951,28 @@ def test_dagster_model() -> None:
     m_str = serialize_value(m, whitelist_map=test_env)  # type: ignore # with_new not seen as packable
     m2_str = m_str.replace("nums", "old_nums")
     assert m == deserialize_value(m2_str, whitelist_map=test_env)
+
+
+def test_dagster_model_fwd_ref():
+    test_env = WhitelistMap.create()
+
+    @_whitelist_for_serdes(test_env)
+    @dagster_model
+    class MyModel:
+        foos: List["Foo"]
+
+    @_whitelist_for_serdes(test_env)
+    @dagster_model
+    class Foo:
+        age: int
+
+    def _out_of_scope():
+        # cant find "Foo" in definition or callsite captured scopes
+        # requires serdes to set contextual namespace
+        return deserialize_value(
+            '{"__class__": "MyModel", "foos": [{"__class__": "Foo", "age": 6}]}',
+            MyModel,
+            whitelist_map=test_env,
+        )
+
+    assert _out_of_scope()
