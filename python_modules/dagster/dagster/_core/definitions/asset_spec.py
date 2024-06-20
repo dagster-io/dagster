@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Sequence
 
 import dagster._check as check
@@ -10,6 +11,7 @@ from dagster._utils.internal_init import IHasInternalInit
 from .auto_materialize_policy import AutoMaterializePolicy
 from .events import AssetKey, CoercibleToAssetKey
 from .freshness_policy import FreshnessPolicy
+from .partition_mapping import PartitionMapping
 from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
@@ -184,3 +186,11 @@ class AssetSpec(
             owners=owners,
             tags=tags,
         )
+
+    @cached_property
+    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
+        return {
+            dep.asset_key: dep.partition_mapping
+            for dep in self.deps
+            if dep.partition_mapping is not None
+        }

@@ -89,7 +89,7 @@ class AssetNode(BaseAssetNode):
 
     @property
     def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
-        return self.assets_def.partition_mappings
+        return self._spec.partition_mappings
 
     @property
     def freshness_policy(self) -> Optional[FreshnessPolicy]:

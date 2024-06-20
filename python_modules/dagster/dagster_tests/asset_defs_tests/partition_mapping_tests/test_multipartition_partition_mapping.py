@@ -830,9 +830,7 @@ def test_multi_partition_mapping_with_asset_deps():
         [upstream, downstream], partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"})
     )
 
-    assert downstream.partition_mappings == {
-        AssetKey("upstream"): mapping,
-    }
+    assert downstream.get_partition_mapping(AssetKey("upstream")) == mapping
 
     ### With @multi_asset and AssetSpec
     asset_1 = AssetSpec(key="asset_1")
@@ -926,10 +924,8 @@ def test_multi_partition_mapping_with_asset_deps():
         partition_key=MultiPartitionKey({"123": "1", "time": "2023-08-05"}),
     )
 
-    assert multi_asset_2.partition_mappings == {
-        AssetKey("asset_1"): asset_1_partition_mapping,
-        AssetKey("asset_2"): asset_2_partition_mapping,
-    }
+    assert multi_asset_2.get_partition_mapping(AssetKey("asset_1")) == asset_1_partition_mapping
+    assert multi_asset_2.get_partition_mapping(AssetKey("asset_2")) == asset_2_partition_mapping
 
 
 def test_dynamic_dimension_multipartition_mapping():
