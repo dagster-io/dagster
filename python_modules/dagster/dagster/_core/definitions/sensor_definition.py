@@ -876,7 +876,7 @@ class SensorDefinition(IHasInternalInit):
                 self._asset_selection,
                 "Can only yield NotABackfillRequests for sensors with an asset_selection",
             )
-            asset_keys = item.asset_keys
+            asset_keys = not_a_backfill_request.asset_keys
 
             unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
                 check.not_none(context.repository_def).asset_graph
