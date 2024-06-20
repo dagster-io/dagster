@@ -236,7 +236,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
           ...Object.values(prevLocations.current).filter((loc) => !locations[loc.name]),
           ...Object.values(locationsData).filter(
             (loc): loc is WorkspaceLocationNodeFragment =>
-              loc.__typename === 'WorkspaceLocationEntry' && !locations[loc.name],
+              loc?.__typename === 'WorkspaceLocationEntry' && !locations[loc.name],
           ),
         ]),
       ),
