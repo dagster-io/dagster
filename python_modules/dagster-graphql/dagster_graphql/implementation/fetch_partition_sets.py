@@ -5,10 +5,7 @@ import dagster._check as check
 from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.remote_representation.external_data import (
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
-)
+from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
 from dagster._core.storage.tags import (
     PARTITION_NAME_TAG,
@@ -162,9 +159,9 @@ def get_partition_tags(
 
 
 def get_partitions(
-    graphene_info: ResolveInfo,
     repository_handle: RepositoryHandle,
     partition_set: ExternalPartitionSet,
+    partition_names: Sequence[str],
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
     reverse: bool = False,
@@ -173,12 +170,8 @@ def get_partitions(
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.inst_param(partition_set, "partition_set", ExternalPartitionSet)
-    result = graphene_info.context.get_external_partition_names(
-        partition_set, instance=graphene_info.context.instance
-    )
-    assert isinstance(result, ExternalPartitionNamesData)
 
-    partition_names = _apply_cursor_limit_reverse(result.partition_names, cursor, limit, reverse)
+    partition_names = _apply_cursor_limit_reverse(partition_names, cursor, limit, reverse)
 
     return GraphenePartitions(
         results=[
@@ -217,7 +210,9 @@ def _apply_cursor_limit_reverse(
 
 
 def get_partition_set_partition_statuses(
-    graphene_info: ResolveInfo, external_partition_set: ExternalPartitionSet
+    graphene_info: ResolveInfo,
+    external_partition_set: ExternalPartitionSet,
+    partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionStatus"]:
     check.inst_param(external_partition_set, "external_partition_set", ExternalPartitionSet)
 
@@ -233,15 +228,11 @@ def get_partition_set_partition_statuses(
             },
         )
     )
-    names_result = graphene_info.context.get_external_partition_names(
-        external_partition_set, graphene_info.context.instance
-    )
-
-    if isinstance(names_result, ExternalPartitionExecutionErrorData):
-        raise DagsterUserCodeProcessError.from_error_info(names_result.error)
 
     return partition_statuses_from_run_partition_data(
-        partition_set_name, run_partition_data, names_result.partition_names
+        partition_set_name,
+        run_partition_data,
+        partition_names,
     )
 
 
@@ -309,15 +300,13 @@ def partition_status_counts_from_run_partition_data(
 
 
 def get_partition_set_partition_runs(
-    graphene_info: ResolveInfo, partition_set: ExternalPartitionSet
+    graphene_info: ResolveInfo,
+    partition_set: ExternalPartitionSet,
+    partition_names: Sequence[str],
 ) -> Sequence["GraphenePartitionRun"]:
     from ..schema.partition_sets import GraphenePartitionRun
     from ..schema.pipelines.pipeline import GrapheneRun
 
-    result = graphene_info.context.get_external_partition_names(
-        partition_set, instance=graphene_info.context.instance
-    )
-    assert isinstance(result, ExternalPartitionNamesData)
     run_records = graphene_info.context.instance.get_run_records(
         RunsFilter(tags={PARTITION_SET_TAG: partition_set.name})
     )
@@ -342,5 +331,5 @@ def get_partition_set_partition_runs(
             ),
         )
         # for partition_name, run_record in by_partition.items()
-        for partition_name in result.partition_names
+        for partition_name in partition_names
     ]

@@ -1,12 +1,14 @@
-from typing import Optional, cast
+from typing import Optional, Sequence, cast
 
 import dagster._check as check
 import graphene
 from dagster import MultiPartitionsDefinition
+from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.remote_representation.external_data import (
     ExternalDynamicPartitionsDefinitionData,
     ExternalMultiPartitionsDefinitionData,
+    ExternalPartitionExecutionErrorData,
     ExternalPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
@@ -312,6 +314,7 @@ class GraphenePartitionSet(graphene.ObjectType):
         self._external_partition_set = check.inst_param(
             external_partition_set, "external_partition_set", ExternalPartitionSet
         )
+        self._partition_names = None
 
         super().__init__(
             name=external_partition_set.name,
@@ -319,6 +322,19 @@ class GraphenePartitionSet(graphene.ObjectType):
             solid_selection=external_partition_set.op_selection,
             mode=external_partition_set.mode,
         )
+
+    def _get_partition_names(self, graphene_info: ResolveInfo) -> Sequence[str]:
+        if self._partition_names is None:
+            result = graphene_info.context.get_external_partition_names(
+                self._external_partition_set,
+                instance=graphene_info.context.instance,
+            )
+            if isinstance(result, ExternalPartitionExecutionErrorData):
+                raise DagsterUserCodeProcessError.from_error_info(result.error)
+
+            self._partition_names = result.partition_names
+
+        return self._partition_names
 
     def resolve_id(self, _graphene_info: ResolveInfo):
         return self._external_partition_set.get_external_origin_id()
@@ -332,9 +348,9 @@ class GraphenePartitionSet(graphene.ObjectType):
         reverse: Optional[bool] = None,
     ):
         return get_partitions(
-            graphene_info,
             self._external_repository_handle,
             self._external_partition_set,
+            self._get_partition_names(graphene_info),
             cursor=cursor,
             limit=limit,
             reverse=reverse or False,
@@ -349,13 +365,18 @@ class GraphenePartitionSet(graphene.ObjectType):
         )
 
     def resolve_partitionRuns(self, graphene_info: ResolveInfo):
-        return get_partition_set_partition_runs(graphene_info, self._external_partition_set)
+        return get_partition_set_partition_runs(
+            graphene_info,
+            self._external_partition_set,
+            self._get_partition_names(graphene_info),
+        )
 
     @capture_error
     def resolve_partitionStatusesOrError(self, graphene_info: ResolveInfo):
         return get_partition_set_partition_statuses(
             graphene_info,
             self._external_partition_set,
+            self._get_partition_names(graphene_info),
         )
 
     def resolve_repositoryOrigin(self, _):
