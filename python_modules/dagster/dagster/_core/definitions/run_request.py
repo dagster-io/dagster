@@ -18,7 +18,6 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import NormalizedTags, normalize_tags
@@ -33,6 +32,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
@@ -118,7 +118,7 @@ class NotABackfillRequest(
     NamedTuple(
         "_NotABackfillRequest",
         [
-            ("asset_graph_subset", AssetGraphSubset),
+            ("asset_graph_subset", "AssetGraphSubset"),
             ("tags", PublicAttr[Optional[Mapping[str, str]]]),
             ("title", PublicAttr[Optional[str]]),
             ("description", PublicAttr[Optional[str]]),
@@ -133,7 +133,7 @@ class NotABackfillRequest(
 # @whitelist_for_serdes
 # @dagster_model
 # class NotABackfillRequest:
-#     asset_graph_subset: AssetGraphSubset
+#     asset_graph_subset: "AssetGraphSubset"
 #     tags: Optional[Mapping[str, str]]
 #     title: Optional[str]
 #     description: Optional[str]
