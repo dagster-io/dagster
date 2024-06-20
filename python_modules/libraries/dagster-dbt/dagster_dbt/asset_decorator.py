@@ -16,16 +16,10 @@ from dagster_dbt.dbt_project import DbtProject
 from .asset_utils import (
     DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
-    get_dbt_multi_asset_args,
-    get_deps,
+    build_dbt_multi_asset_args,
 )
 from .dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from .dbt_manifest import DbtManifestParam, validate_manifest
-from .utils import (
-    ASSET_RESOURCE_TYPES,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
-    select_unique_ids_from_manifest,
-)
 
 
 @suppress_dagster_warnings
@@ -309,26 +303,17 @@ def dbt_assets(
     dagster_dbt_translator = validate_translator(dagster_dbt_translator or DagsterDbtTranslator())
     manifest = validate_manifest(manifest)
 
-    unique_ids = select_unique_ids_from_manifest(
-        select=select, exclude=exclude or "", manifest_json=manifest
-    )
-    node_info_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(manifest)
-    dbt_unique_id_deps = get_deps(
-        dbt_nodes=node_info_by_dbt_unique_id,
-        selected_unique_ids=unique_ids,
-        asset_resource_types=ASSET_RESOURCE_TYPES,
-    )
     (
         deps,
         outs,
         internal_asset_deps,
         check_specs,
-    ) = get_dbt_multi_asset_args(
-        dbt_nodes=node_info_by_dbt_unique_id,
-        dbt_unique_id_deps=dbt_unique_id_deps,
-        io_manager_key=io_manager_key,
+    ) = build_dbt_multi_asset_args(
         manifest=manifest,
         dagster_dbt_translator=dagster_dbt_translator,
+        select=select,
+        exclude=exclude or "",
+        io_manager_key=io_manager_key,
         project=project,
     )
 
