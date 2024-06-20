@@ -1,5 +1,31 @@
-import {useEffect, useRef, useState} from 'react';
-import {unstable_batchedUpdates as batchedUpdates} from 'react-dom';
+import {createContext, useContext, useEffect, useRef, useState} from 'react';
+import {unstable_batchedUpdates} from 'react-dom';
+
+/**
+ * Context to accumulate updates over 200ms and batch them together to reduce the number of renders
+ */
+export const ThrottledMemoBatchingContext = createContext<{enqueue: (update: () => void) => void}>(
+  (() => {
+    let isScheduled = false;
+    const queue: Array<() => void> = [];
+    return {
+      enqueue: (update: () => void) => {
+        queue.push(update);
+        if (!isScheduled) {
+          isScheduled = true;
+          setTimeout(() => {
+            unstable_batchedUpdates(() => {
+              while (queue.length) {
+                queue.shift()!();
+              }
+              isScheduled = false;
+            });
+          }, 200);
+        }
+      },
+    };
+  })(),
+);
 
 export const useThrottledMemo = <T,>(
   factory: () => T,
@@ -9,11 +35,12 @@ export const useThrottledMemo = <T,>(
   const [state, setState] = useState<T>(factory);
   const lastRun = useRef<number>(Date.now());
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
+  const {enqueue} = useContext(ThrottledMemoBatchingContext);
 
   useEffect(() => {
     const now = Date.now();
     if (now - lastRun.current >= delay) {
-      batchedUpdates(() => {
+      enqueue(() => {
         setState(factory);
       });
       lastRun.current = now;
@@ -23,7 +50,7 @@ export const useThrottledMemo = <T,>(
       }
       timeoutId.current = setTimeout(
         () => {
-          batchedUpdates(() => {
+          enqueue(() => {
             setState(factory);
           });
           lastRun.current = Date.now();

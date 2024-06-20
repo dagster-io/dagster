@@ -25,7 +25,8 @@ describe('useThrottledMemo', () => {
     rerender();
 
     act(() => {
-      jest.advanceTimersByTime(1000);
+      // 1000 + 200 for batching
+      jest.advanceTimersByTime(1200);
     });
 
     expect(result.current).toBe(2);
@@ -51,7 +52,7 @@ describe('useThrottledMemo', () => {
     expect(factory).toHaveBeenCalledTimes(1);
 
     act(() => {
-      jest.advanceTimersByTime(500);
+      jest.advanceTimersByTime(700);
     });
 
     expect(result.current).toBe(2);
@@ -65,7 +66,7 @@ describe('useThrottledMemo', () => {
     unmount();
 
     act(() => {
-      jest.advanceTimersByTime(1000);
+      jest.advanceTimersByTime(1200);
     });
 
     expect(factory).toHaveBeenCalledTimes(1); // Only the initial call
@@ -90,7 +91,7 @@ describe('useThrottledMemo', () => {
     rerender();
 
     act(() => {
-      jest.advanceTimersByTime(500);
+      jest.advanceTimersByTime(700);
     });
 
     expect(result.current).toBe(3);

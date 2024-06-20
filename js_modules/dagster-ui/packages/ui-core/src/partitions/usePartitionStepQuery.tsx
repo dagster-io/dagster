@@ -61,7 +61,7 @@ export function usePartitionStepQuery({
   const version = useRef(0);
   const [dataState, setDataState] = useState<DataState>(InitialDataState);
 
-  const _serializedRunTags = useMemo(
+  const _serializedRunTags = useThrottledMemo(
     () =>
       JSON.stringify([
         ...runsFilter.map((token) => {
@@ -74,6 +74,7 @@ export function usePartitionStepQuery({
         },
       ]),
     [repositorySelector.repositoryLocationName, repositorySelector.repositoryName, runsFilter],
+    1000,
   );
 
   const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames]);
