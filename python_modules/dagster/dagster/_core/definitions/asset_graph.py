@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import cached_property
 from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     AssetExecutionType,
@@ -262,6 +262,33 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
                 {asset_or_check_key} if assets_def.can_subset else assets_def.asset_and_check_keys
             )
 
+    def get_execution_set_identifier(self, asset_or_check_key: AssetKeyOrCheckKey) -> Optional[str]:
+        """All assets and asset checks with the same execution_set_identifier must be executed
+        together - i.e. you can't execute just a subset of them.
+
+        Returns None if the asset or asset check can be executed individually.
+        """
+        from dagster._core.definitions.graph_definition import GraphDefinition
+
+        if isinstance(asset_or_check_key, AssetKey):
+            assets_def = self.get(asset_or_check_key).assets_def
+            return (
+                assets_def.unique_id
+                if (
+                    not assets_def.can_subset
+                    and (len(assets_def.keys) > 1 or assets_def.check_keys)
+                )
+                else None
+            )
+
+        else:  # AssetCheckKey
+            assets_def = self._assets_defs_by_check_key[asset_or_check_key]
+            # Executing individual checks isn't supported in graph assets
+            if isinstance(assets_def.node_def, GraphDefinition):
+                return assets_def.unique_id
+            else:
+                return assets_def.unique_id if not assets_def.can_subset else None
+
     @cached_property
     def assets_defs(self) -> Sequence[AssetsDefinition]:
         return list(
@@ -288,6 +315,9 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
     @cached_property
     def asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
         return {key for ad in self.assets_defs for key in ad.check_keys}
+
+    def get_check_spec(self, key: AssetCheckKey) -> AssetCheckSpec:
+        return self._assets_defs_by_check_key[key].get_spec_for_check_key(key)
 
 
 def materializable_in_same_run(
