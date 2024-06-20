@@ -144,7 +144,10 @@ export const BackfillPage = () => {
         {error?.graphQLErrors && (
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
-        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
+        <Box
+          flex={{direction: 'column'}}
+          style={{flex: 1, position: 'relative', minHeight: 0, overflowY: 'scroll'}}
+        >
           {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
           {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
           {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
