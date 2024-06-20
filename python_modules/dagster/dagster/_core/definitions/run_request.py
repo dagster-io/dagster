@@ -29,7 +29,6 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -114,38 +113,36 @@ class DeleteDynamicPartitionsRequest(
         )
 
 
-# @whitelist_for_serdes
-# class NotABackfillRequest(  # TODO - decide on a new name
-#     NamedTuple(  # TODO - should this use the new dagster model?
-#         "_NotABackfillRequest",
-#         [
-#             ("asset_graph_subset", AssetGraphSubset),
-#             ("tags", PublicAttr[Optional[Mapping[str, str]]]),
-#             ("title", PublicAttr[Optional[str]]),
-#             ("description", PublicAttr[Optional[str]]),
-#         ],
-#     )
-# ):
-#     @property
-#     def asset_keys(self) -> AbstractSet[AssetKey]:
-#         return self.asset_graph_subset.asset_keys
-
-#     # TODO - maybe a from_asset_key_partition_key method?
-
-
 @whitelist_for_serdes
-@dagster_model
-class NotABackfillRequest:
-    asset_graph_subset: AssetGraphSubset
-    tags: Optional[Mapping[str, str]]
-    title: Optional[str]
-    description: Optional[str]
-
-    # TODO - maybe a from_asset_key_partition_key method? or override __new__ to take in asset_key_partition_keys
-
+class NotABackfillRequest(
+    NamedTuple(
+        "_NotABackfillRequest",
+        [
+            ("asset_graph_subset", AssetGraphSubset),
+            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("title", PublicAttr[Optional[str]]),
+            ("description", PublicAttr[Optional[str]]),
+        ],
+    )
+):
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return self.asset_graph_subset.asset_keys
+
+
+# @whitelist_for_serdes
+# @dagster_model
+# class NotABackfillRequest:
+#     asset_graph_subset: AssetGraphSubset
+#     tags: Optional[Mapping[str, str]]
+#     title: Optional[str]
+#     description: Optional[str]
+
+#     # TODO - maybe a from_asset_key_partition_key method? or override __new__ to take in asset_key_partition_keys
+
+#     @property
+#     def asset_keys(self) -> AbstractSet[AssetKey]:
+#         return self.asset_graph_subset.asset_keys
 
 
 @whitelist_for_serdes
@@ -430,7 +427,7 @@ class SensorResult(
             (
                 "not_a_backfill_request",
                 Optional[NotABackfillRequest],
-            ),  # TODO - decide on a new name
+            ),
             ("cursor", Optional[str]),
             (
                 "dynamic_partitions_requests",
@@ -475,7 +472,7 @@ class SensorResult(
         cls,
         run_requests: Optional[Sequence[RunRequest]] = None,
         skip_reason: Optional[Union[str, SkipReason]] = None,
-        not_a_backfill_request: Optional[NotABackfillRequest] = None,  # TODO - decide on a new name
+        not_a_backfill_request: Optional[NotABackfillRequest] = None,
         cursor: Optional[str] = None,
         dynamic_partitions_requests: Optional[
             Sequence[Union[DeleteDynamicPartitionsRequest, AddDynamicPartitionsRequest]]
@@ -490,7 +487,6 @@ class SensorResult(
                 "both run_requests and skip_reason"
             )
 
-        # TODO - better way to do all this checking
         if skip_reason and not_a_backfill_request:
             check.failed(
                 "Expected a single skip reason or a not_a_backfill request: received values for "
