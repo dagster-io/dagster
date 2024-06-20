@@ -27,7 +27,7 @@ export const Fence = (props) => {
   }, [copy, text]);
 
   return (
-    <div className='codeBlock relative' aria-live="polite">
+    <div className="codeBlock relative" aria-live="polite">
       <pre className="line-numbers">
         <code className={`language-${language}`}> {text} </code>
       </pre>
