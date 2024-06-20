@@ -1794,6 +1794,49 @@ def test_asset_backfill_with_single_run_backfill_policy(
     assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == partitions[-1]
 
 
+def test_asset_backfill_from_asset_graph_subset_with_single_run_backfill_policy(
+    instance: DagsterInstance, workspace_context: WorkspaceProcessContext
+):
+    partitions = ["2023-01-01", "2023-01-02", "2023-01-03", "2023-01-04", "2023-01-05"]
+
+    backfill_id = "asset_backfill_from_asset_graph_subset_with_backfill_policy"
+    asset_graph_subset = AssetGraphSubset.from_asset_partition_set(
+        asset_partitions_set={
+            AssetKeyPartitionKey(asset_with_single_run_backfill_policy.key, pk) for pk in partitions
+        },
+        asset_graph=workspace_context.create_request_context().asset_graph,
+    )
+    backfill = PartitionBackfill.from_asset_graph_subset(
+        backfill_id=backfill_id,
+        asset_graph_subset=asset_graph_subset,
+        backfill_timestamp=get_current_timestamp(),
+        tags={},
+        dynamic_partitions_store=instance,
+        title=None,
+        description=None,
+    )
+    instance.add_backfill(backfill)
+
+    assert instance.get_runs_count() == 0
+    backfill = instance.get_backfill(backfill_id)
+    assert backfill
+    assert backfill.status == BulkActionStatus.REQUESTED
+    assert backfill.asset_selection == [asset_with_single_run_backfill_policy.key]
+
+    assert all(
+        not error
+        for error in list(
+            execute_backfill_iteration(
+                workspace_context, get_default_daemon_logger("BackfillDaemon")
+            )
+        )
+    )
+
+    assert instance.get_runs_count() == 1
+    assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_START_TAG) == partitions[0]
+    assert instance.get_runs()[0].tags.get(ASSET_PARTITION_RANGE_END_TAG) == partitions[-1]
+
+
 def test_asset_backfill_with_multi_run_backfill_policy(
     instance: DagsterInstance, workspace_context: WorkspaceProcessContext
 ):
@@ -2382,7 +2425,7 @@ def test_asset_backfill_from_asset_graph_subset(
         PartitionBackfill.from_asset_graph_subset(
             backfill_id="backfill_from_asset_graph_subset",
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             dynamic_partitions_store=instance,
             title=None,
             description=None,
@@ -2444,7 +2487,7 @@ def test_asset_backfill_from_asset_graph_subset_with_static_and_time_partitions(
         PartitionBackfill.from_asset_graph_subset(
             backfill_id="backfill_from_asset_graph_subset_with_static_and_time_partitions",
             tags={"custom_tag_key": "custom_tag_value"},
-            backfill_timestamp=pendulum.now().timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             dynamic_partitions_store=instance,
             title=None,
             description=None,
