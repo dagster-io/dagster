@@ -418,6 +418,9 @@ class DagsterRunReaction(
 @experimental_param(
     param="asset_events", additional_warn_text="Runless asset events are experimental"
 )
+@experimental_param(
+    param="not_a_backfill_request", additional_warn_text="NotABackfillRequests are experimental"
+)
 class SensorResult(
     NamedTuple(
         "_SensorResult",
