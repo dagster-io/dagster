@@ -141,7 +141,6 @@ class DbtProject(IHaveNew):
         manifest_preparer (Optional[DbtManifestPreparer]):
             A object for ensuring that manifest.json is in the right state at
             the right times.
-            Default: DagsterDbtManifestPreparer
 
     Examples:
         Creating a DbtProject with by referencing the dbt project directory:
@@ -196,7 +195,7 @@ class DbtProject(IHaveNew):
         target: Optional[str] = None,
         packaged_project_dir: Optional[Union[Path, str]] = None,
         state_path: Optional[Union[Path, str]] = None,
-        manifest_preparer: DbtManifestPreparer = DagsterDbtManifestPreparer(),
+        manifest_preparer: Optional[DbtManifestPreparer] = None,
     ) -> "DbtProject":
         project_dir = Path(project_dir)
         if not project_dir.exists():
@@ -236,7 +235,7 @@ class DbtProject(IHaveNew):
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
-            manifest_preparer=manifest_preparer,
+            manifest_preparer=manifest_preparer if manifest_preparer else DagsterDbtManifestPreparer(),
         )
 
     @public
