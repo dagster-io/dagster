@@ -365,16 +365,53 @@ def dagster_instance_config_schema() -> Mapping[str, Field]:
             {
                 "enabled": Field(bool, is_required=False, default_value=False),
                 "max_retries": Field(int, is_required=False, default_value=0),
+                "retry_on_unexpected_termination": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="Whether to retry if the run is unexpectedly terminated. "
+                    "This configuration corresponds to the UNEXPECTED_TERMINATION run failure reason"
+                    "Setting this to false will only change behavior on dagster version 1.7.11 or greater",
+                ),
+                "retry_on_run_exception": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="Whether to retry if the run fails due to a run exception."
+                    "This configuration corresponds to the RUN_EXCEPTION run failure reason"
+                    "Setting this to false will only change behavior on dagster version 1.7.11 or greater",
+                ),
                 "retry_on_asset_or_op_failure": Field(
                     bool,
                     is_required=False,
                     default_value=True,
-                    description="Whether to retry runs that failed due to assets or ops in the run failing. "
-                    "Set this to false if you only want to retry failures that occur "
-                    "due to the run worker crashing or unexpectedly terminating, and instead "
-                    "rely on op or asset-level retry policies to retry asset or op failures. Setting this "
-                    "field to false will only change retry behavior for runs on dagster "
-                    "version 1.6.7 or greater.",
+                    description="Whether to retry if the run fails due to assets or ops failing."
+                    "This configuration corresponds to the STEP_FAILURE run failure reason"
+                    "Setting this to false will only change behavior on dagster version 1.6.7 or greater",
+                ),
+                "retry_on_job_initialization_failure": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="Whether to retry if the job fails to initialize."
+                    "This configuration corresponds to the JOB_INITIALIZATION_FAILURE run failure reason"
+                    "Setting this to false will only change behavior on dagster version 1.7.11 or greater",
+                ),
+                "retry_on_start_timeout": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="Whether to retry failed runs when they time out and fail when STARTING. "
+                    "This configuration corresponds to the START_TIMEOUT run failure reason"
+                    "Setting this to false will only change behavior on dagster version 1.7.11 or greater",
+                ),
+                "retry_on_unknown_failure": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="Whether to retry if the run fails due an unknown reason."
+                    "This configuration corresponds to the UNKNOWN or empty job failure reasons"
+                    "Setting this to false will only change behavior on dagster version 1.7.11 or greater",
                 ),
             }
         ),
