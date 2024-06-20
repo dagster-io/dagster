@@ -1078,10 +1078,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return {key: spec.code_version for key, spec in self._specs_by_key.items()}
 
     @property
-    def partition_mappings(self) -> Mapping[AssetKey, PartitionMapping]:
-        return self._partition_mappings
-
-    @property
     def owners_by_key(self) -> Mapping[AssetKey, Sequence[str]]:
         return {key: spec.owners or [] for key, spec in self._specs_by_key.items()}
 
