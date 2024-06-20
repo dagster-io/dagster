@@ -216,6 +216,10 @@ class WhitelistMap(NamedTuple):
     def create() -> "WhitelistMap":
         return WhitelistMap(object_serializers={}, object_deserializers={}, enum_serializers={})
 
+    def get_type_map(self) -> Mapping[str, Type]:
+        # Return string name -> type mapping of all registered types
+        return {name: ser.klass for name, ser in self.object_serializers.items()}
+
 
 _WHITELIST_MAP: Final[WhitelistMap] = WhitelistMap.create()
 
@@ -1049,7 +1053,9 @@ def deserialize_value(
     check.str_param(val, "val")
 
     # Never issue warnings when deserializing deprecated objects.
-    with disable_dagster_warnings():
+    with disable_dagster_warnings(), check.EvalContext.contextual_namespace(
+        whitelist_map.get_type_map()
+    ):
         context = UnpackContext()
         unpacked_value = seven.json.loads(
             val, object_hook=partial(_unpack_object, whitelist_map=whitelist_map, context=context)

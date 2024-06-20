@@ -1,6 +1,8 @@
 import collections.abc
 import inspect
 import sys
+from contextlib import contextmanager
+from contextvars import ContextVar
 from os import PathLike, fspath
 from typing import (
     AbstractSet,
@@ -1854,6 +1856,9 @@ def _check_two_dim_mapping_entries(
 # ###################################################################################################
 
 
+_contextual_ns: ContextVar[Mapping[str, Type]] = ContextVar("_contextual_ns", default={})
+
+
 class EvalContext(NamedTuple):
     """Utility class for managing references to global and local namespaces.
 
@@ -1891,27 +1896,44 @@ class EvalContext(NamedTuple):
             local_ns=local_ns,
         )
 
+    @staticmethod
+    @contextmanager
+    def contextual_namespace(ns: Mapping[str, Type]):
+        token = _contextual_ns.set(ns)
+        try:
+            yield
+        finally:
+            _contextual_ns.reset(token)
+
     def update_from_frame(self, depth: int):
         # Update the global and local namespaces with symbols from the target frame
         ctx_frame = sys._getframe(depth + 1)  # noqa # surprisingly not costly
         self.global_ns.update(ctx_frame.f_globals)
         self.local_ns.update(ctx_frame.f_locals)
 
+    def get_merged_ns(self):
+        return {
+            **_contextual_ns.get(),
+            **self.global_ns,
+            **self.local_ns,
+        }
+
     def eval_forward_ref(self, ref: ForwardRef) -> Optional[Type]:
         try:
             if sys.version_info <= (3, 9):
-                return ref._evaluate(self.global_ns, self.local_ns)  # noqa
+                return ref._evaluate(self.get_merged_ns(), {})  # noqa
             else:
-                return ref._evaluate(self.global_ns, self.local_ns, frozenset())  # noqa
+                return ref._evaluate(self.get_merged_ns(), {}, frozenset())  # noqa
         except NameError as e:
-            raise CheckError(f"Unable to resolve {ref}") from e
+            raise CheckError(
+                f"Unable to resolve {ref}, could not map string name to actual type."
+            ) from e
 
     def compile_fn(self, body: str, fn_name: str) -> Callable:
-        merged_global_ns = {**self.global_ns, **self.local_ns}
         local_ns = {}
         exec(
             body,
-            merged_global_ns,
+            self.get_merged_ns(),
             local_ns,
         )
         return local_ns[fn_name]
