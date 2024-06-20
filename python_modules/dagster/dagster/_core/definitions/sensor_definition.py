@@ -835,20 +835,6 @@ class SensorDefinition(IHasInternalInit):
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
             elif isinstance(item, NotABackfillRequest):
-                asset_selection = check.not_none(
-                    self._asset_selection,
-                    "Can only yield NotABackfillRequests for sensors with an asset_selection",
-                )
-                asset_keys = item.asset_keys
-
-                unexpected_asset_keys = (
-                    AssetSelection.keys(*asset_keys) - asset_selection
-                ).resolve(check.not_none(context.repository_def).asset_graph)
-                if unexpected_asset_keys:
-                    raise DagsterInvalidSubsetError(
-                        "NotABackfillRequest includes asset keys that are not part of sensor's asset_selection:"
-                        f" {unexpected_asset_keys}"
-                    )
                 not_a_backfill_request = item
             elif isinstance(item, DagsterRunReaction):
                 dagster_run_reactions = (
@@ -885,6 +871,22 @@ class SensorDefinition(IHasInternalInit):
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
         _check_dynamic_partitions_requests(dynamic_partitions_requests)
+        if not_a_backfill_request:
+            asset_selection = check.not_none(
+                self._asset_selection,
+                "Can only yield NotABackfillRequests for sensors with an asset_selection",
+            )
+            asset_keys = item.asset_keys
+
+            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
+                check.not_none(context.repository_def).asset_graph
+            )
+            if unexpected_asset_keys:
+                raise DagsterInvalidSubsetError(
+                    "NotABackfillRequest includes asset keys that are not part of sensor's asset_selection:"
+                    f" {unexpected_asset_keys}"
+                )
+
         resolved_run_requests = [
             run_request.with_replaced_attrs(
                 tags=merge_dicts(run_request.tags, DagsterRun.tags_for_sensor(self)),

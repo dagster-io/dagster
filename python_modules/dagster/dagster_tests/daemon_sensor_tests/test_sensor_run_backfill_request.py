@@ -165,14 +165,12 @@ def test_backfill_request_sensor(instance: DagsterInstance, executor, sensor_nam
             AssetKeyPartitionKey(unpartitioned_child.key, None),
         }
 
-        # wait_for_all_runs_to_finish(instance)
-
         validate_tick(
             ticks[0],
             external_sensor,
             None,
             TickStatus.SUCCESS,
-            expected_backfill_ids=[backfill.backfill_id],
+            expected_backfill_id=backfill.backfill_id,
         )
 
 

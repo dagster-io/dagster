@@ -6,7 +6,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import ExitStack
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 from unittest import mock
 
 import pytest
@@ -1022,7 +1022,7 @@ def validate_tick(
     expected_status=None,
     expected_run_ids=None,
     expected_error=None,
-    expected_backfill_ids: Optional[Sequence[str]] = None,
+    expected_backfill_id: Optional[str] = None,
 ):
     tick_data = tick.tick_data
     assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
@@ -1035,8 +1035,8 @@ def validate_tick(
         assert set(tick_data.run_ids) == set(expected_run_ids)
     if expected_error:
         assert expected_error in str(tick_data.error)
-    if expected_backfill_ids:
-        assert set(tick_data.backfill_ids) == set(expected_backfill_ids)
+    if expected_backfill_id:
+        assert tick_data.backfill_id == expected_backfill_id
 
 
 def validate_run_started(run, expected_success=True):
