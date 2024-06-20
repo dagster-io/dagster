@@ -82,7 +82,7 @@ class DataVersionCache:
         for output_key in output_keys:
             if output_key not in self._context.job_def.asset_layer.asset_graph.all_asset_keys:
                 continue
-            dep_keys = self._context.job_def.asset_layer.get(output_key).parent_keys
+            dep_keys = self._context.job_def.asset_layer.asset_graph.get(output_key).parent_keys
             for key in dep_keys:
                 if key not in all_dep_keys and key not in output_keys:
                     all_dep_keys.append(key)

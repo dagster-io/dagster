@@ -23,7 +23,7 @@ from .graph_definition import GraphDefinition
 from .node_definition import NodeDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
+    from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.partition_mapping import PartitionMapping
@@ -455,18 +455,8 @@ class AssetLayer(NamedTuple):
         )
 
     @property
-    def all_asset_keys(self) -> Iterable[AssetKey]:
-        return self.asset_graph.all_asset_keys
-
-    @property
     def executable_asset_keys(self) -> Iterable[AssetKey]:
         return self.asset_graph.executable_asset_keys
-
-    def get(self, asset_key: AssetKey) -> "AssetNode":
-        return self.asset_graph.get(asset_key)
-
-    def has(self, asset_key: AssetKey) -> bool:
-        return self.asset_graph.has(asset_key)
 
     def node_output_handle_for_asset(self, asset_key: AssetKey) -> NodeOutputHandle:
         matching_handles = [
