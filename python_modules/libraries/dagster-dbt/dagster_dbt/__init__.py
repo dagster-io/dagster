@@ -31,8 +31,8 @@ from .dagster_dbt_translator import (
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .dbt_project import (
     DagsterDbtProjectPreparer as DagsterDbtProjectPreparer,
-    DbtProjectPreparer as DbtProjectPreparer,
     DbtProject as DbtProject,
+    DbtProjectPreparer as DbtProjectPreparer,
 )
 from .errors import (
     DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
