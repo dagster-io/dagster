@@ -1598,6 +1598,7 @@ BUILD_CASES = [
     (PublicAttr[Optional[Mapping[str, int]]], {"a": 1}, {1: "a"}),
     (PublicAttr[Bar], Bar(), Foo()),
     (Union[bool, Foo], True, None),
+    (Union[Foo, "Bar"], Bar(), None),
     # fwd refs
     ("Foo", Foo(), Bar()),
     (Optional["Foo"], Foo(), Bar()),

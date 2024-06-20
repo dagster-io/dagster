@@ -1921,10 +1921,13 @@ def _coerce_type(
     ttype: Optional[TypeOrTupleOfTypes],
     eval_ctx: Optional[EvalContext],
 ) -> Optional[TypeOrTupleOfTypes]:
-    # coerce input type in to the type we want to pass to check call
+    # coerce input type in to the type we want to pass to the check call
 
+    # Any type translates to passing None for the of_type argument
     if ttype is Any:
         return None
+
+    # assume naked strings should be ForwardRefs
     if isinstance(ttype, str):
         if eval_ctx is None:
             failed(
@@ -1935,12 +1938,20 @@ def _coerce_type(
         if eval_ctx is None:
             failed(f"Can not evaluate ForwardRef {ttype} without passing in EvalContext")
         return eval_ctx.eval_forward_ref(ttype)
+
+    # Unions should become a tuple of types to pass to the of_type argument
+    # ultimately used as second arg in isinstance(target, tuple_of_types)
     if get_origin(ttype) in (UnionType, Union):
-        optional_args = get_args(ttype)
-        tuple_types = _container_pair_args(optional_args, eval_ctx)
-        if None in tuple_types:
-            failed(f"Unable to turn Optional in to tuple of types for {optional_args} from {ttype}")
-        return tuple_types  # type: ignore # static analysis cant follow above check
+        union_types = get_args(ttype)
+        coerced_types = []
+        for t in union_types:
+            # coerce all the inner types
+            coerced = _coerce_type(t, eval_ctx)
+            if coerced is None or isinstance(coerced, tuple):
+                failed(f"Unable to coerce Union member {t} in {ttype}")
+            coerced_types.append(coerced)
+
+        return tuple(t for t in coerced_types)
 
     return ttype
 
