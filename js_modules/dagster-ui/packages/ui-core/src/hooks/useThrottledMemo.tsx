@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import {unstable_batchedUpdates as batchedUpdates} from 'react-dom';
 
 export const useThrottledMemo = <T,>(
   factory: () => T,
@@ -12,7 +13,9 @@ export const useThrottledMemo = <T,>(
   useEffect(() => {
     const now = Date.now();
     if (now - lastRun.current >= delay) {
-      setState(factory);
+      batchedUpdates(() => {
+        setState(factory);
+      });
       lastRun.current = now;
     } else {
       if (timeoutId.current) {
@@ -20,7 +23,9 @@ export const useThrottledMemo = <T,>(
       }
       timeoutId.current = setTimeout(
         () => {
-          setState(factory);
+          batchedUpdates(() => {
+            setState(factory);
+          });
           lastRun.current = Date.now();
         },
         delay - (now - lastRun.current),
