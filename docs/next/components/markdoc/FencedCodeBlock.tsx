@@ -29,7 +29,9 @@ export const Fence = (props) => {
   return (
     <div className="codeBlock relative" aria-live="polite">
       <pre className="line-numbers">
-        <code className={`language-${language}`}> {text} </code>
+        <code className={`language-${language}`}>
+          {text}
+        </code>
       </pre>
       <Transition
         show={!copied}
