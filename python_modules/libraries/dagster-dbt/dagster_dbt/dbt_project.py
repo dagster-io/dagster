@@ -235,7 +235,9 @@ class DbtProject(IHaveNew):
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
-            manifest_preparer=manifest_preparer if manifest_preparer else DagsterDbtManifestPreparer(),
+            manifest_preparer=manifest_preparer
+            if manifest_preparer
+            else DagsterDbtManifestPreparer(),
         )
 
     @public
