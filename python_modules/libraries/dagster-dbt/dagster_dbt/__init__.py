@@ -30,8 +30,8 @@ from .dagster_dbt_translator import (
 )
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
 from .dbt_project import (
-    DagsterDbtManifestPreparer as DagsterDbtManifestPreparer,
-    DbtManifestPreparer as DbtManifestPreparer,
+    DagsterDbtProjectPreparer as DagsterDbtProjectPreparer,
+    DbtProjectPreparer as DbtProjectPreparer,
     DbtProject as DbtProject,
 )
 from .errors import (

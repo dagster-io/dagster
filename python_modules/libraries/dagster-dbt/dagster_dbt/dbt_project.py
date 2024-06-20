@@ -22,7 +22,7 @@ def using_dagster_dev() -> bool:
 
 
 @experimental
-class DbtManifestPreparer:
+class DbtProjectPreparer:
     """The abstract class of a preparer for a DbtProject representation.
 
     When implemented, this handler should provide an experience of:
@@ -50,12 +50,12 @@ class DbtManifestPreparer:
 
 
 @experimental
-class DagsterDbtManifestPreparer(DbtManifestPreparer):
+class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
         generate_cli_args: Optional[Sequence[str]] = None,
     ):
-        """The default DbtManifestPreparer, this handler provides an experience of:
+        """The default DbtProjectPreparer, this handler provides an experience of:
             * During development, reload the manifest at run time to pick up any changes.
             * When deploying, expect a manifest that was created at build time to reduce start-up time.
 
@@ -212,7 +212,7 @@ class DbtProject(IHaveNew):
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
     has_uninstalled_deps: bool
-    preparer: DbtManifestPreparer
+    preparer: DbtProjectPreparer
 
     def __new__(
         cls,
@@ -231,7 +231,7 @@ class DbtProject(IHaveNew):
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
 
-        preparer = DagsterDbtManifestPreparer()
+        preparer = DagsterDbtProjectPreparer()
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
