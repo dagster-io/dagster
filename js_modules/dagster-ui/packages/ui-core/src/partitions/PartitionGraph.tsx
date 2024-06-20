@@ -1,9 +1,11 @@
-import {Colors} from '@dagster-io/ui-components';
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {Box, Button, Colors, NonIdealState} from '@dagster-io/ui-components';
+import {useCallback, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
 import {colorHash} from '../app/Util';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
+import {numberFormatter} from '../ui/formatters';
 
 type PointValue = number | null | undefined;
 type Point = {x: string; y: PointValue};
@@ -29,6 +31,8 @@ export const PartitionGraph = ({
 }: PartitionGraphProps) => {
   const [hiddenPartitions, setHiddenPartitions] = useState<{[name: string]: boolean}>(() => ({}));
   const chart = useRef<any>(null);
+
+  const [showLargeGraphMessage, setShowLargeGraphMessage] = useState(partitionNames.length > 1000);
 
   const onGraphClick = useCallback((event: MouseEvent) => {
     const instance = chart.current;
@@ -61,108 +65,157 @@ export const PartitionGraph = ({
     }));
   }, []);
 
-  const defaultOptions = useMemo(() => {
-    const titleOptions = title ? {display: true, text: title} : undefined;
-    const scales = yLabel
-      ? {
-          y: {
-            id: 'y',
-            title: {display: true, text: yLabel},
-          },
-          x: {
-            id: 'x',
-            title: {display: true, text: title},
-          },
-        }
-      : undefined;
-
-    return {
-      title: titleOptions,
-      animation: false,
-      scales,
-      plugins: {
-        legend: {
-          display: false,
-          onClick: (_e: MouseEvent, _legendItem: any) => {},
-        },
-      },
-      onClick: onGraphClick,
-      maintainAspectRatio: false,
-    };
-  }, [onGraphClick, title, yLabel]);
-
-  const {jobData, stepData} = useMemo(() => {
-    const jobData: Point[] = [];
-    const stepData = {};
-
-    partitionNames.forEach((partitionName) => {
-      const hidden = !!hiddenPartitions[partitionName];
-      if (jobDataByPartition) {
-        jobData.push({
-          x: partitionName,
-          y: !hidden ? jobDataByPartition[partitionName] : undefined,
-        });
+  const defaultOptions = useThrottledMemo(
+    () => {
+      if (showLargeGraphMessage) {
+        return null;
       }
-
-      if (stepDataByPartition) {
-        const stepDataByKey = stepDataByPartition[partitionName];
-        Object.entries(stepDataByKey || {}).forEach(([stepKey, step]) => {
-          if (hiddenStepKeys?.includes(stepKey) || !step) {
-            return;
-          }
-          (stepData as any)[stepKey] = [
-            ...((stepData as any)[stepKey] || []),
-            {
-              x: partitionName,
-              y: !hidden ? step : undefined,
+      const titleOptions = title ? {display: true, text: title} : undefined;
+      const scales = yLabel
+        ? {
+            y: {
+              id: 'y',
+              title: {display: true, text: yLabel},
             },
-          ];
-        });
-      }
-    });
+            x: {
+              id: 'x',
+              title: {display: true, text: title},
+            },
+          }
+        : undefined;
 
-    // stepData may have holes due to missing runs or missing steps.  For these to
-    // render properly, fill in the holes with `undefined` values.
-    Object.keys(stepData).forEach((stepKey) => {
-      (stepData as any)[stepKey] = _fillPartitions(partitionNames, (stepData as any)[stepKey]);
-    });
-
-    return {jobData, stepData};
-  }, [hiddenPartitions, hiddenStepKeys, jobDataByPartition, partitionNames, stepDataByPartition]);
-
-  const allLabel = isJob ? 'Total job' : 'Total pipeline';
-  const graphData = useMemo(
-    () => ({
-      labels: partitionNames,
-      datasets: [
-        ...(!jobDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
-          ? []
-          : [
-              {
-                label: allLabel,
-                data: jobData,
-                borderColor: Colors.borderDefault(),
-                backgroundColor: Colors.accentPrimary(),
-              },
-            ]),
-        ...Object.keys(stepData).map((stepKey) => ({
-          label: stepKey,
-          data: stepData[stepKey as keyof typeof stepData],
-          borderColor: colorHash(stepKey),
-          backgroundColor: Colors.accentPrimary(),
-        })),
-      ],
-    }),
-    [allLabel, hiddenStepKeys, jobData, jobDataByPartition, partitionNames, stepData],
+      return {
+        title: titleOptions,
+        animation: false,
+        scales,
+        plugins: {
+          legend: {
+            display: false,
+            onClick: (_e: MouseEvent, _legendItem: any) => {},
+          },
+        },
+        onClick: onGraphClick,
+        maintainAspectRatio: false,
+      };
+    },
+    [onGraphClick, showLargeGraphMessage, title, yLabel],
+    1000,
   );
 
-  // Passing graphData as a closure prevents ChartJS from trying to isEqual, which is fairly
-  // unlikely to save a render and is time consuming given the size of the data structure.
-  // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
+  const {jobData, stepData} = useThrottledMemo(
+    () => {
+      if (showLargeGraphMessage) {
+        return {jobData: [], stepData: {}};
+      }
+      const jobData: Point[] = [];
+      const stepData = {};
+
+      partitionNames.forEach((partitionName) => {
+        const hidden = !!hiddenPartitions[partitionName];
+        if (jobDataByPartition) {
+          jobData.push({
+            x: partitionName,
+            y: !hidden ? jobDataByPartition[partitionName] : undefined,
+          });
+        }
+
+        if (stepDataByPartition) {
+          const stepDataByKey = stepDataByPartition[partitionName];
+          Object.entries(stepDataByKey || {}).forEach(([stepKey, step]) => {
+            if (hiddenStepKeys?.includes(stepKey) || !step) {
+              return;
+            }
+            (stepData as any)[stepKey] = [
+              ...((stepData as any)[stepKey] || []),
+              {
+                x: partitionName,
+                y: !hidden ? step : undefined,
+              },
+            ];
+          });
+        }
+      });
+
+      // stepData may have holes due to missing runs or missing steps.  For these to
+      // render properly, fill in the holes with `undefined` values.
+      Object.keys(stepData).forEach((stepKey) => {
+        (stepData as any)[stepKey] = _fillPartitions(partitionNames, (stepData as any)[stepKey]);
+      });
+
+      return {jobData, stepData};
+    },
+    [
+      hiddenPartitions,
+      hiddenStepKeys,
+      jobDataByPartition,
+      partitionNames,
+      showLargeGraphMessage,
+      stepDataByPartition,
+    ],
+    1000,
+  );
+
+  const allLabel = isJob ? 'Total job' : 'Total pipeline';
+  const graphData = useThrottledMemo(
+    () =>
+      showLargeGraphMessage
+        ? null
+        : {
+            labels: partitionNames,
+            datasets: [
+              ...(!jobDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
+                ? []
+                : [
+                    {
+                      label: allLabel,
+                      data: jobData,
+                      borderColor: Colors.borderDefault(),
+                      backgroundColor: Colors.accentPrimary(),
+                    },
+                  ]),
+              ...Object.keys(stepData).map((stepKey) => ({
+                label: stepKey,
+                data: stepData[stepKey as keyof typeof stepData],
+                borderColor: colorHash(stepKey),
+                backgroundColor: Colors.accentPrimary(),
+              })),
+            ],
+          },
+    [allLabel, hiddenStepKeys, jobData, jobDataByPartition, partitionNames, stepData],
+    5000,
+  );
+
+  if (graphData && defaultOptions) {
+    // Passing graphData as a closure prevents ChartJS from trying to isEqual, which is fairly
+    // unlikely to save a render and is time consuming given the size of the data structure.
+    // We have a useMemo around the entire <PartitionGraphSet /> and there aren't many extra renders.
+    return (
+      <PartitionGraphContainer>
+        <Line data={() => graphData} height={300} options={defaultOptions as any} ref={chart} />
+      </PartitionGraphContainer>
+    );
+  }
   return (
-    <PartitionGraphContainer>
-      <Line data={() => graphData} height={300} options={defaultOptions as any} ref={chart} />
-    </PartitionGraphContainer>
+    <NonIdealState
+      icon="warning"
+      title="Large number of data points"
+      description={
+        <Box flex={{direction: 'column', gap: 8}}>
+          There are {numberFormatter.format(partitionNames.length)} datapoints in this graph. This
+          might crash the browser.
+          <div>
+            <Button
+              intent="primary"
+              onClick={() => {
+                setShowLargeGraphMessage(false);
+              }}
+            >
+              Show anyways
+            </Button>
+          </div>
+        </Box>
+      }
+    />
   );
 };
 

@@ -10,6 +10,7 @@ import {PARTITION_MATRIX_STEP_RUN_FRAGMENT, PartitionRuns} from './useMatrixData
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 
@@ -197,9 +198,10 @@ export function usePartitionStepQuery({
     partitionNamesSet,
   ]);
 
-  return useMemo(
+  return useThrottledMemo(
     () => assemblePartitions(dataState, partitionTagName),
     [dataState, partitionTagName],
+    1000,
   );
 }
 

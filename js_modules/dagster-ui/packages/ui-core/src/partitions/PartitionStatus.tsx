@@ -9,6 +9,7 @@ import {
 } from '../assets/AssetPartitionStatus';
 import {Range} from '../assets/usePartitionHealthData';
 import {RunStatus} from '../graphql/types';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {RUN_STATUS_COLORS, runStatusToBackfillStateString} from '../runs/RunStatusTag';
 
 type SelectionRange = {
@@ -331,13 +332,17 @@ function useColorSegments(
   const _statusForKey =
     'runStatusForPartitionKey' in health ? health.runStatusForPartitionKey : null;
 
-  return React.useMemo(() => {
-    return _statusForKey
-      ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
-      : _ranges && splitPartitions
-      ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
-      : assetHealthToColorSegments(_ranges!);
-  }, [splitPartitions, partitionNames, _ranges, _statusForKey]);
+  return useThrottledMemo(
+    () => {
+      return _statusForKey
+        ? opRunStatusToColorRanges(partitionNames, splitPartitions, _statusForKey)
+        : _ranges && splitPartitions
+        ? splitColorSegments(partitionNames, assetHealthToColorSegments(_ranges))
+        : assetHealthToColorSegments(_ranges!);
+    },
+    [splitPartitions, partitionNames, _ranges, _statusForKey],
+    1000,
+  );
 }
 
 // If you ask for each partition to be rendered as a separate segment in the UI, we break the

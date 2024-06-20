@@ -30,6 +30,7 @@ import {usePermissionsForLocation} from '../app/Permissions';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {RunStatus} from '../graphql/types';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {DagsterTag} from '../runs/RunTag';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -138,29 +139,33 @@ export const OpJobPartitionsView = ({
 };
 
 export function usePartitionDurations(partitions: PartitionRuns[]) {
-  return useMemo(() => {
-    const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
-    const runDurationData: {[name: string]: number | undefined} = {};
+  return useThrottledMemo(
+    () => {
+      const stepDurationData: {[name: string]: {[key: string]: (number | undefined)[]}} = {};
+      const runDurationData: {[name: string]: number | undefined} = {};
 
-    partitions.forEach((p) => {
-      if (!p.runsLoaded || p.runs.length === 0) {
-        return;
-      }
-      const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
-      const lastRun = sortedRuns[sortedRuns.length - 1]!;
-      stepDurationData[p.name] = {};
-      runDurationData[p.name] =
-        lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
+      partitions.forEach((p) => {
+        if (!p.runsLoaded || p.runs.length === 0) {
+          return;
+        }
+        const sortedRuns = p.runs.sort((a, b) => a.startTime || 0 - (b.startTime || 0));
+        const lastRun = sortedRuns[sortedRuns.length - 1]!;
+        stepDurationData[p.name] = {};
+        runDurationData[p.name] =
+          lastRun?.endTime && lastRun?.startTime ? lastRun.endTime - lastRun.startTime : undefined;
 
-      lastRun.stepStats.forEach((s) => {
-        stepDurationData[p.name]![s.stepKey] = [
-          s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
-        ];
+        lastRun.stepStats.forEach((s) => {
+          stepDurationData[p.name]![s.stepKey] = [
+            s.endTime && s.startTime ? s.endTime - s.startTime : undefined,
+          ];
+        });
       });
-    });
 
-    return {runDurationData, stepDurationData};
-  }, [partitions]);
+      return {runDurationData, stepDurationData};
+    },
+    [partitions],
+    1000,
+  );
 }
 
 export const OpJobPartitionsViewContent = ({
@@ -208,20 +213,28 @@ export const OpJobPartitionsViewContent = ({
     }
   }, [viewport.width, showSteps, setPageSize]);
 
-  const selectedPartitions = useMemo(() => {
-    return showSteps
-      ? partitionNames.slice(
-          Math.max(0, partitionNames.length - 1 - offset - pageSize),
-          partitionNames.length - offset,
-        )
-      : partitionNames;
-  }, [offset, pageSize, partitionNames, showSteps]);
+  const selectedPartitions = useThrottledMemo(
+    () => {
+      return showSteps
+        ? partitionNames.slice(
+            Math.max(0, partitionNames.length - 1 - offset - pageSize),
+            partitionNames.length - offset,
+          )
+        : partitionNames;
+    },
+    [offset, pageSize, partitionNames, showSteps],
+    500,
+  );
 
   const stepDurationData = usePartitionDurations(partitions).stepDurationData;
 
   const onSubmit = useCallback(() => setBlockDialog(true), []);
 
-  const selectPartitionNamesSet = useMemo(() => new Set(selectedPartitions), [selectedPartitions]);
+  const selectPartitionNamesSet = useThrottledMemo(
+    () => new Set(selectedPartitions),
+    [selectedPartitions],
+    1000,
+  );
 
   const {partitionStatusesOrError} = partitionSet;
   const partitionStatuses = useMemo(() => {
@@ -230,25 +243,33 @@ export const OpJobPartitionsViewContent = ({
       : [];
   }, [partitionStatusesOrError]);
 
-  const {runStatusData, runDurationData} = useMemo(() => {
-    // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
-    // rather than looking at the duration of the most recent run returned in `partitions` above
-    // so that the latter can be loaded when you click "Show per-step status" only.
-    const runStatusData: {[name: string]: RunStatus} = {};
-    const runDurationData: {[name: string]: number | undefined} = {};
+  const {runStatusData, runDurationData} = useThrottledMemo(
+    () => {
+      // Note: This view reads "run duration" from the `partitionStatusesOrError` GraphQL API,
+      // rather than looking at the duration of the most recent run returned in `partitions` above
+      // so that the latter can be loaded when you click "Show per-step status" only.
+      const runStatusData: {[name: string]: RunStatus} = {};
+      const runDurationData: {[name: string]: number | undefined} = {};
 
-    partitionStatuses.forEach((p) => {
-      runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
-      if (selectPartitionNamesSet.has(p.partitionName)) {
-        runDurationData[p.partitionName] = p.runDuration || undefined;
-      }
-    });
-    return {runStatusData, runDurationData};
-  }, [partitionStatuses, selectPartitionNamesSet]);
+      partitionStatuses.forEach((p) => {
+        runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
+        if (selectPartitionNamesSet.has(p.partitionName)) {
+          runDurationData[p.partitionName] = p.runDuration || undefined;
+        }
+      });
+      return {runStatusData, runDurationData};
+    },
+    [partitionStatuses, selectPartitionNamesSet],
+    1000,
+  );
 
-  const health = useMemo(() => {
-    return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
-  }, [runStatusData]);
+  const health = useThrottledMemo(
+    () => {
+      return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
+    },
+    [runStatusData],
+    1000,
+  );
 
   return (
     <div>
