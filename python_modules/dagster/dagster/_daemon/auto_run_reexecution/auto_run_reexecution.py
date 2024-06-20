@@ -16,6 +16,7 @@ from dagster._core.storage.tags import (
 )
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
+from dagster._utils.tags import get_boolean_tag_value
 
 DEFAULT_REEXECUTION_POLICY = ReexecutionStrategy.FROM_FAILURE
 
@@ -62,14 +63,15 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
-    default_retry_on_asset_or_op_failure = instance.get_settings("run_retries").get(
+    default_retry_on_asset_or_op_failure: bool = instance.get_settings("run_retries").get(
         "retry_on_asset_or_op_failure", True
     )
 
     for run in runs:
         retry_number = get_retry_number(run)
-        retry_on_asset_or_op_failure = run.tags.get(
-            RETRY_ON_ASSET_OR_OP_FAILURE_TAG, default_retry_on_asset_or_op_failure
+        retry_on_asset_or_op_failure = get_boolean_tag_value(
+            run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
+            default_value=default_retry_on_asset_or_op_failure,
         )
         if retry_number is not None:
             if (
