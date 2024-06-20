@@ -682,6 +682,7 @@ def _evaluate_sensor(
             )
         if sensor_runtime_data.not_a_backfill_request:
             _handle_backfill_requests(sensor_runtime_data.not_a_backfill_request, instance, context)
+            context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
 
 
 def _handle_dynamic_partitions_requests(

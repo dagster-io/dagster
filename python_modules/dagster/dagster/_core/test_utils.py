@@ -54,6 +54,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation import ExternalRepository
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
@@ -527,6 +528,16 @@ def create_test_daemon_workspace_context(
             grpc_server_registry=grpc_server_registry,
         ) as workspace_process_context:
             yield workspace_process_context
+
+
+def load_external_repo(
+    workspace_context: WorkspaceProcessContext, repo_name: str
+) -> ExternalRepository:
+    code_location = next(
+        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+    ).code_location
+    assert code_location
+    return code_location.get_repository(repo_name)
 
 
 def remove_none_recursively(obj: T) -> T:
