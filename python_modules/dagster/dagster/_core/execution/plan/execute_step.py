@@ -224,7 +224,7 @@ def _step_output_error_checked_user_event_sequence(
             node_handle = step_context.node_handle
             asset_key = asset_layer.asset_key_for_output(node_handle, output_def.name)
             if asset_key is not None and asset_key in asset_layer.asset_keys_for_node(node_handle):
-                asset_node = asset_layer.get(asset_key)
+                asset_node = asset_layer.asset_graph.get(asset_key)
                 assets_def = asset_node.assets_def
                 all_dependent_keys = asset_node.child_keys
                 step_local_asset_keys = step_context.get_output_asset_keys()
@@ -280,7 +280,9 @@ def _step_output_error_checked_user_event_sequence(
                 step_context.node_handle, step_output_def.name
             )
             # We require explicitly returned/yielded for asset observations
-            is_observable_asset = asset_key is not None and asset_layer.get(asset_key).is_observable
+            is_observable_asset = (
+                asset_key is not None and asset_layer.asset_graph.get(asset_key).is_observable
+            )
 
             if step_output_def.dagster_type.is_nothing and not is_observable_asset:
                 step_context.log.info(
@@ -645,7 +647,7 @@ def _get_output_asset_events(
 
 def _get_code_version(asset_key: AssetKey, step_context: StepExecutionContext) -> str:
     return (
-        step_context.job_def.asset_layer.get(asset_key).code_version
+        step_context.job_def.asset_layer.asset_graph.get(asset_key).code_version
         or step_context.dagster_run.run_id
     )
 
@@ -659,7 +661,7 @@ def _get_input_provenance_data(
     asset_key: AssetKey, step_context: StepExecutionContext
 ) -> Mapping[AssetKey, _InputProvenanceData]:
     input_provenance: Dict[AssetKey, _InputProvenanceData] = {}
-    deps = step_context.job_def.asset_layer.get(asset_key).parent_keys
+    deps = step_context.job_def.asset_layer.asset_graph.get(asset_key).parent_keys
     for key in deps:
         # For deps external to this step, this will retrieve the cached record that was stored prior
         # to step execution. For inputs internal to this step, it may trigger a query to retrieve
