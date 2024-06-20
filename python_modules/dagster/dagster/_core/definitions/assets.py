@@ -96,8 +96,9 @@ class AssetGraphComputation(IHaveNew):
     """
 
     node_def: NodeDefinition
-    keys_by_input_name: Mapping[str, AssetKey]
-    keys_by_output_name: Mapping[str, AssetKey]
+    all_keys_by_input_name: Mapping[str, AssetKey]
+    all_keys_by_output_name: Mapping[str, AssetKey]
+    all_check_keys_by_output_name: Mapping[str, AssetCheckKey]
     backfill_policy: Optional[BackfillPolicy]
     can_subset: bool
     is_subset: bool
@@ -108,8 +109,9 @@ class AssetGraphComputation(IHaveNew):
     def __new__(
         cls,
         node_def: NodeDefinition,
-        keys_by_input_name: Mapping[str, AssetKey],
-        keys_by_output_name: Mapping[str, AssetKey],
+        all_keys_by_input_name: Mapping[str, AssetKey],
+        all_keys_by_output_name: Mapping[str, AssetKey],
+        all_check_keys_by_output_name: Mapping[str, AssetCheckKey],
         backfill_policy: Optional[BackfillPolicy],
         can_subset: bool,
         is_subset: bool,
@@ -117,7 +119,7 @@ class AssetGraphComputation(IHaveNew):
         selected_asset_check_keys: AbstractSet[AssetCheckKey],
     ):
         output_names_by_key: Dict[AssetKey, str] = {}
-        for output_name, key in keys_by_output_name.items():
+        for output_name, key in all_keys_by_output_name.items():
             if key in output_names_by_key:
                 check.failed(
                     f"Outputs '{output_names_by_key[key]}' and '{output_name}' both target the "
@@ -128,8 +130,9 @@ class AssetGraphComputation(IHaveNew):
         return super().__new__(
             cls,
             node_def=node_def,
-            keys_by_input_name=keys_by_input_name,
-            keys_by_output_name=keys_by_output_name,
+            all_keys_by_input_name=all_keys_by_input_name,
+            all_keys_by_output_name=all_keys_by_output_name,
+            all_check_keys_by_output_name=all_check_keys_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
             is_subset=is_subset,
@@ -137,6 +140,21 @@ class AssetGraphComputation(IHaveNew):
             selected_asset_check_keys=selected_asset_check_keys,
             output_names_by_key=output_names_by_key,
         )
+
+    @property
+    def asset_and_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
+        return merge_dicts(
+            self.all_keys_by_output_name,
+            {output_name: key for output_name, key in self.all_check_keys_by_output_name.items()},
+        )
+
+    @property
+    def selected_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
+        return {
+            output_name: check_key
+            for output_name, check_key in self.all_check_keys_by_output_name.items()
+            if check_key in self.selected_asset_check_keys
+        }
 
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
@@ -212,6 +230,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         if isinstance(node_def, GraphDefinition):
             _validate_graph_def(node_def)
 
+        self._check_specs_by_output_name = check.opt_mapping_param(
+            check_specs_by_output_name,
+            "check_specs_by_output_name",
+            key_type=str,
+            value_type=AssetCheckSpec,
+        )
+
         if node_def is None:
             check.invariant(
                 not keys_by_input_name,
@@ -240,18 +265,22 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
             self._computation = AssetGraphComputation(
                 node_def=node_def,
-                keys_by_input_name=check.opt_mapping_param(
+                all_keys_by_input_name=check.opt_mapping_param(
                     keys_by_input_name,
                     "keys_by_input_name",
                     key_type=str,
                     value_type=AssetKey,
                 ),
-                keys_by_output_name=check.opt_mapping_param(
+                all_keys_by_output_name=check.opt_mapping_param(
                     keys_by_output_name,
                     "keys_by_output_name",
                     key_type=str,
                     value_type=AssetKey,
                 ),
+                all_check_keys_by_output_name={
+                    output_name: spec.key
+                    for output_name, spec in self._check_specs_by_output_name.items()
+                },
                 can_subset=can_subset,
                 backfill_policy=check.opt_inst_param(
                     backfill_policy, "backfill_policy", BackfillPolicy
@@ -260,20 +289,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
             )
-
-        check_specs_by_output_name = check.opt_mapping_param(
-            check_specs_by_output_name,
-            "check_specs_by_output_name",
-            key_type=str,
-            value_type=AssetCheckSpec,
-        )
-
-        self._check_specs_by_output_name = check.opt_mapping_param(
-            check_specs_by_output_name,
-            "check_specs_by_output_name",
-            key_type=str,
-            value_type=AssetCheckSpec,
-        )
 
         self._partitions_def = partitions_def
 
@@ -309,7 +324,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             computation_not_none = check.not_none(
                 self._computation, "If specs are not provided, a node_def must be provided"
             )
-            all_asset_keys = set(computation_not_none.keys_by_output_name.values())
+            all_asset_keys = set(computation_not_none.all_keys_by_output_name.values())
 
             if asset_deps:
                 check.invariant(
@@ -331,7 +346,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
             resolved_specs = _asset_specs_from_attr_key_params(
                 all_asset_keys=all_asset_keys,
-                keys_by_input_name=computation_not_none.keys_by_input_name,
+                keys_by_input_name=computation_not_none.all_keys_by_input_name,
                 deps_by_asset_key=asset_deps,
                 partition_mappings=partition_mappings,
                 tags_by_key=tags_by_key,
@@ -414,7 +429,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     # filter out the special inputs which are used for cases when a multi-asset is
                     # subsetted, as these are not the same as self-dependencies and are never loaded
                     # in the same step that their corresponding output is produced
-                    for input_name, key in self._computation.keys_by_input_name.items()
+                    for input_name, key in self._computation.all_keys_by_input_name.items()
                     if not input_name.startswith(ASSET_SUBSET_INPUT_PREFIX)
                 ],
                 output_keys=self._computation.selected_asset_keys,
@@ -953,12 +968,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def node_keys_by_output_name(self) -> Mapping[str, AssetKey]:
         """AssetKey for each output on the underlying NodeDefinition."""
-        return self._computation.keys_by_output_name if self._computation else {}
+        return self._computation.all_keys_by_output_name if self._computation else {}
 
     @property
     def node_keys_by_input_name(self) -> Mapping[str, AssetKey]:
         """AssetKey for each input on the underlying NodeDefinition."""
-        return self._computation.keys_by_input_name if self._computation else {}
+        return self._computation.all_keys_by_input_name if self._computation else {}
 
     @property
     def node_check_specs_by_output_name(self) -> Mapping[str, AssetCheckSpec]:
@@ -981,16 +996,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         return {
             name: key for name, key in self.node_keys_by_output_name.items() if key in self.keys
         }
-
-    @property
-    def asset_and_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
-        return merge_dicts(
-            self.keys_by_output_name,
-            {
-                output_name: spec.key
-                for output_name, spec in self.check_specs_by_output_name.items()
-            },
-        )
 
     @property
     def asset_and_check_keys(self) -> AbstractSet["AssetKeyOrCheckKey"]:
@@ -1536,6 +1541,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         else:
             asset_keys = ", ".join(sorted(([asset_key.to_string() for asset_key in self.keys])))
             return f"AssetsDefinition with keys {asset_keys}"
+
+    @property
+    def computation(self) -> Optional[AssetGraphComputation]:
+        return self._computation
 
     @cached_property
     def unique_id(self) -> str:

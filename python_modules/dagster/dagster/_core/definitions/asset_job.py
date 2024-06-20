@@ -31,7 +31,7 @@ from dagster._core.utils import toposort
 from dagster._utils.merger import merge_dicts
 
 from .asset_layer import AssetLayer
-from .assets import AssetsDefinition
+from .assets import AssetGraphComputation, AssetsDefinition
 from .config import ConfigMapping
 from .dependency import (
     BlockingAssetChecksDependencyDefinition,
@@ -205,12 +205,12 @@ def build_asset_job(
         asset_graph, asset_graph.executable_asset_keys, partitions_def
     )
 
-    deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
+    deps, computations_by_node_handle = build_node_deps(asset_graph)
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
         asset_graph = _attempt_resolve_node_cycles(asset_graph)
-        deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
+        deps, computations_by_node_handle = build_node_deps(asset_graph)
 
     node_defs = [
         asset.node_def
@@ -234,7 +234,7 @@ def build_asset_job(
 
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
         graph_def=graph,
-        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
+        computations_by_outer_node_handle=computations_by_node_handle,
         asset_graph=asset_graph,
     )
 
@@ -464,7 +464,7 @@ def build_node_deps(
     asset_graph: AssetGraph,
 ) -> Tuple[
     DependencyMapping[NodeInvocation],
-    Mapping[NodeHandle, AssetsDefinition],
+    Mapping[NodeHandle, AssetGraphComputation],
 ]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
@@ -551,7 +551,10 @@ def build_node_deps(
                 deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
                     asset_check_dependencies=asset_check_deps, other_dependency=None
                 )
-    return deps, assets_defs_by_node_handle
+    return deps, {
+        node_handle: check.not_none(assets_def.computation)
+        for node_handle, assets_def in assets_defs_by_node_handle.items()
+    }
 
 
 def _has_cycles(
