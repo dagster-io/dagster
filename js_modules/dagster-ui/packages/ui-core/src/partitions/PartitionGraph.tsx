@@ -91,7 +91,7 @@ export const PartitionGraph = ({
     };
   }, [onGraphClick, title, yLabel]);
 
-  const buildDatasetData = () => {
+  const {jobData, stepData} = useMemo(() => {
     const jobData: Point[] = [];
     const stepData = {};
 
@@ -128,31 +128,33 @@ export const PartitionGraph = ({
     });
 
     return {jobData, stepData};
-  };
+  }, [hiddenPartitions, hiddenStepKeys, jobDataByPartition, partitionNames, stepDataByPartition]);
 
-  const {jobData, stepData} = buildDatasetData();
   const allLabel = isJob ? 'Total job' : 'Total pipeline';
-  const graphData = {
-    labels: partitionNames,
-    datasets: [
-      ...(!jobDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
-        ? []
-        : [
-            {
-              label: allLabel,
-              data: jobData,
-              borderColor: Colors.borderDefault(),
-              backgroundColor: Colors.accentPrimary(),
-            },
-          ]),
-      ...Object.keys(stepData).map((stepKey) => ({
-        label: stepKey,
-        data: stepData[stepKey as keyof typeof stepData],
-        borderColor: colorHash(stepKey),
-        backgroundColor: Colors.accentPrimary(),
-      })),
-    ],
-  };
+  const graphData = useMemo(
+    () => ({
+      labels: partitionNames,
+      datasets: [
+        ...(!jobDataByPartition || (hiddenStepKeys && hiddenStepKeys.includes(allLabel))
+          ? []
+          : [
+              {
+                label: allLabel,
+                data: jobData,
+                borderColor: Colors.borderDefault(),
+                backgroundColor: Colors.accentPrimary(),
+              },
+            ]),
+        ...Object.keys(stepData).map((stepKey) => ({
+          label: stepKey,
+          data: stepData[stepKey as keyof typeof stepData],
+          borderColor: colorHash(stepKey),
+          backgroundColor: Colors.accentPrimary(),
+        })),
+      ],
+    }),
+    [allLabel, hiddenStepKeys, jobData, jobDataByPartition, partitionNames, stepData],
+  );
 
   // Passing graphData as a closure prevents ChartJS from trying to isEqual, which is fairly
   // unlikely to save a render and is time consuming given the size of the data structure.

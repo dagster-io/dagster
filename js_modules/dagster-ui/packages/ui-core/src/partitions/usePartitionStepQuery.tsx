@@ -194,6 +194,7 @@ export function usePartitionStepQuery({
     offset,
     partitionNames,
     skipQuery,
+    partitionNamesSet,
   ]);
 
   return useMemo(
