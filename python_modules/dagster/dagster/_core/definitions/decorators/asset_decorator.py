@@ -33,7 +33,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
-from ..asset_spec import AssetSpec
+from ..asset_spec import AssetExecutionType, AssetSpec
 from ..assets import AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
@@ -446,6 +446,7 @@ def create_assets_def_from_fn_and_decorator_args(
             asset_deps={},
             can_subset=False,
             decorator_name="@asset",
+            execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -488,6 +489,8 @@ def multi_asset(
     check_specs: Optional[Sequence[AssetCheckSpec]] = None,
     # deprecated
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]] = None,
+    # internal
+    _execution_type: Optional[AssetExecutionType] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -612,6 +615,7 @@ def multi_asset(
         ),
         backfill_policy=backfill_policy,
         decorator_name="@multi_asset",
+        execution_type=_execution_type or AssetExecutionType.MATERIALIZATION,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:

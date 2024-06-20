@@ -3,11 +3,7 @@ from typing import AbstractSet, Any, Mapping, Optional, Sequence, Set, Union, ov
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
 from dagster._core.definitions.decorators.asset_decorator import (
     multi_asset,
     resolve_asset_key_and_name_for_decorator,
@@ -251,15 +247,7 @@ def multi_observable_source_asset(
 
     """
     return multi_asset(
-        specs=[
-            spec._replace(
-                metadata={
-                    **(spec.metadata or {}),
-                    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value,
-                }
-            )
-            for spec in specs
-        ],
+        specs=specs,
         name=name,
         description=description,
         partitions_def=partitions_def,
@@ -268,4 +256,5 @@ def multi_observable_source_asset(
         resource_defs=resource_defs,
         group_name=group_name,
         check_specs=check_specs,
+        _execution_type=AssetExecutionType.OBSERVATION,
     )
