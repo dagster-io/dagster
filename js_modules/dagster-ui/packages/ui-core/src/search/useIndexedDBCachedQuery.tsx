@@ -104,6 +104,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
   return {
     data,
     loading,
+    called: true,
     fetch: useCallback(() => fetch(true), [fetch]),
   };
 }

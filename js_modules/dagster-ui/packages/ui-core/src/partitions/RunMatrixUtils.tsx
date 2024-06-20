@@ -188,8 +188,11 @@ const TITLE_MARGIN_BOTTOM = 15;
 const ROTATION_DEGREES = 41;
 
 export function topLabelHeightForLabels(labels: string[]) {
-  const maxlength = Math.max(...labels.map((p) => p.length));
-  return (maxlength > 10 ? maxlength * 4.9 : 55) + TITLE_MARGIN_BOTTOM;
+  let maxLength = 0;
+  for (const label of labels) {
+    maxLength = Math.max(maxLength, label.length);
+  }
+  return (maxLength > 10 ? maxLength * 4.9 : 55) + TITLE_MARGIN_BOTTOM;
 }
 
 export const TopLabelTilted = ({label, $height}: {label: string; $height: number}) => {

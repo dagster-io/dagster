@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {QueryResult, gql, useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -10,7 +10,7 @@ import {
   Tooltip,
   useViewport,
 } from '@dagster-io/ui-components';
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 
 import {BackfillPartitionSelector} from './BackfillSelector';
 import {JobBackfillsTable} from './JobBackfillsTable';
@@ -37,6 +37,11 @@ import {RepoAddress} from '../workspace/types';
 
 type PartitionStatus = OpJobPartitionStatusFragment;
 
+const simpleCache = new Map<
+  string,
+  QueryResult<PartitionsStatusQuery, PartitionsStatusQueryVariables>
+>();
+
 export const OpJobPartitionsView = ({
   partitionSetName,
   repoAddress,
@@ -45,12 +50,27 @@ export const OpJobPartitionsView = ({
   repoAddress: RepoAddress;
 }) => {
   const repositorySelector = repoAddressToSelector(repoAddress);
-  const queryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
+  const variables = useMemo(
+    () => ({partitionSetName, repositorySelector}),
+    [partitionSetName, repositorySelector],
+  );
+  const cacheKey = useMemo(() => JSON.stringify(variables), [variables]);
+  const cachedResult = useMemo(() => simpleCache.get(cacheKey), [cacheKey]);
+  const currentQueryResult = useQuery<PartitionsStatusQuery, PartitionsStatusQueryVariables>(
     PARTITIONS_STATUS_QUERY,
     {
       variables: {partitionSetName, repositorySelector},
+      fetchPolicy: 'no-cache',
     },
   );
+  useLayoutEffect(() => {
+    if (currentQueryResult) {
+      simpleCache.set(cacheKey, currentQueryResult);
+    }
+  }, [cacheKey, currentQueryResult]);
+  const queryResult = currentQueryResult.data
+    ? currentQueryResult
+    : cachedResult ?? currentQueryResult;
   const {data, loading} = queryResult;
   useBlockTraceOnQueryResult(queryResult, 'PartitionsStatusQuery');
 
@@ -188,16 +208,20 @@ export const OpJobPartitionsViewContent = ({
     }
   }, [viewport.width, showSteps, setPageSize]);
 
-  const selectedPartitions = showSteps
-    ? partitionNames.slice(
-        Math.max(0, partitionNames.length - 1 - offset - pageSize),
-        partitionNames.length - offset,
-      )
-    : partitionNames;
+  const selectedPartitions = useMemo(() => {
+    return showSteps
+      ? partitionNames.slice(
+          Math.max(0, partitionNames.length - 1 - offset - pageSize),
+          partitionNames.length - offset,
+        )
+      : partitionNames;
+  }, [offset, pageSize, partitionNames, showSteps]);
 
   const stepDurationData = usePartitionDurations(partitions).stepDurationData;
 
   const onSubmit = useCallback(() => setBlockDialog(true), []);
+
+  const selectPartitionNamesSet = useMemo(() => new Set(selectedPartitions), [selectedPartitions]);
 
   const {partitionStatusesOrError} = partitionSet;
   const partitionStatuses = useMemo(() => {
@@ -215,12 +239,12 @@ export const OpJobPartitionsViewContent = ({
 
     partitionStatuses.forEach((p) => {
       runStatusData[p.partitionName] = p.runStatus || RunStatus.NOT_STARTED;
-      if (selectedPartitions.includes(p.partitionName)) {
+      if (selectPartitionNamesSet.has(p.partitionName)) {
         runDurationData[p.partitionName] = p.runDuration || undefined;
       }
     });
     return {runStatusData, runDurationData};
-  }, [partitionStatuses, selectedPartitions]);
+  }, [partitionStatuses, selectPartitionNamesSet]);
 
   const health = useMemo(() => {
     return {runStatusForPartitionKey: (name: string) => runStatusData[name]};
