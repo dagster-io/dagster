@@ -1,4 +1,5 @@
 from .asset_decorator import dbt_assets as dbt_assets
+from .asset_specs import build_dbt_asset_specs as build_dbt_asset_specs
 from .asset_utils import (
     build_dbt_asset_selection as build_dbt_asset_selection,
     build_schedule_from_dbt_selection as build_schedule_from_dbt_selection,
