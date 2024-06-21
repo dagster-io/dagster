@@ -16,7 +16,7 @@ from typer.testing import CliRunner
 runner = CliRunner()
 
 
-def test_prepare_for_deployment(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path) -> None:
+def test_prepare_and_sync(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path) -> None:
     monkeypatch.chdir(dbt_project_dir)
 
     project_name = "jaffle_dagster"
@@ -47,7 +47,7 @@ def test_prepare_for_deployment(monkeypatch: pytest.MonkeyPatch, dbt_project_dir
         app,
         [
             "project",
-            "prepare-for-deployment",
+            "prepare-and-sync",
             "--file",
             os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
         ],
@@ -58,7 +58,7 @@ def test_prepare_for_deployment(monkeypatch: pytest.MonkeyPatch, dbt_project_dir
     assert packaged_project_dir.exists()
 
 
-def test_prepare_for_deployment_with_dependencies(
+def test_prepare_and_sync_with_dependencies(
     monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:
     monkeypatch.chdir(dbt_project_dir)
@@ -105,7 +105,7 @@ def test_prepare_for_deployment_with_dependencies(
         app,
         [
             "project",
-            "prepare-for-deployment",
+            "prepare-and-sync",
             "--file",
             os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
         ],
@@ -116,7 +116,7 @@ def test_prepare_for_deployment_with_dependencies(
     assert manifest_path.exists()
 
 
-def test_prepare_for_deployment_with_packages(
+def test_prepare_and_sync_with_packages(
     monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:
     monkeypatch.chdir(dbt_project_dir)
@@ -163,7 +163,7 @@ def test_prepare_for_deployment_with_packages(
         app,
         [
             "project",
-            "prepare-for-deployment",
+            "prepare-and-sync",
             "--file",
             os.fspath(dagster_project_dir.joinpath(project_name, "project.py")),
         ],
@@ -174,7 +174,7 @@ def test_prepare_for_deployment_with_packages(
     assert manifest_path.exists()
 
 
-def test_prepare_for_deployment_with_state(
+def test_prepare_and_sync_with_state(
     monkeypatch: pytest.MonkeyPatch, dbt_project_dir: Path
 ) -> None:
     monkeypatch.setenv("DAGSTER_DBT_JAFFLE_SCHEMA", "prod")
@@ -201,7 +201,7 @@ def test_prepare_for_deployment_with_state(
 
     result = runner.invoke(
         app,
-        ["project", "prepare-for-deployment", "--file", os.fspath(dbt_project_file_path)],
+        ["project", "prepare-and-sync", "--file", os.fspath(dbt_project_file_path)],
     )
     assert result.exit_code == 0
 
