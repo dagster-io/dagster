@@ -151,7 +151,7 @@ class AssetGraphComputation(IHaveNew):
         )
 
     @property
-    def selected_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
+    def selected_check_keys_by_output_name(self) -> Mapping[str, AssetCheckKey]:
         return {
             output_name: check_key
             for output_name, check_key in self.all_check_keys_by_output_name.items()
@@ -343,7 +343,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             if partition_mappings:
                 _validate_partition_mappings(
                     partition_mappings=partition_mappings,
-                    input_asset_keys=set(computation_not_none.keys_by_input_name.values()),
+                    input_asset_keys=set(computation_not_none.all_keys_by_input_name.values()),
                     all_asset_keys=all_asset_keys,
                 )
 
@@ -1329,7 +1329,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # All asset keys in selected_asset_keys are outputted from the same top-level graph backed asset
         dep_node_handles_by_asset_key = get_dep_node_handles_of_graph_backed_asset(
-            self.node_def, self
+            self.node_def,
+            check.not_none(self._computation),
         )
         op_selection: List[str] = []
         for asset_key in selected_asset_keys:

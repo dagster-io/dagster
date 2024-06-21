@@ -931,7 +931,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         """
         return (
             self.is_op_in_graph
-            and self.job_def.asset_layer.assets_defs_by_node_handle.get(self.node_handle)
+            and self.job_def.asset_layer.computations_by_node_handle.get(self.node_handle)
             is not None
         )
 

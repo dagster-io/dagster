@@ -179,7 +179,7 @@ def _get_dependency_node_output_handles(
 
 
 def get_dep_node_handles_of_graph_backed_asset(
-    graph_def: GraphDefinition, computation: "AssetGraphComputation"
+    graph_def: GraphDefinition, computation: "AssetGraphComputation", asset_graph: "AssetGraph"
 ) -> Mapping["AssetKeyOrCheckKey", Set[NodeHandle]]:
     """Given a graph-backed asset with graph_def, return a mapping of asset keys outputted by the graph
     to a list of node handles within graph_def that are the dependencies of the asset.
@@ -196,6 +196,7 @@ def get_dep_node_handles_of_graph_backed_asset(
     (dep_node_handles_by_asset_key, _) = asset_or_check_key_to_dep_node_handles(
         dummy_parent_graph,
         {NodeHandle(name=graph_def.name, parent=None): computation},
+        asset_graph,
     )
     return dep_node_handles_by_asset_key
 
@@ -440,6 +441,7 @@ class AssetLayer(NamedTuple):
                 node_handle: check.not_none(asset_graph.get(asset_key).assets_def.computation)
                 for asset_key, node_handles in dep_node_handles_by_asset_key.items()
                 for node_handle in node_handles
+                if asset_graph.get(asset_key).assets_def.computation is not None
             },
             # nodes for asset checks. Required for AssetsDefs that have selected checks
             # but not assets

@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
 
 from typing_extensions import TypedDict
 
@@ -17,7 +17,6 @@ from dagster._core.definitions import (
 )
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_IS_USER_PROVIDED_TAG,
@@ -93,9 +92,18 @@ def _process_user_event(
     step_context: StepExecutionContext, user_event: OpOutputUnion
 ) -> Iterator[OpOutputUnion]:
     if isinstance(user_event, AssetResult):
-        assets_def = _get_assets_def_for_step(step_context, user_event)
-        asset_key = _resolve_asset_result_asset_key(user_event, assets_def)
-        output_name = assets_def.get_output_name_for_asset_key(asset_key)
+        asset_graph_computation = step_context.job_def.asset_layer.computation_for_node(
+            step_context.node_handle
+        )
+        if asset_graph_computation is None:
+            raise DagsterInvariantViolationError(
+                f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
+                " AssetsDefinition found."
+            )
+        asset_key = _resolve_asset_result_asset_key(
+            user_event, asset_graph_computation.selected_asset_keys
+        )
+        output_name = asset_graph_computation.output_names_by_key[asset_key]
 
         for check_result in user_event.check_results or []:
             yield from _process_user_event(step_context, check_result)
@@ -139,30 +147,23 @@ def _process_user_event(
         yield user_event
 
 
-def _get_assets_def_for_step(
-    step_context: StepExecutionContext, user_event: OpOutputUnion
-) -> AssetsDefinition:
-    assets_def = step_context.job_def.asset_layer.assets_def_for_node(step_context.node_handle)
-    if not assets_def:
-        raise DagsterInvariantViolationError(
-            f"{user_event.__class__.__name__} is only valid within asset computations, no backing"
-            " AssetsDefinition found."
-        )
-    return assets_def
-
-
 def _resolve_asset_result_asset_key(
-    asset_result: AssetResult, assets_def: AssetsDefinition
+    asset_result: AssetResult, step_asset_keys: AbstractSet[AssetKey]
 ) -> AssetKey:
     if asset_result.asset_key:
+        if asset_result.asset_key not in step_asset_keys:
+            raise DagsterInvariantViolationError(
+                f"{asset_result.__class__.__name__} had asset_key that was not one of step's asset keys."
+                f" Options are: {step_asset_keys}."
+            )
         return asset_result.asset_key
     else:
-        if len(assets_def.keys) != 1:
+        if len(step_asset_keys) != 1:
             raise DagsterInvariantViolationError(
                 f"{asset_result.__class__.__name__} did not include asset_key and it can not be inferred."
-                f" Specify which asset_key, options are: {assets_def.keys}."
+                f" Specify which asset_key, options are: {step_asset_keys}."
             )
-        return assets_def.key
+        return next(iter(step_asset_keys))
 
 
 def _step_output_error_checked_user_event_sequence(
@@ -854,8 +855,8 @@ def _log_materialization_or_observation_events_for_asset(
 
     if asset_key:
         asset_layer = step_context.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        execution_type = check.not_none(assets_def).execution_type
+        asset_graph_computation = asset_layer.computation_for_node(step_context.node_handle)
+        execution_type = check.not_none(asset_graph_computation).execution_type
 
         check.invariant(
             execution_type != AssetExecutionType.UNEXECUTABLE,

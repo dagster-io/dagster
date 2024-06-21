@@ -19,7 +19,7 @@ from typing import (
 import dagster._check as check
 from dagster._annotations import deprecated, experimental, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.assets import AssetGraphComputation, AssetsDefinition
 from dagster._core.definitions.data_version import (
     DataProvenance,
     DataVersion,
@@ -568,22 +568,30 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     # asset related methods
     #############################################################################################
 
+    @property
+    def _asset_graph_computation(self) -> Optional[AssetGraphComputation]:
+        return check.not_none(self.job_def.asset_layer.computation_for_node(self.node_handle))
+
     @public
     @property
     def asset_key(self) -> AssetKey:
         """The AssetKey for the current asset. In a multi_asset, use asset_key_for_output instead."""
-        if self.has_assets_def and len(self.assets_def.keys_by_output_name.keys()) > 1:
+        asset_graph_computation = self._asset_graph_computation
+        if asset_graph_computation is None:
+            raise DagsterInvariantViolationError(f"Op '{self.op.name}' does not target any assets.")
+
+        if len(asset_graph_computation.selected_asset_keys) > 1:
             raise DagsterInvariantViolationError(
                 "Cannot call `context.asset_key` in a multi_asset with more than one asset. Use"
                 " `context.asset_key_for_output` instead."
             )
-        return next(iter(self.assets_def.keys_by_output_name.values()))
+        return next(iter(asset_graph_computation.selected_asset_keys))
 
     @public
     @property
     def has_assets_def(self) -> bool:
         """If there is a backing AssetsDefinition for what is currently executing."""
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        assets_def = self.job_def.asset_layer.computation_for_node(self.node_handle)
         return assets_def is not None
 
     @public
@@ -601,9 +609,10 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @property
     def selected_asset_keys(self) -> AbstractSet[AssetKey]:
         """Get the set of AssetKeys this execution is expected to materialize."""
-        if not self.has_assets_def:
+        asset_graph_computation = self._asset_graph_computation
+        if asset_graph_computation is None:
             return set()
-        return self.assets_def.keys
+        return asset_graph_computation.selected_asset_keys
 
     @property
     def is_subset(self):
@@ -617,7 +626,11 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
     @public
     @property
     def selected_asset_check_keys(self) -> AbstractSet[AssetCheckKey]:
-        return self.assets_def.check_keys if self.has_assets_def else set()
+        return (
+            self._asset_graph_computation.selected_asset_check_keys
+            if self._asset_graph_computation is not None
+            else set()
+        )
 
     @public
     @property

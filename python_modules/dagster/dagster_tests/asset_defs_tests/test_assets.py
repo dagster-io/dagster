@@ -1690,7 +1690,7 @@ def test_return_materialization():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Asset key random not found in AssetsDefinition",
+        match="MaterializeResult had asset_key that was not one of",
     ):
         mats = _exec_asset(ret_mismatch)
 
