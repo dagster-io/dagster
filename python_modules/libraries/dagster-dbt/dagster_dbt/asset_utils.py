@@ -53,7 +53,12 @@ from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import deprecation_warning
 
-from .utils import ASSET_RESOURCE_TYPES, dagster_name_fn
+from .utils import (
+    ASSET_RESOURCE_TYPES,
+    dagster_name_fn,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
+    select_unique_ids_from_manifest,
+)
 
 if TYPE_CHECKING:
     from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
@@ -674,10 +679,10 @@ def default_code_version_fn(dbt_resource_props: Mapping[str, Any]) -> str:
 
 
 def _attach_sql_model_code_reference(
-    existing_metadata: Dict[str, Any],
-    dbt_resource_props: Dict[str, Any],
+    existing_metadata: Mapping[str, Any],
+    dbt_resource_props: Mapping[str, Any],
     project: "DbtProject",
-) -> Dict[str, Any]:
+) -> Mapping[str, Any]:
     """Pulls the SQL model location for a dbt resource and attaches it as a code reference to the
     existing metadata.
     """
@@ -782,12 +787,13 @@ def get_deps(
     return frozen_asset_deps
 
 
-def get_dbt_multi_asset_args(
-    dbt_nodes: Mapping[str, Any],
-    dbt_unique_id_deps: Mapping[str, FrozenSet[str]],
-    io_manager_key: Optional[str],
+def build_dbt_multi_asset_args(
+    *,
     manifest: Mapping[str, Any],
     dagster_dbt_translator: "DagsterDbtTranslator",
+    select: str,
+    exclude: str,
+    io_manager_key: Optional[str],
     project: Optional["DbtProject"],
 ) -> Tuple[
     Sequence[AssetDep],
@@ -796,6 +802,18 @@ def get_dbt_multi_asset_args(
     Sequence[AssetCheckSpec],
 ]:
     from .dagster_dbt_translator import DbtManifestWrapper
+
+    unique_ids = select_unique_ids_from_manifest(
+        select=select, exclude=exclude or "", manifest_json=manifest
+    )
+    dbt_resource_props_by_dbt_unique_id = get_dbt_resource_props_by_dbt_unique_id_from_manifest(
+        manifest
+    )
+    dbt_unique_id_deps = get_deps(
+        dbt_nodes=dbt_resource_props_by_dbt_unique_id,
+        selected_unique_ids=unique_ids,
+        asset_resource_types=ASSET_RESOURCE_TYPES,
+    )
 
     deps: Set[AssetDep] = set()
     outs: Dict[str, AssetOut] = {}
@@ -811,9 +829,11 @@ def get_dbt_multi_asset_args(
     dbt_adapter_type = manifest.get("metadata", {}).get("adapter_type")
 
     for unique_id, parent_unique_ids in dbt_unique_id_deps.items():
-        dbt_resource_props = dbt_nodes[unique_id]
-        dbt_group_resource_props = dbt_group_resource_props_by_group_name.get(
-            dbt_resource_props.get("group")
+        dbt_resource_props = dbt_resource_props_by_dbt_unique_id[unique_id]
+
+        dbt_group_name = dbt_resource_props.get("group")
+        dbt_group_resource_props = (
+            dbt_group_resource_props_by_group_name.get(dbt_group_name) if dbt_group_name else None
         )
 
         output_name = dagster_name_fn(dbt_resource_props)
@@ -875,7 +895,11 @@ def get_dbt_multi_asset_args(
         ]
         for test_unique_id in test_unique_ids:
             check_spec = default_asset_check_fn(
-                manifest, dbt_nodes, dagster_dbt_translator, asset_key, test_unique_id
+                manifest,
+                dbt_resource_props_by_dbt_unique_id,
+                dagster_dbt_translator,
+                asset_key,
+                test_unique_id,
             )
             if check_spec:
                 check_specs_by_key[check_spec.key] = check_spec
@@ -883,7 +907,7 @@ def get_dbt_multi_asset_args(
         # Translate parent unique ids to dependencies
         output_internal_deps = internal_asset_deps.setdefault(output_name, set())
         for parent_unique_id in parent_unique_ids:
-            dbt_parent_resource_props = dbt_nodes[parent_unique_id]
+            dbt_parent_resource_props = dbt_resource_props_by_dbt_unique_id[parent_unique_id]
             parent_asset_key = dagster_dbt_translator.get_asset_key(dbt_parent_resource_props)
             parent_partition_mapping = dagster_dbt_translator.get_partition_mapping(
                 dbt_resource_props,
@@ -940,7 +964,7 @@ def get_dbt_multi_asset_args(
         for asset_key, unique_ids in dbt_unique_ids_by_duplicate_asset_key.items():
             formatted_ids = []
             for id in unique_ids:
-                unique_id_file_path = dbt_nodes[id]["original_file_path"]
+                unique_id_file_path = dbt_resource_props_by_dbt_unique_id[id]["original_file_path"]
                 formatted_ids.append(f"  - `{id}` ({unique_id_file_path})")
 
             error_messages.append(
