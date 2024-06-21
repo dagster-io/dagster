@@ -260,7 +260,7 @@ def test_source_key_prefix(load_fn):
         AssetKey(["elvis_presley"]),
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
-
+    
     assets_with_prefix_sources = load_fn(
         key_prefix=prefix, source_key_prefix=["bar", "cooler_prefix"]
     )
@@ -273,6 +273,13 @@ def test_source_key_prefix(load_fn):
         AssetKey(["bar", "cooler_prefix", "elvis_presley"]),
         AssetKey(["foo", "my_cool_prefix", "miles_davis"]),
     }
+
+    assets_with_str_prefix_sources = load_fn(
+        key_prefix=prefix, source_key_prefix="string_prefix"
+    )
+    assert get_source_asset_with_key(
+        assets_with_str_prefix_sources, AssetKey(["string_prefix", "elvis_presley"])
+    )
 
 
 @pytest.mark.parametrize(
