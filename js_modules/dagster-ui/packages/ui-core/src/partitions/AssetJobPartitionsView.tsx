@@ -35,13 +35,19 @@ export const AssetJobPartitionsView = ({
   const {viewport, containerProps} = useViewport();
   const repositorySelector = repoAddressToSelector(repoAddress);
 
-  const assetGraph = useAssetGraphData('*', {
-    pipelineSelector: {
-      pipelineName,
-      repositoryName: repoAddress.name,
-      repositoryLocationName: repoAddress.location,
-    },
-  });
+  const assetGraph = useAssetGraphData(
+    '*',
+    useMemo(
+      () => ({
+        pipelineSelector: {
+          pipelineName,
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+        },
+      }),
+      [pipelineName, repoAddress.location, repoAddress.name],
+    ),
+  );
 
   const assetHealth = usePartitionHealthData(assetGraph.graphAssetKeys);
 

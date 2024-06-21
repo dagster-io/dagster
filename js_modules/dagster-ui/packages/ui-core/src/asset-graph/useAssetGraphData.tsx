@@ -14,6 +14,7 @@ import {
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
+import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 
 export interface AssetGraphFetchScope {
@@ -44,6 +45,7 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
       pipelineSelector: options.pipelineSelector,
       groupSelector: options.groupSelector,
     },
+    fetchPolicy: 'no-cache',
   });
   useBlockTraceOnQueryResult(fetchResult, 'ASSET_GRAPH_QUERY');
 
@@ -65,51 +67,54 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const fullGraphQueryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
 
-  const fullAssetGraphData = useMemo(
+  const fullAssetGraphData = useThrottledMemo(
     () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
     [fullGraphQueryItems],
+    1000,
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {
-    if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
+  const {assetGraphData, graphAssetKeys, allAssetKeys} = useThrottledMemo(
+    () => {
+      if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
+        return {
+          graphAssetKeys: [],
+          graphQueryItems: [],
+          assetGraphData: null,
+        };
+      }
+
+      // Filter the set of all AssetNodes down to those matching the `opsQuery`.
+      // In the future it might be ideal to move this server-side, but we currently
+      // get to leverage the useQuery cache almost 100% of the time above, making this
+      // super fast after the first load vs a network fetch on every page view.
+      const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
+      const computeKinds = options.computeKinds;
+      const all = computeKinds?.length
+        ? allFilteredByOpQuery.filter((item) => computeKinds.includes(item.node.computeKind ?? ''))
+        : allFilteredByOpQuery;
+
+      // Assemble the response into the data structure used for layout, traversal, etc.
+      const assetGraphData = buildGraphData(all.map((n) => n.node));
+      if (options.hideEdgesToNodesOutsideQuery) {
+        removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
+      }
+
       return {
-        graphAssetKeys: [],
-        graphQueryItems: [],
-        assetGraphData: null,
+        allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
+        graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
+        assetGraphData,
+        graphQueryItems,
       };
-    }
-
-    // Filter the set of all AssetNodes down to those matching the `opsQuery`.
-    // In the future it might be ideal to move this server-side, but we currently
-    // get to leverage the useQuery cache almost 100% of the time above, making this
-    // super fast after the first load vs a network fetch on every page view.
-    const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
-    const computeKinds = options.computeKinds?.map((c) => c.toLowerCase());
-    const all = computeKinds?.length
-      ? allFilteredByOpQuery.filter(
-          ({node}) => node.computeKind && computeKinds.includes(node.computeKind.toLowerCase()),
-        )
-      : allFilteredByOpQuery;
-
-    // Assemble the response into the data structure used for layout, traversal, etc.
-    const assetGraphData = buildGraphData(all.map((n) => n.node));
-    if (options.hideEdgesToNodesOutsideQuery) {
-      removeEdgesToHiddenAssets(assetGraphData, repoFilteredNodes);
-    }
-
-    return {
-      allAssetKeys: repoFilteredNodes.map((n) => n.assetKey),
-      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
-      assetGraphData,
+    },
+    [
+      repoFilteredNodes,
       graphQueryItems,
-    };
-  }, [
-    repoFilteredNodes,
-    graphQueryItems,
-    opsQuery,
-    options.computeKinds,
-    options.hideEdgesToNodesOutsideQuery,
-  ]);
+      opsQuery,
+      options.computeKinds,
+      options.hideEdgesToNodesOutsideQuery,
+    ],
+    1000,
+  );
 
   return {
     fetchResult,
