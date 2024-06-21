@@ -317,7 +317,7 @@ class AssetLayer(NamedTuple):
     """
 
     asset_graph: "AssetGraph"
-    computations_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"]
+    computations_by_node_handle: Mapping[NodeHandle, "AssetGraphComputation"]
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
     asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, AssetKey]
     check_key_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckKey]
@@ -437,7 +437,7 @@ class AssetLayer(NamedTuple):
         computations_by_node_handle: Dict[NodeHandle, "AssetGraphComputation"] = {
             # nodes for assets
             **{
-                node_handle: asset_graph.get(asset_key).assets_def
+                node_handle: check.not_none(asset_graph.get(asset_key).assets_def.computation)
                 for asset_key, node_handles in dep_node_handles_by_asset_key.items()
                 for node_handle in node_handles
             },
@@ -479,9 +479,12 @@ class AssetLayer(NamedTuple):
     def assets_def_for_node(self, node_handle: NodeHandle) -> Optional["AssetsDefinition"]:
         return self.computations_by_node_handle.get(node_handle)
 
+    def computation_for_node(self, node_handle: NodeHandle) -> Optional["AssetGraphComputation"]:
+        return self.computations_by_node_handle.get(node_handle)
+
     def asset_keys_for_node(self, node_handle: NodeHandle) -> AbstractSet[AssetKey]:
-        assets_def = self.assets_def_for_node(node_handle)
-        return check.not_none(assets_def).keys
+        computation = self.computation_for_node(node_handle)
+        return check.not_none(computation).selected_asset_keys
 
     def asset_key_for_node(self, node_handle: NodeHandle) -> AssetKey:
         asset_keys = self.asset_keys_for_node(node_handle)
