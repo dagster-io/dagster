@@ -3,6 +3,7 @@ import {gql} from '@apollo/client';
 import {LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT} from './LogsScrollingTable';
 import {RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT} from './RunMetadataProvider';
 import {RUN_TIMING_FRAGMENT} from './RunTimingDetails';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {EXECUTION_PLAN_TO_GRAPH_FRAGMENT} from '../gantt/toGraphQueryItems';
 
 export const RUN_FRAGMENT = gql`
@@ -75,13 +76,18 @@ export const RUN_DAGSTER_RUN_EVENT_FRAGMENT = gql`
       level
       stepKey
     }
-
+    ... on ErrorEvent {
+      error {
+        ...PythonErrorFragment
+      }
+    }
     ...LogsScrollingTableMessageFragment
     ...RunMetadataProviderMessageFragment
   }
 
   ${LOGS_SCROLLING_TABLE_MESSAGE_FRAGMENT}
   ${RUN_METADATA_PROVIDER_MESSAGE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const RUN_PAGE_FRAGMENT = gql`

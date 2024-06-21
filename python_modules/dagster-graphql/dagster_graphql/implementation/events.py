@@ -480,6 +480,7 @@ def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -
 
 
 def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
+    from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import GrapheneLogMessageEvent
 
     check.inst_param(event_record, "event_record", EventLogEntry)
@@ -488,7 +489,11 @@ def from_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     if event_record.is_dagster_event:
         return from_dagster_event_record(event_record, pipeline_name)
     else:
-        return GrapheneLogMessageEvent(**construct_basic_params(event_record))
+        print("ERROR: " + str(event_record.error_info))
+        return GrapheneLogMessageEvent(
+            **construct_basic_params(event_record),
+            error=GraphenePythonError(event_record.error_info) if event_record.error_info else None,
+        )
 
 
 def construct_basic_params(event_record: EventLogEntry) -> Any:

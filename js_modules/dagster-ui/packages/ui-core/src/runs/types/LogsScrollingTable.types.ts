@@ -1454,6 +1454,16 @@ export type LogsScrollingTableMessageFragment_LogMessageEvent = {
   timestamp: string;
   level: Types.LogLevel;
   stepKey: string | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
 };
 
 export type LogsScrollingTableMessageFragment_LogsCapturedEvent = {

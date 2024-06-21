@@ -265,6 +265,16 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              error: {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              } | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -430,16 +440,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
               >;
-              error: {
-                __typename: 'PythonError';
-                message: string;
-                stack: Array<string>;
-                errorChain: Array<{
-                  __typename: 'ErrorChainLink';
-                  isExplicitLink: boolean;
-                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-                }>;
-              } | null;
             }
           | {
               __typename: 'ExecutionStepFailureEvent';
@@ -1625,6 +1625,16 @@ export type PipelineRunLogsSubscription = {
               level: Types.LogLevel;
               stepKey: string | null;
               eventType: Types.DagsterEventType | null;
+              error: {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              } | null;
             }
           | {
               __typename: 'LogsCapturedEvent';
@@ -2188,6 +2198,16 @@ export type PipelineRunLogsSubscription = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              error: {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              } | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -2353,16 +2373,6 @@ export type PipelineRunLogsSubscription = {
                     description: string | null;
                   }
               >;
-              error: {
-                __typename: 'PythonError';
-                message: string;
-                stack: Array<string>;
-                errorChain: Array<{
-                  __typename: 'ErrorChainLink';
-                  isExplicitLink: boolean;
-                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-                }>;
-              } | null;
             }
           | {
               __typename: 'ResourceInitStartedEvent';
@@ -3592,6 +3602,16 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
+        error: {
+          __typename: 'PythonError';
+          message: string;
+          stack: Array<string>;
+          errorChain: Array<{
+            __typename: 'ErrorChainLink';
+            isExplicitLink: boolean;
+            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+          }>;
+        } | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -3752,16 +3772,6 @@ export type RunLogsSubscriptionSuccessFragment = {
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
-        error: {
-          __typename: 'PythonError';
-          message: string;
-          stack: Array<string>;
-          errorChain: Array<{
-            __typename: 'ErrorChainLink';
-            isExplicitLink: boolean;
-            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-          }>;
-        } | null;
       }
     | {
         __typename: 'ExecutionStepFailureEvent';
@@ -4923,6 +4933,16 @@ export type RunLogsSubscriptionSuccessFragment = {
         level: Types.LogLevel;
         stepKey: string | null;
         eventType: Types.DagsterEventType | null;
+        error: {
+          __typename: 'PythonError';
+          message: string;
+          stack: Array<string>;
+          errorChain: Array<{
+            __typename: 'ErrorChainLink';
+            isExplicitLink: boolean;
+            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+          }>;
+        } | null;
       }
     | {
         __typename: 'LogsCapturedEvent';
@@ -5473,6 +5493,16 @@ export type RunLogsSubscriptionSuccessFragment = {
         eventType: Types.DagsterEventType | null;
         label: string | null;
         description: string | null;
+        error: {
+          __typename: 'PythonError';
+          message: string;
+          stack: Array<string>;
+          errorChain: Array<{
+            __typename: 'ErrorChainLink';
+            isExplicitLink: boolean;
+            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+          }>;
+        } | null;
         metadataEntries: Array<
           | {
               __typename: 'AssetMetadataEntry';
@@ -5633,16 +5663,6 @@ export type RunLogsSubscriptionSuccessFragment = {
             }
           | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
         >;
-        error: {
-          __typename: 'PythonError';
-          message: string;
-          stack: Array<string>;
-          errorChain: Array<{
-            __typename: 'ErrorChainLink';
-            isExplicitLink: boolean;
-            error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-          }>;
-        } | null;
       }
     | {
         __typename: 'ResourceInitStartedEvent';
@@ -6870,6 +6890,16 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              error: {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              } | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -7035,16 +7065,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
               >;
-              error: {
-                __typename: 'PythonError';
-                message: string;
-                stack: Array<string>;
-                errorChain: Array<{
-                  __typename: 'ErrorChainLink';
-                  isExplicitLink: boolean;
-                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-                }>;
-              } | null;
             }
           | {
               __typename: 'ExecutionStepFailureEvent';
@@ -8230,6 +8250,16 @@ export type RunLogsQuery = {
               level: Types.LogLevel;
               stepKey: string | null;
               eventType: Types.DagsterEventType | null;
+              error: {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              } | null;
             }
           | {
               __typename: 'LogsCapturedEvent';
@@ -8793,6 +8823,16 @@ export type RunLogsQuery = {
               eventType: Types.DagsterEventType | null;
               label: string | null;
               description: string | null;
+              error: {
+                __typename: 'PythonError';
+                message: string;
+                stack: Array<string>;
+                errorChain: Array<{
+                  __typename: 'ErrorChainLink';
+                  isExplicitLink: boolean;
+                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+                }>;
+              } | null;
               metadataEntries: Array<
                 | {
                     __typename: 'AssetMetadataEntry';
@@ -8958,16 +8998,6 @@ export type RunLogsQuery = {
                     description: string | null;
                   }
               >;
-              error: {
-                __typename: 'PythonError';
-                message: string;
-                stack: Array<string>;
-                errorChain: Array<{
-                  __typename: 'ErrorChainLink';
-                  isExplicitLink: boolean;
-                  error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-                }>;
-              } | null;
             }
           | {
               __typename: 'ResourceInitStartedEvent';

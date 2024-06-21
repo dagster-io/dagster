@@ -277,7 +277,7 @@ enum LogLevel {
   DEBUG
 }
 
-type LogMessageEvent implements MessageEvent {
+type LogMessageEvent implements MessageEvent & ErrorEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -285,6 +285,7 @@ type LogMessageEvent implements MessageEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  error: PythonError
 }
 
 interface MessageEvent {

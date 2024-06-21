@@ -217,7 +217,11 @@ export const LogsRowStructuredContent = ({node, metadata}: IStructuredContentPro
         </DefaultContent>
       );
     case 'LogMessageEvent':
-      return <DefaultContent message={node.message} />;
+      if (node.error) {
+        return <FailureContent message={node.message} error={node.error} eventType={eventType} />;
+      } else {
+        return <DefaultContent message={node.message} />;
+      }
     case 'LogsCapturedEvent':
       const currentQuery = qs.parse(location.search, {ignoreQueryPrefix: true});
       const updatedQuery = {...currentQuery, logType: 'stderr', logFileKey: node.fileKey};

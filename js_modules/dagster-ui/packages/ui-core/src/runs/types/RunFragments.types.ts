@@ -285,6 +285,16 @@ export type RunDagsterRunEventFragment_EngineEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -430,16 +440,6 @@ export type RunDagsterRunEventFragment_EngineEvent = {
       }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
-  error: {
-    __typename: 'PythonError';
-    message: string;
-    stack: Array<string>;
-    errorChain: Array<{
-      __typename: 'ErrorChainLink';
-      isExplicitLink: boolean;
-      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-    }>;
-  } | null;
 };
 
 export type RunDagsterRunEventFragment_ExecutionStepFailureEvent = {
@@ -1511,6 +1511,16 @@ export type RunDagsterRunEventFragment_LogMessageEvent = {
   level: Types.LogLevel;
   stepKey: string | null;
   eventType: Types.DagsterEventType | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
 };
 
 export type RunDagsterRunEventFragment_LogsCapturedEvent = {
@@ -2016,6 +2026,16 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
   eventType: Types.DagsterEventType | null;
   label: string | null;
   description: string | null;
+  error: {
+    __typename: 'PythonError';
+    message: string;
+    stack: Array<string>;
+    errorChain: Array<{
+      __typename: 'ErrorChainLink';
+      isExplicitLink: boolean;
+      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
+    }>;
+  } | null;
   metadataEntries: Array<
     | {
         __typename: 'AssetMetadataEntry';
@@ -2161,16 +2181,6 @@ export type RunDagsterRunEventFragment_ResourceInitFailureEvent = {
       }
     | {__typename: 'UrlMetadataEntry'; url: string; label: string; description: string | null}
   >;
-  error: {
-    __typename: 'PythonError';
-    message: string;
-    stack: Array<string>;
-    errorChain: Array<{
-      __typename: 'ErrorChainLink';
-      isExplicitLink: boolean;
-      error: {__typename: 'PythonError'; message: string; stack: Array<string>};
-    }>;
-  } | null;
 };
 
 export type RunDagsterRunEventFragment_ResourceInitStartedEvent = {

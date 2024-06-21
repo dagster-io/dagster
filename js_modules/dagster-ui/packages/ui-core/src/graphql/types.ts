@@ -2368,16 +2368,18 @@ export enum LogLevel {
   WARNING = 'WARNING',
 }
 
-export type LogMessageEvent = MessageEvent & {
-  __typename: 'LogMessageEvent';
-  eventType: Maybe<DagsterEventType>;
-  level: LogLevel;
-  message: Scalars['String']['output'];
-  runId: Scalars['String']['output'];
-  solidHandleID: Maybe<Scalars['String']['output']>;
-  stepKey: Maybe<Scalars['String']['output']>;
-  timestamp: Scalars['String']['output'];
-};
+export type LogMessageEvent = ErrorEvent &
+  MessageEvent & {
+    __typename: 'LogMessageEvent';
+    error: Maybe<PythonError>;
+    eventType: Maybe<DagsterEventType>;
+    level: LogLevel;
+    message: Scalars['String']['output'];
+    runId: Scalars['String']['output'];
+    solidHandleID: Maybe<Scalars['String']['output']>;
+    stepKey: Maybe<Scalars['String']['output']>;
+    timestamp: Scalars['String']['output'];
+  };
 
 export type LogTelemetryMutationResult = LogTelemetrySuccess | PythonError;
 
@@ -9476,6 +9478,12 @@ export const buildLogMessageEvent = (
   relationshipsToOmit.add('LogMessageEvent');
   return {
     __typename: 'LogMessageEvent',
+    error:
+      overrides && overrides.hasOwnProperty('error')
+        ? overrides.error!
+        : relationshipsToOmit.has('PythonError')
+        ? ({} as PythonError)
+        : buildPythonError({}, relationshipsToOmit),
     eventType:
       overrides && overrides.hasOwnProperty('eventType')
         ? overrides.eventType!

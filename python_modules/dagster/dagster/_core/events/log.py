@@ -8,7 +8,7 @@ from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.utils import coerce_valid_log_level
 from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.log import (
     StructuredLoggerHandler,
     StructuredLoggerMessage,
@@ -180,6 +180,17 @@ class EventLogEntry(
 def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogEntry:
     check.inst_param(logger_message, "logger_message", StructuredLoggerMessage)
 
+    print(
+        "EXC INFO: "
+        + str(
+            (
+                serializable_error_info_from_exc_info(logger_message.record.exc_info)
+                if logger_message.record.exc_info
+                else None
+            )
+        )
+    )
+
     return EventLogEntry(
         level=logger_message.level,
         user_message=logger_message.meta["orig_message"],
@@ -188,7 +199,11 @@ def construct_event_record(logger_message: StructuredLoggerMessage) -> EventLogE
         step_key=logger_message.meta.get("step_key"),
         job_name=logger_message.meta.get("job_name"),
         dagster_event=logger_message.meta.get("dagster_event"),
-        error_info=None,
+        error_info=(
+            serializable_error_info_from_exc_info(logger_message.record.exc_info)
+            if logger_message.record.exc_info
+            else None
+        ),
     )
 
 

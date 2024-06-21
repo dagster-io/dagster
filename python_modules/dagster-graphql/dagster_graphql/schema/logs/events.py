@@ -69,7 +69,7 @@ class GrapheneMissingRunIdErrorEvent(graphene.ObjectType):
 
 class GrapheneLogMessageEvent(graphene.ObjectType):
     class Meta:
-        interfaces = (GrapheneMessageEvent,)
+        interfaces = (GrapheneMessageEvent, GrapheneErrorEvent)
         name = "LogMessageEvent"
 
 
