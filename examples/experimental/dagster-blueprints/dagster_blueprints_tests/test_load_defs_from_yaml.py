@@ -241,6 +241,24 @@ def test_additional_resources() -> None:
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
 
+def test_yaml_blueprints_loader_additional_resources() -> None:
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="resource with key 'some_resource' required by op 'asset1' was not provided",
+    ):
+        YamlBlueprintsLoader(
+            path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+            per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+        ).load_defs()
+
+    defs = YamlBlueprintsLoader(
+        path=Path(__file__).parent / "yaml_files" / "single_blueprint.yaml",
+        per_file_blueprint_type=SimpleAssetBlueprintNeedsResource,
+    ).load_defs(resources={"some_resource": "some_value"})
+
+    assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
+
+
 @pytest.mark.parametrize(
     "pydantic_version",
     [
