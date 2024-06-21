@@ -1153,7 +1153,12 @@
           {
             "title": "Migrating from Airflow",
             "path": "/guides/migrations/migrating-airflow-to-dagster"
+          },
+          {
+            "title": "Observe your Airflow pipelines with Dagster",
+            "path": "/guides/migrations/observe-your-airflow-pipelines-with-dagster"
           }
+
         ]
       },
       {
