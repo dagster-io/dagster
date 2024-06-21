@@ -38,6 +38,35 @@ def other_sample_sample_job():
     pass
 ```
 
+### Configuration for Specific Failure Reasons
+
+Dagster exposes configuration options for adjusting the retry behavior of all run failure reasons. Retries are enabled for all failure reasons by default, but can be selectively disabled by setting any of the `run_retries.retry_on_*` configuration options below to `false`:
+
+````yaml
+run_retries:
+  enabled: true # Omit this key if using Dagster+, since run retries are enabled by default
+  max_retries: 3
+  retry_on_unexpected_termination: true
+  retry_on_run_exception: true
+  retry_on_asset_or_op_failure: true
+  retry_on_job_initialization_failure: true
+  retry_on_start_timeout: true
+  retry_on_unknown_failure: true
+````
+
+If you're unsure of the specific reason a job failed, you can find the value set as the `failure_reason` tag of a completed job.
+
+These behaviors can also be controlled by setting any of the tags below to `true` or `false`:
+
+`dagster/retry_on_unexpected_termination`
+`dagster/retry_on_run_exception`
+`dagster/retry_on_asset_or_op_failure`
+`dagster/retry_on_job_initialization_failure`
+`dagster/retry_on_start_timeout`
+`dagster/retry_on_unknown_failure`
+
+**Note:** `retry_on_asset_or_op_failure` is only supported on Dagster version 1.6.7 or greater. Other `retry_on_*` settings are only supported on Dagster 1.7.11 or greater.
+
 ### Retry Strategy
 
 The `dagster/retry_strategy` tag controls which ops the retry will run.
