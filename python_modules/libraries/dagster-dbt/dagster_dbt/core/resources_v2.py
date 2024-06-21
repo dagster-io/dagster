@@ -940,7 +940,7 @@ def _fetch_column_metadata(
 
     with adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"):
         try:
-            relation = adapter.get_relation(
+            relation = adapter.Relation.create(
                 database=dbt_resource_props["database"],
                 schema=dbt_resource_props["schema"],
                 identifier=dbt_resource_props["name"],
