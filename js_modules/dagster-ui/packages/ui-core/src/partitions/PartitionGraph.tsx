@@ -1,10 +1,9 @@
 import {Box, Button, Colors, NonIdealState} from '@dagster-io/ui-components';
-import React, {useCallback, useRef, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
 import {colorHash} from '../app/Util';
-import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {numberFormatter} from '../ui/formatters';
 
 type PointValue = number | null | undefined;
@@ -69,98 +68,90 @@ export const PartitionGraph = React.memo(
       }));
     }, []);
 
-    const defaultOptions = useThrottledMemo(
-      () => {
-        if (showLargeGraphMessage) {
-          return null;
-        }
-        const titleOptions = title ? {display: true, text: title} : undefined;
-        const scales = yLabel
-          ? {
-              y: {
-                id: 'y',
-                title: {display: true, text: yLabel},
-              },
-              x: {
-                id: 'x',
-                title: {display: true, text: title},
-              },
-            }
-          : undefined;
-
-        return {
-          title: titleOptions,
-          animation: false,
-          scales,
-          plugins: {
-            legend: {
-              display: false,
-              onClick: (_e: MouseEvent, _legendItem: any) => {},
+    const defaultOptions = useMemo(() => {
+      if (showLargeGraphMessage) {
+        return null;
+      }
+      const titleOptions = title ? {display: true, text: title} : undefined;
+      const scales = yLabel
+        ? {
+            y: {
+              id: 'y',
+              title: {display: true, text: yLabel},
             },
+            x: {
+              id: 'x',
+              title: {display: true, text: title},
+            },
+          }
+        : undefined;
+
+      return {
+        title: titleOptions,
+        animation: false,
+        scales,
+        plugins: {
+          legend: {
+            display: false,
+            onClick: (_e: MouseEvent, _legendItem: any) => {},
           },
-          onClick: onGraphClick,
-          maintainAspectRatio: false,
-        };
-      },
-      [onGraphClick, showLargeGraphMessage, title, yLabel],
-      1000,
-    );
+        },
+        onClick: onGraphClick,
+        maintainAspectRatio: false,
+      };
+    }, [onGraphClick, showLargeGraphMessage, title, yLabel]);
 
-    const {jobData, stepData} = useThrottledMemo(
-      () => {
-        if (showLargeGraphMessage) {
-          return {jobData: [], stepData: {}};
+    const {jobData, stepData} = useMemo(() => {
+      if (showLargeGraphMessage) {
+        return {jobData: [], stepData: {}};
+      }
+      const jobData: Point[] = [];
+      const stepData = {};
+
+      partitionNames.forEach((partitionName) => {
+        const hidden = !!hiddenPartitions[partitionName];
+        if (jobDataByPartition) {
+          jobData.push({
+            x: partitionName,
+            y: !hidden ? jobDataByPartition[partitionName] : undefined,
+          });
         }
-        const jobData: Point[] = [];
-        const stepData = {};
 
-        partitionNames.forEach((partitionName) => {
-          const hidden = !!hiddenPartitions[partitionName];
-          if (jobDataByPartition) {
-            jobData.push({
-              x: partitionName,
-              y: !hidden ? jobDataByPartition[partitionName] : undefined,
-            });
-          }
+        if (stepDataByPartition) {
+          const stepDataByKey = stepDataByPartition[partitionName];
+          Object.entries(stepDataByKey || {}).forEach(([stepKey, step]) => {
+            if (hiddenStepKeys?.includes(stepKey) || !step) {
+              return;
+            }
+            (stepData as any)[stepKey] = [
+              ...((stepData as any)[stepKey] || []),
+              {
+                x: partitionName,
+                y: !hidden ? step : undefined,
+              },
+            ];
+          });
+        }
+      });
 
-          if (stepDataByPartition) {
-            const stepDataByKey = stepDataByPartition[partitionName];
-            Object.entries(stepDataByKey || {}).forEach(([stepKey, step]) => {
-              if (hiddenStepKeys?.includes(stepKey) || !step) {
-                return;
-              }
-              (stepData as any)[stepKey] = [
-                ...((stepData as any)[stepKey] || []),
-                {
-                  x: partitionName,
-                  y: !hidden ? step : undefined,
-                },
-              ];
-            });
-          }
-        });
+      // stepData may have holes due to missing runs or missing steps.  For these to
+      // render properly, fill in the holes with `undefined` values.
+      Object.keys(stepData).forEach((stepKey) => {
+        (stepData as any)[stepKey] = _fillPartitions(partitionNames, (stepData as any)[stepKey]);
+      });
 
-        // stepData may have holes due to missing runs or missing steps.  For these to
-        // render properly, fill in the holes with `undefined` values.
-        Object.keys(stepData).forEach((stepKey) => {
-          (stepData as any)[stepKey] = _fillPartitions(partitionNames, (stepData as any)[stepKey]);
-        });
-
-        return {jobData, stepData};
-      },
-      [
-        hiddenPartitions,
-        hiddenStepKeys,
-        jobDataByPartition,
-        partitionNames,
-        showLargeGraphMessage,
-        stepDataByPartition,
-      ],
-      1000,
-    );
+      return {jobData, stepData};
+    }, [
+      hiddenPartitions,
+      hiddenStepKeys,
+      jobDataByPartition,
+      partitionNames,
+      showLargeGraphMessage,
+      stepDataByPartition,
+    ]);
 
     const allLabel = isJob ? 'Total job' : 'Total pipeline';
-    const graphData = useThrottledMemo(
+    const graphData = useMemo(
       () =>
         showLargeGraphMessage
           ? null
@@ -185,8 +176,15 @@ export const PartitionGraph = React.memo(
                 })),
               ],
             },
-      [allLabel, hiddenStepKeys, jobData, jobDataByPartition, partitionNames, stepData],
-      5000,
+      [
+        allLabel,
+        hiddenStepKeys,
+        jobData,
+        jobDataByPartition,
+        partitionNames,
+        showLargeGraphMessage,
+        stepData,
+      ],
     );
 
     if (graphData && defaultOptions) {

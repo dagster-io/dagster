@@ -50,7 +50,6 @@ import {
 import {GanttChartMode} from '../gantt/Constants';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {RunStatus} from '../graphql/types';
-import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {linkToRunEvent} from '../runs/RunUtils';
 import {RunFilterToken} from '../runs/RunsFilterInput';
@@ -108,31 +107,23 @@ export const PartitionPerAssetStatus = React.memo(
     assetQueryItems,
     ...rest
   }: PartitionPerAssetStatusProps) => {
-    const rangesByAssetKey = useThrottledMemo(
-      () => {
-        const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
-        for (const a of assetHealth) {
-          if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
-            // Ignore assets in the job / graph that do not have the range partition dimension.
-            continue;
-          }
-          const ranges = a.rangesForSingleDimension(rangeDimensionIdx);
-          rangesByAssetKey[tokenForAssetKey(a.assetKey)] = ranges;
+    const rangesByAssetKey = useMemo(() => {
+      const rangesByAssetKey: {[assetKey: string]: Range[]} = {};
+      for (const a of assetHealth) {
+        if (a.dimensions[rangeDimensionIdx]?.name !== rangeDimension.name) {
+          // Ignore assets in the job / graph that do not have the range partition dimension.
+          continue;
         }
-        return rangesByAssetKey;
-      },
-      [assetHealth, rangeDimension.name, rangeDimensionIdx],
-      1000,
-    );
+        const ranges = a.rangesForSingleDimension(rangeDimensionIdx);
+        rangesByAssetKey[tokenForAssetKey(a.assetKey)] = ranges;
+      }
+      return rangesByAssetKey;
+    }, [assetHealth, rangeDimension.name, rangeDimensionIdx]);
 
-    const layoutBoxesWithRangeDimension = useThrottledMemo(
-      () => {
-        const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
-        return layout.boxes.filter((b) => !!rangesByAssetKey[b.node.name]);
-      },
-      [assetQueryItems, rangesByAssetKey],
-      1000,
-    );
+    const layoutBoxesWithRangeDimension = useMemo(() => {
+      const layout = buildLayout({nodes: assetQueryItems, mode: GanttChartMode.FLAT});
+      return layout.boxes.filter((b) => !!rangesByAssetKey[b.node.name]);
+    }, [assetQueryItems, rangesByAssetKey]);
 
     const data: MatrixData = useMemo(
       () => ({

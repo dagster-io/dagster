@@ -1,4 +1,4 @@
-import {createContext, useContext, useEffect, useRef, useState} from 'react';
+import {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {unstable_batchedUpdates} from 'react-dom';
 
 /**
@@ -32,6 +32,8 @@ export const useThrottledMemo = <T,>(
   deps: React.DependencyList,
   delay: number,
 ): T => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(factory, deps);
   const [state, setState] = useState<T>(factory);
   const lastRun = useRef<number>(Date.now());
   const timeoutId = useRef<NodeJS.Timeout | null>(null);

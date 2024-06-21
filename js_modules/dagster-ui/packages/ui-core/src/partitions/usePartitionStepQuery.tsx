@@ -1,5 +1,5 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
 import {
@@ -10,7 +10,6 @@ import {PARTITION_MATRIX_STEP_RUN_FRAGMENT, PartitionRuns} from './useMatrixData
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment.types';
 import {RepositorySelector, RunStatus} from '../graphql/types';
-import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {DagsterTag} from '../runs/RunTag';
 import {RunFilterToken} from '../runs/RunsFilterInput';
 
@@ -61,7 +60,7 @@ export function usePartitionStepQuery({
   const version = useRef(0);
   const [dataState, setDataState] = useState<DataState>(InitialDataState);
 
-  const _serializedRunTags = useThrottledMemo(
+  const _serializedRunTags = useMemo(
     () =>
       JSON.stringify([
         ...runsFilter.map((token) => {
@@ -77,7 +76,7 @@ export function usePartitionStepQuery({
     1000,
   );
 
-  const partitionNamesSet = useThrottledMemo(() => new Set(partitionNames), [partitionNames], 1000);
+  const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames], 1000);
 
   useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
@@ -199,10 +198,9 @@ export function usePartitionStepQuery({
     partitionNamesSet,
   ]);
 
-  return useThrottledMemo(
+  return useMemo(
     () => assemblePartitions(dataState, partitionTagName),
     [dataState, partitionTagName],
-    1000,
   );
 }
 

@@ -1,6 +1,6 @@
 import {gql} from '@apollo/client';
 import {shallowCompareKeys} from '@blueprintjs/core/lib/cjs/common/utils';
-import {useRef} from 'react';
+import {useMemo, useRef} from 'react';
 
 import {
   PartitionMatrixSolidHandleFragment,
@@ -11,7 +11,6 @@ import {GanttChartLayout} from '../gantt/Constants';
 import {GanttChartMode} from '../gantt/GanttChart';
 import {buildLayout} from '../gantt/GanttChartLayout';
 import {StepEventStatus} from '../graphql/types';
-import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 
@@ -201,35 +200,31 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
     inputs: MatrixDataInputs;
   }>();
 
-  return useThrottledMemo(
-    () => {
-      if (!inputs.solidHandles) {
-        return null;
-      }
-      if (cachedMatrixData.current && shallowCompareKeys(inputs, cachedMatrixData.current.inputs)) {
-        return cachedMatrixData.current.result;
-      }
+  return useMemo(() => {
+    if (!inputs.solidHandles) {
+      return null;
+    }
+    if (cachedMatrixData.current && shallowCompareKeys(inputs, cachedMatrixData.current.inputs)) {
+      return cachedMatrixData.current.result;
+    }
 
-      const nodes = explodeCompositesInHandleGraph(inputs.solidHandles).map((h) => h.solid);
+    const nodes = explodeCompositesInHandleGraph(inputs.solidHandles).map((h) => h.solid);
 
-      // Filter the pipeline's structure and build the flat gantt layout for the left hand side
-      const solidsFiltered = filterByQuery(nodes, inputs.stepQuery);
+    // Filter the pipeline's structure and build the flat gantt layout for the left hand side
+    const solidsFiltered = filterByQuery(nodes, inputs.stepQuery);
 
-      const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
+    const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
 
-      // Build the matrix of step + partition squares - presorted to match the gantt layout
-      const result = buildMatrixData(
-        layout,
-        inputs.partitionNames,
-        inputs.partitions,
-        inputs.options,
-      );
-      cachedMatrixData.current = {result, inputs};
-      return result;
-    },
-    [inputs],
-    1000,
-  );
+    // Build the matrix of step + partition squares - presorted to match the gantt layout
+    const result = buildMatrixData(
+      layout,
+      inputs.partitionNames,
+      inputs.partitions,
+      inputs.options,
+    );
+    cachedMatrixData.current = {result, inputs};
+    return result;
+  }, [inputs]);
 };
 
 export const PARTITION_MATRIX_STEP_RUN_FRAGMENT = gql`
