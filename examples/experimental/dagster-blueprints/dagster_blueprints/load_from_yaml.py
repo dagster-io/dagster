@@ -156,14 +156,30 @@ def load_defs_from_yaml(
 class YamlBlueprintsLoader(NamedTuple):
     """A loader is responsible for loading a set of Dagster definitions from one or more YAML
     files based on a set of supplied blueprints.
+
+    Attributes:
+        path (Path | str): The path to the YAML file or directory of YAML files containing the
+            blueprints for Dagster definitions.
+        per_file_blueprint_type (Union[Type[Blueprint], Sequence[Type[Blueprint]]]): The type
+            of blueprint that each of the YAML files are expected to conform to. If a sequence
+            type is provided, the function will expect each YAML file to contain a list of
+            blueprints.
     """
 
     path: Path
     per_file_blueprint_type: Union[Type[Blueprint], Type[Sequence[Blueprint]]]
 
-    def load_defs(self) -> Definitions:
+    def load_defs(self, resources: Optional[Dict[str, Any]] = None) -> Definitions:
+        """Load Dagster definitions from a YAML file of blueprints.
+
+        Args:
+            resources (Dict[str, Any], optional): A dictionary of resources to be bound to the
+                definitions. Defaults to None.
+        """
         return load_defs_from_yaml(
-            path=self.path, per_file_blueprint_type=self.per_file_blueprint_type
+            path=self.path,
+            per_file_blueprint_type=self.per_file_blueprint_type,
+            resources=resources,
         )
 
     def model_json_schema(self) -> Dict[str, Any]:
