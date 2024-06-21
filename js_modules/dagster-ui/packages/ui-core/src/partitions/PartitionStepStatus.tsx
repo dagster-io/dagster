@@ -208,12 +208,17 @@ export const PartitionPerOpStatus = React.memo(
       pipeline.data?.pipelineSnapshotOrError.__typename === 'PipelineSnapshot' &&
       pipeline.data.pipelineSnapshotOrError.solidHandles;
 
-    const data = useMatrixData({
-      partitionNames,
-      partitions,
-      stepQuery: '',
-      solidHandles,
-    });
+    const data = useMatrixData(
+      useMemo(
+        () => ({
+          partitionNames,
+          partitions,
+          stepQuery: '',
+          solidHandles,
+        }),
+        [partitionNames, partitions, solidHandles],
+      ),
+    );
 
     if (!data) {
       return <span />;
