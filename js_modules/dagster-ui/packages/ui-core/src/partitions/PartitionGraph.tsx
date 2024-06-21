@@ -33,9 +33,10 @@ export const PartitionGraph = React.memo(
     const [hiddenPartitions, setHiddenPartitions] = useState<{[name: string]: boolean}>(() => ({}));
     const chart = useRef<any>(null);
 
-    const [showLargeGraphMessage, setShowLargeGraphMessage] = useState(
+    const [_showLargeGraphMessage, setShowLargeGraphMessage] = useState(
       partitionNames.length > 1000,
     );
+    const showLargeGraphMessage = _showLargeGraphMessage && partitionNames.length > 1000;
 
     const onGraphClick = useCallback((event: MouseEvent) => {
       const instance = chart.current;
