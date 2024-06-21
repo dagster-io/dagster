@@ -27,29 +27,24 @@ def project_dir(shared_project_dir):
 def test_local_dev(project_dir) -> None:
     my_project = DbtProject(project_dir)
     assert not my_project.manifest_path.exists()
-    with pytest.raises(DagsterDbtManifestNotFoundError):
-        # The preparation process will fail locally
-        # if no env var are provided and the manifest does not exist
-        DbtProject(project_dir).ensure_prepared()
     with environ({"DAGSTER_IS_DEV_CLI": "1"}):
-        my_project = DbtProject(project_dir).ensure_prepared()
+        my_project = DbtProject(project_dir)
+        my_project.prepare_if_dev()
         assert my_project.manifest_path.exists()
 
 
 def test_opt_in_env_var(project_dir) -> None:
     my_project = DbtProject(project_dir)
     assert not my_project.manifest_path.exists()
-    with pytest.raises(DagsterDbtManifestNotFoundError):
-        # The preparation process will fail locally
-        # if no env var are provided and the manifest does not exist
-        DbtProject(project_dir).ensure_prepared()
     with environ({"DAGSTER_DBT_PARSE_PROJECT_ON_LOAD": "1"}):
-        my_project = DbtProject(project_dir).ensure_prepared()
+        my_project = DbtProject(project_dir)
+        my_project.prepare_if_dev()
         assert my_project.manifest_path.exists()
 
 
 def _init(project_dir):
-    my_project = DbtProject(project_dir).ensure_prepared()
+    my_project = DbtProject(project_dir)
+    my_project.prepare_if_dev()
     assert my_project.manifest_path.exists()
     assert validate_manifest(my_project.manifest_path)
     return
@@ -58,10 +53,6 @@ def _init(project_dir):
 def test_concurrent_processes(project_dir):
     my_project = DbtProject(project_dir)
     assert not my_project.manifest_path.exists()
-    with pytest.raises(DagsterDbtManifestNotFoundError):
-        # The preparation process will fail locally
-        # if no env var are provided and the manifest does not exist
-        DbtProject(project_dir).ensure_prepared()
     with environ({"DAGSTER_IS_DEV_CLI": "1"}):
         procs = [multiprocessing.Process(target=_init, args=(project_dir,)) for _ in range(4)]
         for proc in procs:

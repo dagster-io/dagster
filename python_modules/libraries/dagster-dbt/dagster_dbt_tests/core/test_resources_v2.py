@@ -469,7 +469,7 @@ def test_dbt_cli_defer_args(monkeypatch: pytest.MonkeyPatch, testrun_uid: str) -
 
     dbt.cli(["--quiet", "parse"], target_path=project.target_path).wait()
 
-    @dbt_assets(manifest=project.ensure_prepared().manifest_path)
+    @dbt_assets(manifest=project.manifest_path)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         yield from dbt.cli(["build", *dbt.get_defer_args()], context=context).stream()
 
