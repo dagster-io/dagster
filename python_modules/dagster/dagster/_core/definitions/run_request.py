@@ -139,8 +139,6 @@ class NotABackfillRequest:
     title: Optional[str]
     description: Optional[str]
 
-    # TODO - maybe a from_asset_key_partition_key method? or override __new__ to take in asset_key_partition_keys
-
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
         return self.asset_graph_subset.asset_keys
