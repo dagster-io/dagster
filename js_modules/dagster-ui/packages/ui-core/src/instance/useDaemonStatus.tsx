@@ -18,7 +18,7 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
     },
   );
 
-  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS, !skip);
 
   const {data: healthData} = queryResult;
 
