@@ -114,23 +114,6 @@ class DeleteDynamicPartitionsRequest(
         )
 
 
-# @whitelist_for_serdes
-# class NotABackfillRequest(
-#     NamedTuple(
-#         "_NotABackfillRequest",
-#         [
-#             ("asset_graph_subset", "AssetGraphSubset"),
-#             ("tags", PublicAttr[Optional[Mapping[str, str]]]),
-#             ("title", PublicAttr[Optional[str]]),
-#             ("description", PublicAttr[Optional[str]]),
-#         ],
-#     )
-# ):
-#     @property
-#     def asset_keys(self) -> AbstractSet[AssetKey]:
-#         return self.asset_graph_subset.asset_keys
-
-
 @whitelist_for_serdes
 @dagster_model
 class NotABackfillRequest:
