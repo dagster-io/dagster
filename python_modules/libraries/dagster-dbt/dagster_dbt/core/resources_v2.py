@@ -1030,13 +1030,7 @@ def _fetch_row_count_metadata(
 
     unique_id = dbt_resource_props["unique_id"]
     logger.debug("Fetching row count for %s", unique_id)
-    table_str = ".".join(
-        [adapter.quote(part) for part in [
-            dbt_resource_props["database"],
-            dbt_resource_props["schema"],
-            dbt_resource_props["name"]]
-        ]
-    )
+    relation_name = dbt_resource_props["relation_name"]
 
     try:
         with adapter.connection_named(f"row_count_{unique_id}"):
