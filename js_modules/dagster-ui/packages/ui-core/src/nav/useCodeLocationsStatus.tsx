@@ -48,7 +48,10 @@ export const useCodeLocationsStatus = (): StatusAndMessage | null => {
           if (entry.__typename === 'PythonError') {
             return entry.__typename;
           }
-          if (entry.locationOrLoadError?.__typename === 'PythonError') {
+          if (
+            entry.locationOrLoadError?.__typename === 'PythonError' &&
+            entry.loadStatus !== RepositoryLocationLoadStatus.LOADING
+          ) {
             return entry.updatedTimestamp;
           }
           return null;
