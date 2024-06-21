@@ -1039,7 +1039,7 @@ def _fetch_row_count_metadata(
                     SELECT
                     count(*) as row_count
                     FROM
-                    {table_str}
+                    {relation_name}
                 """,
                 fetch=True,
             )
