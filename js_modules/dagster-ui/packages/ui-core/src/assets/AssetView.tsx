@@ -74,15 +74,9 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   // tab, or just the current node for other tabs. NOTE: Changing the query does not re-fetch data,
   // it just re-filters.
   const visible = getQueryForVisibleAssets(assetKey, selectedTab, params);
-  const visibleAssetGraph = useAssetGraphData(
-    visible.query,
-    useMemo(
-      () => ({
-        hideEdgesToNodesOutsideQuery: true,
-      }),
-      [],
-    ),
-  );
+  const visibleAssetGraph = useAssetGraphData(visible.query, {
+    hideEdgesToNodesOutsideQuery: true,
+  });
 
   const {upstream, downstream} = useNeighborsFromGraph(visibleAssetGraph.assetGraphData, assetKey);
   const node = visibleAssetGraph.assetGraphData?.nodes[toGraphId(assetKey)];

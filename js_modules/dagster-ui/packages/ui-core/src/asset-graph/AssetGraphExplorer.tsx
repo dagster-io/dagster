@@ -88,16 +88,10 @@ export const GROUPS_ONLY_SCALE = 0.15;
 
 export const AssetGraphExplorer = (props: Props) => {
   const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
-    useAssetGraphData(
-      props.explorerPath.opsQuery,
-      useMemo(
-        () => ({
-          ...props.fetchOptions,
-          computeKinds: props.assetFilterState?.filters.computeKindTags,
-        }),
-        [props.assetFilterState?.filters.computeKindTags, props.fetchOptions],
-      ),
-    );
+    useAssetGraphData(props.explorerPath.opsQuery, {
+      ...props.fetchOptions,
+      computeKinds: props.assetFilterState?.filters.computeKindTags,
+    });
 
   const {explorerPath, onChangeExplorerPath} = props;
 
