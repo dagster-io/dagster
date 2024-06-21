@@ -227,7 +227,7 @@ export const useMatrixData = (inputs: MatrixDataInputs) => {
       cachedMatrixData.current = {result, inputs};
       return result;
     },
-    [],
+    [inputs],
     1000,
   );
 };
