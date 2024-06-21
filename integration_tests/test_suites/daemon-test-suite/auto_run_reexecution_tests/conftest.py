@@ -29,7 +29,7 @@ def instance():
 
 
 @pytest.fixture
-def instance_no_retry_on_asset_or_op_failure():
+def instance_no_retry_on_failure():
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(
             overrides={
@@ -42,7 +42,15 @@ def instance_no_retry_on_asset_or_op_failure():
                     "class": "ConsolidatedSqliteEventLogStorage",
                     "config": {"base_dir": temp_dir},
                 },
-                "run_retries": {"enabled": True, "retry_on_asset_or_op_failure": False},
+                "run_retries": {
+                    "enabled": True,
+                    "retry_on_unexpected_termination": False,
+                    "retry_on_run_exception": False,
+                    "retry_on_asset_or_op_failure": False,
+                    "retry_on_job_initialization_failure": False,
+                    "retry_on_start_timeout": False,
+                    "retry_on_unknown_failure": False,
+                },
             },
             temp_dir=temp_dir,
         ) as instance:
