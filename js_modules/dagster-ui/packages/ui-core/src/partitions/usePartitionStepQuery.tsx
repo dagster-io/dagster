@@ -1,5 +1,5 @@
 import {ApolloClient, gql, useApolloClient} from '@apollo/client';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 
 import {PartitionMatrixStepRunFragment} from './types/useMatrixData.types';
 import {
@@ -77,7 +77,7 @@ export function usePartitionStepQuery({
     1000,
   );
 
-  const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames]);
+  const partitionNamesSet = useThrottledMemo(() => new Set(partitionNames), [partitionNames], 1000);
 
   useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
