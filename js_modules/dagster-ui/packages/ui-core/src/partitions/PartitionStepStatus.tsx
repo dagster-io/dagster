@@ -258,9 +258,18 @@ const PartitionStepStatus = React.memo((props: PartitionStepStatusProps) => {
   const visibleCount = getVisibleItemCount(viewport.width);
   const visibleStart = Math.max(0, partitionColumns.length - props.offset - visibleCount);
   const visibleEnd = Math.max(visibleCount, partitionColumns.length - props.offset);
-  const visibleColumns = partitionColumns.slice(visibleStart, visibleEnd);
-  const [minUnix, maxUnix] = timeboundsOfPartitions(partitionColumns);
-  const topLabelHeight = topLabelHeightForLabels(partitionColumns.map((p) => p.name));
+  const visibleColumns = useMemo(
+    () => partitionColumns.slice(visibleStart, visibleEnd),
+    [partitionColumns, visibleEnd, visibleStart],
+  );
+  const [minUnix, maxUnix] = useMemo(
+    () => timeboundsOfPartitions(partitionColumns),
+    [partitionColumns],
+  );
+  const topLabelHeight = useMemo(
+    () => topLabelHeightForLabels(partitionColumns.map((p) => p.name)),
+    [partitionColumns],
+  );
 
   return (
     <PartitionRunMatrixContainer>
