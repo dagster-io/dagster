@@ -11,7 +11,6 @@ from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.utils import coerce_valid_log_level
-from dagster._utils.log import create_console_logger
 
 
 class DispatchingLogHandler(logging.Handler):
@@ -97,7 +96,7 @@ class InstigationLogger(logging.Logger):
         self._instigator_name = instigator_name
         self._exit_stack = ExitStack()
         self._capture_handler = None
-        self.addHandler(DispatchingLogHandler([create_console_logger("dagster", logging.INFO)]))
+        self.addHandler(DispatchingLogHandler([logging.getLogger(logger_name)]))
 
     def __enter__(self):
         if (
