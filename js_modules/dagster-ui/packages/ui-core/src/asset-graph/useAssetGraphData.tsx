@@ -14,7 +14,6 @@ import {
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
-import {useThrottledMemo} from '../hooks/useThrottledMemo';
 import {useBlockTraceUntilTrue} from '../performance/TraceContext';
 import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 
@@ -72,13 +71,12 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
 
   const fullGraphQueryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
 
-  const fullAssetGraphData = useThrottledMemo(
+  const fullAssetGraphData = useMemo(
     () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
     [fullGraphQueryItems],
-    1000,
   );
 
-  const {assetGraphData, graphAssetKeys, allAssetKeys} = useThrottledMemo(
+  const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(
     () => {
       if (repoFilteredNodes === undefined || graphQueryItems === undefined) {
         return {
