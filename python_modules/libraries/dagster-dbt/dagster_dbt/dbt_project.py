@@ -33,7 +33,8 @@ class DbtProjectPreparer:
     @public
     def prepare_if_dev(self, project: "DbtProject") -> None:
         """Invoked in the `prepare_if_dev` method of DbtProject,
-        when DbtProject needs preparation during development."""
+        when DbtProject needs preparation during development.
+        """
 
     @public
     def prepare(self, project: "DbtProject") -> None:
@@ -43,11 +44,6 @@ class DbtProjectPreparer:
     def using_dagster_dev(self) -> bool:
         """Returns true if Dagster is running using the `dagster dev` command."""
         return using_dagster_dev()
-
-    @public
-    def parse_on_load_opt_in(self) -> bool:
-        """Returns true if the environment variable "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD" is set and true."""
-        return bool(os.getenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD"))
 
 
 @experimental
