@@ -23,6 +23,7 @@ export interface AssetGraphFetchScope {
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
   computeKinds?: string[];
+  needsFullData?: boolean;
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
@@ -69,11 +70,17 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     [repoFilteredNodes],
   );
 
-  const fullGraphQueryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
+  const fullGraphQueryItems = useMemo(
+    () => (nodes && options.needsFullData ? buildGraphQueryItems(nodes) : []),
+    [nodes, options.needsFullData],
+  );
 
   const fullAssetGraphData = useMemo(
-    () => (fullGraphQueryItems ? buildGraphData(fullGraphQueryItems.map((n) => n.node)) : null),
-    [fullGraphQueryItems],
+    () =>
+      fullGraphQueryItems && options.needsFullData
+        ? buildGraphData(fullGraphQueryItems.map((n) => n.node))
+        : null,
+    [fullGraphQueryItems, options.needsFullData],
   );
 
   const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {

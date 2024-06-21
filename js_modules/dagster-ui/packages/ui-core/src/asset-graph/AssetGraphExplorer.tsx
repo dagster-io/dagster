@@ -91,6 +91,7 @@ export const AssetGraphExplorer = (props: Props) => {
     useAssetGraphData(props.explorerPath.opsQuery, {
       ...props.fetchOptions,
       computeKinds: props.assetFilterState?.filters.computeKindTags,
+      needsFullData: true,
     });
 
   const {explorerPath, onChangeExplorerPath} = props;
