@@ -1,4 +1,4 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 import groupBy from 'lodash/groupBy';
 import keyBy from 'lodash/keyBy';
 import reject from 'lodash/reject';
@@ -15,7 +15,8 @@ import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
 import {useThrottledMemo} from '../hooks/useThrottledMemo';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
+import {useBlockTraceUntilTrue} from '../performance/TraceContext';
+import {useIndexedDBCachedQuery} from '../search/useIndexedDBCachedQuery';
 
 export interface AssetGraphFetchScope {
   hideEdgesToNodesOutsideQuery?: boolean;
@@ -39,15 +40,19 @@ export type AssetGraphQueryItem = GraphQueryItem & {
  * uses this option to implement the "3 of 4 repositories" picker.
  */
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
-  const fetchResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSET_GRAPH_QUERY, {
-    notifyOnNetworkStatusChange: true,
+  const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
+    query: ASSET_GRAPH_QUERY,
     variables: {
       pipelineSelector: options.pipelineSelector,
       groupSelector: options.groupSelector,
     },
-    fetchPolicy: 'no-cache',
+    key: JSON.stringify({
+      pipelineSelector: options.pipelineSelector,
+      groupSelector: options.groupSelector,
+    }),
+    version: 1,
   });
-  useBlockTraceOnQueryResult(fetchResult, 'ASSET_GRAPH_QUERY');
+  useBlockTraceUntilTrue('ASSET_GRAPH_QUERY', !fetchResult.loading);
 
   const nodes = fetchResult.data?.assetNodes;
 
