@@ -93,6 +93,38 @@ def test_column_schema(
     assert table_schema_by_asset_key == expected_table_schema_by_asset_key
 
 
+def test_exception_fetch_column_schema_with_adapter(
+    monkeypatch: pytest.MonkeyPatch, mocker: MockFixture, test_metadata_manifest: Dict[str, Any]
+):
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", "false")
+
+    mock_adapter = mocker.patch(
+        "dagster_dbt.core.resources_v2.DbtCliInvocation.adapter",
+        return_value=mocker.MagicMock(),
+        new_callable=mocker.PropertyMock,
+    )
+    mock_adapter.return_value.get_columns_in_relation.side_effect = Exception("An error occurred")
+
+    @dbt_assets(manifest=test_metadata_manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(["build"], context=context)
+            .stream()
+            .fetch_column_metadata(with_column_lineage=False)
+        )
+
+    result = materialize(
+        [my_dbt_assets],
+        resources={"dbt": DbtCliResource(project_dir=os.fspath(test_metadata_path))},
+    )
+
+    assert result.success
+    assert all(
+        not TableMetadataSet.extract(event.materialization.metadata).column_schema
+        for event in result.get_asset_materialization_events()
+    )
+
+
 @pytest.mark.parametrize(
     "use_experimental_fetch_column_schema",
     [True, False],
