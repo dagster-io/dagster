@@ -20,9 +20,6 @@ export type JobMetadataQuery = {
           __typename: 'Schedule';
           id: string;
           mode: string;
-          name: string;
-          cronSchedule: string;
-          executionTimezone: string | null;
           scheduleState: {
             __typename: 'InstigationState';
             id: string;
@@ -33,9 +30,6 @@ export type JobMetadataQuery = {
         sensors: Array<{
           __typename: 'Sensor';
           id: string;
-          jobOriginId: string;
-          name: string;
-          sensorType: Types.SensorType;
           targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
           sensorState: {
             __typename: 'InstigationState';
@@ -94,9 +88,6 @@ export type JobMetadataFragment = {
     __typename: 'Schedule';
     id: string;
     mode: string;
-    name: string;
-    cronSchedule: string;
-    executionTimezone: string | null;
     scheduleState: {
       __typename: 'InstigationState';
       id: string;
@@ -107,9 +98,6 @@ export type JobMetadataFragment = {
   sensors: Array<{
     __typename: 'Sensor';
     id: string;
-    jobOriginId: string;
-    name: string;
-    sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
     sensorState: {
       __typename: 'InstigationState';

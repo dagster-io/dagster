@@ -35,8 +35,8 @@ export const LeftNavItem = React.forwardRef(
 
       const status = () => {
         return schedules.some(
-          (schedule) => schedule.scheduleState.status === InstigationStatus.RUNNING,
-        ) || sensors.some((sensor) => sensor.sensorState.status === InstigationStatus.RUNNING)
+          (schedule) => schedule?.scheduleState?.status === InstigationStatus.RUNNING,
+        ) || sensors.some((sensor) => sensor?.sensorState?.status === InstigationStatus.RUNNING)
           ? InstigationStatus.RUNNING
           : InstigationStatus.STOPPED;
       };

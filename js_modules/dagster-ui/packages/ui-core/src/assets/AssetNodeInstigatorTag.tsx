@@ -45,10 +45,14 @@ export const ASSET_NODE_INSTIGATORS_FRAGMENT = gql`
     id
     targetingInstigators {
       ... on Schedule {
-        ...ScheduleSwitchFragment
+        scheduleState {
+          ...ScheduleSwitchFragment
+        }
       }
       ... on Sensor {
-        ...SensorSwitchFragment
+        sensorState {
+          ...SensorSwitchFragment
+        }
       }
     }
   }

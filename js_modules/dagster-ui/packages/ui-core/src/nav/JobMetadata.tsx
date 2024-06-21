@@ -231,7 +231,9 @@ export const JOB_METADATA_QUERY = gql`
     schedules {
       id
       mode
-      ...ScheduleSwitchFragment
+      scheduleState {
+        ...ScheduleSwitchFragment
+      }
     }
     sensors {
       id
@@ -239,7 +241,9 @@ export const JOB_METADATA_QUERY = gql`
         pipelineName
         mode
       }
-      ...SensorSwitchFragment
+      sensorState {
+        ...SensorSwitchFragment
+      }
     }
   }
 

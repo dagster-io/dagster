@@ -16100,10 +16100,6 @@ export type AssetNodeDefinitionFragment = {
   targetingInstigators: Array<
     | {
         __typename: 'Schedule';
-        id: string;
-        name: string;
-        cronSchedule: string;
-        executionTimezone: string | null;
         scheduleState: {
           __typename: 'InstigationState';
           id: string;
@@ -16113,10 +16109,6 @@ export type AssetNodeDefinitionFragment = {
       }
     | {
         __typename: 'Sensor';
-        id: string;
-        jobOriginId: string;
-        name: string;
-        sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
           id: string;

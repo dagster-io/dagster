@@ -136,28 +136,19 @@ export const ScheduleSwitch = (props: Props) => {
 };
 
 export const SCHEDULE_SWITCH_FRAGMENT = gql`
-  fragment ScheduleSwitchFragment on Schedule {
+  fragment ScheduleSwitchFragment on InstigationState {
     id
-    name
-    cronSchedule
-    executionTimezone
-    scheduleState {
-      id
-      selectorId
-      status
-    }
+    selectorId
+    status
   }
 `;
 
 const SCHEDULE_STATE_QUERY = gql`
-  query ScheduleStateQuery($scheduleSelector: ScheduleSelector!) {
-    scheduleOrError(scheduleSelector: $scheduleSelector) {
-      ... on Schedule {
+  query ScheduleStateQuery($id: String!) {
+    instigationStateOrError(id: $id) {
+      ... on InstigationState {
         id
-        scheduleState {
-          id
-          status
-        }
+        status
       }
     }
   }
