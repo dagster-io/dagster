@@ -325,15 +325,20 @@ export const OpJobPartitionsViewContent = React.memo(
         <Box flex={{direction: 'row', alignItems: 'center'}} border="bottom" padding={{left: 8}}>
           <CountBox count={partitionNames.length} label="Total partitions" />
           <CountBox
-            count={partitionNames.filter((x) => runStatusData[x] === RunStatus.FAILURE).length}
+            count={useMemo(
+              () => partitionNames.filter((x) => runStatusData[x] === RunStatus.FAILURE).length,
+              [partitionNames, runStatusData],
+            )}
             label="Failed partitions"
           />
           <CountBox
-            count={
-              partitionNames.filter(
-                (x) => !runStatusData[x] || runStatusData[x] === RunStatus.NOT_STARTED,
-              ).length
-            }
+            count={useMemo(
+              () =>
+                partitionNames.filter(
+                  (x) => !runStatusData[x] || runStatusData[x] === RunStatus.NOT_STARTED,
+                ).length,
+              [partitionNames, runStatusData],
+            )}
             label="Missing partitions"
           />
         </Box>
@@ -344,18 +349,21 @@ export const OpJobPartitionsViewContent = React.memo(
               health={health}
               selected={showSteps ? selectedPartitions : undefined}
               selectionWindowSize={pageSize}
-              onClick={(partitionName) => {
-                const maxIdx = partitionNames.length - 1;
-                const selectedIdx = partitionNames.indexOf(partitionName);
-                const nextOffset = Math.min(
-                  maxIdx,
-                  Math.max(0, maxIdx - selectedIdx - 0.5 * pageSize),
-                );
-                setOffset(nextOffset);
-                if (!showSteps) {
-                  setShowSteps(true);
-                }
-              }}
+              onClick={useCallback(
+                (partitionName: string) => {
+                  const maxIdx = partitionNames.length - 1;
+                  const selectedIdx = partitionNames.indexOf(partitionName);
+                  const nextOffset = Math.min(
+                    maxIdx,
+                    Math.max(0, maxIdx - selectedIdx - 0.5 * pageSize),
+                  );
+                  setOffset(nextOffset);
+                  if (!showSteps) {
+                    setShowSteps(true);
+                  }
+                },
+                [pageSize, partitionNames, showSteps],
+              )}
               tooltipMessage="Click to view per-step status"
             />
           </div>
