@@ -73,10 +73,9 @@ export function usePartitionStepQuery({
         },
       ]),
     [repositorySelector.repositoryLocationName, repositorySelector.repositoryName, runsFilter],
-    1000,
   );
 
-  const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames], 1000);
+  const partitionNamesSet = useMemo(() => new Set(partitionNames), [partitionNames]);
 
   useEffect(() => {
     // Note: there are several async steps to the loading process - to cancel the previous
