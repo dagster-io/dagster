@@ -25,7 +25,7 @@ def using_dagster_dev() -> bool:
 class DbtManifestPreparer:
     """A dbt manifest represented by DbtProject."""
 
-    def ensure_prepared(self, project: "DbtProject") -> None:
+    def on_load(self, project: "DbtProject") -> None:
         """Invoked when DbtProject is instantiated with this preparer."""
 
     def prepare(self, project: "DbtProject") -> None:
@@ -55,7 +55,7 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
         """
         self._generate_cli_args = generate_cli_args or ["parse", "--quiet"]
 
-    def ensure_prepared(self, project: "DbtProject"):
+    def on_load(self, project: "DbtProject"):
         if self.using_dagster_dev() or self.parse_on_load_opt_in():
             self.prepare(project)
             if not project.manifest_path.exists():
@@ -197,7 +197,7 @@ class DbtProject(IHaveNew):
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
 
-        manifest_preparer = DagsterDbtManifestPreparer()
+        preparer = DagsterDbtManifestPreparer()
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
