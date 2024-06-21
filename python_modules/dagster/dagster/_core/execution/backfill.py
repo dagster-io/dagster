@@ -472,8 +472,8 @@ class PartitionBackfill(
     ):
         asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
             asset_graph_subset=asset_graph_subset,
-            backfill_start_timestamp=backfill_timestamp,
             dynamic_partitions_store=dynamic_partitions_store,
+            backfill_start_timestamp=backfill_timestamp,
         )
         return cls(
             backfill_id=backfill_id,
