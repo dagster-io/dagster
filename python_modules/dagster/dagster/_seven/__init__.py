@@ -48,17 +48,6 @@ def import_module_from_path(module_name: str, path_to_file: str) -> ModuleType:
     return module
 
 
-def is_ascii(str_):
-    if sys.version_info.major == 3 and sys.version_info.minor < 7:
-        try:
-            str_.encode("ascii")
-            return True
-        except UnicodeEncodeError:
-            return False
-    else:
-        return str_.isascii()
-
-
 time_fn = time.perf_counter
 
 
@@ -95,19 +84,6 @@ def wait_for_process(process, timeout=30):
             raise Exception("Timed out waiting for process to finish")
 
 
-def kill_process(process):
-    import multiprocessing
-
-    if not isinstance(process, multiprocessing.Process):
-        raise Exception("invalid process argument passed to kill_process")
-
-    if sys.version_info >= (3, 7):
-        # Kill added in 3.7
-        process.kill()
-    else:
-        process.terminate()
-
-
 # https://stackoverflow.com/a/58437485/324449
 def is_module_available(module_name: str) -> bool:
     # python 3.4 and above
@@ -116,10 +92,6 @@ def is_module_available(module_name: str) -> bool:
     loader = importlib.util.find_spec(module_name)
 
     return loader is not None
-
-
-def builtin_print() -> str:
-    return "builtins.print"
 
 
 def is_lambda(target: object) -> TypeGuard[Callable[..., Any]]:
