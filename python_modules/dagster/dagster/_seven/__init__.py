@@ -84,7 +84,6 @@ def wait_for_process(process, timeout=30):
             raise Exception("Timed out waiting for process to finish")
 
 
-
 # https://stackoverflow.com/a/58437485/324449
 def is_module_available(module_name: str) -> bool:
     # python 3.4 and above

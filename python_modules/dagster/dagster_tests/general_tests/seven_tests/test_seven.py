@@ -11,7 +11,6 @@ from dagster._seven import is_subclass
 from dagster._utils import file_relative_path
 
 
-
 def test_import_module_from_path():
     foo_module = _seven.import_module_from_path(
         "foo_module", file_relative_path(__file__, "foo_module.py")
