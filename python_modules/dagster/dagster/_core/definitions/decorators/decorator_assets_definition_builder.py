@@ -31,7 +31,7 @@ from dagster._core.definitions.assets import (
     AssetsDefinition,
     get_partition_mappings_from_deps,
 )
-from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.input import In
 from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
@@ -267,6 +267,17 @@ class DecoratorAssetsDefinitionBuilder:
             if self.args.can_subset and self.internal_deps
             else named_ins_by_asset_key
         )
+
+        if args.partitions_def is None:
+            check.param_invariant(
+                (
+                    args.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
+                    if args.backfill_policy
+                    else True
+                ),
+                "backfill_policy",
+                "Non partitioned asset can only have single run backfill policy",
+            )
 
     @staticmethod
     def for_multi_asset(
