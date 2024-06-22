@@ -1499,7 +1499,7 @@ class GrpcServerProcess:
     def wait(self, timeout=30):
         self._waited = True
         if self.server_process.poll() is None:
-            seven.wait_for_process(self.server_process, timeout=timeout)
+            self.server_process.wait(timeout=timeout)
 
     def __enter__(self):
         return self

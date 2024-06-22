@@ -2,7 +2,6 @@ import os
 import time
 from contextlib import contextmanager
 
-from dagster import _seven
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
 from dagster._daemon.controller import all_daemons_healthy
@@ -41,7 +40,7 @@ def start_daemon(timeout=60):
         yield
     finally:
         interrupt_ipc_subprocess(p)
-        _seven.wait_for_process(p, timeout=timeout)
+        p.communicate(timeout=timeout)
 
 
 @contextmanager

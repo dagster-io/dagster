@@ -222,7 +222,7 @@ def test_detect_server_restart():
     finally:
         _cleanup_process(server_process)
 
-    seven.wait_for_process(server_process, timeout=5)
+    server_process.communicate(timeout=5)
     with pytest.raises(DagsterUserCodeUnreachableError):
         api_client.get_server_id()
 
