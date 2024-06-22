@@ -3,6 +3,7 @@ from typing import (
     Any,
     Callable,
     Iterable,
+    List,
     Mapping,
     NamedTuple,
     Optional,
@@ -310,8 +311,7 @@ def asset(
             },
             upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
                 deps=deps, non_argument_deps=non_argument_deps
-            )
-            or [],
+            ),
             asset_in_map=ins or {},
             # We will not be using specs to construct here
             # because they are assumption about output names. Non-spec
@@ -956,7 +956,7 @@ def graph_multi_asset(
 def _deps_and_non_argument_deps_to_asset_deps(
     deps: Optional[Iterable[CoercibleToAssetDep]],
     non_argument_deps: Optional[Union[Set[AssetKey], Set[str]]],
-) -> Optional[Iterable[AssetDep]]:
+) -> List[AssetDep]:
     """Helper function for managing deps and non_argument_deps while non_argument_deps is still an accepted parameter.
     Ensures only one of deps and non_argument_deps is provided, then converts the deps to AssetDeps.
     """
@@ -972,10 +972,12 @@ def _deps_and_non_argument_deps_to_asset_deps(
         check.set_param(non_argument_deps, "non_argument_deps", of_type=(AssetKey, str))
         return make_asset_deps(non_argument_deps)
 
+    return []
 
-def make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> Optional[Iterable[AssetDep]]:
+
+def make_asset_deps(deps: Optional[Iterable[CoercibleToAssetDep]]) -> List[AssetDep]:
     if deps is None:
-        return None
+        return []
 
     # expand any multi_assets into a list of keys
     all_deps = []

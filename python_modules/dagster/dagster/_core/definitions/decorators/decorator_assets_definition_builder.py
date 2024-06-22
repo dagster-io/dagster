@@ -229,7 +229,7 @@ class DecoratorAssetsDefinitionBuilderArgs(NamedTuple):
     retry_policy: Optional[RetryPolicy]
     retry_policy: Optional[RetryPolicy]
     specs: Sequence[AssetSpec]
-    upstream_asset_deps: Optional[Iterable[AssetDep]]
+    upstream_asset_deps: List[AssetDep]
 
     @property
     def check_specs(self) -> Sequence[AssetCheckSpec]:
@@ -394,7 +394,7 @@ class DecoratorAssetsDefinitionBuilder:
         asset_in_map: Mapping[str, AssetIn],
         asset_out_map: Mapping[str, AssetOut],
         asset_deps: Mapping[str, Set[AssetKey]],
-        upstream_asset_deps: Optional[Iterable[AssetDep]],
+        upstream_asset_deps: List[AssetDep],
         passed_args: DecoratorAssetsDefinitionBuilderArgs,
     ):
         check.param_invariant(
@@ -403,7 +403,7 @@ class DecoratorAssetsDefinitionBuilder:
         named_ins_by_asset_key = build_named_ins(
             fn,
             asset_in_map,
-            deps=({dep.asset_key for dep in upstream_asset_deps} if upstream_asset_deps else set()),
+            deps={dep.asset_key for dep in upstream_asset_deps},
         )
         named_outs_by_asset_key = build_named_outs(asset_out_map)
 
