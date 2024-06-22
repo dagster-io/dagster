@@ -4,7 +4,6 @@ import inspect
 import os
 import shlex
 import sys
-import threading
 import time
 from contextlib import contextmanager
 from types import ModuleType
