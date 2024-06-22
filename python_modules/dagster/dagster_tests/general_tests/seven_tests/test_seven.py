@@ -11,10 +11,6 @@ from dagster._seven import is_subclass
 from dagster._utils import file_relative_path
 
 
-def test_is_ascii():
-    assert _seven.is_ascii("Hello!")
-    assert not _seven.is_ascii("您好!")
-
 
 def test_import_module_from_path():
     foo_module = _seven.import_module_from_path(
