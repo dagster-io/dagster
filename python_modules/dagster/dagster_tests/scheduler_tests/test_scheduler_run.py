@@ -63,7 +63,6 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._scheduler.scheduler import ScheduleIterationTimes, launch_scheduled_runs
-from dagster._seven import wait_for_process
 from dagster._time import create_datetime, get_current_datetime, get_current_timestamp, get_timezone
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
@@ -705,7 +704,7 @@ def _grpc_server_external_repo(port: int, scheduler_instance: DagsterInstance):
     finally:
         DagsterGrpcClient(port=port, socket=None).shutdown_server()
         if server_process.poll() is None:
-            wait_for_process(server_process, timeout=30)
+            server_process.communicate(timeout=30)
 
 
 @pytest.mark.parametrize("executor", get_schedule_executors())

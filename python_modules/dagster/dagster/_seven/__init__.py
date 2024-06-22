@@ -57,15 +57,6 @@ def get_arg_names(callable_: Callable[..., Any]) -> Sequence[str]:
     ]
 
 
-def wait_for_process(process, timeout=30) -> None:
-    # Using Popen.communicate instead of Popen.wait since the latter
-    # can deadlock, see https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait
-    if not timeout:
-        process.communicate()
-    else:
-        process.communicate(timeout=timeout)
-
-
 # https://stackoverflow.com/a/58437485/324449
 def is_module_available(module_name: str) -> bool:
     # python 3.4 and above
