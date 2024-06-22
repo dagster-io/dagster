@@ -250,14 +250,6 @@ def asset(
 
     from dagster._config.pythonic_config import validate_resource_annotated_function
 
-    compute_kind = check.opt_str_param(compute_kind, "compute_kind")
-    required_resource_keys = check.opt_set_param(required_resource_keys, "required_resource_keys")
-    upstream_asset_deps = (
-        _deps_and_non_argument_deps_to_asset_deps(deps=deps, non_argument_deps=non_argument_deps)
-        or []
-    )
-    resource_defs = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
-
     check.invariant(
         not (io_manager_key and io_manager_def),
         "Both io_manager_key and io_manager_def were provided to `@asset` decorator. Please"
@@ -277,7 +269,7 @@ def asset(
     resource_related_state = ResourceRelatedState(
         io_manager_def=io_manager_def,
         io_manager_key=io_manager_key,
-        resources=resource_defs,
+        resources=dict(check.opt_mapping_param(resource_defs, "resource_defs")),
         out_asset_key=out_asset_key,
     )
 
@@ -292,8 +284,10 @@ def asset(
             code_version=code_version,
             op_tags=op_tags,
             config_schema=config_schema,
-            compute_kind=compute_kind,
-            required_resource_keys=required_resource_keys,
+            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
+            required_resource_keys=check.opt_set_param(
+                required_resource_keys, "required_resource_keys"
+            ),
             op_def_resource_defs=resource_related_state.op_resource_defs,
             assets_def_resource_defs=resource_related_state.asset_resource_defs,
             backfill_policy=backfill_policy,
@@ -314,7 +308,10 @@ def asset(
                     tags=validate_tags_strict(tags),
                 )
             },
-            upstream_asset_deps=upstream_asset_deps,
+            upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
+                deps=deps, non_argument_deps=non_argument_deps
+            )
+            or [],
             asset_in_map=ins or {},
             # We will not be using specs to construct here
             # because they are assumption about output names. Non-spec
