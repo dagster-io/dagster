@@ -26,7 +26,7 @@ from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilderArgs,
     NamedIn,
     build_named_ins,
-    compute_required_resource_keys,
+    create_check_specs_by_output_name,
     get_function_params_without_context_or_config_or_resources,
 )
 from .op_decorator import _Op
@@ -320,9 +320,6 @@ def multi_asset_check(
 
     def inner(fn: MultiAssetCheckFunction) -> AssetChecksDefinition:
         op_name = name or fn.__name__
-        op_required_resource_keys = compute_required_resource_keys(
-            required_resource_keys, resource_defs, fn=fn, decorator_name="@multi_asset_check"
-        )
 
         outs = {
             spec.get_python_identifier(): Out(None, is_required=not can_subset) for spec in specs
@@ -334,13 +331,49 @@ def multi_asset_check(
             | {dep.asset_key for spec in specs for dep in spec.additional_deps or []},
         )
 
+        builder_args = DecoratorAssetsDefinitionBuilderArgs(
+            decorator_name="@multi_asset_check",
+            name=name,
+            # @asset_check previous behavior is to not set description on underlying op
+            op_description=None,
+            required_resource_keys=required_resource_keys or set(),
+            config_schema=config_schema,
+            retry_policy=retry_policy,
+            specs=[],
+            check_specs_by_output_name=create_check_specs_by_output_name(specs),
+            can_subset=False,
+            compute_kind=compute_kind,
+            op_tags=op_tags,
+            op_def_resource_defs=resource_defs,
+            assets_def_resource_defs=resource_defs,
+            upstream_asset_deps=[],
+            # unsupported capabiltiies in asset checks
+            partitions_def=None,
+            code_version=None,
+            backfill_policy=None,
+            group_name=None,
+            # non-sensical args in this context
+            asset_deps={},
+            asset_in_map={},
+            asset_out_map={},
+        )
+
+        builder = DecoratorAssetsDefinitionBuilder(
+            named_ins_by_asset_key=named_ins_by_asset_key,
+            named_outs_by_asset_key={},
+            internal_deps={},
+            op_name=op_name,
+            args=builder_args,
+            fn=fn,
+        )
+
         with disable_dagster_warnings():
             op_def = _Op(
                 name=op_name,
                 description=description,
                 ins=dict(named_ins_by_asset_key.values()),
                 out=outs,
-                required_resource_keys=op_required_resource_keys,
+                required_resource_keys=builder.required_resource_keys,
                 tags={
                     **({COMPUTE_KIND_TAG: compute_kind} if compute_kind else {}),
                     **(op_tags or {}),
