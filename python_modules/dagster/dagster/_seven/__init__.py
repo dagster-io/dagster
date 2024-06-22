@@ -5,7 +5,6 @@ import os
 import shlex
 import sys
 import time
-from contextlib import contextmanager
 from types import ModuleType
 from typing import Any, Callable, List, Sequence, Type
 
@@ -102,12 +101,6 @@ def xplat_shlex_split(s: str) -> List[str]:
 
 def get_import_error_message(import_error: ImportError) -> str:
     return import_error.msg
-
-
-# Stand-in for contextlib.nullcontext, but available in python 3.6
-@contextmanager
-def nullcontext():
-    yield
 
 
 def is_subclass(child_type: Type[Any], parent_type: Type[Any]):
