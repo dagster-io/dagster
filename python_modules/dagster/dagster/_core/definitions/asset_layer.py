@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
@@ -15,12 +15,12 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._model import dagster_model
 
 from ..errors import DagsterInvariantViolationError
-from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from .events import AssetKey
 from .graph_definition import GraphDefinition
-from .node_definition import NodeDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
@@ -29,50 +29,13 @@ if TYPE_CHECKING:
     from dagster._core.definitions.partition_mapping import PartitionMapping
 
 
-def _resolve_output_to_destinations(
-    output_name: str, node_def: NodeDefinition, handle: NodeHandle
-) -> Sequence[NodeInputHandle]:
-    all_destinations: List[NodeInputHandle] = []
-    if not isinstance(node_def, GraphDefinition):
-        # must be in the op definition
-        return all_destinations
-
-    for mapping in node_def.output_mappings:
-        if mapping.graph_output_name != output_name:
-            continue
-        output_pointer = mapping.maps_from
-        output_node = node_def.node_named(output_pointer.node_name)
-
-        all_destinations.extend(
-            _resolve_output_to_destinations(
-                output_pointer.output_name,
-                output_node.definition,
-                NodeHandle(output_pointer.node_name, parent=handle),
-            )
-        )
-
-        output_def = output_node.definition.output_def_named(output_pointer.output_name)
-        downstream_input_handles = (
-            node_def.dependency_structure.output_to_downstream_inputs_for_node(
-                output_pointer.node_name
-            ).get(NodeOutput(output_node, output_def), [])
-        )
-        for input_handle in downstream_input_handles:
-            all_destinations.append(
-                NodeInputHandle(
-                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
-                )
-            )
-
-    return all_destinations
-
-
 def _build_graph_dependencies(
     graph_def: GraphDefinition,
     parent_handle: Optional[NodeHandle],
-    outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
-    non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
-    assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
+    op_output_handles: Set[NodeOutputHandle],
+    upstream_op_output_handles_by_op_output_handle: Dict[
+        NodeOutputHandle, AbstractSet[NodeOutputHandle]
+    ],
 ) -> None:
     """Scans through every node in the graph, making a recursive call when a node is a graph.
 
@@ -81,37 +44,38 @@ def _build_graph_dependencies(
     outputs_by_graph_handle: A mapping of every graph node handle to a dictionary with each out
         name as a key and a NodeOutputHandle containing the op output name and op node handle
 
-    non_asset_inputs_by_node_handle: A mapping of all node handles to all upstream node handles
+    inputs_by_upstream_op_handle: A mapping of all node handles to all upstream node handles
         that are not assets. Each key is a node output handle.
     """
     dep_struct = graph_def.dependency_structure
 
     for sub_node_name, sub_node in graph_def.node_dict.items():
-        curr_node_handle = NodeHandle(sub_node_name, parent=parent_handle)
+        sub_node_handle = NodeHandle(sub_node_name, parent=parent_handle)
         if isinstance(sub_node.definition, GraphDefinition):
             _build_graph_dependencies(
                 sub_node.definition,
-                curr_node_handle,
-                outputs_by_graph_handle,
-                non_asset_inputs_by_node_handle,
-                assets_defs_by_node_handle,
+                sub_node_handle,
+                op_output_handles,
+                upstream_op_output_handles_by_op_output_handle,
             )
-            outputs_by_graph_handle[curr_node_handle] = {
-                mapping.graph_output_name: NodeOutputHandle(
-                    NodeHandle(mapping.maps_from.node_name, parent=curr_node_handle),
-                    mapping.maps_from.output_name,
-                )
-                for mapping in sub_node.definition.output_mappings
+        else:
+            sub_node_op_output_handles = {
+                NodeOutputHandle(sub_node_handle, output_name)
+                for output_name in sub_node.definition.output_dict.keys()
             }
-        non_asset_inputs_by_node_handle[curr_node_handle] = [
-            NodeOutputHandle(
-                NodeHandle(node_output.node_name, parent=parent_handle),
-                node_output.output_def.name,
-            )
-            for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
-            if NodeHandle(node_output.node.name, parent=parent_handle)
-            not in assets_defs_by_node_handle
-        ]
+            op_output_handles |= sub_node_op_output_handles
+
+            sub_node_upstream_op_output_handles = {
+                NodeOutputHandle(
+                    NodeHandle(node_output.node_name, parent=parent_handle),
+                    node_output.output_def.name,
+                )
+                for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
+            }
+            for op_output_handle in sub_node_op_output_handles:
+                upstream_op_output_handles_by_op_output_handle[op_output_handle] = (
+                    sub_node_upstream_op_output_handles
+                )
 
 
 def _get_dependency_node_output_handles(
@@ -193,14 +157,33 @@ def get_dep_node_handles_of_graph_backed_asset(
     # node is a top-level asset node. Create a dummy graph that wraps around graph_def and pass
     # the dummy graph to asset_key_to_dep_node_handles
     dummy_parent_graph = GraphDefinition("dummy_parent_graph", node_defs=[graph_def])
-    (dep_node_handles_by_asset_key, _) = asset_or_check_key_to_dep_node_handles(
+
+    dep_node_output_handles_by_asset_or_check_key = asset_or_check_key_to_dep_node_handles(
         dummy_parent_graph,
-        {NodeHandle(name=graph_def.name, parent=None): assets_def},
+        {
+            NodeOutputHandle(
+                op_output_handle.node_handle.with_ancestor(
+                    NodeHandle(name=graph_def.name, parent=None)
+                ),
+                op_output_handle.output_name,
+            ): asset_or_check_key
+            for op_output_handle, asset_or_check_key in check.not_none(
+                assets_def._computation
+            ).asset_or_check_keys_by_op_output_handle.items()
+        },
+        assets_def._computation.selected_asset_keys,
     )
-    return dep_node_handles_by_asset_key
+    return {
+        asset_or_check_key: {
+            node_output_handle.node_handle for node_output_handle in dep_node_output_handles
+        }
+        for asset_or_check_key, dep_node_output_handles in dep_node_output_handles_by_asset_or_check_key.items()
+        if asset_or_check_key in assets_def._computation.selected_asset_keys
+        # TODO or in selected_asset_check_keys
+    }
 
 
-def asset_or_check_key_to_dep_node_handles(
+def asset_or_check_key_to_dep_node_handles_0(
     graph_def: GraphDefinition,
     assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> Tuple[
@@ -304,6 +287,94 @@ def asset_or_check_key_to_dep_node_handles(
     return dep_node_set_by_asset_or_check_key, dep_node_outputs_by_asset_or_check_key
 
 
+@dagster_model
+class NodeOutputHandleGraph:
+    op_output_handles: AbstractSet[NodeOutputHandle]
+    upstream: Mapping[NodeOutputHandle, AbstractSet[NodeOutputHandle]]
+    downstream: Mapping[NodeOutputHandle, AbstractSet[NodeOutputHandle]]
+
+    def get_sinks(self) -> AbstractSet[NodeOutputHandle]:
+        return {handle for handle in self.op_output_handles if handle not in self.downstream}
+
+
+def build_op_output_graph(graph_def: GraphDefinition) -> NodeOutputHandleGraph:
+    op_output_handles: Set[NodeOutputHandle] = set()
+    upstream: Dict[NodeOutputHandle, AbstractSet[NodeOutputHandle]] = {}
+    _build_graph_dependencies(
+        graph_def=graph_def,
+        parent_handle=None,
+        op_output_handles=op_output_handles,
+        upstream_op_output_handles_by_op_output_handle=upstream,
+    )
+
+    downstream: Dict[NodeOutputHandle, Set[NodeOutputHandle]] = defaultdict(set)
+    for op_output_handle, upstream_op_output_handles in upstream.items():
+        for upstream_op_output_handle in upstream_op_output_handles:
+            downstream[upstream_op_output_handle].add(op_output_handle)
+
+    return NodeOutputHandleGraph(
+        op_output_handles=op_output_handles,
+        upstream=upstream,
+        downstream=downstream,
+    )
+
+
+def asset_or_check_key_to_dep_node_handles(
+    graph_def: GraphDefinition,
+    asset_or_check_keys_by_op_output_handle: Mapping[NodeOutputHandle, "AssetKeyOrCheckKey"],
+    selected_asset_keys: AbstractSet[AssetKey],
+) -> Mapping["AssetKeyOrCheckKey", AbstractSet[NodeOutputHandle]]:
+    op_output_graph = build_op_output_graph(graph_def)
+
+    visited_op_output_handles: Set[NodeOutputHandle] = set()
+    upstream_op_output_handles_by_asset_key: Dict["AssetKeyOrCheckKey", Set[NodeOutputHandle]] = (
+        defaultdict(set)
+    )
+    # this is the inverse of the above dict
+    downstream_asset_keys_by_op_output_handle: Dict[NodeOutputHandle, Set["AssetKeyOrCheckKey"]] = (
+        defaultdict(set)
+    )
+
+    def _add(asset_or_check_key, op_output_handle) -> None:
+        upstream_op_output_handles_by_asset_key[asset_or_check_key].add(op_output_handle)
+        downstream_asset_keys_by_op_output_handle[op_output_handle].add(asset_or_check_key)
+
+    # we always visit children before their parents
+
+    queue_op_output_handles = deque(op_output_graph.get_sinks())
+    while queue_op_output_handles:
+        op_output_handle = queue_op_output_handles.popleft()
+        if op_output_handle in visited_op_output_handles:
+            continue
+
+        visited_op_output_handles.add(op_output_handle)
+        asset_key_or_check_key: Optional["AssetKeyOrCheckKey"] = (
+            asset_or_check_keys_by_op_output_handle.get(op_output_handle)
+        )
+
+        if asset_key_or_check_key:
+            _add(asset_key_or_check_key, op_output_handle)
+        else:
+            # add the asset / asset check keys for downstream op handles
+            child_op_output_handles = op_output_graph.downstream.get(op_output_handle, set())
+            for child_op_output_handle in child_op_output_handles:
+                for downstream_asset_key_or_check_key in downstream_asset_keys_by_op_output_handle[
+                    child_op_output_handle
+                ]:
+                    _add(downstream_asset_key_or_check_key, op_output_handle)
+
+        parent_op_output_handles = op_output_graph.upstream.get(op_output_handle, set())
+        for parent_op_output_handle in parent_op_output_handles:
+            queue_op_output_handles.append(parent_op_output_handle)
+
+    # return upstream_op_output_handles_by_asset_key
+    return {
+        key: handles
+        for key, handles in upstream_op_output_handles_by_asset_key.items()
+        if key in selected_asset_keys
+    }
+
+
 class AssetLayer(NamedTuple):
     """Stores all of the asset-related information for a Dagster job. Maps each
     input / output in the underlying graph to the asset it represents (if any), and records the
@@ -349,22 +420,6 @@ class AssetLayer(NamedTuple):
         asset_keys_by_node_output_handle: Dict[NodeOutputHandle, AssetKey] = {}
         check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
 
-        (
-            dep_node_handles_by_asset_or_check_key,
-            dep_node_output_handles_by_asset_or_check_key,
-        ) = asset_or_check_key_to_dep_node_handles(graph_def, assets_defs_by_outer_node_handle)
-
-        dep_node_handles_by_asset_key = {
-            key: handles
-            for key, handles in dep_node_handles_by_asset_or_check_key.items()
-            if isinstance(key, AssetKey)
-        }
-        dep_node_output_handles_by_asset_key = {
-            key: handles
-            for key, handles in dep_node_output_handles_by_asset_or_check_key.items()
-            if isinstance(key, AssetKey)
-        }
-
         node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle] = {}
         check_names_by_asset_key_by_node_handle: Dict[NodeHandle, Dict[AssetKey, Set[str]]] = {}
         assets_defs_by_check_key: Dict[AssetCheckKey, "AssetsDefinition"] = {}
@@ -392,11 +447,13 @@ class AssetLayer(NamedTuple):
                 asset_key_by_input.update(
                     {
                         input_handle: asset_key
-                        for input_handle in _resolve_output_to_destinations(
-                            output_name, assets_def.node_def, node_handle
+                        for input_handle in assets_def.node_def.resolve_output_to_destinations(
+                            output_name, node_handle
                         )
                     }
                 )
+
+            breakpoint()
 
             if len(assets_def.check_specs_by_output_name) > 0:
                 check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
@@ -419,6 +476,38 @@ class AssetLayer(NamedTuple):
 
                 assets_defs_by_check_key.update({k: assets_def for k in assets_def.check_keys})
 
+        dep_node_output_handles_by_asset_or_check_key = asset_or_check_key_to_dep_node_handles(
+            graph_def,
+            {**asset_keys_by_node_output_handle, **check_key_by_output},
+            asset_graph.executable_asset_keys,
+        )
+
+        dep_node_handles_by_asset_key = {
+            asset_or_check_key: {
+                node_output_handle.node_handle for node_output_handle in dep_node_output_handles
+            }
+            for asset_or_check_key, dep_node_output_handles in dep_node_output_handles_by_asset_or_check_key.items()
+            if isinstance(asset_or_check_key, AssetKey)
+        }
+
+        dep_node_output_handles_by_asset_key = {
+            key: handles
+            for key, handles in dep_node_output_handles_by_asset_or_check_key.items()
+            if isinstance(key, AssetKey)
+        }
+
+        def pretty_print_node_handle(node_handle):
+            return ".".join(node_handle.path)
+
+        print(
+            {
+                asset_key.to_user_string(): [
+                    pretty_print_node_handle(node_handle) for node_handle in node_handles
+                ]
+                for asset_key, node_handles in dep_node_handles_by_asset_key.items()
+            }
+        )
+
         dep_asset_keys_by_node_output_handle = defaultdict(set)
         for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
             for node_output_handle in node_output_handles:
@@ -430,6 +519,7 @@ class AssetLayer(NamedTuple):
                 node_handle: asset_graph.get(asset_key).assets_def
                 for asset_key, node_handles in dep_node_handles_by_asset_key.items()
                 for node_handle in node_handles
+                # if asset_graph.get(asset_key).assets_def.is_executable
             },
             # nodes for asset checks. Required for AssetsDefs that have selected checks
             # but not assets
@@ -439,6 +529,11 @@ class AssetLayer(NamedTuple):
                 if assets_def.check_keys
             },
         }
+        assets_def = next(iter(assets_defs_by_node_handle.values()))
+        # if AssetKey("asset_two") not in assets_def.keys:
+        #     breakpoint()
+
+        # assert AssetKey("asset_two") in next(iter(assets_defs_by_node_handle.values())).keys
 
         return AssetLayer(
             asset_graph=asset_graph,

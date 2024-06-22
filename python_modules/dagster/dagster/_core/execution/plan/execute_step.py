@@ -855,6 +855,9 @@ def _log_materialization_or_observation_events_for_asset(
         assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
         execution_type = check.not_none(assets_def).execution_type
 
+        if execution_type == AssetExecutionType.UNEXECUTABLE:
+            breakpoint()
+
         check.invariant(
             execution_type != AssetExecutionType.UNEXECUTABLE,
             "There should never be unexecutable assets here",

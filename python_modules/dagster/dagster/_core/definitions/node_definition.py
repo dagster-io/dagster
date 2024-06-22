@@ -229,3 +229,8 @@ class NodeDefinition(NamedConfigurableDefinition):
     def get_inputs_must_be_resolved_top_level(
         self, asset_layer: "AssetLayer", handle: Optional["NodeHandle"] = None
     ) -> Sequence["InputDefinition"]: ...
+
+    @abstractmethod
+    def resolve_output_to_destinations(
+        self, output_name: str, handle: NodeHandle
+    ) -> Sequence[NodeInputHandle]: ...

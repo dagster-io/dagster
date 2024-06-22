@@ -692,6 +692,7 @@ def create_execution_plan(
     tags: Optional[Mapping[str, str]] = None,
     repository_load_data: Optional[RepositoryLoadData] = None,
 ) -> ExecutionPlan:
+    breakpoint()
     if isinstance(job, IJob):
         # If you have repository_load_data, make sure to use it when building plan
         if isinstance(job, ReconstructableJob) and repository_load_data is not None:

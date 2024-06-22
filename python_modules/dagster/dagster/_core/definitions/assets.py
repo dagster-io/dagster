@@ -33,6 +33,7 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.dependency import NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
@@ -137,6 +138,45 @@ class AssetGraphComputation(IHaveNew):
             selected_asset_check_keys=selected_asset_check_keys,
             output_names_by_key=output_names_by_key,
         )
+
+    @cached_property
+    def asset_or_check_keys_by_op_output_handle(
+        self,
+    ) -> Mapping[NodeOutputHandle, "AssetKeyOrCheckKey"]:
+        result = {}
+        for output_name, key in self.keys_by_output_name.items():
+            output_def, node_handle = self.node_def.resolve_output_to_origin(output_name, None)
+            result[NodeOutputHandle(check.not_none(node_handle), output_def.name)] = key
+
+        # for output_name, key in self.check_keys_by_output_name.items():
+        #     output_def, node_handle = self.node_def.resolve_output_to_origin(output_name, None)
+        #     result[NodeOutputHandle(check.not_none(node_handle), output_def.name)] = key
+
+        return result
+
+    @cached_property
+    def op_input_handles_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[NodeInputHandle]]:
+        result: Dict[AssetKey, Set[NodeInputHandle]] = defaultdict(set)
+
+        for input_name, input_asset_key in self.keys_by_input_name.items():
+            input_handle = NodeInputHandle(node_handle, input_name)
+            input_asset_key[input_asset_key].add(input_handle)
+            # resolve graph input to list of op inputs that consume it
+            node_input_handles = self.node_def.resolve_input_to_destinations(input_handle)
+            for node_input_handle in node_input_handles:
+                result[input_asset_key].add(node_input_handle)
+
+        for output_name, asset_key in self.keys_by_output_name.items():
+            # resolve graph output to the op output it comes from
+            inner_output_def, inner_node_handle = self.node_def.resolve_output_to_origin(
+                output_name, handle=None
+            )
+
+            result[asset_key].update(
+                self.node_def.resolve_output_to_destinations(output_name, None)
+            )
+
+        return result
 
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
@@ -715,6 +755,11 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             key_type=str,
             value_type=AssetKey,
         )
+        check_specs_by_output_name = create_check_specs_by_output_name(check_specs)
+        keys_by_output_name = _infer_keys_by_output_names(
+            node_def, keys_by_output_name or {}, check_specs_by_output_name
+        )
+
         internal_asset_deps = check.opt_mapping_param(
             internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
         )
@@ -724,18 +769,12 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         transformed_internal_asset_deps: Dict[AssetKey, AbstractSet[AssetKey]] = {}
         if internal_asset_deps:
             for output_name, asset_keys in internal_asset_deps.items():
-                check.invariant(
-                    output_name in keys_by_output_name,
-                    f"output_name {output_name} specified in internal_asset_deps does not exist"
-                    " in the decorated function",
-                )
+                if output_name not in keys_by_output_name:
+                    check.failed(
+                        f"output_name {output_name} specified in internal_asset_deps does not exist"
+                        f" in the decorated function. Output names: {list(keys_by_output_name.keys())}.",
+                    )
                 transformed_internal_asset_deps[keys_by_output_name[output_name]] = asset_keys
-
-        check_specs_by_output_name = create_check_specs_by_output_name(check_specs)
-
-        keys_by_output_name = _infer_keys_by_output_names(
-            node_def, keys_by_output_name or {}, check_specs_by_output_name
-        )
 
         _validate_check_specs_target_relevant_asset_keys(
             check_specs, list(keys_by_output_name.values())
@@ -1330,7 +1369,17 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             for dep_node_handle in dep_node_handles:
                 op_selection.append(".".join(dep_node_handle.path[1:]))
 
-        return get_graph_subset(self.node_def, op_selection)
+        graph_subset = get_graph_subset(self.node_def, op_selection)
+
+        # add an input to the AssetsDefinition's top-level node_def corresponding to the asset
+        # that’s excluded from the subset and depended on by an asset that’s included in the subset
+        unselected_asset_keys = self.all_asset_keys - selected_asset_keys
+        for unselected_asset_key in unselected_asset_keys:
+            for op_input_handle in self.get_op_input_handles_for_asset_key(unselected_asset_key):
+                if op_input_handle in graph_subset:
+                    graph_subset = _ensure_top_level_input_for_op_input(graph_subset)
+
+        return graph_subset
 
     def subset_for(
         self,
@@ -1892,3 +1941,20 @@ def unique_id_from_asset_and_check_keys(
     return non_secure_md5_hash_str(
         json.dumps(sorted_asset_key_strs + sorted_check_key_strs).encode("utf-8")
     )[:8]
+
+
+def _ensure_top_level_input_for_op_input(
+    node_def: NodeDefinition, op_handle: Optional[NodeHandle], op_input_name: str
+) -> NodeDefinition:
+    if has_top_level_input(node_def, op_input_handle):
+        return node_def
+    else:
+        # find the child
+        child_node_name = op_input_handle.node_handle.path[0]
+        child_node = node_def.node_dict[child_node_name]
+
+        # recurse
+        revised_child_node_def = _ensure_top_level_input_for_nested_input(
+            child_node.node_def, op_input_handle.pop()
+        )
+        return node_def.with_input_mapping_and_input_mapping()
