@@ -4,7 +4,6 @@ import inspect
 import os
 import shlex
 import sys
-import threading
 import time
 from contextlib import contextmanager
 from types import ModuleType
@@ -59,29 +58,13 @@ def get_arg_names(callable_: Callable[..., Any]) -> Sequence[str]:
     ]
 
 
-def wait_for_process(process, timeout=30):
+def wait_for_process(process, timeout=30) -> None:
     # Using Popen.communicate instead of Popen.wait since the latter
     # can deadlock, see https://docs.python.org/3/library/subprocess.html#subprocess.Popen.wait
     if not timeout:
         process.communicate()
-    elif sys.version_info.major >= 3:
-        process.communicate(timeout=timeout)
     else:
-        timed_out_event = threading.Event()
-
-        def _wait_timeout():
-            timed_out_event.set()
-            process.kill()
-
-        timer = threading.Timer(timeout, _wait_timeout)
-        try:
-            timer.start()
-            process.wait()
-        finally:
-            timer.cancel()
-
-        if timed_out_event.is_set():
-            raise Exception("Timed out waiting for process to finish")
+        process.communicate(timeout=timeout)
 
 
 # https://stackoverflow.com/a/58437485/324449
