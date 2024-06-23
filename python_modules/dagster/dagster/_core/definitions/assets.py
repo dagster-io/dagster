@@ -159,8 +159,8 @@ class AssetGraphComputation(IHaveNew):
         result: Dict[AssetKey, Set[NodeInputHandle]] = defaultdict(set)
 
         for input_name, input_asset_key in self.keys_by_input_name.items():
-            input_handle = NodeInputHandle(node_handle, input_name)
-            input_asset_key[input_asset_key].add(input_handle)
+            input_handle = NodeInputHandle(None, input_name)
+            result[input_asset_key].add(input_handle)
             # resolve graph input to list of op inputs that consume it
             node_input_handles = self.node_def.resolve_input_to_destinations(input_handle)
             for node_input_handle in node_input_handles:
@@ -1373,11 +1373,15 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         # add an input to the AssetsDefinition's top-level node_def corresponding to the asset
         # that’s excluded from the subset and depended on by an asset that’s included in the subset
-        unselected_asset_keys = self.all_asset_keys - selected_asset_keys
+        unselected_asset_keys = set(self.node_keys_by_output_name.values()) - selected_asset_keys
         for unselected_asset_key in unselected_asset_keys:
-            for op_input_handle in self.get_op_input_handles_for_asset_key(unselected_asset_key):
-                if op_input_handle in graph_subset:
-                    graph_subset = _ensure_top_level_input_for_op_input(graph_subset)
+            for op_input_handle in self._computation.op_input_handles_by_asset_key.get(
+                unselected_asset_key, []
+            ):
+                if graph_subset.has_op_with_handle(check.not_none(op_input_handle.node_handle)):
+                    graph_subset = _ensure_top_level_input_for_op_input(
+                        graph_subset, op_input_handle
+                    )
 
         return graph_subset
 
@@ -1944,17 +1948,60 @@ def unique_id_from_asset_and_check_keys(
 
 
 def _ensure_top_level_input_for_op_input(
-    node_def: NodeDefinition, op_handle: Optional[NodeHandle], op_input_name: str
-) -> NodeDefinition:
-    if has_top_level_input(node_def, op_input_handle):
-        return node_def
-    else:
-        # find the child
-        child_node_name = op_input_handle.node_handle.path[0]
-        child_node = node_def.node_dict[child_node_name]
+    graph_def: "GraphDefinition", op_input_handle: NodeInputHandle
+) -> Tuple["GraphDefinition", str]:
+    """Returns a tuple where:
+    - The first element is the possible new NodeDefinition
+    - The second element is the name of the NodeDefinition's input that corresponds to op_input_handle
+    """
+    from .graph_definition import GraphDefinition
+    from .input import InputMapping
 
-        # recurse
-        revised_child_node_def = _ensure_top_level_input_for_nested_input(
-            child_node.node_def, op_input_handle.pop()
+    sub_node_name = check.not_none(op_input_handle.node_handle).root.name
+    sub_node = graph_def.node_dict[sub_node_name]
+    sub_node_def = sub_node.definition
+    if isinstance(sub_node_def, GraphDefinition):
+        sub_node_def_with_input, sub_input_name = _ensure_top_level_input_for_op_input(
+            sub_node_def, op_input_handle.pop()
         )
-        return node_def.with_input_mapping_and_input_mapping()
+    else:
+        sub_node_def_with_input = sub_node_def
+        sub_input_name = op_input_handle.input_name
+
+    existing_input_mapping = None
+    for input_mapping in graph_def.input_mappings:
+        if (
+            input_mapping.mapped_node_name == sub_node_name
+            and input_mapping.mapped_node_input_name == sub_input_name
+        ):
+            existing_input_mapping = input_mapping
+
+    if existing_input_mapping is None:
+        graph_input_name = op_input_handle.input_name
+        counter = 1
+        while graph_input_name in graph_def.input_dict:
+            counter += 1
+            graph_input_name = f"{op_input_handle.input_name}_{counter}"
+
+        input_mapping = InputMapping(
+            graph_input_name=graph_input_name,
+            mapped_node_name=sub_node_name,
+            mapped_node_input_name=sub_input_name,
+        )
+    else:
+        input_mapping = existing_input_mapping
+
+    if sub_node_def_with_input is sub_node_def and input_mapping is existing_input_mapping:
+        return graph_def, input_mapping.graph_input_name
+    else:
+        return graph_def.copy(
+            node_defs=[
+                *(
+                    node_def
+                    for node_def in graph_def.node_defs
+                    if node_def.name != sub_node_def_with_input.name
+                ),
+                sub_node_def_with_input,
+            ],
+            input_mappings=[*graph_def.input_mappings, input_mapping],
+        ), input_mapping.graph_input_name

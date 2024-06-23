@@ -347,7 +347,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         return self.to_string()
 
     @property
-    def root(self):
+    def root(self) -> "NodeHandle":
         if self.parent:
             return self.parent.root
         else:
@@ -395,7 +395,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
                 return False
         return True
 
-    def pop(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
+    def pop_ancestor(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Return a copy of the handle with some of its ancestors pruned.
 
         Args:
@@ -418,6 +418,12 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
+
+    def pop(self) -> Optional["NodeHandle"]:
+        if self.parent is None:
+            return None
+        else:
+            return NodeHandle.from_path(self.path[1:])
 
     def with_ancestor(self, ancestor: Optional["NodeHandle"]) -> "NodeHandle":
         """Returns a copy of the handle with an ancestor grafted on.
@@ -489,9 +495,12 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 
 
 class NodeInputHandle(
-    NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
+    NamedTuple("_NodeInputHandle", [("node_handle", Optional[NodeHandle]), ("input_name", str)])
 ):
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
+
+    def pop(self) -> "NodeInputHandle":
+        return NodeInputHandle(check.not_none(self.node_handle).pop(), self.input_name)
 
 
 class NodeOutputHandle(

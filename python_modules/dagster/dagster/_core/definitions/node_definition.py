@@ -232,5 +232,5 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @abstractmethod
     def resolve_output_to_destinations(
-        self, output_name: str, handle: NodeHandle
-    ) -> Sequence[NodeInputHandle]: ...
+        self, output_name: str, handle: Optional["NodeHandle"]
+    ) -> Sequence["NodeInputHandle"]: ...

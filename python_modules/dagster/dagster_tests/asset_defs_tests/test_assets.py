@@ -18,6 +18,7 @@ from dagster import (
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
+    In,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
@@ -28,6 +29,7 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    graph_multi_asset,
     io_manager,
     job,
     materialize,
@@ -2274,3 +2276,24 @@ def test_ensure_top_level_input_for_nested_input():
         inner_graph()
 
     assert _ensure_top_level_input_for_op_input(graph1, NodeHandle("op1", None), "x") == op1
+
+
+def test_graph_backed_asset_internal_deps_subset():
+    @op(out={"out1": Out()})
+    def op1() -> None: ...
+
+    @op(ins={"in1": In(Nothing)})
+    def op2() -> None: ...
+
+    @graph_multi_asset(
+        outs={
+            "out1": AssetOut(key="asset1"),
+            "out2": AssetOut(key="asset2"),
+        },
+        can_subset=True,
+    )
+    def assets():
+        out1 = op1()
+        return out1, op2(out1)
+
+    materialize([assets], selection=["asset2"])

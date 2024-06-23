@@ -454,7 +454,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
         return [input_handle]
 
     def resolve_output_to_destinations(
-        self, output_name: str, handle: NodeHandle
+        self, output_name: str, handle: Optional[NodeHandle]
     ) -> Sequence[NodeInputHandle]:
         return []
 
