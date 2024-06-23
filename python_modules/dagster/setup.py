@@ -93,7 +93,7 @@ setup(
         "pendulum>=0.7.0,<3; python_version<'3.9'",  # https://github.com/dagster-io/dagster/issues/19500
         "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
         "protobuf>=4,<5; python_version>='3.11'",
-        "python-dateutil",
+        "python-dateutil>=2.7.0",
         "python-dotenv",
         "pytz",
         "requests",

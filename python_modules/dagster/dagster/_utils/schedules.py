@@ -8,7 +8,6 @@ from typing import Iterator, Optional, Sequence, Union
 import pendulum
 from croniter import croniter as _croniter
 from dateutil.relativedelta import relativedelta
-from dateutil.tz import datetime_ambiguous, datetime_exists
 
 import dagster._check as check
 from dagster._core.definitions.partition import ScheduleType
@@ -90,6 +89,9 @@ def _apply_fold(date: datetime.datetime) -> datetime.datetime:
     Never call this with datetimes that could be non-existant. datetime_ambiguous will return true
     but folding them will leave them non-existant.
     """  # noqa: D415
+    # Lazily importing from dateutil.tz to work around the issue in https://github.com/dagster-io/dagster/issues/22586
+    from dateutil.tz import datetime_ambiguous
+
     if date.fold == 0 and date.hour in DAYLIGHT_SAVINGS_HOURS and datetime_ambiguous(date):
         return date.replace(fold=1)
     return date
@@ -98,6 +100,9 @@ def _apply_fold(date: datetime.datetime) -> datetime.datetime:
 def apply_post_transition(
     date: datetime.datetime,
 ) -> datetime.datetime:
+    # Lazily importing datetime_exists to work around the issue in https://github.com/dagster-io/dagster/issues/22586
+    from dateutil.tz import datetime_exists
+
     if date.hour in DAYLIGHT_SAVINGS_HOURS and not datetime_exists(date):
         # If we fall on a non-existant time (e.g. between 2 and 3AM during a DST transition)
         # advance to the end of the window, which does exist - match behavior described in the docs:
@@ -475,6 +480,9 @@ def _get_dates_to_consider_after_ambigious_time(
 def _timezone_aware_cron_iter(
     cron_string, start_datetime: datetime.datetime, ascending: bool
 ) -> Iterator[datetime.datetime]:
+    # Lazily importing from dateutil.tz to work around the issue in https://github.com/dagster-io/dagster/issues/22586
+    from dateutil.tz import datetime_ambiguous, datetime_exists
+
     """Use croniter to determine the next timestamp matching the passed in cron string
     that is past the passed in UTC timestamp. croniter can only be trusted to compute
     non-timezone aware cron intervals, so we first figure out the time corresponding to the
