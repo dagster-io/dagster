@@ -50,18 +50,18 @@ export default function Document() {
         />
         <link
           rel="manifest"
-          href={`${process.env.NEXT_PUBLIC_URL ?? ''}/manifest.json`}
+          href={`${process.env.NEXT_PUBLIC_URL ?? PREFIX_PLACEHOLDER}/manifest.json`}
           crossOrigin="use-credentials"
         />
         <link
           rel="icon"
           type="image/png"
-          href={`${process.env.NEXT_PUBLIC_URL ?? ''}/favicon.png`}
+          href={`${process.env.NEXT_PUBLIC_URL ?? PREFIX_PLACEHOLDER}/favicon.png`}
         />
         <link
           rel="icon"
           type="image/svg+xml"
-          href={`${process.env.NEXT_PUBLIC_URL ?? ''}/favicon.svg`}
+          href={`${process.env.NEXT_PUBLIC_URL ?? PREFIX_PLACEHOLDER}/favicon.svg`}
         />
       </Head>
       <body>
