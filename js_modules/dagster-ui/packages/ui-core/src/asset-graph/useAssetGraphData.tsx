@@ -11,6 +11,7 @@ import {
   AssetGraphQueryVariables,
   AssetNodeForGraphQueryFragment,
 } from './types/useAssetGraphData.types';
+import {usePrefixedCacheKey} from '../app/AppProvider';
 import {GraphQueryItem, filterByQuery} from '../app/GraphQueryImpl';
 import {AssetKey} from '../assets/types';
 import {AssetGroupSelector, PipelineSelector} from '../graphql/types';
@@ -23,12 +24,41 @@ export interface AssetGraphFetchScope {
   pipelineSelector?: PipelineSelector;
   groupSelector?: AssetGroupSelector;
   computeKinds?: string[];
-  needsFullData?: boolean;
 }
 
 export type AssetGraphQueryItem = GraphQueryItem & {
   node: AssetNode;
 };
+
+export function useFullAssetGraphData(options: AssetGraphFetchScope) {
+  const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
+    query: ASSET_GRAPH_QUERY,
+    variables: useMemo(
+      () => ({
+        pipelineSelector: options.pipelineSelector,
+        groupSelector: options.groupSelector,
+      }),
+      [options.pipelineSelector, options.groupSelector],
+    ),
+    key: usePrefixedCacheKey(
+      `AssetGraphQuery/${JSON.stringify({
+        pipelineSelector: options.pipelineSelector,
+        groupSelector: options.groupSelector,
+      })}`,
+    ),
+    version: 1,
+  });
+  useBlockTraceUntilTrue('ASSET_GRAPH_QUERY', !fetchResult.loading);
+
+  const nodes = fetchResult.data?.assetNodes;
+  const queryItems = useMemo(() => (nodes ? buildGraphQueryItems(nodes) : []), [nodes]);
+
+  const fullAssetGraphData = useMemo(
+    () => (queryItems ? buildGraphData(queryItems.map((n) => n.node)) : null),
+    [queryItems],
+  );
+  return fullAssetGraphData;
+}
 
 /** Fetches data for rendering an asset graph:
  *
@@ -42,14 +72,19 @@ export type AssetGraphQueryItem = GraphQueryItem & {
 export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScope) {
   const fetchResult = useIndexedDBCachedQuery<AssetGraphQuery, AssetGraphQueryVariables>({
     query: ASSET_GRAPH_QUERY,
-    variables: {
-      pipelineSelector: options.pipelineSelector,
-      groupSelector: options.groupSelector,
-    },
-    key: JSON.stringify({
-      pipelineSelector: options.pipelineSelector,
-      groupSelector: options.groupSelector,
-    }),
+    variables: useMemo(
+      () => ({
+        pipelineSelector: options.pipelineSelector,
+        groupSelector: options.groupSelector,
+      }),
+      [options.pipelineSelector, options.groupSelector],
+    ),
+    key: usePrefixedCacheKey(
+      `/AssetGraphQuery/${JSON.stringify({
+        pipelineSelector: options.pipelineSelector,
+        groupSelector: options.groupSelector,
+      })}`,
+    ),
     version: 1,
   });
   useBlockTraceUntilTrue('ASSET_GRAPH_QUERY', !fetchResult.loading);
@@ -68,19 +103,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   const graphQueryItems = useMemo(
     () => (repoFilteredNodes ? buildGraphQueryItems(repoFilteredNodes) : []),
     [repoFilteredNodes],
-  );
-
-  const fullGraphQueryItems = useMemo(
-    () => (nodes && options.needsFullData ? buildGraphQueryItems(nodes) : []),
-    [nodes, options.needsFullData],
-  );
-
-  const fullAssetGraphData = useMemo(
-    () =>
-      fullGraphQueryItems && options.needsFullData
-        ? buildGraphData(fullGraphQueryItems.map((n) => n.node))
-        : null,
-    [fullGraphQueryItems, options.needsFullData],
   );
 
   const {assetGraphData, graphAssetKeys, allAssetKeys} = useMemo(() => {
@@ -125,7 +147,6 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
   return {
     fetchResult,
     assetGraphData,
-    fullAssetGraphData,
     graphQueryItems,
     graphAssetKeys,
     allAssetKeys,
