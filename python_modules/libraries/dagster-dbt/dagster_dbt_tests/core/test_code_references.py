@@ -6,7 +6,7 @@ from typing import Any, Dict
 import pytest
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
-    AnchorBasedFilePathMappingFn,
+    AnchorBasedFilePathMapping,
     LocalFileCodeReference,
     UrlCodeReference,
     link_to_git,
@@ -102,7 +102,7 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
             with_source_code_references([my_dbt_assets]),
             git_url="https://github.com/dagster-io/jaffle_shop",
             git_branch="master",
-            file_path_mapping=AnchorBasedFilePathMappingFn(
+            file_path_mapping=AnchorBasedFilePathMapping(
                 local_file_anchor=Path(JAFFLE_SHOP_ROOT_PATH), file_anchor_path_in_repository=""
             ),
         )

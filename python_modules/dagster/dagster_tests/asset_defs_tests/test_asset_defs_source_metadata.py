@@ -8,7 +8,11 @@ from dagster._core.definitions.metadata import (
     UrlCodeReference,
     with_source_code_references,
 )
-from dagster._core.definitions.metadata.source_code import AnchorBasedFilePathMappingFn, link_to_git
+from dagster._core.definitions.metadata.source_code import (
+    AnchorBasedFilePathMapping,
+    FilePathMapping,
+    link_to_git,
+)
 from dagster._utils import file_relative_path
 
 # path of the `dagster` package on the filesystem
@@ -120,7 +124,7 @@ def test_asset_code_origins_source_control() -> None:
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
-        file_path_mapping=AnchorBasedFilePathMappingFn(
+        file_path_mapping=AnchorBasedFilePathMapping(
             local_file_anchor=Path(GIT_ROOT_PATH), file_anchor_path_in_repository=""
         ),
     )
@@ -172,13 +176,19 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
 
     collection_with_source_metadata = with_source_code_references(collection)
 
+    class CustomFilePathMapping(FilePathMapping):
+        def convert_to_source_control_path(self, local_path: Path) -> str:
+            return (
+                "override.py"
+                if os.fspath(local_path).endswith("module_with_assets.py")
+                else os.path.normpath(os.path.relpath(local_path, GIT_ROOT_PATH))
+            )
+
     collection_with_source_control_metadata = link_to_git(
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
-        file_path_mapping=lambda file_path: "override.py"
-        if os.fspath(file_path).endswith("module_with_assets.py")
-        else os.path.normpath(os.path.relpath(file_path, GIT_ROOT_PATH)),
+        file_path_mapping=CustomFilePathMapping(),
     )
 
     for asset in collection_with_source_control_metadata:

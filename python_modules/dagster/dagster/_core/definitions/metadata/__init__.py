@@ -45,7 +45,7 @@ from .metadata_value import (
 )
 from .source_code import (
     DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
-    AnchorBasedFilePathMappingFn as AnchorBasedFilePathMappingFn,
+    AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     LocalFileCodeReference as LocalFileCodeReference,

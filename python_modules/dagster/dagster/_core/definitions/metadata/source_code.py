@@ -1,3 +1,4 @@
+import abc
 import inspect
 import os
 from pathlib import Path
@@ -135,10 +136,21 @@ def _with_code_source_single_definition(
     )
 
 
-FilePathMappingFn = Callable[[Path], str]
+class FilePathMapping(abc.ABC):
+    """Base class for file path mapping functions. These functions are used to map local file paths to their corresponding
+    paths in a source control repository.
+
+    In many cases where a source control repository is reproduced exactly on a local machine, the included
+    AnchorBasedFilePathMapping class can be used to specify a direct mapping between the local file paths and the
+    repository paths. However, in cases where the repository structure differs from the local structure, a custom
+    mapping function can be provided to handle these cases.
+    """
+
+    @abc.abstractmethod
+    def convert_to_source_control_path(self, local_path: Path) -> str: ...
 
 
-class AnchorBasedFilePathMappingFn(NamedTuple):
+class AnchorBasedFilePathMapping(NamedTuple):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
     using a specific file "anchor" as a reference point. All other paths are calculated relative to this anchor file.
 
@@ -155,7 +167,7 @@ class AnchorBasedFilePathMappingFn(NamedTuple):
     Example:
         .. code-block:: python
 
-            mapping_fn = AnchorBasedFilePathMappingFn(
+            mapping_fn = AnchorBasedFilePathMapping(
                 local_file_anchor=Path(__file__),
                 file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
             )
@@ -164,7 +176,7 @@ class AnchorBasedFilePathMappingFn(NamedTuple):
     local_file_anchor: Path
     file_anchor_path_in_repository: str
 
-    def __call__(self, local_path: Path) -> str:
+    def convert_to_source_control_path(self, local_path: Path) -> str:
         path_from_anchor_to_target = os.path.relpath(
             local_path,
             self.local_file_anchor,
@@ -179,10 +191,12 @@ class AnchorBasedFilePathMappingFn(NamedTuple):
 
 def convert_local_path_to_git_path(
     base_git_url: str,
-    file_path_mapping_fn: FilePathMappingFn,
+    file_path_mapping: FilePathMapping,
     local_path: LocalFileCodeReference,
 ) -> UrlCodeReference:
-    source_file_from_repo_root = file_path_mapping_fn(Path(local_path.file_path))
+    source_file_from_repo_root = file_path_mapping.convert_to_source_control_path(
+        Path(local_path.file_path)
+    )
     line_number_suffix = f"#L{local_path.line_number}" if local_path.line_number else ""
 
     return UrlCodeReference(
@@ -193,7 +207,7 @@ def convert_local_path_to_git_path(
 
 def _convert_local_path_to_git_path_single_definition(
     base_git_url: str,
-    file_path_mapping_fn: FilePathMappingFn,
+    file_path_mapping: FilePathMapping,
     assets_def: Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"],
 ) -> Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]:
     from dagster._core.definitions.assets import AssetsDefinition
@@ -215,7 +229,7 @@ def _convert_local_path_to_git_path_single_definition(
         sources_for_asset: List[Union[LocalFileCodeReference, UrlCodeReference]] = [
             convert_local_path_to_git_path(
                 base_git_url,
-                file_path_mapping_fn,
+                file_path_mapping,
                 source,
             )
             if isinstance(source, LocalFileCodeReference)
@@ -248,7 +262,7 @@ def link_to_git(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
     git_url: str,
     git_branch: str,
-    file_path_mapping: FilePathMappingFn,
+    file_path_mapping: FilePathMapping,
 ) -> Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]]:
     """Wrapper function which converts local file path code references to source control URLs
     based on the provided source control URL and branch.
@@ -261,9 +275,9 @@ def link_to_git(
         git_url (str): The base URL for the source control system. For example,
             "https://github.com/dagster-io/dagster".
         git_branch (str): The branch in the source control system, such as "master".
-        file_path_mapping (Callable[[Path], str]):
+        file_path_mapping (FilePathMapping):
             Specifies the mapping between local file paths and their corresponding paths in a source control repository.
-            Simple usage is to provide a `AnchorBasedFilePathMappingFn` instance, which specifies an anchor file in the
+            Simple usage is to provide a `AnchorBasedFilePathMapping` instance, which specifies an anchor file in the
             repository and the corresponding local file path, which is extrapolated to all other local file paths.
             Alternatively, a custom function can be provided which takes a local file path and returns the corresponding
             path in the repository, allowing for more complex mappings.
@@ -275,7 +289,7 @@ def link_to_git(
                         with_source_code_references([my_dbt_assets]),
                         git_url="https://github.com/dagster-io/dagster",
                         git_branch="master",
-                        file_path_mapping=AnchorBasedFilePathMappingFn(
+                        file_path_mapping=AnchorBasedFilePathMapping(
                             local_file_anchor=Path(__file__),
                             file_anchor_path_in_repository="python_modules/my_module/my-module/__init__.py",
                         ),
@@ -295,7 +309,7 @@ def link_to_git(
     return [
         _convert_local_path_to_git_path_single_definition(
             base_git_url=git_url,
-            file_path_mapping_fn=file_path_mapping,
+            file_path_mapping=file_path_mapping,
             assets_def=assets_def,
         )
         for assets_def in assets_defs
