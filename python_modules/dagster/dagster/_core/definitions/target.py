@@ -1,60 +1,83 @@
-from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence, Union
+from typing import NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 
+from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-
-if TYPE_CHECKING:
-    from .graph_definition import GraphDefinition
 
 ExecutableDefinition: TypeAlias = Union[
     JobDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
 ]
 
 
-class RepoRelativeTarget(NamedTuple):
-    """The thing to be executed by a schedule or sensor, selecting by name a job in the same repository."""
+ResolvableToJob: TypeAlias = Union[
+    JobDefinition, UnresolvedAssetJobDefinition, GraphDefinition, str
+]
+"""
+A piece of data that is resolvable to a JobDefinition. One of:
 
-    job_name: str
-    op_selection: Optional[Sequence[str]]
+- JobDefinition
+- UnresolvedAssetJobDefinition
+- GraphDefinition
+- str (a job name)
+
+The property of being resolvable to a JobDefinition is what unites all of the entities that an
+AutomationTarget can wrap.
+"""
 
 
-class DirectTarget(
+class AutomationTarget(
     NamedTuple(
-        "_DirectTarget",
-        [("target", ExecutableDefinition)],
+        "_AutomationTarget",
+        [
+            ("resolvable_to_job", ResolvableToJob),
+            ("op_selection", Optional[Sequence[str]]),
+        ],
     )
 ):
-    """The thing to be executed by a schedule or sensor, referenced directly and loaded
-    in to any repository the container is included in.
+    """An abstraction representing a job to be executed by an automation, i.e. schedule or sensor.
+
+    Attributes:
+        resolvable_to_job (ResolvableToJob): An entity that is resolvable to a job at
+            definition-resolution time.
+        op_selection (Optional[Sequence[str]]): An optional list of op names to execute within the job.
     """
 
     def __new__(
         cls,
-        target: ExecutableDefinition,
+        resolvable_to_job: Union[ExecutableDefinition, str],
+        op_selection: Optional[Sequence[str]] = None,
     ):
         from .graph_definition import GraphDefinition
 
         check.inst_param(
-            target, "target", (GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition)
+            resolvable_to_job,
+            "resolvable_to_job",
+            (GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition, str),
         )
 
-        return super().__new__(
-            cls,
-            target,
-        )
+        return super().__new__(cls, resolvable_to_job, op_selection=op_selection)
 
     @property
     def job_name(self) -> str:
-        return self.target.name
+        if isinstance(self.resolvable_to_job, str):
+            return self.resolvable_to_job
+        else:
+            return self.resolvable_to_job.name
 
     @property
-    def op_selection(self):
-        # open question on how to direct target subset job
-        return None
+    def executable_def(self) -> ExecutableDefinition:
+        if isinstance(self.resolvable_to_job, str):
+            check.failed(
+                "Cannot access job_def for a target with string job name for resolvable_to_job"
+            )
+        return self.resolvable_to_job
 
-    def load(self) -> ExecutableDefinition:
-        return self.target
+    @property
+    def has_executable_def(self) -> bool:
+        return isinstance(
+            self.resolvable_to_job, (GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition)
+        )
