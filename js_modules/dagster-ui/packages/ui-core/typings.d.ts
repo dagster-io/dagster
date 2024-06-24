@@ -21,6 +21,13 @@ declare module 'worker-loader!*' {
   export default WebpackWorker;
 }
 
+declare module '*.graphql' {
+  import {DocumentNode} from 'graphql';
+  const Schema: DocumentNode;
+
+  export = Schema;
+}
+
 declare module 'chartjs-adapter-date-fns';
 
 declare namespace Intl {
