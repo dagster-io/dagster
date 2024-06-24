@@ -113,7 +113,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
 
   React.useEffect(() => {
     getCachedData<TQuery>({key, version}).then((data) => {
-      if (data && (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))) {
+      if (data && !dataRef.current) {
         setData(data);
         setLoading(false);
       }
