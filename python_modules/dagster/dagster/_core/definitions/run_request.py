@@ -36,6 +36,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
@@ -123,7 +124,9 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
         asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
+        asset_graph_subset: Optional["AssetGraphSubset"] = None,
     ):
+        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
         from dagster._core.definitions.run_config import convert_config_input
 
         return super().__new__(
@@ -136,7 +139,21 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             stale_assets_only=stale_assets_only,
             partition_key=partition_key,
             asset_check_keys=asset_check_keys,
+            asset_graph_subset=asset_graph_subset,
         )
+
+    @classmethod
+    def for_asset_graph_subset(
+        cls,
+        asset_graph_subset: "AssetGraphSubset",
+        tags: Optional[Mapping[str, str]],
+    ) -> "RunRequest":
+        """Constructs a RunRequest from an AssetGraphSubset. When processed by the sensor
+        daemon, this will launch a backfill instead of a run.
+        Note: This constructor is intentionally left private since AssetGraphSubset is not part of the
+        public API. Other constructor methods will be public.
+        """
+        return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
         fields = self._asdict()
@@ -221,6 +238,13 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             )
         else:
             return None
+
+    def requires_backfill_daemon(self) -> bool:
+        """For now we always send RunRequests with an asset_graph_subset to the backfill daemon, but
+        eventaully we will want to introspect on the asset_graph_subset to determine if we can
+        execute it as a single run instead.
+        """
+        return self.asset_graph_subset is not None
 
 
 def _check_valid_partition_key_after_dynamic_partitions_requests(
