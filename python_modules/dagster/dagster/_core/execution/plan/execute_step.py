@@ -112,7 +112,7 @@ def _process_user_event(
         asset_check_evaluation = user_event.to_asset_check_evaluation(step_context)
         spec = check.not_none(
             step_context.job_def.asset_layer.get_spec_for_asset_check(
-                step_context.node_handle.root, asset_check_evaluation.asset_check_key
+                step_context.node_handle, asset_check_evaluation.asset_check_key
             ),
             "If we were able to create an AssetCheckEvaluation from the AssetCheckResult, then"
             " there should be a spec for the check",

@@ -466,6 +466,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
         return direct_invocation_result(self, *args, **kwargs)
 
+    def get_op_handles(self, parent: NodeHandle) -> AbstractSet[NodeHandle]:
+        return {parent}
+
 
 def _resolve_output_defs_from_outs(
     compute_fn: Union[Callable[..., Any], "DecoratedOpFunction"],
