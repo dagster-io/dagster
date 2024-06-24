@@ -181,12 +181,7 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="sensors"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="sensors" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}} flex={{justifyContent: 'space-between'}}>
         <Box flex={{direction: 'row', gap: 12}}>
           {filterButton}
