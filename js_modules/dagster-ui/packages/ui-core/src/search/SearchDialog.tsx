@@ -91,6 +91,7 @@ export const SearchDialog = () => {
   const firstSearchTrace = React.useRef<null | Trace>(null);
 
   const openSearch = React.useCallback(() => {
+    trackEvent('open-global-search');
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
