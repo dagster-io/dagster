@@ -453,6 +453,11 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     ) -> Sequence[NodeInputHandle]:
         return [input_handle]
 
+    def resolve_output_to_destinations(
+        self, output_name: str, handle: Optional[NodeHandle]
+    ) -> Sequence[NodeInputHandle]:
+        return []
+
     def __call__(self, *args, **kwargs) -> Any:
         from .composition import is_in_composition
 
