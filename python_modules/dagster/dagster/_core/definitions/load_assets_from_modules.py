@@ -394,6 +394,9 @@ def prefix_assets(
         key_prefix = [key_prefix]
     key_prefix = check.is_list(key_prefix, of_type=str)
 
+    if isinstance(source_key_prefix, str):
+        source_key_prefix = [source_key_prefix]
+
     result_assets: List[AssetsDefinition] = []
     for assets_def in assets_defs:
         output_asset_key_replacements = {
