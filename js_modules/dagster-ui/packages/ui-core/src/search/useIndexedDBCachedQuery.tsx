@@ -102,12 +102,7 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         version,
         bypassCache,
       });
-      if (
-        // Work around a weird jest issue..
-        data &&
-        Object.keys(data).length &&
-        (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))
-      ) {
+      if (data && (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))) {
         setData(data);
       }
       setError(error);
@@ -175,7 +170,9 @@ export function useGetData() {
         });
       }
 
-      const state = {onFetched: [] as ((value: any) => void)[]};
+      const state = {
+        onFetched: [] as ((value: Pick<typeof queryResult, 'data' | 'error'>) => void)[],
+      };
       fetchState[key] = state;
 
       const queryResult = await client.query<TQuery, TVariables>({
@@ -195,7 +192,7 @@ export function useGetData() {
         delete fetchState[key]; // Clean up fetch state after handling
       }
 
-      onFetchedHandlers.forEach((handler) => handler(data)); // Notify all waiting fetches
+      onFetchedHandlers.forEach((handler) => handler({data, error})); // Notify all waiting fetches
 
       return {data, error};
     },
