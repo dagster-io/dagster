@@ -89,7 +89,7 @@ class InstigationLogger(logging.Logger):
         instigator_name: Optional[str] = None,
         level: int = logging.NOTSET,
         logger_name: str = "dagster",
-        additional_console_logger: Optional[logging.Logger] = None,
+        console_logger: Optional[logging.Logger] = None,
     ):
         super().__init__(name=logger_name, level=coerce_valid_log_level(level))
         self._log_key = log_key
@@ -98,9 +98,9 @@ class InstigationLogger(logging.Logger):
         self._instigator_name = instigator_name
         self._exit_stack = ExitStack()
         self._capture_handler = None
-        if additional_console_logger is None:
-            additional_console_logger = create_console_logger("dagster", logging.INFO)
-        self.addHandler(DispatchingLogHandler([additional_console_logger]))
+        if console_logger is None:
+            console_logger = create_console_logger("dagster", logging.INFO)
+        self.addHandler(DispatchingLogHandler([console_logger]))
 
     def __enter__(self):
         if (
