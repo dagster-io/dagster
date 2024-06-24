@@ -17,54 +17,15 @@ import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 
 from ..errors import DagsterInvariantViolationError
-from .dependency import NodeHandle, NodeInputHandle, NodeOutput, NodeOutputHandle
+from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from .events import AssetKey
 from .graph_definition import GraphDefinition
-from .node_definition import NodeDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.base_asset_graph import AssetKeyOrCheckKey
     from dagster._core.definitions.partition_mapping import PartitionMapping
-
-
-def _resolve_output_to_destinations(
-    output_name: str, node_def: NodeDefinition, handle: NodeHandle
-) -> Sequence[NodeInputHandle]:
-    all_destinations: List[NodeInputHandle] = []
-    if not isinstance(node_def, GraphDefinition):
-        # must be in the op definition
-        return all_destinations
-
-    for mapping in node_def.output_mappings:
-        if mapping.graph_output_name != output_name:
-            continue
-        output_pointer = mapping.maps_from
-        output_node = node_def.node_named(output_pointer.node_name)
-
-        all_destinations.extend(
-            _resolve_output_to_destinations(
-                output_pointer.output_name,
-                output_node.definition,
-                NodeHandle(output_pointer.node_name, parent=handle),
-            )
-        )
-
-        output_def = output_node.definition.output_def_named(output_pointer.output_name)
-        downstream_input_handles = (
-            node_def.dependency_structure.output_to_downstream_inputs_for_node(
-                output_pointer.node_name
-            ).get(NodeOutput(output_node, output_def), [])
-        )
-        for input_handle in downstream_input_handles:
-            all_destinations.append(
-                NodeInputHandle(
-                    NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
-                )
-            )
-
-    return all_destinations
 
 
 def _build_graph_dependencies(
@@ -392,8 +353,8 @@ class AssetLayer(NamedTuple):
                 asset_key_by_input.update(
                     {
                         input_handle: asset_key
-                        for input_handle in _resolve_output_to_destinations(
-                            output_name, assets_def.node_def, node_handle
+                        for input_handle in assets_def.node_def.resolve_output_to_destinations(
+                            output_name, node_handle
                         )
                     }
                 )
