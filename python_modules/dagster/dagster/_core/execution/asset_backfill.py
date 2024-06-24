@@ -567,6 +567,15 @@ class AssetBackfillData(NamedTuple):
 
         return cls.empty(target_subset, backfill_start_timestamp, dynamic_partitions_store)
 
+    @classmethod
+    def from_asset_graph_subset(
+        cls,
+        asset_graph_subset: AssetGraphSubset,
+        dynamic_partitions_store: DynamicPartitionsStore,
+        backfill_start_timestamp: float,
+    ) -> "AssetBackfillData":
+        return cls.empty(asset_graph_subset, backfill_start_timestamp, dynamic_partitions_store)
+
     def serialize(
         self, dynamic_partitions_store: DynamicPartitionsStore, asset_graph: BaseAssetGraph
     ) -> str:

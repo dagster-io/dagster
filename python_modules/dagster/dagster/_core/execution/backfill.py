@@ -3,6 +3,7 @@ from typing import Mapping, NamedTuple, Optional, Sequence, Union
 
 from dagster import _check as check
 from dagster._core.definitions import AssetKey
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.utils import check_valid_title
@@ -454,6 +455,35 @@ class PartitionBackfill(
             serialized_asset_backfill_data=None,
             asset_backfill_data=asset_backfill_data,
             asset_selection=[selector.asset_key for selector in partitions_by_assets],
+            title=title,
+            description=description,
+        )
+
+    @classmethod
+    def from_asset_graph_subset(
+        cls,
+        backfill_id: str,
+        backfill_timestamp: float,
+        tags: Mapping[str, str],
+        dynamic_partitions_store: DynamicPartitionsStore,
+        asset_graph_subset: AssetGraphSubset,
+        title: Optional[str],
+        description: Optional[str],
+    ):
+        asset_backfill_data = AssetBackfillData.from_asset_graph_subset(
+            asset_graph_subset=asset_graph_subset,
+            dynamic_partitions_store=dynamic_partitions_store,
+            backfill_start_timestamp=backfill_timestamp,
+        )
+        return cls(
+            backfill_id=backfill_id,
+            status=BulkActionStatus.REQUESTED,
+            from_failure=False,
+            tags=tags,
+            backfill_timestamp=backfill_timestamp,
+            serialized_asset_backfill_data=None,
+            asset_backfill_data=asset_backfill_data,
+            asset_selection=list(asset_graph_subset.asset_keys),
             title=title,
             description=description,
         )
