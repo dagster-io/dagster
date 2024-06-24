@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
 import {explodeCompositesInHandleGraph} from './CompositeSupport';
@@ -25,7 +25,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {Loading} from '../ui/Loading';
-import {buildPipelineSelector, useJob} from '../workspace/WorkspaceContext';
+import {buildPipelineSelector} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
 export const PipelineExplorerSnapshotRoot = () => {
@@ -80,24 +80,12 @@ export const PipelineExplorerContainer = ({
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
 
-  const snapIdFromContext = useJob(repoAddress || null, explorerPath.pipelineName)
-    ?.pipelineSnapshotId;
-  const snapshotId = useMemo(() => {
-    return snapIdFromContext
-      ? snapIdFromContext
-      : explorerPath.snapshotId
-      ? explorerPath.snapshotId
-      : undefined;
-    // only add snapshot id from workspace if its loaded when we first render
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [explorerPath]);
-
   const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
     {
       variables: {
-        snapshotPipelineSelector: snapshotId ? undefined : pipelineSelector,
-        snapshotId,
+        snapshotPipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
+        snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
         rootHandleID: parentNames.join('.'),
         requestScopeHandleID: options.explodeComposites ? undefined : parentNames.join('.'),
       },
