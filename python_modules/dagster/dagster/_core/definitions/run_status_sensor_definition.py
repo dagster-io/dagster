@@ -838,7 +838,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 ):
                     # check if the run is one of the jobs specified by JobSelector or RepositorySelector (ie in another repo)
                     # make a JobSelector for the run in question
-                    external_repository_origin = dagster_run.external_job_origin
+                    external_repository_origin = dagster_run.external_job_origin.repository_origin
                     run_job_selector = JobSelector(
                         location_name=external_repository_origin.code_location_origin.location_name,
                         repository_name=external_repository_origin.repository_name,
