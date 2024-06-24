@@ -32,7 +32,8 @@ export const PipelineExplorerSnapshotRoot = () => {
   useTrackPageView();
 
   const params = useParams();
-  const explorerPath = explorerPathFromString((params as any)['0']);
+  const pathStr = (params as any)['0'];
+  const explorerPath = useMemo(() => explorerPathFromString(pathStr), [pathStr]);
   const {pipelineName, snapshotId} = explorerPath;
   const history = useHistory();
 
@@ -88,9 +89,10 @@ export const PipelineExplorerContainer = ({
       : explorerPath.snapshotId
       ? explorerPath.snapshotId
       : undefined;
+
     // only add snapshot id from workspace if its loaded when we first render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [explorerPath]);
+  }, [explorerPath.snapshotId]);
 
   const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
