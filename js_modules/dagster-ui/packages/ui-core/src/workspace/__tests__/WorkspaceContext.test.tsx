@@ -169,6 +169,7 @@ describe('WorkspaceContext', () => {
 
     expect(result.current.allRepos).toEqual([]);
     expect(result.current.data).toEqual({});
+    expect(result.current.loading).toEqual(true);
 
     // Runs the individual location queries
     await act(async () => {
