@@ -69,7 +69,6 @@ export const TestProvider = (props: Props) => {
     () => ({
       page: () => {},
       track: () => {},
-      action: () => {},
     }),
     [],
   );

@@ -15,7 +15,6 @@ export interface GenericAnalytics {
   identify?: (userId: string, traits?: Record<string, any>) => void;
   page: (path: string, specificPath: string) => void;
   track: (eventName: string, properties?: Record<string, any>) => void;
-  action: (actionName: string, properties?: Record<string, any>) => void;
 }
 
 export const AnalyticsContext = createContext<GenericAnalytics>(undefined!);
@@ -53,11 +52,6 @@ export const dummyAnalytics = () => ({
   track: (eventName: string, properties?: Record<string, any>) => {
     if (process.env.NODE_ENV !== 'production') {
       console.log('[Event]', eventName, properties);
-    }
-  },
-  action: (actionName: string, properties?: Record<string, any>) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Action]', actionName, properties);
     }
   },
 });
@@ -102,16 +96,5 @@ export const useTrackEvent = () => {
       analytics.track(eventName, {...properties, path, specificPath});
     },
     [analytics, path, specificPath],
-  );
-};
-
-export const useTrackAction = () => {
-  const analytics = useAnalytics();
-
-  return useCallback(
-    (actionName: string, properties?: Record<string, any>) => {
-      analytics.action(actionName, properties);
-    },
-    [analytics],
   );
 };

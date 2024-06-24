@@ -13,7 +13,7 @@ import {useGlobalSearch} from './useGlobalSearch';
 import {__updateSearchVisibility} from './useSearchVisibility';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {TooltipShortcutInfo, TopNavButton} from '../app/TopNavButton';
-import {useTrackAction, useTrackEvent} from '../app/analytics';
+import {useTrackEvent} from '../app/analytics';
 import {Trace, createTrace} from '../performance';
 
 const MAX_DISPLAYED_RESULTS = 50;
@@ -79,7 +79,6 @@ export const SearchDialog = () => {
     includeAssetFilters: false,
   });
   const trackEvent = useTrackEvent();
-  const trackAction = useTrackAction();
 
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {shown, queryString, primaryResults, secondaryResults, highlight} = state;
@@ -92,11 +91,11 @@ export const SearchDialog = () => {
   const firstSearchTrace = React.useRef<null | Trace>(null);
 
   const openSearch = React.useCallback(() => {
-    trackAction('open-global-search');
+    trackEvent('open-global-search');
     trackEvent('searchOpen');
     initialize();
     dispatch({type: 'show-dialog'});
-  }, [initialize, trackEvent, trackAction]);
+  }, [initialize, trackEvent]);
 
   React.useEffect(() => {
     if (!loading && primaryResults && secondaryResults) {

@@ -10,7 +10,6 @@ describe('Analytics', () => {
   const createMockAnalytics = () => ({
     page: jest.fn(),
     track: jest.fn(),
-    action: jest.fn(),
   });
 
   const Test = ({
