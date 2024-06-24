@@ -12,8 +12,15 @@ from typing import (
     cast,
     get_args,
     get_origin,
-    overload,
+    overload, Callable, Generic, TypeVar, List,
+
 )
+
+
+if sys.version_info >= (3, 9):
+    from typing import TypeAlias
+else:
+    from typing_extensions import TypeAlias
 
 import polars as pl
 from dagster import (
@@ -32,99 +39,197 @@ from pydantic.fields import Field
 from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
     DataFramePartitions,
-    DataFramePartitionsWithMetadata,
     LazyFramePartitions,
-    LazyFramePartitionsWithMetadata,
     LazyFrameWithMetadata,
-    StorageMetadata,
 )
+
+try:
+    import pandera
+
+    PANDERA_INSTALLED = True
+except ImportError:
+    PANDERA_INSTALLED = False
+
 
 if TYPE_CHECKING:
     from upath import UPath
 
-POLARS_EAGER_FRAME_ANNOTATIONS = [
-    pl.DataFrame,
-    Optional[pl.DataFrame],
-    # common default types
-    Any,
-    type(None),
-    None,
-    # multiple partitions
-    Dict[str, pl.DataFrame],
-    Mapping[str, pl.DataFrame],
-    DataFramePartitions,
-    # DataFrame + metadata
-    Tuple[pl.DataFrame, StorageMetadata],
-    Optional[Tuple[pl.DataFrame, StorageMetadata]],
-    # multiple partitions + metadata
-    DataFramePartitionsWithMetadata,
+
+T = TypeVar("T")
+
+
+# dump_to_path signature
+F_D: TypeAlias = Callable[[OutputContext, T, "UPath"], None]
+
+# load_from_path signature
+F_L: TypeAlias = Callable[[InputContext, "UPath"], T]
+
+
+class BaseTypeRouter(Generic[T]):
+    """
+    Specifies how to apply a given dump/load operation to a given type annotation.
+    """
+
+    def __init__(self, context: Union[InputContext, OutputContext], type_to_resolve: Any):
+        self.context = context
+        self.type_to_resolve = type_to_resolve
+
+    @abstractmethod
+    def match(self) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    @property
+    def is_root_type(self) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    @property
+    def parent_type(self) -> Any:
+        raise NotImplementedError
+
+    def dump(self, obj: T, path: "UPath", dump_fn: F_D) -> None:
+        dump_fn(self.context, obj, path)
+
+    def load(self, path: "UPath", load_fn: F_L) -> T:
+        return load_fn(self.context, path)
+
+
+class TypeRouter(BaseTypeRouter, Generic[T]):
+    """
+    Specifies how to apply a given dump/load operation to a given type annotation.
+    This base class trivially calls the dump/load functions if the type matches the most simple cases.
+    """
+
+    def match(self) -> bool:
+        return self.type_to_resolve in [
+            pl.DataFrame,
+            pl.LazyFrame,
+            Any,
+            type(None),
+            None,
+        ]
+
+    @property
+    def is_root_type(self) -> bool:
+        return True
+
+
+class OptionalTypeRouter(TypeRouter):
+    """
+    Handles Optional type annotations with a noop if the object is None or missing in storage.
+    """
+
+    def match(self) -> bool:
+        return get_origin(self.type_to_resolve) == Union and type(None) in get_args(self.type_to_resolve)
+
+    @property
+    def is_root_type(self) -> bool:
+        return False
+
+    def parent_type(self) -> Any:
+        return get_args(self.type_to_resolve)[0]
+
+    def dump(self, obj: T, path: "UPath", dump_fn: F_D) -> None:
+        if obj is None:
+            self.context.log.warning(f"Skipping saving optional output at {path} as it is None")
+            return
+        else:
+            router = resolve_type_router(self.context, self.parent_type)
+            router.dump(obj, path, dump_fn)
+
+    def load(self, path: "UPath", load_fn: F_L) -> T:
+        if not path.exists():
+            self.context.log.warning(f"Skipping loading optional input at {path} as it is missing")
+            return None
+        else:
+            router = resolve_type_router(self.context, self.parent_type)
+            return router.load(path, load_fn)
+
+
+class DictTypeRouter(TypeRouter):
+    """
+    Handles loading partitions as dictionaries of DataFrames.
+    """
+
+    def match(self) -> bool:
+        return get_origin(self.type_to_resolve) in (dict, Dict, Mapping)
+
+    @property
+    def is_root_type(self) -> bool:
+        return False
+
+    @property
+    def parent_type(self) -> Any:
+        return get_args(self.type_to_resolve)[1]
+
+
+class PanderaTypeRouter(TypeRouter):
+    """
+    Handles loading Pandera DataFrames.
+    """
+
+    def match(self) -> bool:
+        try:
+            import pandera
+            import pandera.typing.polars
+
+            return (
+                    get_origin(self.type_to_resolve) == pandera.typing.polars.LazyFrame
+                    and issubclass(get_args(self.type_to_resolve)[0], pandera.DataFrameModel)
+            )
+        except ImportError:
+            return False
+
+    @property
+    def is_root_type(self) -> bool:
+        return True
+
+    def dump(self, obj: T, path: "UPath", dump_fn: F_D) -> None:
+        if isinstance()
+        router = resolve_type_router(self.context, self.parent_type)
+        router.dump(obj, path, dump_fn)
+
+    def load(self, path: "UPath", load_fn: F_L) -> T:
+        if not path.exists():
+            self.context.log.warning(f"Skipping loading optional input at {path} as it is missing")
+            return None
+        else:
+            router = resolve_type_router(self.context, self.parent_type)
+            return router.load(path, load_fn)
+
+
+TYPE_ROUTERS = [
+    TypeRouter,
+    OptionalTypeRouter,
+    DictTypeRouter,
 ]
 
-POLARS_LAZY_FRAME_ANNOTATIONS = [
-    pl.LazyFrame,
-    Optional[pl.LazyFrame],
-    # multiple partitions
-    Dict[str, pl.LazyFrame],
-    Mapping[str, pl.LazyFrame],
-    LazyFramePartitions,
-    # LazyFrame + metadata
-    Tuple[pl.LazyFrame, StorageMetadata],
-    Optional[Tuple[pl.LazyFrame, StorageMetadata]],
-    # multiple partitions + metadata
-    LazyFramePartitionsWithMetadata,
-]
+if PANDERA_INSTALLED:
+    TYPE_ROUTERS.append(PanderaTypeRo`uter)
 
 
-if sys.version_info >= (3, 9):
-    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, pl.DataFrame])
-    POLARS_EAGER_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.DataFrame]])
+def resolve_type_router(context: Union[InputContext, OutputContext], type_to_resolve: Any) -> TypeRouter:
+    """
+    Finds the correct TypeRouter for the given context.
+    """
 
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, pl.LazyFrame])
-    POLARS_LAZY_FRAME_ANNOTATIONS.append(dict[str, Optional[pl.LazyFrame]])
+    # try each router class in order of increasing complexity
+    for router_class in [
+        TypeRouter,
+        OptionalTypeRouter,
+        ...
+    ]:
+        router = router_class(context, type_to_resolve)
 
-
-def annotation_is_typing_optional(annotation) -> bool:
-    return get_origin(annotation) == Union and type(None) in get_args(annotation)
-
-
-def annotation_is_tuple(annotation) -> bool:
-    return get_origin(annotation) in (Tuple, tuple)
-
-
-def annotation_for_multiple_partitions(annotation) -> bool:
-    if not annotation_is_typing_optional(annotation):
-        return annotation_is_tuple(annotation) and get_origin(annotation) in (dict, Dict, Mapping)
-    else:
-        inner_annotation = get_args(annotation)[0]
-        return annotation_is_tuple(inner_annotation) and get_origin(inner_annotation) in (
-            dict,
-            Dict,
-            Mapping,
-        )
-
-
-def annotation_is_tuple_with_metadata(annotation) -> bool:
-    if annotation_is_typing_optional(annotation):
-        annotation = get_args(annotation)[0]
-
-    return annotation_is_tuple(annotation) and get_origin(get_args(annotation)[1]) in [
-        dict,
-        Dict,
-        Mapping,
-    ]
-
-
-def annotation_for_storage_metadata(annotation) -> bool:
-    # first unwrap the Optional type
-    if annotation_is_typing_optional(annotation):
-        annotation = get_args(annotation)[0]
-
-    if not annotation_for_multiple_partitions(annotation):
-        return annotation_is_tuple_with_metadata(annotation)
-    else:
-        # unwrap the partitions
-        annotation = get_args(annotation)[1]
-        return annotation_is_tuple_with_metadata(annotation)
+        if not router.match():
+            continue
+        else:
+            if router.is_root_type:
+                return router
+            else:
+                # recursively resolve the parent type
+                return resolve_type_router(context, router.parent_type)
 
 
 def _process_env_vars(config: Mapping[str, Any]) -> Dict[str, Any]:
@@ -187,7 +292,6 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         context: OutputContext,
         df: pl.DataFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,
     ): ...
 
     @abstractmethod
@@ -196,24 +300,23 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
         context: OutputContext,
         df: pl.LazyFrame,
         path: "UPath",
-        metadata: Optional[StorageMetadata] = None,
     ): ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Literal[None, False]
+        self, path: "UPath", context: InputContext,
     ) -> pl.LazyFrame: ...
 
     @overload
     @abstractmethod
     def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Literal[True]
+        self, path: "UPath", context: InputContext,
     ) -> LazyFrameWithMetadata: ...
 
     @abstractmethod
     def scan_df_from_path(
-        self, path: "UPath", context: InputContext, with_metadata: Optional[bool] = False
+        self, path: "UPath", context: InputContext,
     ) -> Union[pl.LazyFrame, LazyFrameWithMetadata]: ...
 
     def dump_to_path(
@@ -334,9 +437,3 @@ class BasePolarsUPathIOManager(ConfigurableIOManager, UPathIOManager):
                 if df is not None
                 else {"missing": MetadataValue.bool(True)}
             )
-
-    def get_missing_optional_input_log_message(self, context: InputContext, path: "UPath") -> str:
-        return f"Optional input {context.name} at {path} doesn't exist in the filesystem and won't be loaded!"
-
-    def get_optional_output_none_log_message(self, context: OutputContext, path: "UPath") -> str:
-        return f"The object for the optional output {context.name} is None, so it won't be saved to {path}!"
