@@ -1,5 +1,4 @@
 import {gql} from '@apollo/client';
-import {useMemo} from 'react';
 
 import {
   PartitionMatrixSolidHandleFragment,
@@ -193,38 +192,24 @@ export const useMatrixData = ({
   partitions,
   options,
 }: MatrixDataInputs) => {
-  const nodes = useMemo(() => {
-    if (!solidHandles) {
-      return [];
-    }
-    return explodeCompositesInHandleGraph(solidHandles).map((h) => h.solid);
-  }, [solidHandles]);
-
-  const solidsFiltered = useMemo(() => {
-    // Filter the pipeline's structure and build the flat gantt layout for the left hand side
-    return filterByQuery(nodes, stepQuery);
-  }, [nodes, stepQuery]);
-
-  const layout = useMemo(() => {
-    return buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
-  }, [solidsFiltered.all]);
-
-  const partitionsByName = useMemo(() => {
-    const partitionsByName: Record<string, PartitionRuns> = {};
-    partitions.forEach((p) => {
-      // sort partition runs in place
-      p.runs.sort(byStartTimeAsc);
-      partitionsByName[p.name] = p;
-    });
-    return partitionsByName;
-  }, [partitions]);
-
   return useThrottledMemo(
     () => {
+      const nodes = solidHandles
+        ? explodeCompositesInHandleGraph(solidHandles).map((h) => h.solid)
+        : [];
+      // Filter the pipeline's structure and build the flat gantt layout for the left hand side
+      const solidsFiltered = filterByQuery(nodes, stepQuery);
+      const layout = buildLayout({nodes: solidsFiltered.all, mode: GanttChartMode.FLAT});
+      const partitionsByName: Record<string, PartitionRuns> = {};
+      partitions.forEach((p) => {
+        // sort partition runs in place
+        p.runs.sort(byStartTimeAsc);
+        partitionsByName[p.name] = p;
+      });
       // Build the matrix of step + partition squares - presorted to match the gantt layout
       return buildMatrixData(layout, partitionNames, partitionsByName, options);
     },
-    [layout, partitionNames, partitionsByName, options],
+    [solidHandles, stepQuery, partitions, partitionNames, options],
     1000,
   );
 };
