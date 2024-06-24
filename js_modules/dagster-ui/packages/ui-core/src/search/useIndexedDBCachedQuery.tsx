@@ -102,7 +102,12 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         version,
         bypassCache,
       });
-      if (data && (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))) {
+      if (
+        data &&
+        // Work around a weird jest issue where it returns an empty object if no mocks are found...
+        Object.keys(data).length &&
+        (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))
+      ) {
         setData(data);
       }
       setError(error);
