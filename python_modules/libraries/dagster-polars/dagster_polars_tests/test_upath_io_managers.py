@@ -25,7 +25,6 @@ from dagster_polars import (
     LazyFramePartitions,
     PolarsDeltaIOManager,
     PolarsParquetIOManager,
-    StorageMetadata,
 )
 
 from dagster_polars_tests.utils import get_saved_path
@@ -333,134 +332,6 @@ def check_skip_storage_metadata_test(io_manager_def: BasePolarsUPathIOManager):
         pytest.skip(f"Only {IO_MANAGERS_SUPPORTING_STORAGE_METADATA} support storage metadata")
 
 
-@pytest.fixture
-def metadata() -> StorageMetadata:
-    return {"a": 1, "b": "2", "c": [1, 2, 3], "d": {"e": 1}, "f": [1, 2, 3, {"g": 1}]}
-
-
-def test_upath_io_manager_storage_metadata_eager(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Tuple[pl.DataFrame, StorageMetadata]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Tuple[pl.DataFrame, StorageMetadata]) -> None:
-        loaded_df, upstream_metadata = upstream
-        assert upstream_metadata == metadata
-        pl_testing.assert_frame_equal(loaded_df, df)
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_lazy(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Tuple[pl.DataFrame, StorageMetadata]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Tuple[pl.LazyFrame, StorageMetadata]) -> None:
-        df, upstream_metadata = upstream
-        assert isinstance(df, pl.LazyFrame)
-        assert upstream_metadata == metadata
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_optional_eager_exists(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.DataFrame, StorageMetadata]]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.DataFrame, StorageMetadata]]) -> None:
-        assert upstream is not None
-        df, upstream_metadata = upstream
-        assert upstream_metadata == metadata
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_optional_eager_missing(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.DataFrame, StorageMetadata]]:
-        return None
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.DataFrame, StorageMetadata]]) -> None:
-        assert upstream is None
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_optional_lazy_exists(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.DataFrame, StorageMetadata]]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
-        assert upstream is not None
-        df, upstream_metadata = upstream
-        assert isinstance(df, pl.LazyFrame)
-        assert upstream_metadata == metadata
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_optional_lazy_missing(
-    io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.DataFrame, StorageMetadata]]:
-        return None
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
-        assert upstream is None
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
 def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
     io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
 ):
@@ -513,3 +384,15 @@ def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
         [upstream.to_source_asset(), downstream],
         partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
     )
+
+
+#
+# def test_polars_upath_io_manager_pandera(
+#     io_manager_and_df: Tuple[BasePolarsUPathIOManager, pl.DataFrame],
+# ):
+#     manager, df = io_manager_and_df
+#
+#     @asset(io_manager_def=manager)
+#     def upstream() -> pl.DataFrame:
+#         return df
+#

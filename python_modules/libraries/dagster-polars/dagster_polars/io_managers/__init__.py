@@ -12,8 +12,11 @@ try:
     from dagster_polars.io_managers.delta import DeltaWriteMode, PolarsDeltaIOManager  # noqa
 
     __all__.extend(["DeltaWriteMode", "PolarsDeltaIOManager"])
-except ImportError:
-    pass
+except ImportError as e:
+    if "deltalake" in str(e):
+        pass
+    else:
+        raise e
 
 
 try:
@@ -24,5 +27,8 @@ try:
     )
 
     __all__.extend(["PolarsBigQueryIOManager", "PolarsBigQueryTypeHandler"])
-except ImportError:
-    pass
+except ImportError as e:
+    if "google-cloud-bigquery" in str(e):
+        pass
+    else:
+        raise e
