@@ -129,6 +129,7 @@ export function useAssetCatalogFiltering(
   const isFiltered: boolean = !!(
     filters.changedInBranch?.length ||
     filters.computeKindTags?.length ||
+    filters.storageKindTags?.length ||
     filters.groups?.length ||
     filters.owners?.length ||
     filters.repos?.length
