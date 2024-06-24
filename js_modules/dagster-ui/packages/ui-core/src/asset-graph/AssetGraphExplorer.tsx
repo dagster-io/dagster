@@ -40,7 +40,12 @@ import {assetKeyTokensInRange} from './assetKeyTokensInRange';
 import {AssetGraphLayout, GroupLayout} from './layout';
 import {AssetGraphExplorerSidebar} from './sidebar/Sidebar';
 import {AssetNodeForGraphQueryFragment} from './types/useAssetGraphData.types';
-import {AssetGraphFetchScope, AssetGraphQueryItem, useAssetGraphData} from './useAssetGraphData';
+import {
+  AssetGraphFetchScope,
+  AssetGraphQueryItem,
+  useAssetGraphData,
+  useFullAssetGraphData,
+} from './useAssetGraphData';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
@@ -87,11 +92,14 @@ export const MINIMAL_SCALE = 0.6;
 export const GROUPS_ONLY_SCALE = 0.15;
 
 export const AssetGraphExplorer = (props: Props) => {
-  const {fetchResult, assetGraphData, fullAssetGraphData, graphQueryItems, allAssetKeys} =
-    useAssetGraphData(props.explorerPath.opsQuery, {
+  const fullAssetGraphData = useFullAssetGraphData(props.fetchOptions);
+  const {fetchResult, assetGraphData, graphQueryItems, allAssetKeys} = useAssetGraphData(
+    props.explorerPath.opsQuery,
+    {
       ...props.fetchOptions,
       computeKinds: props.assetFilterState?.filters.computeKindTags,
-    });
+    },
+  );
 
   const {explorerPath, onChangeExplorerPath} = props;
 
@@ -100,7 +108,7 @@ export const AssetGraphExplorer = (props: Props) => {
       () => (fullAssetGraphData ? Object.values(fullAssetGraphData.nodes) : []),
       [fullAssetGraphData],
     ),
-    loading: fetchResult.loading ?? true,
+    loading: fetchResult.loading,
     isGlobalGraph: !!props.isGlobalGraph,
     assetFilterState: props.assetFilterState,
     explorerPath: explorerPath.opsQuery,

@@ -5,7 +5,7 @@ import * as React from 'react';
 import {ERROR_CODES_TO_SURFACE, errorCodeToMessage} from '../app/HTTPErrorCodes';
 
 interface ILoadingProps<TData> {
-  queryResult: QueryResult<TData, any>;
+  queryResult: Pick<QueryResult<TData, any>, 'error' | 'data' | 'loading'>;
   children: (data: TData) => React.ReactNode;
   renderError?: (error: ApolloError) => React.ReactNode;
   allowStaleData?: boolean;
