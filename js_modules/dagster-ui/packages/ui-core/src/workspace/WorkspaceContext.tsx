@@ -181,7 +181,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         },
         bypassCache: true,
       });
-      const entry = locationData?.workspaceLocationEntryOrError;
+      const entry = locationData.data?.workspaceLocationEntryOrError;
       setLocationsData((locationsData) =>
         Object.assign({}, locationsData, {
           [name]: entry,
@@ -293,7 +293,10 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
 
   const refetch = useCallback(async () => {
     return await Promise.all(
-      Object.values(locationsRef.current).map((location) => refetchLocation(location.name)),
+      Object.values(locationsRef.current).map(async (location) => {
+        const result = await refetchLocation(location.name);
+        return result.data;
+      }),
     );
   }, [locationsRef, refetchLocation]);
 

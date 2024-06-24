@@ -1,6 +1,6 @@
 import {useApolloClient} from '@apollo/client';
 import {MockedProvider, MockedResponse} from '@apollo/client/testing';
-import {renderHook} from '@testing-library/react-hooks';
+import {act, renderHook} from '@testing-library/react-hooks';
 import {cache as _cache} from 'idb-lru-cache';
 import {ReactNode, useMemo} from 'react';
 
@@ -47,7 +47,7 @@ jest.mock('@apollo/client', () => {
   };
 });
 
-const mock = () =>
+const mock = ({delay}: {delay: number} = {delay: 10}) =>
   buildQueryMock<AssetCatalogTableQuery, AssetCatalogTableQueryVariables>({
     query: ASSET_CATALOG_TABLE_QUERY,
     variableMatcher: () => true,
@@ -56,7 +56,7 @@ const mock = () =>
         nodes: AssetCatalogTableMockAssets,
       }),
     },
-    delay: 10,
+    delay,
   });
 
 describe('useIndexedDBCachedQuery', () => {
@@ -80,12 +80,17 @@ describe('useIndexedDBCachedQuery', () => {
           version: 1,
         }),
       {
-        wrapper: ({children}: {children: ReactNode}) => <Wrapper mocks={[]}>{children}</Wrapper>,
+        wrapper: ({children}: {children: ReactNode}) => (
+          <Wrapper mocks={[mock({delay: Infinity})]}>{children}</Wrapper>
+        ),
       },
     );
-    expect(result.current.data).toBeNull();
+    expect(result.current.data).toBeUndefined();
 
-    await waitForNextUpdate();
+    await act(async () => {
+      await waitForNextUpdate();
+    });
+
     expect(result.current.data).toBe('test');
   });
 
@@ -104,9 +109,9 @@ describe('useIndexedDBCachedQuery', () => {
         wrapper: ({children}: {children: ReactNode}) => <Wrapper mocks={[]}>{children}</Wrapper>,
       },
     );
-    expect(result.current.data).toBeNull();
+    expect(result.current.data).toBeUndefined();
     jest.runAllTimers();
-    expect(result.current.data).toBeNull();
+    expect(result.current.data).toBeUndefined();
   });
 
   it('Ensures that concurrent fetch requests consolidate correctly, not triggering multiple network requests for the same key', async () => {
