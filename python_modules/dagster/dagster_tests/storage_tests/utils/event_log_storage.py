@@ -1264,6 +1264,8 @@ class TestEventLogStorage:
     def test_asset_materialization_fetch(self, storage, test_run_id):
         asset_key = AssetKey(["path", "to", "asset_one"])
 
+        other_asset_key = AssetKey(["path", "to", "asset_two"])
+
         @op
         def materialize(_):
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 1}, partition="1")
@@ -1271,6 +1273,9 @@ class TestEventLogStorage:
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 3}, partition="3")
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 4}, partition="4")
             yield AssetMaterialization(asset_key=asset_key, metadata={"count": 5}, partition="5")
+            yield AssetMaterialization(
+                asset_key=other_asset_key, metadata={"count": 1}, partition="z"
+            )
             yield Output(1)
 
         def _ops():
@@ -1309,6 +1314,11 @@ class TestEventLogStorage:
             timestamp_3 = result.records[2].timestamp
             storage_id_1 = result.records[0].storage_id
             timestamp_1 = result.records[0].timestamp
+
+            other_key_result = storage.fetch_materializations(
+                other_asset_key, limit=1, ascending=True
+            )
+            other_key_storage_id = other_key_result.records[0].storage_id
 
             # filter by after storage id
             result = storage.fetch_materializations(
@@ -1366,7 +1376,7 @@ class TestEventLogStorage:
             result = storage.fetch_materializations(
                 AssetRecordsFilter(
                     asset_key=asset_key,
-                    storage_ids=[storage_id_1, storage_id_3],
+                    storage_ids=[storage_id_1, storage_id_3, other_key_storage_id],
                 ),
                 limit=100,
             )
