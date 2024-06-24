@@ -154,15 +154,15 @@ def _attach_resources_to_jobs_and_instigator_jobs(
             schedule.job
             for schedule in schedules
             if isinstance(schedule, ScheduleDefinition)
-            and schedule.target.has_executable_def
+            and schedule.target.has_job_def
             and isinstance(schedule.job, (JobDefinition, UnresolvedAssetJobDefinition))
         ],
         *[
-            target.executable_def
+            target.job_def
             for sensor in sensors
             for target in sensor.targets
-            if target.has_executable_def
-            and isinstance(target.executable_def, (JobDefinition, UnresolvedAssetJobDefinition))
+            if target.has_job_def
+            and isinstance(target.job_def, (JobDefinition, UnresolvedAssetJobDefinition))
         ],
     ]
     # Dedupe
@@ -209,7 +209,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
             schedule.with_updated_job(unsatisfied_job_to_resource_bound_job[id(schedule.job)])
             if (
                 isinstance(schedule, ScheduleDefinition)
-                and schedule.target.has_executable_def
+                and schedule.target.has_job_def
                 and schedule.job in unsatisfied_jobs
             )
             else schedule
@@ -228,7 +228,7 @@ def _attach_resources_to_jobs_and_instigator_jobs(
                     for job in sensor.jobs
                 ]
             )
-            if any(target.has_executable_def for target in sensor.targets)
+            if any(target.has_job_def for target in sensor.targets)
             and any(job in unsatisfied_jobs for job in sensor.jobs)
             else sensor
         )
