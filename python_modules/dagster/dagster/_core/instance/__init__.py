@@ -159,6 +159,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.daemon_cursor import DaemonCursorStorage
     from dagster._core.storage.event_log import EventLogStorage
     from dagster._core.storage.event_log.base import (
+        AssetCheckSummaryRecord,
         AssetRecord,
         EventLogConnection,
         EventLogRecord,
@@ -2111,6 +2112,24 @@ class DagsterInstance(DynamicPartitionsStore):
             EventRecordsResult: Object containing a list of event log records and a cursor string
         """
         return self._event_storage.fetch_observations(records_filter, limit, cursor, ascending)
+
+    @experimental
+    @public
+    @traced
+    def get_asset_check_summary_records(
+        self, asset_check_keys: Sequence["AssetCheckKey"]
+    ) -> Mapping["AssetCheckKey", "AssetCheckSummaryRecord"]:
+        """For a given set of asset check keys, return an :py:class:`AssetCheckSummaryRecord` for
+        each.
+
+        Args:
+            asset_check_keys (Sequence[AssetCheckKey]): The asset check keys to retrieve records for.
+
+        Returns:
+            Mapping[AssetCheckKey, AssetCheckSummaryRecord]: A mapping of asset check keys to
+                :py:class:`AssetCheckSummaryRecord` objects.
+        """
+        return self._event_storage.get_asset_check_summary_records(asset_check_keys)
 
     @public
     @traced
