@@ -140,7 +140,13 @@ FilePathMappingFn = Callable[[Path], str]
 
 class AnchorBasedFilePathMappingFn(NamedTuple):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
-    using a specific anchor file as a reference point. All other paths are calculated relative to this anchor file.
+    using a specific file "anchor" as a reference point. All other paths are calculated relative to this anchor file.
+
+    For example, if the chosen anchor file is `/Users/dagster/Documents/python_modules/my_module/my-module/__init__.py`
+    locally, and `python_modules/my_module/my-module/__init__.py` in a source control repository, in order to map a
+    different file `/Users/dagster/Documents/python_modules/my_module/my-module/my_asset.py` to the repository path,
+    the mapping function will position the file in the repository relative to the anchor file's position in the repository,
+    resulting in `python_modules/my_module/my-module/my_asset.py`.
 
     Args:
         local_file_anchor (Path): The path to a local file that is present in the repository.
