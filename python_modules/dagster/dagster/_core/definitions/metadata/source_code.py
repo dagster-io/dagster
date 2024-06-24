@@ -1,8 +1,9 @@
 import abc
 import inspect
 import os
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
@@ -150,7 +151,8 @@ class FilePathMapping(abc.ABC):
     def convert_to_source_control_path(self, local_path: Path) -> str: ...
 
 
-class AnchorBasedFilePathMapping(NamedTuple):
+@dataclass(frozen=True)
+class AnchorBasedFilePathMapping(FilePathMapping):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
     using a specific file "anchor" as a reference point. All other paths are calculated relative to this anchor file.
 
