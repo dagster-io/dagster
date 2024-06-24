@@ -234,3 +234,6 @@ class NodeDefinition(NamedConfigurableDefinition):
     def resolve_output_to_destinations(
         self, output_name: str, handle: Optional["NodeHandle"]
     ) -> Sequence["NodeInputHandle"]: ...
+
+    @abstractmethod
+    def get_op_handles(self, parent: "NodeHandle") -> AbstractSet["NodeHandle"]: ...

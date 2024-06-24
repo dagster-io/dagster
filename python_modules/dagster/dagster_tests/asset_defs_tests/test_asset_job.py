@@ -902,12 +902,13 @@ def test_all_assets_job():
         return 2
 
     job = create_test_asset_job([a1, a2])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
-    assert node_handle_deps_by_asset[AssetKey("a1")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("a1")) == {
         NodeHandle("a1", parent=None),
     }
-    assert node_handle_deps_by_asset[AssetKey("a2")] == {NodeHandle("a2", parent=None)}
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("a2")) == {
+        NodeHandle("a2", parent=None)
+    }
 
 
 def test_basic_graph():
@@ -941,10 +942,9 @@ def test_basic_graph():
     )
 
     job = create_test_asset_job([complex_asset])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
-    assert node_handle_deps_by_asset[AssetKey("out_asset1")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("out_asset1")) == {
         NodeHandle("get_string", parent=thing_handle),
         NodeHandle("get_string_2", parent=thing_handle),
         NodeHandle("combine_strings_and_split", parent=thing_handle),
@@ -978,15 +978,14 @@ def test_hanging_op_graph():
         node_def=thing,
     )
     job = create_test_asset_job([complex_asset])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
-
     thing_handle = NodeHandle(name="thing", parent=None)
-    assert node_handle_deps_by_asset[AssetKey("out_asset1")] == {
+
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("out_asset1")) == {
         NodeHandle("get_string", parent=thing_handle),
         NodeHandle("get_string_2", parent=thing_handle),
         NodeHandle("combine_strings", parent=thing_handle),
     }
-    assert node_handle_deps_by_asset[AssetKey("out_asset2")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("out_asset2")) == {
         NodeHandle("hanging_op", parent=thing_handle),
     }
 
@@ -1022,10 +1021,8 @@ def test_nested_graph():
     )
 
     job = create_test_asset_job([thing_asset])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
-
     thing_handle = NodeHandle(name="thing", parent=None)
-    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing")) == {
         NodeHandle("get_inside_string", parent=NodeHandle("inside_thing", parent=thing_handle)),
         NodeHandle("get_string", parent=thing_handle),
         NodeHandle("combine_strings_and_split", parent=thing_handle),
@@ -1064,13 +1061,12 @@ def test_asset_in_nested_graph():
     )
 
     job = create_test_asset_job([thing_asset])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     thing_handle = NodeHandle(name="thing", parent=None)
-    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing")) == {
         NodeHandle("get_inside_string", parent=NodeHandle("inside_thing", parent=thing_handle)),
     }
-    assert node_handle_deps_by_asset[AssetKey("thing_2")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing_2")) == {
         NodeHandle("get_string", parent=NodeHandle("inside_thing", parent=thing_handle)),
         NodeHandle("get_transformed_string", parent=thing_handle),
     }
@@ -1127,11 +1123,10 @@ def test_twice_nested_graph():
     )
 
     job = create_test_asset_job([foo_asset, thing_asset])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
 
     outer_thing_handle = NodeHandle("outer_thing", parent=None)
     middle_thing_handle = NodeHandle("middle_thing", parent=outer_thing_handle)
-    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing")) == {
         NodeHandle(
             "get_inside_string",
             parent=NodeHandle(
@@ -1140,11 +1135,11 @@ def test_twice_nested_graph():
             ),
         )
     }
-    assert node_handle_deps_by_asset[AssetKey("thing_2")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing_2")) == {
         NodeHandle("get_string", parent=middle_thing_handle),
         NodeHandle("transformer", parent=outer_thing_handle),
     }
-    assert node_handle_deps_by_asset[AssetKey("foo_asset")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("foo_asset")) == {
         NodeHandle("foo_asset", parent=None)
     }
 
@@ -1187,19 +1182,18 @@ def test_internal_asset_deps_assets():
         yield Output(2, "my_other_out_name")
 
     job = create_test_asset_job([thing_asset, multi_asset_with_internal_deps])
-    node_handle_deps_by_asset = job.asset_layer.dependency_node_handles_by_asset_key
-    assert node_handle_deps_by_asset[AssetKey("thing")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing")) == {
         NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None)),
         NodeHandle(name="upstream_op", parent=NodeHandle(name="thing", parent=None)),
     }
-    assert node_handle_deps_by_asset[AssetKey("thing_2")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing_2")) == {
         NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None))
     }
 
-    assert node_handle_deps_by_asset[AssetKey("my_out_name")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("my_out_name")) == {
         NodeHandle(name="multi_asset_with_internal_deps", parent=None)
     }
-    assert node_handle_deps_by_asset[AssetKey("my_other_out_name")] == {
+    assert job.asset_layer.upstream_dep_op_handles(AssetKey("my_other_out_name")) == {
         NodeHandle(name="multi_asset_with_internal_deps", parent=None)
     }
 

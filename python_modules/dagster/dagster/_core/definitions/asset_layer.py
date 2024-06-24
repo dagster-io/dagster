@@ -32,10 +32,6 @@ class AssetLayer(NamedTuple):
     asset_keys_by_node_input_handle: Mapping[NodeInputHandle, AssetKey]
     asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, AssetKey]
     check_key_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckKey]
-    dependency_node_handles_by_asset_key: Mapping[AssetKey, Set[NodeHandle]]
-    # Used to store the asset key dependencies of op node handles within graph backed assets
-    # See AssetLayer.downstream_dep_assets for more information
-    dep_asset_keys_by_node_output_handle: Mapping[NodeOutputHandle, Set[AssetKey]]
     node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle]
     check_names_by_asset_key_by_node_handle: Mapping[
         NodeHandle, Mapping[AssetKey, AbstractSet[str]]
@@ -56,27 +52,9 @@ class AssetLayer(NamedTuple):
             assets_defs_by_outer_node_handle (Mapping[NodeHandle, AssetsDefinition]): A mapping from
                 a NodeHandle pointing to the node in the graph where the AssetsDefinition ended up.
         """
-        from .assets import asset_or_check_key_to_dep_node_handles
-
         asset_key_by_input: Dict[NodeInputHandle, AssetKey] = {}
         asset_keys_by_node_output_handle: Dict[NodeOutputHandle, AssetKey] = {}
         check_key_by_output: Dict[NodeOutputHandle, AssetCheckKey] = {}
-
-        (
-            dep_node_handles_by_asset_or_check_key,
-            dep_node_output_handles_by_asset_or_check_key,
-        ) = asset_or_check_key_to_dep_node_handles(graph_def, assets_defs_by_outer_node_handle)
-
-        dep_node_handles_by_asset_key = {
-            key: handles
-            for key, handles in dep_node_handles_by_asset_or_check_key.items()
-            if isinstance(key, AssetKey)
-        }
-        dep_node_output_handles_by_asset_key = {
-            key: handles
-            for key, handles in dep_node_output_handles_by_asset_or_check_key.items()
-            if isinstance(key, AssetKey)
-        }
 
         node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle] = {}
         check_names_by_asset_key_by_node_handle: Dict[NodeHandle, Dict[AssetKey, Set[str]]] = {}
@@ -132,35 +110,20 @@ class AssetLayer(NamedTuple):
 
                 assets_defs_by_check_key.update({k: assets_def for k in assets_def.check_keys})
 
-        dep_asset_keys_by_node_output_handle = defaultdict(set)
-        for asset_key, node_output_handles in dep_node_output_handles_by_asset_key.items():
-            for node_output_handle in node_output_handles:
-                dep_asset_keys_by_node_output_handle[node_output_handle].add(asset_key)
-
-        assets_defs_by_node_handle: Dict[NodeHandle, "AssetsDefinition"] = {
-            # nodes for assets
-            **{
-                node_handle: asset_graph.get(asset_key).assets_def
-                for asset_key, node_handles in dep_node_handles_by_asset_key.items()
-                for node_handle in node_handles
-            },
-            # nodes for asset checks. Required for AssetsDefs that have selected checks
-            # but not assets
-            **{
-                node_handle: assets_def
-                for node_handle, assets_def in assets_defs_by_outer_node_handle.items()
-                if assets_def.check_keys
-            },
-        }
+        assets_defs_by_op_handle: Dict[NodeHandle, "AssetsDefinition"] = {}
+        for outer_node_handle, assets_def in assets_defs_by_outer_node_handle.items():
+            if assets_def.computation is not None:
+                for op_handle in assets_def.computation.node_def.get_op_handles(
+                    parent=outer_node_handle
+                ):
+                    assets_defs_by_op_handle[op_handle] = assets_def
 
         return AssetLayer(
             asset_graph=asset_graph,
             asset_keys_by_node_input_handle=asset_key_by_input,
             asset_keys_by_node_output_handle=asset_keys_by_node_output_handle,
             check_key_by_node_output_handle=check_key_by_output,
-            assets_defs_by_node_handle=assets_defs_by_node_handle,
-            dependency_node_handles_by_asset_key=dep_node_handles_by_asset_key,
-            dep_asset_keys_by_node_output_handle=dep_asset_keys_by_node_output_handle,
+            assets_defs_by_node_handle=assets_defs_by_op_handle,
             node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
             check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
         )
@@ -275,6 +238,15 @@ class AssetLayer(NamedTuple):
         Calling downstream_dep_assets with node handle add_one will return:
         - {AssetKey("asset_two")} if output_name="result"
         """
-        return self.dep_asset_keys_by_node_output_handle.get(
-            NodeOutputHandle(node_handle, output_name), set()
-        )
+        assets_def = self.assets_defs_by_node_handle[node_handle]
+        return {
+            key
+            for key in assets_def.asset_or_check_keys_by_dep_op_output_handle[
+                NodeOutputHandle(node_handle, output_name)
+            ]
+            if isinstance(key, AssetKey)
+        }
+
+    def upstream_dep_op_handles(self, asset_key: AssetKey) -> AbstractSet[NodeHandle]:
+        assets_def = self.asset_graph.get(asset_key).assets_def
+        return assets_def.dep_op_handles_by_asset_or_check_key[asset_key]

@@ -914,6 +914,13 @@ class GraphDefinition(NodeDefinition):
 
         return all_destinations
 
+    def get_op_handles(self, parent: NodeHandle) -> AbstractSet[NodeHandle]:
+        return {
+            op_handle
+            for node in self.nodes
+            for op_handle in node.definition.get_op_handles(NodeHandle(node.name, parent=parent))
+        }
+
 
 class SubselectedGraphDefinition(GraphDefinition):
     """Defines a subselected graph.

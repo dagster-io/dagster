@@ -1734,7 +1734,7 @@ def external_asset_nodes_from_defs(
                     break
                 root_node_handle = root_node_handle.parent
             node_def = job_def.graph.get_node(output_handle.node_handle).definition
-            node_handles = job_def.asset_layer.dependency_node_handles_by_asset_key.get(key, [])
+            node_handles = job_def.asset_layer.upstream_dep_op_handles(key)
 
             # graph_name is only set for assets that are produced by nested ops.
             graph_name = (
