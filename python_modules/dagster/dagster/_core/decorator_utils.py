@@ -200,6 +200,10 @@ def _wrap_with_pre_call_fn(
     def wrapped_with_pre_call_fn(*args, **kwargs):
         if condition is None or condition(*args, **kwargs):
             pre_call_fn()
+        # if we targeted a base class with no __init__
+        # just pass through "self"
+        if fn is object.__init__:
+            return fn(args[0])
         return fn(*args, **kwargs)
 
     return cast(T_Callable, wrapped_with_pre_call_fn)

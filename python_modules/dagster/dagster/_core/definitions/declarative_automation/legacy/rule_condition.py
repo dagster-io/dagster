@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional
 
 from dagster._annotations import experimental
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
 
 @experimental
 @whitelist_for_serdes
+@dagster_model
 class RuleCondition(AssetCondition):
     """This class represents the condition that a particular AutoMaterializeRule is satisfied."""
 

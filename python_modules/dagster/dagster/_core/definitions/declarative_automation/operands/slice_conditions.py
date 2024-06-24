@@ -4,6 +4,7 @@ from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
+from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
@@ -28,6 +29,7 @@ class SliceAutomationCondition(AutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class MissingAutomationCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
@@ -40,6 +42,7 @@ class MissingAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class InProgressAutomationCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
@@ -50,6 +53,7 @@ class InProgressAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class FailedAutomationCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
@@ -60,6 +64,7 @@ class FailedAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class WillBeRequestedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
@@ -89,6 +94,7 @@ class WillBeRequestedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class NewlyRequestedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
@@ -101,6 +107,7 @@ class NewlyRequestedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class NewlyUpdatedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
@@ -117,6 +124,7 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class CronTickPassedCondition(SliceAutomationCondition):
     cron_schedule: str
     cron_timezone: str
@@ -147,6 +155,7 @@ class CronTickPassedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@dagster_model
 class InLatestTimeWindowCondition(SliceAutomationCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
 

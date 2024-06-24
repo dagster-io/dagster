@@ -1,5 +1,6 @@
 from typing import Sequence
 
+from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
@@ -7,6 +8,7 @@ from ..automation_context import AutomationContext
 
 
 @whitelist_for_serdes
+@dagster_model
 class SinceCondition(AutomationCondition):
     trigger_condition: AutomationCondition
     reset_condition: AutomationCondition

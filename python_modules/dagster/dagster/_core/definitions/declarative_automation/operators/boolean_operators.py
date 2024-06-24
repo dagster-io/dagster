@@ -1,6 +1,7 @@
 from typing import List, Sequence
 
 from dagster._annotations import experimental
+from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
@@ -9,6 +10,7 @@ from ..automation_context import AutomationContext
 
 @experimental
 @whitelist_for_serdes
+@dagster_model
 class AndAssetCondition(AutomationCondition):
     """This class represents the condition that all of its children evaluate to true."""
 
@@ -37,6 +39,7 @@ class AndAssetCondition(AutomationCondition):
 
 @experimental
 @whitelist_for_serdes
+@dagster_model
 class OrAssetCondition(AutomationCondition):
     """This class represents the condition that any of its children evaluate to true."""
 
@@ -66,6 +69,7 @@ class OrAssetCondition(AutomationCondition):
 
 @experimental
 @whitelist_for_serdes
+@dagster_model
 class NotAssetCondition(AutomationCondition):
     """This class represents the condition that none of its children evaluate to true."""
 

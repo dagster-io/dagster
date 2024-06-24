@@ -4,12 +4,14 @@ from typing import AbstractSet, Optional
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._model import copy, dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
 
 
+@dagster_model
 class DepConditionWrapperCondition(AutomationCondition):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
@@ -40,6 +42,7 @@ class DepConditionWrapperCondition(AutomationCondition):
         )
 
 
+@dagster_model
 class DepCondition(AutomationCondition):
     operand: AutomationCondition
     allow_selection: Optional[AssetSelection] = None
@@ -65,7 +68,7 @@ class DepCondition(AutomationCondition):
         allow_selection = (
             selection if self.allow_selection is None else selection | self.allow_selection
         )
-        return self.model_copy(update={"allow_selection": allow_selection})
+        return copy(self, allow_selection=allow_selection)
 
     def ignore(self, selection: AssetSelection) -> "DepCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
@@ -74,7 +77,7 @@ class DepCondition(AutomationCondition):
         ignore_selection = (
             selection if self.ignore_selection is None else selection | self.ignore_selection
         )
-        return self.model_copy(update={"ignore_selection": ignore_selection})
+        return copy(self, ignore_selection=ignore_selection)
 
     def _get_dep_keys(
         self, asset_key: AssetKey, asset_graph: BaseAssetGraph
