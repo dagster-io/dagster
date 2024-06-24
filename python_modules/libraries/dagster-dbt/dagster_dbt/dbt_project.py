@@ -234,20 +234,17 @@ class DbtProject(IHaveNew):
 
     @public
     def prepare_if_dev(self) -> None:
-        """Prepare a dbt project at run time during development.
+        """Prepare a dbt project at run time during development, i.e. when `dagster dev` is used.
+        This method has no effect outside this development context.
 
-        The preparation process ensures that the dbt manifest file and dbt dependencies are available and up-to-date:
-            * During development, pull the dependencies and reload the manifest at run time to pick up any changes.
-            * When deploying, expect a manifest that was created at build time to reduce start-up time.
+        The preparation process ensures that the dbt manifest file and dbt dependencies are available and up-to-date.
+        During development, it pulls the dependencies and reloads the manifest at run time to pick up any changes.
 
         If this method returns successfully, `self.manifest_path` will point to a loadable manifest file.
         This method causes errors if the manifest file has not been correctly created by the preparation process.
 
-        The preparation process is handled by `self.manifest_preparer`,
-        which is a :py:class:`~dagster_dbt.DagsterDbtManifestPreparer`.
-
         Examples:
-            Preparing a DbtProject on creation::
+            Preparing a DbtProject during development:
 
             .. code-block:: python
 
