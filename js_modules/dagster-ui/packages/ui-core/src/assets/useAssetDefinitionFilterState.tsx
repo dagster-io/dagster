@@ -173,10 +173,8 @@ export function filterAssetDefinition(
       return false;
     }
   } else if (filters.computeKindTags?.length) {
-    if (
-      !definition?.computeKind?.length ||
-      !filters.computeKindTags.includes(definition.computeKind)
-    ) {
+    const lowercased = new Set(filters.computeKindTags.map((c) => c.toLowerCase()));
+    if (!definition?.computeKind || !lowercased.has(definition.computeKind.toLowerCase())) {
       return false;
     }
   }

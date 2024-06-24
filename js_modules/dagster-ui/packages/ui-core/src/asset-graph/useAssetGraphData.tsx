@@ -84,9 +84,11 @@ export function useAssetGraphData(opsQuery: string, options: AssetGraphFetchScop
     // get to leverage the useQuery cache almost 100% of the time above, making this
     // super fast after the first load vs a network fetch on every page view.
     const {all: allFilteredByOpQuery} = filterByQuery(graphQueryItems, opsQuery);
-    const computeKinds = options.computeKinds;
+    const computeKinds = options.computeKinds?.map((c) => c.toLowerCase());
     const all = computeKinds?.length
-      ? allFilteredByOpQuery.filter((item) => computeKinds.includes(item.node.computeKind ?? ''))
+      ? allFilteredByOpQuery.filter(
+          ({node}) => node.computeKind && computeKinds.includes(node.computeKind.toLowerCase()),
+        )
       : allFilteredByOpQuery;
 
     // Assemble the response into the data structure used for layout, traversal, etc.
