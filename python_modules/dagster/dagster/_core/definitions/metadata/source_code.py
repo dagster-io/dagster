@@ -1,13 +1,13 @@
-import abc
 import inspect
 import os
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
+from dagster._model.decorator import dagster_model
 from dagster._serdes import whitelist_for_serdes
 
 from .metadata_set import (
@@ -137,9 +137,10 @@ def _with_code_source_single_definition(
     )
 
 
-class FilePathMapping(abc.ABC):
-    """Base class for file path mapping functions. These functions are used to map local file paths to their corresponding
-    paths in a source control repository.
+@experimental
+class FilePathMapping(ABC):
+    """Base class which defines a file path mapping function. These functions are used to map local file paths
+    to their corresponding paths in a source control repository.
 
     In many cases where a source control repository is reproduced exactly on a local machine, the included
     AnchorBasedFilePathMapping class can be used to specify a direct mapping between the local file paths and the
@@ -147,11 +148,12 @@ class FilePathMapping(abc.ABC):
     mapping function can be provided to handle these cases.
     """
 
-    @abc.abstractmethod
+    @abstractmethod
     def convert_to_source_control_path(self, local_path: Path) -> str: ...
 
 
-@dataclass(frozen=True)
+@experimental
+@dagster_model
 class AnchorBasedFilePathMapping(FilePathMapping):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
     using a specific file "anchor" as a reference point. All other paths are calculated relative to this anchor file.
