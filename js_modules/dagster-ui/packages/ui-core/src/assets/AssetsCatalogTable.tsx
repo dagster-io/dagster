@@ -182,8 +182,16 @@ export const AssetsCatalogTable = ({
   const [view, setView] = useAssetView();
 
   const {assets, query, error} = useAllAssets({groupSelector});
-  const {searchPath, filtered, isFiltered, filterButton, filterInput, activeFiltersJsx} =
-    useAssetCatalogFiltering(assets, prefixPath);
+  const {
+    searchPath,
+    filtered,
+    isFiltered,
+    filterButton,
+    filterInput,
+    activeFiltersJsx,
+    computeKindFilter,
+    storageKindFilter,
+  } = useAssetCatalogFiltering(assets, prefixPath);
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
 
@@ -267,6 +275,8 @@ export const AssetsCatalogTable = ({
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
       requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache'}]}
+      computeKindFilter={computeKindFilter}
+      storageKindFilter={storageKindFilter}
     />
   );
 };

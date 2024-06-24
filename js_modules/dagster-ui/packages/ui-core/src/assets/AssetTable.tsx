@@ -22,9 +22,10 @@ import {AssetViewType} from './useAssetView';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {useUnscopedPermissions} from '../app/Permissions';
 import {QueryRefreshCountdown, RefreshState} from '../app/QueryRefresh';
-import {AssetKeyInput} from '../graphql/types';
+import {AssetKeyInput, DefinitionTag} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {testId} from '../testing/testId';
+import {StaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {VirtualizedAssetTable} from '../workspace/VirtualizedAssetTable';
 
 type Asset = AssetTableFragment;
@@ -40,6 +41,8 @@ interface Props {
   requery?: RefetchQueriesFunction;
   searchPath: string;
   isFiltered: boolean;
+  computeKindFilter?: StaticSetFilter<string>;
+  storageKindFilter?: StaticSetFilter<DefinitionTag>;
 }
 
 export const AssetTable = ({
@@ -53,6 +56,8 @@ export const AssetTable = ({
   searchPath,
   isFiltered,
   view,
+  computeKindFilter,
+  storageKindFilter,
 }: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
@@ -131,6 +136,8 @@ export const AssetTable = ({
         showRepoColumn
         view={view}
         onWipe={(assetKeys: AssetKeyInput[]) => setToWipe(assetKeys)}
+        computeKindFilter={computeKindFilter}
+        storageKindFilter={storageKindFilter}
       />
     );
   };
