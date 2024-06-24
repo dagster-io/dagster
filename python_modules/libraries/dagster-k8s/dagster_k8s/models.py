@@ -5,7 +5,7 @@ from typing import Any, Mapping, Type, TypeVar
 import dagster._check as check
 import kubernetes
 import kubernetes.client.models
-from dateutil.parser import parse
+from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient
 
 # Unclear what the correct type is to use for a bound here.

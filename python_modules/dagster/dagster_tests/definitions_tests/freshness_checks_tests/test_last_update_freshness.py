@@ -23,7 +23,7 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime
 from dagster._utils.security import non_secure_md5_hash_str
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .conftest import add_new_event, assert_check_result
 

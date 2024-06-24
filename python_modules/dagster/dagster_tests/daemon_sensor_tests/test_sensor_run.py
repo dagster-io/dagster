@@ -92,7 +92,7 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.daemon import SpanMarker
 from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster._time import create_datetime, get_current_datetime
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .conftest import create_workspace_load_target
 

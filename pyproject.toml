@@ -29,6 +29,7 @@ exclude = [
   "**/__pycache__",
   "**/__generated__",
   "**/vendor",
+  "**/_vendored",
   "**/.tox",
   ".git",
   "**/.venv*",
@@ -102,6 +103,7 @@ target-version = "py38"
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
+  "*/_vendored/*",
   "*/snapshots/*",
 ]
 

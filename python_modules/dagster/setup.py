@@ -93,7 +93,6 @@ setup(
         "pendulum>=0.7.0,<3; python_version<'3.9'",  # https://github.com/dagster-io/dagster/issues/19500
         "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
         "protobuf>=4,<5; python_version>='3.11'",
-        "python-dateutil",
         "python-dotenv",
         "pytz",
         "requests",
@@ -153,7 +152,7 @@ setup(
             "types-paramiko",  # version will be resolved against paramiko
             "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
             "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
-            "types-python-dateutil",  # version will be resolved against python-dateutil
+            "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
             "types-PyYAML",  # version will be resolved against PyYAML
             "types-pytz",  # version will be resolved against pytz
             "types-requests",  # version will be resolved against requests
