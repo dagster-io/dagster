@@ -447,6 +447,11 @@ export const useRepository = (repoAddress: RepoAddress | null) => {
   return findRepositoryAmongOptions(options, repoAddress) || null;
 };
 
+export const useJob = (repoAddress: RepoAddress | null, jobName: string | null) => {
+  const repo = useRepository(repoAddress);
+  return repo?.repository.pipelines.find((pipelineOrJob) => pipelineOrJob.name === jobName) || null;
+};
+
 export const findRepositoryAmongOptions = (
   options: DagsterRepoOption[],
   repoAddress: RepoAddress | null,
