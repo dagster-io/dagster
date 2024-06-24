@@ -102,7 +102,12 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
         version,
         bypassCache,
       });
-      if (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data)) {
+      if (
+        // Work around a weird jest issue..
+        data &&
+        Object.keys(data).length &&
+        (!dataRef.current || JSON.stringify(dataRef.current) !== JSON.stringify(data))
+      ) {
         setData(data);
       }
       setError(error);
