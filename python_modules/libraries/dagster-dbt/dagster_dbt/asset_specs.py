@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 import dagster._check as check
 from dagster import AssetDep, AssetKey, AssetSpec
 from dagster._annotations import experimental
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
 from .asset_utils import build_dbt_multi_asset_args
 from .dagster_dbt_translator import DagsterDbtTranslator, validate_translator
@@ -65,6 +66,10 @@ def build_dbt_asset_specs(
         ._replace(
             skippable=False,
             code_version=None,
+            tags={
+                **(asset_out.tags or {}),
+                COMPUTE_KIND_TAG: "dbt",
+            },
         )
         for output_name, asset_out in outs.items()
     ]
