@@ -55,15 +55,34 @@ interface Props {
   assetKey: AssetKey;
   trace?: PageLoadTrace;
   headerBreadcrumbs: BreadcrumbProps[];
+  writeAssetVisit?: (assetKey: AssetKey) => void;
+  currentPath: string[];
 }
 
-export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
+export const AssetView = ({
+  assetKey,
+  trace,
+  headerBreadcrumbs,
+  writeAssetVisit,
+  currentPath,
+}: Props) => {
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
   const {useTabBuilder, renderFeatureView} = useContext(AssetFeatureContext);
 
   // Load the asset definition
   const {definition, definitionQueryResult, lastMaterialization} =
     useAssetViewAssetDefinition(assetKey);
+
+  useEffect(() => {
+    // If the asset exists, add it to the recently visited list
+    if (
+      definitionQueryResult.loading === false &&
+      definitionQueryResult.data?.assetOrError.__typename === 'Asset' &&
+      writeAssetVisit
+    ) {
+      writeAssetVisit({path: currentPath});
+    }
+  }, [definitionQueryResult, writeAssetVisit, currentPath]);
 
   const tabList = useTabBuilder({definition, params});
 
@@ -158,9 +177,6 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
   };
 
   const renderPartitionsTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
-      return <AssetLoadingDefinitionState />;
-    }
     if (definition?.isSource) {
       return <Redirect to={assetDetailsPathForKey(assetKey, {view: 'events'})} />;
     }
@@ -169,6 +185,7 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
       <AssetPartitions
         assetKey={assetKey}
         assetPartitionDimensions={definition?.partitionKeysByDimension.map((k) => k.name)}
+        isLoadingDefinition={definitionQueryResult.loading && !definitionQueryResult.previousData}
         dataRefreshHint={dataRefreshHint}
         params={params}
         paramsTimeWindowOnly={!!params.asOf}
@@ -270,6 +287,11 @@ export const AssetView = ({assetKey, trace, headerBreadcrumbs}: Props) => {
       : null,
     refresh,
   );
+
+  if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
+    // Redirect to the asset catalog
+    return <Redirect to="/assets" />;
+  }
 
   return (
     <Box
