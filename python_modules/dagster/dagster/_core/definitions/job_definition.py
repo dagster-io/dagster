@@ -1197,7 +1197,7 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
                     input_asset_keys.add(assets_def.key)
                     all_input_assets.append(assets_def)
 
-                input_handle = NodeInputHandle(node_handle, input_name)
+                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
                 asset_keys_by_node_input_handle[input_handle] = assets_def.key
                 for resolved_input_handle in graph_def.node_dict[
                     node_name

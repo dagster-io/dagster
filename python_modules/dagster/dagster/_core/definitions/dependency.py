@@ -27,6 +27,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._model import dagster_model
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 
@@ -485,19 +486,23 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         return NodeHandle(name=dict_repr["name"], parent=parent)
 
 
-class NodeInputHandle(
-    NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
-):
+@dagster_model(checked=False)
+class NodeInputHandle:
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
+
+    node_handle: NodeHandle
+    input_name: str
 
     def __str__(self) -> str:
         return f"{self.node_handle}:{self.input_name}"
 
 
-class NodeOutputHandle(
-    NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
-):
+@dagster_model(checked=False)
+class NodeOutputHandle:
     """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
+
+    node_handle: NodeHandle
+    output_name: str
 
     def __str__(self) -> str:
         return f"{self.node_handle}:{self.output_name}"

@@ -62,7 +62,7 @@ class AssetLayer(NamedTuple):
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
-                input_handle = NodeInputHandle(node_handle, input_name)
+                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
                 asset_key_by_input[input_handle] = input_asset_key
                 # resolve graph input to list of op inputs that consume it
                 node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
@@ -75,7 +75,7 @@ class AssetLayer(NamedTuple):
                     output_name, handle=node_handle
                 )
                 node_output_handle = NodeOutputHandle(
-                    check.not_none(inner_node_handle), inner_output_def.name
+                    node_handle=check.not_none(inner_node_handle), output_name=inner_output_def.name
                 )
 
                 asset_keys_by_node_output_handle[node_output_handle] = asset_key
@@ -100,7 +100,8 @@ class AssetLayer(NamedTuple):
                         output_name, handle=node_handle
                     )
                     node_output_handle = NodeOutputHandle(
-                        check.not_none(inner_node_handle), inner_output_def.name
+                        node_handle=check.not_none(inner_node_handle),
+                        output_name=inner_output_def.name,
                     )
                     node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
                     check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
@@ -178,7 +179,9 @@ class AssetLayer(NamedTuple):
         return self.node_output_handles_by_asset_check_key[asset_check_key].output_name
 
     def asset_key_for_input(self, node_handle: NodeHandle, input_name: str) -> Optional[AssetKey]:
-        return self.asset_keys_by_node_input_handle.get(NodeInputHandle(node_handle, input_name))
+        return self.asset_keys_by_node_input_handle.get(
+            NodeInputHandle(node_handle=node_handle, input_name=input_name)
+        )
 
     def input_for_asset_key(self, node_handle: NodeHandle, key: AssetKey) -> Optional[str]:
         return next(
@@ -191,12 +194,16 @@ class AssetLayer(NamedTuple):
         )
 
     def asset_key_for_output(self, node_handle: NodeHandle, output_name: str) -> Optional[AssetKey]:
-        return self.asset_keys_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
+        return self.asset_keys_by_node_output_handle.get(
+            NodeOutputHandle(node_handle=node_handle, output_name=output_name)
+        )
 
     def asset_check_key_for_output(
         self, node_handle: NodeHandle, output_name: str
     ) -> Optional[AssetCheckKey]:
-        return self.check_key_by_node_output_handle.get(NodeOutputHandle(node_handle, output_name))
+        return self.check_key_by_node_output_handle.get(
+            NodeOutputHandle(node_handle=node_handle, output_name=output_name)
+        )
 
     def partition_mapping_for_node_input(
         self, node_handle: NodeHandle, upstream_asset_key: AssetKey
@@ -242,7 +249,7 @@ class AssetLayer(NamedTuple):
         return {
             key
             for key in assets_def.asset_or_check_keys_by_dep_op_output_handle[
-                NodeOutputHandle(node_handle, output_name)
+                NodeOutputHandle(node_handle=node_handle, output_name=output_name)
             ]
             if isinstance(key, AssetKey)
         }
