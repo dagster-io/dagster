@@ -97,4 +97,40 @@ describe('useThrottledMemo', () => {
     expect(result.current).toBe(3);
     expect(factory).toHaveBeenCalledTimes(2);
   });
+
+  it('should use the stale closure of the factory function', () => {
+    const initialFactory = jest.fn((): number => 1);
+    const newFactory = jest.fn((): number => 2);
+
+    const {result, rerender} = renderHook(
+      ({factory, deps}: {factory: () => number; deps: React.DependencyList}) =>
+        useThrottledMemo(factory, deps, 200),
+      {
+        initialProps: {factory: initialFactory, deps: [1]},
+      },
+    );
+
+    expect(result.current).toBe(1);
+
+    rerender({factory: newFactory, deps: [1]});
+
+    // Advance timers to trigger the update
+    act(() => {
+      jest.advanceTimersByTime(1200);
+    });
+
+    // It should still be 1 since deps didn't change
+    expect(result.current).toBe(1);
+
+    rerender({factory: newFactory, deps: [2]});
+
+    // Advance timers to trigger the update
+    act(() => {
+      jest.advanceTimersByTime(1200);
+    });
+
+    expect(result.current).toBe(2);
+    expect(initialFactory).toHaveBeenCalledTimes(2);
+    expect(newFactory).toHaveBeenCalledTimes(1);
+  });
 });
