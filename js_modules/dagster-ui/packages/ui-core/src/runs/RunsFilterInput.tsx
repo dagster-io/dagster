@@ -163,8 +163,8 @@ const CREATED_BY_TAGS = [
   DagsterTag.User,
 ];
 
-// Exclude these tags from the "tag" filter because theyre already being fetched by other filters.
-const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill];
+// Exclude these tags from the "tag" filter because they're already being fetched by other filters.
+const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Partition];
 
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
@@ -417,28 +417,25 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
     matchType: 'any-of',
   });
 
-  const partitionsFilter = useStaticSetFilter({
+  const partitionsFilter = useSuggestionFilter({
     name: 'Partition',
     icon: 'partition',
-    allValues: partitionValues,
-    allowMultipleSelections: false,
+    initialSuggestions: partitionValues,
+    getNoSuggestionsPlaceholder: (query) => (query ? 'Invalid ID' : 'Type or paste a backfill ID'),
+
     state: useMemo(() => {
-      return new Set(
-        tokens
-          .filter(
-            ({token, value}) => token === 'tag' && value.split('=')[0] === DagsterTag.Partition,
-          )
-          .map(({value}) => tagValueToFilterObject(value)),
-      );
+      return tokens
+        .filter(({token, value}) => token === 'tag' && value.split('=')[0] === DagsterTag.Partition)
+        .map(({value}) => tagValueToFilterObject(value));
     }, [tokens]),
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="job" />
-        <TruncatedTextWithFullTextOnHover text={value.value!} />
-      </Box>
-    ),
-    getStringValue: ({value}) => value!,
-    onStateChanged: (values) => {
+
+    freeformSearchResult: (query) => {
+      return {
+        value: tagValueToFilterObject(`${DagsterTag.Partition}=${query.trim()}`),
+        final: true,
+      };
+    },
+    setState: (values) => {
       onChange([
         ...tokens.filter(({token, value}) => {
           if (token !== 'tag') {
@@ -452,6 +449,26 @@ export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilte
         })),
       ]);
     },
+    getStringValue: ({value}) => value,
+    getKey: ({value}) => value,
+    renderLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="partition" />
+        <TruncatedTextWithFullTextOnHover text={value.value} />
+      </Box>
+    ),
+    onSuggestionClicked: async (value) => {
+      return [{value}];
+    },
+    renderActiveStateLabel: ({value}) => (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="partition" />
+        <TruncatedTextWithFullTextOnHover text={value.value} />
+        {value.value!}
+      </Box>
+    ),
+    isMatch: ({value}, query) => value.toLowerCase().includes(query.toLowerCase()),
+    matchType: 'any-of',
   });
 
   const launchedByFilter = useStaticSetFilter({
