@@ -46,7 +46,7 @@ export const useThrottledMemo = <T,>(
     const now = Date.now();
     if (now - lastRun.current >= delay) {
       enqueue(() => {
-        setState(factory);
+        setState(factoryRef.current);
       });
       lastRun.current = now;
     } else {
