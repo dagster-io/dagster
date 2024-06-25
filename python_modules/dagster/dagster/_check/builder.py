@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
     get_args,
     get_origin,
@@ -132,6 +133,8 @@ def _coerce_type(
         if eval_ctx is None:
             failed(f"Can not evaluate ForwardRef {ttype} without passing in EvalContext")
         return eval_ctx.eval_forward_ref(ttype)
+    if isinstance(ttype, TypeVar):
+        return _coerce_type(ttype.__bound__, eval_ctx) if ttype.__bound__ else None
 
     # Unions should become a tuple of types to pass to the of_type argument
     # ultimately used as second arg in isinstance(target, tuple_of_types)

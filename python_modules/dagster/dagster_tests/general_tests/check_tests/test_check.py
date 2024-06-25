@@ -3,7 +3,19 @@ import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 import dagster._check as check
 import pytest
@@ -1599,6 +1611,8 @@ BUILD_CASES = [
     (PublicAttr[Bar], Bar(), Foo()),
     (Union[bool, Foo], True, None),
     (Union[Foo, "Bar"], Bar(), None),
+    (TypeVar("T", bound=Foo), Foo(), Bar()),
+    (TypeVar("T", bound=Optional[Foo]), None, Bar()),
     # fwd refs
     ("Foo", Foo(), Bar()),
     (Optional["Foo"], Foo(), Bar()),
