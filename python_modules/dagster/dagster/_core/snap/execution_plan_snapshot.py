@@ -279,7 +279,7 @@ def _snapshot_from_execution_step(execution_step: IExecutionStep) -> ExecutionSt
             list(map(_snapshot_from_step_output, execution_step.step_outputs)),
             key=lambda so: so.name,
         ),
-        node_handle_id=execution_step.node_handle.to_string(),
+        node_handle_id=str(execution_step.node_handle),
         kind=execution_step.kind,
         metadata_items=(
             sorted(

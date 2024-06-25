@@ -16,12 +16,12 @@ def test_handle_path():
 
 def test_handle_to_from_string():
     handle = NodeHandle("baz", NodeHandle("bar", NodeHandle("foo", None)))
-    assert handle.to_string() == "foo.bar.baz"
-    assert NodeHandle.from_string(handle.to_string()) == handle
+    assert str(handle) == "foo.bar.baz"
+    assert NodeHandle.from_string(str(handle)) == handle
 
     handle = NodeHandle("foo", None)
-    assert handle.to_string() == "foo"
-    assert NodeHandle.from_string(handle.to_string()) == handle
+    assert str(handle) == "foo"
+    assert NodeHandle.from_string(str(handle)) == handle
 
 
 def test_is_or_descends_from():

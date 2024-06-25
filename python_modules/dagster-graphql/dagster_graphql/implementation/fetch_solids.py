@@ -43,7 +43,7 @@ def get_used_solid_map(repo):
                 definition=definition,
                 invocations=sorted(
                     inv_by_def_name[definition.name],
-                    key=lambda i: i.solidHandle.handleID.to_string(),
+                    key=lambda i: str(i.solidHandle.handleID),
                 ),
             ),
         )

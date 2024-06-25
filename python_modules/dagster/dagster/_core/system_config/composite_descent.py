@@ -62,7 +62,7 @@ class DescentStack(
 
     @property
     def current_handle_str(self) -> str:
-        return check.not_none(self.handle).to_string()
+        return str(check.not_none(self.handle))
 
     def descend(self, node: Node) -> "DescentStack":
         parent = self.handle if self.handle != _ROOT_HANDLE else None
@@ -102,7 +102,7 @@ def composite_descent(
         )
 
     return {
-        handle.to_string(): op_config
+        str(handle): op_config
         for handle, op_config in _composite_descent(
             parent_stack=DescentStack(job_def, _ROOT_HANDLE),
             ops_config_dict=ops_config,
