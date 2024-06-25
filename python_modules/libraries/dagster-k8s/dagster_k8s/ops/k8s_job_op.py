@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import kubernetes.config
 import kubernetes.watch
+import kubernetes.client.exceptions as ApiException
 from dagster import (
     Enum as DagsterEnum,
     Field,
@@ -377,10 +378,20 @@ def execute_k8s_job(
                 if timeout and time.time() - start_time > timeout:
                     watch.stop()
                     raise Exception("Timed out waiting for pod to finish")
-
                 try:
+                    # retry after ApiException which on k8s api server momentary unavailability
+                    api_exception_retry_count = 10
+
                     log_entry = next(log_stream)
                     print(log_entry)  # noqa: T201
+                except ApiException as e:
+                    if api_exception_retry_count > 10:
+                        raise Exception(f"ApiException retry count exceeded: {e}")
+                    elif e.status == 410:
+                        raise Exception(f"Pod logs are disabled, because the pod has been deleted: {e}")
+                    else:
+                        context.log.warning(f"Kubernetes ApiException error: {e}")
+                        api_exception_retry_count -= 1
                 except StopIteration:
                     break
         else:
