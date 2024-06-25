@@ -115,10 +115,7 @@ export type LocationWorkspaceQuery = {
                   sensorsUsing: Array<string>;
                   parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
                   assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-                  jobsOpsUsing: Array<{
-                    __typename: 'JobWithOps';
-                    job: {__typename: 'Job'; id: string};
-                  }>;
+                  jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
                 }>;
                 location: {__typename: 'RepositoryLocation'; id: string; name: string};
                 displayMetadata: Array<{
@@ -229,7 +226,7 @@ export type WorkspaceLocationNodeFragment = {
             sensorsUsing: Array<string>;
             parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
             assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-            jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+            jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
           }>;
           location: {__typename: 'RepositoryLocation'; id: string; name: string};
           displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
@@ -321,7 +318,7 @@ export type WorkspaceLocationFragment = {
       sensorsUsing: Array<string>;
       parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
       assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-      jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+      jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
     }>;
     location: {__typename: 'RepositoryLocation'; id: string; name: string};
     displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
@@ -394,7 +391,7 @@ export type WorkspaceRepositoryFragment = {
     sensorsUsing: Array<string>;
     parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
     assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-    jobsOpsUsing: Array<{__typename: 'JobWithOps'; job: {__typename: 'Job'; id: string}}>;
+    jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
   }>;
   location: {__typename: 'RepositoryLocation'; id: string; name: string};
   displayMetadata: Array<{__typename: 'RepositoryMetadata'; key: string; value: string}>;
