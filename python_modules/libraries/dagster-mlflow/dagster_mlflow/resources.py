@@ -12,7 +12,9 @@ from typing import Any, Optional
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from mlflow import MlflowException
 from mlflow.entities.run_status import RunStatus
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),
@@ -27,6 +29,12 @@ CONFIG_SCHEMA = {
         default_value=None,
         is_required=False,
         description="Mlflow run ID of parent run if this is a nested run.",
+    ),
+    "mlflow_run_id": Field(
+        Noneable(str),
+        default_value=None,
+        is_required=False,
+        description="Mlflow run ID to use for this run.",
     ),
     "env": Field(Permissive(), description="Environment variables for mlflow setup."),
     "env_to_tag": Field(
@@ -74,6 +82,7 @@ class MlFlow(metaclass=MlflowMeta):
         if self.tracking_uri:
             mlflow.set_tracking_uri(self.tracking_uri)
         self.parent_run_id = resource_config.get("parent_run_id")
+        self.mlflow_run_id = resource_config.get("mlflow_run_id")
         self.experiment_name = resource_config["experiment_name"]
         self.env_tags_to_log = resource_config.get("env_to_tag") or []
         self.extra_tags = resource_config.get("extra_tags")
@@ -98,14 +107,43 @@ class MlFlow(metaclass=MlflowMeta):
         active run is set to it. This way a single Dagster run outputs data
         to the same Mlflow run, even when multiprocess executors are used.
         """
-        # Get the run id
-        run_id = self._get_current_run_id()
+        # If already set in self then use that mlflow_run_id, else search for the run
+        if self.mlflow_run_id is None:
+            run_id = self._get_current_run_id()
+            self.mlflow_run_id = run_id
+        else:
+            run_id = self.mlflow_run_id
         self._set_active_run(run_id=run_id)
         self._set_all_tags()
 
         # hack needed to stop mlflow from marking run as finished when
         # a process exits in parallel runs
         atexit.unregister(mlflow.end_run)
+
+    @retry(
+        retry=retry_if_exception_type(MlflowException),
+        wait=wait_exponential(min=1, max=60),
+        stop=stop_after_attempt(3),
+        reraise=True,
+    )
+    def _search_runs_with_retry(self, experiment_ids: [str], filter_string: str):
+        """Searches for MLflow runs with retry on failure.
+
+        This method attempts to search for MLflow runs within a given experiment ID(s)
+        using a filter string. If an MlflowException is encountered (e.g., due to rate
+        limiting), the search is retried with exponential backoff.
+
+        Args:
+            experiment_ids (list): The list of MLflow experiment IDs to search within.
+            filter_string (str): The filter string to use for the search query.
+
+        Returns:
+            Any: A DataFrame containing the search results.
+
+        Raises:
+            MlflowException: If the search fails after the specified number of retries.
+        """
+        return mlflow.search_runs(experiment_ids=experiment_ids, filter_string=filter_string)
 
     def _get_current_run_id(
         self, experiment: Optional[Any] = None, dagster_run_id: Optional[str] = None
@@ -128,8 +166,10 @@ class MlFlow(metaclass=MlflowMeta):
         dagster_run_id = dagster_run_id or self.dagster_run_id
         if experiment:
             # Check if a run with this dagster run id has already been started
-            # in mlflow, will get an empty dataframe if not
-            current_run_df = mlflow.search_runs(
+            # in mlflow, will get an empty dataframe if not.
+            # Note: Search requests have a lower rate limit than others, so we
+            # need to limit/retry searches where possible.
+            current_run_df = self._search_runs_with_retry(
                 experiment_ids=[experiment.experiment_id],
                 filter_string=f"tags.dagster_run_id='{dagster_run_id}'",
             )
@@ -153,6 +193,8 @@ class MlFlow(metaclass=MlflowMeta):
     def _start_run(self, **kwargs):
         """Catches the Mlflow exception if a run is already active."""
         try:
+            # If a run_id is passed, mlflow will generally not start a new run
+            # and instead, it will just be set as the active run
             run = mlflow.start_run(**kwargs)
             self.log.info(
                 f"Starting a new mlflow run with id {run.info.run_id} "
@@ -259,6 +301,10 @@ def mlflow_tracking(context):
 
                             # if want to run a nested run, provide parent_run_id
                             "parent_run_id": an_existing_mlflow_run_id,
+
+                            # if you want to resume a run or avoid creating a new run in the resource init,
+                            # provide mlflow_run_id
+                            "mlflow_run_id": an_existing_mlflow_run_id,
 
                             # env variables to pass to mlflow
                             "env": {
