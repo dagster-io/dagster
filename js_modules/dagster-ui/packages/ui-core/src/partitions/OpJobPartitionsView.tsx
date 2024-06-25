@@ -55,9 +55,11 @@ export const OpJobPartitionsView = React.memo(
       PARTITIONS_STATUS_QUERY,
       {
         variables: {partitionSetName, repositorySelector},
+        notifyOnNetworkStatusChange: true,
         fetchPolicy: 'no-cache',
       },
     );
+
     useLayoutEffect(() => {
       if (currentQueryResult) {
         simpleCache.set(cacheKey, currentQueryResult);
@@ -128,6 +130,7 @@ export const OpJobPartitionsView = React.memo(
         partitionNames={partitionNames}
         partitionSet={partitionSetOrError}
         repoAddress={repoAddress}
+        partitionsQueryResult={currentQueryResult}
       />
     );
   },
@@ -164,10 +167,12 @@ export const OpJobPartitionsViewContent = React.memo(
     partitionSet,
     partitionNames,
     repoAddress,
+    partitionsQueryResult,
   }: {
     partitionNames: string[];
     partitionSet: OpJobPartitionSetFragment;
     repoAddress: RepoAddress;
+    partitionsQueryResult: QueryResult<PartitionsStatusQuery, PartitionsStatusQueryVariables>;
   }) => {
     const {
       permissions: {canLaunchPartitionBackfill},
@@ -265,6 +270,7 @@ export const OpJobPartitionsViewContent = React.memo(
               partitionSetName={partitionSet.name}
               partitionNames={partitionNames}
               runStatusData={runStatusData}
+              refreshing={partitionsQueryResult.loading}
               pipelineName={partitionSet.pipelineName}
               onCancel={() => setShowBackfillSetup(false)}
               onLaunch={(_backfillId, _stepQuery) => {
@@ -287,9 +293,19 @@ export const OpJobPartitionsViewContent = React.memo(
             <Button onClick={() => setShowSteps(!showSteps)} active={showBackfillSetup}>
               {showSteps ? 'Hide per-step status' : 'Show per-step status'}
             </Button>
+            <Button
+              onClick={() => partitionsQueryResult.refetch()}
+              loading={partitionsQueryResult.loading}
+              disabled={partitionsQueryResult.loading}
+            >
+              Refresh
+            </Button>
             {canLaunchPartitionBackfill ? (
               <Button
-                onClick={() => setShowBackfillSetup(!showBackfillSetup)}
+                onClick={() => {
+                  void partitionsQueryResult.refetch();
+                  setShowBackfillSetup(!showBackfillSetup);
+                }}
                 icon={<Icon name="add_circle" />}
                 active={showBackfillSetup}
               >
