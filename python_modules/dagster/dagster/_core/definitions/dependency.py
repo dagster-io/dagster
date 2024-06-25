@@ -493,11 +493,17 @@ class NodeInputHandle(
 ):
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
+    def __str__(self) -> str:
+        return f"{self.node_handle}:{self.input_name}"
+
 
 class NodeOutputHandle(
     NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
 ):
     """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
+
+    def __str__(self) -> str:
+        return f"{self.node_handle}:{self.output_name}"
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):
