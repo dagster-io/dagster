@@ -164,7 +164,7 @@ const CREATED_BY_TAGS = [
 ];
 
 // Exclude these tags from the "tag" filter because theyre already being fetched by other filters.
-const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill];
+const tagsToExclude = [...CREATED_BY_TAGS, DagsterTag.Backfill, DagsterTag.Partition];
 
 export const useRunsFilterInput = ({tokens, onChange, enabledFilters}: RunsFilterInputProps) => {
   const {options} = useRepositoryOptions();
