@@ -1,4 +1,4 @@
-import {useCallback} from 'react';
+import {useCallback, useMemo} from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 
 import {PipelineExplorerContainer} from './PipelineExplorerRoot';
@@ -28,8 +28,8 @@ export const PipelineOverviewRoot = (props: Props) => {
   const history = useHistory();
   const location = useLocation();
   const params = useParams();
-
-  const explorerPath = explorerPathFromString((params as any)['0']);
+  const pathStr = (params as any)['0'];
+  const explorerPath = useMemo(() => explorerPathFromString(pathStr), [pathStr]);
 
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, explorerPath.pipelineName);
