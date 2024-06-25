@@ -11,6 +11,11 @@ from dagster._core.storage.tags import (
     MAX_RETRIES_TAG,
     RETRY_NUMBER_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
+    RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG,
+    RETRY_ON_RUN_EXCEPTION_TAG,
+    RETRY_ON_START_TIMEOUT_TAG,
+    RETRY_ON_UNEXPECTED_TERMINATION_TAG,
+    RETRY_ON_UNKNOWN_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
     RUN_FAILURE_REASON_TAG,
 )
@@ -63,28 +68,79 @@ def filter_runs_to_should_retry(
         else:
             return 1
 
-    default_retry_on_asset_or_op_failure: bool = instance.get_settings("run_retries").get(
-        "retry_on_asset_or_op_failure", True
-    )
+    run_failure_reason_config_map = {
+        RunFailureReason.UNEXPECTED_TERMINATION.value: {
+            "config_name": "retry_on_unexpected_termination",
+            "tag_name": RETRY_ON_UNEXPECTED_TERMINATION_TAG,
+        },
+        RunFailureReason.RUN_EXCEPTION.value: {
+            "config_name": "retry_on_run_exception",
+            "tag_name": RETRY_ON_RUN_EXCEPTION_TAG,
+        },
+        RunFailureReason.STEP_FAILURE.value: {
+            "config_name": "retry_on_asset_or_op_failure",
+            "tag_name": RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
+        },
+        RunFailureReason.JOB_INITIALIZATION_FAILURE.value: {
+            "config_name": "retry_on_job_initialization_failure",
+            "tag_name": RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG,
+        },
+        RunFailureReason.START_TIMEOUT.value: {
+            "config_name": "retry_on_start_timeout",
+            "tag_name": RETRY_ON_START_TIMEOUT_TAG,
+        },
+        RunFailureReason.UNKNOWN.value: {
+            "config_name": "retry_on_unknown_failure",
+            "tag_name": RETRY_ON_UNKNOWN_FAILURE_TAG,
+        },
+        None: None,
+    }
 
     for run in runs:
         retry_number = get_retry_number(run)
-        retry_on_asset_or_op_failure = get_boolean_tag_value(
-            run.tags.get(RETRY_ON_ASSET_OR_OP_FAILURE_TAG),
-            default_value=default_retry_on_asset_or_op_failure,
-        )
+
         if retry_number is not None:
-            if (
-                run.tags.get(RUN_FAILURE_REASON_TAG) == RunFailureReason.STEP_FAILURE.value
-                and not retry_on_asset_or_op_failure
-            ):
+            failure_reason = run.tags.get(RUN_FAILURE_REASON_TAG)
+
+            if failure_reason is None:
+                failure_reason = RunFailureReason.UNKNOWN.value
+
+            if failure_reason not in run_failure_reason_config_map:
+                # This should not occur unless new failure reasons are added
+                # and run_failure_reason_config_map / configs are not updated to handle them
                 instance.report_engine_event(
-                    "Not retrying run since it failed due to an asset or op failure and run retries "
-                    "are configured with retry_on_asset_or_op_failure set to false.",
+                    f"Unmapped failure reason {failure_reason}. Job will not be restarted.",
                     run,
                 )
             else:
-                yield (run, retry_number)
+                failure_reason_retry_config_name = run_failure_reason_config_map[failure_reason][
+                    "config_name"
+                ]
+                failure_reason_retry_tag_name = run_failure_reason_config_map[failure_reason][
+                    "tag_name"
+                ]
+                failure_reason_instance_retry_config_value = instance.get_settings(
+                    "run_retries"
+                ).get(failure_reason_retry_config_name, False)
+                failure_reason_retry_tag_value = run.tags.get(failure_reason_retry_tag_name, None)
+
+                retry_job = False
+
+                # If tag is set, determine retry behavior based on tag:
+                if failure_reason_retry_tag_value is not None:
+                    if get_boolean_tag_value(failure_reason_retry_tag_value):
+                        retry_job = True
+                # Otherwise, determine retry behavior based on instance setting
+                elif failure_reason_instance_retry_config_value:
+                    retry_job = True
+
+                if retry_job:
+                    yield (run, retry_number)
+                else:
+                    instance.report_engine_event(
+                        f"No retry configuration enabled for failure reason {failure_reason}. Job will not be restarted.",
+                        run,
+                    )
 
 
 def get_reexecution_strategy(

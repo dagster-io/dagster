@@ -11,6 +11,11 @@ from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import (
     MAX_RETRIES_TAG,
     RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
+    RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG,
+    RETRY_ON_RUN_EXCEPTION_TAG,
+    RETRY_ON_START_TIMEOUT_TAG,
+    RETRY_ON_UNEXPECTED_TERMINATION_TAG,
+    RETRY_ON_UNKNOWN_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
 )
 from dagster._core.test_utils import MockedRunCoordinator, create_run_for_test, instance_for_test
@@ -79,8 +84,8 @@ def test_filter_runs_to_should_retry(instance):
     )
 
 
-def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_or_op_failure):
-    instance = instance_no_retry_on_asset_or_op_failure
+def test_filter_runs_no_retry_on_unexpected_termination(instance_no_retry_on_failure):
+    instance = instance_no_retry_on_failure
 
     run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
 
@@ -112,7 +117,209 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
     )
 
     assert any(
-        "Not retrying run since it failed due to an asset or op failure and run retries are configured with retry_on_asset_or_op_failure set to false."
+        "No retry configuration enabled for failure reason STEP_FAILURE. Job will not be restarted."
+        in str(event)
+        for event in instance.all_logs(run.run_id)
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_UNEXPECTED_TERMINATION_TAG: False},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.UNEXPECTED_TERMINATION
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does not retry due to the RETRY_ON_UNEXPECTED_TERMINATION_TAG tag being false
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_UNEXPECTED_TERMINATION_TAG: True},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.UNEXPECTED_TERMINATION
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does retry due to the RETRY_ON_UNEXPECTED_TERMINATION_TAG tag being true
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 1
+    )
+
+
+def test_filter_runs_no_retry_on_run_exception(instance_no_retry_on_failure):
+    instance = instance_no_retry_on_failure
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+
+    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # doesn't retry because its a step failure
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    assert any(
+        "No retry configuration enabled for failure reason STEP_FAILURE. Job will not be restarted."
+        in str(event)
+        for event in instance.all_logs(run.run_id)
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_RUN_EXCEPTION_TAG: False},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does not retry due to the RETRY_ON_RUN_EXCEPTION_TAG tag being false
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_RUN_EXCEPTION_TAG: True},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.RUN_EXCEPTION
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does retry due to the RETRY_ON_RUN_EXCEPTION_TAG tag being true
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 1
+    )
+
+
+def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_failure):
+    instance = instance_no_retry_on_failure
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+
+    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # doesn't retry because its a step failure
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    assert any(
+        "No retry configuration enabled for failure reason STEP_FAILURE. Job will not be restarted."
         in str(event)
         for event in instance.all_logs(run.run_id)
     )
@@ -165,6 +372,305 @@ def test_filter_runs_no_retry_on_asset_or_op_failure(instance_no_retry_on_asset_
     instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
 
     # does retry due to the RETRY_ON_ASSET_OR_OP_FAILURE_TAG tag being true
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 1
+    )
+
+
+def test_filter_runs_no_retry_on_job_initialization_failure(instance_no_retry_on_failure):
+    instance = instance_no_retry_on_failure
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+
+    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # doesn't retry because its a step failure
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    assert any(
+        "No retry configuration enabled for failure reason STEP_FAILURE. Job will not be restarted."
+        in str(event)
+        for event in instance.all_logs(run.run_id)
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG: False},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.JOB_INITIALIZATION_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does not retry due to the RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG tag being false
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG: True},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.JOB_INITIALIZATION_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does retry due to the RETRY_ON_JOB_INITIALIZATION_FAILURE_TAG tag being true
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 1
+    )
+
+
+def test_filter_runs_no_retry_on_start_timeout(instance_no_retry_on_failure):
+    instance = instance_no_retry_on_failure
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+
+    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # doesn't retry because its a step failure
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    assert any(
+        "No retry configuration enabled for failure reason STEP_FAILURE. Job will not be restarted."
+        in str(event)
+        for event in instance.all_logs(run.run_id)
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_START_TIMEOUT_TAG: False},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.START_TIMEOUT
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does not retry due to the RETRY_ON_START_TIMEOUT_TAG tag being false
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_START_TIMEOUT_TAG: True},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.START_TIMEOUT
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does retry due to the RETRY_ON_START_TIMEOUT_TAG tag being true
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 1
+    )
+
+
+def test_filter_runs_no_retry_on_unknown(instance_no_retry_on_failure):
+    instance = instance_no_retry_on_failure
+
+    run = create_run(instance, status=DagsterRunStatus.STARTED, tags={MAX_RETRIES_TAG: "2"})
+
+    assert list(filter_runs_to_should_retry([run], instance, 2)) == []
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(
+            error=None, failure_reason=RunFailureReason.STEP_FAILURE
+        ),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # doesn't retry because its a step failure
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    assert any(
+        "No retry configuration enabled for failure reason STEP_FAILURE. Job will not be restarted."
+        in str(event)
+        for event in instance.all_logs(run.run_id)
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_UNKNOWN_FAILURE_TAG: False},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(error=None, failure_reason=RunFailureReason.UNKNOWN),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does not retry due to the RETRY_ON_UNKNOWN_FAILURE_TAG tag being false
+
+    assert (
+        len(
+            list(
+                filter_runs_to_should_retry(
+                    instance.get_runs(filters=RunsFilter(statuses=[DagsterRunStatus.FAILURE])),
+                    instance,
+                    2,
+                )
+            )
+        )
+        == 0
+    )
+
+    run = create_run(
+        instance,
+        status=DagsterRunStatus.STARTED,
+        tags={MAX_RETRIES_TAG: "2", RETRY_ON_UNKNOWN_FAILURE_TAG: True},
+    )
+
+    dagster_event = DagsterEvent(
+        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
+        job_name=run.job_name,
+        message="oops step failure",
+        event_specific_data=JobFailureData(error=None, failure_reason=RunFailureReason.UNKNOWN),
+    )
+    instance.report_dagster_event(dagster_event, run_id=run.run_id, log_level=logging.ERROR)
+
+    # does retry due to the RETRY_ON_UNKNOWN_FAILURE_TAG tag being true
 
     assert (
         len(
