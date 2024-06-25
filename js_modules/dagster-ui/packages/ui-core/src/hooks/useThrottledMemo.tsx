@@ -1,8 +1,6 @@
 import {createContext, useContext, useEffect, useRef, useState} from 'react';
 import {unstable_batchedUpdates} from 'react-dom';
 
-import {useUpdatingRef} from './useUpdatingRef';
-
 /**
  * Context to accumulate updates over 200ms and batch them together to reduce the number of renders
  * Using a context instead of global state to make it easier to reset state across tests.
@@ -36,7 +34,6 @@ export const useThrottledMemo = <T,>(
   delay: number,
 ): T => {
   const [state, setState] = useState<T>(factory);
-  const factoryRef = useUpdatingRef(factory);
   const lastRun = useRef<number>(Date.now());
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const {enqueue} = useContext(ThrottledMemoBatchingContext);
@@ -46,7 +43,7 @@ export const useThrottledMemo = <T,>(
     const now = Date.now();
     if (now - lastRun.current >= delay) {
       enqueue(() => {
-        setState(factoryRef.current);
+        setState(factory);
       });
       lastRun.current = now;
     } else {
@@ -59,7 +56,7 @@ export const useThrottledMemo = <T,>(
             if (isCancelled) {
               return;
             }
-            setState(factoryRef.current);
+            setState(factory);
           });
           lastRun.current = Date.now();
         },
