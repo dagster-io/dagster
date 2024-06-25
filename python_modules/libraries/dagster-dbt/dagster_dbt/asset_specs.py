@@ -61,6 +61,11 @@ def build_dbt_asset_specs(
             key=check.inst(asset_out.key, AssetKey),
             deps=[AssetDep(asset=dep) for dep in internal_asset_deps.get(output_name, set())],
         )
+        # Allow specs to be represented as external assets by adhering to external asset invariants.
+        ._replace(
+            skippable=False,
+            code_version=None,
+        )
         for output_name, asset_out in outs.items()
     ]
 
