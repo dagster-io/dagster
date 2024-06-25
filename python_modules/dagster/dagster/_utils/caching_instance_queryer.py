@@ -707,9 +707,15 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                         f"and child {child_asset_key.to_string()}."
                     ) from e
 
-                child_partitions = reversed(list(child_partitions_subset.get_partition_keys()))
+                # Prefer more recent time-based partitions, particularly if we end up filtering
+                # using max_child_partitions (not a strict guarantee that this will always return
+                # the most recent partitions in time though)
+                child_partitions = sorted(
+                    child_partitions_subset.get_partition_keys(), reverse=True
+                )
+
                 if max_child_partitions is not None:
-                    child_partitions = list(child_partitions)[:max_child_partitions]
+                    child_partitions = child_partitions[:max_child_partitions]
 
                 for child_partition in child_partitions:
                     # we need to see if the child is planned for the same run, but this is
