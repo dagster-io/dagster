@@ -7,6 +7,7 @@ from typing import (
     Any,
     DefaultDict,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -486,11 +487,20 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         return NodeHandle(name=dict_repr["name"], parent=parent)
 
 
+# The advantage of using this TypeVar instead of just Optional[NodeHandle] is that the type checker
+# can know the value not None if it knew it was not None at construction. E.g. this passes
+# type-checking:
+#     node_handle = NodeHandle("foo", parent=None)
+#     node_output_handle = NodeOutputHandle(node_handle=node_handle, output_name="bar")
+#     node_output_handle.node_handle.path  # type checker knows node_output_handle.node_handle is not None
+T_OptionalNodeHandle = TypeVar("T_OptionalNodeHandle", bound=Optional[NodeHandle])
+
+
 @dagster_model(checked=False)
-class NodeInputHandle:
+class NodeInputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
-    node_handle: NodeHandle
+    node_handle: T_OptionalNodeHandle
     input_name: str
 
     def __str__(self) -> str:
@@ -498,10 +508,10 @@ class NodeInputHandle:
 
 
 @dagster_model(checked=False)
-class NodeOutputHandle:
+class NodeOutputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
 
-    node_handle: NodeHandle
+    node_handle: T_OptionalNodeHandle
     output_name: str
 
     def __str__(self) -> str:
