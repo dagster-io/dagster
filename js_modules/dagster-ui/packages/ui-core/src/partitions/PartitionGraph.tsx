@@ -212,7 +212,7 @@ export const PartitionGraph = React.memo(
                   setShowLargeGraphMessage(false);
                 }}
               >
-                Show anyways
+                Show anyway
               </Button>
             </div>
           </Box>

@@ -1,5 +1,6 @@
 import {gql, useMutation, useQuery} from '@apollo/client';
 import {
+  Body2,
   Box,
   Button,
   Checkbox,
@@ -60,12 +61,14 @@ export const BackfillPartitionSelector = ({
   onSubmit,
   repoAddress,
   runStatusData,
+  refreshing,
   pipelineName,
   partitionNames,
 }: {
   partitionSetName: string;
   partitionNames: string[];
   runStatusData: {[partitionName: string]: RunStatus};
+  refreshing: boolean;
   pipelineName: string;
   onLaunch?: (backfillId: string, stepQuery: string) => void;
   onCancel?: () => void;
@@ -177,7 +180,19 @@ export const BackfillPartitionSelector = ({
     <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 24}}>
-          <Section title="Partitions">
+          <Section
+            title={
+              <Box flex={{justifyContent: 'space-between'}}>
+                <div>Partitions</div>
+                {refreshing && (
+                  <Box flex={{gap: 4, alignItems: 'center'}}>
+                    <Spinner purpose="body-text" />
+                    <Body2 color={Colors.textLight()}>Refreshing...</Body2>
+                  </Box>
+                )}
+              </Box>
+            }
+          >
             <Box>
               Select partitions to materialize. Click and drag to select a range on the timeline.
             </Box>
