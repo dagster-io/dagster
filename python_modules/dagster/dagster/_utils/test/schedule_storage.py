@@ -2,7 +2,6 @@ import sys
 import time
 
 import pytest
-from dateutil.relativedelta import relativedelta
 
 from dagster import StaticPartitionsDefinition
 from dagster._core.definitions.asset_subset import AssetSubset
@@ -29,6 +28,7 @@ from dagster._core.test_utils import freeze_time
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._time import get_current_datetime
 from dagster._utils.error import SerializableErrorInfo
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 
 class TestScheduleStorage:

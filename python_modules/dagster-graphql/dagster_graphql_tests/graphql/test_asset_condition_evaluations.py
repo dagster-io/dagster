@@ -36,8 +36,8 @@ from dagster._daemon.asset_daemon import (
 )
 from dagster._serdes.serdes import serialize_value
 from dagster._time import get_current_datetime
+from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
-from dateutil.relativedelta import relativedelta
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

@@ -18,7 +18,7 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._seven import IS_WINDOWS
 from dagster._time import create_datetime, get_timezone
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
 

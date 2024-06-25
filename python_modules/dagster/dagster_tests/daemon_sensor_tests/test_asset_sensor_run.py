@@ -2,7 +2,7 @@ from dagster import materialize
 from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.test_utils import freeze_time
 from dagster._time import create_datetime, get_timezone
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .test_run_status_sensors import instance_with_single_code_location_multiple_repos_with_sensors
 from .test_sensor_run import a_source_asset, evaluate_sensors, validate_tick

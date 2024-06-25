@@ -2,15 +2,14 @@ import time
 from datetime import datetime, timedelta, timezone, tzinfo
 from typing import Union
 
-from dateutil import parser
-
 import dagster._check as check
+from dagster._vendored.dateutil import parser
 
 try:
     # zoneinfo is python >= 3.9
     from zoneinfo import ZoneInfo as _timezone_from_string  # type: ignore
 except:
-    from dateutil.tz import gettz as _timezone_from_string
+    from dagster._vendored.dateutil.tz import gettz as _timezone_from_string
 
 
 def _mockable_get_current_datetime() -> datetime:

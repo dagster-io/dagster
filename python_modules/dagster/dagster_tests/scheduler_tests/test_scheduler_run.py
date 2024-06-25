@@ -67,7 +67,7 @@ from dagster._time import create_datetime, get_current_datetime, get_current_tim
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .conftest import loadable_target_origin, workspace_load_target
 
