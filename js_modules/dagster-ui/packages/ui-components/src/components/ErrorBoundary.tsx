@@ -85,6 +85,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 const Trace = styled.div`
   color: ${Colors.textLight()};
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   font-size: 1em;
   white-space: pre;
   padding-bottom: 1em;

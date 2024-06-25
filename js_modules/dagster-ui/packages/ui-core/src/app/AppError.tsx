@@ -157,6 +157,7 @@ export const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps
           color: Colors.textDefault(),
           fontFamily: FontFamily.monospace,
           whiteSpace: 'pre',
+          fontVariantLigatures: 'none',
           overflowX: 'auto',
         }}
       >

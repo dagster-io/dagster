@@ -32,6 +32,7 @@ export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   white-space: pre-wrap;
   color: ${Colors.textDefault()};
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   display: flex;
   flex-direction: row;
   align-items: baseline;
@@ -57,6 +58,7 @@ export const StructuredContent = styled.div`
   word-break: break-word;
   white-space: pre-wrap;
   font-family: ${FontFamily.monospace};
+  font-variant-ligatures: none;
   flex: 1;
   align-self: stretch;
   display: flex;
