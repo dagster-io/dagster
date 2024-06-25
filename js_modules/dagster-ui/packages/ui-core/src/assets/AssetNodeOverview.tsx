@@ -58,6 +58,7 @@ import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {
   AssetComputeKindTag,
   AssetStorageKindTag,
+  isCanonicalComputeKindTag,
   isCanonicalStorageKindTag,
 } from '../graph/KindTags';
 import {CodeReferencesMetadataEntry, IntMetadataEntry} from '../graphql/types';
@@ -230,6 +231,8 @@ export const AssetNodeOverview = ({
     </>
   );
 
+  const computeKind =
+    assetNode.computeKind || assetNode.tags?.find(isCanonicalComputeKindTag)?.value;
   const storageKindTag = assetNode.tags?.find(isCanonicalStorageKindTag);
   const filteredTags = assetNode.tags?.filter((tag) => tag.key !== 'dagster/storage_kind');
   const relationIdentifierMetadata = assetNode.metadataEntries?.find(
@@ -281,10 +284,10 @@ export const AssetNodeOverview = ({
           )}
       </AttributeAndValue>
       <AttributeAndValue label="Compute kind">
-        {assetNode.computeKind && (
+        {computeKind && (
           <AssetComputeKindTag
+            computeKind={computeKind}
             style={{position: 'relative'}}
-            definition={assetNode}
             reduceColor
             linkToFilteredAssetsTable
           />
