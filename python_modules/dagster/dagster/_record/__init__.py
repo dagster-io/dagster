@@ -104,13 +104,13 @@ def _namedtuple_model_transform(
 
 
 @overload
-def dagster_model(
+def record(
     cls: TType,
 ) -> TType: ...  # Overload for using decorator with no ().
 
 
 @overload
-def dagster_model(
+def record(
     *,
     checked: bool = True,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
@@ -120,7 +120,7 @@ def dagster_model(
     kw_only_default=True,
     frozen_default=True,
 )
-def dagster_model(
+def record(
     cls: Optional[TType] = None,
     *,
     checked: bool = True,
@@ -149,27 +149,27 @@ def dagster_model(
 
 
 @overload
-def dagster_model_custom(
+def record_custom(
     cls: TType,
 ) -> TType: ...  # Overload for using decorator with no ().
 
 
 @overload
-def dagster_model_custom(
+def record_custom(
     *,
     checked: bool = True,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
-def dagster_model_custom(
+def record_custom(
     cls: Optional[TType] = None,
     *,
     checked: bool = True,
 ) -> Union[TType, Callable[[TType], TType]]:
-    """Variant of the dagster_model decorator to use to opt out of the dataclass_transform decorator behavior.
+    """Variant of the record decorator to use to opt out of the dataclass_transform decorator behavior.
     This is often doesn't to be able to override __new__, so the type checker respects your constructor.
 
-    @dagster_model_custom
+    @record_custom
     class Coerced(IHaveNew):
         name: str
 
@@ -205,7 +205,7 @@ def dagster_model_custom(
 
 
 class IHaveNew:
-    """Marker class to be used when overriding new in @dagster_model_custom classes to prevent
+    """Marker class to be used when overriding new in @record_custom classes to prevent
     type errors when calling super().__new__.
     """
 
@@ -214,8 +214,8 @@ class IHaveNew:
         def __new__(cls, **kwargs): ...
 
 
-def is_dagster_model(obj) -> bool:
-    """Whether or not this object was produced by a dagster_model decorator."""
+def is_record(obj) -> bool:
+    """Whether or not this object was produced by a record decorator."""
     return getattr(obj, _MODEL_MARKER_FIELD, None) == _MODEL_MARKER_VALUE
 
 
@@ -225,14 +225,14 @@ def has_generated_new(obj) -> bool:
 
 def as_dict(obj) -> Mapping[str, Any]:
     """Creates a dict representation of a model."""
-    if not is_dagster_model(obj):
-        raise Exception("Only works for @dagster_model decorated classes")
+    if not is_record(obj):
+        raise Exception("Only works for @record decorated classes")
 
     return {key: value for key, value in zip(obj._fields, obj.__hidden_iter__())}
 
 
 def copy(obj: TVal, **kwargs) -> TVal:
-    """Create a copy of this dagster_model instance, with new values specified as key word args."""
+    """Create a copy of this record instance, with new values specified as key word args."""
     return obj.__class__(
         **{
             **as_dict(obj),
@@ -245,7 +245,7 @@ class LegacyNamedTupleMixin(ABC):
     """Mixin to ease migration by adding NamedTuple utility methods.
     Inherit when converting an existing NamedTuple that has callsites to _replace / _asdict, ie.
 
-    @dagster_model
+    @record
     def AssetSubset(LegacyNamedTupleMixin):
         asset_key: AssetKey
         value: Union[bool, PartitionsSubset]
@@ -374,11 +374,11 @@ def build_args_and_assignment_strs(
 
 
 def _banned_iter(*args, **kwargs):
-    raise Exception("Iteration is not allowed on `@dagster_model`s.")
+    raise Exception("Iteration is not allowed on `@record`s.")
 
 
 def _banned_idx(*args, **kwargs):
-    raise Exception("Index access is not allowed on `@dagster_model`s.")
+    raise Exception("Index access is not allowed on `@record`s.")
 
 
 def _true(_):

@@ -28,7 +28,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._model import dagster_model
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 
@@ -506,7 +506,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 T_OptionalNodeHandle = TypeVar("T_OptionalNodeHandle", bound=Optional[NodeHandle])
 
 
-@dagster_model(checked=False)
+@record(checked=False)
 class NodeInputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
@@ -517,7 +517,7 @@ class NodeInputHandle(Generic[T_OptionalNodeHandle]):
         return f"{self.node_handle}:{self.input_name}"
 
 
-@dagster_model(checked=False)
+@record(checked=False)
 class NodeOutputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
 

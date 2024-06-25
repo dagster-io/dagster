@@ -61,7 +61,7 @@ from dagster._core.errors import (
     DagsterInvariantViolationError,
 )
 from dagster._core.utils import toposort_flatten
-from dagster._model import IHaveNew, dagster_model, dagster_model_custom
+from dagster._record import IHaveNew, record, record_custom
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
@@ -88,7 +88,7 @@ if TYPE_CHECKING:
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
 
 
-@dagster_model_custom
+@record_custom
 class AssetGraphComputation(IHaveNew):
     """A computation whose purpose is to materialize assets, observe assets, and/or evaluate asset
     checks.
@@ -1980,7 +1980,7 @@ def unique_id_from_asset_and_check_keys(
     )[:8]
 
 
-@dagster_model
+@record
 class OpOutputHandleGraph:
     """A graph where each node is a NodeOutputHandle corresponding to an op. There's an edge from
     op_output_1 to op_output_2 if op_output_2 is part of an op that has an input that's connected to
