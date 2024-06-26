@@ -1,9 +1,9 @@
 import time
 from typing import Any, Dict, List, Optional
 
+import kubernetes.client.exceptions as ApiException
 import kubernetes.config
 import kubernetes.watch
-import kubernetes.client.exceptions as ApiException
 from dagster import (
     Enum as DagsterEnum,
     Field,
@@ -385,10 +385,13 @@ def execute_k8s_job(
                     log_entry = next(log_stream)
                     print(log_entry)  # noqa: T201
                 except ApiException as e:
+                    # to not block jobs we fail run after 10 retries which can be considered as k8s API issues
                     if api_exception_retry_count > 10:
                         raise Exception(f"ApiException retry count exceeded: {e}")
                     elif e.status == 410:
-                        raise Exception(f"Pod logs are disabled, because the pod has been deleted: {e}")
+                        raise Exception(
+                            f"Pod logs are disabled, because the pod has been deleted: {e}"
+                        )
                     else:
                         context.log.warning(f"Kubernetes ApiException error: {e}")
                         api_exception_retry_count -= 1
