@@ -155,7 +155,21 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         """Returns an AssetSubset representing the subset of the asset that has been materialized."""
         partitions_def = self.asset_graph.get(asset_key).partitions_def
         if partitions_def:
-            cache_value = self._get_updated_cache_value(asset_key=asset_key)
+            # when fetching the materialized status, it is possible for it to be completely up to
+            # date, but fetching the fully-updated asset status cache value would require an
+            # expensive re-computation of the in-progress subset. here, we short-circuit the full
+            # rebuild when possible.
+            asset_record = self.get_asset_record(asset_key)
+            stored_cache_value = asset_record.asset_entry.cached_status if asset_record else None
+            if (
+                asset_record
+                and stored_cache_value
+                and (stored_cache_value.latest_storage_id or 0)
+                >= (asset_record.asset_entry.last_materialization_storage_id or 0)
+            ):
+                cache_value = stored_cache_value
+            else:
+                cache_value = self._get_updated_cache_value(asset_key=asset_key)
             if cache_value is None:
                 value = partitions_def.empty_subset()
             else:
