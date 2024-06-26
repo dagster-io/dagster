@@ -100,12 +100,7 @@ export const WorkspaceAssetsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="assets"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="assets" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
