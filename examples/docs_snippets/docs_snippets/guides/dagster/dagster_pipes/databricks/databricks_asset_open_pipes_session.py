@@ -1,8 +1,11 @@
 import os
 import sys
 
-from dagster_databricks import PipesDbfsContextInjector, PipesDbfsMessageReader
-from dagster_databricks.pipes import PipesDbfsLogReader
+from dagster_databricks_pipes import (
+    PipesDbfsContextInjector,
+    PipesDbfsLogReader,
+    PipesDbfsMessageReader,
+)
 
 from dagster import AssetExecutionContext, asset, open_pipes_session
 from databricks.sdk import WorkspaceClient
