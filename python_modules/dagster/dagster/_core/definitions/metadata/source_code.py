@@ -1,13 +1,13 @@
 import inspect
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._model import DagsterModel
-from dagster._model.decorator import dagster_model
 from dagster._serdes import whitelist_for_serdes
 
 from .metadata_set import (
@@ -153,7 +153,7 @@ class FilePathMapping(ABC):
 
 
 @experimental
-@dagster_model
+@dataclass
 class AnchorBasedFilePathMapping(FilePathMapping):
     """Specifies the mapping between local file paths and their corresponding paths in a source control repository,
     using a specific file "anchor" as a reference point. All other paths are calculated relative to this anchor file.
