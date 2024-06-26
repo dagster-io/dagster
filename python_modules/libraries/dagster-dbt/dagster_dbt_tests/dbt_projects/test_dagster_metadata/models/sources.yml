@@ -2,7 +2,6 @@ version: 2
 
 sources:
   - name: jaffle_shop
-    schema: main
     tables:
       - name: raw_customers
         meta:
