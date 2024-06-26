@@ -817,7 +817,9 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
             previous_parent_subsets = context.legacy_context.node_cursor.get_extra_state(list) or []
             previous_parent_subset = next(
                 (s for s in previous_parent_subsets if s.asset_key == parent_asset_key),
-                context.legacy_context.empty_subset(),
+                ValidAssetSubset.empty(
+                    parent_asset_key, context.asset_graph.get(parent_asset_key).partitions_def
+                ),
             )
 
             # the set of asset partitions that have been updated since the previous evaluation
@@ -946,7 +948,11 @@ class SkipOnNotAllParentsUpdatedSinceCronRule(
                         parent_asset_key,
                         candidate,
                         updated_subsets_by_key.get(
-                            parent_asset_key, context.legacy_context.empty_subset()
+                            parent_asset_key,
+                            ValidAssetSubset.empty(
+                                parent_asset_key,
+                                context.asset_graph.get(parent_asset_key).partitions_def,
+                            ),
                         ),
                     )
                     for parent_asset_key in context.legacy_context.asset_graph.get(
