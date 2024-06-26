@@ -19,6 +19,7 @@ from .json import (
 from .temp_dir import get_system_temp_directory as get_system_temp_directory
 
 IS_WINDOWS = os.name == "nt"
+IS_PYTHON_3_12 = (sys.version_info[0], sys.version_info[1]) == (3, 12)
 
 # TODO implement a generic import by name -- see https://stackoverflow.com/questions/301134/how-to-import-a-module-given-its-name
 
