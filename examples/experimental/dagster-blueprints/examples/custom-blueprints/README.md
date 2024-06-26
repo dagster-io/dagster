@@ -17,7 +17,7 @@ Custom blueprint types can help with this. Using them involves two kinds of file
 
 ### Try it out
 
-Make sure the blueprints library is installed, using the instructions [here](../../README.md#install)
+Make sure the blueprints library is installed, using the instructions [here](../../README.md#install).
 
 Install the example:
 
