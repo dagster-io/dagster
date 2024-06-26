@@ -303,7 +303,7 @@ def project_scaffold_command(
     )
 
 
-def prepare_and_sync(project: DbtProject) -> None:
+def prepare_and_package(project: DbtProject) -> None:
     """A method that can be called as part of the deployment process."""
     if project.preparer:
         console.print(
@@ -358,8 +358,8 @@ def sync_project_to_packaged_dir(
     console.print("Sync complete.")
 
 
-@project_app.command(name="prepare-and-sync")
-def project_prepare_and_sync_command(
+@project_app.command(name="prepare-and-package")
+def project_prepare_and_package_command(
     file: Annotated[
         str,
         typer.Option(
@@ -367,7 +367,7 @@ def project_prepare_and_sync_command(
         ),
     ],
 ) -> None:
-    """This command will invoke ``prepare_and_sync`` on :py:class:`DbtProject` found in the target module or file."""
+    """This command will invoke ``prepare_and_package`` on :py:class:`DbtProject` found in the target module or file."""
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
@@ -375,7 +375,7 @@ def project_prepare_and_sync_command(
     contents = load_python_file(file, working_directory=None)
     dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(contents, types=DbtProject)
     for project in dbt_projects:
-        prepare_and_sync(project)
+        prepare_and_package(project)
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)
