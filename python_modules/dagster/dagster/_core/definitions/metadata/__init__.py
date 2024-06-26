@@ -45,11 +45,12 @@ from .metadata_value import (
 )
 from .source_code import (
     DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
+    AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     LocalFileCodeReference as LocalFileCodeReference,
     UrlCodeReference as UrlCodeReference,
-    link_to_source_control as link_to_source_control,
+    link_to_git as link_to_git,
     with_source_code_references as with_source_code_references,
 )
 from .table import (  # re-exported
