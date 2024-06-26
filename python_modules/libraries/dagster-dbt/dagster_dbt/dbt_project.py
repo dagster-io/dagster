@@ -263,5 +263,5 @@ class DbtProject(IHaveNew):
                     ...
                 )
         """
-        if self.manifest_preparer:
-            self.manifest_preparer.on_load(self)
+        if self.preparer:
+            self.preparer.on_load(self)
