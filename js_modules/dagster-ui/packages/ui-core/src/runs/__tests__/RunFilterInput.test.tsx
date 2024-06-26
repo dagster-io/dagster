@@ -261,7 +261,7 @@ describe('<RunFilterInput  />', () => {
         onChange={onChange}
         mocks={[
           runTagKeysMock,
-          buildRunTagValuesQueryMockedResponse(DagsterTag.Partition, ['partition1', 'partition2']),
+          buildRunTagValuesQueryMockedResponse(DagsterTag.PartitionSet, ['set1', 'set2']),
         ]}
       />,
     );
@@ -272,15 +272,15 @@ describe('<RunFilterInput  />', () => {
     await userEvent.click(getByText('Tag'));
 
     await waitFor(async () => {
-      await userEvent.click(getByText(DagsterTag.Partition));
+      await userEvent.click(getByText(DagsterTag.PartitionSet));
     });
 
     await waitFor(async () => {
-      await userEvent.click(getByText('partition1'));
+      await userEvent.click(getByText('set1'));
     });
 
     expect(onChange).toHaveBeenCalledWith([
-      {token: 'tag', value: `${DagsterTag.Partition}=partition1`},
+      {token: 'tag', value: `${DagsterTag.PartitionSet}=set1`},
     ]);
   });
 });

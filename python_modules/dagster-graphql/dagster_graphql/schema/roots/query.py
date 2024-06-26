@@ -14,6 +14,7 @@ from dagster._core.definitions.selector import (
     ScheduleSelector,
     SensorSelector,
 )
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.backfill import BulkActionStatus
 from dagster._core.nux import get_has_seen_nux
 from dagster._core.scheduler.instigation import InstigatorStatus, InstigatorType
@@ -64,6 +65,7 @@ from ...implementation.fetch_partition_sets import get_partition_set, get_partit
 from ...implementation.fetch_pipelines import (
     get_job_or_error,
     get_job_snapshot_or_error_from_job_selector,
+    get_job_snapshot_or_error_from_snap_or_selector,
     get_job_snapshot_or_error_from_snapshot_id,
 )
 from ...implementation.fetch_resources import (
@@ -603,19 +605,18 @@ class GrapheneQuery(graphene.ObjectType):
         snapshotId: Optional[str] = None,
         activePipelineSelector: Optional[GraphenePipelineSelector] = None,
     ):
-        check.invariant(
-            not (snapshotId and activePipelineSelector),
-            "Must only pass one of snapshotId or activePipelineSelector",
-        )
-
         if activePipelineSelector:
-            pipeline_selector = pipeline_selector_from_graphql(activePipelineSelector)
-            return get_job_snapshot_or_error_from_job_selector(graphene_info, pipeline_selector)
+            job_selector = pipeline_selector_from_graphql(activePipelineSelector)
+            if snapshotId:
+                return get_job_snapshot_or_error_from_snap_or_selector(
+                    graphene_info, job_selector, snapshotId
+                )
+            return get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
         elif snapshotId:
             return get_job_snapshot_or_error_from_snapshot_id(graphene_info, snapshotId)
         else:
-            check.failed(
-                "Must set one of snapshotId or activePipelineSelector",
+            raise DagsterInvariantViolationError(
+                "Must pass snapshotId or activePipelineSelector",
             )
 
     @capture_error

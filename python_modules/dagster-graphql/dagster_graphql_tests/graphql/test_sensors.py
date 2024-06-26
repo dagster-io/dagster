@@ -21,6 +21,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
+from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
 from dagster_graphql.test.utils import (
@@ -30,7 +31,6 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-from dateutil.relativedelta import relativedelta
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

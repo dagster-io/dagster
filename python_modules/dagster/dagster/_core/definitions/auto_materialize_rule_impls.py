@@ -281,17 +281,22 @@ class AutoMaterializeAssetPartitionsFilter(
                         AssetKeyPartitionKey(asset_key, record.partition_key)
                     )
 
+        run_ids_with_required_tags = set()
+
         if len(asset_partitions_by_latest_run_id) > 0:
-            run_ids_with_required_tags = (
-                context.legacy_context.instance_queryer.instance.get_run_ids(
-                    filters=RunsFilter(
-                        run_ids=list(asset_partitions_by_latest_run_id.keys()),
-                        tags=self.latest_run_required_tags,
-                    )
+            run_step = int(os.getenv("DAGSTER_ASSET_DAEMON_RUN_TAGS_RUN_FETCH_LIMIT", "1000"))
+
+            required_tag_items = self.latest_run_required_tags.items()
+
+            run_ids_to_fetch = list(asset_partitions_by_latest_run_id.keys())
+            for i in range(0, len(run_ids_to_fetch), run_step):
+                run_ids = run_ids_to_fetch[i : i + run_step]
+                runs = context.legacy_context.instance_queryer.instance.get_runs(
+                    filters=RunsFilter(run_ids=run_ids)
                 )
-            )
-        else:
-            run_ids_with_required_tags = set()
+                run_ids_with_required_tags.update(
+                    {run.run_id for run in runs if required_tag_items <= run.tags.items()}
+                )
 
         updated_partitions_with_required_tags = {
             asset_partition

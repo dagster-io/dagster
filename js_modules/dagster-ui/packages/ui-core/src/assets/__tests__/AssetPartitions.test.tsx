@@ -59,6 +59,7 @@ const SingleDimensionAssetPartitions = ({
           paramsTimeWindowOnly={false}
           assetPartitionDimensions={['default']}
           dataRefreshHint={undefined}
+          isLoadingDefinition={false}
         />
       </MockedProvider>
       <Route
@@ -157,6 +158,7 @@ describe('AssetPartitions', () => {
               paramsTimeWindowOnly={false}
               assetPartitionDimensions={['date', 'zstate']}
               dataRefreshHint={undefined}
+              isLoadingDefinition={false}
             />
           </MockedProvider>
         </MemoryRouter>

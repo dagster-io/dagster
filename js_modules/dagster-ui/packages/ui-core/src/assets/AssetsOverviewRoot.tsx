@@ -1,7 +1,7 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {BreadcrumbProps} from '@blueprintjs/core';
-import {Box, Colors, Page, Spinner} from '@dagster-io/ui-components';
+import {Box} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -10,15 +10,10 @@ import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetKey} from './types';
-import {
-  AssetsOverviewRootQuery,
-  AssetsOverviewRootQueryVariables,
-} from './types/AssetsOverviewRoot.types';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {usePageLoadTrace} from '../performance';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
 export const AssetsOverviewRoot = ({
@@ -46,16 +41,6 @@ export const AssetsOverviewRoot = ({
   );
   const assetKey = useMemo(() => ({path: currentPath}), [currentPath]);
 
-  const skip = currentPath.length === 0;
-  const queryResult = useQuery<AssetsOverviewRootQuery, AssetsOverviewRootQueryVariables>(
-    ASSETS_OVERVIEW_ROOT_QUERY,
-    {
-      skip,
-      variables: {assetKey},
-    },
-  );
-  useBlockTraceOnQueryResult(queryResult, 'AssetsOverviewRootQuery', {skip});
-
   useDocumentTitle(
     currentPath && currentPath.length
       ? `${documentTitlePrefix}: ${displayNameForAssetKey(assetKey)}`
@@ -66,37 +51,7 @@ export const AssetsOverviewRoot = ({
     currentPath && currentPath.length === 0 ? 'AssetsOverviewRoot' : 'AssetCatalogAssetView',
   );
 
-  React.useEffect(() => {
-    // If the asset exists, add it to the recently visited list
-    if (
-      currentPath &&
-      currentPath.length &&
-      queryResult.loading === false &&
-      queryResult.data?.assetOrError.__typename === 'Asset' &&
-      writeAssetVisit
-    ) {
-      writeAssetVisit({path: currentPath});
-    }
-  }, [currentPath, queryResult, writeAssetVisit]);
-
-  if (queryResult.loading) {
-    return (
-      <Page>
-        <AssetPageHeader assetKey={assetKey} headerBreadcrumbs={headerBreadcrumbs} />
-        <Box flex={{direction: 'row', justifyContent: 'center'}} style={{paddingTop: '100px'}}>
-          <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
-            <Spinner purpose="body-text" />
-            <div style={{color: Colors.textLight()}}>Loading assets…</div>
-          </Box>
-        </Box>
-      </Page>
-    );
-  }
-
-  if (
-    currentPath.length === 0 ||
-    queryResult.data?.assetOrError.__typename === 'AssetNotFoundError'
-  ) {
+  if (currentPath.length === 0) {
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
@@ -118,7 +73,15 @@ export const AssetsOverviewRoot = ({
     );
   }
 
-  return <AssetView assetKey={assetKey} trace={trace} headerBreadcrumbs={headerBreadcrumbs} />;
+  return (
+    <AssetView
+      assetKey={assetKey}
+      trace={trace}
+      headerBreadcrumbs={headerBreadcrumbs}
+      writeAssetVisit={writeAssetVisit}
+      currentPath={currentPath}
+    />
+  );
 };
 
 // Imported via React.lazy, which requires a default export.

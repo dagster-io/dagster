@@ -29,7 +29,7 @@ from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
 from dagster._serdes.serdes import deserialize_value
 from dagster._time import get_current_datetime
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (

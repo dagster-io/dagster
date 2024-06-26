@@ -251,7 +251,7 @@ def _create_repository_using_definitions_args(
     executor: Optional[Union[ExecutorDefinition, Executor]] = None,
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
-) -> RepositoryDefinition:
+) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None

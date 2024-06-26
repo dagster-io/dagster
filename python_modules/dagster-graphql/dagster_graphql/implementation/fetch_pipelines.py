@@ -28,7 +28,23 @@ def get_job_snapshot_or_error_from_snapshot_id(
     graphene_info: ResolveInfo, snapshot_id: str
 ) -> "GraphenePipelineSnapshot":
     check.str_param(snapshot_id, "snapshot_id")
+
     return _get_job_snapshot_from_instance(graphene_info.context.instance, snapshot_id)
+
+
+def get_job_snapshot_or_error_from_snap_or_selector(
+    graphene_info: ResolveInfo,
+    job_selector: JobSubsetSelector,
+    snapshot_id: str,
+):
+    from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
+
+    if graphene_info.context.instance.has_job_snapshot(snapshot_id):
+        job_snapshot = graphene_info.context.instance.get_historical_job(snapshot_id)
+        if job_snapshot:
+            return GraphenePipelineSnapshot(job_snapshot)
+
+    return get_job_snapshot_or_error_from_job_selector(graphene_info, job_selector)
 
 
 # extracted this out to test

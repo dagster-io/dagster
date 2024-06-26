@@ -37,6 +37,7 @@ const Container = styled.div`
   &&& table tr td {
     box-shadow: none !important;
     padding: 2px 8px;
+    font-variant-ligatures: none;
   }
 
   &&& table tr th:last-child,

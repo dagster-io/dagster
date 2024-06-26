@@ -20,7 +20,7 @@ from dagster._core.test_utils import (
 from dagster._seven import IS_WINDOWS
 from dagster._time import create_datetime, get_current_datetime
 from dagster._utils import DebugCrashFlags, get_terminate_signal
-from dateutil.relativedelta import relativedelta
+from dagster._vendored.dateutil.relativedelta import relativedelta
 
 from .conftest import workspace_load_target
 from .test_scheduler_run import (

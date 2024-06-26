@@ -78,7 +78,7 @@ describe('AssetView', () => {
           <WorkspaceProvider>
             <AssetLiveDataProvider>
               <MemoryRouter initialEntries={[path]}>
-                <AssetView assetKey={assetKey} headerBreadcrumbs={[]} />
+                <AssetView assetKey={assetKey} headerBreadcrumbs={[]} currentPath={assetKey.path} />
               </MemoryRouter>
             </AssetLiveDataProvider>
           </WorkspaceProvider>
