@@ -1,4 +1,4 @@
-import {createContext, useContext, useEffect, useRef, useState} from 'react';
+import {createContext, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import {unstable_batchedUpdates} from 'react-dom';
 
 /**
@@ -29,16 +29,30 @@ export const ThrottledMemoBatchingContext = createContext<{enqueue: (update: () 
 );
 
 export const useThrottledMemo = <T,>(
-  factory: () => T,
+  factoryArg: () => T,
   deps: React.DependencyList,
-  delay: number,
+  throttleDelay?: number,
 ): T => {
+  const delayRef = useRef(32); // 32ms = 30fps - Only used if throttleDelay is not passed in
+  const factory = useCallback(() => {
+    const start = Date.now();
+    const res = factoryArg();
+    const end = Date.now();
+
+    // Multiply by 4 so that if this is slow to compute we don't use up all of the wall time.
+    delayRef.current = (end - start) * 4;
+    return res;
+  }, [factoryArg]);
+
   const [state, setState] = useState<T>(factory);
   const lastRun = useRef<number>(Date.now());
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const {enqueue} = useContext(ThrottledMemoBatchingContext);
 
   useEffect(() => {
+    // If no delay is passed in
+    const delay = throttleDelay ?? delayRef.current;
+
     let isCancelled = false;
     const now = Date.now();
     if (now - lastRun.current >= delay) {
