@@ -42,3 +42,7 @@ Install the dagster-blueprints package, as well as the HEAD version of Dagster:
 pip install -e python_modules/dagster
 pip install -e examples/experimental/dagster-blueprints/
 ```
+
+### Try out one of the examples:
+- [Built-in blueprints](examples/builtin-blueprints)
+- [Custom blueprints](examples/custom-blueprints)
