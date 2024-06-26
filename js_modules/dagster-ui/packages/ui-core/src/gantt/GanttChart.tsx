@@ -130,22 +130,18 @@ export const GanttChart = (props: GanttChartProps) => {
     [graph, graphFiltered.all, state.hideUnselectedSteps, state.mode],
   );
 
-  const layout = useThrottledMemo(
-    () => {
-      const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
-      if (
-        !cachedLayoutParams.current ||
-        names(cachedLayoutParams.current.nodes) !== names(layoutParams.nodes) ||
-        cachedLayoutParams.current.mode !== layoutParams.mode
-      ) {
-        cachedLayout.current = buildLayout(layoutParams);
-        cachedLayoutParams.current = layoutParams;
-      }
-      return cachedLayout.current!;
-    },
-    [layoutParams],
-    1000,
-  );
+  const layout = useThrottledMemo(() => {
+    const names = (ns: GraphQueryItem[]) => ns.map((n) => n.name).join(',');
+    if (
+      !cachedLayoutParams.current ||
+      names(cachedLayoutParams.current.nodes) !== names(layoutParams.nodes) ||
+      cachedLayoutParams.current.mode !== layoutParams.mode
+    ) {
+      cachedLayout.current = buildLayout(layoutParams);
+      cachedLayoutParams.current = layoutParams;
+    }
+    return cachedLayout.current!;
+  }, [layoutParams]);
 
   const updateOptions = React.useCallback((changes: Partial<GanttChartLayoutOptions>) => {
     setState((current) => ({...current, ...changes}));
