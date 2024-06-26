@@ -1,6 +1,8 @@
 import {createContext, useCallback, useContext, useEffect, useRef, useState} from 'react';
 import {unstable_batchedUpdates} from 'react-dom';
 
+import {useUpdatingRef} from './useUpdatingRef';
+
 /**
  * Context to accumulate updates over 200ms and batch them together to reduce the number of renders
  * Using a context instead of global state to make it easier to reset state across tests.
@@ -33,6 +35,7 @@ export const useThrottledMemo = <T,>(
   deps: React.DependencyList,
   throttleDelay?: number,
 ): T => {
+  const throttleDelayRef = useUpdatingRef(throttleDelay);
   const delayRef = useRef(32); // 32ms = 30fps - Only used if throttleDelay is not passed in
   const factory = useCallback(() => {
     const start = Date.now();
@@ -51,7 +54,7 @@ export const useThrottledMemo = <T,>(
 
   useEffect(() => {
     // If no delay is passed in then use the dynamic delay from delayRef
-    const delay = throttleDelay ?? delayRef.current;
+    const delay = throttleDelayRef.current ?? delayRef.current;
 
     let isCancelled = false;
     const now = Date.now();
