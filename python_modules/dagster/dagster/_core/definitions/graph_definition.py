@@ -875,8 +875,10 @@ class GraphDefinition(NodeDefinition):
                 mapping.maps_to.node_name
             ).definition.resolve_input_to_destinations(
                 NodeInputHandle(
-                    NodeHandle(mapping.maps_to.node_name, parent=input_handle.node_handle),
-                    mapping.maps_to.input_name,
+                    node_handle=NodeHandle(
+                        mapping.maps_to.node_name, parent=input_handle.node_handle
+                    ),
+                    input_name=mapping.maps_to.input_name,
                 ),
             )
 
@@ -908,7 +910,8 @@ class GraphDefinition(NodeDefinition):
             for input_handle in downstream_input_handles:
                 all_destinations.append(
                     NodeInputHandle(
-                        NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
+                        node_handle=NodeHandle(input_handle.node_name, parent=handle),
+                        input_name=input_handle.input_name,
                     )
                 )
 

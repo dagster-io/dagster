@@ -1728,11 +1728,7 @@ def external_asset_nodes_from_defs(
         if key in primary_node_pairs_by_asset_key:
             output_handle, job_def = primary_node_pairs_by_asset_key[key]
 
-            root_node_handle = output_handle.node_handle
-            while True:
-                if root_node_handle.parent is None:
-                    break
-                root_node_handle = root_node_handle.parent
+            root_node_handle = output_handle.node_handle.root
             node_def = job_def.graph.get_node(output_handle.node_handle).definition
             node_handles = job_def.asset_layer.upstream_dep_op_handles(key)
 

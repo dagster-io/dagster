@@ -2080,15 +2080,15 @@ def _build_graph_dependencies(
             )
             outputs_by_graph_handle[curr_node_handle] = {
                 mapping.graph_output_name: NodeOutputHandle(
-                    NodeHandle(mapping.maps_from.node_name, parent=curr_node_handle),
-                    mapping.maps_from.output_name,
+                    node_handle=NodeHandle(mapping.maps_from.node_name, parent=curr_node_handle),
+                    output_name=mapping.maps_from.output_name,
                 )
                 for mapping in sub_node.definition.output_mappings
             }
         non_asset_inputs_by_node_handle[curr_node_handle] = [
             NodeOutputHandle(
-                NodeHandle(node_output.node_name, parent=parent_handle),
-                node_output.output_def.name,
+                node_handle=NodeHandle(node_output.node_name, parent=parent_handle),
+                output_name=node_output.output_def.name,
             )
             for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
             if NodeHandle(node_output.node.name, parent=parent_handle)
