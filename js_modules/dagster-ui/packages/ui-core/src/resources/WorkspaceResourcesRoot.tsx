@@ -141,9 +141,7 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
       path
     }
     jobsOpsUsing {
-      job {
-        id
-      }
+      jobName
     }
     schedulesUsing
     sensorsUsing
