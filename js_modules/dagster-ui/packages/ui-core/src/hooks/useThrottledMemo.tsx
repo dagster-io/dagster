@@ -50,7 +50,7 @@ export const useThrottledMemo = <T,>(
   const {enqueue} = useContext(ThrottledMemoBatchingContext);
 
   useEffect(() => {
-    // If no delay is passed in
+    // If no delay is passed in then use the dynamic delay from delayRef
     const delay = throttleDelay ?? delayRef.current;
 
     let isCancelled = false;
