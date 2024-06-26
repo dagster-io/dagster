@@ -1,11 +1,9 @@
-"""Databricks integration for Dagster.
+"""Databricks pipes integration for Dagster.
 
 This package provides:
 
-- the :py:class:`~dagster_databricks.databricks_pyspark_step_launcher` resource, which
-    launches a Databricks job in which an op can be run
-- the :py:class:`~dagster_databricks.DatabricksRunJobSolidDefinition`, which can be used
-    to execute an arbitrary task in Databricks.
+- the :py:class:`~dagster_databricks_pipes.PipesDatabricksClient` class, which
+    makes it possible to create a databricks pipes session
 """
 
 from dagster._core.libraries import DagsterLibraryRegistry
@@ -18,4 +16,4 @@ from .pipes import (
 )
 from .version import __version__
 
-DagsterLibraryRegistry.register("dagster-databricks", __version__)
+DagsterLibraryRegistry.register("dagster-databricks-pipes", __version__)
