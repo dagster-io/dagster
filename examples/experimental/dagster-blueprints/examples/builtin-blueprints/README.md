@@ -14,7 +14,7 @@ Using it involves two kinds of files.
 
 ### Try it out
 
-Make sure the blueprints library is installed, using the instructions [here](../../README.md#install)
+Make sure the blueprints library is installed, using the instructions [here](../../README.md#install).
 
 Install the example:
 
@@ -22,14 +22,14 @@ Install the example:
 pip install -e .
 ```
 
-Launch Dagster to see the definitions loaded from the blueprints
+Launch Dagster to see the definitions loaded from the blueprints:
 
 ```bash
 
 dagster dev
 ```
 
-Print out the JSON schema for the blueprints
+Print out the JSON schema for the blueprints:
 
 ```bash
 dagster-blueprints print-schema
