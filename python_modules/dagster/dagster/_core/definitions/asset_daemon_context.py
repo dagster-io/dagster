@@ -19,6 +19,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
@@ -192,14 +193,28 @@ class AssetDaemonContext:
 
         results, to_request = self.get_asset_condition_evaluations()
 
-        run_requests = [
-            *build_run_requests(
-                asset_partitions=to_request,
-                asset_graph=self.asset_graph,
-                run_tags=self.auto_materialize_run_tags,
-            ),
-            *auto_observe_run_requests,
-        ]
+        if self.instance_queryer.instance.da_emit_backfills():
+            run_requests = (
+                [
+                    RunRequest(
+                        asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
+                            to_request, asset_graph=self.asset_graph
+                        ),
+                        tags=self.auto_materialize_run_tags,
+                    )
+                ]
+                if to_request
+                else []
+            )
+        else:
+            run_requests = [
+                *build_run_requests(
+                    asset_partitions=to_request,
+                    asset_graph=self.asset_graph,
+                    run_tags=self.auto_materialize_run_tags,
+                ),
+                *auto_observe_run_requests,
+            ]
 
         # only record evaluation results where something changed
         updated_evaluations = []

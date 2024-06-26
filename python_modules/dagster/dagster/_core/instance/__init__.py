@@ -3230,3 +3230,6 @@ class DagsterInstance(DynamicPartitionsStore):
 
     def backfill_log_storage_enabled(self) -> bool:
         return False
+
+    def da_emit_backfills(self) -> bool:
+        return True  # TODO: make False before merge
