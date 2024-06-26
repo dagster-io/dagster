@@ -475,8 +475,7 @@ def test_repository_snap_definitions_function_style_resources_assets_usage() -> 
 
 def _to_dict(entries: List[ResourceJobUsageEntry]) -> Dict[str, List[str]]:
     return {
-        entry.job_name: sorted([handle.to_string() for handle in entry.node_handles])
-        for entry in entries
+        entry.job_name: sorted([str(handle) for handle in entry.node_handles]) for entry in entries
     }
 
 

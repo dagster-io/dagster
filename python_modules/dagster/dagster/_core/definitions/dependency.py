@@ -344,7 +344,11 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         )
 
     def __str__(self):
-        return self.to_string()
+        """Return a unique string representation of the handle.
+
+        Inverse of NodeHandle.from_string.
+        """
+        return str(self.parent) + "." + self.name if self.parent else self.name
 
     @property
     def root(self):
@@ -369,13 +373,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
             cur = cur.parent
         path.reverse()
         return path
-
-    def to_string(self) -> str:
-        """Return a unique string representation of the handle.
-
-        Inverse of NodeHandle.from_string.
-        """
-        return self.parent.to_string() + "." + self.name if self.parent else self.name
 
     def is_or_descends_from(self, handle: "NodeHandle") -> bool:
         """Check if the handle is or descends from another handle.
@@ -414,7 +411,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
-            f"Handle {self.to_string()} does not descend from {ancestor.to_string()}",
+            f"Handle {self} does not descend from {ancestor}",
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
