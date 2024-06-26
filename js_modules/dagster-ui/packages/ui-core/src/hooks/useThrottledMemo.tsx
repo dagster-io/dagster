@@ -40,7 +40,7 @@ export const useThrottledMemo = <T,>(
     const end = Date.now();
 
     // Multiply by 4 so that if this is slow to compute we don't use up all of the wall time.
-    delayRef.current = (end - start) * 4;
+    delayRef.current = Math.max((end - start) * 4, 32);
     return res;
   }, [factoryArg]);
 
