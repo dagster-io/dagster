@@ -1402,6 +1402,13 @@ def test_graph_backed_asset_reused():
                 ),
             )
         )
+        asset_one_dep_op_handles = asset_job.asset_layer.upstream_dep_op_handles(
+            AssetKey("asset_one")
+        )
+        duplicate_one_dep_op_handles = asset_job.asset_layer.upstream_dep_op_handles(
+            AssetKey("duplicate_one")
+        )
+        assert asset_one_dep_op_handles != duplicate_one_dep_op_handles
 
         with instance_for_test() as instance:
             asset_job.execute_in_process(instance=instance, asset_selection=[AssetKey("upstream")])
