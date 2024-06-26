@@ -9,10 +9,12 @@ The built-in `ShellCommandBlueprint` can help with this. A `ShellCommandBlueprin
 
 Using it involves two kinds of files.
 
-- The YAML files themselves, which contain blobs that conform to the `ShellCommandBlueprint` spec. These are located in the the [builtin_blueprints/pipelines/](builtin_blueprints/pipelines/) directory.
-- The Python harness - a few lines of Python code that parse the YAML files to generate definitions to load into Dagster. These are located in the [builtin_blueprints/definition.py](builtin_blueprints/definition.py) file.
+- The YAML files themselves, which contain blobs that conform to the `ShellCommandBlueprint` spec. E.g. [builtin_blueprints/pipelines/process_customers.yaml](builtin_blueprints/pipelines/process_customers.yaml).
+- The Python harness - a few lines of Python code that parse the YAML files to generate definitions to load into Dagster. These are located in the [builtin_blueprints/definitions.py](builtin_blueprints/definitions.py) file.
 
 ### Try it out
+
+Make sure the blueprints library is installed, using the instructions [here](../../README.md#install)
 
 Install the example:
 
