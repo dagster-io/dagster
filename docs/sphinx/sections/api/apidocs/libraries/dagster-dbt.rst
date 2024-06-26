@@ -50,10 +50,6 @@ Assets (dbt Core)
 
 .. autoclass:: DbtProject
 
-.. autoclass:: DbtManifestPreparer
-
-.. autoclass:: DagsterDbtManifestPreparer
-
 Asset Checks (dbt Core)
 =======================
 
