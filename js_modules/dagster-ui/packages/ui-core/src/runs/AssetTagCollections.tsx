@@ -21,6 +21,7 @@ import {globalAssetGraphPathForAssetsAndDescendants} from '../assets/globalAsset
 import {AssetKey} from '../assets/types';
 import {TagActionsPopover} from '../ui/TagActions';
 import {VirtualizedItemListForDialog} from '../ui/VirtualizedItemListForDialog';
+import {numberFormatter} from '../ui/formatters';
 
 const renderItemAssetKey = (assetKey: AssetKey) => (
   <Link to={assetDetailsPathForKey(assetKey)} style={{display: 'block', width: '100%'}}>
@@ -137,13 +138,13 @@ export const AssetKeyTagCollection = React.memo((props: AssetKeyTagCollectionPro
       >
         {useTags ? (
           <Tag intent="none" icon="asset">
-            {assetKeys.length} assets
+            {numberFormatter.format(assetKeys.length)} assets
           </Tag>
         ) : (
           <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
               <Icon color={Colors.accentGray()} name="asset" size={16} />
-              {`${assetKeys.length} assets`}
+              {`${numberFormatter.format(assetKeys.length)} assets`}
             </Box>
           </ButtonLink>
         )}
@@ -209,13 +210,13 @@ export const AssetCheckTagCollection = React.memo((props: AssetCheckTagCollectio
       >
         {useTags ? (
           <Tag intent="none" icon="asset_check">
-            {assetChecks.length} asset checks
+            {numberFormatter.format(assetChecks.length)} asset checks
           </Tag>
         ) : (
           <ButtonLink onClick={() => setShowMore(true)} underline="hover">
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center', display: 'inline-flex'}}>
               <Icon color={Colors.accentGray()} name="asset_check" size={16} />
-              {`${assetChecks.length} asset checks`}
+              {`${numberFormatter.format(assetChecks.length)} asset checks`}
             </Box>
           </ButtonLink>
         )}
