@@ -25,14 +25,14 @@ Install the example:
 pip install -e .
 ```
 
-Launch Dagster to see the definitions loaded from the blueprints
+Launch Dagster to see the definitions loaded from the blueprints:
 
 ```bash
 
 dagster dev
 ```
 
-Print out the JSON schema for the blueprints
+Print out the JSON schema for the blueprints:
 
 ```bash
 dagster-blueprints print-schema
