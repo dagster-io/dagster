@@ -52,10 +52,7 @@ export type OverviewResourcesQuery = {
                     sensorsUsing: Array<string>;
                     parentResources: Array<{__typename: 'NestedResourceEntry'; name: string}>;
                     assetKeysUsing: Array<{__typename: 'AssetKey'; path: Array<string>}>;
-                    jobsOpsUsing: Array<{
-                      __typename: 'JobWithOps';
-                      job: {__typename: 'Job'; id: string};
-                    }>;
+                    jobsOpsUsing: Array<{__typename: 'JobWithOps'; jobName: string}>;
                   }>;
                 }>;
               }

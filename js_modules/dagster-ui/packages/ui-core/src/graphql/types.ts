@@ -2142,6 +2142,8 @@ export type JobOrPipelineSelector = {
 export type JobWithOps = {
   __typename: 'JobWithOps';
   job: Job;
+  jobName: Scalars['String']['output'];
+  opHandleIDs: Array<Scalars['String']['output']>;
   opsUsing: Array<SolidHandle>;
 };
 
@@ -9141,6 +9143,8 @@ export const buildJobWithOps = (
         : relationshipsToOmit.has('Job')
         ? ({} as Job)
         : buildJob({}, relationshipsToOmit),
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'nihil',
+    opHandleIDs: overrides && overrides.hasOwnProperty('opHandleIDs') ? overrides.opHandleIDs! : [],
     opsUsing: overrides && overrides.hasOwnProperty('opsUsing') ? overrides.opsUsing! : [],
   };
 };
