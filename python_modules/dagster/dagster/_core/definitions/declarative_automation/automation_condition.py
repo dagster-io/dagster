@@ -286,9 +286,12 @@ class AutomationCondition(ABC, DagsterModel):
         )
         return (
             AutomationCondition.in_latest_time_window()
-            & became_missing_or_any_deps_updated.since_last_requested()
+            & became_missing_or_any_deps_updated.since(
+                AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+            )
             & ~any_parent_missing
             & ~any_parent_in_progress
+            & ~AutomationCondition.in_progress()
         )
 
     @staticmethod
