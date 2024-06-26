@@ -230,10 +230,6 @@ export const SectionedLeftNav = () => {
 
   const collapsible = sortedRepos.length > 1;
 
-  if (loading) {
-    return <div style={{flex: 1}} />;
-  }
-
   return (
     <Container ref={parentRef}>
       <Inner $totalHeight={totalHeight}>
@@ -508,7 +504,7 @@ const SectionHeader = styled.button<{
 
   width: 100%;
   margin: 0;
-  
+
   box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
   :disabled {
