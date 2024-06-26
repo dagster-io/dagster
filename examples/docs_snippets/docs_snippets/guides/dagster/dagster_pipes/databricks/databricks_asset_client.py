@@ -4,7 +4,7 @@
 import os
 import sys
 
-from dagster_databricks import PipesDatabricksClient
+from dagster_databricks_pipes import PipesDatabricksClient
 
 from dagster import AssetExecutionContext, Definitions, EnvVar, asset
 from databricks.sdk import WorkspaceClient
