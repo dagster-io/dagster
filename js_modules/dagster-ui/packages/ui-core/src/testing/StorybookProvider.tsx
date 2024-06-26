@@ -1,12 +1,10 @@
-import {loader} from 'graphql.macro';
 import * as React from 'react';
 import {MemoryRouter, MemoryRouterProps} from 'react-router-dom';
 
 import {ApolloTestProps, ApolloTestProvider} from './ApolloTestProvider';
 import {CustomAlertProvider} from '../app/CustomAlertProvider';
+import typeDefs from '../graphql/schema.graphql';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
-
-const typeDefs = loader('../graphql/schema.graphql');
 
 interface Props {
   children: React.ReactNode;
