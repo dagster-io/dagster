@@ -7,12 +7,12 @@ from typing import Any, Mapping, Optional, cast
 
 import dagster._check as check
 import pytest
-from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events import DagsterEvent, DagsterEventType, RunFailureReason
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
+from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG, RUN_FAILURE_REASON_TAG
 from dagster._core.test_utils import (
     create_run_for_test,
     create_test_daemon_workspace_context,
@@ -201,6 +201,7 @@ def test_monitor_starting(instance: DagsterInstance, logger: Logger):
     run = instance.get_run_by_id(run.run_id)
     assert run
     assert run.status == DagsterRunStatus.FAILURE
+    assert run.tags[RUN_FAILURE_REASON_TAG] == RunFailureReason.START_TIMEOUT.value
 
 
 def test_monitor_canceling(instance: DagsterInstance, logger: Logger):
