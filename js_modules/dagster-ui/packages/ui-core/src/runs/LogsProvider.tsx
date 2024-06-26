@@ -293,6 +293,7 @@ const LogsProviderWithQuery = (props: LogsProviderWithQueryProps) => {
     RUN_LOGS_QUERY,
     {
       notifyOnNetworkStatusChange: true,
+      fetchPolicy: 'no-cache',
       variables: {runId, cursor, limit: QUERY_LOG_LIMIT},
       pollInterval: POLL_INTERVAL,
       onCompleted: (data: RunLogsQuery) => {
