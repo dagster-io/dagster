@@ -1,5 +1,50 @@
 # Changelog
 
+# 1.7.11 (core)/ 0.23.11 (libraries)
+
+### New
+
+- [ui] Improved performance for loading assets that are part of big asset graphs.
+- [ui] Improved performance for loading job backfills that have thousands of partitions
+- [ui] The code location page can now be filtered by status
+- [agent] K8s and ECS agent main loop writes a sentinel file that can be used for liveness checks.
+- [agent][experimental] ECS CloudFormation template with private IP addresses using NAT Gateways, security groups, IAM role separation, tighter permissions requirements, and improved documentation.
+- Ephemeral asset jobs are now supported in run status sensors (thanks [@the4thamigo-uk](https://github.com/the4thamigo-uk))!
+
+### Bugfixes
+
+- In `AssetsDefinition` construction, enforce single key per output name
+- Fixed a bug where freshness checks on assets with both observations and materializations would incorrectly miss a materialization if there’s no observation with `dagster/last_updated_timestamp`.
+- Fixed a bug with anomaly detection freshness checks where “not enough records” result would cause the sensor to crash loop.
+- Fixed a bug that could cause errors in the Asset Daemon if an asset using `AutoMaterializeRule.skip_on_not_all_parents_updated_since_cron()` rule gained a new dependency with a different PartitionsDefinition.
+- [ui] Fixed an issue that caused the backfill page not to be scrollable.
+- [ui] Fixed an issue where filtering by partition on the Runs page wouldn’t work if fetching all of your partitions timed out.
+- [dagster-dlt] Fixed bug with dlt integration in which partitioned assets would change the file name when using the filesystem destination.
+- [ui] Fixed an issue where an erroring code location would cause multiple toast popups.
+- Allow a string to be provided for `source_key_prefix` arg of `load_assets_from_modules`. (thanks [@drjlin](https://github.com/drjlin))!
+- Added a missing debug level log message when loading partitions with polars (thanks [Daniel Gafni](https://github.com/danielgafni))!
+- Set postgres timeout via statement, which improves storage-layer compatibility with Amazon RDS (thanks [@james lewis](https://github.com/jameslewisfaculty))!
+- In DBT integration, quote the table identifiers to handle cases where table names require quotes due to special characters. (thanks [@alex launi](https://github.com/lamalex))!
+- remove deprecated param usage in dagster-wandb integration (thanks [@chris histe](https://github.com/chrishiste))!
+- Add missing QUEUED state to DatabricksRunLifeCycleState (thanks [@gabor ratky](https://github.com/gaborratky-db))!
+- Fixed a bug with dbt-cloud integration subsetting implementation (thanks [@ivan tsarev](https://github.com/mudravrik))!
+
+### Breaking Changes
+
+- [dagster-airflow] `load_assets_from_airflow_dag` no longer allows multiple tasks to materialize the same asset.
+
+### Documentation
+
+- Added type-hinting to backfills example
+- Added syntax highlighting to some examples (thanks [@Niko](https://github.com/nikomancy))!
+- Fixed broken link (thanks [@federico caselli](https://github.com/caselit))!
+
+### Dagster Plus
+
+- The `dagster-cloud ci init` CLI will now use the `--deployment` argument as the base deployment when creating a branch deployment. This base deployment will be used for Change Tracking.
+- The BigQuery dbt insights wrapper `dbt_with_bigquery_insights` now respects CLI arguments for profile configuration and also selects location / dataset from the profile when available.
+- [experimental feature] Fixes a recent regression where the UI errored upon attempting to create an insights metric alert.
+
 # 1.7.10 (core)/ 0.23.10 (libraries)
 
 ### New
