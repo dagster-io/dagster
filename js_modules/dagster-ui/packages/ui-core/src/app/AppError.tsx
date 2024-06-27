@@ -50,7 +50,8 @@ const showNetworkError = async (statusCode: number) => {
 export const createErrorLink = (toastOnErrors?: boolean) =>
   onError((response) => {
     let didLogError = false;
-    const operationName = response.operation.operationName;
+    // Wrap the operation name in curly braces so that our datadog RUM handler can parse the operation name out easily to add as an attribute.
+    const operationName = `{${response.operation.operationName}}`;
     if (response.graphQLErrors) {
       const {graphQLErrors} = response;
       graphQLErrors.forEach((error) => {
