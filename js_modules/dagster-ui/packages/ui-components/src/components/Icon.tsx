@@ -69,7 +69,6 @@ import email from '../icon-svgs/email.svg';
 import error from '../icon-svgs/error.svg';
 import error_outline from '../icon-svgs/error_outline.svg';
 import execute from '../icon-svgs/execute.svg';
-import executing from '../icon-svgs/executing.svg';
 import expand from '../icon-svgs/expand.svg';
 import expand_arrows from '../icon-svgs/expand_arrows.svg';
 import expand_less from '../icon-svgs/expand_less.svg';
@@ -206,7 +205,6 @@ export const Icons = {
   datatype_number,
   expectation,
   execute,
-  executing,
   materialization,
   observation,
   job,
