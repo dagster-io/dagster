@@ -67,14 +67,20 @@ class AssetLayer(NamedTuple):
                 input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
                 asset_key_by_input[input_handle] = input_asset_key
                 # resolve graph input to list of op inputs that consume it
-                node_input_handles = assets_def.node_def.resolve_input_to_destinations(input_handle)
+                node_input_handles = (
+                    assets_def._computation.full_node_def.resolve_input_to_destinations(
+                        input_handle
+                    )
+                )
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = input_asset_key
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
-                inner_output_def, inner_node_handle = assets_def.node_def.resolve_output_to_origin(
-                    output_name, handle=node_handle
+                inner_output_def, inner_node_handle = (
+                    assets_def._computation.full_node_def.resolve_output_to_origin(
+                        output_name, handle=node_handle
+                    )
                 )
                 node_output_handle = NodeOutputHandle(
                     node_handle=inner_node_handle, output_name=inner_output_def.name
@@ -85,7 +91,7 @@ class AssetLayer(NamedTuple):
                 asset_key_by_input.update(
                     {
                         input_handle: asset_key
-                        for input_handle in assets_def.node_def.resolve_output_to_destinations(
+                        for input_handle in assets_def._computation.full_node_def.resolve_output_to_destinations(
                             output_name, node_handle
                         )
                     }
@@ -99,7 +105,7 @@ class AssetLayer(NamedTuple):
                     (
                         inner_output_def,
                         inner_node_handle,
-                    ) = assets_def.node_def.resolve_output_to_origin(
+                    ) = assets_def._computation.node_def.resolve_output_to_origin(
                         output_name, handle=node_handle
                     )
                     node_output_handle = NodeOutputHandle(

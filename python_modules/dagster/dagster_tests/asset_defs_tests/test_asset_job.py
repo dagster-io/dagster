@@ -1187,7 +1187,8 @@ def test_internal_asset_deps_assets():
         NodeHandle(name="upstream_op", parent=NodeHandle(name="thing", parent=None)),
     }
     assert job.asset_layer.upstream_dep_op_handles(AssetKey("thing_2")) == {
-        NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None))
+        NodeHandle("two_outputs", parent=NodeHandle("thing", parent=None)),
+        NodeHandle(name="upstream_op", parent=NodeHandle(name="thing", parent=None)),
     }
 
     assert job.asset_layer.upstream_dep_op_handles(AssetKey("my_out_name")) == {

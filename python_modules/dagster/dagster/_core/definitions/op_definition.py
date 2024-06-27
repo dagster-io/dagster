@@ -20,7 +20,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.policy import RetryPolicy
@@ -468,6 +468,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def get_op_handles(self, parent: NodeHandle) -> AbstractSet[NodeHandle]:
         return {parent}
+
+    def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
+        return {
+            NodeOutputHandle(check.not_none(parent), output_def.name)
+            for output_def in self.output_defs
+        }
 
 
 def _resolve_output_defs_from_outs(

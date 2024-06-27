@@ -18,6 +18,7 @@ from dagster import (
     FreshnessPolicy,
     GraphOut,
     IdentityPartitionMapping,
+    In,
     IOManager,
     IOManagerDefinition,
     LastPartitionMapping,
@@ -28,6 +29,7 @@ from dagster import (
     define_asset_job,
     fs_io_manager,
     graph,
+    graph_multi_asset,
     io_manager,
     job,
     materialize,
@@ -1209,13 +1211,47 @@ def test_graph_backed_asset_subset_context(
         )
 
 
+def test_graph_backed_asset_subset_two_routes():
+    """Only asset2 is selected.
+
+    Materializating asset2 requires executing op2, whose in2 is hooked up to op1's out2. op1's out2
+    does not correspond to any asset, so the only way to get it is to execute op1. Thus, op1 is
+    executed. op1's out1 is linked to asset1, so asset1 is also materialized, even though it is not
+    selected.
+    """
+
+    @op(out={"out1": Out(), "out2": Out()})
+    def op1():
+        yield Output(None, output_name="out1")
+        yield Output(None, output_name="out2")
+
+    @op
+    def op2(in1, in2) -> None: ...
+
+    @graph_multi_asset(
+        outs={
+            "out1": AssetOut(key="asset1"),
+            "out2": AssetOut(key="asset2"),
+        },
+        can_subset=True,
+    )
+    def assets():
+        op1_out1, op1_out2 = op1()
+        return op1_out1, op2(op1_out1, op1_out2)
+
+    result = materialize([assets], selection=["asset2"])
+    assert result.success
+    materialized_assets = [
+        event.event_specific_data.materialization.asset_key
+        for event in result.get_asset_materialization_events()
+    ]
+    assert materialized_assets == [AssetKey("asset1"), AssetKey("asset2")]
+
+
 @pytest.mark.parametrize(
     "asset_selection,selected_output_names_op_1,selected_output_names_op_3,num_materializations",
     [
-        # Because out_1 of op_1 is an input to generate asset_one and is yielded as asset_4,
-        # we materialize it even though it is not selected. A log message will indicate that it is
-        # an unexpected materialization.
-        ([AssetKey("asset_one")], {"out_1"}, None, 2),
+        ([AssetKey("asset_one")], {"out_1"}, None, 1),
         ([AssetKey("asset_two")], {"out_2"}, {"op_3_1"}, 1),
         ([AssetKey("asset_two"), AssetKey("asset_three")], {"out_2"}, {"op_3_1", "op_3_2"}, 2),
         ([AssetKey("asset_four"), AssetKey("asset_three")], {"out_1", "out_2"}, {"op_3_2"}, 2),
@@ -1244,17 +1280,20 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
         if "out_2" in context.selected_output_names:
             yield Output(1, output_name="out_2")
 
-    @op
-    def op_2(x):
-        return x
+    @op(ins={"x": In(Nothing)})
+    def op_2():
+        return None
 
-    @op(out={"op_3_1": Out(is_required=False), "op_3_2": Out(is_required=False)})
-    def op_3(context, x):
+    @op(
+        out={"op_3_1": Out(is_required=False), "op_3_2": Out(is_required=False)},
+        ins={"x": In(Nothing)},
+    )
+    def op_3(context):
         assert context.selected_output_names == selected_output_names_op_3
         if "op_3_1" in context.selected_output_names:
-            yield Output(x, output_name="op_3_1")
+            yield Output(None, output_name="op_3_1")
         if "op_3_2" in context.selected_output_names:
-            yield Output(x, output_name="op_3_2")
+            yield Output(None, output_name="op_3_2")
 
     @graph(
         out={
@@ -1277,7 +1316,13 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
 
     asset_job = define_asset_job("yay").resolve(
         asset_graph=AssetGraph.from_assets(
-            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
+            [
+                AssetsDefinition.from_graph(
+                    graph_asset,
+                    can_subset=True,
+                    internal_asset_deps={"asset_one": {AssetKey("asset_four")}},
+                )
+            ],
         )
     )
 
@@ -1295,10 +1340,8 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
     [
         ([AssetKey("a")], {"op_1_1"}, None, 1),
         ([AssetKey("b")], {"op_1_2"}, None, 1),
-        # The following two test cases will also yield a materialization for b because b
-        # is required as an input and directly outputted from the graph. A warning is logged.
-        ([AssetKey("c")], {"op_1_2"}, {"op_2_1"}, 2),
-        ([AssetKey("c"), AssetKey("d")], {"op_1_2"}, {"op_2_1", "op_2_2"}, 3),
+        ([AssetKey("c")], {"op_1_2"}, {"op_2_1"}, 1),
+        ([AssetKey("c"), AssetKey("d")], {"op_1_2"}, {"op_2_1", "op_2_2"}, 2),
         ([AssetKey("b"), AssetKey("d")], {"op_1_2"}, {"op_2_2"}, 2),
     ],
 )
@@ -1313,13 +1356,16 @@ def test_nested_graph_subset_context(
         if "op_1_2" in context.selected_output_names:
             yield Output(1, output_name="op_1_2")
 
-    @op(out={"op_2_1": Out(is_required=False), "op_2_2": Out(is_required=False)})
-    def op_2(context, x):
+    @op(
+        out={"op_2_1": Out(is_required=False), "op_2_2": Out(is_required=False)},
+        ins={"x": In(Nothing)},
+    )
+    def op_2(context):
         assert context.selected_output_names == selected_output_names_op_2
         if "op_2_2" in context.selected_output_names:
-            yield Output(x, output_name="op_2_2")
+            yield Output(None, output_name="op_2_2")
         if "op_2_1" in context.selected_output_names:
-            yield Output(x, output_name="op_2_1")
+            yield Output(None, output_name="op_2_1")
 
     @graph(out={"a": GraphOut(), "b": GraphOut()})
     def two_outputs_graph():

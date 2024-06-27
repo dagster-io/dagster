@@ -45,6 +45,7 @@ from .dependency import (
     NodeInputHandle,
     NodeInvocation,
     NodeOutput,
+    NodeOutputHandle,
 )
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -923,6 +924,48 @@ class GraphDefinition(NodeDefinition):
             for node in self.nodes
             for op_handle in node.definition.get_op_handles(NodeHandle(node.name, parent=parent))
         }
+
+    def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
+        return {
+            op_output_handle
+            for node in self.nodes
+            for op_output_handle in node.definition.get_op_output_handles(
+                NodeHandle(node.name, parent=parent)
+            )
+        }
+
+    def get_op_input_output_handle_pairs(
+        self, outer_handle: Optional[NodeHandle]
+    ) -> AbstractSet[Tuple[NodeOutputHandle, NodeInputHandle]]:
+        result: Set[Tuple[NodeOutputHandle, NodeInputHandle]] = set()
+
+        for node in self.nodes:
+            node_handle = NodeHandle(node.name, parent=outer_handle)
+            if isinstance(node.definition, GraphDefinition):
+                result.update(node.definition.get_op_input_output_handle_pairs(node_handle))
+
+            for (
+                node_input,
+                upstream_outputs,
+            ) in self.dependency_structure.input_to_upstream_outputs_for_node(node.name).items():
+                op_input_handles = node_input.node.definition.resolve_input_to_destinations(
+                    NodeInputHandle(node_handle=node_handle, input_name=node_input.input_def.name)
+                )
+                for op_input_handle in op_input_handles:
+                    for upstream_node_output in upstream_outputs:
+                        origin_output_def, origin_node_handle = (
+                            upstream_node_output.node.definition.resolve_output_to_origin(
+                                upstream_node_output.output_def.name,
+                                NodeHandle(upstream_node_output.node.name, parent=outer_handle),
+                            )
+                        )
+                        origin_output_handle = NodeOutputHandle(
+                            node_handle=origin_node_handle, output_name=origin_output_def.name
+                        )
+
+                        result.add((origin_output_handle, op_input_handle))
+
+        return result
 
 
 class SubselectedGraphDefinition(GraphDefinition):
