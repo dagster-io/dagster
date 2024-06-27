@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import yaml
-from dagster._annotations import experimental, public
+from dagster._annotations import public
 from dagster._model import IHaveNew, dagster_model_custom
 from dagster._utils import run_with_concurrent_update_guard
 
@@ -21,7 +21,6 @@ def using_dagster_dev() -> bool:
     return bool(os.getenv("DAGSTER_IS_DEV_CLI"))
 
 
-@experimental
 class DbtProjectPreparer:
     """The abstract class of a preparer for a DbtProject representation.
 
@@ -46,7 +45,6 @@ class DbtProjectPreparer:
         return using_dagster_dev()
 
 
-@experimental
 class DagsterDbtProjectPreparer(DbtProjectPreparer):
     def __init__(
         self,
@@ -133,7 +131,6 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
 
-@experimental
 @dagster_model_custom
 class DbtProject(IHaveNew):
     """Representation of a dbt project and related settings that assist with managing the project preparation.
