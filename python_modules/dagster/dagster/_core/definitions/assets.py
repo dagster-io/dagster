@@ -1627,7 +1627,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             parent_handle=None,
             outputs_by_graph_handle=outputs_by_graph_handle,
             non_asset_inputs_by_node_handle=non_asset_inputs_by_node_handle,
-            assets_defs_by_node_handle={outer_node_handle: self},
         )
 
         dep_nodes_by_asset_or_check_key: Dict["AssetKeyOrCheckKey", List[NodeHandle]] = {}
@@ -2052,7 +2051,6 @@ def _build_graph_dependencies(
     parent_handle: Optional[NodeHandle],
     outputs_by_graph_handle: Dict[NodeHandle, Mapping[str, NodeOutputHandle]],
     non_asset_inputs_by_node_handle: Dict[NodeHandle, Sequence[NodeOutputHandle]],
-    assets_defs_by_node_handle: Mapping[NodeHandle, "AssetsDefinition"],
 ) -> None:
     """Scans through every node in the graph, making a recursive call when a node is a graph.
 
@@ -2076,7 +2074,6 @@ def _build_graph_dependencies(
                 curr_node_handle,
                 outputs_by_graph_handle,
                 non_asset_inputs_by_node_handle,
-                assets_defs_by_node_handle,
             )
             outputs_by_graph_handle[curr_node_handle] = {
                 mapping.graph_output_name: NodeOutputHandle(
@@ -2091,8 +2088,6 @@ def _build_graph_dependencies(
                 output_name=node_output.output_def.name,
             )
             for node_output in dep_struct.all_upstream_outputs_from_node(sub_node_name)
-            if NodeHandle(node_output.node.name, parent=parent_handle)
-            not in assets_defs_by_node_handle
         ]
 
 
