@@ -9,3 +9,4 @@ from dagster_dbt import DbtProject
     state_path=Path("target", "state"),
     {%- endif %}
 )
+{{ dbt_project_name }}.prepare_if_dev()
