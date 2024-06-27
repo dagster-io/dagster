@@ -859,7 +859,7 @@ class AssetDaemon(DagsterDaemon):
             instance.da_emit_backfills()
         )  # TODO - what if the setting changes between when run request was made and now?
 
-        if is_retry:
+        if is_retry:  # TODO - if something fails after the backfill gets submitted, reusing the backfill ids will cause errors because of uniqueness. Maybe we just check if that backfill id has already been submitted?
             # Unfinished or retried tick already generated evaluations and run requests and cursor, now
             # need to finish it
             run_requests = tick.tick_data.run_requests or []
@@ -989,13 +989,14 @@ class AssetDaemon(DagsterDaemon):
                         backfill_id=reserved_run_id,
                         dynamic_partitions_store=instance,
                         backfill_timestamp=pendulum.now("UTC").timestamp(),  # replace pendulum
-                        asset_graph_subset=run_requests.asset_graph_subset,
-                        tags=run_requests.tags or {},
-                        title=f"Run for Declarative Automation evaludation ID {evaluation_id}",
+                        asset_graph_subset=run_request.asset_graph_subset,
+                        tags=run_request.tags or {},
+                        title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
                         description=None,
                     )
                 )
                 submitted_run_id = reserved_run_id
+                asset_keys = check.not_none(run_request.asset_graph_subset.asset_keys)
             else:
                 submitted_run = submit_asset_run(
                     run_id=reserved_run_id,
@@ -1015,10 +1016,10 @@ class AssetDaemon(DagsterDaemon):
                     logger=self._logger,
                 )
                 submitted_run_id = submitted_run.run_id
+                asset_keys = check.not_none(run_request.asset_selection)
             # heartbeat after each submitted runs
             yield
 
-            asset_keys = check.not_none(run_request.asset_selection)
             tick_context.add_run_info(run_id=submitted_run_id)
 
             # write the submitted run ID to any evaluations

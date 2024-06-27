@@ -235,7 +235,9 @@ class AssetDaemonContext:
                 newly_observe_requested_asset_keys=[
                     asset_key
                     for run_request in auto_observe_run_requests
-                    for asset_key in cast(Sequence[AssetKey], run_request.asset_selection)
+                    for asset_key in cast(
+                        Sequence[AssetKey], run_request.asset_selection
+                    )  # TODO - need to replace run_request.asset_selection for backfills?
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),
