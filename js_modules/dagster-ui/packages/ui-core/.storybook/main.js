@@ -17,9 +17,11 @@ const config = {
     getAbsolutePath('@storybook/addon-mdx-gfm'),
     '@chromatic-com/storybook',
   ],
+  typescript: {
+    reactDocgen: false,
+  },
   framework: {
     name: getAbsolutePath('@storybook/nextjs'),
-    options: {},
   },
   // https://github.com/storybookjs/storybook/issues/16690#issuecomment-971579785
   webpackFinal: async (config) => {

@@ -21,9 +21,8 @@ const config = {
     name: getAbsolutePath('@storybook/nextjs'),
     options: {},
   },
-  // https://github.com/hipstersmoothie/react-docgen-typescript-plugin/issues/78#issuecomment-1409224863
   typescript: {
-    reactDocgen: 'react-docgen-typescript-plugin',
+    reactDocgen: false,
   },
   docs: {},
   env: (config) => ({
