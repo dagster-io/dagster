@@ -105,16 +105,15 @@ class DagsterDbtManifestPreparer(DbtManifestPreparer):
 @experimental
 @dagster_model_custom
 class DbtProject(IHaveNew):
-    """Representation of a dbt project and related settings that assist
-    with preparing the manifest.json files and the dbt dependencies.
+    """Representation of a dbt project and related settings that assist with managing the project preparation.
 
-
-    Using this helps achieve a setup where:
-    * during development, reload the manifest at run time to pick up any changes.
+    Using this helps achieve a setup where the dbt manifest file
+    and dbt dependencies are available and up-to-date:
+    * during development, pull the dependencies and reload the manifest at run time to pick up any changes.
     * when deployed, expect a manifest that was created at build time to reduce start-up time.
 
     The cli ``dagster-dbt project prepare-for-deployment`` can be used as part of the deployment process to
-    handle manifest.json preparation.
+    handle the project preparation.
 
     This object can be passed directly to :py:class:`~dagster_dbt.DbtCliResource`.
 
@@ -123,6 +122,7 @@ class DbtProject(IHaveNew):
             The directory of the dbt project.
         target_path (Union[str, Path]):
             The path, relative to the project directory, to output artifacts.
+            It corresponds to the target path in dbt.
             Default: "target"
         target (Optional[str]):
             The target from your dbt `profiles.yml` to use for execution, if it should be explicitly set.
@@ -178,7 +178,7 @@ class DbtProject(IHaveNew):
     packaged_project_dir: Optional[Path]
     state_path: Optional[Path]
     has_uninstalled_deps: bool
-    manifest_preparer: DbtManifestPreparer
+    preparer: DbtManifestPreparer
 
     def __new__(
         cls,
@@ -197,7 +197,7 @@ class DbtProject(IHaveNew):
         if not using_dagster_dev() and packaged_project_dir and packaged_project_dir.exists():
             project_dir = packaged_project_dir
 
-        manifest_preparer = DagsterDbtManifestPreparer()
+        preparer = DagsterDbtManifestPreparer()
 
         manifest_path = project_dir.joinpath(target_path, "manifest.json")
 
@@ -229,7 +229,7 @@ class DbtProject(IHaveNew):
             state_path=project_dir.joinpath(state_path) if state_path else None,
             packaged_project_dir=packaged_project_dir,
             has_uninstalled_deps=has_uninstalled_deps,
-            manifest_preparer=manifest_preparer,
+            preparer=preparer,
         )
 
     @public
@@ -263,5 +263,5 @@ class DbtProject(IHaveNew):
                     ...
                 )
         """
-        if self.manifest_preparer:
-            self.manifest_preparer.on_load(self)
+        if self.preparer:
+            self.preparer.on_load(self)
