@@ -165,11 +165,11 @@ def test_project_scaffold_command_without_dbt_project_with_runtime_manifest(
 @pytest.mark.parametrize("use_experimental_dbt_project", [True])
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_dbt_project_with_runtime_manifest(
-        monkeypatch: pytest.MonkeyPatch,
-        tmp_path: Path,
-        dbt_project_dir: Path,
-        use_dbt_project_package_data_dir: bool,
-        use_experimental_dbt_project: bool,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    dbt_project_dir: Path,
+    use_dbt_project_package_data_dir: bool,
+    use_experimental_dbt_project: bool,
 ) -> None:
     monkeypatch.chdir(tmp_path)
 
@@ -196,6 +196,7 @@ def test_project_scaffold_command_with_dbt_project_with_runtime_manifest(
     sys.path.append(os.fspath(tmp_path))
 
     _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
+
 
 @pytest.mark.parametrize("use_experimental_dbt_project", [True, False])
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
