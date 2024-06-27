@@ -128,7 +128,7 @@ def test_project_scaffold_command_with_precompiled_manifest(
 
 
 @pytest.mark.parametrize("use_experimental_dbt_project", [False])
-@pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
+@pytest.mark.parametrize("use_dbt_project_package_data_dir", [False])
 def test_project_scaffold_command_without_dbt_project_with_runtime_manifest(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -162,7 +162,7 @@ def test_project_scaffold_command_without_dbt_project_with_runtime_manifest(
     _assert_scaffold_defs(project_name=project_name, dagster_project_dir=dagster_project_dir)
 
 
-@pytest.mark.parametrize("use_experimental_dbt_project", [True])
+@pytest.mark.parametrize("use_experimental_dbt_project", [True, False])
 @pytest.mark.parametrize("use_dbt_project_package_data_dir", [True, False])
 def test_project_scaffold_command_with_dbt_project_with_runtime_manifest(
     monkeypatch: pytest.MonkeyPatch,
@@ -171,6 +171,10 @@ def test_project_scaffold_command_with_dbt_project_with_runtime_manifest(
     use_dbt_project_package_data_dir: bool,
     use_experimental_dbt_project: bool,
 ) -> None:
+    # Skip the case where we don't use DbtProject
+    if not use_dbt_project_package_data_dir and not use_experimental_dbt_project:
+        pytest.skip()
+
     monkeypatch.chdir(tmp_path)
 
     project_name = f"test_dagster_scaffold_runtime_manifest_{use_experimental_dbt_project}"
@@ -190,7 +194,7 @@ def test_project_scaffold_command_with_dbt_project_with_runtime_manifest(
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
-    # DbtProject does not support the opt in env var anymore, only the local dev env var
+    # DbtProject does not support the opt-in env var anymore, only the local dev env var
     monkeypatch.setenv("DAGSTER_IS_DEV_CLI", "1")
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
