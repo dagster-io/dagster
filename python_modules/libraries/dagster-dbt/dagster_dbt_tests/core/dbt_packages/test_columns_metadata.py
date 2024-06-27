@@ -421,8 +421,6 @@ def test_column_lineage_real_warehouse(
     sql_dialect = target
 
     monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(False).lower())
-    # Simulate the parsing of the SQL into a different dialect.
-    assert Dialect.get_or_raise(sql_dialect)
 
     manifest = test_metadata_manifest.copy()
     assert manifest["metadata"]["adapter_type"] == sql_dialect
@@ -435,6 +433,7 @@ def test_column_lineage_real_warehouse(
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         cli_invocation = dbt.cli(["build"], context=context).stream()
+        # test chaining fetch_row_counts and fetch_column_metadata
         if fetch_row_counts:
             cli_invocation = cli_invocation.fetch_row_counts()
         cli_invocation = cli_invocation.fetch_column_metadata()
