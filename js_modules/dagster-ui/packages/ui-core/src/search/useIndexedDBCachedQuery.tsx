@@ -113,7 +113,9 @@ export function useIndexedDBCachedQuery<TQuery, TVariables extends OperationVari
       setError(error);
       setLoading(false);
     },
-    [getData, client, key, query, variables, version, dataRef],
+    // exclude variables, instead JSON stringify it to avoid changing this reference if the caller hasn't memoized it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [getData, client, key, query, JSON.stringify(variables), version, dataRef],
   );
 
   React.useEffect(() => {
