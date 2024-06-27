@@ -34,3 +34,9 @@ Print out the JSON schema for the blueprints:
 ```bash
 dagster-blueprints print-schema
 ```
+
+If you use [VS Code](https://code.visualstudio.com/) for editing code, configure VS Code to associate the YAML files in the [custom_blueprints/curl_assets/](custom_blueprints/curl_assets/) with the blueprint schema that's used to interpret them. This will provide typeahead and type checking when editing these files.
+
+```bash
+dagster-blueprints configure-vscode
+```
