@@ -52,7 +52,7 @@ VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
 
 
 def pandera_schema_to_dagster_type(
-    schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
+    schema: Union[pa.DataFrameSchema, Type[pa.DataFrameModel]],
 ) -> DagsterType:
     """Convert a Pandera dataframe schema to a `DagsterType`.
 
@@ -78,7 +78,7 @@ def pandera_schema_to_dagster_type(
     - `failure_sample` a table containing up to the first 10 validation errors.
 
     Args:
-        schema (Union[pa.DataFrameSchema, Type[pa.SchemaModel]]):
+        schema (Union[pa.DataFrameSchema, Type[pa.DataFrameModel]]):
 
     Returns:
         DagsterType: Dagster Type constructed from the Pandera schema.
@@ -86,16 +86,16 @@ def pandera_schema_to_dagster_type(
     """
     if not (
         isinstance(schema, pa.DataFrameSchema)
-        or (isinstance(schema, type) and issubclass(schema, pa.SchemaModel))
+        or (isinstance(schema, type) and issubclass(schema, pa.DataFrameModel))
     ):
         raise TypeError(
-            "schema must be a pandera `DataFrameSchema` or a subclass of a pandera `SchemaModel`"
+            "schema must be a pandera `DataFrameSchema` or a subclass of a pandera `DataFrameModel`"
         )
 
     name = _extract_name_from_pandera_schema(schema)
     norm_schema = (
         schema.to_schema()
-        if isinstance(schema, type) and issubclass(schema, pa.SchemaModel)
+        if isinstance(schema, type) and issubclass(schema, pa.DataFrameModel)
         else schema
     )
     tschema = _pandera_schema_to_table_schema(norm_schema)
@@ -117,9 +117,9 @@ _anonymous_schema_name_generator = (f"DagsterPanderaDataframe{i}" for i in itert
 
 
 def _extract_name_from_pandera_schema(
-    schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
+    schema: Union[pa.DataFrameSchema, Type[pa.DataFrameModel]],
 ) -> str:
-    if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
+    if isinstance(schema, type) and issubclass(schema, pa.DataFrameModel):
         return (
             getattr(schema.Config, "title", None)
             or getattr(schema.Config, "name", None)
