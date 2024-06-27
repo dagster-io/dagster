@@ -38,13 +38,14 @@ setup(
     install_requires=[
         f"dagster{pin}",
         "pandas",
-        "pandera>=0.14.2,<0.20.0",
+        "pandera>=0.15.0",
         # Pin numpy pending release of pandera that either supports numpy 2 or adds a pin
         "numpy<2",
     ],
     extras_require={
         "test": [
             "pytest",
+            "pyarrow",  # optional dep of dagster-pandera
         ],
     },
 )
