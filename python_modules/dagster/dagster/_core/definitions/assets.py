@@ -138,6 +138,23 @@ class AssetGraphComputation(IHaveNew):
             output_names_by_key=output_names_by_key,
         )
 
+    @cached_property
+    def asset_keys_by_node_handle(self) -> Mapping[Optional[NodeHandle], AbstractSet[AssetKey]]:
+        """Returns a mapping of <node handle>: <asset keys targeted by the node>.
+
+        The nodes handles are relative to the root node. If node_def is an OpDefinition, then the
+        returned dictionary will have a single None key. If node_def is a GraphDefinition with a
+        single Op inside it named "inner", then the returned dictionary will have a single
+        NodeHandle("inner", parent=None) key.
+        """
+        asset_keys_by_leaf_node_handle: Dict[Optional[NodeHandle], Set[AssetKey]] = defaultdict(set)
+
+        for output_name, asset_key in self.keys_by_output_name.items():
+            _, leaf_node_handle = self.node_def.resolve_output_to_origin(output_name, handle=None)
+            asset_keys_by_leaf_node_handle[leaf_node_handle].add(asset_key)
+
+        return asset_keys_by_leaf_node_handle
+
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     """Defines a set of assets that are produced by the same op or graph.
@@ -1719,6 +1736,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             specs=self.specs,
             is_subset=self.is_subset,
         )
+
+    def asset_keys_for_node(self, node_handle: Optional[NodeHandle]) -> AbstractSet[AssetKey]:
+        """Returns the selected asset keys targeted by the given leaf node within the computation
+        for this AssetsDefinition.
+
+        Args:
+            node_handle: The handle relative to the root node for this AssetsDefinition. If its
+                node_def is an OpDefinition, then the node_handle should be None. If its node_def is
+                a GraphDefinition with a single Op inside it named "inner", then the argument value
+                to select asset keys targeted by it is NodeHandle("inner", parent=None) key.
+        """
+        computation = check.not_none(self._computation)
+        return computation.asset_keys_by_node_handle[node_handle] & computation.selected_asset_keys
 
 
 def _infer_keys_by_input_names(

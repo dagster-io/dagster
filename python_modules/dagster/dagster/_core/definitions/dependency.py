@@ -353,7 +353,7 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         return str(self.parent) + "." + self.name if self.parent else self.name
 
     @property
-    def root(self):
+    def root(self) -> Optional["NodeHandle"]:
         if self.parent:
             return self.parent.root
         else:
