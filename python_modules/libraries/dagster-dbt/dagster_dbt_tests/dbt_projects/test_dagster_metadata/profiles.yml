@@ -5,7 +5,6 @@ jaffle_shop:
       type: duckdb
       path: "{{ env_var('DAGSTER_DBT_PYTEST_XDIST_DUCKDB_DBFILE_PATH') }}"
       threads: 24
-      schema: main
     snowflake:
       type: snowflake
       account: "{{ env_var('SNOWFLAKE_ACCOUNT') }}"

@@ -384,6 +384,11 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
             "count_star": [],
         }
     ),
+    AssetKey(["count_star_implicit_alias_customers"]): TableColumnLineage(
+        deps_by_column={
+            "count_star()": [],
+        }
+    ),
 }
 
 
