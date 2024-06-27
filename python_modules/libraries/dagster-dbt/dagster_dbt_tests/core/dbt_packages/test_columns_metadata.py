@@ -401,10 +401,12 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
         # TODO: test on bigquery
     ],
 )
+@pytest.mark.parametrize("fetch_row_counts", [True, False])
 def test_column_lineage_real_warehouse(
     request: pytest.FixtureRequest,
     target: str,
     excluded_models: Optional[List[str]],
+    fetch_row_counts: bool,
     manifest_fixture_name: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -412,16 +414,13 @@ def test_column_lineage_real_warehouse(
         Dict[str, Any], request.getfixturevalue(manifest_fixture_name)
     )
     sql_dialect = target
-    use_experimental_fetch_column_schema = True
 
-    monkeypatch.setenv(
-        "DBT_LOG_COLUMN_METADATA", str(not use_experimental_fetch_column_schema).lower()
-    )
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(False).lower())
     # Simulate the parsing of the SQL into a different dialect.
     assert Dialect.get_or_raise(sql_dialect)
 
     manifest = test_metadata_manifest.copy()
-    manifest["metadata"]["adapter_type"] = sql_dialect
+    assert manifest["metadata"]["adapter_type"] == sql_dialect
 
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path), target=target)
     dbt.cli(
@@ -431,8 +430,9 @@ def test_column_lineage_real_warehouse(
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
         cli_invocation = dbt.cli(["build"], context=context).stream()
-        if use_experimental_fetch_column_schema:
-            cli_invocation = cli_invocation.fetch_column_metadata()
+        if fetch_row_counts:
+            cli_invocation = cli_invocation.fetch_row_counts()
+        cli_invocation = cli_invocation.fetch_column_metadata()
         yield from cli_invocation
 
     result = materialize(
