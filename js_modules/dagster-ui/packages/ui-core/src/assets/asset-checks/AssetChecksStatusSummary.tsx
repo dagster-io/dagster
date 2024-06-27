@@ -15,11 +15,7 @@ import {CheckStatusRow} from './AssetCheckStatusTag';
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {LiveDataForNode} from '../../asset-graph/Utils';
-import {
-  AssetCheckExecutionResolvedStatus,
-  AssetCheckSeverity,
-  AssetKeyInput,
-} from '../../graphql/types';
+import {AssetCheckExecutionResolvedStatus, AssetCheckSeverity, AssetKey} from '../../graphql/types';
 
 type AssetCheckIconType =
   | Exclude<
@@ -86,13 +82,13 @@ const titlePerCheckType = (type: AssetCheckIconType) => {
   }
 };
 
-export const ChecksSummaryPopover = ({
+const ChecksSummaryPopover = ({
   type,
   assetKey,
   assetChecks,
 }: {
   type: AssetCheckIconType;
-  assetKey: AssetKeyInput;
+  assetKey: AssetKey;
   assetChecks: AssetCheckLiveFragment[];
 }) => {
   return (
@@ -127,7 +123,7 @@ export const AssetChecksStatusSummary = ({
 }: {
   liveData: LiveDataForNode;
   rendering: 'dag' | 'tags';
-  assetKey: AssetKeyInput;
+  assetKey: AssetKey;
 }) => {
   const byIconType = countBy(liveData.assetChecks, iconTypeFromCheck);
 

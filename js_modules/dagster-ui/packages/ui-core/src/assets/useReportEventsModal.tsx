@@ -42,7 +42,7 @@ type Asset = {
   repository: {name: string; location: {name: string}};
 };
 
-export function useReportEventsModal(asset: Asset | null, onEventReported?: () => void) {
+export function useReportEventsModal(asset: Asset | null, onEventReported: () => void) {
   const [isOpen, setIsOpen] = useState(false);
 
   const dropdownOptions = useMemo(
@@ -85,7 +85,7 @@ const ReportEventDialogBody = ({
   repoAddress: RepoAddress;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  onEventReported?: () => void;
+  onEventReported: () => void;
 }) => {
   const [description, setDescription] = useState('');
   const {
@@ -159,7 +159,7 @@ const ReportEventDialogBody = ({
         icon: 'materialization',
         intent: 'success',
       });
-      onEventReported?.();
+      onEventReported();
       setIsOpen(false);
     }
   };

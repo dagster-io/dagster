@@ -3,15 +3,12 @@ import {
   Box,
   Colors,
   Icon,
-  MiddleTruncate,
-  Popover,
   Spinner,
   Tag,
   intentToFillColor,
 } from '@dagster-io/ui-components';
 import {Link} from 'react-router-dom';
 
-import {ChecksSummaryPopover} from './AssetChecksStatusSummary';
 import {assertUnreachable} from '../../app/Util';
 import {AssetCheckLiveFragment} from '../../asset-data/types/AssetBaseDataProvider.types';
 import {
@@ -19,7 +16,7 @@ import {
   AssetCheckExecution,
   AssetCheckExecutionResolvedStatus,
   AssetCheckSeverity,
-  AssetKeyInput,
+  AssetKey,
 } from '../../graphql/types';
 import {linkToRunEvent} from '../../runs/RunUtils';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
@@ -34,7 +31,7 @@ const CheckRow = ({
 }: {
   icon: JSX.Element;
   checkName: string;
-  assetKey: AssetKeyInput;
+  assetKey: AssetKey;
   timestamp?: number;
 }) => (
   <Box
@@ -59,7 +56,7 @@ export const CheckStatusRow = ({
   assetKey,
 }: {
   assetCheck: AssetCheckLiveFragment;
-  assetKey: AssetKeyInput;
+  assetKey: AssetKey;
 }) => {
   const {executionForLatestMaterialization: execution} = assetCheck;
 
@@ -231,56 +228,29 @@ export const AssetCheckStatusTag = ({
 export const AssetCheckErrorsTag = ({
   checks,
   severity,
-  assetKey,
 }: {
   checks: AssetCheckLiveFragment[];
   severity: AssetCheckSeverity;
-  assetKey: AssetKeyInput;
 }) => {
-  const tagIcon = severity === AssetCheckSeverity.ERROR ? 'cancel' : 'warning_outline';
-  const tagIntent = severity === AssetCheckSeverity.ERROR ? 'danger' : 'warning';
-
-  if (checks.length === 1) {
-    const actions: TagAction[] = [];
-    const execution = checks[0]!.executionForLatestMaterialization;
-
+  const actions: TagAction[] = [];
+  const execution = checks[0]?.executionForLatestMaterialization;
+  if (execution) {
     actions.push({
-      label: 'View details',
-      to: assetDetailsPathForAssetCheck({assetKey, name: checks[0]!.name}),
+      label: 'View in run logs',
+      to: linkToRunEvent(
+        {id: execution.runId},
+        {stepKey: execution.stepKey, timestamp: execution.timestamp},
+      ),
     });
-    if (execution) {
-      actions.push({
-        label: 'View in run logs',
-        to: linkToRunEvent(
-          {id: execution.runId},
-          {stepKey: execution.stepKey, timestamp: execution.timestamp},
-        ),
-      });
-    }
-
-    return (
-      <TagActionsPopover
-        data={{key: '', value: ''}}
-        actions={actions}
-        childrenMiddleTruncate={checks.length === 1}
-      >
-        <Tag icon={tagIcon} intent={tagIntent}>
-          <MiddleTruncate text={checks[0]!.name} />
-        </Tag>
-      </TagActionsPopover>
-    );
   }
-
   return (
-    <Popover
-      content={<ChecksSummaryPopover type={severity} assetKey={assetKey} assetChecks={checks} />}
-      position="top-left"
-      interactionKind="hover"
-      className="chunk-popover-target"
-    >
-      <Tag icon={tagIcon} intent={tagIntent}>
-        {`${checks.length} failed`}
+    <TagActionsPopover data={{key: '', value: ''}} actions={actions}>
+      <Tag
+        icon={severity === AssetCheckSeverity.ERROR ? 'cancel' : 'warning_outline'}
+        intent={severity === AssetCheckSeverity.ERROR ? 'danger' : 'warning'}
+      >
+        {checks.length === 1 ? checks[0]!.name : `${checks.length} failed`}
       </Tag>
-    </Popover>
+    </TagActionsPopover>
   );
 };

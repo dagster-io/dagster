@@ -1,13 +1,4 @@
-import {
-  Button,
-  Icon,
-  Menu,
-  MenuDivider,
-  MenuItem,
-  Popover,
-  Spinner,
-  Tooltip,
-} from '@dagster-io/ui-components';
+import {Button, Icon, Menu, MenuItem, Popover, Spinner, Tooltip} from '@dagster-io/ui-components';
 import {useContext} from 'react';
 
 import {
@@ -17,7 +8,6 @@ import {
 import {useObserveAction} from './LaunchAssetObservationButton';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {AssetTableDefinitionFragment} from './types/AssetTableFragment.types';
-import {useReportEventsModal} from './useReportEventsModal';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {usePermissionsForLocation} from '../app/Permissions';
@@ -40,24 +30,14 @@ export const AssetActionMenu = (props: Props) => {
   } = usePermissionsForLocation(repoAddress?.location);
 
   const {
-    featureContext: {canSeeWipeMaterializationAction, canSeeMaterializeAction},
+    featureContext: {canSeeWipeMaterializationAction},
   } = useContext(CloudOSSContext);
 
   const {executeItem, launchpadElement} = useExecuteAssetMenuItem(path, definition);
 
-  const reportEvents = useReportEventsModal(
-    repoAddress
-      ? {
-          assetKey: {path},
-          isPartitioned: !!definition?.partitionDefinition,
-          repository: {name: repoAddress.name, location: {name: repoAddress.location}},
-        }
-      : null,
-  );
   return (
     <>
       {launchpadElement}
-      {reportEvents.element}
       <Popover
         position="bottom-right"
         content={
@@ -75,13 +55,7 @@ export const AssetActionMenu = (props: Props) => {
               icon="asset_group"
             />
             <MenuLink
-              text="View checks"
-              to={assetDetailsPathForKey({path}, {view: 'checks'})}
-              disabled={!definition}
-              icon="asset_check"
-            />
-            <MenuLink
-              text="View lineage"
+              text="View neighbors"
               to={assetDetailsPathForKey({path}, {view: 'lineage', lineageScope: 'neighbors'})}
               disabled={!definition}
               icon="graph_neighbors"
@@ -98,17 +72,6 @@ export const AssetActionMenu = (props: Props) => {
               disabled={!definition}
               icon="graph_downstream"
             />
-            {canSeeMaterializeAction && definition?.hasMaterializePermission
-              ? reportEvents.dropdownOptions.map((option) => (
-                  <MenuItem
-                    key={option.label}
-                    text={option.label}
-                    icon={option.icon}
-                    onClick={option.onClick}
-                  />
-                ))
-              : undefined}
-            {canSeeWipeMaterializationAction ? <MenuDivider /> : undefined}
             {canSeeWipeMaterializationAction ? (
               <MenuItem
                 text="Wipe materializations"
