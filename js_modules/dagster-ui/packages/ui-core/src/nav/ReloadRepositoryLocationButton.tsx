@@ -1,4 +1,5 @@
 import * as React from 'react';
+import {useHistory} from 'react-router-dom';
 
 import {buildReloadFnForLocation, useRepositoryLocationReload} from './useRepositoryLocationReload';
 import {AppContext} from '../app/AppContext';
@@ -23,6 +24,7 @@ export const ReloadRepositoryLocationButton = (props: Props) => {
   const {ChildComponent, location} = props;
   const [shown, setShown] = React.useState(false);
 
+  const history = useHistory();
   const {basePath} = React.useContext(AppContext);
 
   const {
@@ -51,7 +53,7 @@ export const ReloadRepositoryLocationButton = (props: Props) => {
           // is presented to the user, and so that if the user was previously viewing
           // an object in a failed repo location, they aren't staring at a blank page.
           setShown(false);
-          window.location.href = `${basePath}/locations`;
+          history.push(`${basePath}/locations`);
         }}
       />
     </>
