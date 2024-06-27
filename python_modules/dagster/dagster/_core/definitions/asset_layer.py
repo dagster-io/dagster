@@ -36,6 +36,7 @@ class AssetLayer(NamedTuple):
     check_names_by_asset_key_by_node_handle: Mapping[
         NodeHandle, Mapping[AssetKey, AbstractSet[str]]
     ]
+    outer_node_names_by_asset_key: Mapping[AssetKey, str] = {}
 
     @staticmethod
     def from_graph_and_assets_node_mapping(
@@ -59,6 +60,7 @@ class AssetLayer(NamedTuple):
         node_output_handles_by_asset_check_key: Mapping[AssetCheckKey, NodeOutputHandle] = {}
         check_names_by_asset_key_by_node_handle: Dict[NodeHandle, Dict[AssetKey, Set[str]]] = {}
         assets_defs_by_check_key: Dict[AssetCheckKey, "AssetsDefinition"] = {}
+        outer_node_names_by_asset_key: Dict[AssetKey, str] = {}
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
@@ -88,6 +90,7 @@ class AssetLayer(NamedTuple):
                         )
                     }
                 )
+                outer_node_names_by_asset_key[asset_key] = node_handle.name
 
             if len(assets_def.check_specs_by_output_name) > 0:
                 check_names_by_asset_key_by_node_handle[node_handle] = defaultdict(set)
@@ -126,6 +129,7 @@ class AssetLayer(NamedTuple):
             assets_defs_by_node_handle=assets_defs_by_op_handle,
             node_output_handles_by_asset_check_key=node_output_handles_by_asset_check_key,
             check_names_by_asset_key_by_node_handle=check_names_by_asset_key_by_node_handle,
+            outer_node_names_by_asset_key=outer_node_names_by_asset_key,
         )
 
     @property
@@ -248,11 +252,14 @@ class AssetLayer(NamedTuple):
         return {
             key
             for key in assets_def.asset_or_check_keys_by_dep_op_output_handle[
-                NodeOutputHandle(node_handle=node_handle, output_name=output_name)
+                NodeOutputHandle(node_handle=node_handle.pop(), output_name=output_name)
             ]
             if isinstance(key, AssetKey)
         }
 
     def upstream_dep_op_handles(self, asset_key: AssetKey) -> AbstractSet[NodeHandle]:
-        assets_def = self.asset_graph.get(asset_key).assets_def
-        return assets_def.dep_op_handles_by_asset_or_check_key[asset_key]
+        op_handles_in_assets_def = self.asset_graph.get(
+            asset_key
+        ).assets_def.dep_op_handles_by_asset_or_check_key[asset_key]
+        outer_node_handle = NodeHandle(self.outer_node_names_by_asset_key[asset_key], parent=None)
+        return {outer_node_handle.with_child(op_handle) for op_handle in op_handles_in_assets_def}
