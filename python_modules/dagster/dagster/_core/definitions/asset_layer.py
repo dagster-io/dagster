@@ -75,7 +75,7 @@ class AssetLayer(NamedTuple):
                     output_name, handle=node_handle
                 )
                 node_output_handle = NodeOutputHandle(
-                    node_handle=check.not_none(inner_node_handle), output_name=inner_output_def.name
+                    node_handle=inner_node_handle, output_name=inner_output_def.name
                 )
 
                 asset_keys_by_node_output_handle[node_output_handle] = asset_key
@@ -100,8 +100,7 @@ class AssetLayer(NamedTuple):
                         output_name, handle=node_handle
                     )
                     node_output_handle = NodeOutputHandle(
-                        node_handle=check.not_none(inner_node_handle),
-                        output_name=inner_output_def.name,
+                        node_handle=inner_node_handle, output_name=inner_output_def.name
                     )
                     node_output_handles_by_asset_check_key[check_spec.key] = node_output_handle
                     check_names_by_asset_key_by_node_handle[node_handle][check_spec.asset_key].add(
