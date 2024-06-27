@@ -155,7 +155,11 @@ def test_project_scaffold_command_with_runtime_manifest(
         use_dbt_project_package_data_dir=use_dbt_project_package_data_dir,
     )
 
-    monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
+    if use_experimental_dbt_project:
+        # DbtProject does not support opt in env var anymore
+        monkeypatch.setenv("DAGSTER_IS_DEV_CLI", "1")
+    else:
+        monkeypatch.setenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", "1")
     monkeypatch.chdir(tmp_path)
     sys.path.append(os.fspath(tmp_path))
 
@@ -194,7 +198,11 @@ def test_project_scaffold_command_with_runtime_manifest_without_env_var(
     sys.path.append(os.fspath(tmp_path))
 
     with pytest.raises(DagsterDbtManifestNotFoundError):
-        monkeypatch.delenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", raising=False)
+        if use_experimental_dbt_project:
+            # DbtProject does not support opt in env var anymore
+            monkeypatch.delenv("DAGSTER_IS_DEV_CLI", raising=False)
+        else:
+            monkeypatch.delenv("DAGSTER_DBT_PARSE_PROJECT_ON_LOAD", raising=False)
         importlib.import_module(f"{project_name}.{project_name}.definitions")
 
 
