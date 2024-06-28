@@ -61,7 +61,7 @@ from .run_request import (
     SensorResult,
     SkipReason,
 )
-from .target import AutomationTarget, ExecutableDefinition
+from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -627,9 +627,9 @@ class SensorDefinition(IHasInternalInit):
                 )
             ]
         elif job:
-            targets = [AutomationTarget(job)]
+            targets = [AutomationTarget(normalize_automation_target_def(job))]
         elif jobs:
-            targets = [AutomationTarget(job) for job in jobs]
+            targets = [AutomationTarget(normalize_automation_target_def(job)) for job in jobs]
         elif asset_selection:
             targets = []
 
@@ -750,8 +750,8 @@ class SensorDefinition(IHasInternalInit):
         """
         if self._targets:
             if len(self._targets) == 1:
-                if self._targets[0].has_executable_def:
-                    return self._targets[0].executable_def
+                if self._targets[0].has_job_def:
+                    return self._targets[0].job_def
                 else:
                     raise DagsterInvalidDefinitionError(
                         "Job property not available when target is defined by a string job name."
@@ -768,10 +768,10 @@ class SensorDefinition(IHasInternalInit):
         """List[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]: A list of jobs
         that are targeted by this schedule.
         """
-        targets = [t for t in self._targets if t.has_executable_def]
+        targets = [t for t in self._targets if t.has_job_def]
         if not targets:
             raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
-        return [t.executable_def for t in targets]
+        return [t.job_def for t in targets]
 
     @property
     def has_jobs(self) -> bool:

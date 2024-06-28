@@ -26,9 +26,11 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._serdes import whitelist_for_serdes
 from dagster._seven.compat.pendulum import pendulum_create_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
@@ -47,7 +49,7 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
 from .run_request import RunRequest, SkipReason
-from .target import AutomationTarget, ExecutableDefinition
+from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
 from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
@@ -583,7 +585,8 @@ class ScheduleDefinition(IHasInternalInit):
             )
 
         if job:
-            self._target = AutomationTarget(job)
+            job_def = normalize_automation_target_def(job)
+            self._target = AutomationTarget(job_def)
         elif job_name:
             self._target = AutomationTarget(
                 resolvable_to_job=check.str_param(job_name, "job_name"),
@@ -838,12 +841,12 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> ExecutableDefinition:
-        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+    def job(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
+        """Union[JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
-        if self._target.has_executable_def:
-            return self._target.executable_def
+        if self._target.has_job_def:
+            return self._target.job_def
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:

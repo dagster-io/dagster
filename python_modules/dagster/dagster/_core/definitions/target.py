@@ -3,25 +3,23 @@ from typing import NamedTuple, Optional, Sequence, Union
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._utils.warnings import deprecation_warning
 
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 ExecutableDefinition: TypeAlias = Union[
-    JobDefinition, "GraphDefinition", UnresolvedAssetJobDefinition
+    JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition
 ]
 
 
-ResolvableToJob: TypeAlias = Union[
-    JobDefinition, UnresolvedAssetJobDefinition, GraphDefinition, str
-]
+ResolvableToJob: TypeAlias = Union[JobDefinition, UnresolvedAssetJobDefinition, str]
 """
 A piece of data that is resolvable to a JobDefinition. One of:
 
 - JobDefinition
 - UnresolvedAssetJobDefinition
-- GraphDefinition
 - str (a job name)
 
 The property of being resolvable to a JobDefinition is what unites all of the entities that an
@@ -48,15 +46,13 @@ class AutomationTarget(
 
     def __new__(
         cls,
-        resolvable_to_job: Union[ExecutableDefinition, str],
+        resolvable_to_job: Union[JobDefinition, UnresolvedAssetJobDefinition, str],
         op_selection: Optional[Sequence[str]] = None,
     ):
-        from .graph_definition import GraphDefinition
-
         check.inst_param(
             resolvable_to_job,
             "resolvable_to_job",
-            (GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition, str),
+            (JobDefinition, UnresolvedAssetJobDefinition, str),
         )
 
         return super().__new__(cls, resolvable_to_job, op_selection=op_selection)
@@ -69,7 +65,7 @@ class AutomationTarget(
             return self.resolvable_to_job.name
 
     @property
-    def executable_def(self) -> ExecutableDefinition:
+    def job_def(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
         if isinstance(self.resolvable_to_job, str):
             check.failed(
                 "Cannot access job_def for a target with string job name for resolvable_to_job"
@@ -77,7 +73,20 @@ class AutomationTarget(
         return self.resolvable_to_job
 
     @property
-    def has_executable_def(self) -> bool:
-        return isinstance(
-            self.resolvable_to_job, (GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition)
+    def has_job_def(self) -> bool:
+        return isinstance(self.resolvable_to_job, (JobDefinition, UnresolvedAssetJobDefinition))
+
+
+def normalize_automation_target_def(
+    target_def: "ExecutableDefinition",
+) -> Union["JobDefinition", "UnresolvedAssetJobDefinition"]:
+    from dagster._core.definitions.graph_definition import GraphDefinition
+
+    if isinstance(target_def, GraphDefinition):
+        deprecation_warning(
+            "Passing GraphDefinition as a job argument to ScheduleDefinition and SensorDefinition",
+            breaking_version="2.0",
         )
+        return target_def.to_job()
+    else:
+        return target_def
