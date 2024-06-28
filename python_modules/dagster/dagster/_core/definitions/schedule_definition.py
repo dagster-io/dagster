@@ -46,6 +46,7 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
+from .automation_target import CoercibleToAutomationTarget, resolve_automation_target
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
@@ -544,6 +545,7 @@ class ScheduleDefinition(IHasInternalInit):
             tags=None,
             tags_fn=None,
             should_execute=None,
+            target=None,
         )
 
     def __init__(
@@ -564,6 +566,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        target: Optional[CoercibleToAutomationTarget] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -585,10 +588,24 @@ class ScheduleDefinition(IHasInternalInit):
                 " https://github.com/dagster-io/dagster/issues/15294 for more information."
             )
 
+        self.passed_assets = []
+
         if job is not None:
-            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
+            self._direct_or_repo_relative_target: Union[DirectTarget, RepoRelativeTarget] = (
+                DirectTarget(job)
+            )
+        elif target is not None:
+            self.automation_target = resolve_automation_target(
+                target=target,
+                automation_name=check.not_none(
+                    name, "If you specify target you must specify schedule name"
+                ),
+            )
+            self._direct_or_repo_relative_target = DirectTarget(
+                self.automation_target.target_executable
+            )
         else:
-            self._target = RepoRelativeTarget(
+            self._direct_or_repo_relative_target = RepoRelativeTarget(
                 job_name=check.str_param(job_name, "job_name"),
                 op_selection=None,
             )
@@ -747,6 +764,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         default_status: DefaultScheduleStatus,
         required_resource_keys: Optional[Set[str]],
+        target: Optional[CoercibleToAutomationTarget],
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -764,6 +782,7 @@ class ScheduleDefinition(IHasInternalInit):
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:
@@ -801,7 +820,7 @@ class ScheduleDefinition(IHasInternalInit):
     @property
     def job_name(self) -> str:
         """str: The name of the job targeted by this schedule."""
-        return self._target.job_name
+        return self._direct_or_repo_relative_target.job_name
 
     @public
     @property
@@ -843,8 +862,8 @@ class ScheduleDefinition(IHasInternalInit):
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
-        if isinstance(self._target, DirectTarget):
-            return self._target.target
+        if isinstance(self._direct_or_repo_relative_target, DirectTarget):
+            return self._direct_or_repo_relative_target.target
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
@@ -911,7 +930,9 @@ class ScheduleDefinition(IHasInternalInit):
                         " partitioned run requests"
                     )
 
-                scheduled_target = context.repository_def.get_job(self._target.job_name)
+                scheduled_target = context.repository_def.get_job(
+                    self._direct_or_repo_relative_target.job_name
+                )
                 resolved_request = run_request.with_resolved_tags_and_config(
                     target_definition=scheduled_target,
                     dynamic_partitions_requests=[],
@@ -933,8 +954,8 @@ class ScheduleDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
         )
 
-    def has_loadable_target(self):
-        return isinstance(self._target, DirectTarget)
+    def has_loadable_target(self) -> bool:
+        return isinstance(self._direct_or_repo_relative_target, DirectTarget)
 
     @property
     def targets_unresolved_asset_job(self) -> bool:
@@ -945,8 +966,8 @@ class ScheduleDefinition(IHasInternalInit):
     def load_target(
         self,
     ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        if isinstance(self._target, DirectTarget):
-            return self._target.load()
+        if isinstance(self._direct_or_repo_relative_target, DirectTarget):
+            return self._direct_or_repo_relative_target.load()
 
         check.failed("Target is not loadable")
 

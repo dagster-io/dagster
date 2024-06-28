@@ -9,6 +9,7 @@ from dagster._core.definitions.asset_selection import AssetSelection, CoercibleT
 
 from ...errors import DagsterInvariantViolationError
 from ..asset_sensor_definition import AssetSensorDefinition
+from ..automation_target import CoercibleToAutomationTarget
 from ..events import AssetKey
 from ..multi_asset_sensor_definition import (
     AssetMaterializationFunction,
@@ -37,6 +38,7 @@ def sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[CoercibleToAssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    target: Optional[CoercibleToAutomationTarget] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """Creates a sensor where the decorated function is used as the sensor's evaluation function.
 
@@ -82,6 +84,7 @@ def sensor(
             default_status=default_status,
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
