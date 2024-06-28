@@ -6,6 +6,7 @@ import {
   InMemoryCache,
   split,
 } from '@apollo/client';
+import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
@@ -93,6 +94,20 @@ export const AppProvider = (props: AppProviderProps) => {
     [headerObject, websocketURI],
   );
 
+  const retryLink = React.useMemo(() => {
+    return new RetryLink({
+      attempts: {
+        max: 2,
+        retryIf: (error, _operation) => {
+          return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
+        },
+      },
+      delay: {
+        initial: 300,
+      },
+    });
+  }, []);
+
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
     const splitLink = split(
@@ -101,7 +116,7 @@ export const AppProvider = (props: AppProviderProps) => {
         return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
       new WebSocketLink(websocketClient),
-      new HttpLink({uri: graphqlPath, headers: headerObject}),
+      ApolloLink.from([retryLink, new HttpLink({uri: graphqlPath, headers: headerObject})]),
     );
 
     return new ApolloClient({
@@ -113,7 +128,7 @@ export const AppProvider = (props: AppProviderProps) => {
         },
       },
     });
-  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({
