@@ -9,8 +9,8 @@ from .asset_condition_scenario import AutomationConditionScenarioState
 def test_updated_since_cron_unpartitioned() -> None:
     state = AutomationConditionScenarioState(
         one_asset,
-        automation_condition=AutomationCondition.newly_updated().since_last_cron_tick(
-            cron_schedule="0 * * * *", cron_timezone="UTC"
+        automation_condition=AutomationCondition.newly_updated().since(
+            AutomationCondition.cron_tick_passed(cron_schedule="0 * * * *", cron_timezone="UTC")
         ),
     ).with_current_time("2020-02-02T00:55:00")
 
@@ -40,8 +40,8 @@ def test_updated_since_cron_partitioned() -> None:
     state = (
         AutomationConditionScenarioState(
             one_asset,
-            automation_condition=AutomationCondition.newly_updated().since_last_cron_tick(
-                cron_schedule="0 * * * *", cron_timezone="UTC"
+            automation_condition=AutomationCondition.newly_updated().since(
+                AutomationCondition.cron_tick_passed(cron_schedule="0 * * * *", cron_timezone="UTC")
             ),
         )
         .with_asset_properties(partitions_def=two_partitions_def)
