@@ -21,46 +21,25 @@ from .scenarios.scenarios import ASSET_RECONCILIATION_SCENARIOS
     list(ASSET_RECONCILIATION_SCENARIOS.values()),
     ids=list(ASSET_RECONCILIATION_SCENARIOS.keys()),
 )
-@pytest.mark.parametrize("emit_backfills", [True, False])
-def test_reconciliation(scenario, respect_materialization_data_versions, emit_backfills):
-    # test_reconciliation[True-auto_materialize_policy_lazy_with_nothing_dep_and_failure-True]
+def test_reconciliation(scenario, respect_materialization_data_versions):
     instance = DagsterInstance.ephemeral()
-
-    # need to override this method on the instance since it is hard-coded to False. Once we
-    # determine how we want to enable the feature, we can change this
-    def override_da_backfill_setting(self):
-        return emit_backfills
-
-    instance.da_emit_backfills = override_da_backfill_setting.__get__(instance, DagsterInstance)
     run_requests, _, evaluations = scenario.do_sensor_scenario(
         instance, respect_materialization_data_versions=respect_materialization_data_versions
     )
 
-    if emit_backfills:
-        assert len(run_requests) == len(scenario.expected_run_requests_for_backfill_daemon)
+    assert len(run_requests) == len(scenario.expected_run_requests), evaluations
 
-        if len(run_requests) > 0:
-            assert len(run_requests) == 1
-            assert (
-                run_requests[0].asset_graph_subset
-                == scenario.expected_run_requests_for_backfill_daemon[0].asset_graph_subset
-            )
-    else:
-        assert len(run_requests) == len(scenario.expected_run_requests), evaluations
+    def sort_run_request_key_fn(run_request):
+        return (min(run_request.asset_selection), run_request.partition_key)
 
-        def sort_run_request_key_fn(run_request):
-            return (min(run_request.asset_selection), run_request.partition_key)
+    sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
+    sorted_expected_run_requests = sorted(
+        scenario.expected_run_requests, key=sort_run_request_key_fn
+    )
 
-        sorted_run_requests = sorted(run_requests, key=sort_run_request_key_fn)
-        sorted_expected_run_requests = sorted(
-            scenario.expected_run_requests, key=sort_run_request_key_fn
-        )
-
-        for run_request, expected_run_request in zip(
-            sorted_run_requests, sorted_expected_run_requests
-        ):
-            assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
-            assert run_request.partition_key == expected_run_request.partition_key
+    for run_request, expected_run_request in zip(sorted_run_requests, sorted_expected_run_requests):
+        assert set(run_request.asset_selection) == set(expected_run_request.asset_selection)
+        assert run_request.partition_key == expected_run_request.partition_key
 
 
 @pytest.mark.parametrize(

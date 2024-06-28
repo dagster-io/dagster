@@ -431,6 +431,7 @@ class AssetReconciliationScenario(
                 },
                 respect_materialization_data_versions=respect_materialization_data_versions,
                 logger=logging.getLogger("dagster.amp"),
+                launch_backfills=False,
             ).evaluate()
 
         if not instance.da_emit_backfills:

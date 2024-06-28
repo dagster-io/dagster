@@ -406,8 +406,6 @@ def _test_asset_daemon_in_subprocess(
 def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location):
     # Verifies that if we crash at various points during the tick, the next tick recovers and
     # produces the correct number of runs
-
-    # test_asset_daemon_crash_recovery[EVALUATIONS_FINISHED]
     instance = daemon_not_paused_instance
     scenario = daemon_scenarios["auto_materialize_policy_max_materializations_not_exceeded"]
 
@@ -476,50 +474,33 @@ def test_asset_daemon_crash_recovery(daemon_not_paused_instance, crash_location)
         else freeze_datetime.timestamp()
     )
     assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-    if instance.da_emit_backfills:
-        assert len(ticks[0].tick_data.run_ids) == 1
-    else:
-        assert len(ticks[0].tick_data.run_ids) == 5
+    assert len(ticks[0].tick_data.run_ids) == 5
     assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
 
     if len(ticks) == 2:
         # first tick is intercepted and moved into skipped instead of being stuck in STARTED
         assert ticks[1].status == TickStatus.SKIPPED
 
-    if instance.da_emit_backfills:
-        assert len(ticks[0].tick_data.run_requests) == len(
-            scenario.expected_run_requests_for_backfill_daemon
-        )
+    _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
 
-        if len(ticks[0].tick_data.run_requests) > 0:
-            assert len(ticks[0].tick_data.run_requests) == 1
-            assert (
-                ticks[0].tick_data.run_requests[0].asset_graph_subset
-                == scenario.expected_run_requests_for_backfill_daemon[0].asset_graph_subset
-            )
-        runs = instance.get_backfills()
-        assert len(runs) == 1
-    else:
-        _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
-        runs = instance.get_runs()
-        assert len(runs) == 5
+    runs = instance.get_runs()
+    assert len(runs) == 5
 
-        def sort_run_key_fn(run):
-            return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+    def sort_run_key_fn(run):
+        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
 
-        sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
+    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
 
-        evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("hourly"), limit=100
-        )
-        assert len(evaluations) == 1
-        assert evaluations[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-            "hourly"
-        )
-        # TODO - figure out how to assert on these evaluations for backfills
-        assert evaluations[0].get_evaluation_with_run_ids(None).run_ids == {
-            run.run_id for run in sorted_runs
-        }
+    evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
+        asset_key=AssetKey("hourly"), limit=100
+    )
+    assert len(evaluations) == 1
+    assert evaluations[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+        "hourly"
+    )
+    assert evaluations[0].get_evaluation_with_run_ids(None).run_ids == {
+        run.run_id for run in sorted_runs
+    }
 
 
 @pytest.mark.parametrize(
@@ -577,10 +558,7 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     if not tick_data_written:
         assert not len(ticks[0].tick_data.reserved_run_ids)
     else:
-        if instance.da_emit_backfills:
-            assert len(ticks[0].tick_data.reserved_run_ids) == 1
-        else:
-            assert len(ticks[0].tick_data.reserved_run_ids) == 5
+        assert len(ticks[0].tick_data.reserved_run_ids) == 5
 
     cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
     assert (cursor.evaluation_id > 0) == cursor_written
@@ -611,45 +589,29 @@ def test_asset_daemon_exception_recovery(daemon_not_paused_instance, crash_locat
     assert ticks[0].status == TickStatus.SUCCESS
     assert ticks[0].timestamp == freeze_datetime.timestamp()
     assert ticks[0].tick_data.end_timestamp == freeze_datetime.timestamp()
-    if instance.da_emit_backfills:
-        assert len(ticks[0].tick_data.run_ids) == 1
-    else:
-        assert len(ticks[0].tick_data.run_ids) == 5
+    assert len(ticks[0].tick_data.run_ids) == 5
     assert ticks[0].tick_data.auto_materialize_evaluation_id == 1
 
-    if instance.da_emit_backfills:
-        assert len(ticks[0].tick_data.run_requests) == len(
-            scenario.expected_run_requests_for_backfill_daemon
-        )
+    _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
 
-        if len(ticks[0].tick_data.run_requests) > 0:
-            assert len(ticks[0].tick_data.run_requests) == 1
-            assert (
-                ticks[0].tick_data.run_requests[0].asset_graph_subset
-                == scenario.expected_run_requests_for_backfill_daemon[0].asset_graph_subset
-            )
-        runs = instance.get_backfills()
-        assert len(runs) == 1
-    else:
-        _assert_run_requests_match(scenario.expected_run_requests, ticks[0].tick_data.run_requests)
-        runs = instance.get_runs()
-        assert len(runs) == 5
+    runs = instance.get_runs()
+    assert len(runs) == 5
 
-        def sort_run_key_fn(run):
-            return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
+    def sort_run_key_fn(run):
+        return (min(run.asset_selection), run.tags.get(PARTITION_NAME_TAG))
 
-        sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
+    sorted_runs = sorted(runs[: len(scenario.expected_run_requests)], key=sort_run_key_fn)
 
-        evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
-            asset_key=AssetKey("hourly"), limit=100
-        )
-        assert len(evaluations) == 1
-        assert evaluations[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
-            "hourly"
-        )
-        assert evaluations[0].get_evaluation_with_run_ids(None).run_ids == {
-            run.run_id for run in sorted_runs
-        }
+    evaluations = instance.schedule_storage.get_auto_materialize_asset_evaluations(
+        asset_key=AssetKey("hourly"), limit=100
+    )
+    assert len(evaluations) == 1
+    assert evaluations[0].get_evaluation_with_run_ids(None).evaluation.asset_key == AssetKey(
+        "hourly"
+    )
+    assert evaluations[0].get_evaluation_with_run_ids(None).run_ids == {
+        run.run_id for run in sorted_runs
+    }
 
-        cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
-        assert cursor.evaluation_id > 0
+    cursor = _get_pre_sensor_auto_materialize_cursor(instance, None)
+    assert cursor.evaluation_id > 0

@@ -179,6 +179,14 @@ class AutomationConditionEvaluator:
             self.asset_graph.get(asset_key).auto_materialize_policy
         ).to_automation_condition()
 
+        if asset_condition.is_rule_condition() and self.instance_queryer.instance.da_emit_backfills:
+            # TODO - make da_emits_backfills something that gets passed in to class init?
+            # TODO real exception
+            raise Exception(
+                "Cannot use rule-based conditions with backfill daemon. "
+                "Please use the declarative scheduling system."
+            )
+
         legacy_context = LegacyRuleEvaluationContext.create(
             asset_key=asset_key,
             cursor=self.cursor.get_previous_condition_cursor(asset_key),

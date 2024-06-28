@@ -100,6 +100,13 @@ class AutomationCondition(ABC):
 
         return AutoMaterializePolicy.from_automation_condition(self)
 
+    def is_rule_condition(self):
+        from .legacy import RuleCondition
+
+        if isinstance(self, RuleCondition):
+            return True
+        return any(child.is_rule_condition() for child in self.children)
+
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
         raise NotImplementedError()
