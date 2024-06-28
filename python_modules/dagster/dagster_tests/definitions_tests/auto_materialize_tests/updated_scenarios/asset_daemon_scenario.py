@@ -11,6 +11,7 @@ from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -226,17 +227,33 @@ class AssetDaemonScenarioState(ScenarioState):
                 new_cursor = _get_pre_sensor_auto_materialize_cursor(
                     self.instance, self.asset_graph
                 )
-            new_run_requests = [
-                run_request(
-                    list(run.asset_selection or []),
-                    partition_key=run.tags.get(PARTITION_NAME_TAG),
-                )._replace(tags=run.tags)
-                for run in self.instance.get_runs(
-                    filters=RunsFilter(
-                        tags={"dagster/asset_evaluation_id": str(new_cursor.evaluation_id)}
+            # TODO - here we need to get backfills instead of runs. but we don't have the code in place to search by tag
+
+            new_run_requests = []
+            if self.instance.da_emit_backfills:
+                backfills = self.instance.get_backfills(limit=5)
+                for backfill in backfills:
+                    if backfill.tags.get("dagster/asset_evaluation_id") == str(
+                        new_cursor.evaluation_id
+                    ):
+                        new_run_requests = [
+                            RunRequest(
+                                asset_graph_subset=backfill.asset_backfill_data.target_subset
+                            )
+                        ]
+                        break
+            else:
+                new_run_requests = [
+                    run_request(
+                        list(run.asset_selection or []),
+                        partition_key=run.tags.get(PARTITION_NAME_TAG),
+                    )._replace(tags=run.tags)
+                    for run in self.instance.get_runs(
+                        filters=RunsFilter(
+                            tags={"dagster/asset_evaluation_id": str(new_cursor.evaluation_id)}
+                        )
                     )
-                )
-            ]
+                ]
             new_evaluations = [
                 e.get_evaluation_with_run_ids(
                     self.asset_graph.get(e.asset_key).partitions_def
@@ -332,24 +349,57 @@ class AssetDaemonScenarioState(ScenarioState):
         """Asserts that the set of runs requested by the previously-evaluated tick is identical to
         the set of runs specified in the expected_run_requests argument.
         """
+        if self.instance.da_emit_backfills:
+            run_requests_converted_to_run_requests_for_backfill_daemon = []
+            if len(expected_run_requests) > 0:
+                asset_key_partition_keys = []
+                for run_request in expected_run_requests:
+                    asset_keys = run_request.asset_selection
+                    partition_key = run_request.partition_key
+                    for ak in asset_keys:
+                        asset_key_partition_keys.append(AssetKeyPartitionKey(ak, partition_key))
+                run_requests_converted_to_run_requests_for_backfill_daemon.append(
+                    RunRequest(
+                        asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
+                            asset_key_partition_keys, asset_graph=self.scenario_spec.asset_graph
+                        )
+                    )
+                )
 
-        def sort_run_request_key_fn(run_request) -> Tuple[AssetKey, Optional[str]]:
-            return (min(run_request.asset_selection), run_request.partition_key)
+            assert len(self.run_requests) == len(
+                run_requests_converted_to_run_requests_for_backfill_daemon
+            )
+            if len(self.run_requests) > 0:
+                assert len(self.run_requests) == 1
+                if (
+                    self.run_requests[0].asset_graph_subset
+                    != run_requests_converted_to_run_requests_for_backfill_daemon[
+                        0
+                    ].asset_graph_subset
+                ):
+                    assert False
+        else:
 
-        sorted_run_requests = sorted(self.run_requests, key=sort_run_request_key_fn)
-        sorted_expected_run_requests = sorted(expected_run_requests, key=sort_run_request_key_fn)
+            def sort_run_request_key_fn(run_request) -> Tuple[AssetKey, Optional[str]]:
+                return (min(run_request.asset_selection), run_request.partition_key)
 
-        try:
-            assert len(sorted_run_requests) == len(sorted_expected_run_requests)
-            for arr, err in zip(sorted_run_requests, sorted_expected_run_requests):
-                assert set(arr.asset_selection or []) == set(err.asset_selection or [])
-                assert arr.partition_key == err.partition_key
-        except:
-            self._log_assertion_error(sorted_expected_run_requests, sorted_run_requests)
-            raise
+            sorted_run_requests = sorted(self.run_requests, key=sort_run_request_key_fn)
+            sorted_expected_run_requests = sorted(
+                expected_run_requests, key=sort_run_request_key_fn
+            )
 
-        if self.is_daemon:
-            self._assert_requested_runs_daemon(sorted_expected_run_requests)
+            try:
+                assert len(sorted_run_requests) == len(sorted_expected_run_requests)
+                for arr, err in zip(sorted_run_requests, sorted_expected_run_requests):
+                    assert set(arr.asset_selection or []) == set(err.asset_selection or [])
+                    assert arr.partition_key == err.partition_key
+            except:
+                self._log_assertion_error(sorted_expected_run_requests, sorted_run_requests)
+                raise
+
+            if self.is_daemon:
+                # TODO may need to make this work for backfills too
+                self._assert_requested_runs_daemon(sorted_expected_run_requests)
 
         return self
 
@@ -363,13 +413,25 @@ class AssetDaemonScenarioState(ScenarioState):
         current_evaluation_id = check.not_none(
             get_current_evaluation_id(self.instance, sensor_origin)
         )
-        new_run_ids_for_asset = {
-            run.run_id
-            for run in self.instance.get_runs(
-                filters=RunsFilter(tags={"dagster/asset_evaluation_id": str(current_evaluation_id)})
-            )
-            if key in (run.asset_selection or set())
-        }
+
+        if self.instance.da_emit_backfills:
+            backfills = self.instance.get_backfills(limit=5)
+            new_run_ids_for_asset = {
+                backfill.backfill_id
+                for backfill in backfills
+                if backfill.tags.get("dagster/asset_evaluation_id") == str(current_evaluation_id)
+                and key in backfill.asset_backfill_data.target_subset
+            }
+        else:
+            new_run_ids_for_asset = {
+                run.run_id
+                for run in self.instance.get_runs(
+                    filters=RunsFilter(
+                        tags={"dagster/asset_evaluation_id": str(current_evaluation_id)}
+                    )
+                )
+                if key in (run.asset_selection or set())
+            }
         evaluation_record = next(
             iter(
                 [

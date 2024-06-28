@@ -187,6 +187,8 @@ def test_asset_daemon_without_sensor(scenario: AssetDaemonScenario) -> None:
     with get_daemon_instance() as instance:
         scenario.evaluate_daemon(instance)
 
+        # test_asset_daemon_without_sensor[unpartitioned_to_dynamic_partitions]
+
 
 daemon_scenarios_with_threadpool_without_sensor = basic_scenarios[:5]
 

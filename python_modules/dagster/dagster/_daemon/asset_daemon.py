@@ -990,7 +990,11 @@ class AssetDaemon(DagsterDaemon):
                         dynamic_partitions_store=instance,
                         backfill_timestamp=pendulum.now("UTC").timestamp(),  # replace pendulum
                         asset_graph_subset=run_request.asset_graph_subset,
-                        tags=run_request.tags or {},
+                        tags={
+                            **run_request.tags,
+                            AUTO_MATERIALIZE_TAG: "true",
+                            ASSET_EVALUATION_ID_TAG: str(evaluation_id),
+                        },
                         title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
                         description=None,
                     )

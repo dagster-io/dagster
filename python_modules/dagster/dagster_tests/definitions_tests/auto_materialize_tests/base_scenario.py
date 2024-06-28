@@ -60,7 +60,7 @@ from dagster._core.definitions.auto_materialize_rule_evaluation import (
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.partition import PartitionsSubset
@@ -242,6 +242,24 @@ class AssetReconciliationScenario(
             location_name=location_name or "test_location",
         )
 
+    @property
+    def expected_run_requests_for_backfill_daemon(self):
+        if len(self.expected_run_requests) == 0:
+            return []
+        asset_key_partition_keys = []
+        for run_request in self.expected_run_requests:
+            asset_keys = run_request.asset_selection
+            partition_key = run_request.partition_key
+            for ak in asset_keys:
+                asset_key_partition_keys.append(AssetKeyPartitionKey(ak, partition_key))
+        return [
+            RunRequest(
+                asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
+                    asset_key_partition_keys, asset_graph=AssetGraph.from_assets(self.assets)
+                )
+            )
+        ]
+
     def do_sensor_scenario(
         self,
         instance,
@@ -415,9 +433,10 @@ class AssetReconciliationScenario(
                 logger=logging.getLogger("dagster.amp"),
             ).evaluate()
 
-        for run_request in run_requests:
-            base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
-            assert base_job is not None
+        if not instance.da_emit_backfills:
+            for run_request in run_requests:
+                base_job = repo.get_implicit_job_def_for_assets(run_request.asset_selection)
+                assert base_job is not None
 
         return run_requests, cursor, evaluations
 
