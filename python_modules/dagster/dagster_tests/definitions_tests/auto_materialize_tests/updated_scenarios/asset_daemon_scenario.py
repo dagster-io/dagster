@@ -152,7 +152,7 @@ class AssetDaemonScenarioState(ScenarioState):
             },
             respect_materialization_data_versions=False,
             logger=self.logger,
-            launch_backfills=False,
+            request_backfills=False,
         ).evaluate()
         check.is_list(new_run_requests, of_type=RunRequest)
         check.inst(new_cursor, AssetDaemonCursor)
