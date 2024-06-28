@@ -471,7 +471,7 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
         return {
-            NodeOutputHandle(check.not_none(parent), output_def.name)
+            NodeOutputHandle(node_handle=parent, output_name=output_def.name)
             for output_def in self.output_defs
         }
 

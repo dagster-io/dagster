@@ -937,6 +937,7 @@ class GraphDefinition(NodeDefinition):
     def get_op_input_output_handle_pairs(
         self, outer_handle: Optional[NodeHandle]
     ) -> AbstractSet[Tuple[NodeOutputHandle, NodeInputHandle]]:
+        """Get all pairs of op output handles and their downstream op input handles within the graph."""
         result: Set[Tuple[NodeOutputHandle, NodeInputHandle]] = set()
 
         for node in self.nodes:

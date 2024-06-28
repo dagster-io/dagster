@@ -1,6 +1,7 @@
+import itertools
 import json
 import warnings
-from collections import defaultdict, deque
+from collections import defaultdict
 from functools import cached_property
 from typing import (
     TYPE_CHECKING,
@@ -60,6 +61,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.utils import toposort_flatten
 from dagster._model import IHaveNew, dagster_model, dagster_model_custom
 from dagster._utils import IHasInternalInit
 from dagster._utils.merger import merge_dicts
@@ -98,6 +100,7 @@ class AssetGraphComputation(IHaveNew):
     node_def: NodeDefinition
     keys_by_input_name: Mapping[str, AssetKey]
     keys_by_output_name: Mapping[str, AssetKey]
+    check_keys_by_output_name: Mapping[str, AssetCheckKey]
     backfill_policy: Optional[BackfillPolicy]
     can_subset: bool
     is_subset: bool
@@ -110,6 +113,7 @@ class AssetGraphComputation(IHaveNew):
         node_def: NodeDefinition,
         keys_by_input_name: Mapping[str, AssetKey],
         keys_by_output_name: Mapping[str, AssetKey],
+        check_keys_by_output_name: Mapping[str, AssetCheckKey],
         backfill_policy: Optional[BackfillPolicy],
         can_subset: bool,
         is_subset: bool,
@@ -130,6 +134,7 @@ class AssetGraphComputation(IHaveNew):
             node_def=node_def,
             keys_by_input_name=keys_by_input_name,
             keys_by_output_name=keys_by_output_name,
+            check_keys_by_output_name=check_keys_by_output_name,
             backfill_policy=backfill_policy,
             can_subset=can_subset,
             is_subset=is_subset,
@@ -143,22 +148,21 @@ class AssetGraphComputation(IHaveNew):
         self,
     ) -> Mapping[NodeOutputHandle, "AssetKeyOrCheckKey"]:
         result = {}
-        for output_name, key in self.keys_by_output_name.items():
+        for output_name, key in itertools.chain(
+            self.keys_by_output_name.items(), self.check_keys_by_output_name.items()
+        ):
             output_def, node_handle = self.full_node_def.resolve_output_to_origin(output_name, None)
             result[NodeOutputHandle(node_handle=node_handle, output_name=output_def.name)] = key
-
-        # for output_name, key in self.check_keys_by_output_name.items():
-        #     output_def, node_handle = self.node_def.resolve_output_to_origin(output_name, None)
-        #     result[NodeOutputHandle(check.not_none(node_handle), output_def.name)] = key
 
         return result
 
     @property
     def full_node_def(self) -> NodeDefinition:
-        if isinstance(self.node_def, SubselectedGraphDefinition):
-            return self.node_def.parent_graph_def
-        else:
-            return self.node_def
+        node_def = self.node_def
+        while isinstance(node_def, SubselectedGraphDefinition):
+            node_def = node_def.parent_graph_def
+
+        return node_def
 
 
 class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
@@ -234,6 +238,13 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         if isinstance(node_def, GraphDefinition):
             _validate_graph_def(node_def)
 
+        self._check_specs_by_output_name = check.opt_mapping_param(
+            check_specs_by_output_name,
+            "check_specs_by_output_name",
+            key_type=str,
+            value_type=AssetCheckSpec,
+        )
+
         if node_def is None:
             check.invariant(
                 not keys_by_input_name,
@@ -274,6 +285,10 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     key_type=str,
                     value_type=AssetKey,
                 ),
+                check_keys_by_output_name={
+                    output_name: spec.key
+                    for output_name, spec in self._check_specs_by_output_name.items()
+                },
                 can_subset=can_subset,
                 backfill_policy=check.opt_inst_param(
                     backfill_policy, "backfill_policy", BackfillPolicy
@@ -282,20 +297,6 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
             )
-
-        check_specs_by_output_name = check.opt_mapping_param(
-            check_specs_by_output_name,
-            "check_specs_by_output_name",
-            key_type=str,
-            value_type=AssetCheckSpec,
-        )
-
-        self._check_specs_by_output_name = check.opt_mapping_param(
-            check_specs_by_output_name,
-            "check_specs_by_output_name",
-            key_type=str,
-            value_type=AssetCheckSpec,
-        )
 
         self._partitions_def = partitions_def
 
@@ -1584,64 +1585,50 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def asset_or_check_keys_by_dep_op_output_handle(
         self,
     ) -> Mapping[NodeOutputHandle, AbstractSet["AssetKeyOrCheckKey"]]:
-        """For each asset in assets_defs_by_node_handle, determines all the op handles and output handles
-        within the asset's node that are upstream dependencies of the asset.
+        """Returns a mapping between op outputs and the assets and asset checks that, when selected,
+        those op outputs need to be produced for.
 
-        TODO: update this
-        Returns a tuple with two objects:
-        1. A mapping of each asset or check key to a set of node handles that are upstream dependencies of the asset.
-        2. A mapping of each asset or check key to a list of node output handles that are upstream dependencies of the asset.
+        For non-graph-backed assets, this is essentially the same as node_keys_by_output_name.
+
+        For graph-backed multi-assets, depending on the asset selection, we often only need to
+        execute a subset of the ops and for those ops to only produce a subset of their outputs,
+        in order to materialize/observe the asset.
+
+        Op output X will be selected when asset (or asset check) A is selected iff there's at least
+        one path in the graph from X to the op output corresponding to A, and no outputs in that
+        path directly correspond to other assets.
         """
         from .graph_definition import GraphDefinition
 
         computation = check.not_none(self._computation)
+        asset_or_check_keys_by_op_output_handle = (
+            computation.asset_or_check_keys_by_op_output_handle
+        )
         if not isinstance(computation.full_node_def, GraphDefinition):
             return {
                 key: {op_output_handle}
-                for key, op_output_handle in computation.asset_or_check_keys_by_op_output_handle.items()
+                for key, op_output_handle in asset_or_check_keys_by_op_output_handle.items()
             }
 
         op_output_graph = OpOutputHandleGraph.from_graph(computation.full_node_def)
+        reverse_toposorted_op_outputs_handles = [
+            *reversed(toposort_flatten(op_output_graph.upstream)),
+            *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),
+        ]
 
-        visited_op_output_handles: Set[NodeOutputHandle] = set()
-        # this is the inverse of the above dict
-        downstream_asset_keys_by_op_output_handle: Dict[
-            NodeOutputHandle, Set["AssetKeyOrCheckKey"]
-        ] = defaultdict(set)
+        result: Dict[NodeOutputHandle, Set["AssetKeyOrCheckKey"]] = defaultdict(set)
 
-        # we always visit children before their parents
-
-        queue_op_output_handles = deque(op_output_graph.get_sinks())
-        while queue_op_output_handles:
-            op_output_handle = queue_op_output_handles.popleft()
-            if op_output_handle in visited_op_output_handles:
-                continue
-
-            visited_op_output_handles.add(op_output_handle)
-            asset_key_or_check_key: Optional["AssetKeyOrCheckKey"] = (
-                computation.asset_or_check_keys_by_op_output_handle.get(op_output_handle)
-            )
+        for op_output_handle in reverse_toposorted_op_outputs_handles:
+            asset_key_or_check_key = asset_or_check_keys_by_op_output_handle.get(op_output_handle)
 
             if asset_key_or_check_key:
-                downstream_asset_keys_by_op_output_handle[op_output_handle].add(
-                    asset_key_or_check_key
-                )
+                result[op_output_handle].add(asset_key_or_check_key)
             else:
-                # add the asset / asset check keys for downstream op handles
                 child_op_output_handles = op_output_graph.downstream.get(op_output_handle, set())
                 for child_op_output_handle in child_op_output_handles:
-                    for (
-                        downstream_asset_key_or_check_key
-                    ) in downstream_asset_keys_by_op_output_handle[child_op_output_handle]:
-                        downstream_asset_keys_by_op_output_handle[op_output_handle].add(
-                            downstream_asset_key_or_check_key
-                        )
+                    result[op_output_handle].update(result[child_op_output_handle])
 
-            parent_op_output_handles = op_output_graph.upstream.get(op_output_handle, set())
-            for parent_op_output_handle in parent_op_output_handles:
-                queue_op_output_handles.append(parent_op_output_handle)
-
-        return downstream_asset_keys_by_op_output_handle
+        return result
 
     def get_attributes_dict(self) -> Dict[str, Any]:
         return dict(
@@ -1992,12 +1979,14 @@ def unique_id_from_asset_and_check_keys(
 
 @dagster_model
 class OpOutputHandleGraph:
+    """A graph where each node is a NodeOutputHandle corresponding to an op. There's an edge from
+    op_output_1 to op_output_2 if op_output_2 is part of an op that has an input that's connected to
+    op_output_1.
+    """
+
     op_output_handles: AbstractSet[NodeOutputHandle]
     upstream: Mapping[NodeOutputHandle, AbstractSet[NodeOutputHandle]]
     downstream: Mapping[NodeOutputHandle, AbstractSet[NodeOutputHandle]]
-
-    def get_sinks(self) -> AbstractSet[NodeOutputHandle]:
-        return {handle for handle in self.op_output_handles if handle not in self.downstream}
 
     @staticmethod
     def from_graph(graph_def: "GraphDefinition") -> "OpOutputHandleGraph":

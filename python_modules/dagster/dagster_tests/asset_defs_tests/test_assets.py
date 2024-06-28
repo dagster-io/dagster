@@ -1316,13 +1316,7 @@ def test_graph_backed_asset_subset_context_intermediate_ops(
 
     asset_job = define_asset_job("yay").resolve(
         asset_graph=AssetGraph.from_assets(
-            [
-                AssetsDefinition.from_graph(
-                    graph_asset,
-                    can_subset=True,
-                    internal_asset_deps={"asset_one": {AssetKey("asset_four")}},
-                )
-            ],
+            [AssetsDefinition.from_graph(graph_asset, can_subset=True)],
         )
     )
 
