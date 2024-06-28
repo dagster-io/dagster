@@ -125,6 +125,7 @@ def evaluate_automation_conditions(
         data_time_resolver=data_time_resolver,
         respect_materialization_data_versions=False,
         auto_materialize_run_tags={},
+        request_backfills=False,  # TODO - is this old APIs? or should this get the value from the setting?
     )
     results, requested_asset_partitions = evaluator.evaluate()
     cursor = AssetDaemonCursor(

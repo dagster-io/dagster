@@ -47,6 +47,7 @@ def execute_ds_ticks(defs: Definitions, n: int) -> Iterator[AutomationTickResult
             cursor=cursor,
             respect_materialization_data_versions=False,
             auto_materialize_run_tags={},
+            request_backfills=False,  # TODO - maybe should add a test where this is True
         )
         results, to_request = evaluator.evaluate()
 

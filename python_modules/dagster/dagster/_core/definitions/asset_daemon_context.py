@@ -174,6 +174,7 @@ class AssetDaemonContext:
             data_time_resolver=self.data_time_resolver,
             respect_materialization_data_versions=self.respect_materialization_data_versions,
             auto_materialize_run_tags=self.auto_materialize_run_tags,
+            request_backfills=self._request_backfills,
         )
         return evaluator.evaluate()
 
