@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Callable, Dict, Generator, Tuple
+from typing import Generator, Tuple
 
 import pytest
 from dagster import (
@@ -14,13 +14,9 @@ from dagster import (
     build_op_context,
     instance_for_test,
     multi_observable_source_asset,
+    observable_source_asset,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-)
-from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.observe import observe
 from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
@@ -28,22 +24,8 @@ from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
-def _with_observe_metadata(kwargs: Dict[str, Any]) -> Dict[str, Any]:
-    metadata = kwargs.pop("metadata", {})
-    metadata[SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE] = AssetExecutionType.OBSERVATION.value
-    return {**kwargs, "metadata": metadata}
-
-
-def _external_observable_asset(**kwargs) -> Callable[..., AssetsDefinition]:
-    def _decorator(fn: Callable[..., Any]) -> AssetsDefinition:
-        new_kwargs = _with_observe_metadata(kwargs)
-        return asset(**new_kwargs)(fn)
-
-    return _decorator
-
-
 def test_observe_result_asset():
-    @_external_observable_asset()
+    @observable_source_asset()
     def ret_untyped(context: AssetExecutionContext):
         return ObserveResult(metadata={"one": 1}, tags={"foo": "bar"})
 
@@ -55,7 +37,7 @@ def test_observe_result_asset():
     assert observations[0].tags["foo"] == "bar"
 
     # key mismatch
-    @_external_observable_asset()
+    @observable_source_asset()
     def ret_mismatch(context: AssetExecutionContext):
         return ObserveResult(
             asset_key="random",
@@ -69,32 +51,13 @@ def test_observe_result_asset():
     ):
         observe([ret_mismatch])
 
-    # direct invocation
-    with pytest.raises(
-        DagsterInvariantViolationError,
-        match="Asset key random not found in AssetsDefinition",
-    ):
-        ret_mismatch(build_asset_context())
-
-    # tuple
-    @_external_observable_asset()
-    def ret_two():
-        return ObserveResult(metadata={"one": 1}), ObserveResult(metadata={"two": 2})
-
-    # core execution
-    result = observe([ret_two])
-    assert result.success
-
-    # direct invocation
-    direct_results = ret_two()
-    assert len(direct_results) == 2
-
 
 def test_return_observe_result_with_asset_checks():
     with instance_for_test() as instance:
 
-        @_external_observable_asset(
-            check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))]
+        @multi_observable_source_asset(
+            specs=[AssetSpec("ret_checks")],
+            check_specs=[AssetCheckSpec(name="foo_check", asset=AssetKey("ret_checks"))],
         )
         def ret_checks(context: AssetExecutionContext):
             return ObserveResult(
@@ -303,7 +266,7 @@ def test_observe_result_output_typing():
         def load_input(self, context):
             return 1
 
-    @_external_observable_asset()
+    @observable_source_asset()
     def asset_with_type_annotation() -> ObserveResult:
         return ObserveResult(metadata={"foo": "bar"})
 
@@ -336,11 +299,12 @@ def test_observe_result_output_typing():
         resources={"io_manager": TestingIOManager()},
     ).success
 
-    @_external_observable_asset(
+    @multi_observable_source_asset(
+        specs=[AssetSpec("with_checks")],
         check_specs=[
             AssetCheckSpec(name="check_one", asset="with_checks"),
             AssetCheckSpec(name="check_two", asset="with_checks"),
-        ]
+        ],
     )
     def with_checks(context: AssetExecutionContext) -> ObserveResult:
         return ObserveResult(
@@ -419,20 +383,6 @@ def test_generator_return_type_annotation():
 
 
 def test_observe_result_generators():
-    @_external_observable_asset()
-    def generator_asset() -> Generator[ObserveResult, None, None]:
-        yield ObserveResult(metadata={"foo": "bar"})
-
-    result = observe([generator_asset])
-    assert result.success
-    observations = result.asset_observations_for_node(generator_asset.node_def.name)
-    assert len(observations) == 1
-    assert observations[0].metadata["foo"].value == "bar"
-
-    result = list(generator_asset())
-    assert len(result) == 1
-    assert result[0].metadata["foo"] == "bar"
-
     @multi_observable_source_asset(specs=[AssetSpec("one"), AssetSpec("two")])
     def generator_specs_multi_asset():
         yield ObserveResult(asset_key="one", metadata={"foo": "bar"})
@@ -510,8 +460,9 @@ def test_observe_result_generators():
 
 
 def test_observe_result_with_partitions():
-    @_external_observable_asset(
-        partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"])
+    @multi_observable_source_asset(
+        specs=[AssetSpec("partitioned_asset")],
+        partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"]),
     )
     def partitioned_asset(context: AssetExecutionContext) -> ObserveResult:
         return ObserveResult(metadata={"key": context.partition_key})
@@ -524,8 +475,9 @@ def test_observe_result_with_partitions():
 
 
 def test_observe_result_with_partitions_direct_invocation():
-    @_external_observable_asset(
-        partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"])
+    @multi_observable_source_asset(
+        specs=[AssetSpec("partitioned_asset")],
+        partitions_def=StaticPartitionsDefinition(["red", "blue", "yellow"]),
     )
     def partitioned_asset(context: AssetExecutionContext) -> ObserveResult:
         return ObserveResult(metadata={"key": context.partition_key})
