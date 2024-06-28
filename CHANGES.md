@@ -1,5 +1,11 @@
 # Changelog
 
+# 1.7.12 (core)/ 0.23.12 (libraries)
+
+### Bugfixes
+
+- [ui] fixes behavior issues with jobs and asset pages introduced in 1.7.11
+
 # 1.7.11 (core)/ 0.23.11 (libraries)
 
 ### New
