@@ -67,7 +67,7 @@ from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from .submit_asset_runs import submit_asset_runs_in_chunks
+from .submit_asset_runs import submit_asset_run
 
 if TYPE_CHECKING:
     from .backfill import PartitionBackfill
@@ -696,6 +696,27 @@ def get_requested_asset_partitions_from_run_requests(
     return requested_partitions
 
 
+def _write_updated_backfill_data(
+    instance: DagsterInstance,
+    backfill_id: str,
+    updated_backfill_data: AssetBackfillData,
+    asset_graph: RemoteAssetGraph,
+    updated_run_requests: Sequence[RunRequest],
+    updated_reserved_run_ids: Sequence[str],
+):
+    backfill = check.not_none(instance.get_backfill(backfill_id))
+    updated_backfill = backfill.with_asset_backfill_data(
+        updated_backfill_data,
+        dynamic_partitions_store=instance,
+        asset_graph=asset_graph,
+    ).with_submitting_run_requests(
+        updated_run_requests,
+        updated_reserved_run_ids,
+    )
+    instance.update_backfill(updated_backfill)
+    return updated_backfill
+
+
 def _submit_runs_and_update_backfill_in_chunks(
     instance: DagsterInstance,
     workspace_process_context: IWorkspaceProcessContext,
@@ -706,7 +727,7 @@ def _submit_runs_and_update_backfill_in_chunks(
     run_tags: Mapping[str, str],
     instance_queryer: CachingInstanceQueryer,
 ) -> Iterable[None]:
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.execution.backfill import BulkActionStatus
 
     run_requests = asset_backfill_iteration_result.run_requests
 
@@ -718,47 +739,72 @@ def _submit_runs_and_update_backfill_in_chunks(
 
     num_submitted = 0
 
-    for submit_run_request_chunk_result in submit_asset_runs_in_chunks(
-        run_requests=run_requests,
-        reserved_run_ids=asset_backfill_iteration_result.reserved_run_ids,
-        chunk_size=get_asset_backfill_run_chunk_size(),
-        instance=instance,
-        workspace_process_context=workspace_process_context,
-        asset_graph=asset_graph,
-        debug_crash_flags={},
-        logger=logger,
-        run_tags={**run_tags, BACKFILL_ID_TAG: backfill_id},
-    ):
-        if submit_run_request_chunk_result is None:
-            # chunk is still processing, allow the daemon to heartbeat
-            yield None
-            continue
+    reserved_run_ids = asset_backfill_iteration_result.reserved_run_ids
 
-        # Chunk has finished submitting
+    run_request_execution_data_cache = {}
 
-        num_submitted += len(submit_run_request_chunk_result.chunk_submitted_runs)
+    chunk_size = get_asset_backfill_run_chunk_size()
+
+    for run_request_idx, run_request in enumerate(run_requests):
+        run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
+        try:
+            submit_asset_run(
+                run_id,
+                run_request._replace(
+                    tags={
+                        **run_request.tags,
+                        **run_tags,
+                        BACKFILL_ID_TAG: backfill_id,
+                    }
+                ),
+                run_request_idx,
+                instance,
+                workspace_process_context,
+                asset_graph,
+                run_request_execution_data_cache,
+                {},
+                logger,
+            )
+        except Exception:
+            logger.exception(
+                "Error while submitting run - updating the backfill data before re-raising"
+            )
+            # Write the runs that we submitted before hitting an error
+            _write_updated_backfill_data(
+                instance,
+                backfill_id,
+                updated_backfill_data,
+                asset_graph,
+                run_requests[num_submitted:],
+                asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
+            )
+            raise
+        yield None
+
+        num_submitted += 1
+
         updated_backfill_data: AssetBackfillData = (
             updated_backfill_data.with_run_requests_submitted(
-                [rr for (rr, _) in submit_run_request_chunk_result.chunk_submitted_runs],
+                [run_request],
                 asset_graph,
                 instance_queryer,
             )
         )
 
-        # Refetch, in case the backfill was requested for cancellation in the meantime
-        backfill = cast(PartitionBackfill, instance.get_backfill(backfill_id))
-        updated_backfill = backfill.with_asset_backfill_data(
-            updated_backfill_data,
-            dynamic_partitions_store=instance,
-            asset_graph=asset_graph,
-        ).with_submitting_run_requests(
-            run_requests[num_submitted:],
-            asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
-        )
-        instance.update_backfill(updated_backfill)
+        # After each chunk or on the final request, write the updated backfill data
+        # and check to make sure we weren't interrupted
+        if (num_submitted % chunk_size == 0) or num_submitted == len(run_requests):
+            backfill = _write_updated_backfill_data(
+                instance,
+                backfill_id,
+                updated_backfill_data,
+                asset_graph,
+                run_requests[num_submitted:],
+                asset_backfill_iteration_result.reserved_run_ids[num_submitted:],
+            )
 
-        if backfill.status != BulkActionStatus.REQUESTED:
-            break
+            if backfill.status != BulkActionStatus.REQUESTED:
+                break
 
         yield None
 
