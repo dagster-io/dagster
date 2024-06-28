@@ -480,7 +480,8 @@ def test_auto_materialize_sensor_transition():
 
 
 @pytest.mark.parametrize("num_threads", [0, 4])
-def test_auto_materialize_sensor_ticks(num_threads):
+@pytest.mark.parametrize("emit_backfills", [True, False])
+def test_auto_materialize_sensor_ticks(num_threads, emit_backfills):
     with get_daemon_instance(
         paused=True,
         extra_overrides={
@@ -491,6 +492,12 @@ def test_auto_materialize_sensor_ticks(num_threads):
             }
         },
     ) as instance:
+        # need to override this method on the instance since it is hard-coded to False. Once we
+        # determine how we want to enable the feature, we can change this
+        def override_da_backfill_setting(self):
+            return emit_backfills
+
+        instance.da_emit_backfills = override_da_backfill_setting.__get__(instance, DagsterInstance)
         with _get_threadpool_executor(instance) as threadpool_executor:
             pre_sensor_evaluation_id = 12345
 
@@ -536,7 +543,10 @@ def test_auto_materialize_sensor_ticks(num_threads):
                 expected_status=InstigatorStatus.STOPPED,
             )
 
-            runs = instance.get_runs()
+            if instance.da_emit_backfills:
+                runs = instance.get_backfills()
+            else:
+                runs = instance.get_runs()
 
             assert len(runs) == 1
             run = runs[0]
