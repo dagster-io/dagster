@@ -49,7 +49,7 @@ type RowType =
     };
 
 export const SectionedLeftNav = () => {
-  const {loading, visibleRepos} = React.useContext(WorkspaceContext);
+  const {visibleRepos} = React.useContext(WorkspaceContext);
   const {basePath} = React.useContext(AppContext);
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
