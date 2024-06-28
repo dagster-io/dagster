@@ -725,6 +725,11 @@
     "statusCode": 302
   },
   {
+    "source": "/integrations/airflow/reference",
+    "destination": "/integrations/airflow",
+    "statusCode": 302
+  },
+  {
     "source": "/deployment/open-source",
     "destination": "/deployment",
     "statusCode": 302
