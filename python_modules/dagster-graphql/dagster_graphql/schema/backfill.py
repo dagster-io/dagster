@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
@@ -8,6 +9,7 @@ from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPo
 from dagster._core.definitions.partition import PartitionsSubset
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._core.errors import DagsterError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillStatus,
     PartitionedAssetBackfillStatus,
@@ -181,9 +183,15 @@ class GrapheneAssetBackfillData(graphene.ObjectType):
     )
 
     def resolve_rootTargetedPartitions(self, graphene_info: ResolveInfo):
-        root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
-            graphene_info.context
-        )
+        try:
+            root_partitions_subset = self._backfill_job.get_target_root_partitions_subset(
+                graphene_info.context
+            )
+        except DagsterError:
+            logging.getLogger("dagster").warning(
+                "Error generating root target partitions", exc_info=True
+            )
+            return None
 
         return (
             GrapheneAssetBackfillTargetPartitions(root_partitions_subset)
