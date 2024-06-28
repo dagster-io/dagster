@@ -226,7 +226,7 @@ The primary difference between Airflow and Dagster are how the k8s pod specifica
 
 The primary difference between Airflow and Dagster are how the k8s pod specification are expose. In Airflow, they are passed as parameters the `KubernetesPodOperator`, whereas in Dagster they are passed as a `base_pod_spec` dictionary to the `k8s_pipes_client.run` method. Another difference is that in Airflow, `get_logs` is required to capture _stdout_, however, with Dagster they are automatically captured to on the _stdout_ tab of the step output.
 
-### Advanced pipes usage
+In the above example, we demonstrated how to run images on Kubernetes using the `dagster_k8s` library. One of the biggest benefits of Dagster Pipes, however, is that you can leverage the `dagster_pipes` library from within your containerized pipeline to access the full Dagster context, and emit events back to the Dagster UI.
 
 In the above example, we demonstrated how to run images on Kubernetes using the `dagsater_k8s` library. One of the biggest benefits of Dagster Pipes, however, is that you can leverage the `dagster_pipes` library from within your containerized pipeline to access the full Dagster context, and emit events back to the Dagster UI.
 
