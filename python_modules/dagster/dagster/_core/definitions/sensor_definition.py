@@ -53,7 +53,6 @@ from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, KeysAssetSelection
-from .graph_definition import GraphDefinition
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -62,8 +61,7 @@ from .run_request import (
     SensorResult,
     SkipReason,
 )
-from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .target import AutomationTarget, ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
@@ -620,18 +618,18 @@ class SensorDefinition(IHasInternalInit):
 
         jobs = jobs if jobs else [job] if job else None
 
-        targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
+        targets: Optional[List[AutomationTarget]] = None
         if job_name:
             targets = [
-                RepoRelativeTarget(
-                    job_name=check.str_param(job_name, "job_name"),
+                AutomationTarget(
+                    resolvable_to_job=check.str_param(job_name, "job_name"),
                     op_selection=None,
                 )
             ]
         elif job:
-            targets = [DirectTarget(job)]
+            targets = [AutomationTarget(job)]
         elif jobs:
-            targets = [DirectTarget(job) for job in jobs]
+            targets = [AutomationTarget(job) for job in jobs]
         elif asset_selection:
             targets = []
 
@@ -654,8 +652,8 @@ class SensorDefinition(IHasInternalInit):
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
         self._description = check.opt_str_param(description, "description")
-        self._targets: Sequence[Union[RepoRelativeTarget, DirectTarget]] = check.opt_list_param(
-            targets, "targets", (DirectTarget, RepoRelativeTarget)
+        self._targets: Sequence[AutomationTarget] = check.opt_list_param(
+            targets, "targets", AutomationTarget
         )
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultSensorStatus
@@ -741,18 +739,23 @@ class SensorDefinition(IHasInternalInit):
         return self._min_interval
 
     @property
-    def targets(self) -> Sequence[Union[DirectTarget, RepoRelativeTarget]]:
+    def targets(self) -> Sequence[AutomationTarget]:
         return self._targets
 
     @public
     @property
-    def job(self) -> Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> ExecutableDefinition:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
         if self._targets:
-            if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
-                return self._targets[0].target
+            if len(self._targets) == 1:
+                if self._targets[0].has_executable_def:
+                    return self._targets[0].executable_def
+                else:
+                    raise DagsterInvalidDefinitionError(
+                        "Job property not available when target is defined by a string job name."
+                    )
             elif len(self._targets) > 1:
                 raise DagsterInvalidDefinitionError(
                     "Job property not available when SensorDefinition has multiple jobs."
@@ -761,13 +764,18 @@ class SensorDefinition(IHasInternalInit):
 
     @public
     @property
-    def jobs(self) -> List[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
+    def jobs(self) -> List[ExecutableDefinition]:
         """List[Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]]: A list of jobs
         that are targeted by this schedule.
         """
-        if self._targets and all(isinstance(target, DirectTarget) for target in self._targets):
-            return [target.target for target in self._targets]  # type: ignore  # (illegible conditional)
-        raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+        targets = [t for t in self._targets if t.has_executable_def]
+        if not targets:
+            raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
+        return [t.executable_def for t in targets]
+
+    @property
+    def has_jobs(self) -> bool:
+        return bool(self._targets)
 
     @property
     def sensor_type(self) -> SensorType:
@@ -881,24 +889,6 @@ class SensorDefinition(IHasInternalInit):
             asset_events=asset_events,
         )
 
-    def has_loadable_targets(self) -> bool:
-        for target in self._targets:
-            if isinstance(target, DirectTarget):
-                return True
-        return False
-
-    def load_targets(
-        self,
-    ) -> Sequence[Union[JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition]]:
-        """Returns job/graph definitions that have been directly passed into the sensor definition.
-        Any jobs or graphs that are referenced by name will not be loaded.
-        """
-        targets = []
-        for target in self._targets:
-            if isinstance(target, DirectTarget):
-                targets.append(target.load())
-        return targets
-
     def resolve_run_requests(
         self,
         run_requests: Sequence[RunRequest],
@@ -974,7 +964,7 @@ class SensorDefinition(IHasInternalInit):
         return resolved_run_requests
 
     @property
-    def _target(self) -> Optional[Union[DirectTarget, RepoRelativeTarget]]:
+    def _target(self) -> Optional[AutomationTarget]:
         return self._targets[0] if self._targets else None
 
     @public

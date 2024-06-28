@@ -46,11 +46,8 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
-from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
-from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .target import AutomationTarget, ExecutableDefinition
 from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
@@ -585,13 +582,15 @@ class ScheduleDefinition(IHasInternalInit):
                 " https://github.com/dagster-io/dagster/issues/15294 for more information."
             )
 
-        if job is not None:
-            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
-        else:
-            self._target = RepoRelativeTarget(
-                job_name=check.str_param(job_name, "job_name"),
+        if job:
+            self._target = AutomationTarget(job)
+        elif job_name:
+            self._target = AutomationTarget(
+                resolvable_to_job=check.str_param(job_name, "job_name"),
                 op_selection=None,
             )
+        else:
+            check.failed("Must provide job or job_name")
 
         if name:
             self._name = check_valid_name(name)
@@ -839,12 +838,12 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
+    def job(self) -> ExecutableDefinition:
         """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
-        if isinstance(self._target, DirectTarget):
-            return self._target.target
+        if self._target.has_executable_def:
+            return self._target.executable_def
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
@@ -933,22 +932,9 @@ class ScheduleDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
         )
 
-    def has_loadable_target(self):
-        return isinstance(self._target, DirectTarget)
-
     @property
-    def targets_unresolved_asset_job(self) -> bool:
-        return self.has_loadable_target() and isinstance(
-            self.load_target(), UnresolvedAssetJobDefinition
-        )
-
-    def load_target(
-        self,
-    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        if isinstance(self._target, DirectTarget):
-            return self._target.load()
-
-        check.failed("Target is not loadable")
+    def target(self) -> AutomationTarget:
+        return self._target
 
     @public
     @property

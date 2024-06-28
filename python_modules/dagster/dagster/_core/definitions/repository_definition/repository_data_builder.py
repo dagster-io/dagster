@@ -46,6 +46,7 @@ from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.target import ExecutableDefinition
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -283,18 +284,20 @@ def build_caching_repository_data_from_list(
             jobs[job_name] = job_def
 
     for name, sensor_def in sensors.items():
-        if sensor_def.has_loadable_targets():
-            targets = sensor_def.load_targets()
-            for target in targets:
+        for target in sensor_def.targets:
+            if target.has_executable_def:
                 _process_and_validate_target(
-                    sensor_def, coerced_graphs, unresolved_jobs, jobs, target
+                    sensor_def, coerced_graphs, unresolved_jobs, jobs, target.executable_def
                 )
 
     for name, schedule_def in schedules.items():
-        if schedule_def.has_loadable_target():
-            target = schedule_def.load_target()
+        if schedule_def.target.has_executable_def:
             _process_and_validate_target(
-                schedule_def, coerced_graphs, unresolved_jobs, jobs, target
+                schedule_def,
+                coerced_graphs,
+                unresolved_jobs,
+                jobs,
+                schedule_def.target.executable_def,
             )
 
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)
@@ -429,7 +432,7 @@ def _process_and_validate_target(
     coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
     jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
-    target: Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition],
+    executable_def: ExecutableDefinition,
 ):
     """This function modifies the state of coerced_graphs, unresolved_jobs, and jobs."""
     targeter = (
@@ -437,51 +440,55 @@ def _process_and_validate_target(
         if isinstance(schedule_or_sensor_def, ScheduleDefinition)
         else f"sensor '{schedule_or_sensor_def.name}'"
     )
-    if isinstance(target, GraphDefinition):
-        if target.name not in coerced_graphs:
+    if isinstance(executable_def, GraphDefinition):
+        if executable_def.name not in coerced_graphs:
             # Since this is a graph we have to coerce, it is not possible to be
             # the same definition by reference equality
-            if target.name in jobs:
-                raise DagsterInvalidDefinitionError(
-                    _get_error_msg_for_target_conflict(targeter, "graph", target.name, "job")
-                )
-        elif coerced_graphs[target.name].graph != target:
-            raise DagsterInvalidDefinitionError(
-                _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
-            )
-        coerced_job = target.coerce_to_job()
-        coerced_graphs[target.name] = coerced_job
-        jobs[target.name] = coerced_job
-    elif isinstance(target, UnresolvedAssetJobDefinition):
-        if target.name not in unresolved_jobs:
-            # Since this is an unresolved job we have to resolve, it is not possible to
-            # be the same definition by reference equality
-            if target.name in jobs:
+            if executable_def.name in jobs:
                 raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
-                        targeter, "unresolved asset job", target.name, "job"
+                        targeter, "graph", executable_def.name, "job"
                     )
                 )
-        elif unresolved_jobs[target.name].selection != target.selection:
+        elif coerced_graphs[executable_def.name].graph != executable_def:
+            raise DagsterInvalidDefinitionError(
+                _get_error_msg_for_target_conflict(targeter, "graph", executable_def.name, "graph")
+            )
+        coerced_job = executable_def.coerce_to_job()
+        coerced_graphs[executable_def.name] = coerced_job
+        jobs[executable_def.name] = coerced_job
+    elif isinstance(executable_def, UnresolvedAssetJobDefinition):
+        if executable_def.name not in unresolved_jobs:
+            # Since this is an unresolved job we have to resolve, it is not possible to
+            # be the same definition by reference equality
+            if executable_def.name in jobs:
+                raise DagsterInvalidDefinitionError(
+                    _get_error_msg_for_target_conflict(
+                        targeter, "unresolved asset job", executable_def.name, "job"
+                    )
+                )
+        elif unresolved_jobs[executable_def.name].selection != executable_def.selection:
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(
-                    targeter, "unresolved asset job", target.name, "unresolved asset job"
+                    targeter, "unresolved asset job", executable_def.name, "unresolved asset job"
                 )
             )
-        unresolved_jobs[target.name] = target
+        unresolved_jobs[executable_def.name] = executable_def
     else:
-        if target.name in jobs and jobs[target.name] != target:
+        if executable_def.name in jobs and jobs[executable_def.name] != executable_def:
             dupe_target_type = (
                 "graph"
-                if target.name in coerced_graphs
+                if executable_def.name in coerced_graphs
                 else "unresolved asset job"
-                if target.name in unresolved_jobs
+                if executable_def.name in unresolved_jobs
                 else "job"
             )
             raise DagsterInvalidDefinitionError(
-                _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)
+                _get_error_msg_for_target_conflict(
+                    targeter, "job", executable_def.name, dupe_target_type
+                )
             )
-        jobs[target.name] = target
+        jobs[executable_def.name] = executable_def
 
 
 def _validate_auto_materialize_sensors(
