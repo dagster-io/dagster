@@ -877,13 +877,7 @@
       },
       {
         "title": "Airflow",
-        "path": "/integrations/airflow",
-        "children": [
-          {
-            "title": "Learning Dagster from Airflow",
-            "path": "/integrations/airflow/from-airflow-to-dagster"
-          }
-        ]
+        "path": "/integrations/airflow"
       },
       {
         "title": "Databricks",
@@ -1152,6 +1146,10 @@
         "title": "Migrating to Dagster",
         "path": "/guides/migrations",
         "children": [
+          {
+            "title": "Learning Dagster from Airflow",
+            "path": "/integrations/airflow/from-airflow-to-dagster"
+          },
           {
             "title": "Migrating from Airflow",
             "path": "/guides/migrations/migrating-airflow-to-dagster"
