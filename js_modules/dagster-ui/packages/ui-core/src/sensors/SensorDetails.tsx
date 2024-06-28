@@ -8,6 +8,7 @@ import {
   MetadataTableWIP,
   PageHeader,
   Tag,
+  Tooltip,
 } from '@dagster-io/ui-components';
 import {useState} from 'react';
 
@@ -107,15 +108,20 @@ export const SensorDetails = ({
         right={
           <Box margin={{top: 4}} flex={{direction: 'row', alignItems: 'center', gap: 8}}>
             <QueryRefreshCountdown refreshState={refreshState} />
-            {sensor.sensorType === SensorType.STANDARD ? (
+            <Tooltip
+              canShow={sensor.sensorType !== SensorType.STANDARD}
+              content="Testing not available for this sensor type"
+              placement="top-end"
+            >
               <Button
+                disabled={sensor.sensorType !== SensorType.STANDARD}
                 onClick={() => {
                   setShowTestTickDialog(true);
                 }}
               >
-                Test Sensor
+                Test sensor
               </Button>
-            ) : null}
+            </Tooltip>
           </Box>
         }
       />
