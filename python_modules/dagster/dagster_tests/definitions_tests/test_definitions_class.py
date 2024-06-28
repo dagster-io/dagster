@@ -15,6 +15,7 @@ from dagster import (
     ScheduleDefinition,
     SourceAsset,
     asset,
+    asset_check,
     build_schedule_from_partitioned_job,
     create_repository_using_definitions_args,
     define_asset_job,
@@ -27,11 +28,14 @@ from dagster import (
     observable_source_asset,
     op,
     repository,
+    schedule,
     sensor,
     with_resources,
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.cacheable_assets import (
     AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
@@ -923,3 +927,62 @@ def test_invalid_partitions_subclass():
         match="custom PartitionsDefinition subclasses",
     ):
         Definitions(assets=[asset1])
+
+
+def test_definitions_dedupe_reference_equality():
+    """Test that Definitions objects correctly dedupe objects by
+    reference equality.
+    """
+
+    @asset
+    def the_asset():
+        pass
+
+    @asset_check(asset=the_asset)
+    def the_check():
+        return AssetCheckResult(passed=True)
+
+    the_job = define_asset_job(name="the_job", selection="the_asset")
+
+    @sensor(job=the_job)
+    def the_sensor():
+        pass
+
+    @schedule(job=the_job, cron_schedule="* * * * *")
+    def the_schedule():
+        pass
+
+    defs = Definitions(
+        assets=[the_asset, the_asset],
+        asset_checks=[the_check, the_check],
+        jobs=[the_job, the_job],
+        sensors=[the_sensor, the_sensor],
+        schedules=[the_schedule, the_schedule],
+    )
+    underlying_repo = defs.get_repository_def()
+    assert (
+        len(
+            [
+                assets_def
+                for assets_def in underlying_repo.asset_graph.assets_defs
+                if not isinstance(assets_def, AssetChecksDefinition)
+            ]
+        )
+        == 1
+    )
+    assert len(list(underlying_repo.asset_graph._assets_defs_by_check_key)) == 1  # noqa
+    assert (
+        len(
+            [job_def for job_def in underlying_repo.get_all_jobs() if job_def.name != "__ASSET_JOB"]
+        )
+        == 1
+    )
+    assert len(list(underlying_repo.sensor_defs)) == 1
+    assert len(list(underlying_repo.schedule_defs)) == 1
+
+    # properties on the definitions object do not dedupe
+    assert len(defs.original_args["assets"]) == 2
+    assert len(defs.original_args["asset_checks"]) == 2
+    assert len(defs.original_args["jobs"]) == 2
+    assert len(defs.original_args["sensors"]) == 2
+    assert len(defs.original_args["schedules"]) == 2

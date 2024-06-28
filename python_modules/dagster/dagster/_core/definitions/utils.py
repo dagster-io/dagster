@@ -7,12 +7,14 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
     Optional,
     Sequence,
     Tuple,
+    TypeVar,
     Union,
     cast,
 )
@@ -393,3 +395,11 @@ def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> M
         ) from err
 
     return config_from_yaml_strings(yaml_strings=yaml_strings)
+
+
+T = TypeVar("T")
+
+
+def dedupe_object_refs(objects: Optional[Iterable[T]]) -> Sequence[T]:
+    """Dedupe definitions by reference equality."""
+    return list({id(obj): obj for obj in objects}.values()) if objects is not None else []

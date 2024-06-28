@@ -22,6 +22,7 @@ from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.utils import dedupe_object_refs
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._core.execution.with_resources import with_resources
@@ -254,6 +255,13 @@ def _create_repository_using_definitions_args(
     loggers: Optional[Mapping[str, LoggerDefinition]] = None,
     asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
 ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
+    # First, dedupe all definition types.
+    sensors = dedupe_object_refs(sensors)
+    jobs = dedupe_object_refs(jobs)
+    assets = dedupe_object_refs(assets)
+    schedules = dedupe_object_refs(schedules)
+    asset_checks = dedupe_object_refs(asset_checks)
+
     executor_def = (
         executor
         if isinstance(executor, ExecutorDefinition) or executor is None
