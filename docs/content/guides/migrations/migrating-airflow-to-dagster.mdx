@@ -201,7 +201,7 @@ with DAG(dag_id="example_kubernetes_dag", schedule_interval=None, catchup=False)
     )
 ```
 
-Now, let’s show how the same image would be run on Kubernetes using Dagster pipes and the `dagster_k8s` wrapper.
+Now, let's look at how the same image would be run on Kubernetes using Dagster Pipes and the `dagster_k8s` wrapper.
 
 ```python
 from dagster import AssetExecutionContext, asset
