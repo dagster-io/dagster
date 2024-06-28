@@ -74,7 +74,12 @@ export const VirtualizedAssetRow = (props: AssetRowProps) => {
   } = props;
 
   const liveData = useLiveDataOrLatestMaterializationDebounced(path, type);
-  const linkUrl = assetDetailsPathForKey({path});
+  const linkUrl = assetDetailsPathForKey(
+    {path},
+    {
+      view: type === 'folder' ? 'folder' : undefined,
+    },
+  );
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (onToggleChecked && e.target instanceof HTMLInputElement) {
