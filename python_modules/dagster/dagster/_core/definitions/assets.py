@@ -26,7 +26,6 @@ from dagster._annotations import experimental_param, public
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     AssetExecutionType,
@@ -104,6 +103,7 @@ class AssetGraphComputation(IHaveNew):
     selected_asset_keys: AbstractSet[AssetKey]
     selected_asset_check_keys: AbstractSet[AssetCheckKey]
     output_names_by_key: Mapping[AssetKey, str]
+    execution_type: AssetExecutionType
 
     def __new__(
         cls,
@@ -115,6 +115,7 @@ class AssetGraphComputation(IHaveNew):
         is_subset: bool,
         selected_asset_keys: AbstractSet[AssetKey],
         selected_asset_check_keys: AbstractSet[AssetCheckKey],
+        execution_type: AssetExecutionType,
     ):
         output_names_by_key: Dict[AssetKey, str] = {}
         for output_name, key in keys_by_output_name.items():
@@ -136,6 +137,7 @@ class AssetGraphComputation(IHaveNew):
             selected_asset_keys=selected_asset_keys,
             selected_asset_check_keys=selected_asset_check_keys,
             output_names_by_key=output_names_by_key,
+            execution_type=execution_type,
         )
 
 
@@ -169,6 +171,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     _computation: Optional[AssetGraphComputation]
 
     @experimental_param(param="specs")
+    @experimental_param(param="execution_type")
     def __init__(
         self,
         *,
@@ -202,6 +205,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         is_subset: bool = False,
         owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]] = None,
         specs: Optional[Sequence[AssetSpec]] = None,
+        execution_type: Optional[AssetExecutionType] = None,
         # if adding new fields, make sure to handle them in the with_attributes, from_graph,
         # from_op, and get_attributes_dict methods
     ):
@@ -259,6 +263,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 is_subset=check.bool_param(is_subset, "is_subset"),
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
+                execution_type=execution_type or AssetExecutionType.MATERIALIZATION,
             )
 
         check_specs_by_output_name = check.opt_mapping_param(
@@ -436,6 +441,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         selected_asset_check_keys: Optional[AbstractSet[AssetCheckKey]],
         is_subset: bool,
         specs: Optional[Sequence[AssetSpec]],
+        execution_type: Optional[AssetExecutionType],
     ) -> "AssetsDefinition":
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
@@ -452,6 +458,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 selected_asset_check_keys=selected_asset_check_keys,
                 is_subset=is_subset,
                 specs=specs,
+                execution_type=execution_type,
             )
 
     def __call__(self, *args: object, **kwargs: object) -> object:
@@ -821,6 +828,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=None,
             is_subset=False,
             specs=specs,
+            execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
     @public
@@ -1131,14 +1139,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     def execution_type(self) -> AssetExecutionType:
         if self._computation is None:
             return AssetExecutionType.UNEXECUTABLE
-
-        value = self._get_external_asset_metadata_value(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
-        if value is None:
-            return AssetExecutionType.MATERIALIZATION
-        elif isinstance(value, str):
-            return AssetExecutionType[value]
         else:
-            check.failed(f"Expected execution type metadata to be a string or None, not {value}")
+            return self._computation.execution_type
 
     @property
     def is_external(self) -> bool:
@@ -1718,6 +1720,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=self.check_keys,
             specs=self.specs,
             is_subset=self.is_subset,
+            execution_type=self._computation.execution_type if self._computation else None,
         )
 
 

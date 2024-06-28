@@ -898,11 +898,7 @@ def test_get_all_asset_specs():
         group_name="default",
         tags={"biz": "boz"},
     )
-    assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec(
-        "asset6",
-        group_name="blag",
-        metadata={"dagster/asset_execution_type": "OBSERVATION"},
-    )
+    assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec("asset6", group_name="blag")
 
 
 @pytest.mark.skip(reason="Failing BK")
