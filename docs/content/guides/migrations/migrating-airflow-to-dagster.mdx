@@ -173,7 +173,9 @@ Finally, we create a <PyObject object="Definitions" /> object to register our as
 
 ## Migrating containerized pipelines
 
-If you've elected to containerize your Airflow pipelines by using technologies like Kubernetes using the `KubernetesPodOperator`, or Elastic Container Service using the `EcsRunTaskOperator`, then we recommend that you leverage Dagster Pipes for running these external execution environments from Dagster. For a high level overview of Pipes, please refer to the <a href="/concepts/dagster-pipes">core concept page</a>.
+If you've elected to containerize your Airflow pipelines by using technologies like Kubernetes using the `KubernetesPodOperator`, or Elastic Container Service using the `EcsRunTaskOperator`, you'll need a different approach to migration.
+
+In these cases, we recommend leveraging Dagster Pipes for running these external execution environments from Dagster. Refer to the [Dagster Pipes documentation](/concepts/dagster-pipes) for more information.
 
 Some benefits of containerizing your pipelines are as follows:
 
