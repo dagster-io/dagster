@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 import time
 from typing import Any, Mapping, Optional, Sequence, Tuple
 from urllib.parse import urljoin
@@ -112,6 +113,7 @@ class FivetranResource(ConfigurableResource):
                     headers=headers,
                     auth=self._auth,
                     data=data,
+                    timeout=int(os.getenv("DAGSTER_FIVETRAN_CONNECTOR_REQUEST_TIMEOUT", "60")),
                 )
                 response.raise_for_status()
                 resp_dict = response.json()
