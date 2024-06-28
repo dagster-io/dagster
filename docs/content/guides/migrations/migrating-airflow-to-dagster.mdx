@@ -222,7 +222,7 @@ def k8s_pipes_asset(context: AssetExecutionContext, k8s_pipes_client: PipesK8sCl
             ]
         },
     ).get_materialize_result()
-```
+The primary difference between Airflow and Dagster are how the k8s pod specifications are exposed. In Airflow, they are passed as parameters to the `KubernetesPodOperator`, whereas in Dagster they are passed as a `base_pod_spec` dictionary to the `k8s_pipes_client.run` method. Additionally, in Airflow, `get_logs` is required to capture `stdout`. In Dagster, however, they are automatically captured on the `stdout` tab of the step output.
 
 The primary difference between Airflow and Dagster are how the k8s pod specification are expose. In Airflow, they are passed as parameters the `KubernetesPodOperator`, whereas in Dagster they are passed as a `base_pod_spec` dictionary to the `k8s_pipes_client.run` method. Another difference is that in Airflow, `get_logs` is required to capture _stdout_, however, with Dagster they are automatically captured to on the _stdout_ tab of the step output.
 
