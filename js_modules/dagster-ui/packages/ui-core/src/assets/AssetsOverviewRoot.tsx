@@ -9,10 +9,11 @@ import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
-import {AssetKey} from './types';
+import {AssetKey, AssetViewParams} from './types';
 import {useTrackPageView} from '../app/analytics';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {usePageLoadTrace} from '../performance';
 import {ReloadAllButton} from '../workspace/ReloadAllButton';
 
@@ -28,6 +29,7 @@ export const AssetsOverviewRoot = ({
   useTrackPageView();
 
   const params = useParams();
+  const [searchParams] = useQueryPersistedState<AssetViewParams>({});
   const history = useHistory();
 
   const currentPathStr = (params as any)['0'];
@@ -51,7 +53,7 @@ export const AssetsOverviewRoot = ({
     currentPath && currentPath.length === 0 ? 'AssetsOverviewRoot' : 'AssetCatalogAssetView',
   );
 
-  if (currentPath.length === 0) {
+  if (currentPath.length === 0 || searchParams.view === 'folder') {
     return (
       <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
         <AssetPageHeader
