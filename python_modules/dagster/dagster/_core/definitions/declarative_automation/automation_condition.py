@@ -7,7 +7,6 @@ import pendulum
 from dagster._annotations import experimental
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
@@ -114,40 +113,6 @@ class AutomationCondition(ABC, DagsterModel):
 
         return SinceCondition(trigger_condition=self, reset_condition=reset_condition)
 
-    def since_last_updated(self) -> "SinceCondition":
-        """Returns a AutomationCondition that is true if this condition has become true since the
-        last time this asset was updated.
-        """
-        from .operands import NewlyUpdatedCondition
-        from .operators import SinceCondition
-
-        return SinceCondition(trigger_condition=self, reset_condition=NewlyUpdatedCondition())
-
-    def since_last_requested(self) -> "SinceCondition":
-        """Returns a AutomationCondition that is true if this condition has become true since the
-        last time this asset was updated.
-        """
-        from .operands import NewlyRequestedCondition
-        from .operators import SinceCondition
-
-        return SinceCondition(trigger_condition=self, reset_condition=NewlyRequestedCondition())
-
-    def since_last_cron_tick(
-        self, cron_schedule: str, cron_timezone: str = "UTC"
-    ) -> "SinceCondition":
-        """Returns a AutomationCondition that is true if this condition has become true since the
-        latest tick of the given cron schedule.
-        """
-        from .operands import CronTickPassedCondition
-        from .operators import SinceCondition
-
-        return SinceCondition(
-            trigger_condition=self,
-            reset_condition=CronTickPassedCondition(
-                cron_schedule=cron_schedule, cron_timezone=cron_timezone
-            ),
-        )
-
     def newly_true(self) -> "NewlyTrueCondition":
         """Returns a AutomationCondition that is true only on the tick that this condition goes
         from false to true for a given asset partition.
@@ -170,11 +135,7 @@ class AutomationCondition(ABC, DagsterModel):
         return AnyDepsCondition(operand=condition)
 
     @staticmethod
-    def all_deps_match(
-        condition: "AutomationCondition",
-        include_selection: Optional[AssetSelection] = None,
-        exclude_selection: Optional[AssetSelection] = None,
-    ) -> "AllDepsCondition":
+    def all_deps_match(condition: "AutomationCondition") -> "AllDepsCondition":
         """Returns a AutomationCondition that is true for an asset partition if at least one partition
         of all of its dependencies evaluate to True for the given condition.
 
@@ -286,13 +247,16 @@ class AutomationCondition(ABC, DagsterModel):
         )
         return (
             AutomationCondition.in_latest_time_window()
-            & became_missing_or_any_deps_updated.since_last_requested()
+            & became_missing_or_any_deps_updated.since(
+                AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+            )
             & ~any_parent_missing
             & ~any_parent_in_progress
+            & ~AutomationCondition.in_progress()
         )
 
     @staticmethod
-    def on_cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
+    def cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
         """Returns a condition which will materialize asset partitions within the latest time window
         on a given cron schedule, after their parents have been updated. For example, if the
         cron_schedule is set to "0 0 * * *" (every day at midnight), then this rule will not become
@@ -306,15 +270,14 @@ class AutomationCondition(ABC, DagsterModel):
             schedule, or will be requested this tick
         - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
+        cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
         all_deps_updated_since_cron = AutomationCondition.all_deps_match(
-            AutomationCondition.newly_updated().since_last_cron_tick(cron_schedule, cron_timezone)
+            AutomationCondition.newly_updated().since(cron_tick_passed)
             | AutomationCondition.will_be_requested()
         )
         return (
             AutomationCondition.in_latest_time_window()
-            & AutomationCondition.cron_tick_passed(
-                cron_schedule, cron_timezone
-            ).since_last_requested()
+            & cron_tick_passed.since(AutomationCondition.newly_requested())
             & all_deps_updated_since_cron
         )
 
