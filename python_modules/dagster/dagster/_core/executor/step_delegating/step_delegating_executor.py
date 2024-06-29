@@ -81,7 +81,7 @@ class StepDelegatingExecutor(Executor):
             self._pop_events_limit = int(os.getenv("DAGSTER_EXECUTOR_POP_EVENTS_LIMIT", "1000"))
 
     @property
-    def retries(self):
+    def retries(self) -> RetryMode:
         return self._retries
 
     def _pop_events(
