@@ -17,8 +17,6 @@ from dagster_graphql.schema.errors import (
     GrapheneRepositoryNotFoundError,
     GrapheneResourceNotFoundError,
 )
-from dagster_graphql.schema.pipelines.pipeline import GrapheneJob
-from dagster_graphql.schema.solids import GrapheneSolidHandle, build_solid_handles
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 from .config_types import GrapheneConfigTypeField
@@ -65,10 +63,6 @@ class GrapheneNestedResourceEntry(graphene.ObjectType):
 
 
 class GrapheneJobAndSpecificOps(graphene.ObjectType):
-    # deprecated expensive fields
-    job = graphene.NonNull(GrapheneJob)
-    opsUsing = graphene.Field(non_null_list(GrapheneSolidHandle))
-
     jobName = graphene.NonNull(graphene.String)
     opHandleIDs = graphene.Field(non_null_list(graphene.String))
 
@@ -92,34 +86,6 @@ class GrapheneJobAndSpecificOps(graphene.ObjectType):
 
     def resolve_opHandleIDs(self, _) -> List[str]:
         return [str(handle) for handle in self._entry.node_handles]
-
-    def resolve_job(self, graphene_info: ResolveInfo):
-        if self._cached is None:
-            self._cached = self._construct_job_and_specific_ops(graphene_info)
-
-        return self._cached[0]
-
-    def resolve_opsUsing(self, graphene_info: ResolveInfo):
-        if self._cached is None:
-            self._cached = self._construct_job_and_specific_ops(graphene_info)
-
-        return self._cached[1]
-
-    def _construct_job_and_specific_ops(
-        self,
-        graphene_info: ResolveInfo,
-    ):
-        repo = graphene_info.context.get_code_location(self._location_name).get_repository(
-            self._repository_name
-        )
-        job = repo.get_full_external_job(self._entry.job_name)
-        handle_strs = {str(handle) for handle in self._entry.node_handles}
-        node_handles = [
-            handle
-            for handle_str, handle in build_solid_handles(job).items()
-            if handle_str in handle_strs
-        ]
-        return GrapheneJob(job), node_handles
 
 
 class GrapheneResourceDetails(graphene.ObjectType):
