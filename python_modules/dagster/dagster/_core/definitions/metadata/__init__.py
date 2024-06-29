@@ -48,6 +48,7 @@ from .source_code import (
     AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
+    FilePathMapping as FilePathMapping,
     LocalFileCodeReference as LocalFileCodeReference,
     UrlCodeReference as UrlCodeReference,
     link_to_git as link_to_git,
