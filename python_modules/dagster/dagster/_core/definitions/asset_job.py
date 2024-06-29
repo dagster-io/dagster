@@ -285,7 +285,7 @@ def get_asset_graph_for_job(
     Any unselected dependencies will be included as unexecutable AssetsDefinitions.
     """
     from dagster._core.definitions.external_asset import (
-        create_unexecutable_external_assets_from_assets_def,
+        create_unexecutable_external_asset_from_assets_def,
     )
 
     selected_keys = selection.resolve(parent_asset_graph)
@@ -325,9 +325,7 @@ def get_asset_graph_for_job(
         excluded_assets_defs, other_keys, None, allow_extraneous_asset_keys=True
     )
     unexecutable_assets_defs = [
-        unexecutable_ad
-        for ad in other_assets_defs
-        for unexecutable_ad in create_unexecutable_external_assets_from_assets_def(ad)
+        create_unexecutable_external_asset_from_assets_def(ad) for ad in other_assets_defs
     ]
 
     return AssetGraph.from_assets([*executable_assets_defs, *unexecutable_assets_defs])
