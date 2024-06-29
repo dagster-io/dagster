@@ -1,3 +1,4 @@
+import {useQuery} from '@apollo/client';
 import {
   Box,
   Button,
@@ -5,8 +6,8 @@ import {
   Dialog,
   DialogFooter,
   Icon,
-  Mono,
-  Spinner,
+  NonIdealState,
+  SpinnerWithText,
   Table,
   Tag,
   Tooltip,
@@ -16,9 +17,15 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import * as yaml from 'yaml';
 
-import {RunTableRunFragment} from './types/RunTable.types';
+import {QUEUED_RUN_CRITERIA_QUERY} from './QueuedRunCriteriaQuery';
+import {
+  QueuedRunCriteriaQuery,
+  QueuedRunCriteriaQueryVariables,
+} from './types/QueuedRunCriteriaQuery.types';
+import {RunFragment} from './types/RunFragments.types';
 import {useRunQueueConfig} from '../instance/useRunQueueConfig';
 import {StructuredContentTable} from '../metadata/MetadataEntry';
+import {numberFormatter} from '../ui/formatters';
 
 type TagConcurrencyLimit = {
   key: string;
@@ -26,15 +33,13 @@ type TagConcurrencyLimit = {
   limit: number;
 };
 
-export const QueuedRunCriteriaDialog = ({
-  isOpen,
-  onClose,
-  run,
-}: {
+interface DialogProps extends ContentProps {
   isOpen: boolean;
   onClose: () => void;
-  run: RunTableRunFragment;
-}) => {
+}
+
+export const QueuedRunCriteriaDialog = (props: DialogProps) => {
+  const {isOpen, onClose, run} = props;
   return (
     <Dialog
       isOpen={isOpen}
@@ -54,8 +59,22 @@ export const QueuedRunCriteriaDialog = ({
   );
 };
 
-const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
+interface ContentProps {
+  run: Pick<RunFragment, 'id' | 'tags'>;
+}
+
+const QueuedRunCriteriaDialogContent = ({run}: ContentProps) => {
   const runQueueConfig = useRunQueueConfig();
+
+  const {data, loading} = useQuery<QueuedRunCriteriaQuery, QueuedRunCriteriaQueryVariables>(
+    QUEUED_RUN_CRITERIA_QUERY,
+    {
+      variables: {
+        runId: run.id,
+      },
+    },
+  );
+
   const runTagMap = Object.fromEntries(run.tags.map(({key, value}) => [key, value]));
   const maxConcurrentRuns = runQueueConfig?.maxConcurrentRuns;
   const runTagLimits = React.useMemo(() => {
@@ -77,20 +96,34 @@ const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
     }
   }, [runQueueConfig, runTagMap]);
 
-  if (!runQueueConfig) {
+  if (!runQueueConfig || loading) {
     return (
-      <Box padding={32}>
-        <Spinner purpose="section" />
+      <Box padding={32} flex={{direction: 'row', justifyContent: 'center'}}>
+        <SpinnerWithText label="Loading run queue criteria…" />
       </Box>
     );
   }
 
+  if (!data || data.runOrError.__typename !== 'Run') {
+    return (
+      <Box padding={32} flex={{direction: 'row', justifyContent: 'center'}}>
+        <NonIdealState
+          icon="run"
+          title="Queue criteria not found"
+          description="Could not load queue criteria for this run."
+        />
+      </Box>
+    );
+  }
+
+  const {rootConcurrencyKeys, hasUnconstrainedRootNodes} = data.runOrError;
+
   const priority = runTagMap['dagster/priority'];
   const runIsOpConcurrencyLimited =
     runQueueConfig?.isOpConcurrencyAware &&
-    run.rootConcurrencyKeys &&
-    run.rootConcurrencyKeys.length > 0 &&
-    !run.hasUnconstrainedRootNodes;
+    rootConcurrencyKeys &&
+    rootConcurrencyKeys.length > 0 &&
+    !hasUnconstrainedRootNodes;
 
   return (
     <Table>
@@ -104,9 +137,7 @@ const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
         {maxConcurrentRuns !== undefined ? (
           <tr>
             <td>Max concurrent runs</td>
-            <td>
-              <Mono>{maxConcurrentRuns}</Mono>
-            </td>
+            <td>{numberFormatter.format(maxConcurrentRuns)}</td>
           </tr>
         ) : null}
         {runTagLimits?.length ? (
@@ -154,7 +185,7 @@ const QueuedRunCriteriaDialogContent = ({run}: {run: RunTableRunFragment}) => {
               </Box>
             </td>
             <td>
-              {run.rootConcurrencyKeys!.map((key, i) =>
+              {rootConcurrencyKeys!.map((key, i) =>
                 runQueueConfig ? (
                   <Tag interactive key={`rootConcurrency:${i}`}>
                     <Link to={`/concurrency?key=${key}`}>{key}</Link>
