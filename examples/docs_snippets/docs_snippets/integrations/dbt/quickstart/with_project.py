@@ -12,7 +12,7 @@ my_project = DbtProject(
     project_dir=Path(__file__)
     .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
     .resolve(),
-)
+).ensure_prepared()
 # end_dbt_project_example
 
 

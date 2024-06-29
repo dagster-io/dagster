@@ -5,15 +5,6 @@ description: Get started swiftly with this simple dbt & Dagster example.
 
 # Quickstart: Run your dbt project with Dagster
 
-<Note>
-  <strong>Note</strong>: This guide uses the <code>DbtProject</code> class,
-  which is an experimental feature. Visit the{" "}
-  <a href="/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject">
-    dagster-dbt library API reference
-  </a>{" "}
-  for more info.
-</Note>
-
 ---
 
 ## Setup your environment
@@ -63,7 +54,7 @@ my_project = DbtProject(
     project_dir=Path(__file__)
     .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
     .resolve(),
-)
+).ensure_prepared()
 
 
 @dbt_assets(manifest=my_project.manifest_path)
@@ -139,7 +130,7 @@ my_dagster_project
        project_dir=Path(__file__)
        .joinpath("..", RELATIVE_PATH_TO_MY_DBT_PROJECT)
        .resolve(),
-   )
+   ).ensure_prepared()
    ```
 
 3. In your `assets.py` file, add the following code. Using the `dbt_assets` decorator allows Dagster to create a definition for how to compute a set of dbt resources, described by a `manifest.json`.
