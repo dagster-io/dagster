@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 
 from dagster import AssetsDefinition, multi_asset
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvariantViolationError
 
 from .asset_utils import (
     build_looker_dashboard_specs,
@@ -35,11 +36,22 @@ def looker_assets(
     """
     dagster_looker_translator = dagster_looker_translator or DagsterLookerTranslator()
 
-    return multi_asset(
-        compute_kind="looker",
-        specs=[
-            *build_looker_dashboard_specs(project_dir, dagster_looker_translator),
-            *build_looker_explore_specs(project_dir, dagster_looker_translator),
-            *build_looker_view_specs(project_dir, dagster_looker_translator),
-        ],
-    )
+    def looker_assets_as_external_assets(fn: Callable[..., Any]) -> AssetsDefinition:
+        @multi_asset(
+            name=fn.__name__,
+            compute_kind="looker",
+            specs=[
+                *build_looker_dashboard_specs(project_dir, dagster_looker_translator),
+                *build_looker_explore_specs(project_dir, dagster_looker_translator),
+                *build_looker_view_specs(project_dir, dagster_looker_translator),
+            ],
+        )
+        def _fn():
+            raise DagsterInvariantViolationError(
+                "You have attempted to execute an unexecutable asset computed from"
+                f" {fn.__name__}."
+            )
+
+        return _fn
+
+    return looker_assets_as_external_assets
