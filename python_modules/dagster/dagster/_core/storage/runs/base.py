@@ -68,7 +68,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance], DaemonCursorSto
         self,
         filters: Optional[RunsFilter] = None,
         cursor: Optional[str] = None,
-        limit: Optional[int] = None,
+        limit: int = 100,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
         ascending: bool = False,
     ) -> Sequence[DagsterRun]:
