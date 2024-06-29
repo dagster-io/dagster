@@ -2,7 +2,7 @@ import io
 import sqlite3
 
 import pytest
-from dagster import AssetSpec, Definitions
+from dagster import AssetKey, AssetSpec, Definitions
 from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling import SlingMode, SlingResource, build_sling_asset
 
@@ -72,8 +72,8 @@ def test_can_build_two_assets(
         resources={"sling_resource": sling_sqlite_resource},
     )
 
-    assert defs.get_assets_def("asset1")
-    assert defs.get_assets_def("asset2")
+    assert defs.get_asset_graph().has(AssetKey("asset1"))
+    assert defs.get_asset_graph().has(AssetKey("asset2"))
 
 
 def test_update_mode(

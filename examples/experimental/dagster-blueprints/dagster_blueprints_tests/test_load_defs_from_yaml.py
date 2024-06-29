@@ -48,7 +48,7 @@ def test_single_file_single_blueprint() -> None:
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
-    metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
+    metadata = defs.get_asset_graph().get(AssetKey("asset1")).metadata
     code_references_metadata = CodeReferencesMetadataSet.extract(metadata)
     assert code_references_metadata.code_references
     assert len(code_references_metadata.code_references.code_references) == 1
@@ -71,7 +71,7 @@ def test_dir_of_single_blueprints() -> None:
         (AssetKey("asset2"), "single_blueprint1.yaml"),
         (AssetKey("asset3"), "single_blueprint2.yaml"),
     ):
-        metadata = defs.get_assets_def(asset_key).metadata_by_key[asset_key]
+        metadata = defs.get_asset_graph().get(asset_key).metadata
         code_references_metadata = CodeReferencesMetadataSet.extract(metadata)
         assert code_references_metadata.code_references
         assert len(code_references_metadata.code_references.code_references) == 1
@@ -208,7 +208,7 @@ def test_source_file_name() -> None:
     )
     assert set(defs.get_asset_graph().all_asset_keys) == {AssetKey("asset1")}
 
-    metadata = defs.get_assets_def("asset1").metadata_by_key[AssetKey("asset1")]
+    metadata = defs.get_asset_graph().get(AssetKey("asset1")).metadata
     assert metadata["source_file_name"] == "single_blueprint.yaml"
 
 
