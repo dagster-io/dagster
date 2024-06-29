@@ -22,11 +22,11 @@ from typing import (
 )
 from weakref import WeakSet
 
-import toposort as toposort_
 from typing_extensions import Final
 
 import dagster._check as check
 from dagster._utils import library_version_from_core_version, parse_package_version
+from dagster._vendored.toposort import toposort as toposort_
 
 BACKFILL_TAG_LENGTH = 8
 
