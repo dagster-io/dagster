@@ -184,10 +184,10 @@ def _filter_expected_output_defs(
         return output_defs
 
     check_names_by_asset_key = {}
-    for spec in context.op_execution_context.assets_def.check_specs:
-        if spec.asset_key not in check_names_by_asset_key:
-            check_names_by_asset_key[spec.asset_key] = []
-        check_names_by_asset_key[spec.asset_key].append(spec.name)
+    for check_key in context.op_execution_context.selected_asset_check_keys:
+        if check_key.asset_key not in check_names_by_asset_key:
+            check_names_by_asset_key[check_key.asset_key] = []
+        check_names_by_asset_key[check_key.asset_key].append(check_key.name)
 
     remove_outputs = []
     for asset_result in asset_results:
