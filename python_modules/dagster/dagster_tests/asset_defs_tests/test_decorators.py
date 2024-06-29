@@ -36,6 +36,7 @@ from dagster import (
 from dagster._check import CheckError
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions import AssetIn, AssetsDefinition, asset, multi_asset
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
 from dagster._core.definitions.policy import RetryPolicy
@@ -1375,3 +1376,24 @@ def test_graph_inputs_error():
 
     except DagsterInvalidDefinitionError as err:
         assert "except for Ins that have the Nothing dagster_type" not in str(err)
+
+
+def test_multi_asset_multiple_compute_kind():
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Cannot specify multiple compute kinds"
+    ):
+
+        @multi_asset(
+            specs=[AssetSpec("foo", compute_kind="alpha"), AssetSpec("bar", compute_kind="beta")]
+        )
+        def foo_bar():
+            pass
+
+    # With a null compute kind
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Cannot specify multiple compute kinds"
+    ):
+
+        @multi_asset(specs=[AssetSpec("foo", compute_kind="alpha"), AssetSpec("bar")])
+        def foo_bar_2():
+            pass
