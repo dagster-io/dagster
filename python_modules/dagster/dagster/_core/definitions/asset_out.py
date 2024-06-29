@@ -40,7 +40,7 @@ class AssetOut(
             ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
             ("backfill_policy", PublicAttr[Optional[BackfillPolicy]]),
             ("owners", PublicAttr[Optional[Sequence[str]]]),
-            ("tags", PublicAttr[Optional[Mapping[str, str]]]),
+            ("tags", PublicAttr[Mapping[str, str]]),
         ],
     )
 ):
@@ -126,7 +126,7 @@ class AssetOut(
                 backfill_policy, "backfill_policy", BackfillPolicy
             ),
             owners=check.opt_sequence_param(owners, "owners", of_type=str),
-            tags=validate_tags_strict(tags),
+            tags=validate_tags_strict(tags or {}),
         )
 
     def to_out(self) -> Out:

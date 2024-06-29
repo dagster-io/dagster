@@ -239,13 +239,9 @@ def is_valid_definition_tag_value(key: str) -> bool:
     return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
 
 
-def validate_tags_strict(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
-    if tags is None:
-        return tags
-
+def validate_tags_strict(tags: Mapping[str, str]) -> Mapping[str, str]:
     for key, value in tags.items():
         validate_tag_strict(key, value)
-
     return tags
 
 

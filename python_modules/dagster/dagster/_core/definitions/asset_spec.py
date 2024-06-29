@@ -155,7 +155,7 @@ class AssetSpec(
                 AutoMaterializePolicy,
             ),
             owners=owners,
-            tags=validate_tags_strict(tags) or {},
+            tags=validate_tags_strict(tags or {}),
         )
 
     @staticmethod

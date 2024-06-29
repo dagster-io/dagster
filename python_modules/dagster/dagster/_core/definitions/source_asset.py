@@ -209,7 +209,7 @@ class SourceAsset(ResourceAddable):
     _node_def: Optional[OpDefinition]  # computed lazily
     auto_observe_interval_minutes: Optional[float]
     freshness_policy: Optional[FreshnessPolicy]
-    tags: Optional[Mapping[str, str]]
+    tags: Mapping[str, str]
 
     def __init__(
         self,
@@ -241,7 +241,7 @@ class SourceAsset(ResourceAddable):
         metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
         self.raw_metadata = metadata
         self.metadata = normalize_metadata(metadata, allow_invalid=True)
-        self.tags = validate_tags_strict(tags) or {}
+        self.tags = validate_tags_strict(tags or {})
 
         resource_defs_dict = dict(check.opt_mapping_param(resource_defs, "resource_defs"))
         if io_manager_def:
