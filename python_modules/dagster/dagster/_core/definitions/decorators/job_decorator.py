@@ -10,7 +10,6 @@ from ..graph_definition import GraphDefinition
 from ..hook_definition import HookDefinition
 from ..job_definition import JobDefinition
 from ..logger_definition import LoggerDefinition
-from ..metadata import RawMetadataValue
 from ..policy import RetryPolicy
 from ..resource_definition import ResourceDefinition
 from ..utils import normalize_tags
@@ -28,7 +27,7 @@ class _Job:
         name: Optional[str] = None,
         description: Optional[str] = None,
         tags: Optional[Mapping[str, Any]] = None,
-        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+        metadata: Optional[Mapping[str, object]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         config: Optional[
             Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
@@ -126,7 +125,7 @@ def job(
     resource_defs: Optional[Mapping[str, object]] = ...,
     config: Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"] = ...,
     tags: Optional[Mapping[str, Any]] = ...,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = ...,
+    metadata: Optional[Mapping[str, object]] = ...,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = ...,
     executor_def: Optional["ExecutorDefinition"] = ...,
     hooks: Optional[AbstractSet[HookDefinition]] = ...,
@@ -152,7 +151,7 @@ def job(
         Union[ConfigMapping, Mapping[str, Any], "RunConfig", "PartitionedConfig"]
     ] = None,
     tags: Optional[Mapping[str, Any]] = None,
-    metadata: Optional[Mapping[str, RawMetadataValue]] = None,
+    metadata: Optional[Mapping[str, object]] = None,
     logger_defs: Optional[Mapping[str, LoggerDefinition]] = None,
     executor_def: Optional["ExecutorDefinition"] = None,
     hooks: Optional[AbstractSet[HookDefinition]] = None,

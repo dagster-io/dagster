@@ -13,6 +13,8 @@ from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
+from dagster._core.definitions.metadata import HasSerializedMetadataRepresentation
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.utils import is_valid_definition_tag_key
 
 from .asset_utils import (
@@ -47,7 +49,7 @@ class DagsterDbtTranslatorSettings:
     enable_dbt_selection_by_name: bool = False
 
 
-class DagsterDbtTranslator:
+class DagsterDbtTranslator(HasSerializedMetadataRepresentation):
     """Holds a set of methods that derive Dagster asset definition metadata given a representation
     of a dbt resource (models, tests, sources, etc).
 
@@ -62,6 +64,9 @@ class DagsterDbtTranslator:
             settings (Optional[DagsterDbtTranslatorSettings]): Settings for the translator.
         """
         self._settings = settings or DagsterDbtTranslatorSettings()
+
+    def serialized_representation(self) -> MetadataValue[Any]:
+        return MetadataValue.text(repr(self._settings))
 
     @property
     def settings(self) -> DagsterDbtTranslatorSettings:
