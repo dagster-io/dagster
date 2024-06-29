@@ -1,4 +1,4 @@
-from dagster import StaticPartitionsDefinition, asset
+from dagster import AssetExecutionContext, Config, StaticPartitionsDefinition, asset
 
 
 @asset
@@ -20,6 +20,12 @@ def partitioned_asset() -> None: ...
 @asset(partitions_def=StaticPartitionsDefinition(["apple", "banana", "pear"]))
 def differently_partitioned_asset() -> None: ...
 
+class MyConfig(Config):
+    some_prop: str
+
+@asset
+def asset_with_config(context: AssetExecutionContext, config: MyConfig):
+    context.log.info(f"some_prop:{config.some_prop}")
 
 @asset
 def fail_asset() -> None:
