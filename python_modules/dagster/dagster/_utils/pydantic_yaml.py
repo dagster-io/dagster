@@ -1,4 +1,4 @@
-from typing import Sequence, Type, TypeVar
+from typing import Any, Callable, Optional, Sequence, Type, TypeVar
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
@@ -64,7 +64,12 @@ def _parse_and_populate_model_with_annotated_errors(
     return model
 
 
-def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string>") -> T:
+def parse_yaml_file_to_pydantic(
+    cls: Type[T],
+    src: str,
+    filename: str = "<string>",
+    leaf_resolver: Optional[Callable[[Any], Any]] = None,
+) -> T:
     """Parse the YAML source and create a Pydantic model instance from it.
 
     Attaches source position information to the `_source_position_and_key_path` attribute of the
@@ -75,6 +80,8 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
         src (str): The YAML source string to be parsed.
         filename (str): The filename associated with the YAML source, used for error reporting.
             Defaults to "<string>" if not provided.
+        leaf_resolver (Optional[Callable[[Any], Any]]): A function that can be used to postprocess
+            leaf values in the parsed YAML object.
 
     Returns:
         T: An instance of the Pydantic model class, with the `_source_position_and_key_path`
@@ -85,14 +92,17 @@ def parse_yaml_file_to_pydantic(cls: Type[T], src: str, filename: str = "<string
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_positions(src, filename, leaf_resolver=leaf_resolver)
     return _parse_and_populate_model_with_annotated_errors(
         cls=cls, obj_parse_root=parsed, obj_key_path_prefix=[]
     )
 
 
 def parse_yaml_file_to_pydantic_sequence(
-    cls: Type[T], src: str, filename: str = "<string>"
+    cls: Type[T],
+    src: str,
+    filename: str = "<string>",
+    leaf_resolver: Optional[Callable[[Any], Any]] = None,
 ) -> Sequence[T]:
     """Parse the YAML source and create a list of Pydantic model instances from it.
 
@@ -104,6 +114,8 @@ def parse_yaml_file_to_pydantic_sequence(
         src (str): The YAML source string to be parsed.
         filename (str): The filename associated with the YAML source, used for error reporting.
             Defaults to "<string>" if not provided.
+        leaf_resolver (Optional[Callable[[Any], Any]]): A function that can be used to postprocess
+            leaf values in the parsed YAML object.
 
     Returns:
         T: A list of instances of the Pydantic model class, with the `_source_position_and_key_path`
@@ -114,7 +126,7 @@ def parse_yaml_file_to_pydantic_sequence(
             Pydantic2+, errors will include context information about the position in the document
             that the model corresponds to.
     """
-    parsed = parse_yaml_with_source_positions(src, filename)
+    parsed = parse_yaml_with_source_positions(src, filename, leaf_resolver=leaf_resolver)
 
     if not isinstance(parsed.value, list):
         raise DagsterInvariantViolationError(

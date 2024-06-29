@@ -1,6 +1,6 @@
 import functools
 import glob
-from typing import Any, Dict, List, Mapping, Sequence, Type, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type, cast
 
 import yaml
 
@@ -166,6 +166,7 @@ def parse_yaml_with_source_positions(
     src: str,
     filename: str = "<string>",
     implicits_to_remove: Sequence[str] = [YAML_TIMESTAMP_TAG],
+    leaf_resolver: Optional[Callable[[Any], Any]] = None,
 ) -> ValueAndSourcePositionTree:
     """Parse YAML source with source position information.
     This function takes a YAML source string and an optional filename, and returns a
@@ -231,6 +232,8 @@ def parse_yaml_with_source_positions(
                     list_with_raw_values,
                     SourcePositionTree(position=source_position, children=child_trees),
                 )
+            if leaf_resolver:
+                value = leaf_resolver(value)
 
             return ValueAndSourcePositionTree(
                 value,
