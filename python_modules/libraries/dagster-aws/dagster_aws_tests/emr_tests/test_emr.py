@@ -9,12 +9,12 @@ import pytest
 from dagster._utils.test import create_test_pipeline_execution_context
 from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now
-from moto import mock_emr
+from moto import mock_aws
 
 REGION = "us-west-1"
 
 
-@mock_emr
+@mock_aws
 def test_emr_create_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     cluster = EmrJobRunner(region=REGION)
@@ -22,7 +22,7 @@ def test_emr_create_cluster(emr_cluster_config):
     assert cluster_id.startswith("j-")
 
 
-@mock_emr
+@mock_aws
 def test_emr_add_tags_and_describe_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
@@ -37,7 +37,7 @@ def test_emr_add_tags_and_describe_cluster(emr_cluster_config):
     assert {"Key": "foobar", "Value": "v1"} in tags
 
 
-@mock_emr
+@mock_aws
 def test_emr_describe_cluster(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     cluster = EmrJobRunner(region=REGION)
@@ -47,7 +47,7 @@ def test_emr_describe_cluster(emr_cluster_config):
     assert EmrClusterState(cluster_info["Status"]["State"]) == EmrClusterState.Waiting
 
 
-@mock_emr
+@mock_aws
 def test_emr_id_from_name(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     cluster = EmrJobRunner(region=REGION)
@@ -78,7 +78,7 @@ def test_emr_construct_step_dict():
     }
 
 
-@mock_emr
+@mock_aws
 def test_emr_log_location_for_cluster(emr_cluster_config, mock_s3_bucket):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
@@ -95,7 +95,7 @@ def test_emr_log_location_for_cluster(emr_cluster_config, mock_s3_bucket):
     assert "Log URI not specified, cannot retrieve step execution logs" in str(exc_info.value)
 
 
-@mock_emr
+@mock_aws
 def test_emr_retrieve_logs(emr_cluster_config, mock_s3_bucket):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION)
@@ -159,7 +159,7 @@ def test_wait_for_log(mock_s3_bucket):
     assert "EMR log file did not appear on S3 after waiting" in str(exc_info.value)
 
 
-@mock_emr
+@mock_aws
 def test_is_emr_step_complete(emr_cluster_config):
     context = create_test_pipeline_execution_context()
     emr = EmrJobRunner(region=REGION, check_cluster_every=1)

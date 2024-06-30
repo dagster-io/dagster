@@ -28,7 +28,7 @@ def ignore_dagster_warnings() -> Iterator[None]:
 
 @pytest.fixture
 def cloudwatch_client(region: str):
-    with moto.mock_logs():
+    with moto.mock_aws():
         yield boto3.client("logs", region_name=region)
 
 

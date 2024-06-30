@@ -7,7 +7,7 @@ from dagster_aws.athena.resources import (
     ResourceWithAthenaConfig,
     fake_athena_resource,
 )
-from moto import mock_athena
+from moto import mock_aws
 
 
 class TestAthenaClientResource(ResourceWithAthenaConfig):
@@ -22,7 +22,7 @@ class TestAthenaClientResource(ResourceWithAthenaConfig):
 
 @pytest.fixture
 def mock_athena_client(mock_s3_resource):
-    with mock_athena():
+    with mock_aws():
         yield boto3.client("athena", region_name="us-east-1")
 
 
