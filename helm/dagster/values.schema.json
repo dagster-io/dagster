@@ -2897,6 +2897,10 @@
                 "schedules": {
                     "$ref": "#/definitions/Schedules"
                 },
+                "checkDBReady": {
+                    "title": "CheckDBReady",
+                    "type": "object"
+                },
                 "schedulerName": {
                     "title": "Schedulername",
                     "anyOf": [
