@@ -176,7 +176,7 @@ def test_load_from_instance(
         tables = {
             connection_to_asset_key_fn(
                 AirbyteConnectionMetadata(
-                    "Github <> snowflake-ben", "", use_normalization_tables, []
+                    "Github <> snowflake-ben", "", "", use_normalization_tables, []
                 ),
                 t,
             ).path[0]
