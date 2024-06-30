@@ -52,7 +52,7 @@ def get_origins_from_toml(path: str) -> Sequence[ManagedGrpcPythonEnvCodeLocatio
             return ModuleTarget(
                 module_name=dagster_block["module_name"],
                 attribute=None,
-                working_directory=os.getcwd(),
+                working_directory=dagster_block["working_directory"] or os.getcwd(),
                 location_name=dagster_block.get("code_location_name"),
             ).create_origins()
         return []
