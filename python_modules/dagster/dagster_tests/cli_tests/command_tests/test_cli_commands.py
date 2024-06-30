@@ -23,6 +23,7 @@ from dagster._cli import ENV_PREFIX, cli
 from dagster._cli.job import job_execute_command
 from dagster._cli.run import (
     run_delete_command,
+    run_delete_range_command,
     run_list_command,
     run_migrate_command,
     run_wipe_command,
@@ -34,7 +35,7 @@ from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 from dagster._core.storage.tags import MEMOIZED_RUN_TAG
-from dagster._core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test, create_run_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
 from dagster._utils import file_relative_path
@@ -966,3 +967,27 @@ def test_run_migrate_command():
 
         assert len(get_repo_runs(instance, old_repo_label)) == 0
         assert len(get_repo_runs(instance, new_repo_label)) == 1
+
+
+def test_run_delete_range_command():
+    with instance_for_test():
+        # Create some runs that are over an hour old.
+        with instance_for_test() as instance:
+            # @todo How do I set the created_at time on a run?
+            for n in range(10):
+                create_run_for_test(instance, pipeline_name="foo_pipeline")
+
+        runner = CliRunner()
+        result = runner.invoke(run_delete_range_command, args=["1h", "--force"])
+        assert "Found 10 runs to delete" in result.output
+        assert "Deleted run history and event logs older than" in result.output
+        assert result.exit_code == 0
+
+
+@pytest.mark.parametrize("date", ["hello", "0.2y", "1s", "432m2", "1hour", "3 weeks"])
+def test_run_delete_range_invalid_date(date):
+    with instance_for_test():
+        runner = CliRunner()
+        result = runner.invoke(run_delete_range_command, args=[date, "--force"])
+        assert "Error: Please specify a valid date range to delete" in result.output
+        assert result.exit_code == 1
