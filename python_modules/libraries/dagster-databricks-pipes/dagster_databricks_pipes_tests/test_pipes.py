@@ -5,12 +5,12 @@ from typing import Dict
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
 from dagster._core.errors import DagsterPipesExecutionError
-from dagster_databricks._test_utils import (
+from dagster_databricks_pipes import PipesDatabricksClient
+from dagster_databricks_pipes._test_utils import (
     databricks_client,  # noqa: F401
     temp_dbfs_script,
     upload_dagster_pipes_whl,
 )
-from dagster_databricks.pipes import PipesDatabricksClient
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import jobs
 
