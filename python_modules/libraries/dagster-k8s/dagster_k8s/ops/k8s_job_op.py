@@ -1,3 +1,4 @@
+import os
 import time
 from typing import Any, Dict, List, Optional
 
@@ -373,15 +374,22 @@ def execute_k8s_job(
                 container=container_name,
             )
 
-            # retry after ApiException which on k8s api server momentary unavailability
-            max_api_exception_retry_count = 10
-
             while True:
                 if timeout and time.time() - start_time > timeout:
                     watch.stop()
                     raise Exception("Timed out waiting for pod to finish")
                 try:
-                    log_entry = k8s_api_retry(next(log_stream), max_api_exception_retry_count, 1)
+                    log_entry = k8s_api_retry(
+                        next(log_stream),
+                        max_retries=int(
+                            os.getenv("DAGSTER_EXECUTE_K8S_JOB_STREAM_LOGS_RETRIES", "3")
+                        ),
+                        timeout=int(
+                            os.getenv(
+                                "DAGSTER_EXECUTE_K8S_JOB_STREAM_LOGS_WAIT_BETWEEN_ATTEMPTS", "5"
+                            )
+                        ),
+                    )
                     print(log_entry)  # noqa: T201
                 except StopIteration:
                     break
