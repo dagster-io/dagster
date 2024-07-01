@@ -441,6 +441,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
         asset_partitions = set()
         for run_request in self.tick_data.run_requests or []:
+            # TODO - need to figure out what the number is for backfills
             for asset_key in run_request.asset_selection or []:
                 asset_partitions.add(AssetKeyPartitionKey(asset_key, run_request.partition_key))
         return len(asset_partitions)
