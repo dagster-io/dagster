@@ -358,7 +358,7 @@ class OutputContext:
     def asset_partitions_def(self) -> "PartitionsDefinition":
         """The PartitionsDefinition on the asset corresponding to this output."""
         asset_key = self.asset_key
-        result = self.step_context.job_def.asset_layer.get(asset_key).partitions_def
+        result = self.step_context.job_def.asset_layer.asset_graph.get(asset_key).partitions_def
         if result is None:
             raise DagsterInvariantViolationError(
                 f"Attempting to access partitions def for asset {asset_key}, but it is not"
@@ -782,7 +782,9 @@ def get_output_context(
         node_handle=node_handle, output_name=step_output.name
     )
     if asset_key is not None:
-        definition_metadata = job_def.asset_layer.get(asset_key).metadata or output_def.metadata
+        definition_metadata = (
+            job_def.asset_layer.asset_graph.get(asset_key).metadata or output_def.metadata
+        )
     else:
         definition_metadata = output_def.metadata
 

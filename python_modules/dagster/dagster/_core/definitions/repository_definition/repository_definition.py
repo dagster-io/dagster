@@ -297,7 +297,8 @@ class RepositoryDefinition:
             base_job = self.get_job(ASSET_BASE_JOB_PREFIX)
             asset_layer = base_job.asset_layer
             if all(
-                asset_layer.has(key) and asset_layer.get(key).is_executable for key in asset_keys
+                asset_layer.asset_graph.has(key) and asset_layer.asset_graph.get(key).is_executable
+                for key in asset_keys
             ):
                 return base_job
         else:
@@ -306,7 +307,8 @@ class RepositoryDefinition:
                 base_job = self.get_job(f"{ASSET_BASE_JOB_PREFIX}_{i}")
                 asset_layer = base_job.asset_layer
                 if all(
-                    asset_layer.has(key) and asset_layer.get(key).is_executable
+                    asset_layer.asset_graph.has(key)
+                    and asset_layer.asset_graph.get(key).is_executable
                     for key in asset_keys
                 ):
                     return base_job

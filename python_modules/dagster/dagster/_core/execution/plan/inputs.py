@@ -155,7 +155,7 @@ class FromLoadableAsset(
         input_manager_key = (
             input_def.input_manager_key
             if input_def.input_manager_key
-            else asset_layer.get(input_asset_key).io_manager_key
+            else asset_layer.asset_graph.get(input_asset_key).io_manager_key
         )
 
         op_config = step_context.resolved_run_config.ops.get(str(self.node_handle))
@@ -176,7 +176,7 @@ class FromLoadableAsset(
                 asset_key=input_asset_key,
                 name=input_asset_key.path[-1],
                 step_key="none",
-                definition_metadata=asset_layer.get(input_asset_key).metadata,
+                definition_metadata=asset_layer.asset_graph.get(input_asset_key).metadata,
                 resource_config=resource_config,
                 log_manager=step_context.log,
                 step_context=step_context,
@@ -251,8 +251,8 @@ class FromLoadableAsset(
             input_manager_key = input_def.input_manager_key
         else:
             input_manager_key = (
-                job_def.asset_layer.get(input_asset_key).io_manager_key
-                if job_def.asset_layer.has(input_asset_key)
+                job_def.asset_layer.asset_graph.get(input_asset_key).io_manager_key
+                if job_def.asset_layer.asset_graph.has(input_asset_key)
                 else DEFAULT_IO_MANAGER_KEY
             )
 
