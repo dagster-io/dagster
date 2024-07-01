@@ -1115,12 +1115,19 @@ class SqlEventLogStorage(EventLogStorage):
 
         before_cursor, after_cursor = EventRecordsFilter.get_cursor_params(cursor, ascending)
         event_records_filter = (
-            records_filter.to_event_records_filter(cursor, ascending)
+            records_filter.to_event_records_filter_without_job_names(cursor, ascending)
             if isinstance(records_filter, RunStatusChangeRecordsFilter)
             else EventRecordsFilter(
                 event_type, before_cursor=before_cursor, after_cursor=after_cursor
             )
         )
+        has_job_name_filter = (
+            isinstance(records_filter, RunStatusChangeRecordsFilter) and records_filter.job_names
+        )
+        if has_job_name_filter and not self.supports_run_status_change_job_name_filter:
+            check.failed(
+                "Called fetch_run_status_changes with selectors, which are not supported with this storage."
+            )
         return self._get_event_records_result(event_records_filter, limit, cursor, ascending)
 
     def get_logs_for_all_runs_by_log_id(

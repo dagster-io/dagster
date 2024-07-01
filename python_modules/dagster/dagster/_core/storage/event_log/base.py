@@ -589,6 +589,10 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     ) -> EventRecordsResult:
         raise NotImplementedError()
 
+    @property
+    def supports_run_status_change_job_name_filter(self) -> bool:
+        return False
+
     @abstractmethod
     def fetch_run_status_changes(
         self,

@@ -269,7 +269,13 @@ def _default_loggers(event_callback):
 
 # This exists to create synthetic events to test the store
 def _synthesize_events(
-    ops_fn_or_assets, run_id=None, check_success=True, instance=None, run_config=None, tags=None
+    ops_fn_or_assets,
+    run_id=None,
+    check_success=True,
+    instance=None,
+    run_config=None,
+    tags=None,
+    job_name=None,
 ) -> Tuple[List[EventLogEntry], JobExecutionResult]:
     events = []
 
@@ -288,6 +294,7 @@ def _synthesize_events(
     else:  # op_fn
 
         @job(
+            name=job_name,
             resource_defs=_default_resources(),
             logger_defs=_default_loggers(_append_event),
             executor_def=in_process_executor,
@@ -1995,6 +2002,61 @@ class TestEventLogStorage:
                 limit=100,
             )
             assert _get_storage_ids(result) == [storage_id_3, storage_id_1]
+
+    def test_fetch_run_status_monitor_filters(self, storage, instance):
+        if not storage.supports_run_status_change_job_name_filter:
+            # test sqlite in test_get_event_records_sqlite
+            pytest.skip()
+
+        @op
+        def my_op(_):
+            yield Output(1)
+
+        def _ops():
+            my_op()
+
+        def _store_run_events(run_id, job_name=None):
+            events, _ = _synthesize_events(_ops, run_id=run_id, job_name=job_name)
+            for event in events:
+                storage.store_event(event)
+
+        # store events for three runs
+        [run_id_1, run_id_2, run_id_3] = [
+            make_new_run_id(),
+            make_new_run_id(),
+            make_new_run_id(),
+        ]
+
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _store_run_events(run_id_1, "job_one")
+            _store_run_events(run_id_2, "job_two")
+            _store_run_events(run_id_3, "job_three")
+
+            result = storage.fetch_run_status_changes(
+                DagsterEventType.RUN_SUCCESS,
+                limit=100,
+            )
+            assert [r.event_log_entry.run_id for r in result.records] == [
+                run_id_3,
+                run_id_2,
+                run_id_1,
+            ]
+            result = storage.fetch_run_status_changes(
+                RunStatusChangeRecordsFilter(
+                    DagsterEventType.RUN_SUCCESS,
+                    job_names=["job_one"],
+                ),
+                limit=100,
+            )
+            assert [r.event_log_entry.run_id for r in result.records] == [run_id_1]
+            result = storage.fetch_run_status_changes(
+                RunStatusChangeRecordsFilter(
+                    DagsterEventType.RUN_SUCCESS,
+                    job_names=["job_one", "job_two"],
+                ),
+                limit=100,
+            )
+            assert [r.event_log_entry.run_id for r in result.records] == [run_id_2, run_id_1]
 
     def test_get_event_records_sqlite(self, storage):
         if not self.is_sqlite(storage):
