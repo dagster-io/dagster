@@ -13,7 +13,10 @@ import styled from 'styled-components';
 
 import {RepositoryLocationNonBlockingErrorDialog} from './RepositoryLocationErrorDialog';
 import {WorkspaceRepositoryLocationNode} from './WorkspaceContext';
-import {WorkspaceDisplayMetadataFragment} from './types/WorkspaceQueries.types';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceDisplayMetadataFragment,
+} from './types/WorkspaceQueries.types';
 import {showSharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {
@@ -103,35 +106,38 @@ export const ModuleOrPackageOrFile = ({
 };
 
 export const LocationStatus = (props: {
-  location: string;
-  locationOrError: WorkspaceRepositoryLocationNode;
+  locationStatus: LocationStatusEntryFragment;
+  locationOrError: WorkspaceRepositoryLocationNode | null;
 }) => {
-  const {location, locationOrError} = props;
+  const {locationStatus, locationOrError} = props;
   const [showDialog, setShowDialog] = useState(false);
 
-  const reloadFn = useMemo(() => buildReloadFnForLocation(location), [location]);
+  const reloadFn = useMemo(
+    () => buildReloadFnForLocation(locationStatus.name),
+    [locationStatus.name],
+  );
   const {reloading, tryReload} = useRepositoryLocationReload({
     scope: 'location',
     reloadFn,
   });
 
-  if (locationOrError.loadStatus === 'LOADING') {
-    if (locationOrError.locationOrLoadError) {
-      return (
-        <Tag minimal intent="primary">
-          Updating...
-        </Tag>
-      );
-    } else {
-      return (
-        <Tag minimal intent="primary">
-          Loading...
-        </Tag>
-      );
-    }
+  if (locationStatus.loadStatus === 'LOADING') {
+    return (
+      <Tag minimal intent="primary">
+        Updating...
+      </Tag>
+    );
   }
 
-  if (locationOrError.locationOrLoadError?.__typename === 'PythonError') {
+  if (locationOrError?.updatedTimestamp !== locationStatus.updateTimestamp) {
+    return (
+      <Tag minimal intent="primary">
+        Loading...
+      </Tag>
+    );
+  }
+
+  if (locationOrError?.locationOrLoadError?.__typename === 'PythonError') {
     return (
       <>
         <Box flex={{alignItems: 'center', gap: 12}}>
@@ -143,7 +149,7 @@ export const LocationStatus = (props: {
           </ButtonLink>
         </Box>
         <RepositoryLocationNonBlockingErrorDialog
-          location={location}
+          location={locationStatus.name}
           isOpen={showDialog}
           error={locationOrError.locationOrLoadError}
           reloading={reloading}
