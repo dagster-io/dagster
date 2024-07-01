@@ -1,5 +1,5 @@
 import {MockedProvider} from '@apollo/client/testing';
-import {getAllByText, getByText, render, screen, waitFor} from '@testing-library/react';
+import {getAllByText, getByText, getByTitle, render, screen, waitFor} from '@testing-library/react';
 import {MemoryRouter, Route} from 'react-router-dom';
 import {RecoilRoot} from 'recoil';
 
@@ -76,7 +76,20 @@ const mocks = [
   }),
 ];
 
+let nativeGBRC: any;
+
 describe('BackfillPage', () => {
+  beforeAll(() => {
+    nativeGBRC = window.Element.prototype.getBoundingClientRect;
+    window.Element.prototype.getBoundingClientRect = jest
+      .fn()
+      .mockReturnValue({height: 400, width: 400});
+  });
+
+  afterAll(() => {
+    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  });
+
   it('renders the loading state', async () => {
     render(
       <RecoilRoot>
@@ -93,7 +106,7 @@ describe('BackfillPage', () => {
     );
 
     expect(await screen.findByTestId('page-loading-indicator')).toBeInTheDocument();
-    expect(await screen.findByText('assetA')).toBeVisible();
+    expect(await screen.findByTitle('assetA')).toBeVisible();
   });
 
   it('renders the error state', async () => {
@@ -153,14 +166,14 @@ describe('BackfillPage', () => {
 
     const assetARow = await screen.findByTestId('backfill-asset-row-assetA');
     // Check if the correct data is displayed
-    expect(getByText(assetARow, 'assetA')).toBeVisible();
+    expect(getByTitle(assetARow, 'assetA')).toBeVisible();
     expect(getByText(assetARow, '33')).toBeVisible(); // numPartitionsTargeted
     expect(getByText(assetARow, '22')).toBeVisible(); // numPartitionsInProgress
     expect(getByText(assetARow, '11')).toBeVisible(); // numPartitionsMaterialized
     expect(getByText(assetARow, '0')).toBeVisible(); // numPartitionsFailed
 
     const assetBRow = await screen.findByTestId('backfill-asset-row-assetB');
-    expect(getByText(assetBRow, 'assetB')).toBeVisible();
+    expect(getByTitle(assetBRow, 'assetB')).toBeVisible();
     expect(getByText(assetBRow, 'Completed')).toBeVisible();
     expect(getAllByText(assetBRow, '-').length).toBe(3);
   });

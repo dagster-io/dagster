@@ -13,12 +13,13 @@ import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components';
 
 import {BackfillDetailsBackfillFragment} from './types/BackfillPage.types';
-import {displayNameForAssetKey} from '../../asset-graph/Utils';
+import {displayNameForAssetKey, tokenForAssetKey} from '../../asset-graph/Utils';
 import {asAssetKeyInput} from '../../assets/asInput';
 import {assetDetailsPathForKey} from '../../assets/assetDetailsPathForKey';
 import {AssetViewParams} from '../../assets/types';
 import {AssetKey, RunStatus} from '../../graphql/types';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
+import {testId} from '../../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
 import {
   BackfillPartitionsForAssetKeyQuery,
@@ -205,7 +206,11 @@ export const VirtualizedBackfillPartitionsRow = ({
   };
 
   return (
-    <Row $height={height} $start={start}>
+    <Row
+      $height={height}
+      $start={start}
+      data-testid={testId(`backfill-asset-row-${tokenForAssetKey(asset.assetKey)}`)}
+    >
       <RowGrid border="bottom">
         <RowCell>
           <Box flex={{direction: 'row', justifyContent: 'space-between'}} style={{minWidth: 0}}>
