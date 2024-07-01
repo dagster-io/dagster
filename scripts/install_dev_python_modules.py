@@ -56,6 +56,7 @@ def main(
         "-e python_modules/libraries/dagster-celery-docker",
         "-e python_modules/libraries/dagster-dask[yarn,pbs,kube]",
         "-e python_modules/libraries/dagster-databricks",
+        "-e python_modules/libraries/dagster-databricks-pipes",
         "-e python_modules/libraries/dagster-datadog",
         "-e python_modules/libraries/dagster-datahub",
         "-e python_modules/libraries/dagster-dbt",
