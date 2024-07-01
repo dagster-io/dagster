@@ -1,18 +1,28 @@
 from typing import NamedTuple, Optional, Sequence, Union
 
-from typing_extensions import TypeAlias
+from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
+from dagster._core.definitions.asset_selection import (
+    AssetSelection,
+    CoercibleToAssetSelection,
+    is_coercible_to_asset_selection,
+)
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._utils.warnings import deprecation_warning
 
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition, define_asset_job
 
 ExecutableDefinition: TypeAlias = Union[
     JobDefinition, GraphDefinition, UnresolvedAssetJobDefinition
 ]
 
+CoercibleToAutomationTarget: TypeAlias = Union[
+    CoercibleToAssetSelection, AssetsDefinition, ExecutableDefinition
+]
 
 ResolvableToJob: TypeAlias = Union[JobDefinition, UnresolvedAssetJobDefinition, str]
 """
@@ -33,6 +43,7 @@ class AutomationTarget(
         [
             ("resolvable_to_job", ResolvableToJob),
             ("op_selection", Optional[Sequence[str]]),
+            ("assets_defs", Sequence[Union[AssetsDefinition, SourceAsset]]),
         ],
     )
 ):
@@ -48,14 +59,58 @@ class AutomationTarget(
         cls,
         resolvable_to_job: Union[JobDefinition, UnresolvedAssetJobDefinition, str],
         op_selection: Optional[Sequence[str]] = None,
+        assets_defs: Optional[Sequence[Union[AssetsDefinition, SourceAsset]]] = None,
     ):
-        check.inst_param(
-            resolvable_to_job,
-            "resolvable_to_job",
-            (JobDefinition, UnresolvedAssetJobDefinition, str),
+        return super().__new__(
+            cls,
+            resolvable_to_job=check.inst_param(
+                resolvable_to_job,
+                "resolvable_to_job",
+                (JobDefinition, UnresolvedAssetJobDefinition, str),
+            ),
+            op_selection=check.opt_nullable_sequence_param(
+                op_selection, "op_selection", of_type=str
+            ),
+            assets_defs=check.opt_sequence_param(
+                assets_defs, "assets_defs", of_type=AssetsDefinition
+            ),
         )
 
-        return super().__new__(cls, resolvable_to_job, op_selection=op_selection)
+    @classmethod
+    def from_coercible(
+        cls,
+        coercible: CoercibleToAutomationTarget,
+        automation_name: Optional[str] = None,  # only needed if we are generating an anonymous job
+    ) -> Self:
+        if isinstance(coercible, (JobDefinition, UnresolvedAssetJobDefinition)):
+            return cls(coercible)
+        elif isinstance(coercible, GraphDefinition):
+            deprecation_warning(
+                "Passing GraphDefinition as a job/target argument to ScheduleDefinition and SensorDefinition",
+                breaking_version="2.0",
+            )
+            return cls(coercible.to_job())
+        else:
+            if isinstance(coercible, AssetsDefinition):
+                asset_selection = AssetSelection.assets(coercible)
+                assets_defs = [coercible]
+            elif is_coercible_to_asset_selection(coercible):
+                asset_selection = AssetSelection.from_coercible(coercible)
+                assets_defs = (
+                    [x for x in coercible if isinstance(x, (AssetsDefinition, SourceAsset))]
+                    if isinstance(coercible, Sequence)
+                    else []
+                )
+            else:
+                check.failed(_make_invalid_target_error_message(coercible))
+
+            job_name = _make_anonymous_asset_job_name(
+                check.not_none(automation_name, "Must provide automation_name")
+            )
+            return cls(
+                resolvable_to_job=define_asset_job(name=job_name, selection=asset_selection),
+                assets_defs=assets_defs,
+            )
 
     @property
     def job_name(self) -> str:
@@ -77,16 +132,13 @@ class AutomationTarget(
         return isinstance(self.resolvable_to_job, (JobDefinition, UnresolvedAssetJobDefinition))
 
 
-def normalize_automation_target_def(
-    target_def: "ExecutableDefinition",
-) -> Union["JobDefinition", "UnresolvedAssetJobDefinition"]:
-    from dagster._core.definitions.graph_definition import GraphDefinition
+def _make_anonymous_asset_job_name(automation_name: str) -> str:
+    return f"__anonymous_asset_job_{automation_name}"
 
-    if isinstance(target_def, GraphDefinition):
-        deprecation_warning(
-            "Passing GraphDefinition as a job argument to ScheduleDefinition and SensorDefinition",
-            breaking_version="2.0",
-        )
-        return target_def.to_job()
+
+def _make_invalid_target_error_message(target: object) -> str:
+    if isinstance(target, Sequence):
+        additional_message = " If you pass a sequence to a schedule, it must be a sequence of strings, AssetKeys, AssetsDefinitions, or SourceAssets."
     else:
-        return target_def
+        additional_message = ""
+    return f"Invalid target passed to schedule/sensor.{additional_message} Target: {target}"

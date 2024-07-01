@@ -24,7 +24,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import deprecated, deprecated_param, experimental_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
@@ -49,13 +49,17 @@ from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
 from .run_request import RunRequest, SkipReason
-from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
+from .target import AutomationTarget, CoercibleToAutomationTarget, ExecutableDefinition
 from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
     from dagster._core.definitions.run_config import RunConfig
+
 T = TypeVar("T")
 
 RunRequestIterator: TypeAlias = Iterator[Union[RunRequest, SkipReason]]
@@ -479,6 +483,7 @@ def validate_and_get_schedule_resource_dict(
         " the containing environment, and can safely be deleted."
     ),
 )
+@experimental_param(param="target")
 class ScheduleDefinition(IHasInternalInit):
     """Defines a schedule that targets a job.
 
@@ -518,6 +523,8 @@ class ScheduleDefinition(IHasInternalInit):
             schedule runs.
         default_status (DefaultScheduleStatus): If set to ``RUNNING``, the schedule will start as running. The default status can be overridden from the `Dagster UI </concepts/webserver/ui>`_ or via the `GraphQL API </concepts/webserver/graphql>`_.
         required_resource_keys (Optional[Set[str]]): The set of resource keys required by the schedule.
+        target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition, GraphDefinition]]):
+            The target that the schedule will execute.
     """
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "ScheduleDefinition":
@@ -530,7 +537,7 @@ class ScheduleDefinition(IHasInternalInit):
         return ScheduleDefinition.dagster_internal_init(
             name=self.name,
             cron_schedule=self._cron_schedule,
-            job_name=self.job_name,
+            job_name=None,  # job name will be derived from the passed job
             execution_timezone=self.execution_timezone,
             execution_fn=self._execution_fn,
             description=self.description,
@@ -543,6 +550,7 @@ class ScheduleDefinition(IHasInternalInit):
             tags=None,
             tags_fn=None,
             should_execute=None,
+            target=None,
         )
 
     def __init__(
@@ -563,6 +571,15 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
         required_resource_keys: Optional[Set[str]] = None,
+        target: Optional[
+            Union[
+                "CoercibleToAssetSelection",
+                "AssetsDefinition",
+                "JobDefinition",
+                "UnresolvedAssetJobDefinition",
+                "GraphDefinition",
+            ]
+        ] = None,
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
@@ -584,16 +601,36 @@ class ScheduleDefinition(IHasInternalInit):
                 " https://github.com/dagster-io/dagster/issues/15294 for more information."
             )
 
-        if job:
-            job_def = normalize_automation_target_def(job)
-            self._target = AutomationTarget(job_def)
+        if (
+            sum(
+                [
+                    int(target is not None),
+                    int(job_name is not None),
+                    int(job is not None),
+                ]
+            )
+            > 1
+        ):
+            raise DagsterInvalidDefinitionError(
+                "Attempted to provide more than one of 'job', 'job_name', and 'target'"
+                "params to ScheduleDefinition. Must provide only one."
+            )
+
+        if target:
+            self._target = AutomationTarget.from_coercible(
+                target,
+                automation_name=check.not_none(
+                    name, "If you specify target you must specify schedule name"
+                ),
+            )
+        elif job:
+            self._target = AutomationTarget.from_coercible(job)
         elif job_name:
             self._target = AutomationTarget(
                 resolvable_to_job=check.str_param(job_name, "job_name"),
-                op_selection=None,
             )
         else:
-            check.failed("Must provide job or job_name")
+            check.failed("Must provide target, job, or job_name")
 
         if name:
             self._name = check_valid_name(name)
@@ -648,7 +685,7 @@ class ScheduleDefinition(IHasInternalInit):
                     " to ScheduleDefinition. Must provide only one of the two."
                 )
             elif tags:
-                tags = normalize_tags(tags, allow_reserved_tags=False).tags
+                tags = normalize_tags(tags, allow_reserved_tags=False, warning_stacklevel=5).tags
                 tags_fn = lambda _context: tags
             else:
                 tags_fn = check.opt_callable_param(
@@ -749,6 +786,7 @@ class ScheduleDefinition(IHasInternalInit):
         job: Optional[ExecutableDefinition],
         default_status: DefaultScheduleStatus,
         required_resource_keys: Optional[Set[str]],
+        target: Optional[CoercibleToAutomationTarget],
     ) -> "ScheduleDefinition":
         return ScheduleDefinition(
             name=name,
@@ -766,6 +804,7 @@ class ScheduleDefinition(IHasInternalInit):
             job=job,
             default_status=default_status,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
     def __call__(self, *args, **kwargs) -> ScheduleEvaluationFunctionReturn:

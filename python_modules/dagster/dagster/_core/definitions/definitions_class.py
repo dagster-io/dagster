@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -467,9 +468,16 @@ class Definitions:
             asset_checks=asset_checks,
         )
 
-    @property
+    @cached_property
     def assets(self) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-        return self._assets
+        inlined_assets: List[Union[AssetsDefinition, SourceAsset]] = []
+        for schedule_def in self._schedules:
+            if isinstance(schedule_def, ScheduleDefinition):
+                inlined_assets.extend(schedule_def.target.assets_defs)
+        for sensor_def in self._sensors:
+            for target in sensor_def.targets:
+                inlined_assets.extend(target.assets_defs)
+        return [*self._assets, *inlined_assets]
 
     @property
     def schedules(

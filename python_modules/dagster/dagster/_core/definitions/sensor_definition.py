@@ -27,9 +27,8 @@ import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import deprecated, deprecated_param, experimental_param, public
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation
 from dagster._core.definitions.instigation_logger import InstigationLogger
 from dagster._core.definitions.job_definition import JobDefinition
@@ -52,7 +51,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import get_function_params
-from .asset_selection import AssetSelection, KeysAssetSelection
+from .asset_selection import AssetSelection, CoercibleToAssetSelection, KeysAssetSelection
 from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
@@ -61,13 +60,18 @@ from .run_request import (
     SensorResult,
     SkipReason,
 )
-from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
+from .target import AutomationTarget, CoercibleToAutomationTarget, ExecutableDefinition
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.definitions_class import Definitions
+    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.repository_definition import RepositoryDefinition
+    from dagster._core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
+    )
     from dagster._core.remote_representation.origin import CodeLocationOrigin
 
 
@@ -529,6 +533,7 @@ def _check_dynamic_partitions_requests(
             check.failed(f"Unexpected dynamic partition request type: {req}")
 
 
+@experimental_param(param="target")
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -550,6 +555,8 @@ class SensorDefinition(IHasInternalInit):
         asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
             (Experimental) an asset selection to launch a run for if the sensor condition is met.
             This can be provided instead of specifying a job.
+        target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition, GraphDefinition]]):
+            The target that the sensor will execute.
     """
 
     def with_updated_jobs(self, new_jobs: Sequence[ExecutableDefinition]) -> "SensorDefinition":
@@ -570,6 +577,7 @@ class SensorDefinition(IHasInternalInit):
             default_status=self.default_status,
             asset_selection=self.asset_selection,
             required_resource_keys=self._raw_required_resource_keys,
+            target=None,
         )
 
     def with_updated_job(self, new_job: ExecutableDefinition) -> "SensorDefinition":
@@ -594,6 +602,15 @@ class SensorDefinition(IHasInternalInit):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         asset_selection: Optional[CoercibleToAssetSelection] = None,
         required_resource_keys: Optional[Set[str]] = None,
+        target: Optional[
+            Union[
+                "CoercibleToAssetSelection",
+                "AssetsDefinition",
+                "JobDefinition",
+                "UnresolvedAssetJobDefinition",
+                "GraphDefinition",
+            ]
+        ] = None,
     ):
         from dagster._config.pythonic_config import validate_resource_annotated_function
 
@@ -603,9 +620,10 @@ class SensorDefinition(IHasInternalInit):
         if (
             sum(
                 [
+                    int(target is not None),
                     int(job is not None),
-                    int(jobs is not None),
                     int(job_name is not None),
+                    int(jobs is not None),
                     int(asset_selection is not None),
                 ]
             )
@@ -616,21 +634,24 @@ class SensorDefinition(IHasInternalInit):
                 "'asset_selection' params to SensorDefinition. Must provide only one."
             )
 
-        jobs = jobs if jobs else [job] if job else None
-
-        targets: Optional[List[AutomationTarget]] = None
-        if job_name:
+        if target:
             targets = [
-                AutomationTarget(
-                    resolvable_to_job=check.str_param(job_name, "job_name"),
-                    op_selection=None,
+                AutomationTarget.from_coercible(
+                    target,
+                    automation_name=check.not_none(
+                        name, "If you specify target you must specify sensor name"
+                    ),
                 )
             ]
         elif job:
-            targets = [AutomationTarget(normalize_automation_target_def(job))]
+            targets = [AutomationTarget.from_coercible(job)]
+        elif job_name:
+            targets = [
+                AutomationTarget(resolvable_to_job=check.str_param(job_name, "job_name")),
+            ]
         elif jobs:
-            targets = [AutomationTarget(normalize_automation_target_def(job)) for job in jobs]
-        elif asset_selection:
+            targets = [AutomationTarget.from_coercible(job) for job in jobs]
+        else:
             targets = []
 
         if name:
@@ -687,6 +708,7 @@ class SensorDefinition(IHasInternalInit):
         default_status: DefaultSensorStatus,
         asset_selection: Optional[CoercibleToAssetSelection],
         required_resource_keys: Optional[Set[str]],
+        target: Optional[CoercibleToAutomationTarget],
     ) -> "SensorDefinition":
         return SensorDefinition(
             name=name,
@@ -699,6 +721,7 @@ class SensorDefinition(IHasInternalInit):
             default_status=default_status,
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
     def __call__(self, *args, **kwargs) -> RawSensorEvaluationFunctionReturn:

@@ -1,10 +1,10 @@
 import collections.abc
 import inspect
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Set, Union
 
 import dagster._check as check
-from dagster._annotations import experimental
+from dagster._annotations import experimental, experimental_param
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 
 from ...errors import DagsterInvariantViolationError
@@ -25,7 +25,16 @@ from ..sensor_definition import (
 )
 from ..target import ExecutableDefinition
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.unresolved_asset_job_definition import (
+        UnresolvedAssetJobDefinition,
+    )
 
+
+@experimental_param(param="target")
 def sensor(
     job_name: Optional[str] = None,
     *,
@@ -37,6 +46,15 @@ def sensor(
     default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     asset_selection: Optional[CoercibleToAssetSelection] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    target: Optional[
+        Union[
+            "CoercibleToAssetSelection",
+            "AssetsDefinition",
+            "JobDefinition",
+            "UnresolvedAssetJobDefinition",
+            "GraphDefinition",
+        ]
+    ] = None,
 ) -> Callable[[RawSensorEvaluationFunction], SensorDefinition]:
     """Creates a sensor where the decorated function is used as the sensor's evaluation function.
 
@@ -65,6 +83,8 @@ def sensor(
         asset_selection (Optional[Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]]):
             (Experimental) an asset selection to launch a run for if the sensor condition is met.
             This can be provided instead of specifying a job.
+        target (Optional[Union[CoercibleToAssetSelection, AssetsDefinition, JobDefinition, UnresolvedAssetJobDefinition, GraphDefinition]]):
+            The target that the sensor will execute.
     """
     check.opt_str_param(name, "name")
 
@@ -82,6 +102,7 @@ def sensor(
             default_status=default_status,
             asset_selection=asset_selection,
             required_resource_keys=required_resource_keys,
+            target=target,
         )
 
         update_wrapper(sensor_def, wrapped=fn)

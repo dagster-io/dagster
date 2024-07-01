@@ -55,7 +55,7 @@ def boring_observable_asset():
     pass
 
 
-@sensor()
+@sensor(asset_selection=[auto_materialize_asset])
 def normal_sensor():
     yield SkipReason("OOPS")
 

@@ -25,6 +25,7 @@ from dagster._config.pythonic_config import (
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import get_base_asset_jobs, is_base_asset_job_name
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
@@ -267,12 +268,55 @@ def build_caching_repository_data_from_list(
     for partitions_def in partitions_defs:
         _validate_partitions_definition(partitions_def)
 
-    asset_graph = AssetGraph.from_assets([*assets_defs, *asset_checks_defs, *source_assets])
     source_assets_by_key = {source_asset.key: source_asset for source_asset in source_assets}
     assets_defs_by_key = {key: asset for asset in assets_defs for key in asset.keys}
     asset_checks_defs_by_key = {
         key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
     }
+
+    for name, sensor_def in sensors.items():
+        for target in sensor_def.targets:
+            if target.has_job_def:
+                _process_and_validate_target_job(sensor_def, unresolved_jobs, jobs, target.job_def)
+            if target.assets_defs:
+                _process_and_validate_target_assets(
+                    sensor_def, assets_defs_by_key, source_assets_by_key, target.assets_defs
+                )
+
+    for name, schedule_def in schedules.items():
+        if schedule_def.target.has_job_def:
+            _process_and_validate_target_job(
+                schedule_def, unresolved_jobs, jobs, schedule_def.target.job_def
+            )
+        if schedule_def.target.assets_defs:
+            _process_and_validate_target_assets(
+                schedule_def,
+                assets_defs_by_key,
+                source_assets_by_key,
+                schedule_def.target.assets_defs,
+            )
+
+    if unresolved_partitioned_asset_schedules:
+        for (
+            name,
+            unresolved_partitioned_asset_schedule,
+        ) in unresolved_partitioned_asset_schedules.items():
+            _process_and_validate_target_job(
+                unresolved_partitioned_asset_schedule,
+                unresolved_jobs,
+                jobs,
+                unresolved_partitioned_asset_schedule.job,
+            )
+
+    assets_without_keys = [ad for ad in assets_defs if not ad.keys]
+    asset_graph = AssetGraph.from_assets(
+        [
+            *assets_defs_by_key.values(),
+            *assets_without_keys,
+            *asset_checks_defs,
+            *source_assets_by_key.values(),
+        ]
+    )
     if assets_defs or asset_checks_defs or source_assets:
         for job_name, job_def in get_base_asset_jobs(
             asset_graph=asset_graph,
@@ -282,30 +326,7 @@ def build_caching_repository_data_from_list(
         ).items():
             jobs[job_name] = job_def
 
-    for name, sensor_def in sensors.items():
-        for target in sensor_def.targets:
-            if target.has_job_def:
-                _process_and_validate_target(sensor_def, unresolved_jobs, jobs, target.job_def)
-
-    for name, schedule_def in schedules.items():
-        if schedule_def.target.has_job_def:
-            _process_and_validate_target(
-                schedule_def, unresolved_jobs, jobs, schedule_def.target.job_def
-            )
-
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)
-
-    if unresolved_partitioned_asset_schedules:
-        for (
-            name,
-            unresolved_partitioned_asset_schedule,
-        ) in unresolved_partitioned_asset_schedules.items():
-            _process_and_validate_target(
-                unresolved_partitioned_asset_schedule,
-                unresolved_jobs,
-                jobs,
-                unresolved_partitioned_asset_schedule.job,
-            )
 
     # resolve all the UnresolvedAssetJobDefinitions using the full set of assets
     # resolving jobs is potentially time-consuming if there are many of them,
@@ -417,8 +438,8 @@ def build_caching_repository_data_from_dict(
     )
 
 
-def _process_and_validate_target(
-    schedule_or_sensor_def: Union[
+def _process_and_validate_target_job(
+    automation_def: Union[
         SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
     ],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
@@ -427,9 +448,9 @@ def _process_and_validate_target(
 ):
     """This function modifies the state of unresolved_jobs, and jobs."""
     targeter = (
-        f"schedule '{schedule_or_sensor_def.name}'"
-        if isinstance(schedule_or_sensor_def, ScheduleDefinition)
-        else f"sensor '{schedule_or_sensor_def.name}'"
+        f"schedule '{automation_def.name}'"
+        if isinstance(automation_def, ScheduleDefinition)
+        else f"sensor '{automation_def.name}'"
     )
     if isinstance(job_def, UnresolvedAssetJobDefinition):
         if job_def.name not in unresolved_jobs:
@@ -457,11 +478,44 @@ def _process_and_validate_target(
         jobs[job_def.name] = job_def
 
 
+def _process_and_validate_target_assets(
+    automation_def: Union[
+        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
+    ],
+    assets_defs_by_key: Dict["AssetKey", AssetsDefinition],
+    source_assets_by_key: Dict["AssetKey", SourceAsset],
+    target_assets_defs: Sequence[Union[AssetsDefinition, SourceAsset]],
+) -> None:
+    for ad in target_assets_defs:
+        keys = ad.keys if isinstance(ad, AssetsDefinition) else [ad.key]
+        for key in keys:
+            if isinstance(ad, AssetsDefinition):
+                existing_ad = assets_defs_by_key.get(key)
+                if not existing_ad:
+                    assets_defs_by_key[key] = ad
+                elif not existing_ad.computation == ad.computation:
+                    raise DagsterInvalidDefinitionError(
+                        _get_error_msg_for_target_asset_conflict(
+                            _get_automation_str(automation_def), key.to_user_string()
+                        )
+                    )
+            else:  # SourceAsset
+                existing_sa = source_assets_by_key.get(key)
+                if not existing_sa:
+                    source_assets_by_key[key] = ad
+                elif not ad == existing_sa:
+                    raise DagsterInvalidDefinitionError(
+                        _get_error_msg_for_target_asset_conflict(
+                            _get_automation_str(automation_def), key.to_user_string()
+                        )
+                    )
+
+
 def _validate_auto_materialize_sensors(
     sensors: Iterable[SensorDefinition], asset_graph: BaseAssetGraph
 ) -> None:
     """Raises an error if two or more automation policy sensors target the same asset."""
-    sensor_names_by_asset_key: Dict[AssetKey, str] = {}
+    sensor_names_by_asset_key: Dict["AssetKey", str] = {}
     for sensor in sensors:
         if isinstance(sensor, AutoMaterializeSensorDefinition):
             asset_keys = sensor.asset_selection.resolve(asset_graph)
@@ -489,9 +543,33 @@ def _validate_partitions_definition(partitions_def: PartitionsDefinition) -> Non
         )
 
 
-def _get_error_msg_for_target_conflict(targeter, target_type, target_name, dupe_target_type):
+def _get_automation_str(
+    automation_def: Union[
+        SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
+    ],
+) -> str:
     return (
-        f"{targeter} targets {target_type} '{target_name}', but a different {dupe_target_type} with"
+        f"schedule '{automation_def.name}'"
+        if isinstance(
+            automation_def,
+            (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition),
+        )
+        else f"sensor '{automation_def.name}'"
+    )
+
+
+def _get_error_msg_for_target_conflict(
+    automation: str, target_type: str, target_name: str, dupe_target_type: str
+) -> str:
+    return (
+        f"{automation} targets {target_type} '{target_name}', but a different {dupe_target_type} with"
         " the same name was provided. Disambiguate between these by providing a separate name to"
         " one of them."
+    )
+
+
+def _get_error_msg_for_target_asset_conflict(automation: str, target_name: str) -> str:
+    return (
+        f"{automation} targets asset '{target_name}', but a different asset with"
+        " the same key was provided. Assets must have unique keys."
     )
