@@ -1,5 +1,3 @@
-from typing import Optional
-
 import dagster._check as check
 import graphene
 from dagster import DefaultSensorStatus
@@ -7,10 +5,9 @@ from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
 from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
+from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.workspace.permissions import Permissions
 
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
     assert_permission_for_location,
     capture_error,
@@ -18,7 +15,6 @@ from dagster_graphql.implementation.utils import (
 )
 
 from ..implementation.fetch_sensors import (
-    get_sensor_next_tick,
     reset_sensor,
     set_sensor_cursor,
     start_sensor,
@@ -33,11 +29,7 @@ from .errors import (
     GrapheneUnauthorizedError,
 )
 from .inputs import GrapheneSensorSelector
-from .instigation import (
-    GrapheneDryRunInstigationTick,
-    GrapheneInstigationState,
-    GrapheneInstigationStatus,
-)
+from .instigation import GrapheneInstigationState, GrapheneInstigationStatus
 from .util import ResolveInfo, non_null_list
 
 
@@ -76,11 +68,8 @@ class GrapheneSensor(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     targets = graphene.List(graphene.NonNull(GrapheneTarget))
     defaultStatus = graphene.NonNull(GrapheneInstigationStatus)
-    canReset = graphene.NonNull(graphene.Boolean)
-    sensorState = graphene.NonNull(GrapheneInstigationState)
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
-    nextTick = graphene.Field(GrapheneDryRunInstigationTick)
     metadata = graphene.NonNull(GrapheneSensorMetadata)
     sensorType = graphene.NonNull(GrapheneSensorType)
     assetSelection = graphene.Field(GrapheneAssetSelection)
@@ -92,20 +81,9 @@ class GrapheneSensor(graphene.ObjectType):
         self,
         external_sensor: ExternalSensor,
         external_repository: ExternalRepository,
-        sensor_state: Optional[InstigatorState],
-        batch_loader: Optional[RepositoryScopedBatchLoader] = None,
     ):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
         self._external_repository = external_repository
-
-        # optional run loader, provided by a parent GrapheneRepository object that instantiates
-        # multiple sensors
-        self._batch_loader = check.opt_inst_param(
-            batch_loader, "batch_loader", RepositoryScopedBatchLoader
-        )
-
-        self._stored_state = sensor_state
-        self._sensor_state = self._external_sensor.get_current_instigator_state(sensor_state)
 
         super().__init__(
             name=external_sensor.name,
@@ -135,18 +113,6 @@ class GrapheneSensor(graphene.ObjectType):
             return GrapheneInstigationStatus.RUNNING
         elif default_sensor_status == DefaultSensorStatus.STOPPED:
             return GrapheneInstigationStatus.STOPPED
-
-    def resolve_canReset(self, _graphene_info: ResolveInfo):
-        return bool(
-            self._stored_state and self._stored_state.status != InstigatorStatus.DECLARED_IN_CODE
-        )
-
-    def resolve_sensorState(self, _graphene_info: ResolveInfo):
-        # forward the batch run loader to the instigation state, which provides the sensor runs
-        return GrapheneInstigationState(self._sensor_state, self._batch_loader)
-
-    def resolve_nextTick(self, graphene_info: ResolveInfo):
-        return get_sensor_next_tick(graphene_info, self._sensor_state)
 
 
 class GrapheneSensorOrError(graphene.Union):

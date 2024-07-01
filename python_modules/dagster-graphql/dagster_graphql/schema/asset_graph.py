@@ -958,19 +958,11 @@ class GrapheneAssetNode(graphene.ObjectType):
             if not self._sensor_targets_asset(external_sensor, asset_graph, job_names):
                 continue
 
-            sensor_state = graphene_info.context.instance.get_instigator_state(
-                external_sensor.get_external_origin_id(),
-                external_sensor.selector_id,
-            )
-            results.append(GrapheneSensor(external_sensor, self._external_repository, sensor_state))
+            results.append(GrapheneSensor(external_sensor, self._external_repository))
 
         for external_schedule in external_schedules:
             if external_schedule.job_name in job_names:
-                schedule_state = graphene_info.context.instance.get_instigator_state(
-                    external_schedule.get_external_origin_id(),
-                    external_schedule.selector_id,
-                )
-                results.append(GrapheneSchedule(external_schedule, schedule_state))
+                results.append(GrapheneSchedule(external_schedule))
 
         return results
 

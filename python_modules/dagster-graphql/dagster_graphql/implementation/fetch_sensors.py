@@ -1,19 +1,13 @@
 import time
-from typing import TYPE_CHECKING, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector, SensorSelector
-from dagster._core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorStatus,
-    SensorInstigatorData,
-)
+from dagster._core.scheduler.instigation import InstigatorState, SensorInstigatorData
 from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from .loader import RepositoryScopedBatchLoader
 from .utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
 
 if TYPE_CHECKING:
@@ -25,7 +19,6 @@ if TYPE_CHECKING:
 def get_sensors_or_error(
     graphene_info: ResolveInfo,
     repository_selector: RepositorySelector,
-    instigator_statuses: Optional[Set[InstigatorStatus]] = None,
 ) -> "GrapheneSensors":
     from ..schema.sensors import GrapheneSensor, GrapheneSensors
 
@@ -33,30 +26,15 @@ def get_sensors_or_error(
 
     location = graphene_info.context.get_code_location(repository_selector.location_name)
     repository = location.get_repository(repository_selector.repository_name)
-    batch_loader = RepositoryScopedBatchLoader(graphene_info.context.instance, repository)
     sensors = repository.get_external_sensors()
-    sensor_states = graphene_info.context.instance.all_instigator_state(
-        repository_origin_id=repository.get_external_origin_id(),
-        repository_selector_id=repository_selector.selector_id,
-        instigator_type=InstigatorType.SENSOR,
-        instigator_statuses=instigator_statuses,
-    )
-
-    sensor_states_by_name = {state.name: state for state in sensor_states}
-    if instigator_statuses:
-        filtered = [
-            sensor
-            for sensor in sensors
-            if sensor.get_current_instigator_state(sensor_states_by_name.get(sensor.name)).status
-            in instigator_statuses
-        ]
-    else:
-        filtered = sensors
 
     return GrapheneSensors(
         results=[
-            GrapheneSensor(sensor, repository, sensor_states_by_name.get(sensor.name), batch_loader)
-            for sensor in filtered
+            GrapheneSensor(
+                sensor,
+                repository,
+            )
+            for sensor in sensors
         ]
     )
 
@@ -72,12 +50,8 @@ def get_sensor_or_error(graphene_info: ResolveInfo, selector: SensorSelector) ->
     if not repository.has_external_sensor(selector.sensor_name):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
     external_sensor = repository.get_external_sensor(selector.sensor_name)
-    sensor_state = graphene_info.context.instance.get_instigator_state(
-        external_sensor.get_external_origin_id(),
-        external_sensor.selector_id,
-    )
 
-    return GrapheneSensor(external_sensor, repository, sensor_state)
+    return GrapheneSensor(external_sensor, repository)
 
 
 def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) -> "GrapheneSensor":
@@ -91,8 +65,9 @@ def start_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
     if not repository.has_external_sensor(sensor_selector.sensor_name):
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
-    sensor_state = graphene_info.context.instance.start_sensor(external_sensor)
-    return GrapheneSensor(external_sensor, repository, sensor_state)
+    _sensor_state = graphene_info.context.instance.start_sensor(external_sensor)
+    # NEED TO RESOLVE: state access after mutation
+    return GrapheneSensor(external_sensor, repository)
 
 
 def stop_sensor(
@@ -143,9 +118,10 @@ def reset_sensor(graphene_info: ResolveInfo, sensor_selector: SensorSelector) ->
         raise UserFacingGraphQLError(GrapheneSensorNotFoundError(sensor_selector.sensor_name))
 
     external_sensor = repository.get_external_sensor(sensor_selector.sensor_name)
-    sensor_state = graphene_info.context.instance.reset_sensor(external_sensor)
+    _sensor_state = graphene_info.context.instance.reset_sensor(external_sensor)
 
-    return GrapheneSensor(external_sensor, repository, sensor_state)
+    # NEED TO RESOLVE: state access on mutation
+    return GrapheneSensor(external_sensor, repository)
 
 
 def get_sensors_for_pipeline(
@@ -166,11 +142,7 @@ def get_sensors_for_pipeline(
         ]:
             continue
 
-        sensor_state = graphene_info.context.instance.get_instigator_state(
-            external_sensor.get_external_origin_id(),
-            external_sensor.selector_id,
-        )
-        results.append(GrapheneSensor(external_sensor, repository, sensor_state))
+        results.append(GrapheneSensor(external_sensor, repository))
 
     return results
 
@@ -255,4 +227,5 @@ def set_sensor_cursor(
     else:
         instance.update_instigator_state(updated_state)
 
-    return GrapheneSensor(external_sensor, repository, updated_state)
+    # NEED TO RESOLVE: state access on mutation
+    return GrapheneSensor(external_sensor, repository)
