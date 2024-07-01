@@ -37,16 +37,19 @@ export const TagActionsPopover = ({
   data,
   actions,
   children,
+  childrenMiddleTruncate,
 }: {
   data: TagType;
   actions: TagAction[];
   children: React.ReactNode;
+  childrenMiddleTruncate?: boolean;
 }) => {
   return (
     <Popover
       content={<TagActions actions={actions} data={data} />}
       hoverOpenDelay={100}
       hoverCloseDelay={100}
+      targetProps={childrenMiddleTruncate ? {style: {minWidth: 0, maxWidth: '100%'}} : {}}
       placement="top"
       interactionKind="hover"
     >
