@@ -164,10 +164,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             if (
                 asset_record
                 and stored_cache_value
-                and (stored_cache_value.latest_storage_id or 0)
-                >= (asset_record.asset_entry.last_materialization_storage_id or 0)
-                and stored_cache_value.partitions_def_id
-                == partitions_def.get_serializable_unique_identifier(dynamic_partitions_store=self)
+                and stored_cache_value.is_materialized_subset_up_to_date(
+                    asset_record, partitions_def, dynamic_partitions_store=self
+                )
             ):
                 cache_value = stored_cache_value
             else:

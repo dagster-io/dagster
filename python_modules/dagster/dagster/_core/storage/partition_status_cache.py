@@ -168,6 +168,34 @@ class AssetStatusCacheValue(
 
         return partitions_def.deserialize_subset(self.serialized_in_progress_partition_subset)
 
+    def is_materialized_subset_up_to_date(
+        self,
+        asset_record: AssetRecord,
+        partitions_def: Optional[PartitionsDefinition],
+        dynamic_partitions_store: DynamicPartitionsStore,
+    ) -> bool:
+        """Helper method to determine if the materialized subset is up to date. This is currently
+        cheaper than the corresponding check for the in_progress and failed subsets, and therefore
+        is sometimes useful to execute independently in cases where only the materialized subset
+        is necessary.
+        """
+        # new events have come in since cache was last calculated
+        if (self.latest_storage_id or 0) < (
+            asset_record.asset_entry.last_materialization_storage_id or 0
+        ):
+            return False
+        # partitions definition has changed since cache was last calculated
+        elif (
+            partitions_def is None
+            or self.partitions_def_id
+            != partitions_def.get_serializable_unique_identifier(
+                dynamic_partitions_store=dynamic_partitions_store
+            )
+        ):
+            return False
+        else:
+            return True
+
 
 def get_materialized_multipartitions(
     instance: DagsterInstance, asset_key: AssetKey, partitions_def: MultiPartitionsDefinition
