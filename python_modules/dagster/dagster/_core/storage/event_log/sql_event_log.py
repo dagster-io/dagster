@@ -37,6 +37,7 @@ from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluationPlanned,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import (
     DagsterEventLogInvalidForRun,
@@ -2992,6 +2993,74 @@ class SqlEventLogStorage(EventLogStorage):
             storage_id=records[0].storage_id,
             run_id=records[0].run_id,
         )
+
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        latest_data_version_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
+            asset_key=asset_key,
+            event_types=[
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_OBSERVATION,
+            ],
+            asset_partitions=list(partitions),
+            after_cursor=since_storage_id,
+        )
+        latest_data_version_by_partition_query = (
+            db_select(
+                [
+                    latest_data_version_event_ids_subquery.c.partition,
+                    AssetEventTagsTable.c.value,
+                ]
+            )
+            .select_from(
+                latest_data_version_event_ids_subquery.join(
+                    AssetEventTagsTable,
+                    AssetEventTagsTable.c.event_id == latest_data_version_event_ids_subquery.c.id,
+                )
+            )
+            .where(AssetEventTagsTable.c.key == DATA_VERSION_TAG)
+        )
+        penultimate_data_version_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
+            asset_key=asset_key,
+            event_types=[
+                DagsterEventType.ASSET_MATERIALIZATION,
+                DagsterEventType.ASSET_OBSERVATION,
+            ],
+            asset_partitions=list(partitions),
+            before_cursor=since_storage_id + 1,
+        )
+        penultimate_data_version_by_partition_query = (
+            db_select(
+                [
+                    penultimate_data_version_event_ids_subquery.c.partition,
+                    AssetEventTagsTable.c.value,
+                ]
+            )
+            .select_from(
+                penultimate_data_version_event_ids_subquery.join(
+                    AssetEventTagsTable,
+                    AssetEventTagsTable.c.event_id
+                    == penultimate_data_version_event_ids_subquery.c.id,
+                )
+            )
+            .where(AssetEventTagsTable.c.key == DATA_VERSION_TAG)
+        )
+        with self.index_connection() as conn:
+            latest_rows = conn.execute(latest_data_version_by_partition_query).fetchall()
+            penultimate_rows = conn.execute(penultimate_data_version_by_partition_query).fetchall()
+
+        latest_data_version_by_partition: Dict[str, str] = {
+            cast(str, row[0]): cast(str, row[1]) for row in latest_rows
+        }
+        penultimate_data_version_by_partition: Dict[str, str] = {
+            cast(str, row[0]): cast(str, row[1]) for row in penultimate_rows
+        }
+        return {
+            partition
+            for partition, version in latest_data_version_by_partition.items()
+            if version != penultimate_data_version_by_partition.get(partition)
+        }
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:

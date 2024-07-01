@@ -489,6 +489,13 @@ class LegacyEventLogStorage(EventLogStorage, ConfigurableClass):
             asset_key, partition
         )
 
+    def get_updated_data_version_partitions(
+        self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
+    ) -> Set[str]:
+        return self._storage.event_log_storage.get_updated_data_version_partitions(
+            asset_key, partitions, since_storage_id
+        )
+
     def get_asset_records(
         self, asset_keys: Optional[Sequence["AssetKey"]] = None
     ) -> Iterable[AssetRecord]:
