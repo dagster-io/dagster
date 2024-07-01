@@ -42,6 +42,7 @@ from dagster._utils.warnings import deprecation_warning
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry
+    from dagster._core.storage.asset_check_summary_record import AssetCheckSummaryRecord
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
@@ -132,12 +133,6 @@ class AssetRecord(NamedTuple):
 
     storage_id: int
     asset_entry: AssetEntry
-
-
-class AssetCheckSummaryRecord(NamedTuple):
-    asset_check_key: AssetCheckKey
-    last_check_execution_record: Optional[AssetCheckExecutionRecord]
-    last_run_id: Optional[str]
 
 
 class PlannedMaterializationInfo(NamedTuple):
@@ -327,7 +322,7 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):
     @abstractmethod
     def get_asset_check_summary_records(
         self, asset_check_keys: Sequence[AssetCheckKey]
-    ) -> Mapping[AssetCheckKey, AssetCheckSummaryRecord]:
+    ) -> Mapping[AssetCheckKey, "AssetCheckSummaryRecord"]:
         pass
 
     @property

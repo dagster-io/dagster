@@ -547,6 +547,9 @@ from dagster._core.run_coordinator.queued_run_coordinator import (
     QueuedRunCoordinator as QueuedRunCoordinator,
     SubmitRunContext as SubmitRunContext,
 )
+from dagster._core.storage.asset_check_summary_record import (
+    AssetCheckSummaryRecord as AssetCheckSummaryRecord,
+)
 from dagster._core.storage.asset_value_loader import AssetValueLoader as AssetValueLoader
 from dagster._core.storage.dagster_run import (
     DagsterRun as DagsterRun,
