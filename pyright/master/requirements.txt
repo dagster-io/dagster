@@ -45,6 +45,7 @@
 -e python_modules/libraries/dagster-census/
 -e python_modules/libraries/dagster-dask[yarn,pbs,kube,test]
 -e python_modules/libraries/dagster-databricks/
+-e python_modules/libraries/dagster-databricks-pipes/
 -e python_modules/libraries/dagster-datadog/
 -e python_modules/libraries/dagster-datahub/
 -e python_modules/libraries/dagster-dbt/
