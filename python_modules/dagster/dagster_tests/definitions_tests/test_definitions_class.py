@@ -818,13 +818,16 @@ def test_merge():
     )
 
     merged = Definitions.merge(defs1, defs2)
-    assert merged.assets == [asset1, asset2]
-    assert merged.jobs == [job1, job2]
-    assert merged.schedules == [schedule1, schedule2]
-    assert merged.sensors == [sensor1, sensor2]
-    assert merged.resources == {"resource1": resource1, "resource2": resource2}
-    assert merged.loggers == {"logger1": logger1, "logger2": logger2}
-    assert merged.executor == in_process_executor
+    assert merged.original_args == {
+        "assets": [asset1, asset2],
+        "jobs": [job1, job2],
+        "schedules": [schedule1, schedule2],
+        "sensors": [sensor1, sensor2],
+        "resources": {"resource1": resource1, "resource2": resource2},
+        "loggers": {"logger1": logger1, "logger2": logger2},
+        "executor": in_process_executor,
+        "asset_checks": [],
+    }
 
 
 def test_resource_conflict_on_merge():

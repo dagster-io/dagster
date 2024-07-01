@@ -9,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Type,
+    TypedDict,
     Union,
 )
 
@@ -314,6 +315,19 @@ class BindResourcesToJobs(list):
     """
 
 
+class DefinitionsArgs(TypedDict):
+    assets: Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]
+    schedules: Optional[
+        Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
+    ]
+    sensors: Optional[Iterable[SensorDefinition]]
+    jobs: Optional[Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]]
+    resources: Optional[Mapping[str, Any]]
+    executor: Optional[Union[ExecutorDefinition, Executor]]
+    loggers: Optional[Mapping[str, LoggerDefinition]]
+    asset_checks: Optional[Iterable[AssetChecksDefinition]]
+
+
 class Definitions:
     """A set of definitions explicitly available and loadable by Dagster tools.
 
@@ -403,14 +417,8 @@ class Definitions:
       Any other object is coerced to a :py:class:`ResourceDefinition`.
     """
 
-    _assets: Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]
-    _schedules: Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]
-    _sensors: Iterable[SensorDefinition]
-    _jobs: Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]
-    _resources: Mapping[str, Any]
-    _executor: Optional[Union[ExecutorDefinition, Executor]]
-    _loggers: Mapping[str, LoggerDefinition]
-    _asset_checks: Iterable[AssetChecksDefinition]
+    _created_pending_or_normal_repo: Union[RepositoryDefinition, PendingRepositoryDefinition]
+    _original_args: DefinitionsArgs
 
     def __init__(
         self,
@@ -427,98 +435,78 @@ class Definitions:
         loggers: Optional[Mapping[str, LoggerDefinition]] = None,
         asset_checks: Optional[Iterable[AssetChecksDefinition]] = None,
     ):
-        self._assets = check.opt_iterable_param(
-            assets,
-            "assets",
-            (AssetsDefinition, SourceAsset, CacheableAssetsDefinition),
-        )
-        self._schedules = check.opt_iterable_param(
-            schedules,
-            "schedules",
-            (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition),
-        )
-        self._sensors = check.opt_iterable_param(sensors, "sensors", SensorDefinition)
-        self._jobs = check.opt_iterable_param(
-            jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition)
-        )
-        # Thee's a bug that means that sometimes it's Dagster's fault when AssetsDefinitions are
-        # passed here instead of AssetChecksDefinitions: https://github.com/dagster-io/dagster/issues/22064.
-        # After we fix the bug, we should remove AssetsDefinition from the set of accepted types.
-        self._asset_checks = check.opt_iterable_param(
-            asset_checks,
-            "asset_checks",
-            (AssetChecksDefinition, AssetsDefinition),
-        )
-        self._resources = check.opt_mapping_param(resources, "resources", key_type=str)
-        self._executor = check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor))
-        self._loggers = check.opt_mapping_param(
-            loggers, "loggers", key_type=str, value_type=LoggerDefinition
-        )
-
         self._created_pending_or_normal_repo = _create_repository_using_definitions_args(
             name=SINGLETON_REPOSITORY_NAME,
-            assets=assets,
-            schedules=schedules,
-            sensors=sensors,
-            jobs=jobs,
-            resources=resources,
-            executor=executor,
-            loggers=loggers,
-            asset_checks=asset_checks,
+            assets=check.opt_iterable_param(
+                assets,
+                "assets",
+                (AssetsDefinition, SourceAsset, CacheableAssetsDefinition),
+            ),
+            schedules=check.opt_iterable_param(
+                schedules,
+                "schedules",
+                (ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition),
+            ),
+            sensors=check.opt_iterable_param(sensors, "sensors", SensorDefinition),
+            jobs=check.opt_iterable_param(
+                jobs, "jobs", (JobDefinition, UnresolvedAssetJobDefinition)
+            ),
+            resources=check.opt_mapping_param(resources, "resources", key_type=str),
+            executor=check.opt_inst_param(executor, "executor", (ExecutorDefinition, Executor)),
+            loggers=check.opt_mapping_param(
+                loggers, "loggers", key_type=str, value_type=LoggerDefinition
+            ),
+            asset_checks=check.opt_iterable_param(
+                asset_checks,
+                "asset_checks",
+                (AssetChecksDefinition, AssetsDefinition),
+            ),
         )
+        self._original_args = {
+            "assets": assets,
+            "schedules": schedules,
+            "sensors": sensors,
+            "jobs": jobs,
+            "resources": resources,
+            "executor": executor,
+            "loggers": loggers,
+            "asset_checks": asset_checks,
+        }
 
     @property
-    def assets(self) -> Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]:
-        return self._assets
+    def original_args(self) -> DefinitionsArgs:
+        return self._original_args
 
     @property
-    def schedules(
+    def assets(
         self,
-    ) -> Iterable[Union[ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition]]:
-        return self._schedules
-
-    @property
-    def sensors(self) -> Iterable[SensorDefinition]:
-        return self._sensors
-
-    @property
-    def jobs(self) -> Iterable[Union[JobDefinition, UnresolvedAssetJobDefinition]]:
-        return self._jobs
-
-    @property
-    def resources(self) -> Mapping[str, Any]:
-        return self._resources
-
-    @property
-    def executor(self) -> Optional[Union[ExecutorDefinition, Executor]]:
-        return self._executor
-
-    @property
-    def loggers(self) -> Mapping[str, LoggerDefinition]:
-        return self._loggers
-
-    @property
-    def asset_checks(self) -> Iterable[AssetChecksDefinition]:
-        return self._asset_checks
+    ) -> Optional[Iterable[Union[AssetsDefinition, SourceAsset, CacheableAssetsDefinition]]]:
+        return self._original_args["assets"]
 
     @public
     def get_job_def(self, name: str) -> JobDefinition:
         """Get a job definition by name. If you passed in a an :py:class:`UnresolvedAssetJobDefinition`
         (return value of :py:func:`define_asset_job`) it will be resolved to a :py:class:`JobDefinition` when returned
-        from this function.
+        from this function, with all resource dependencies fully resolved.
         """
         check.str_param(name, "name")
         return self.get_repository_def().get_job(name)
 
     @public
     def get_sensor_def(self, name: str) -> SensorDefinition:
-        """Get a sensor definition by name."""
+        """Get a :py:class:`SensorDefinition` by name.
+        If your passed-in sensor had resource dependencies, or the job targeted by the sensor had
+        resource dependencies, those resource dependencies will be fully resolved on the returned object.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_sensor_def(name)
 
     @public
     def get_schedule_def(self, name: str) -> ScheduleDefinition:
-        """Get a schedule definition by name."""
+        """Get a :py:class:`ScheduleDefinition` by name.
+        If your passed-in schedule had resource dependencies, or the job targeted by the schedule had
+        resource dependencies, those resource dependencies will be fully resolved on the returned object.
+        """
         check.str_param(name, "name")
         return self.get_repository_def().get_schedule_def(name)
 
@@ -581,7 +569,10 @@ class Definitions:
         )
 
     def get_all_job_defs(self) -> Sequence[JobDefinition]:
-        """Get all the Job definitions in the code location."""
+        """Get all the Job definitions in the code location.
+        This includes both jobs passed into the Definitions object and any implicit jobs created.
+        All jobs returned from this function will have all resource dependencies resolved.
+        """
         return self.get_repository_def().get_all_jobs()
 
     def has_implicit_global_asset_job_def(self) -> bool:
@@ -611,7 +602,7 @@ class Definitions:
     @cached_method
     def get_repository_def(self) -> RepositoryDefinition:
         """Definitions is implemented by wrapping RepositoryDefinition. Get that underlying object
-        in order to access an functionality which is not exposed on Definitions. This method
+        in order to access any functionality which is not exposed on Definitions. This method
         also resolves a PendingRepositoryDefinition to a RepositoryDefinition.
         """
         return (
@@ -659,13 +650,13 @@ class Definitions:
         executor_index: Optional[int] = None
 
         for i, def_set in enumerate(def_sets):
-            assets.extend(def_set.assets or [])
-            asset_checks.extend(def_set.asset_checks or [])
-            schedules.extend(def_set.schedules or [])
-            sensors.extend(def_set.sensors or [])
-            jobs.extend(def_set.jobs or [])
+            assets.extend(def_set.original_args["assets"] or [])
+            asset_checks.extend(def_set.original_args["asset_checks"] or [])
+            schedules.extend(def_set.original_args["schedules"] or [])
+            sensors.extend(def_set.original_args["sensors"] or [])
+            jobs.extend(def_set.original_args["jobs"] or [])
 
-            for resource_key, resource_value in (def_set.resources or {}).items():
+            for resource_key, resource_value in (def_set.original_args["resources"] or {}).items():
                 if resource_key in resources:
                     raise DagsterInvariantViolationError(
                         f"Definitions objects {resource_key_indexes[resource_key]} and {i} both have a "
@@ -674,7 +665,7 @@ class Definitions:
                 resources[resource_key] = resource_value
                 resource_key_indexes[resource_key] = i
 
-            for logger_key, logger_value in (def_set.loggers or {}).items():
+            for logger_key, logger_value in (def_set.original_args["loggers"] or {}).items():
                 if logger_key in loggers:
                     raise DagsterInvariantViolationError(
                         f"Definitions objects {logger_key_indexes[logger_key]} and {i} both have a "
@@ -683,13 +674,13 @@ class Definitions:
                 loggers[logger_key] = logger_value
                 logger_key_indexes[logger_key] = i
 
-            if def_set.executor is not None:
-                if executor is not None and executor != def_set.executor:
+            if def_set.original_args["executor"] is not None:
+                if executor is not None and executor != def_set.original_args["executor"]:
                     raise DagsterInvariantViolationError(
                         f"Definitions objects {executor_index} and {i} both have an executor"
                     )
 
-                executor = def_set.executor
+                executor = def_set.original_args["executor"]
                 executor_index = i
 
         return Definitions(
