@@ -25,6 +25,7 @@ def get_repo_root() -> str:
         path = os.path.dirname(path)
     return path
 
+
 # Upload the Dagster Pipes wheel to DBFS. Use this fixture to avoid needing to manually reupload
 # dagster-pipes if it has changed between test runs.
 @contextmanager
@@ -44,12 +45,14 @@ def upload_dagster_pipes_whl(databricks_client: WorkspaceClient) -> Iterator[str
         os.chdir(orig_wd)
         yield path
 
+
 @pytest.fixture
 def databricks_client() -> WorkspaceClient:
     return WorkspaceClient(
         host=os.environ["DATABRICKS_HOST"],
         token=os.environ["DATABRICKS_TOKEN"],
     )
+
 
 @contextmanager
 def temp_dbfs_script(
