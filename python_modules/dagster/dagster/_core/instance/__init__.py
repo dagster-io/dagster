@@ -961,10 +961,6 @@ class DagsterInstance(DynamicPartitionsStore):
     def global_op_concurrency_default_limit(self) -> Optional[int]:
         return self.get_settings("concurrency").get("default_op_concurrency_limit")
 
-    @property
-    def use_transitive_stale_causes(self) -> bool:
-        return False
-
     # python logs
 
     @property

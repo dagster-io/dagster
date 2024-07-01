@@ -294,28 +294,7 @@ def test_stale_status_general() -> None:
                 ],
             ),
         ]
-        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
-        assert status_resolver.get_stale_causes(asset2.key) == [
-            StaleCause(
-                asset2.key,
-                StaleCauseCategory.DATA,
-                "stale dependency",
-                asset1.key,
-                [
-                    StaleCause(
-                        asset1.key,
-                        StaleCauseCategory.DATA,
-                        "has a new dependency data version",
-                        source1.key,
-                        [
-                            StaleCause(
-                                source1.key, StaleCauseCategory.DATA, "has a new data version"
-                            ),
-                        ],
-                    ),
-                ],
-            )
-        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
         materialize_assets(all_assets, instance)
 
         # Simulate updating an asset with a new code version
@@ -329,18 +308,7 @@ def test_stale_status_general() -> None:
         assert status_resolver.get_stale_causes(asset1.key) == [
             StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
         ]
-        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
-        assert status_resolver.get_stale_causes(asset2.key) == [
-            StaleCause(
-                asset2.key,
-                StaleCauseCategory.DATA,
-                "stale dependency",
-                asset1.key,
-                [
-                    StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
-                ],
-            ),
-        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
 
         @asset
         def asset3(): ...
@@ -505,7 +473,7 @@ def test_stale_status_partitions_disabled_code_versions() -> None:
         all_assets = [asset1, asset2]
         status_resolver = get_stale_status_resolver(instance, all_assets)
         assert status_resolver.get_status(asset1.key, "foo") == StaleStatus.STALE
-        assert status_resolver.get_status(asset2.key, "foo") == StaleStatus.STALE
+        assert status_resolver.get_status(asset2.key, "foo") == StaleStatus.FRESH
 
 
 def test_stale_status_partitions_enabled() -> None:
@@ -672,8 +640,8 @@ def test_stale_status_many_to_one_partitions() -> None:
         assert status_resolver.get_status(asset1.key, "alpha") == StaleStatus.FRESH
         assert status_resolver.get_status(asset1.key, "beta") == StaleStatus.FRESH
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
-        assert status_resolver.get_status(asset3.key, "alpha") == StaleStatus.STALE
-        assert status_resolver.get_status(asset3.key, "beta") == StaleStatus.STALE
+        assert status_resolver.get_status(asset3.key, "alpha") == StaleStatus.FRESH
+        assert status_resolver.get_status(asset3.key, "beta") == StaleStatus.FRESH
         assert status_resolver.get_stale_causes(asset2.key) == [
             StaleCause(
                 asset2.key,
@@ -707,10 +675,8 @@ def test_stale_status_many_to_one_partitions() -> None:
             )
             for dep_key in [a1_foo_key, a1_bar_key]
         ]
-        assert status_resolver.get_stale_root_causes(asset3.key, "alpha") == [
-            StaleCause(dep_key, StaleCauseCategory.DATA, "has a new data version")
-            for dep_key in [a1_foo_key, a1_bar_key]
-        ]
+        assert status_resolver.get_status(asset3.key, "alpha") == StaleStatus.FRESH
+        assert status_resolver.get_status(asset3.key, "beta") == StaleStatus.FRESH
 
         materialize_asset(all_assets, asset2, instance)
         status_resolver = get_stale_status_resolver(instance, all_assets)
@@ -834,7 +800,7 @@ def test_stale_status_manually_versioned() -> None:
         assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
 
 
-def test_stale_status_root_causes_general() -> None:
+def test_stale_status_non_transitive_root_causes() -> None:
     x = 0
 
     @observable_source_asset
@@ -870,14 +836,10 @@ def test_stale_status_root_causes_general() -> None:
         assert status_resolver.get_stale_root_causes(asset1.key) == [
             StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
         ]
-        assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
-        assert status_resolver.get_stale_root_causes(asset2.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
-        ]
-        assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
-        assert status_resolver.get_stale_root_causes(asset3.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
-        ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(asset2.key) == []
+        assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(asset3.key) == []
 
         observe([source1], instance=instance)
         status_resolver = get_stale_status_resolver(instance, all_assets)
@@ -886,133 +848,20 @@ def test_stale_status_root_causes_general() -> None:
             StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
             StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
+        assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(asset2.key) == []
+        assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(asset3.key) == []
+
+        materialize_assets(all_assets, instance=instance, selection=[asset1])
+        status_resolver = get_stale_status_resolver(instance, all_assets)
+        assert status_resolver.get_status(asset1.key) == StaleStatus.FRESH
         assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
         assert status_resolver.get_stale_root_causes(asset2.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
-        ]
-        assert status_resolver.get_status(asset3.key) == StaleStatus.STALE
-        assert status_resolver.get_stale_root_causes(asset3.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
-        ]
-
-        # Simulate updating an asset with a new code version
-        @asset(name="asset3", code_version="2")
-        def asset3_v2(asset2): ...
-
-        all_assets = [source1, asset1_v2, asset2, asset3_v2]
-        status_resolver = get_stale_status_resolver(instance, all_assets)
-        assert status_resolver.get_stale_root_causes(asset3.key) == [
-            StaleCause(asset3.key, StaleCauseCategory.CODE, "has a new code version"),
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
-            StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
-        ]
-
-
-def test_stale_status_non_transitive_root_causes() -> None:
-    with mock.patch.object(DagsterInstance, "use_transitive_stale_causes", False):
-        x = 0
-
-        @observable_source_asset
-        def source1(_context):
-            nonlocal x
-            x = x + 1
-            return DataVersion(str(x))
-
-        @asset(code_version="1")
-        def asset1(source1): ...
-
-        @asset(code_version="1")
-        def asset2(asset1): ...
-
-        @asset(code_version="1")
-        def asset3(asset2): ...
-
-        with instance_for_test() as instance:
-            all_assets = [source1, asset1, asset2, asset3]
-            status_resolver = get_stale_status_resolver(instance, all_assets)
-            assert status_resolver.get_stale_root_causes(asset1.key) == []
-            assert status_resolver.get_stale_root_causes(asset2.key) == []
-
-            materialize_assets(all_assets, instance)
-
-            # Simulate updating an asset with a new code version
-            @asset(name="asset1", code_version="2")
-            def asset1_v2(source1): ...
-
-            all_assets = [source1, asset1_v2, asset2, asset3]
-            status_resolver = get_stale_status_resolver(instance, all_assets)
-            assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
-            assert status_resolver.get_stale_root_causes(asset1.key) == [
-                StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version")
-            ]
-            assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
-            assert status_resolver.get_stale_root_causes(asset2.key) == []
-            assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
-            assert status_resolver.get_stale_root_causes(asset3.key) == []
-
-            observe([source1], instance=instance)
-            status_resolver = get_stale_status_resolver(instance, all_assets)
-            assert status_resolver.get_status(asset1.key) == StaleStatus.STALE
-            assert status_resolver.get_stale_root_causes(asset1.key) == [
-                StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
-                StaleCause(source1.key, StaleCauseCategory.DATA, "has a new data version"),
-            ]
-            assert status_resolver.get_status(asset2.key) == StaleStatus.FRESH
-            assert status_resolver.get_stale_root_causes(asset2.key) == []
-            assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
-            assert status_resolver.get_stale_root_causes(asset3.key) == []
-
-            materialize_assets(all_assets, instance=instance, selection=[asset1])
-            status_resolver = get_stale_status_resolver(instance, all_assets)
-            assert status_resolver.get_status(asset1.key) == StaleStatus.FRESH
-            assert status_resolver.get_status(asset2.key) == StaleStatus.STALE
-            assert status_resolver.get_stale_root_causes(asset2.key) == [
-                StaleCause(asset1.key, StaleCauseCategory.DATA, "has a new data version"),
-            ]
-            assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
-            assert status_resolver.get_stale_root_causes(asset3.key) == []
-
-
-def test_stale_status_root_causes_dedup() -> None:
-    x = 0
-
-    @asset(code_version="1")
-    def asset1():
-        nonlocal x
-        x += 1
-        return Output(x, data_version=DataVersion(str(x)))
-
-    @asset
-    def asset2(asset1): ...
-
-    @asset
-    def asset3(asset1): ...
-
-    @asset
-    def asset4(asset2, asset3): ...
-
-    with instance_for_test() as instance:
-        all_assets = [asset1, asset2, asset3, asset4]
-        materialize_assets(all_assets, instance)
-
-        # Test dedup from updated data version
-        materialize_assets([asset1], instance=instance)
-        status_resolver = get_stale_status_resolver(instance, all_assets)
-        assert status_resolver.get_stale_root_causes(asset4.key) == [
             StaleCause(asset1.key, StaleCauseCategory.DATA, "has a new data version"),
         ]
-
-        # Test dedup from updated code version
-        @asset(name="asset1", code_version="2")
-        def asset1_v2(): ...
-
-        all_assets = [asset1_v2, asset2, asset3, asset4]
-        status_resolver = get_stale_status_resolver(instance, all_assets)
-        assert status_resolver.get_stale_root_causes(asset4.key) == [
-            StaleCause(asset1.key, StaleCauseCategory.CODE, "has a new code version"),
-        ]
+        assert status_resolver.get_status(asset3.key) == StaleStatus.FRESH
+        assert status_resolver.get_stale_root_causes(asset3.key) == []
 
 
 def test_no_provenance_stale_status():
