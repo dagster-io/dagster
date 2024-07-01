@@ -36,6 +36,10 @@ import {Timestamp} from '../../app/time/Timestamp';
 import {BulkActionStatus} from '../../graphql/types';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
+import {
+  DaemonNotRunningAlert,
+  useIsBackfillDaemonHealthy,
+} from '../../partitions/BackfillMessaging';
 import {useBlockTraceOnQueryResult} from '../../performance/TraceContext';
 import {testId} from '../../testing/testId';
 
@@ -52,6 +56,8 @@ export const BackfillPage = () => {
     queryKey: 'tab',
     defaults: {tab: 'partitions'},
   });
+
+  const isDaemonHealthy = useIsBackfillDaemonHealthy();
 
   const queryResult = useQuery<BackfillStatusesByAssetQuery, BackfillStatusesByAssetQueryVariables>(
     BACKFILL_DETAILS_QUERY,
@@ -114,7 +120,7 @@ export const BackfillPage = () => {
           <Detail
             label="Duration"
             detail={
-              <Duration
+              <BackfillDuration
                 start={backfill.timestamp * 1000}
                 end={backfill.endTimestamp ? backfill.endTimestamp * 1000 : null}
               />
@@ -131,6 +137,13 @@ export const BackfillPage = () => {
           />
           <Detail label="Status" detail={<BackfillStatusTagForPage backfill={backfill} />} />
         </Box>
+
+        {isDaemonHealthy ? null : (
+          <Box padding={{horizontal: 24, bottom: 16}}>
+            <DaemonNotRunningAlert />
+          </Box>
+        )}
+
         <Box padding={{left: 24}} border="bottom">
           <Tabs size="large" selectedTabId={selectedTab}>
             <Tab id="partitions" title="Partitions" onClick={() => setSelectedTab('partitions')} />
@@ -144,10 +157,7 @@ export const BackfillPage = () => {
         {error?.graphQLErrors && (
           <Alert intent="error" title={error.graphQLErrors.map((err) => err.message)} />
         )}
-        <Box
-          flex={{direction: 'column'}}
-          style={{flex: 1, position: 'relative', minHeight: 0, overflowY: 'scroll'}}
-        >
+        <Box flex={{direction: 'column'}} style={{flex: 1, position: 'relative', minHeight: 0}}>
           {selectedTab === 'partitions' && <BackfillPartitionsTab backfill={backfill} />}
           {selectedTab === 'runs' && <BackfillRunsTab backfill={backfill} />}
           {selectedTab === 'logs' && <BackfillLogsTab backfill={backfill} />}
@@ -199,14 +209,13 @@ const Label = styled.div`
   line-height: 16px;
 `;
 
-const Duration = ({start, end}: {start: number; end?: number | null}) => {
+const BackfillDuration = ({start, end}: {start: number; end?: number | null}) => {
   const [_, rerender] = useReducer((s: number, _: any) => s + 1, 0);
   useEffect(() => {
     if (end) {
       return;
     }
-    // re-render once a minute to update the "time ago"
-    const intervalId = setInterval(rerender, 60000);
+    const intervalId = setInterval(rerender, 1000);
     return () => clearInterval(intervalId);
   }, [start, end]);
   const duration = end ? end - start : Date.now() - start;
@@ -302,6 +311,8 @@ const formatDuration = (duration: number) => {
     result += `${minutes}m`;
   } else if (minutes > 0) {
     result += `${minutes}m `;
+    result += `${seconds}s`;
+  } else if (seconds > 0) {
     result += `${seconds}s`;
   }
   return result.trim();

@@ -1,10 +1,12 @@
-import {gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Alert, ButtonLink, Colors, Group, Mono} from '@dagster-io/ui-components';
 import {History} from 'history';
 import * as React from 'react';
 
 import {
   DaemonNotRunningAlertInstanceFragment,
+  DaemonNotRunningAlertQuery,
+  DaemonNotRunningAlertQueryVariables,
   UsingDefaultLauncherAlertInstanceFragment,
 } from './types/BackfillMessaging.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -106,13 +108,29 @@ export const DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT = gql`
   }
 `;
 
-export const DaemonNotRunningAlert = ({
-  instance,
-}: {
-  instance: DaemonNotRunningAlertInstanceFragment;
-}) => (!instance.daemonHealth.daemonStatus.healthy ? <DaemonNotRunningAlertBody /> : null);
+const DAEMON_NOT_RUNNING_ALERT_QUERY = gql`
+  query DaemonNotRunningAlertQuery {
+    instance {
+      id
+      ...DaemonNotRunningAlertInstanceFragment
+    }
+  }
 
-export const DaemonNotRunningAlertBody = () => (
+  ${DAEMON_NOT_RUNNING_ALERT_INSTANCE_FRAGMENT}
+`;
+
+export function isBackfillDaemonHealthy(instance: DaemonNotRunningAlertInstanceFragment) {
+  return instance.daemonHealth.daemonStatus.healthy;
+}
+
+export function useIsBackfillDaemonHealthy() {
+  const queryData = useQuery<DaemonNotRunningAlertQuery, DaemonNotRunningAlertQueryVariables>(
+    DAEMON_NOT_RUNNING_ALERT_QUERY,
+  );
+  return queryData.data ? isBackfillDaemonHealthy(queryData.data.instance) : true;
+}
+
+export const DaemonNotRunningAlert = () => (
   <Alert
     intent="warning"
     title="The backfill daemon is not running."

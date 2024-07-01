@@ -39,13 +39,15 @@ type Props = {
 export function useTimelineRange({
   maxNowMs,
   hourWindowStorageKey,
+  hourWindowDefault = '12',
   lookaheadHours = LOOKAHEAD_HOURS,
 }: {
   maxNowMs?: number;
   hourWindowStorageKey?: string;
+  hourWindowDefault?: HourWindow;
   lookaheadHours?: number;
 }) {
-  const [hourWindow, setHourWindow] = useHourWindow('12', hourWindowStorageKey);
+  const [hourWindow, setHourWindow] = useHourWindow(hourWindowDefault, hourWindowStorageKey);
   const [now, setNow] = React.useState(() => maxNowMs || Date.now());
   const [offsetMsec, setOffsetMsec] = React.useState(() => 0);
 

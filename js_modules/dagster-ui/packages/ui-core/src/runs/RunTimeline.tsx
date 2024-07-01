@@ -656,7 +656,7 @@ const RunTimelineRow = ({
   );
 };
 
-export const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
+const RunsEmptyOrLoading = (props: {loading: boolean; includesTicks: boolean}) => {
   const {loading, includesTicks} = props;
 
   const content = () => {
