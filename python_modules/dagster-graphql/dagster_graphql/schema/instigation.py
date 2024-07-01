@@ -727,10 +727,10 @@ class GrapheneInstigationStateNotFoundError(graphene.ObjectType):
 
     name = graphene.NonNull(graphene.String)
 
-    def __init__(self, name):
+    def __init__(self, target):
         super().__init__()
-        self.name = check.str_param(name, "name")
-        self.message = f"Could not find `{name}` in the currently loaded repository."
+        self.name = check.str_param(target, "target")
+        self.message = f"Could not find instigation state for `{target}`"
 
 
 class GrapheneInstigationStateOrError(graphene.Union):

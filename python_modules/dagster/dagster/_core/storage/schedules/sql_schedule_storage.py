@@ -110,7 +110,6 @@ class SqlScheduleStorage(ScheduleStorage):
                 query = query.where(
                     JobTable.c.status.in_([status.value for status in instigator_statuses])
                 )
-
         rows = self.execute(query)
         return self._deserialize_rows(rows, InstigatorState)
 

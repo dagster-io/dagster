@@ -3679,6 +3679,7 @@ export type Query = {
   graphOrError: GraphOrError;
   instance: Instance;
   instigationStateOrError: InstigationStateOrError;
+  instigationStatesOrError: InstigationStatesOrError;
   isPipelineConfigValid: PipelineConfigValidationResult;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
@@ -3819,7 +3820,12 @@ export type QueryGraphOrErrorArgs = {
 };
 
 export type QueryInstigationStateOrErrorArgs = {
-  instigationSelector: InstigationSelector;
+  id?: InputMaybe<Scalars['String']['input']>;
+  instigationSelector?: InputMaybe<InstigationSelector>;
+};
+
+export type QueryInstigationStatesOrErrorArgs = {
+  repositoryID: Scalars['String']['input'];
 };
 
 export type QueryIsPipelineConfigValidArgs = {
@@ -11848,6 +11854,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('InstigationState')
         ? ({} as InstigationState)
         : buildInstigationState({}, relationshipsToOmit),
+    instigationStatesOrError:
+      overrides && overrides.hasOwnProperty('instigationStatesOrError')
+        ? overrides.instigationStatesOrError!
+        : relationshipsToOmit.has('InstigationStates')
+        ? ({} as InstigationStates)
+        : buildInstigationStates({}, relationshipsToOmit),
     isPipelineConfigValid:
       overrides && overrides.hasOwnProperty('isPipelineConfigValid')
         ? overrides.isPipelineConfigValid!
