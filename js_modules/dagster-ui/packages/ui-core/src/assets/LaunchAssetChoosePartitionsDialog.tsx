@@ -72,6 +72,7 @@ import {
   DaemonNotRunningAlert,
   USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
   UsingDefaultLauncherAlert,
+  isBackfillDaemonHealthy,
   showBackfillErrorToast,
   showBackfillSuccessToast,
 } from '../partitions/BackfillMessaging';
@@ -805,7 +806,7 @@ const Warnings = ({
       selections,
       setSelections,
     }),
-    instance && launchAsBackfill && DaemonNotRunningAlert({instance}),
+    instance && launchAsBackfill && !isBackfillDaemonHealthy(instance) && DaemonNotRunningAlert(),
     instance && launchAsBackfill && UsingDefaultLauncherAlert({instance}),
   ]
     .filter((a) => !!a)

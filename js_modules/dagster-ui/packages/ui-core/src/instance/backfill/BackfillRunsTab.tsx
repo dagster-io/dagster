@@ -39,6 +39,7 @@ export const BackfillRunsTab = ({backfill}: {backfill: BackfillDetailsBackfillFr
     useTimelineRange({
       maxNowMs: backfill.endTimestamp ? backfill.endTimestamp * 1000 : undefined,
       hourWindowStorageKey: BACKFILL_RUNS_HOUR_WINDOW_KEY,
+      hourWindowDefault: '1',
       lookaheadHours: 0.1, // no ticks, so miminal "future" needed
     });
 
@@ -141,6 +142,15 @@ const ExecutionRunTable = ({
         <StickyTableContainer $top={56}>
           <RunTable
             runs={pipelineRunsOrError.results}
+            emptyState={() => (
+              <Box
+                padding={{vertical: 24}}
+                border="top-and-bottom"
+                flex={{direction: 'column', alignItems: 'center'}}
+              >
+                No runs have been launched.
+              </Box>
+            )}
             actionBarComponents={actionBarComponents}
             actionBarSticky
           />
