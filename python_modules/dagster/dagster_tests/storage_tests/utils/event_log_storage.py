@@ -6096,3 +6096,97 @@ class TestEventLogStorage:
                 )
                 == set()
             )
+
+    def test_updated_none_data_version(self, storage, instance):
+        asset_key = AssetKey(["one"])
+        partitions = ["1", "2", "3"]
+
+        def _materialize_partition(partition, data_version):
+            tags = {"dagster/data_version": data_version} if data_version else None
+            yield AssetMaterialization(asset_key=asset_key, partition=partition, tags=tags)
+
+        def _materialize(data_version):
+            for partition in partitions:
+                yield from _materialize_partition(partition, data_version)
+
+        @op
+        def materialize_foo():
+            yield from _materialize("foo")
+            yield Output(1)
+
+        @op
+        def materialize_bar():
+            yield from _materialize("bar")
+            yield Output(1)
+
+        @op
+        def materialize_none():
+            yield from _materialize(None)
+            yield Output(1)
+
+        def _get_last_storage_id(storage):
+            return (
+                storage.fetch_materializations(asset_key, limit=1, ascending=False)
+                .records[0]
+                .storage_id
+            )
+
+        run_id_1, run_id_2, run_id_3 = [make_new_run_id() for i in range(3)]
+        with create_and_delete_test_runs(instance, [run_id_1, run_id_2, run_id_3]):
+            _synthesize_and_store_events(storage, lambda: materialize_foo(), run_id_1)
+
+            after_one = _get_last_storage_id(storage)
+
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=-1
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_one
+                )
+                == set()
+            )
+
+            # change data version
+            _synthesize_and_store_events(storage, lambda: materialize_bar(), run_id_2)
+            after_two = _get_last_storage_id(storage)
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_one
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_two
+                )
+                == set()
+            )
+
+            # materialize without data version
+            _synthesize_and_store_events(storage, lambda: materialize_bar(), run_id_3)
+            after_three = _get_last_storage_id(storage)
+            assert storage.get_updated_data_version_partitions(
+                asset_key, partitions=partitions, since_storage_id=after_one
+            ) == {
+                "1",
+                "2",
+                "3",
+            }
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_two
+                )
+                == set()
+            )
+            assert (
+                storage.get_updated_data_version_partitions(
+                    asset_key, partitions=partitions, since_storage_id=after_three
+                )
+                == set()
+            )
