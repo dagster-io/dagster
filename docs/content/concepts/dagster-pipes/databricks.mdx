@@ -300,7 +300,11 @@ With either option, once the <PyObject object="open_pipes_session" /> block clos
 import os
 import sys
 
-from dagster_databricks_pipes import PipesDbfsContextInjector, PipesDbfsMessageReader, PipesDbfsLogReader
+from dagster_databricks_pipes import (
+    PipesDbfsContextInjector,
+    PipesDbfsMessageReader,
+    PipesDbfsLogReader,
+)
 
 from dagster import AssetExecutionContext, asset, open_pipes_session
 from databricks.sdk import WorkspaceClient
