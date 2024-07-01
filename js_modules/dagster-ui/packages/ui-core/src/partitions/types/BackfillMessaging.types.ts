@@ -12,6 +12,21 @@ export type DaemonNotRunningAlertInstanceFragment = {
   };
 };
 
+export type DaemonNotRunningAlertQueryVariables = Types.Exact<{[key: string]: never}>;
+
+export type DaemonNotRunningAlertQuery = {
+  __typename: 'Query';
+  instance: {
+    __typename: 'Instance';
+    id: string;
+    daemonHealth: {
+      __typename: 'DaemonHealth';
+      id: string;
+      daemonStatus: {__typename: 'DaemonStatus'; id: string; healthy: boolean | null};
+    };
+  };
+};
+
 export type UsingDefaultLauncherAlertInstanceFragment = {
   __typename: 'Instance';
   id: string;
