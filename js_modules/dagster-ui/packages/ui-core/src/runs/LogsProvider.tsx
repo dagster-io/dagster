@@ -69,7 +69,7 @@ const pipelineStatusFromMessages = (messages: RunDagsterRunEventFragment[]) => {
 };
 
 const BATCH_INTERVAL = 100;
-const QUERY_LOG_LIMIT = 10000;
+const QUERY_LOG_LIMIT = 1000;
 
 type State = {
   nodes: LogNode[];
