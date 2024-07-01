@@ -24,7 +24,7 @@ from dagster._config.pythonic_config import (
 )
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME, get_base_asset_job_lambda, is_base_asset_job_name
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_NAME, get_base_asset_job_lambda
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutomationConditionSensorDefinition,

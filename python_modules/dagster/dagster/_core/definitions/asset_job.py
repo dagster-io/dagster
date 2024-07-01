@@ -214,7 +214,7 @@ def build_asset_job(
 def get_asset_graph_for_job(
     parent_asset_graph: AssetGraph,
     selection: AssetSelection,
-    allow_different_partitions_defs: bool,
+    allow_different_partitions_defs: bool = False,
 ) -> AssetGraph:
     """Subset an AssetGraph to create an AssetGraph representing an asset job.
 

@@ -950,7 +950,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         job_names = {
             job_name
             for job_name in self._external_asset_node.job_names
-            if not job_name.startswith(ASSET_BASE_JOB_NAME)
+            if not job_name == ASSET_BASE_JOB_NAME
         }
 
         results = []

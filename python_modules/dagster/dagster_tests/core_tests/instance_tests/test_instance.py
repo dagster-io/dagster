@@ -335,7 +335,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_START_TAG: "partition_0"},
-                asset_job_partitions_def=noop_asset_job.partitions_def,
+                asset_graph=noop_asset_job.asset_layer.asset_graph,
             )
 
         with pytest.raises(
@@ -351,7 +351,7 @@ def test_create_run_with_asset_partitions():
                 execution_plan_snapshot=ep_snapshot,
                 job_snapshot=noop_asset_job.get_job_snapshot(),
                 tags={ASSET_PARTITION_RANGE_END_TAG: "partition_0"},
-                asset_job_partitions_def=noop_asset_job.partitions_def,
+                asset_graph=noop_asset_job.asset_layer.asset_graph,
             )
 
         create_run_for_test(
@@ -360,7 +360,7 @@ def test_create_run_with_asset_partitions():
             execution_plan_snapshot=ep_snapshot,
             job_snapshot=noop_asset_job.get_job_snapshot(),
             tags={ASSET_PARTITION_RANGE_START_TAG: "bar", ASSET_PARTITION_RANGE_END_TAG: "foo"},
-            asset_job_partitions_def=noop_asset_job.partitions_def,
+            asset_graph=noop_asset_job.asset_layer.asset_graph,
         )
 
 

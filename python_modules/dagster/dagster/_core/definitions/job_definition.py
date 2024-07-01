@@ -205,7 +205,7 @@ class JobDefinition(IHasInternalInit):
             elif isinstance(config, PartitionedConfig):
                 self._partitioned_config = config
                 if asset_layer:
-                    for asset_key in _output_asset_keys(asset_layer):
+                    for asset_key in asset_layer.asset_keys_by_node_output_handle.values():
                         asset_partitions_def = asset_layer.get(asset_key).partitions_def
                         check.invariant(
                             asset_partitions_def is None
@@ -711,8 +711,12 @@ class JobDefinition(IHasInternalInit):
             asset_selection=frozenset(asset_selection),
         )
 
+    # This returns the PartitionsDefinition of the last partitioned asset in the selection
     def validate_partition_key(
-        self, partition_key: str, dynamic_partitions_store: "DynamicPartitionsStore"
+        self,
+        partition_key: str,
+        dynamic_partitions_store: Optional["DynamicPartitionsStore"] = None,
+        asset_selection: Optional[AbstractSet[AssetKey]] = None,
     ) -> PartitionsDefinition:
         if self.partitions_def:
             self.partitions_def.validate_partition_key(
@@ -720,12 +724,13 @@ class JobDefinition(IHasInternalInit):
             )
             return self.partitions_def
         elif self.asset_layer:
-            if self.asset_selection:
+            if asset_selection:
+                selected_asset_keys = asset_selection
+            elif self.asset_selection:
                 selected_asset_keys = self.asset_selection
             else:
                 selected_asset_keys = [
-                    asset_info.key
-                    for asset_info in self.asset_layer.asset_info_by_node_output_handle.values()
+                    key for key in self.asset_layer.asset_keys_by_node_output_handle.values()
                 ]
 
             partitions_def = None
@@ -1325,7 +1330,3 @@ def _create_run_config_schema(
         config_type_dict_by_key=config_type_dict_by_key,
         config_mapping=job_def.config_mapping,
     )
-
-
-def _output_asset_keys(asset_layer: AssetLayer) -> Iterable[AssetKey]:
-    return [asset_info.key for asset_info in asset_layer.asset_info_by_node_output_handle.values()]
