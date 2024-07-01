@@ -31,7 +31,7 @@ def test_prepare_and_package(monkeypatch: pytest.MonkeyPatch, dbt_project_dir: P
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-experimental-dbt-project",
+            "--use-dbt-project",
         ],
     )
 
@@ -75,7 +75,7 @@ def test_prepare_and_package_with_dependencies(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-experimental-dbt-project",
+            "--use-dbt-project",
         ],
     )
 
@@ -133,7 +133,7 @@ def test_prepare_and_package_with_packages(
             project_name,
             "--dbt-project-dir",
             os.fspath(dbt_project_dir),
-            "--use-experimental-dbt-project",
+            "--use-dbt-project",
         ],
     )
 
