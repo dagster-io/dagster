@@ -170,7 +170,7 @@ class AssetStatusCacheValue(
 
     def is_materialized_subset_up_to_date(
         self,
-        asset_record: AssetRecord,
+        asset_record: "AssetRecord",
         partitions_def: Optional[PartitionsDefinition],
         dynamic_partitions_store: DynamicPartitionsStore,
     ) -> bool:
