@@ -39,6 +39,7 @@ export type RunsRootQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
