@@ -24,7 +24,6 @@ from .ops import (
     create_databricks_run_now_op as create_databricks_run_now_op,
     create_databricks_submit_run_op as create_databricks_submit_run_op,
 )
-
 from .resources import (
     DatabricksClientResource as DatabricksClientResource,
     databricks_client as databricks_client,
