@@ -380,7 +380,7 @@ def execute_k8s_job(
                     raise Exception("Timed out waiting for pod to finish")
                 try:
                     log_entry = k8s_api_retry(
-                        next(log_stream),
+                        lambda: next(log_stream),
                         max_retries=int(
                             os.getenv("DAGSTER_EXECUTE_K8S_JOB_STREAM_LOGS_RETRIES", "3")
                         ),
