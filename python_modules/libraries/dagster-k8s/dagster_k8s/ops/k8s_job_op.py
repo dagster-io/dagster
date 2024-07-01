@@ -1,7 +1,6 @@
 import time
 from typing import Any, Dict, List, Optional
 
-import kubernetes.client.exceptions as ApiException
 import kubernetes.config
 import kubernetes.watch
 from dagster import (
@@ -19,7 +18,7 @@ from dagster._annotations import experimental
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
-from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient
+from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
 from ..container_context import K8sContainerContext
 from ..job import (
     DagsterK8sJobConfig,
@@ -382,19 +381,8 @@ def execute_k8s_job(
                     watch.stop()
                     raise Exception("Timed out waiting for pod to finish")
                 try:
-                    log_entry = next(log_stream)
+                    log_entry = k8s_api_retry(next(log_stream), max_api_exception_retry_count, 1)
                     print(log_entry)  # noqa: T201
-                except ApiException as e:
-                    # to not block jobs we fail run after 10 retries which can be considered as k8s API issues
-                    if max_api_exception_retry_count <= 0:
-                        raise Exception(f"ApiException retry count exceeded: {e}")
-                    elif e.status == 410:
-                        raise Exception(
-                            f"Pod logs are disabled, because the pod has been deleted: {e}"
-                        )
-                    else:
-                        context.log.warning(f"Kubernetes ApiException error: {e}")
-                        max_api_exception_retry_count -= 1
                 except StopIteration:
                     break
         else:
