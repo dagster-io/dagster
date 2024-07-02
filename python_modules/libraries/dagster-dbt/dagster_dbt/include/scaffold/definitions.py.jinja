@@ -1,4 +1,4 @@
-{% if use_experimental_dbt_project -%}
+{% if use_dbt_project -%}
 from dagster import Definitions
 from dagster_dbt import DbtCliResource
 {% else -%}
@@ -8,7 +8,7 @@ from dagster import Definitions
 from dagster_dbt import DbtCliResource
 {% endif %}
 from .assets import {{ dbt_assets_name }}
-{% if use_experimental_dbt_project -%}
+{% if use_dbt_project -%}
 from .project import {{ dbt_project_name }}
 {% else -%}
 from .constants import dbt_project_dir
@@ -19,7 +19,7 @@ defs = Definitions(
     assets=[{{ dbt_assets_name }}],
     schedules=schedules,
     resources={
-        {% if use_experimental_dbt_project -%}
+        {% if use_dbt_project -%}
         "dbt": DbtCliResource(project_dir={{ dbt_project_name }}),
         {%- else -%}
         "dbt": DbtCliResource(project_dir=os.fspath(dbt_project_dir)),
