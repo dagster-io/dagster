@@ -849,6 +849,7 @@ class AssetDaemon(DagsterDaemon):
         is_retry: bool,
         instigator_state: Optional[InstigatorState],
     ):
+        print("IN ASSET DAEMON")
         evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
 
         instance = workspace_process_context.instance

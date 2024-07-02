@@ -210,14 +210,13 @@ class AssetDaemonContext:
                 else []
             )
         else:
-            run_requests = [
-                *build_run_requests(
+            run_requests = build_run_requests(
                     asset_partitions=to_request,
                     asset_graph=self.asset_graph,
                     run_tags=self.auto_materialize_run_tags,
-                ),
-                *auto_observe_run_requests,
-            ]
+                )
+
+        run_requests = [*run_requests, *auto_observe_run_requests]
 
         # only record evaluation results where something changed
         updated_evaluations = []
@@ -239,8 +238,8 @@ class AssetDaemonContext:
                     asset_key
                     for run_request in auto_observe_run_requests
                     for asset_key in cast(
-                        Sequence[AssetKey], run_request.asset_selection
-                    )  # TODO - need to replace run_request.asset_selection for backfills?
+                        Sequence[AssetKey], run_request.asset_selection # auto-observe run requests always have asset_selection
+                    )
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),
             ),
