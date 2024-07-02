@@ -11,7 +11,7 @@ import pytest
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
 
-from dagster_databricks.pipes import dbfs_tempdir
+from dagster_databricks_pipes.pipes import dbfs_tempdir
 
 DAGSTER_PIPES_WHL_FILENAME = "dagster_pipes-1!0+dev-py3-none-any.whl"
 

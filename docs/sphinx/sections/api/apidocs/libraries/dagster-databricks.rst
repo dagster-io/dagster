@@ -43,14 +43,6 @@ Step Launcher
 .. autoconfigurable:: dagster_databricks.databricks_pyspark_step_launcher
   :annotation: ResourceDefinition
 
-Pipes
-=====
-
-.. autoclass:: PipesDatabricksClient
-
-.. autoclass:: PipesDbfsContextInjector
-
-.. autoclass:: PipesDbfsMessageReader
 
 Other
 =====

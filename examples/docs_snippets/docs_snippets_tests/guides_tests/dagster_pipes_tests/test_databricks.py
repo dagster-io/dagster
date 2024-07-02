@@ -3,11 +3,7 @@ import os
 import re
 
 import pytest
-from dagster_databricks._test_utils import (
-    databricks_client,
-    temp_dbfs_script,
-    upload_dagster_pipes_whl,
-)
+from dagster_databricks_pipes._test_utils import databricks_client, temp_dbfs_script
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
