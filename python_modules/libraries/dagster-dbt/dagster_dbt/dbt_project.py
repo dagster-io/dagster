@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Union
 
 import yaml
 from dagster._annotations import public
-from dagster._model import IHaveNew, dagster_model_custom
+from dagster._record import IHaveNew, record_custom
 from dagster._utils import run_with_concurrent_update_guard
 
 from .errors import (
@@ -131,7 +131,7 @@ class DagsterDbtProjectPreparer(DbtProjectPreparer):
         )
 
 
-@dagster_model_custom
+@record_custom
 class DbtProject(IHaveNew):
     """Representation of a dbt project and related settings that assist with managing the project preparation.
 

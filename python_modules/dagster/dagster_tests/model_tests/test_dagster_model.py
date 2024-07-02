@@ -1,11 +1,15 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
-from dagster._check import CheckError
-from dagster._model import DagsterModel, IHaveNew, copy, dagster_model, dagster_model_custom
-from dagster._model.decorator import (
+from dagster._model import DagsterModel
+from dagster._record import (
     _INJECTED_DEFAULT_VALS_LOCAL_VAR,
+    IHaveNew,
     build_args_and_assignment_strs,
+    check,
+    copy,
+    record,
+    record_custom,
 )
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
 from pydantic import ValidationError
@@ -19,12 +23,12 @@ def test_runtime_typecheck() -> None:
     with pytest.raises(ValidationError):
         MyClass(foo="fdsjk", bar="fdslk")  # type: ignore # good job type checker
 
-    @dagster_model
+    @record
     class MyClass2:
         foo: str
         bar: int
 
-    with pytest.raises(CheckError):
+    with pytest.raises(check.CheckError):
         MyClass2(foo="fdsjk", bar="fdslk")  # type: ignore # good job type checker
 
 
@@ -38,7 +42,7 @@ def test_override_constructor_in_subclass() -> None:
 
     assert MyClass(foo="fdsjk", bar=4)
 
-    @dagster_model
+    @record
     class MyClass2:
         foo: str
         bar: int
@@ -63,7 +67,7 @@ def test_override_constructor_in_subclass_different_arg_names() -> None:
 
     assert MyClass(fooarg="fdsjk", bararg=4)
 
-    @dagster_model_custom
+    @record_custom
     class MyClass2(IHaveNew):
         foo: str
         bar: int
@@ -89,7 +93,7 @@ def test_override_constructor_in_subclass_wrong_type() -> None:
     with pytest.raises(ValidationError):
         MyClass(foo="fdsjk", bar="fdslk")
 
-    @dagster_model_custom
+    @record_custom
     class MyClass2(IHaveNew):
         foo: str
         bar: int
@@ -101,7 +105,7 @@ def test_override_constructor_in_subclass_wrong_type() -> None:
                 bar=bar,
             )
 
-    with pytest.raises(CheckError):
+    with pytest.raises(check.CheckError):
         MyClass2(foo="fdsjk", bar="fdslk")
 
 
@@ -115,7 +119,7 @@ def test_model_copy() -> None:
     assert obj.model_copy(update=dict(bar=6)) == MyClass(foo="abc", bar=6)
     assert obj.model_copy(update=dict(foo="xyz", bar=6)) == MyClass(foo="xyz", bar=6)
 
-    @dagster_model
+    @record
     class MyClass2:
         foo: str
         bar: int
@@ -143,16 +147,16 @@ def test_non_model_param():
     with pytest.raises(ValidationError):
         MyModel(some_class=SomeClass)  # forgot ()
 
-    @dagster_model
+    @record
     class MyModel2:
         some_class: SomeClass
 
     assert MyModel2(some_class=SomeClass())
 
-    with pytest.raises(CheckError):
+    with pytest.raises(check.CheckError):
         MyModel2(some_class=OtherClass())  # wrong class
 
-    with pytest.raises(CheckError):
+    with pytest.raises(check.CheckError):
         MyModel2(some_class=SomeClass)  # forgot ()
 
 
@@ -174,7 +178,7 @@ def test_cached_method() -> None:
 
     assert CACHED_METHOD_CACHE_FIELD not in m.dict()
 
-    @dagster_model()
+    @record()
     class CoolModel2:
         name: str
 
@@ -211,7 +215,7 @@ def test_cached_method() -> None:
 
 
 def test_forward_ref() -> None:
-    @dagster_model
+    @record
     class Parent:
         partner: Optional["Parent"]
         child: Optional["Child"]
@@ -222,7 +226,7 @@ def test_forward_ref() -> None:
 
 
 def test_forward_ref_with_new() -> None:
-    @dagster_model_custom
+    @record_custom
     class Parent:
         partner: Optional["Parent"]
         child: Optional["Child"]
@@ -248,19 +252,19 @@ def test_frame_capture() -> None:
 
     val = LocalAtDefineTime()
 
-    @dagster_model
+    @record
     class Direct:
         local: Optional["LocalAtDefineTime"]
 
     _empty_callsite_scope(Direct, val)
 
-    @dagster_model()  # invoking decorator has different frame depth from direct
+    @record()  # invoking decorator has different frame depth from direct
     class InDirect:
         local: Optional["LocalAtDefineTime"]
 
     _empty_callsite_scope(InDirect, val)
 
-    @dagster_model_custom
+    @record_custom
     class DirectNew:
         local: Optional["LocalAtDefineTime"]
 
@@ -269,7 +273,7 @@ def test_frame_capture() -> None:
 
     _empty_callsite_scope(DirectNew, val)
 
-    @dagster_model_custom()
+    @record_custom()
     class InDirectNew:
         local: Optional["LocalAtDefineTime"]
 
@@ -280,28 +284,28 @@ def test_frame_capture() -> None:
 
 
 def test_didnt_override_new():
-    with pytest.raises(CheckError):
+    with pytest.raises(check.CheckError):
 
-        @dagster_model_custom()
+        @record_custom()
         class Failed:
             local: Optional[str]
 
-    with pytest.raises(CheckError):
+    with pytest.raises(check.CheckError):
 
-        @dagster_model_custom
+        @record_custom
         class FailedAgain:
             local: Optional[str]
 
 
 def test_empty():
-    @dagster_model
+    @record
     class Empty: ...
 
     assert Empty()
 
 
 def test_optional_arg() -> None:
-    @dagster_model
+    @record
     class Opt:
         maybe: Optional[str] = None
         always: Optional[str]
@@ -309,7 +313,7 @@ def test_optional_arg() -> None:
     assert Opt(always="set")
     assert Opt(always="set", maybe="x").maybe == "x"
 
-    @dagster_model(checked=False)
+    @record(checked=False)
     class Other:
         maybe: Optional[str] = None
         always: Optional[str]
@@ -319,7 +323,7 @@ def test_optional_arg() -> None:
 
 
 def test_dont_share_containers() -> None:
-    @dagster_model
+    @record
     class Empties:
         items: List[str] = []
         map: Dict[str, str] = {}
@@ -333,14 +337,14 @@ def test_dont_share_containers() -> None:
 def test_sentinel():
     _unset = object()
 
-    @dagster_model
+    @record
     class Sample:
         val: Optional[Any] = _unset
 
     assert Sample().val is _unset
     assert Sample(val=None).val is None
 
-    @dagster_model(checked=False)
+    @record(checked=False)
     class OtherSample:
         val: Optional[Any] = _unset
 
