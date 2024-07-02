@@ -7,6 +7,7 @@ export type RunTimelineFragment = {
   id: string;
   pipelineName: string;
   status: Types.RunStatus;
+  creationTime: number;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;
@@ -36,6 +37,7 @@ export type OngoingRunTimelineQuery = {
           id: string;
           pipelineName: string;
           status: Types.RunStatus;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -67,6 +69,7 @@ export type CompletedRunTimelineQuery = {
           id: string;
           pipelineName: string;
           status: Types.RunStatus;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;

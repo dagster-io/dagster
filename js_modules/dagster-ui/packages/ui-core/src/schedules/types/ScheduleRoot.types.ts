@@ -52,6 +52,7 @@ export type ScheduleRootQuery = {
             __typename: 'Run';
             id: string;
             status: Types.RunStatus;
+            creationTime: number;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;
@@ -140,6 +141,7 @@ export type PreviousRunsForScheduleQuery = {
           pipelineSnapshotId: string | null;
           pipelineName: string;
           solidSelection: Array<string> | null;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;

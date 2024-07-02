@@ -290,15 +290,11 @@ interface RunTimeProps {
 }
 
 export const RunTime = memo(({run}: RunTimeProps) => {
-  const {startTime, updateTime} = run;
+  const {creationTime} = run;
 
   return (
     <div>
-      {startTime ? (
-        <Timestamp timestamp={{unix: startTime}} />
-      ) : updateTime ? (
-        <Timestamp timestamp={{unix: updateTime}} />
-      ) : null}
+      <Timestamp timestamp={{unix: creationTime}} />
     </div>
   );
 });
@@ -328,6 +324,7 @@ export const RUN_TIME_FRAGMENT = gql`
   fragment RunTimeFragment on Run {
     id
     status
+    creationTime
     startTime
     endTime
     updateTime
