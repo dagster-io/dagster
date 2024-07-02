@@ -19,11 +19,11 @@ def make_app(app_args=None):
             },
             TASK_EXECUTE_JOB_NAME: {
                 "queue": "dagster",
-                "routing_key": f"dagster.{TASK_EXECUTE_PLAN_NAME}",
+                "routing_key": f"dagster.{TASK_EXECUTE_JOB_NAME}",
             },
             TASK_RESUME_JOB_NAME: {
                 "queue": "dagster",
-                "routing_key": f"dagster.{TASK_EXECUTE_PLAN_NAME}",
+                "routing_key": f"dagster.{TASK_RESUME_JOB_NAME}",
             },
         },
     )

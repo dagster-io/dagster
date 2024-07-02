@@ -45,7 +45,7 @@ def workspace_process_context(instance) -> Iterator[WorkspaceProcessContext]:
         instance,
         PythonFileTarget(
             python_file=file_relative_path(__file__, "repo_runner.py"),
-            attribute="nope",
+            attribute="celery_test_repository",
             working_directory=None,
             location_name="test",
         ),
@@ -83,7 +83,9 @@ def test_successful_run(
     run_config,
 ):
     external_job = (
-        workspace.get_code_location("test").get_repository("nope").get_full_external_job("noop_job")
+        workspace.get_code_location("test")
+        .get_repository("celery_test_repository")
+        .get_full_external_job("noop_job")
     )
 
     dagster_run = instance.create_run_for_job(
@@ -127,7 +129,7 @@ def test_crashy_run(
 
     external_job = (
         workspace.get_code_location("test")
-        .get_repository("nope")
+        .get_repository("celery_test_repository")
         .get_full_external_job("crashy_job")
     )
 
@@ -173,7 +175,7 @@ def test_exity_run(
 ):
     external_job = (
         workspace.get_code_location("test")
-        .get_repository("nope")
+        .get_repository("celery_test_repository")
         .get_full_external_job("exity_job")
     )
 
@@ -224,7 +226,7 @@ def test_terminated_run(
 ):
     external_job = (
         workspace.get_code_location("test")
-        .get_repository("nope")
+        .get_repository("celery_test_repository")
         .get_full_external_job("sleepy_job")
     )
     run = instance.create_run_for_job(

@@ -80,7 +80,7 @@ def math_diamond():
 
 
 @repository
-def nope():
+def celery_test_repository():
     return [
         noop_job,
         crashy_job,
