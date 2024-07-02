@@ -31,9 +31,10 @@ from dagster._core.definitions.run_request import (
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, split_run_requests
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
@@ -50,6 +51,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
@@ -663,16 +665,26 @@ def _evaluate_sensor(
 
         yield
     else:
-        yield from _handle_run_requests(
-            run_requests=sensor_runtime_data.run_requests,
-            cursor=sensor_runtime_data.cursor,
-            context=context,
-            instance=instance,
-            external_sensor=external_sensor,
-            workspace_process_context=workspace_process_context,
-            submit_threadpool_executor=submit_threadpool_executor,
-            sensor_debug_crash_flags=sensor_debug_crash_flags,
+        run_requests_for_backfill_daemon, run_requests_for_single_runs = split_run_requests(
+            sensor_runtime_data.run_requests
         )
+
+        if run_requests_for_single_runs:
+            yield from _handle_run_requests(
+                run_requests=run_requests_for_single_runs,
+                cursor=sensor_runtime_data.cursor,
+                context=context,
+                instance=instance,
+                external_sensor=external_sensor,
+                workspace_process_context=workspace_process_context,
+                submit_threadpool_executor=submit_threadpool_executor,
+                sensor_debug_crash_flags=sensor_debug_crash_flags,
+            )
+        if run_requests_for_backfill_daemon:
+            _handle_backfill_requests(
+                run_requests=run_requests_for_backfill_daemon, instance=instance, context=context
+            )
+            context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
 
 
 def _handle_dynamic_partitions_requests(
@@ -873,6 +885,31 @@ def _handle_run_requests(
         context.update_state(TickStatus.SKIPPED, cursor=cursor)
 
     yield
+
+
+def _handle_backfill_requests(
+    run_requests: Sequence[RunRequest],
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+) -> None:
+    for run_request in run_requests:
+        # TODO handling of duplicate run_keys so the same backfill isn't submitted twice
+        # issue with this is that we determine run_key duplicates based on tags
+        # and we dont have an efficient way to query backfills by tags
+        backfill_id = make_new_backfill_id()
+        instance.add_backfill(
+            PartitionBackfill.from_asset_graph_subset(
+                backfill_id=backfill_id,
+                dynamic_partitions_store=instance,
+                backfill_timestamp=pendulum.now("UTC").timestamp(),
+                asset_graph_subset=run_request.asset_graph_subset,
+                tags=run_request.tags or {},
+                # would need to add these as params to RunRequest
+                title=None,
+                description=None,
+            )
+        )
+        context.add_run_info(run_id=backfill_id, run_key=run_request.run_key)
 
 
 def is_under_min_interval(state: InstigatorState, external_sensor: ExternalSensor) -> bool:

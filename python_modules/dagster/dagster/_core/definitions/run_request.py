@@ -31,6 +31,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
@@ -124,6 +125,7 @@ class RunRequest(
             ("stale_assets_only", PublicAttr[bool]),
             ("partition_key", PublicAttr[Optional[str]]),
             ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
+            ("asset_graph_subset", PublicAttr[Optional["AssetGraphSubset"]]),
         ],
     )
 ):
@@ -159,6 +161,9 @@ class RunRequest(
             selection to stale assets. If passed without an asset selection, all stale assets in the
             job will be materialized. If the job does not materialize assets, this flag is ignored.
         partition_key (Optional[str]): The partition key for this run request.
+        asset_graph_subset (Optional[AssetGraphSubset]): (Experimental) The subset of the asset graph to
+            materialize. Note that this parameter can only be used in sensors and schedules that use the
+            asset_selection parameter.
     """
 
     def __new__(
@@ -171,8 +176,23 @@ class RunRequest(
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
         asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
+        asset_graph_subset: Optional["AssetGraphSubset"] = None,
     ):
+        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
         from dagster._core.definitions.run_config import convert_config_input
+
+        if asset_check_keys and asset_graph_subset:
+            check.failed(
+                "Cannot specify both asset_check_keys and asset_graph_subset in RunRequest. Must use asset_selection in order to use asset_check_keys."
+            )
+
+        if stale_assets_only and asset_graph_subset:
+            check.failed(
+                "Cannot specify both stale_assets_only and asset_graph_subset in RunRequest. Must use asset_selection in order to use stale_assets_only."
+            )
+
+        if asset_selection and asset_graph_subset:
+            check.failed("Cannot specify both asset_selection and asset_graph_subset in RunRequest")
 
         return super(RunRequest, cls).__new__(
             cls,
@@ -189,6 +209,9 @@ class RunRequest(
             partition_key=check.opt_str_param(partition_key, "partition_key"),
             asset_check_keys=check.opt_nullable_sequence_param(
                 asset_check_keys, "asset_check_keys", of_type=AssetCheckKey
+            ),
+            asset_graph_subset=check.opt_inst_param(
+                asset_graph_subset, "asset_graph_subset", AssetGraphSubset
             ),
         )
 
@@ -275,6 +298,21 @@ class RunRequest(
             )
         else:
             return None
+
+    def requires_backfill_daemon(self):
+        # TODO - is this slow?
+        return (
+            self.asset_graph_subset is not None
+            and len(
+                set(
+                    [
+                        asset_partition.partition_key
+                        for asset_partition in self.asset_graph_subset.iterate_asset_partitions()
+                    ]
+                )
+            )
+            > 1
+        )
 
 
 def _check_valid_partition_key_after_dynamic_partitions_requests(
