@@ -1,0 +1,6 @@
+execution:
+  celery:
+    broker:
+      env: CELERY_BROKER_URL
+    backend:
+      env: CELERY_RESULT_BACKEND
