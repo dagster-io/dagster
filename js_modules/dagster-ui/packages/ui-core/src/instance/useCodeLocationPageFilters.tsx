@@ -1,15 +1,18 @@
 import React, {useCallback, useContext, useMemo, useState} from 'react';
+import {useRecoilValue} from 'recoil';
 
 import {CodeLocationFilters, flattenCodeLocationRows} from './flattenCodeLocationRows';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {TruncatedTextWithFullTextOnHover} from '../nav/getLeftNavItemsForOption';
+import {codeLocationStatusAtom} from '../nav/useCodeLocationsStatus';
 import {useFilters} from '../ui/Filters';
 import {useStaticSetFilter} from '../ui/Filters/useStaticSetFilter';
 import {CodeLocationRowStatusType} from '../workspace/VirtualizedCodeLocationRow';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 export const useCodeLocationPageFilters = () => {
-  const workspace = useContext(WorkspaceContext);
+  const {loading, locationEntries} = useContext(WorkspaceContext);
+  const codeLocationStatusData = useRecoilValue(codeLocationStatusAtom);
   const [searchValue, setSearchValue] = useState('');
 
   const onChangeSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,11 +33,14 @@ export const useCodeLocationPageFilters = () => {
   });
 
   const {flattened, filtered} = useMemo(() => {
-    // For now don't show any items in the code location list until they are all loaded.
-    // Ideally we will power this view with both location status and and location entry data.
-    const locationEntries = workspace.loading ? [] : workspace.locationEntries;
-    return flattenCodeLocationRows(locationEntries, queryString, filters);
-  }, [workspace.loading, workspace.locationEntries, queryString, filters]);
+    const codeLocationStatuses =
+      codeLocationStatusData?.locationStatusesOrError?.__typename ===
+      'WorkspaceLocationStatusEntries'
+        ? codeLocationStatusData.locationStatusesOrError.entries
+        : [];
+
+    return flattenCodeLocationRows(codeLocationStatuses, locationEntries, queryString, filters);
+  }, [locationEntries, queryString, filters, codeLocationStatusData]);
 
   const statusFilter = useStaticSetFilter<CodeLocationRowStatusType>({
     name: 'Status',
@@ -68,7 +74,7 @@ export const useCodeLocationPageFilters = () => {
     button,
     activeFiltersJsx,
     onChangeSearch,
-    loading: workspace.loading,
+    loading,
     flattened,
     filtered,
     searchValue,

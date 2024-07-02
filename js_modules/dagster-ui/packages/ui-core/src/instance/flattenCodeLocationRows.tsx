@@ -2,37 +2,56 @@ import {
   CodeLocationRowStatusType,
   CodeLocationRowType,
 } from '../workspace/VirtualizedCodeLocationRow';
-import {WorkspaceLocationNodeFragment} from '../workspace/types/WorkspaceQueries.types';
+import {
+  LocationStatusEntryFragment,
+  WorkspaceLocationNodeFragment,
+} from '../workspace/types/WorkspaceQueries.types';
 
-const flatten = (locationEntries: WorkspaceLocationNodeFragment[]) => {
+const flatten = (
+  locationStatuses: LocationStatusEntryFragment[],
+  locationEntries: WorkspaceLocationNodeFragment[],
+) => {
   // Consider each loaded repository to be a "code location".
   const all: CodeLocationRowType[] = [];
-  for (const locationNode of locationEntries) {
-    const {locationOrLoadError} = locationNode;
+
+  const entryMap = locationEntries.reduce(
+    (acc, entry) => {
+      acc[entry.name] = entry;
+      return acc;
+    },
+    {} as {[name: string]: WorkspaceLocationNodeFragment},
+  );
+
+  for (const locationStatus of locationStatuses) {
+    const locationEntry = entryMap[locationStatus.name];
     let status: CodeLocationRowStatusType;
-    if (locationNode.loadStatus === 'LOADING') {
-      if (locationOrLoadError) {
-        status = 'Updating';
-      } else {
-        status = 'Loading';
-      }
+
+    if (locationStatus.loadStatus === 'LOADING') {
+      status = 'Updating';
+    } else if (locationEntry?.updatedTimestamp !== locationStatus.updateTimestamp) {
+      status = 'Loading';
+    } else if (locationEntry?.locationOrLoadError?.__typename === 'PythonError') {
+      status = 'Failed';
     } else {
-      if (locationOrLoadError?.__typename === 'PythonError') {
-        status = 'Failed';
-      } else {
-        status = 'Loaded';
-      }
+      status = 'Loaded';
     }
-    if (!locationOrLoadError || locationOrLoadError?.__typename === 'PythonError') {
-      all.push({type: 'error' as const, node: locationNode, status});
-    } else {
-      locationOrLoadError.repositories.forEach((repo) => {
+
+    if (locationEntry?.locationOrLoadError?.__typename === 'RepositoryLocation') {
+      locationEntry.locationOrLoadError.repositories.forEach((repo) => {
         all.push({
           type: 'repository' as const,
-          codeLocation: locationNode,
+          locationStatus,
+          locationEntry,
           repository: repo,
           status,
         });
+      });
+    } else {
+      all.push({
+        type: 'location' as const,
+        locationStatus,
+        locationEntry: locationEntry || null,
+        status,
       });
     }
   }
@@ -51,11 +70,11 @@ const filterRows = (
         return false;
       }
     }
-    if (row.type === 'error') {
-      return row.node.name.toLocaleLowerCase().includes(queryString);
+    if (row.type !== 'repository') {
+      return row.locationStatus.name.toLocaleLowerCase().includes(queryString);
     }
     return (
-      row.codeLocation.name.toLocaleLowerCase().includes(queryString) ||
+      row.locationStatus.name.toLocaleLowerCase().includes(queryString) ||
       row.repository.name.toLocaleLowerCase().includes(queryString)
     );
   });
@@ -64,11 +83,12 @@ const filterRows = (
 export type CodeLocationFilters = Partial<{status: CodeLocationRowStatusType[]}>;
 
 export const flattenCodeLocationRows = (
+  locationStatuses: LocationStatusEntryFragment[],
   locationEntries: WorkspaceLocationNodeFragment[],
   searchValue: string = '',
   filters: CodeLocationFilters = {},
 ) => {
-  const flattened = flatten(locationEntries);
+  const flattened = flatten(locationStatuses, locationEntries);
   const filtered = filterRows(flattened, searchValue, filters);
 
   return {
