@@ -11,24 +11,30 @@ Branch Deployments automatically create staging environments of your Dagster cod
 
 ---
 
-## Understanding Branch Deployments
+## Benefits
 
-- [Overview](#overview)
-- [Benefits](#benefits)
-- [Requirements](#requirements)
-- [Supported platforms](#supported-platforms)
-- [Limitations](#limitations)
-- [Output handling](#output-handling)
-- [Change Tracking](#change-tracking)
+Using Branch Deployments helps you:
 
-### Overview
+- **Improve collaboration.** Branch Deployments make it easy for everyone on your team to stay in the loop on the latest Dagster changes.
+- **Reduce the development cycle.** Quickly test and iterate on your changes without impacting production or overwriting a testing environment.
+
+---
+
+## Prerequisites
+
+To use Branch Deployments, you'll need a [Dagster+ account](https://dagster.cloud/). Branch Deployments aren't currently supported for use in Dagster Open Source.
+
+---
+
+## How it works
 
 Think of a branch deployment as a branch of your data platform, one where you can preview changes without impacting production or overwriting a testing environment.
 
 <Image
+alt="todo"
 src="/images/dagster-cloud/developing-testing/branch-deployments/branch-deployments.png"
-width={700}
-height={744}
+width={1894}
+height={620}
 />
 
 Let's take a closer look:
@@ -41,25 +47,6 @@ Let's take a closer look:
 
 3. For every push to the `feature-1` branch, the `feature-1` branch deployment in Dagster+ is rebuilt and redeployed.
 
-### Benefits
-
-Now that you know how Branch Deployments work, **why should you use them**?
-
-- **Improved collaboration.** Branch Deployments make it easy for everyone on your team to stay in the loop on the latest Dagster changes.
-- **Reduced development cycle.** Quickly test and iterate on your changes without impacting production or overwriting a testing environment.
-
-### Requirements
-
-To use Branch Deployments, you'll need a [Dagster+ account](https://dagster.cloud/).
-
-### Supported platforms
-
-Branch Deployments can be used with any git or CI provider. However, setup is easiest with the [Dagster GitHub app](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github) or [Dagster Gitlab app](/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab) as parts of the process are automated. Refer to the [Setting up Branch Deployments section](#setting-up-branch-deployments) for more info.
-
-### Limitations
-
-Branch Deployments aren't currently supported for use in Dagster Open Source.
-
 ### Output handling
 
 Output created from a branch deployment - such as a database, table, etc. - won't be automatically removed from storage once a branch is merged or closed. Refer to the [Best practices section](#best-practices) for info on how to handle this.
@@ -70,18 +57,11 @@ When a Branch Deployment is deployed, it compares the asset definitions in the b
 
 ---
 
-## Managing Branch Deployments
+## Getting started
 
-- [Setting up Branch Deployments](#setting-up-branch-deployments)
-- [Accessing a branch deployment](#accessing-a-branch-deployment)
+Branch Deployments can be used with any git or CI provider. If using [Serverless](/dagster-plus/deployment/serverless), the process will be automated for you as part of adding a code location using the Dagster+ GitHub or Gitlab apps.
 
-### Setting up Branch Deployments
-
-There are currently two ways to set up Branch Deployments for Dagster+. In the table below:
-
-- **Platform** - The name of the git/CI platform, which is also a link to a setup guide
-- **How it works** - Summary of how Branch Deployments work with the platform
-- **May be a good fit if...** - A high-level summary of when the platform may be a good fit
+There are currently three ways to set up Branch Deployments for Dagster+, which are outlined below.
 
 <table
   className="table"
@@ -93,23 +73,57 @@ There are currently two ways to set up Branch Deployments for Dagster+. In the t
     <tr>
       <th
         style={{
-          width: "25%",
+          width: "15%",
+        }}
+      ></th>
+      <th
+        style={{
+          width: "28%",
         }}
       >
-        Platform
+        GitHub
       </th>
-      <th>How it works</th>
-      <th>May be a good fit if...</th>
+      <th
+        style={{
+          width: "28%",
+        }}
+      >
+        Gitlab
+      </th>
+      <th>Other git/CI platform</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td>
-        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github">
-          GitHub
-        </a>
+        <strong>How it works</strong>
       </td>
-      <td>GitHub Actions</td>
+      <td>
+        GitHub Actions (
+        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github">
+          see guide
+        </a>
+        )
+      </td>
+      <td>
+        Gitlab CI/CD (
+        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab">
+          see guide
+        </a>
+        )
+      </td>
+      <td>
+        dagster-cloud CLI (
+        <a href="/dagster-plus/managing-deployments/dagster-plus-cli">
+          see guide
+        </a>
+        )
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>May be a good fit if...</strong>
+      </td>
       <td>
         <ul
           style={{
@@ -126,14 +140,6 @@ There are currently two ways to set up Branch Deployments for Dagster+. In the t
           <li>You want Dagster to fully automate Branch Deployments</li>
         </ul>
       </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab">
-          Gitlab
-        </a>
-      </td>
-      <td>Gitlab CI/CD</td>
       <td>
         <ul
           style={{
@@ -149,18 +155,6 @@ There are currently two ways to set up Branch Deployments for Dagster+. In the t
           </li>
           <li>You want Dagster to fully automate Branch Deployments</li>
         </ul>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments">
-          Other git/CI platform
-        </a>
-      </td>
-      <td>
-        <a href="/dagster-plus/managing-deployments/dagster-plus-cli">
-          dagster-cloud CLI
-        </a>
       </td>
       <td>
         <ul
@@ -178,6 +172,47 @@ There are currently two ways to set up Branch Deployments for Dagster+. In the t
           <li>You use an alternate CI platform</li>
           <li>You want full control over Branch Deployment configuration</li>
         </ul>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Serverless setup</strong>
+      </td>
+      <td>
+        Not required if the Dagster+ GitHub app is used to{" "}
+        <a href="/dagster-plus/managing-deployments/code-locations">
+          create a code location
+        </a>
+      </td>
+      <td>
+        Not required if the Dagster+ Gitlab app is used to{" "}
+        <a href="/dagster-plus/managing-deployments/code-locations">
+          create a code location
+        </a>
+      </td>
+      <td>TODO</td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Hybrid setup</strong>
+      </td>
+      <td>
+        Required;{" "}
+        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-github">
+          see guide
+        </a>
+      </td>
+      <td>
+        Required;{" "}
+        <a href="/dagster-plus/managing-deployments/branch-deployments/using-branch-deployments-with-gitlab">
+          see guide
+        </a>
+      </td>
+      <td>
+        Required;{" "}
+        <a href="/dagster-plus/managing-deployments/dagster-plus-cli">
+          see guide
+        </a>
       </td>
     </tr>
   </tbody>
