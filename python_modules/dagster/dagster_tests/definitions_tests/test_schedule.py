@@ -130,10 +130,8 @@ def test_coerce_graph_def_to_job():
     def bar():
         foo()
 
-    # Skipping this assertion until we can figure out what is causing warning non-determinism in
-    # pytest
-    # with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
-    my_schedule = ScheduleDefinition(cron_schedule="* * * * *", job=bar)
+    with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
+        my_schedule = ScheduleDefinition(cron_schedule="* * * * *", job=bar)
 
     assert isinstance(my_schedule.job, JobDefinition)
     assert my_schedule.job.name == "bar"
