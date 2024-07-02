@@ -18,7 +18,7 @@ from dagster._core.definitions.auto_materialize_policy import AutoMaterializePol
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 get_unique_asset_identifier = lambda asset: (
-    asset.op.name if isinstance(asset, AssetsDefinition) else asset.key
+    asset.node_def.name if isinstance(asset, AssetsDefinition) else asset.key
 )
 
 
@@ -90,12 +90,12 @@ def test_load_assets_from_package_name():
     from . import asset_package
 
     assets_defs = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs) == 10
+    assert len(assets_defs) == 11
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
     assets_defs_2 = load_assets_from_package_name(asset_package.__name__)
-    assert len(assets_defs_2) == 10
+    assert len(assets_defs_2) == 11
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_defs]
 
@@ -106,12 +106,12 @@ def test_load_assets_from_package_module():
     from . import asset_package
 
     assets_1 = load_assets_from_package_module(asset_package)
-    assert len(assets_1) == 10
+    assert len(assets_1) == 11
 
     assets_1 = [get_unique_asset_identifier(asset) for asset in assets_1]
 
     assets_2 = load_assets_from_package_module(asset_package)
-    assert len(assets_2) == 10
+    assert len(assets_2) == 11
 
     assets_2 = [get_unique_asset_identifier(asset) for asset in assets_2]
 

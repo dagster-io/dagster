@@ -50,7 +50,7 @@ def test_asset_code_origins() -> None:
             for key in asset.keys:
                 # `chuck_berry` is the only asset with source code metadata manually
                 # attached to it
-                if asset.op.name == "chuck_berry":
+                if asset.node_def.name == "chuck_berry":
                     assert "dagster/code_references" in asset.metadata_by_key[key]
                 else:
                     assert "dagster/code_references" not in asset.metadata_by_key[key]
@@ -59,7 +59,11 @@ def test_asset_code_origins() -> None:
 
     for asset in collection_with_source_metadata:
         if isinstance(asset, AssetsDefinition):
-            op_name = asset.op.name
+            op_name = asset.node_def.name
+
+            if op_name == "graph_backed_asset":
+                continue
+
             assert op_name in EXPECTED_ORIGINS, f"Missing expected origin for op {op_name}"
 
             expected_file_path, expected_line_number = EXPECTED_ORIGINS[op_name].split(":")
@@ -113,7 +117,10 @@ def test_asset_code_origins_source_control() -> None:
             for key in asset.keys:
                 # `chuck_berry` is the only asset with source code metadata manually
                 # attached to it
-                if asset.op.name == "chuck_berry":
+
+                if asset.node_def.name == "graph_backed_asset":
+                    continue
+                elif asset.node_def.name == "chuck_berry":
                     assert "dagster/code_references" in asset.specs_by_key[key].metadata
                 else:
                     assert "dagster/code_references" not in asset.specs_by_key[key].metadata
@@ -131,7 +138,10 @@ def test_asset_code_origins_source_control() -> None:
 
     for asset in collection_with_source_control_metadata:
         if isinstance(asset, AssetsDefinition):
-            op_name = asset.op.name
+            op_name = asset.node_def.name
+            if op_name == "graph_backed_asset":
+                continue
+
             assert op_name in EXPECTED_ORIGINS, f"Missing expected origin for op {op_name}"
 
             expected_file_path, expected_line_number = EXPECTED_ORIGINS[op_name].split(":")
@@ -169,7 +179,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
             for key in asset.keys:
                 # `chuck_berry` is the only asset with source code metadata manually
                 # attached to it
-                if asset.op.name == "chuck_berry":
+                if asset.node_def.name == "chuck_berry":
                     assert "dagster/code_references" in asset.metadata_by_key[key]
                 else:
                     assert "dagster/code_references" not in asset.metadata_by_key[key]
@@ -193,7 +203,10 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
 
     for asset in collection_with_source_control_metadata:
         if isinstance(asset, AssetsDefinition):
-            op_name = asset.op.name
+            op_name = asset.node_def.name
+            if op_name == "graph_backed_asset":
+                continue
+
             assert op_name in EXPECTED_ORIGINS, f"Missing expected origin for op {op_name}"
 
             expected_file_path, expected_line_number = EXPECTED_ORIGINS[op_name].split(":")
