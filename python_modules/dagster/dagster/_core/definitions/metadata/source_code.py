@@ -110,7 +110,7 @@ def _with_code_source_single_definition(
         )
     elif isinstance(assets_def.node_def, GraphDefinition):
         # todo - properly handle graph-backed asset code source
-        base_fn = assets_def.node_def.underlying_fn
+        base_fn = assets_def.node_def.composition_fn
         if not base_fn:
             return assets_def
     else:
