@@ -40,8 +40,7 @@ from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
 from dagster._seven import JSONDecodeError
-from dagster._time import parse_time_string
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp, parse_time_string
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.warnings import normalize_renamed_param
 
@@ -712,7 +711,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                     else -1
                 )
                 record_timestamp = (
-                    utc_datetime_from_timestamp(most_recent_event_records[0].timestamp).isoformat()
+                    datetime_from_timestamp(most_recent_event_records[0].timestamp).isoformat()
                     if len(most_recent_event_records) == 1
                     else None
                 )
@@ -785,7 +784,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             for event_record in event_records:
                 event_log_entry = event_record.event_log_entry
                 storage_id = event_record.storage_id
-                record_timestamp = utc_datetime_from_timestamp(event_record.timestamp).isoformat()
+                record_timestamp = datetime_from_timestamp(event_record.timestamp).isoformat()
 
                 # skip if we couldn't find the right run
                 if event_log_entry.run_id not in run_records:

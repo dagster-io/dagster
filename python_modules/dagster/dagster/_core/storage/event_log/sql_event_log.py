@@ -70,12 +70,8 @@ from dagster._core.storage.sqlalchemy_compat import (
 )
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.errors import DeserializationError
-from dagster._utils import (
-    PrintFn,
-    datetime_as_float,
-    utc_datetime_from_naive,
-    utc_datetime_from_timestamp,
-)
+from dagster._time import datetime_from_timestamp, utc_datetime_from_naive
+from dagster._utils import PrintFn, datetime_as_float
 from dagster._utils.concurrency import (
     ClaimedSlotInfo,
     ConcurrencyClaimStatus,
@@ -300,9 +296,7 @@ class SqlEventLogStorage(EventLogStorage):
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
         elif dagster_event.is_asset_materialization_planned:
@@ -315,18 +309,14 @@ class SqlEventLogStorage(EventLogStorage):
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
         elif dagster_event.is_asset_observation:
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
 
@@ -1502,7 +1492,7 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_time = materialization_times.get(asset_key)
                 if not materialization_time or utc_datetime_from_naive(
                     materialization_time
-                ) < utc_datetime_from_timestamp(wiped_timestamp):
+                ) < datetime_from_timestamp(wiped_timestamp):
                     # remove rows that have not been materialized since being wiped
                     row_by_asset_key.pop(asset_key)
 
@@ -1768,7 +1758,7 @@ class SqlEventLogStorage(EventLogStorage):
         if self.has_asset_key_index_cols():
             values.update(
                 dict(
-                    wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
+                    wipe_timestamp=datetime_from_timestamp(wipe_timestamp),
                 )
             )
         if self.can_read_asset_status_cache():

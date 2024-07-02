@@ -74,6 +74,10 @@ def datetime_from_timestamp(timestamp: float, tz: Union[str, tzinfo] = timezone.
     return datetime.fromtimestamp(timestamp, tz=tzinfo)
 
 
+def utc_datetime_from_naive(dt: datetime) -> datetime:
+    return dt.replace(tzinfo=timezone.utc)
+
+
 def add_absolute_time(
     dt: datetime,
     *,

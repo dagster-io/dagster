@@ -64,7 +64,8 @@ from dagster._core.storage.tags import (
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._seven import JSONDecodeError
-from dagster._utils import PrintFn, utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
+from dagster._utils import PrintFn
 from dagster._utils.merger import merge_dicts
 
 from ..dagster_run import (
@@ -796,7 +797,7 @@ class SqlRunStorage(RunStorage):
             try:
                 conn.execute(
                     DaemonHeartbeatsTable.insert().values(
-                        timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                        timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_type=daemon_heartbeat.daemon_type,
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_value(daemon_heartbeat),
@@ -807,7 +808,7 @@ class SqlRunStorage(RunStorage):
                     DaemonHeartbeatsTable.update()
                     .where(DaemonHeartbeatsTable.c.daemon_type == daemon_heartbeat.daemon_type)
                     .values(
-                        timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                        timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                         daemon_id=daemon_heartbeat.daemon_id,
                         body=serialize_value(daemon_heartbeat),
                     )
@@ -867,7 +868,7 @@ class SqlRunStorage(RunStorage):
         values: Dict[str, Any] = dict(
             key=partition_backfill.backfill_id,
             status=partition_backfill.status.value,
-            timestamp=utc_datetime_from_timestamp(partition_backfill.backfill_timestamp),
+            timestamp=datetime_from_timestamp(partition_backfill.backfill_timestamp),
             body=serialize_value(cast(NamedTuple, partition_backfill)),
         )
 

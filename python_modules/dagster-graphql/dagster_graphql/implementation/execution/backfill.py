@@ -16,7 +16,7 @@ from dagster._core.execution.job_backfill import submit_backfill_runs
 from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.permissions import Permissions
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..utils import (
@@ -218,7 +218,7 @@ def create_and_launch_partition_backfill(
             dynamic_partitions_store=CachingInstanceQueryer(
                 graphene_info.context.instance,
                 asset_graph,
-                utc_datetime_from_timestamp(backfill_timestamp),
+                datetime_from_timestamp(backfill_timestamp),
             ),
             all_partitions=backfill_params.get("allPartitions", False),
             title=backfill_params.get("title"),
@@ -253,7 +253,7 @@ def create_and_launch_partition_backfill(
             dynamic_partitions_store=CachingInstanceQueryer(
                 graphene_info.context.instance,
                 asset_graph,
-                utc_datetime_from_timestamp(backfill_timestamp),
+                datetime_from_timestamp(backfill_timestamp),
             ),
             partitions_by_assets=partitions_by_assets,
             title=backfill_params.get("title"),
