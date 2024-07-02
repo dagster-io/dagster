@@ -73,7 +73,6 @@ def create_daemon_grpc_server_registry(
 ) -> GrpcServerRegistry:
     return GrpcServerRegistry(
         instance_ref=instance.get_ref(),
-        reload_interval=0,  # refresh_workspace call handles the reload
         heartbeat_ttl=DAEMON_GRPC_SERVER_HEARTBEAT_TTL,
         startup_timeout=instance.code_server_process_startup_timeout,
         log_level=code_server_log_level,

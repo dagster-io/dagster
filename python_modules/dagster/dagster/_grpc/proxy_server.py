@@ -74,7 +74,6 @@ class DagsterProxyApiServicer(DagsterApiServicer):
         self._grpc_server_registry = self._exit_stack.enter_context(
             GrpcServerRegistry(
                 instance_ref=self._instance_ref,
-                reload_interval=0,
                 heartbeat_ttl=30,
                 startup_timeout=startup_timeout,
                 log_level=self._log_level,
