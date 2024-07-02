@@ -80,8 +80,8 @@ def test_coerce_graph_def_to_job():
 
     # Skipping this assertion until we can figure out what is causing warning non-determinism in
     # pytest
-    # with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
-    my_sensor = SensorDefinition(job=bar, evaluation_fn=lambda _: ...)
+    with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
+        my_sensor = SensorDefinition(job=bar, evaluation_fn=lambda _: ...)
 
     assert isinstance(my_sensor.job, JobDefinition)
     assert my_sensor.job.name == "bar"
