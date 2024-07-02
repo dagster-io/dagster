@@ -208,7 +208,6 @@ export const InsightsBarChart = (props: Props) => {
                 day: 'numeric',
                 hour: 'numeric',
                 minute: 'numeric',
-                timeZone: 'UTC',
               });
             },
           },
