@@ -515,7 +515,6 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             self._grpc_server_registry = self._stack.enter_context(
                 GrpcServerRegistry(
                     instance_ref=self._instance.get_ref(),
-                    reload_interval=0,
                     heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
                     startup_timeout=instance.code_server_process_startup_timeout,
                     log_level=code_server_log_level,

@@ -267,7 +267,6 @@ class ManagedGrpcPythonEnvCodeLocationOrigin(
 
         with GrpcServerRegistry(
             instance_ref=instance.get_ref(),
-            reload_interval=0,
             heartbeat_ttl=WEBSERVER_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=(
                 instance.code_server_process_startup_timeout
