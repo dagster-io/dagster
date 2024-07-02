@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   postgresql:
     image: postgres:16
@@ -11,7 +9,7 @@ services:
     networks:
       - dagster-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U username -d dagster" ]
+      test: ["CMD-SHELL", "pg_isready -U username -d dagster"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -136,7 +134,13 @@ services:
 
   flower:
     image: mher/flower:latest
-    command: ["celery", '--broker=redis://:password@redis:6379/0', 'flower', '--port=5555' ]
+    command:
+      [
+        "celery",
+        "--broker=redis://:password@redis:6379/0",
+        "flower",
+        "--port=5555",
+      ]
     expose:
       - 5555
     ports:

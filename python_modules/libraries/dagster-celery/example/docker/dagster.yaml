@@ -40,6 +40,5 @@ run_monitoring:
   cancel_timeout_seconds: 60
   poll_interval_seconds: 30
 
-
 telemetry:
   enabled: false

@@ -40,7 +40,7 @@ def instance(tempdir):
 
 
 @pytest.fixture(scope="function")
-def workspace_process_context(instance) -> WorkspaceProcessContext:
+def workspace_process_context(instance) -> Iterator[WorkspaceProcessContext]:
     with WorkspaceProcessContext(
         instance,
         PythonFileTarget(
@@ -56,7 +56,7 @@ def workspace_process_context(instance) -> WorkspaceProcessContext:
 @pytest.fixture(scope="function")
 def workspace(
     instance, workspace_process_context: WorkspaceProcessContext
-) -> WorkspaceRequestContext:
+) -> Iterator[WorkspaceRequestContext]:
     yield workspace_process_context.create_request_context()
 
 
