@@ -5,6 +5,7 @@ import {useContext} from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {__resetForJest} from '../../search/useIndexedDBCachedQuery';
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {
   HIDDEN_REPO_KEYS,
   WorkspaceContext,
@@ -27,18 +28,13 @@ describe('Repository options', () => {
   const locationOne = 'ipsum';
   const repoOne = 'lorem';
 
-  let nativeGBRC: any;
-
   beforeEach(() => {
     window.localStorage.clear();
-    nativeGBRC = window.Element.prototype.getBoundingClientRect;
-    window.Element.prototype.getBoundingClientRect = jest
-      .fn()
-      .mockReturnValue({height: 400, width: 400});
+    mockViewportClientRect();
   });
 
   afterEach(() => {
-    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+    restoreViewportClientRect();
     window.localStorage.clear();
     __resetForJest();
     jest.resetModules();

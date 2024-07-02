@@ -11,6 +11,7 @@ import {
   buildRunTagKeys,
   buildWorkspaceLocationEntry,
 } from '../../graphql/types';
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {calculateTimeRanges} from '../../ui/Filters/useTimeRangeFilter';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
@@ -65,17 +66,12 @@ const backfillRunTagsValuesMock = buildRunTagValuesQueryMockedResponse(DagsterTa
   'value2',
 ]);
 
-let nativeGBRC: any;
-
 beforeAll(() => {
-  nativeGBRC = window.Element.prototype.getBoundingClientRect;
-  window.Element.prototype.getBoundingClientRect = jest
-    .fn()
-    .mockReturnValue({height: 400, width: 400});
+  mockViewportClientRect();
 });
 
 afterAll(() => {
-  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  restoreViewportClientRect();
 });
 
 describe('useTagDataFilterValues', () => {
