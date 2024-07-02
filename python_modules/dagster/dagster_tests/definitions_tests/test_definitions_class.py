@@ -901,7 +901,6 @@ def test_get_all_asset_specs():
     assert asset_specs_by_key[AssetKey("asset6")] == AssetSpec("asset6", group_name="blag")
 
 
-@pytest.mark.skip(reason="Failing BK")
 def test_invalid_partitions_subclass():
     class CustomPartitionsDefinition(PartitionsDefinition):
         def get_partition_keys(
