@@ -251,6 +251,7 @@ def project_scaffold_command(
         typer.Option(
             ...,
             "--use-dbt-project",
+            "--use-experimental-dbt-project",
             "--use-dbt-project-package-data-dir",
             help="Controls whether `DbtProject` is used.",
             is_flag=True,
