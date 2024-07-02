@@ -34,7 +34,7 @@ import {
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
-export const LOCATION_WORKSPACE_QUERY_VERSION = 2;
+export const LOCATION_WORKSPACE_QUERY_VERSION = 3;
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
 

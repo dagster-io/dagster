@@ -170,11 +170,15 @@ const SINGLE_JOB_QUERY = gql`
         }
         schedules {
           id
-          ...ScheduleSwitchFragment
+          scheduleState {
+            ...ScheduleSwitchFragment
+          }
         }
         sensors {
           id
-          ...SensorSwitchFragment
+          sensorState {
+            ...SensorSwitchFragment
+          }
         }
       }
     }

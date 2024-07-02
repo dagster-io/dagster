@@ -5,7 +5,6 @@ import {StatusAndMessage} from './DeploymentStatusType';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstanceWarningQuery, InstanceWarningQueryVariables} from './types/useDaemonStatus.types';
 import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
-import {InstigationStatus} from '../graphql/types';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
@@ -28,15 +27,13 @@ export const useDaemonStatus = (skip = false): StatusAndMessage | null => {
 
     // Find any schedules or sensors in the repo list.
     for (const repo of options) {
-      if (repo.repository.sensors.some((s) => s.sensorState.status === InstigationStatus.RUNNING)) {
+      if (repo.repository.sensors.length > 0) {
         anySensors = true;
         break;
       }
     }
     for (const repo of options) {
-      if (
-        repo.repository.schedules.some((s) => s.scheduleState.status === InstigationStatus.RUNNING)
-      ) {
+      if (repo.repository.schedules.length > 0) {
         anySchedules = true;
         break;
       }

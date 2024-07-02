@@ -45,10 +45,6 @@ export type AssetViewDefinitionQuery = {
           targetingInstigators: Array<
             | {
                 __typename: 'Schedule';
-                id: string;
-                name: string;
-                cronSchedule: string;
-                executionTimezone: string | null;
                 scheduleState: {
                   __typename: 'InstigationState';
                   id: string;
@@ -58,10 +54,6 @@ export type AssetViewDefinitionQuery = {
               }
             | {
                 __typename: 'Sensor';
-                id: string;
-                jobOriginId: string;
-                name: string;
-                sensorType: Types.SensorType;
                 sensorState: {
                   __typename: 'InstigationState';
                   id: string;
@@ -16317,10 +16309,6 @@ export type AssetViewDefinitionNodeFragment = {
   targetingInstigators: Array<
     | {
         __typename: 'Schedule';
-        id: string;
-        name: string;
-        cronSchedule: string;
-        executionTimezone: string | null;
         scheduleState: {
           __typename: 'InstigationState';
           id: string;
@@ -16330,10 +16318,6 @@ export type AssetViewDefinitionNodeFragment = {
       }
     | {
         __typename: 'Sensor';
-        id: string;
-        jobOriginId: string;
-        name: string;
-        sensorType: Types.SensorType;
         sensorState: {
           __typename: 'InstigationState';
           id: string;

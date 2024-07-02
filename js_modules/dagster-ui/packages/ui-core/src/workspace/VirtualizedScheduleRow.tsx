@@ -315,34 +315,25 @@ const ScheduleStringContainer = styled.div`
 `;
 
 const SINGLE_SCHEDULE_QUERY = gql`
-  query SingleScheduleQuery($selector: ScheduleSelector!) {
-    scheduleOrError(scheduleSelector: $selector) {
-      ... on Schedule {
+  query SingleScheduleStateQuery($id: String!) {
+    instigationStateOrError(id: $id) {
+      ... on InstigationState {
         id
-        name
-        pipelineName
-        description
-        scheduleState {
+        runningCount
+        ticks(limit: 1) {
           id
-          runningCount
-          ticks(limit: 1) {
-            id
-            ...TickTagFragment
-          }
-          runs(limit: 1) {
-            id
-            ...RunTimeFragment
-          }
-          nextTick {
-            timestamp
-          }
+          ...TickTagFragment
         }
-        partitionSet {
+        runs(limit: 1) {
           id
-          name
+          ...RunTimeFragment
         }
-        ...ScheduleSwitchFragment
+        nextTick {
+          timestamp
+        }
       }
+
+      ...ScheduleSwitchFragment
     }
   }
 

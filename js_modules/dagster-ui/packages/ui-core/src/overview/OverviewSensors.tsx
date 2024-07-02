@@ -1,24 +1,15 @@
-import {gql, useQuery} from '@apollo/client';
 import {Box, Colors, NonIdealState, Spinner, TextInput, Tooltip} from '@dagster-io/ui-components';
 import {useContext, useMemo} from 'react';
 
-import {BASIC_INSTIGATION_STATE_FRAGMENT} from './BasicInstigationStateFragment';
 import {OverviewSensorTable} from './OverviewSensorsTable';
 import {sortRepoBuckets} from './sortRepoBuckets';
-import {OverviewSensorsQuery, OverviewSensorsQueryVariables} from './types/OverviewSensors.types';
+import {OverviewSensorsQuery} from './types/OverviewSensors.types';
 import {visibleRepoKeys} from './visibleRepoKeys';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {
-  FIFTEEN_SECONDS,
-  QueryRefreshCountdown,
-  useQueryRefreshAtInterval,
-} from '../app/QueryRefresh';
+import {QueryRefreshCountdown} from '../app/QueryRefresh';
 import {SensorType} from '../graphql/types';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {filterPermissionedInstigationState} from '../instigation/filterPermissionedInstigationState';
-import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {makeSensorKey} from '../sensors/makeSensorKey';
@@ -59,7 +50,7 @@ export const OverviewSensors = () => {
     allRepos,
     visibleRepos,
     loading: workspaceLoading,
-    data: cachedData,
+    data: workspaceData,
   } = useContext(WorkspaceContext);
 
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
@@ -95,34 +86,16 @@ export const OverviewSensors = () => {
   );
   const {button: filterButton, activeFiltersJsx} = useFilters({filters});
 
-  const queryResultOverview = useQuery<OverviewSensorsQuery, OverviewSensorsQueryVariables>(
-    OVERVIEW_SENSORS_QUERY,
-    {
-      fetchPolicy: 'network-only',
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-  const {data, loading: queryLoading} = queryResultOverview;
-
-  useBlockTraceOnQueryResult(queryResultOverview, 'OverviewSensorsQuery');
-
-  const refreshState = useQueryRefreshAtInterval(queryResultOverview, FIFTEEN_SECONDS);
-
   const repoBuckets = useMemo(() => {
-    const cachedEntries = Object.values(cachedData).filter(
+    const workspaceEntries = Object.values(workspaceData).filter(
       (location): location is Extract<typeof location, {__typename: 'WorkspaceLocationEntry'}> =>
         location.__typename === 'WorkspaceLocationEntry',
     );
-    const workspaceOrError = data?.workspaceOrError;
-    const entries =
-      workspaceOrError?.__typename === 'Workspace'
-        ? workspaceOrError.locationEntries
-        : cachedEntries;
     const visibleKeys = visibleRepoKeys(visibleRepos);
-    return buildBuckets(entries).filter(({repoAddress}) =>
+    return buildBuckets(workspaceEntries).filter(({repoAddress}) =>
       visibleKeys.has(repoAddressAsHumanString(repoAddress)),
     );
-  }, [data, cachedData, visibleRepos]);
+  }, [workspaceData, visibleRepos]);
 
   const {state: runningState} = runningStateFilter;
 
@@ -388,45 +361,45 @@ const buildBuckets = (
   return sortRepoBuckets(buckets);
 };
 
-const OVERVIEW_SENSORS_QUERY = gql`
-  query OverviewSensorsQuery {
-    workspaceOrError {
-      ... on Workspace {
-        id
-        locationEntries {
-          id
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              name
-              repositories {
-                id
-                name
-                sensors {
-                  id
-                  name
-                  description
-                  sensorType
-                  sensorState {
-                    id
-                    ...BasicInstigationStateFragment
-                  }
-                }
-              }
-            }
-            ...PythonErrorFragment
-          }
-        }
-      }
-      ...PythonErrorFragment
-    }
-    instance {
-      id
-      ...InstanceHealthFragment
-    }
-  }
+// const OVERVIEW_SENSORS_QUERY = gql`
+//   query OverviewSensorsQuery {
+//     workspaceOrError {
+//       ... on Workspace {
+//         id
+//         locationEntries {
+//           id
+//           locationOrLoadError {
+//             ... on RepositoryLocation {
+//               id
+//               name
+//               repositories {
+//                 id
+//                 name
+//                 sensors {
+//                   id
+//                   name
+//                   description
+//                   sensorType
+//                   sensorState {
+//                     id
+//                     ...BasicInstigationStateFragment
+//                   }
+//                 }
+//               }
+//             }
+//             ...PythonErrorFragment
+//           }
+//         }
+//       }
+//       ...PythonErrorFragment
+//     }
+//     instance {
+//       id
+//       ...InstanceHealthFragment
+//     }
+//   }
 
-  ${BASIC_INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-  ${INSTANCE_HEALTH_FRAGMENT}
-`;
+//   ${BASIC_INSTIGATION_STATE_FRAGMENT}
+//   ${PYTHON_ERROR_FRAGMENT}
+//   ${INSTANCE_HEALTH_FRAGMENT}
+// `;

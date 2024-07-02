@@ -250,33 +250,24 @@ const parseRunStatusSensorCursor = (cursor: string | null) => {
 };
 
 export const SENSOR_SWITCH_FRAGMENT = gql`
-  fragment SensorSwitchFragment on Sensor {
+  fragment SensorSwitchFragment on InstigationState {
     id
-    jobOriginId
-    name
-    sensorState {
-      id
-      selectorId
-      status
-      typeSpecificData {
-        ... on SensorData {
-          lastCursor
-        }
+    selectorId
+    status
+    typeSpecificData {
+      ... on SensorData {
+        lastCursor
       }
     }
-    sensorType
   }
 `;
 
 const SENSOR_STATE_QUERY = gql`
-  query SensorStateQuery($sensorSelector: SensorSelector!) {
-    sensorOrError(sensorSelector: $sensorSelector) {
-      ... on Sensor {
+  query SensorStateQuery($id: String!) {
+    instigationStateOrError(id: $id) {
+      ... on InstigationState {
         id
-        sensorState {
-          id
-          status
-        }
+        status
       }
     }
   }

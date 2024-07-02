@@ -323,39 +323,25 @@ export const SENSOR_TYPE_META: Record<
 };
 
 const SINGLE_SENSOR_QUERY = gql`
-  query SingleSensorQuery($selector: SensorSelector!) {
-    sensorOrError(sensorSelector: $selector) {
-      ... on Sensor {
+  query SingleSensorStateQuery($id: String!) {
+    instigationStateOrError(id: $id) {
+      __typename
+      ... on InstigationState {
         id
-        description
-        name
-        targets {
-          pipelineName
-        }
-        metadata {
-          assetKeys {
-            path
-          }
-        }
-        minIntervalSeconds
-        description
-        sensorState {
+        runningCount
+        ticks(limit: 1) {
           id
-          runningCount
-          ticks(limit: 1) {
-            id
-            ...TickTagFragment
-          }
-          runs(limit: 1) {
-            id
-            ...RunTimeFragment
-          }
-          nextTick {
-            timestamp
-          }
+          ...TickTagFragment
         }
-        ...SensorSwitchFragment
+        runs(limit: 1) {
+          id
+          ...RunTimeFragment
+        }
+        nextTick {
+          timestamp
+        }
       }
+      ...SensorSwitchFragment
     }
   }
 

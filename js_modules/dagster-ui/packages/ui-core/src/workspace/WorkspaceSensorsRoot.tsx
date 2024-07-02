@@ -227,26 +227,26 @@ export const WorkspaceSensorsRoot = ({repoAddress}: {repoAddress: RepoAddress}) 
   );
 };
 
-const WORKSPACE_SENSORS_QUERY = gql`
-  query WorkspaceSensorsQuery($selector: RepositorySelector!) {
-    repositoryOrError(repositorySelector: $selector) {
-      ... on Repository {
-        id
-        name
-        sensors {
-          id
-          name
-          description
-          sensorState {
-            id
-            ...BasicInstigationStateFragment
-          }
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
+// const WORKSPACE_SENSORS_QUERY = gql`
+//   query WorkspaceSensorsQuery($selector: RepositorySelector!) {
+//     repositoryOrError(repositorySelector: $selector) {
+//       ... on Repository {
+//         id
+//         name
+//         sensors {
+//           id
+//           name
+//           description
+//           sensorState {
+//             id
+//             ...BasicInstigationStateFragment
+//           }
+//         }
+//       }
+//       ...PythonErrorFragment
+//     }
+//   }
 
-  ${BASIC_INSTIGATION_STATE_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;
+//   ${BASIC_INSTIGATION_STATE_FRAGMENT}
+//   ${PYTHON_ERROR_FRAGMENT}
+// `;
