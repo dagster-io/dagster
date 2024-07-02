@@ -472,11 +472,6 @@ def iterate_with_context(
         yield next_output
 
 
-def datetime_as_float(dt: datetime.datetime) -> float:
-    check.inst_param(dt, "dt", datetime.datetime)
-    return float((dt - EPOCH).total_seconds())
-
-
 T_GeneratedContext = TypeVar("T_GeneratedContext")
 
 
