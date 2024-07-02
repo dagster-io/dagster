@@ -211,7 +211,7 @@ def delete_pipeline_run(
 def get_chunk_size() -> int:
     return int(
         os.getenv(
-            "DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "10000")
+            "DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE", os.getenv("DAGIT_EVENT_LOAD_CHUNK_SIZE", "1000")
         )
     )
 
