@@ -72,8 +72,8 @@ export type LocationWorkspaceQuery = {
                   scheduleState: {
                     __typename: 'InstigationState';
                     id: string;
-                    selectorId: string;
                     status: Types.InstigationStatus;
+                    selectorId: string;
                     hasStartPermission: boolean;
                     hasStopPermission: boolean;
                   };
@@ -81,15 +81,14 @@ export type LocationWorkspaceQuery = {
                 sensors: Array<{
                   __typename: 'Sensor';
                   id: string;
-                  jobOriginId: string;
                   name: string;
                   sensorType: Types.SensorType;
                   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
                   sensorState: {
                     __typename: 'InstigationState';
                     id: string;
-                    selectorId: string;
                     status: Types.InstigationStatus;
+                    selectorId: string;
                     hasStartPermission: boolean;
                     hasStopPermission: boolean;
                     typeSpecificData:
@@ -183,8 +182,8 @@ export type WorkspaceLocationNodeFragment = {
             scheduleState: {
               __typename: 'InstigationState';
               id: string;
-              selectorId: string;
               status: Types.InstigationStatus;
+              selectorId: string;
               hasStartPermission: boolean;
               hasStopPermission: boolean;
             };
@@ -192,15 +191,14 @@ export type WorkspaceLocationNodeFragment = {
           sensors: Array<{
             __typename: 'Sensor';
             id: string;
-            jobOriginId: string;
             name: string;
             sensorType: Types.SensorType;
             targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
             sensorState: {
               __typename: 'InstigationState';
               id: string;
-              selectorId: string;
               status: Types.InstigationStatus;
+              selectorId: string;
               hasStartPermission: boolean;
               hasStopPermission: boolean;
               typeSpecificData:
@@ -275,8 +273,8 @@ export type WorkspaceLocationFragment = {
       scheduleState: {
         __typename: 'InstigationState';
         id: string;
-        selectorId: string;
         status: Types.InstigationStatus;
+        selectorId: string;
         hasStartPermission: boolean;
         hasStopPermission: boolean;
       };
@@ -284,15 +282,14 @@ export type WorkspaceLocationFragment = {
     sensors: Array<{
       __typename: 'Sensor';
       id: string;
-      jobOriginId: string;
       name: string;
       sensorType: Types.SensorType;
       targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
       sensorState: {
         __typename: 'InstigationState';
         id: string;
-        selectorId: string;
         status: Types.InstigationStatus;
+        selectorId: string;
         hasStartPermission: boolean;
         hasStopPermission: boolean;
         typeSpecificData:
@@ -348,8 +345,8 @@ export type WorkspaceRepositoryFragment = {
     scheduleState: {
       __typename: 'InstigationState';
       id: string;
-      selectorId: string;
       status: Types.InstigationStatus;
+      selectorId: string;
       hasStartPermission: boolean;
       hasStopPermission: boolean;
     };
@@ -357,15 +354,14 @@ export type WorkspaceRepositoryFragment = {
   sensors: Array<{
     __typename: 'Sensor';
     id: string;
-    jobOriginId: string;
     name: string;
     sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
     sensorState: {
       __typename: 'InstigationState';
       id: string;
-      selectorId: string;
       status: Types.InstigationStatus;
+      selectorId: string;
       hasStartPermission: boolean;
       hasStopPermission: boolean;
       typeSpecificData:
@@ -408,8 +404,8 @@ export type WorkspaceScheduleFragment = {
   scheduleState: {
     __typename: 'InstigationState';
     id: string;
-    selectorId: string;
     status: Types.InstigationStatus;
+    selectorId: string;
     hasStartPermission: boolean;
     hasStopPermission: boolean;
   };
@@ -418,15 +414,14 @@ export type WorkspaceScheduleFragment = {
 export type WorkspaceSensorFragment = {
   __typename: 'Sensor';
   id: string;
-  jobOriginId: string;
   name: string;
   sensorType: Types.SensorType;
   targets: Array<{__typename: 'Target'; mode: string; pipelineName: string}> | null;
   sensorState: {
     __typename: 'InstigationState';
     id: string;
-    selectorId: string;
     status: Types.InstigationStatus;
+    selectorId: string;
     hasStartPermission: boolean;
     hasStopPermission: boolean;
     typeSpecificData:

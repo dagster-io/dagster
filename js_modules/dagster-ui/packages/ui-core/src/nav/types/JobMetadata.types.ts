@@ -33,7 +33,6 @@ export type JobMetadataQuery = {
         sensors: Array<{
           __typename: 'Sensor';
           id: string;
-          jobOriginId: string;
           name: string;
           sensorType: Types.SensorType;
           targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
@@ -108,7 +107,6 @@ export type JobMetadataFragment = {
   sensors: Array<{
     __typename: 'Sensor';
     id: string;
-    jobOriginId: string;
     name: string;
     sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;

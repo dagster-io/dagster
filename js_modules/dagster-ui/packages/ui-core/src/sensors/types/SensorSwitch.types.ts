@@ -5,7 +5,6 @@ import * as Types from '../../graphql/types';
 export type SensorSwitchFragment = {
   __typename: 'Sensor';
   id: string;
-  jobOriginId: string;
   name: string;
   sensorType: Types.SensorType;
   sensorState: {

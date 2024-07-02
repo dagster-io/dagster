@@ -112,7 +112,6 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
       potentialTickTimestamps(startTimestamp: $ticksAfter, upperLimit: 3, lowerLimit: 3)
       scheduleState {
         id
-        selectorId
         ticks {
           id
           timestamp
@@ -137,7 +136,6 @@ query getScheduleState($scheduleSelector: ScheduleSelector!) {
       canReset
       scheduleState {
         id
-        selectorId
         status
         hasStartPermission
         hasStopPermission
@@ -174,10 +172,12 @@ mutation(
 
 STOP_SCHEDULES_QUERY = """
 mutation(
-  $scheduleOriginId: String!
-  $scheduleSelectorId: String!
+  $id: String
+  $scheduleOriginId: String
+  $scheduleSelectorId: String
 ) {
   stopRunningSchedule(
+    id: $id
     scheduleOriginId: $scheduleOriginId,
     scheduleSelectorId: $scheduleSelectorId
   ) {
@@ -213,7 +213,6 @@ mutation(
     ... on ScheduleStateResult {
       scheduleState {
         id
-        selectorId
         status
       }
     }
@@ -835,15 +834,13 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         schedule_id = start_result.data["startSchedule"]["scheduleState"]["id"]
-        schedule_selector_id = start_result.data["startSchedule"]["scheduleState"]["selectorId"]
 
         # Stop a single schedule
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SCHEDULES_QUERY,
             variables={
-                "scheduleOriginId": schedule_id,  # compat code handles using compound id as origin id
-                "scheduleSelectorId": schedule_selector_id,
+                "id": schedule_id,
             },
         )
         assert (
@@ -928,7 +925,6 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         schedule_id = result.data["scheduleOrError"]["scheduleState"]["id"]
-        schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
 
         assert result.data["scheduleOrError"]["defaultStatus"] == "RUNNING"
         assert result.data["scheduleOrError"]["canReset"] is False
@@ -954,8 +950,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             STOP_SCHEDULES_QUERY,
             variables={
-                "scheduleOriginId": schedule_id,  # compat code handles compound id passed as origin id
-                "scheduleSelectorId": schedule_selector_id,
+                "id": schedule_id,
             },
         )
         assert (
@@ -1043,14 +1038,12 @@ class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
         assert result.data["scheduleOrError"]["scheduleState"]["hasStopPermission"] is False
 
         schedule_id = result.data["scheduleOrError"]["scheduleState"]["id"]
-        schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
 
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SCHEDULES_QUERY,
             variables={
-                "scheduleOriginId": schedule_id,  # compat code handles compound id passed as origin id
-                "scheduleSelectorId": schedule_selector_id,
+                "id": schedule_id,
             },
         )
         assert stop_result.data["stopRunningSchedule"]["__typename"] == "UnauthorizedError"

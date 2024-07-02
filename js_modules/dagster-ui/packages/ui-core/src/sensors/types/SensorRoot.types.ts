@@ -22,7 +22,6 @@ export type SensorRootQuery = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
         description: string | null;
         minIntervalSeconds: number;

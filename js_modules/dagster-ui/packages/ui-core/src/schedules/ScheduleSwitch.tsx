@@ -32,7 +32,7 @@ interface Props {
 export const ScheduleSwitch = (props: Props) => {
   const {repoAddress, schedule, size = 'large', shouldFetchLatestState} = props;
   const {name, scheduleState} = schedule;
-  const {id, selectorId} = scheduleState;
+  const {id} = scheduleState;
 
   const {
     permissions: {canStartSchedule, canStopRunningSchedule},
@@ -68,7 +68,7 @@ export const ScheduleSwitch = (props: Props) => {
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId: id, scheduleSelectorId: selectorId},
+        variables: {id},
       });
     } else {
       startSchedule({

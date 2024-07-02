@@ -91,8 +91,7 @@ export const ScheduleStateChangeDialog = (props: Props) => {
   const stop = async (schedule: ScheduleInfo) => {
     const {scheduleName, scheduleState} = schedule;
     const variables = {
-      scheduleOriginId: scheduleState.id,
-      scheduleSelectorId: scheduleState.selectorId,
+      id: scheduleState.id,
     };
 
     const {data} = await stopSchedule({variables});
