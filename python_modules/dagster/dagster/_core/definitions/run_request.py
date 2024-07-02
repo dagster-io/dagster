@@ -1,7 +1,9 @@
+from abc import ABC
 from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     List,
     Mapping,
@@ -31,6 +33,7 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
@@ -111,8 +114,68 @@ class DeleteDynamicPartitionsRequest(
         )
 
 
+class IRunRequest(ABC):
+    @property
+    def requires_backfill_daemon(self) -> bool:
+        return False
+
+
+(
+    "_RunRequest",
+    [
+        ("asset_graph_subset", "AssetGraphSubset"),
+        ("tags", Mapping[str, str]),
+        ("title", Optional[str]),
+        ("dscription", PublicAttr[Optional[str]]),
+        ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
+    ],
+)
+
+
+@whitelist_for_serdes
+class MultiRunRequest(
+    IRunRequest,
+    NamedTuple(
+        "_RunRequest",
+        [
+            ("asset_graph_subset", "AssetGraphSubset"),
+            ("tags", Mapping[str, str]),
+            ("title", Optional[str]),
+            ("description", Optional[str]),
+        ],
+    ),
+):
+    def __new__(
+        cls,
+        asset_graph_subset: "AssetGraphSubset",
+        tags: Union[NormalizedTags, Optional[Mapping[str, Any]]] = None,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
+        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+
+        return super(MultiRunRequest, cls).__new__(
+            cls,
+            asset_graph_subset=check.inst_param(
+                asset_graph_subset, "asset_graph_subset", AssetGraphSubset
+            ),
+            tags=normalize_tags(tags).tags,
+            title=check.opt_str_param(title, "title"),
+            description=check.opt_str_param(description, "description"),
+        )
+
+    @property
+    def asset_selection(self) -> AbstractSet[AssetKey]:
+        return self.asset_graph_subset.asset_keys
+
+    @property
+    def requires_backfill_daemon(self) -> bool:
+        return True
+
+
 @whitelist_for_serdes
 class RunRequest(
+    IRunRequest,
     NamedTuple(
         "_RunRequest",
         [
@@ -125,7 +188,7 @@ class RunRequest(
             ("partition_key", PublicAttr[Optional[str]]),
             ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
         ],
-    )
+    ),
 ):
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
@@ -276,6 +339,20 @@ class RunRequest(
         else:
             return None
 
+    @classmethod
+    def from_asset_graph_subset(
+        cls,
+        asset_graph_subset: "AssetGraphSubset",
+        tags: Optional[Mapping[str, str]],
+        title: Optional[str],
+        description: Optional[str],
+    ) -> MultiRunRequest:
+        """Not the final version of this method. will choose a better user api."""
+        # This is where we could introspect on the asset_graph_subset and determine if it should be a backfill or a single run
+        return MultiRunRequest(
+            asset_graph_subset=asset_graph_subset, tags=tags, title=title, description=description
+        )
+
 
 def _check_valid_partition_key_after_dynamic_partitions_requests(
     partition_key: str,
@@ -388,7 +465,7 @@ class SensorResult(
     NamedTuple(
         "_SensorResult",
         [
-            ("run_requests", Optional[Sequence[RunRequest]]),
+            ("run_requests", Optional[Sequence[IRunRequest]]),
             ("skip_reason", Optional[SkipReason]),
             ("cursor", Optional[str]),
             (
@@ -424,12 +501,11 @@ class SensorResult(
             will persist on your behalf at the end of sensor evaluation. These events will be not
             be associated with any particular run, but will be queryable and viewable in the asset catalog.
 
-
     """
 
     def __new__(
         cls,
-        run_requests: Optional[Sequence[RunRequest]] = None,
+        run_requests: Optional[Sequence[IRunRequest]] = None,
         skip_reason: Optional[Union[str, SkipReason]] = None,
         cursor: Optional[str] = None,
         dynamic_partitions_requests: Optional[
@@ -451,7 +527,7 @@ class SensorResult(
 
         return super(SensorResult, cls).__new__(
             cls,
-            run_requests=check.opt_sequence_param(run_requests, "run_requests", RunRequest),
+            run_requests=check.opt_sequence_param(run_requests, "run_requests", IRunRequest),
             skip_reason=skip_reason,
             cursor=check.opt_str_param(cursor, "cursor"),
             dynamic_partitions_requests=check.opt_sequence_param(

@@ -57,6 +57,8 @@ from .run_request import (
     AddDynamicPartitionsRequest,
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
+    IRunRequest,
+    MultiRunRequest,
     RunRequest,
     SensorResult,
     SkipReason,
@@ -440,10 +442,10 @@ class SensorEvaluationContext:
 
 
 RawSensorEvaluationFunctionReturn = Union[
-    Iterator[Union[SkipReason, RunRequest, DagsterRunReaction, SensorResult]],
-    Sequence[RunRequest],
+    Iterator[Union[SkipReason, IRunRequest, DagsterRunReaction, SensorResult]],
+    Sequence[IRunRequest],
     SkipReason,
-    RunRequest,
+    IRunRequest,
     DagsterRunReaction,
     SensorResult,
     None,
@@ -451,7 +453,7 @@ RawSensorEvaluationFunctionReturn = Union[
 RawSensorEvaluationFunction: TypeAlias = Callable[..., RawSensorEvaluationFunctionReturn]
 
 SensorEvaluationFunction: TypeAlias = Callable[
-    ..., Sequence[Union[None, SensorResult, SkipReason, RunRequest]]
+    ..., Sequence[Union[None, SensorResult, SkipReason, IRunRequest]]
 ]
 
 
@@ -796,7 +798,7 @@ class SensorDefinition(IHasInternalInit):
         result = self._evaluation_fn(context)
 
         skip_message: Optional[str] = None
-        run_requests: List[RunRequest] = []
+        run_requests: List[IRunRequest] = []
         dagster_run_reactions: List[DagsterRunReaction] = []
         dynamic_partitions_requests: Optional[
             Sequence[Union[AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest]]
@@ -807,7 +809,10 @@ class SensorDefinition(IHasInternalInit):
         if not result or result == [None]:
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            item = check.inst(result[0], (SkipReason, RunRequest, DagsterRunReaction, SensorResult))
+            item = check.inst(
+                result[0],
+                (SkipReason, RunRequest, MultiRunRequest, DagsterRunReaction, SensorResult),
+            )
 
             if isinstance(item, SensorResult):
                 run_requests = list(item.run_requests) if item.run_requests else []
@@ -831,7 +836,7 @@ class SensorDefinition(IHasInternalInit):
 
                 asset_events = item.asset_events
 
-            elif isinstance(item, RunRequest):
+            elif isinstance(item, IRunRequest):
                 run_requests = [item]
             elif isinstance(item, SkipReason):
                 skip_message = item.skip_message if isinstance(item, SkipReason) else None
@@ -848,9 +853,9 @@ class SensorDefinition(IHasInternalInit):
                     " returned."
                 )
 
-            check.is_list(result, (SkipReason, RunRequest, DagsterRunReaction))
+            check.is_list(result, (SkipReason, IRunRequest, DagsterRunReaction))
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
-            run_requests = [item for item in result if isinstance(item, RunRequest)]
+            run_requests = [item for item in result if isinstance(item, IRunRequest)]
             dagster_run_reactions = [
                 item for item in result if isinstance(item, DagsterRunReaction)
             ]
@@ -870,14 +875,42 @@ class SensorDefinition(IHasInternalInit):
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
         _check_dynamic_partitions_requests(dynamic_partitions_requests)
-        resolved_run_requests = [
-            run_request.with_replaced_attrs(
-                tags=merge_dicts(run_request.tags, DagsterRun.tags_for_sensor(self)),
-            )
-            for run_request in self.resolve_run_requests(
-                run_requests, context, self._asset_selection, dynamic_partitions_requests
-            )
-        ]
+
+        run_requests_to_resolve = []
+        resolved_run_requests = []
+        for run_request in run_requests:
+            if run_request.requires_backfill_daemon:
+                asset_selection = check.not_none(
+                    self._asset_selection,
+                    "Can only yield RunRequests with asset_graph_subset for sensors with an asset_selection",
+                )
+                asset_keys = run_request.asset_graph_subset.asset_keys
+
+                unexpected_asset_keys = (
+                    AssetSelection.keys(*asset_keys) - asset_selection
+                ).resolve(check.not_none(context.repository_def).asset_graph)
+                if unexpected_asset_keys:
+                    raise DagsterInvalidSubsetError(
+                        "RunRequest includes asset keys that are not part of sensor's asset_selection:"
+                        f" {unexpected_asset_keys}"
+                    )
+                resolved_run_requests.append(run_request)
+            else:
+                run_requests_to_resolve.append(run_request)
+
+        resolved_run_requests.extend(
+            [
+                run_request.with_replaced_attrs(
+                    tags=merge_dicts(run_request.tags, DagsterRun.tags_for_sensor(self)),
+                )
+                for run_request in self.resolve_run_requests(
+                    run_requests_to_resolve,
+                    context,
+                    self._asset_selection,
+                    dynamic_partitions_requests,
+                )
+            ]
+        )
 
         return SensorExecutionData(
             resolved_run_requests,
@@ -1002,7 +1035,7 @@ class SensorExecutionData(
     NamedTuple(
         "_SensorExecutionData",
         [
-            ("run_requests", Optional[Sequence[RunRequest]]),
+            ("run_requests", Optional[Sequence[IRunRequest]]),
             ("skip_message", Optional[str]),
             ("cursor", Optional[str]),
             ("dagster_run_reactions", Optional[Sequence[DagsterRunReaction]]),
@@ -1024,7 +1057,7 @@ class SensorExecutionData(
 
     def __new__(
         cls,
-        run_requests: Optional[Sequence[RunRequest]] = None,
+        run_requests: Optional[Sequence[IRunRequest]] = None,
         skip_message: Optional[str] = None,
         cursor: Optional[str] = None,
         dagster_run_reactions: Optional[Sequence[DagsterRunReaction]] = None,
@@ -1036,7 +1069,7 @@ class SensorExecutionData(
             Sequence[Union[AssetMaterialization, AssetObservation, AssetCheckEvaluation]]
         ] = None,
     ):
-        check.opt_sequence_param(run_requests, "run_requests", RunRequest)
+        check.opt_sequence_param(run_requests, "run_requests", IRunRequest)
         check.opt_str_param(skip_message, "skip_message")
         check.opt_str_param(cursor, "cursor")
         check.opt_sequence_param(dagster_run_reactions, "dagster_run_reactions", DagsterRunReaction)
@@ -1051,9 +1084,7 @@ class SensorExecutionData(
             "asset_events",
             (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
-        check.invariant(
-            not (run_requests and skip_message), "Found both skip data and run request data"
-        )
+
         return super(SensorExecutionData, cls).__new__(
             cls,
             run_requests=run_requests,
@@ -1084,13 +1115,13 @@ def wrap_sensor_evaluation(
         raw_evaluation_result = fn(**context_param, **resource_args_populated)
 
         def check_returned_scalar(scalar):
-            if isinstance(scalar, (SkipReason, RunRequest, SensorResult)):
+            if isinstance(scalar, (SkipReason, RunRequest, SensorResult, MultiRunRequest)):
                 return scalar
             elif scalar is not None:
                 raise Exception(
                     f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason or "
-                    "RunRequest objects."
+                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason, "
+                    "RunRequest, or MultiRunRequest objects."
                 )
 
         if inspect.isgenerator(raw_evaluation_result):

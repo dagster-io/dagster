@@ -28,12 +28,14 @@ from dagster._core.definitions.run_request import (
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     InstigatorType,
+    MultiRunRequest,
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.definitions.utils import normalize_tags
 from dagster._core.errors import DagsterError
+from dagster._core.execution.backfill import PartitionBackfill
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.code_location import CodeLocation
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
@@ -50,6 +52,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._core.utils import make_new_backfill_id
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
@@ -662,16 +665,26 @@ def _evaluate_sensor(
 
         yield
     else:
-        yield from _handle_run_requests(
-            run_requests=sensor_runtime_data.run_requests,
-            cursor=sensor_runtime_data.cursor,
-            context=context,
-            instance=instance,
-            external_sensor=external_sensor,
-            workspace_process_context=workspace_process_context,
-            submit_threadpool_executor=submit_threadpool_executor,
-            sensor_debug_crash_flags=sensor_debug_crash_flags,
-        )
+        single_runs_to_handle = []
+        for run_request in sensor_runtime_data.run_requests:
+            if run_request.requires_backfill_daemon:
+                _handle_multi_run_request(run_request, instance, context)
+            else:
+                single_runs_to_handle.append(run_request)
+        if single_runs_to_handle:
+            yield from _handle_run_requests(
+                run_requests=single_runs_to_handle,
+                context=context,
+                instance=instance,
+                external_sensor=external_sensor,
+                workspace_process_context=workspace_process_context,
+                submit_threadpool_executor=submit_threadpool_executor,
+                sensor_debug_crash_flags=sensor_debug_crash_flags,
+            )
+        if context.run_count:
+            context.update_state(TickStatus.SUCCESS, cursor=sensor_runtime_data.cursor)
+        else:
+            context.update_state(TickStatus.SKIPPED, cursor=sensor_runtime_data.cursor)
 
 
 def _handle_dynamic_partitions_requests(
@@ -746,6 +759,26 @@ def _handle_dynamic_partitions_requests(
             check.failed(f"Unexpected action {request.action} for dynamic partition request")
 
 
+def _handle_multi_run_request(
+    multi_run_request: MultiRunRequest,
+    instance: DagsterInstance,
+    context: SensorLaunchContext,
+) -> None:
+    backfill_id = make_new_backfill_id()
+    instance.add_backfill(
+        PartitionBackfill.from_asset_graph_subset(
+            backfill_id=backfill_id,
+            dynamic_partitions_store=instance,
+            backfill_timestamp=pendulum.now("UTC").timestamp(),
+            asset_graph_subset=multi_run_request.asset_graph_subset,
+            tags=multi_run_request.tags or {},
+            title=multi_run_request.title,
+            description=multi_run_request.description,
+        )
+    )
+    context.add_run_info(run_id=backfill_id)
+
+
 def _handle_run_reactions(
     dagster_run_reactions: Sequence[DagsterRunReaction],
     instance: DagsterInstance,
@@ -796,7 +829,6 @@ def _handle_run_requests(
     instance: DagsterInstance,
     context: SensorLaunchContext,
     external_sensor: ExternalSensor,
-    cursor: Optional[str],
     workspace_process_context: IWorkspaceProcessContext,
     submit_threadpool_executor: Optional[ThreadPoolExecutor],
     sensor_debug_crash_flags: Optional[SingleInstigatorDebugCrashFlags] = None,
@@ -865,11 +897,6 @@ def _handle_run_requests(
             f"Skipping {skipped_count} {'run' if skipped_count == 1 else 'runs'} for sensor "
             f"{external_sensor.name} already completed with run keys: {seven.json.dumps(run_keys)}"
         )
-
-    if context.run_count:
-        context.update_state(TickStatus.SUCCESS, cursor=cursor)
-    else:
-        context.update_state(TickStatus.SKIPPED, cursor=cursor)
 
     yield
 
