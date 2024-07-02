@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
     Union,
     cast,
 )
@@ -323,11 +322,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         yield self
 
-    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
-
     def resolve_output_to_origin(
-        self, output_name: str, handle: T_Handle
-    ) -> Tuple[OutputDefinition, T_Handle]:
+        self, output_name: str, handle: Optional[NodeHandle]
+    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         return self.output_def_named(output_name), handle
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
