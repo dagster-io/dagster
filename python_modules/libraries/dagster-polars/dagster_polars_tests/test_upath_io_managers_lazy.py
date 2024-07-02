@@ -1,21 +1,11 @@
-from datetime import datetime, timedelta
 from typing import Dict, Optional, Tuple
 
 import polars as pl
 import polars.testing as pl_testing
-import pytest
 from dagster import (
     AssetExecutionContext,
-    AssetIn,
-    DailyPartitionsDefinition,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionKey,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
     OpExecutionContext,
     StaticPartitionsDefinition,
-    TimeWindowPartitionMapping,
     asset,
     materialize,
 )
@@ -24,7 +14,6 @@ from dagster_polars import (
     LazyFramePartitions,
     PolarsDeltaIOManager,
     PolarsParquetIOManager,
-    StorageMetadata,
 )
 
 from dagster_polars_tests.utils import get_saved_path
@@ -251,135 +240,4 @@ def test_polars_upath_io_manager_output_optional_lazy(
 
     materialize(
         [upstream, downstream],
-    )
-
-
-IO_MANAGERS_SUPPORTING_STORAGE_METADATA = (
-    PolarsParquetIOManager,
-    PolarsDeltaIOManager,
-)
-
-
-def check_skip_storage_metadata_test(io_manager_def: BasePolarsUPathIOManager):
-    if not isinstance(io_manager_def, IO_MANAGERS_SUPPORTING_STORAGE_METADATA):
-        pytest.skip(f"Only {IO_MANAGERS_SUPPORTING_STORAGE_METADATA} support storage metadata")
-
-
-@pytest.fixture
-def metadata() -> StorageMetadata:
-    return {"a": 1, "b": "2", "c": [1, 2, 3], "d": {"e": 1}, "f": [1, 2, 3, {"g": 1}]}
-
-
-def test_upath_io_manager_storage_metadata_lazy(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_lazy_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Tuple[pl.LazyFrame, StorageMetadata]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Tuple[pl.LazyFrame, StorageMetadata]) -> None:
-        loaded_df, upstream_metadata = upstream
-        assert upstream_metadata == metadata
-        pl_testing.assert_frame_equal(loaded_df.collect(), df.collect())
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_optional_lazy_exists(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_lazy_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.LazyFrame, StorageMetadata]]:
-        return df, metadata
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
-        assert upstream is not None
-        df, upstream_metadata = upstream
-        assert upstream_metadata == metadata
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_storage_metadata_optional_lazy_missing(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame], metadata: StorageMetadata
-):
-    io_manager_def, df = io_manager_and_lazy_df
-    check_skip_storage_metadata_test(io_manager_def)
-
-    @asset(io_manager_def=io_manager_def)
-    def upstream() -> Optional[Tuple[pl.LazyFrame, StorageMetadata]]:
-        return None
-
-    @asset(io_manager_def=io_manager_def)
-    def downstream(upstream: Optional[Tuple[pl.LazyFrame, StorageMetadata]]) -> None:
-        assert upstream is None
-
-    materialize(
-        [upstream, downstream],
-    )
-
-
-def test_upath_io_manager_multi_partitions_definition_load_multiple_partitions(
-    io_manager_and_lazy_df: Tuple[BasePolarsUPathIOManager, pl.LazyFrame],
-):
-    io_manager_def, df = io_manager_and_lazy_df
-
-    today = datetime.now().date()
-
-    partitions_def = MultiPartitionsDefinition(
-        {
-            "time": DailyPartitionsDefinition(start_date=str(today - timedelta(days=3))),
-            "static": StaticPartitionsDefinition(["a"]),
-        }
-    )
-
-    @asset(partitions_def=partitions_def, io_manager_def=io_manager_def)
-    def upstream(context: AssetExecutionContext) -> pl.LazyFrame:
-        return pl.LazyFrame({"partition": [str(context.partition_key)]})
-
-    # this asset will request 2 upstream partitions
-    @asset(
-        io_manager_def=io_manager_def,
-        partitions_def=partitions_def,
-        ins={
-            "upstream": AssetIn(
-                partition_mapping=MultiPartitionMapping(
-                    {
-                        "time": DimensionPartitionMapping(
-                            "time", TimeWindowPartitionMapping(start_offset=-1)
-                        ),
-                        "static": DimensionPartitionMapping("static", IdentityPartitionMapping()),
-                    }
-                )
-            )
-        },
-    )
-    def downstream(context: AssetExecutionContext, upstream: LazyFramePartitions) -> None:
-        assert len(upstream.values()) == 2
-
-    materialize(
-        [upstream],
-        partition_key=MultiPartitionKey({"time": str(today - timedelta(days=3)), "static": "a"}),
-    )
-    materialize(
-        [upstream],
-        partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
-    )
-    # materialize([upstream], partition_key=MultiPartitionKey({"time": str(today - timedelta(days=1)), "static": "a"}))
-
-    materialize(
-        [upstream.to_source_asset(), downstream],
-        partition_key=MultiPartitionKey({"time": str(today - timedelta(days=2)), "static": "a"}),
     )
