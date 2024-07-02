@@ -302,7 +302,7 @@ const RowGrid = styled(Box)<{$showCheckboxColumn: boolean}>`
   height: 100%;
 `;
 
-const ScheduleStringContainer = styled.div`
+export const ScheduleStringContainer = styled.div`
   max-width: 100%;
 
   .bp4-popover2-target {
@@ -314,7 +314,7 @@ const ScheduleStringContainer = styled.div`
   }
 `;
 
-const SINGLE_SCHEDULE_QUERY = gql`
+export const SINGLE_SCHEDULE_QUERY = gql`
   query SingleScheduleQuery($selector: ScheduleSelector!) {
     scheduleOrError(scheduleSelector: $selector) {
       ... on Schedule {
@@ -325,6 +325,8 @@ const SINGLE_SCHEDULE_QUERY = gql`
         scheduleState {
           id
           runningCount
+          hasStartPermission
+          hasStopPermission
           ticks(limit: 1) {
             id
             ...TickTagFragment

@@ -22,6 +22,8 @@ export type SingleScheduleQuery = {
           __typename: 'InstigationState';
           id: string;
           runningCount: number;
+          hasStartPermission: boolean;
+          hasStopPermission: boolean;
           selectorId: string;
           status: Types.InstigationStatus;
           ticks: Array<{
