@@ -49,7 +49,7 @@ from dagster._core.remote_representation.origin import (
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.utils import toposort
-from dagster._model.decorator import dagster_model
+from dagster._record import record
 from dagster._serdes import create_snapshot_id
 from dagster._utils.cached_method import cached_method
 from dagster._utils.schedules import schedule_execution_time_iterator
@@ -85,7 +85,7 @@ if TYPE_CHECKING:
 _DELIMITER = "::"
 
 
-@dagster_model
+@record
 class CompoundID:
     """Compound ID object for the two id schemes that state is recorded in the database against."""
 
