@@ -3607,13 +3607,18 @@ type Mutation {
   ): LaunchRunReexecutionResult!
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(
-    scheduleOriginId: String!
-    scheduleSelectorId: String!
+    id: String
+    scheduleOriginId: String
+    scheduleSelectorId: String
   ): ScheduleMutationResult!
   resetSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
-  stopSensor(jobOriginId: String!, jobSelectorId: String!): StopSensorMutationResultOrError!
+  stopSensor(
+    id: String
+    jobOriginId: String
+    jobSelectorId: String
+  ): StopSensorMutationResultOrError!
   resetSensor(sensorSelector: SensorSelector!): SensorOrError!
   sensorDryRun(cursor: String, selectorData: SensorSelector!): SensorDryRunResult!
   scheduleDryRun(selectorData: ScheduleSelector!, timestamp: Float): ScheduleDryRunResult!

@@ -52,10 +52,10 @@ def stop_schedule(
     instance = graphene_info.context.instance
 
     external_schedules = {
-        job.get_external_origin_id(): job
+        schedule.get_external_origin_id(): schedule
         for repository_location in graphene_info.context.code_locations
         for repository in repository_location.get_repositories().values()
-        for job in repository.get_external_schedules()
+        for schedule in repository.get_external_schedules()
     }
 
     external_schedule = external_schedules.get(schedule_origin_id)

@@ -106,6 +106,11 @@ class CompoundID:
             selector_id=parts[1],
         )
 
+    @staticmethod
+    def is_valid_string(serialized: str):
+        parts = serialized.split(_DELIMITER)
+        return len(parts) == 2
+
 
 class ExternalRepository:
     """ExternalRepository is a object that represents a loaded repository definition that
