@@ -5,11 +5,12 @@ import time
 from contextlib import contextmanager
 
 from click.testing import CliRunner
-from dagster import _seven
+from dagster import _seven, job, op
 from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
 from dagster_graphql.cli import ui
+from dagster_graphql.client.client_queries import GET_PIPELINE_RUN_STATUS_QUERY
 
 
 @contextmanager
@@ -52,6 +53,46 @@ def test_basic_repositories():
 
         result_data = json.loads(result.output)
         assert result_data["data"]["repositoriesOrError"]["nodes"]
+
+
+def test_async_resolver():
+    @op
+    def my_op():
+        pass
+
+    @job
+    def my_job():
+        my_op()
+
+    with tempfile.TemporaryDirectory() as dagster_home_temp:
+        with instance_for_test(
+            temp_dir=dagster_home_temp,
+            overrides={
+                "run_launcher": {
+                    "module": "dagster._core.launcher.sync_in_memory_run_launcher",
+                    "class": "SyncInMemoryRunLauncher",
+                }
+            },
+        ) as instance:
+            result = my_job.execute_in_process(instance=instance)
+            run_id = result.dagster_run.run_id
+
+            runner = CliRunner(env={"DAGSTER_HOME": dagster_home_temp})
+
+            query = GET_PIPELINE_RUN_STATUS_QUERY
+            variables = json.dumps({"runId": run_id})
+
+            workspace_path = file_relative_path(__file__, "./cli_test_workspace.yaml")
+
+            result = runner.invoke(ui, ["-w", workspace_path, "-v", variables, "-t", query])
+            assert result.exit_code == 0
+
+            result_data = json.loads(result.output)
+
+            assert (
+                result_data["data"]["pipelineRunOrError"]["status"]
+                == DagsterRunStatus.SUCCESS.value
+            )
 
 
 def test_basic_repository_locations():
