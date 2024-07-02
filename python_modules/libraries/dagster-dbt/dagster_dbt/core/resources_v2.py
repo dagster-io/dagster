@@ -55,7 +55,7 @@ from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvali
 from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._utils import pushd
 from dagster._utils.warnings import disable_dagster_warnings
-from dbt.adapters.base.impl import BaseAdapter, BaseColumn
+from dbt.adapters.base.impl import BaseAdapter, BaseColumn, BaseRelation
 from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
 from dbt.config import RuntimeConfig
 from dbt.config.runtime import load_profile, load_project
@@ -774,6 +774,20 @@ class EventHistoryMetadata(NamedTuple):
     parents: Dict[str, Dict[str, Any]]
 
 
+def _build_relation_from_dbt_resource_props(
+    adapter: BaseAdapter, dbt_resource_props: Dict[str, Any]
+) -> BaseRelation:
+    return adapter.Relation.create(
+        database=dbt_resource_props["database"],
+        schema=dbt_resource_props["schema"],
+        identifier=(
+            dbt_resource_props["identifier"]
+            if dbt_resource_props["unique_id"].startswith("source")
+            else dbt_resource_props["alias"]
+        ),
+    )
+
+
 def _build_column_lineage_metadata(
     event_history_metadata: EventHistoryMetadata,
     dbt_resource_props: Dict[str, Any],
@@ -940,10 +954,8 @@ def _fetch_column_metadata(
 
     with adapter.connection_named(f"column_metadata_{dbt_resource_props['unique_id']}"):
         try:
-            relation = adapter.Relation.create(
-                database=dbt_resource_props["database"],
-                schema=dbt_resource_props["schema"],
-                identifier=dbt_resource_props["name"],
+            relation = _build_relation_from_dbt_resource_props(
+                adapter=adapter, dbt_resource_props=dbt_resource_props
             )
             cols: List[BaseColumn] = adapter.get_columns_in_relation(relation=relation)
         except Exception as e:
@@ -983,10 +995,8 @@ def _fetch_column_metadata(
                         parent_unique_id
                     ) or invocation.manifest["sources"].get(parent_unique_id)
 
-                    parent_relation = adapter.Relation.create(
-                        database=dbt_parent_resource_props["database"],
-                        schema=dbt_parent_resource_props["schema"],
-                        identifier=dbt_parent_resource_props["name"],
+                    parent_relation = _build_relation_from_dbt_resource_props(
+                        adapter=adapter, dbt_resource_props=dbt_parent_resource_props
                     )
                     parent_columns: List[BaseColumn] = adapter.get_columns_in_relation(
                         relation=parent_relation

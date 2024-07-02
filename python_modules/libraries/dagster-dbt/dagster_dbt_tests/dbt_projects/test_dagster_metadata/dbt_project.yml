@@ -30,3 +30,6 @@ models:
 seeds:
   +post-hook:
     - "{{ dagster.log_column_level_metadata(enable_parent_relation_metadata_collection=var('dagster_enable_parent_relation_metadata_collection', 'true')) if env_var('DBT_LOG_COLUMN_METADATA', 'true') == 'true' else null }}"
+  test_dagster_metadata:
+    raw_orders:
+      +alias: aliased_raw_orders
