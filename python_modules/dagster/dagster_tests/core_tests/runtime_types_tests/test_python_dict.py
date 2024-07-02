@@ -2,12 +2,12 @@ import typing
 
 import pytest
 from dagster import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterTypeCheckDidNotPass,
-    Dict,
     In,
     Out,
+    Dict,
+    DagsterInvalidConfigError,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvalidDefinitionError,
     op,
     usable_as_dagster_type,
 )

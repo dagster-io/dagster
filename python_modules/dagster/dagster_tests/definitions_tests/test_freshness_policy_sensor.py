@@ -7,14 +7,14 @@ from dagster import (
     DagsterInstance,
     FreshnessPolicy,
     asset,
+    repository,
+    materialize,
     build_sensor_context,
     freshness_policy_sensor,
-    materialize,
-    repository,
 )
-from dagster._core.definitions.freshness_policy_sensor_definition import FreshnessPolicySensorCursor
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.freshness_policy_sensor_definition import FreshnessPolicySensorCursor
 
 
 @asset(freshness_policy=FreshnessPolicy(maximum_lag_minutes=0))

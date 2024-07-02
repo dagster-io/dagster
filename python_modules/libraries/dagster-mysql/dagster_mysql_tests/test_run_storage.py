@@ -1,8 +1,8 @@
 from urllib.parse import urlparse
 
-import pytest
 import yaml
-from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
+import pytest
+from dagster._core.test_utils import environ, instance_for_test, ensure_dagster_tests_import
 from dagster_mysql.run_storage import MySQLRunStorage
 
 ensure_dagster_tests_import()

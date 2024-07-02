@@ -1,13 +1,13 @@
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from .composites_query import (
+    SOLID_ID_QUERY,
+    PARENT_ID_QUERY,
     COMPOSITES_QUERY,
-    COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE,
     NESTED_INPUT_DEPENDS_ON,
     NESTED_OUTPUT_DEPENDED_BY,
-    PARENT_ID_QUERY,
-    SOLID_ID_QUERY,
+    COMPOSITES_QUERY_NESTED_DEPENDS_ON_DEPENDS_BY_CORE,
 )
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 

@@ -1,9 +1,9 @@
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Union, Mapping, Optional
 
 import dagster._check as check
 from dagster._core.definitions import JobDefinition
-from dagster._core.definitions.run_config import RunConfig, convert_config_input
 from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
 
 def validate_run_config(

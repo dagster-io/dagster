@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Set, Mapping, Iterable, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey
-from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
+from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
     from dagster._core.storage.event_log.base import AssetRecord

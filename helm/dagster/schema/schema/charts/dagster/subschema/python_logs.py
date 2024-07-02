@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra, BaseModel
 
 
 class PythonLogLevel(str, Enum):

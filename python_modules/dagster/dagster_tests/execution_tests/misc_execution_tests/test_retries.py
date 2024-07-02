@@ -1,40 +1,40 @@
 import os
-import tempfile
 import time
-from collections import defaultdict
+import tempfile
 from typing import Sequence
+from collections import defaultdict
 
 import pytest
 from dagster import (
-    Backoff,
-    DagsterEventType,
-    Failure,
-    Jitter,
     Out,
+    Jitter,
     Output,
+    Backoff,
+    Failure,
     RetryPolicy,
     RetryRequested,
-    failure_hook,
-    graph,
-    job,
+    DagsterEventType,
     op,
-    reconstructable,
+    job,
+    graph,
+    failure_hook,
     success_hook,
+    reconstructable,
 )
-from dagster._core.definitions.events import HookExecutionResult
-from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.events import DagsterEvent
+from dagster._core.test_utils import instance_for_test
 from dagster._core.execution.api import (
     ReexecutionOptions,
-    create_execution_plan,
     execute_job,
     execute_plan,
     execute_run_iterator,
+    create_execution_plan,
 )
 from dagster._core.execution.retries import RetryMode
+from dagster._core.definitions.events import HookExecutionResult
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.job_base import InMemoryJob
 
 executors = pytest.mark.parametrize(
     "environment",

@@ -1,5 +1,5 @@
 # ruff: noqa: A001, A002
-from typing import List, Optional, Union
+from typing import List, Union, Optional
 
 import dagster._check as check
 from dagster._annotations import public

@@ -1,17 +1,17 @@
 import json
 from contextlib import contextmanager
 
-import kubernetes
 import pytest
+import kubernetes
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.instance import DagsterInstance
-from dagster._core.pipes.client import PipesContextInjector
-from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster_k8s import execute_k8s_job
-from dagster_k8s.client import DagsterKubernetesClient
-from dagster_k8s.pipes import PipesK8sClient, PipesK8sPodLogsMessageReader
 from dagster_pipes import PipesContextData, PipesDefaultContextLoader
+from dagster_k8s.pipes import PipesK8sClient, PipesK8sPodLogsMessageReader
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster._core.instance import DagsterInstance
+from dagster._core.pipes.utils import PipesEnvContextInjector, open_pipes_session
 from dagster_test.test_project import get_test_project_docker_image
+from dagster._core.pipes.client import PipesContextInjector
 
 POLL_INTERVAL = 0.5
 

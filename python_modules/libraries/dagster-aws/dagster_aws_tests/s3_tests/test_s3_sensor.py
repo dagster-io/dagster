@@ -1,5 +1,5 @@
-import boto3
 import moto
+import boto3
 from dagster_aws.s3.sensor import get_s3_keys
 
 

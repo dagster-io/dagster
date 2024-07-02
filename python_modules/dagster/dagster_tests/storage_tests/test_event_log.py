@@ -1,30 +1,30 @@
-import multiprocessing
 import os
 import sys
-import tempfile
 import time
+import tempfile
 import traceback
+import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 import sqlalchemy
 import sqlalchemy as db
-from dagster._core.errors import DagsterEventLogInvalidForRun
-from dagster._core.storage.event_log import (
-    ConsolidatedSqliteEventLogStorage,
-    InMemoryEventLogStorage,
-    SqlEventLogStorageMetadata,
-    SqlEventLogStorageTable,
-    SqliteEventLogStorage,
-)
-from dagster._core.storage.event_log.schema import ConcurrencyLimitsTable, ConcurrencySlotsTable
-from dagster._core.storage.legacy_storage import LegacyEventLogStorage
-from dagster._core.storage.sql import create_engine
-from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
+from sqlalchemy.engine import Connection
 from dagster._core.utils import make_new_run_id
 from dagster._utils.test import ConcurrencyEnabledSqliteTestEventLogStorage
-from sqlalchemy.engine import Connection
+from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.storage.sql import create_engine
+from dagster._core.storage.event_log import (
+    SqliteEventLogStorage,
+    InMemoryEventLogStorage,
+    SqlEventLogStorageTable,
+    SqlEventLogStorageMetadata,
+    ConsolidatedSqliteEventLogStorage,
+)
+from dagster._core.storage.legacy_storage import LegacyEventLogStorage
+from dagster._core.storage.sqlite_storage import DagsterSqliteStorage
+from dagster._core.storage.event_log.schema import ConcurrencySlotsTable, ConcurrencyLimitsTable
+from dagster._core.storage.sqlalchemy_compat import db_select
 
 from .utils.event_log_storage import TestEventLogStorage
 

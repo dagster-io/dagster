@@ -1,5 +1,5 @@
 import numpy as np
-from pandas import DataFrame, Series
+from pandas import Series, DataFrame
 from scipy.sparse import coo_matrix
 from sklearn.decomposition import TruncatedSVD
 

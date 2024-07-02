@@ -1,9 +1,9 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Union, Mapping, Optional, Sequence, NamedTuple
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental, public
-from dagster._core.definitions.asset_key import AssetKey
+from dagster._annotations import PublicAttr, public, experimental
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.definitions.asset_key import AssetKey
 
 # ########################
 # ##### TABLE RECORD

@@ -1,5 +1,5 @@
 import pytest
-from dagster import job, op
+from dagster import op, job
 from dagster._config.pythonic_config import Config
 from dagster._core.execution.context.invocation import build_op_context
 

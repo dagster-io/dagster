@@ -3,22 +3,22 @@ import time
 from typing import Any, Dict, List, cast
 
 from dagster import (
-    AssetExecutionContext,
-    AssetIn,
-    AssetsDefinition,
-    DagsterInstance,
-    Definitions,
     In,
+    AssetIn,
+    Definitions,
+    DagsterInstance,
+    AssetsDefinition,
+    AssetExecutionContext,
     StaticPartitionMapping,
     StaticPartitionsDefinition,
-    asset,
-    job,
     op,
+    job,
+    asset,
 )
 from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
-from .utils import AssetBasedInMemoryIOManager, DefinitionsRunner
+from .utils import DefinitionsRunner, AssetBasedInMemoryIOManager
 
 partitioning_scheme = StaticPartitionsDefinition(["A", "B", "C"])
 secondary_partitioning_scheme = StaticPartitionsDefinition(["1", "2", "3"])

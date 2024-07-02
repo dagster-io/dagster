@@ -1,7 +1,7 @@
 import os
 
 import snowflake.connector
-from dagster import load_assets_from_modules, materialize
+from dagster import materialize, load_assets_from_modules
 from dagster_dbt import DbtCliResource
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 

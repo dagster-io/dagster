@@ -1,5 +1,6 @@
 import boto3
 import pytest
+from moto import mock_athena
 from dagster_aws.athena.resources import (
     AthenaError,
     AthenaTimeout,
@@ -7,7 +8,6 @@ from dagster_aws.athena.resources import (
     ResourceWithAthenaConfig,
     fake_athena_resource,
 )
-from moto import mock_athena
 
 
 class TestAthenaClientResource(ResourceWithAthenaConfig):
@@ -78,7 +78,7 @@ def test_execute_query_succeeds_on_last_poll(mock_athena_client):
 
 
 def test_op(mock_athena_client) -> None:
-    from dagster import build_op_context, op
+    from dagster import op, build_op_context
 
     @op(required_resource_keys={"athena"})
     def example_athena_op(context):

@@ -1,44 +1,44 @@
 import datetime
-from typing import Any, Dict, Iterable, Optional, Sequence, Union, cast
+from typing import Any, Dict, Union, Iterable, Optional, Sequence, cast
 
 import pendulum
 
 from dagster import _check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import (
-    JsonMetadataValue,
-    MetadataValue,
-    TimestampMetadataValue,
-)
-from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._utils.schedules import (
-    get_latest_completed_cron_tick,
     get_next_cron_tick,
     is_valid_cron_string,
+    get_latest_completed_cron_tick,
 )
+from dagster._core.definitions.assets import SourceAsset, AssetsDefinition
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    JsonMetadataValue,
+    TimestampMetadataValue,
+)
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 from ..utils import (
+    TIMEZONE_PARAM_KEY,
     DEADLINE_CRON_PARAM_KEY,
+    FRESH_UNTIL_METADATA_KEY,
     DEFAULT_FRESHNESS_SEVERITY,
     DEFAULT_FRESHNESS_TIMEZONE,
-    FRESH_UNTIL_METADATA_KEY,
-    FRESHNESS_PARAMS_METADATA_KEY,
-    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
-    LATEST_CRON_TICK_METADATA_KEY,
     LOWER_BOUND_DELTA_PARAM_KEY,
+    FRESHNESS_PARAMS_METADATA_KEY,
+    LATEST_CRON_TICK_METADATA_KEY,
     LOWER_BOUND_TIMESTAMP_METADATA_KEY,
-    TIMEZONE_PARAM_KEY,
+    LAST_UPDATED_TIMESTAMP_METADATA_KEY,
     assets_to_keys,
-    ensure_no_duplicate_assets,
-    freshness_multi_asset_check,
-    get_last_updated_timestamp,
-    retrieve_last_update_record,
     seconds_in_words,
+    ensure_no_duplicate_assets,
+    get_last_updated_timestamp,
+    freshness_multi_asset_check,
+    retrieve_last_update_record,
 )
 
 

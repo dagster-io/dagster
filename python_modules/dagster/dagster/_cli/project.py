@@ -1,18 +1,18 @@
 import os
 import sys
-from typing import NamedTuple, Optional, Sequence
+from typing import Optional, Sequence, NamedTuple
 
 import click
 import requests
 
+from dagster.version import __version__ as dagster_version
 from dagster._generate import (
-    download_example_from_github,
-    generate_code_location,
     generate_project,
     generate_repository,
+    generate_code_location,
+    download_example_from_github,
 )
 from dagster._generate.download import AVAILABLE_EXAMPLES
-from dagster.version import __version__ as dagster_version
 
 
 @click.group(name="project")

@@ -1,9 +1,9 @@
 import math
 import time
-from datetime import datetime
 from random import random
+from datetime import datetime
 
-from dagster import AssetMaterialization, In, Nothing, Out, fs_io_manager, graph, op
+from dagster import In, Out, Nothing, AssetMaterialization, op, graph, fs_io_manager
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 TRAFFIC_CONSTANTS = {

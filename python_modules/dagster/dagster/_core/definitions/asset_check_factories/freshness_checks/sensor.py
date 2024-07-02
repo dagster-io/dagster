@@ -1,5 +1,5 @@
 import datetime
-from typing import Iterator, Optional, Sequence, Tuple, Union, cast
+from typing import Tuple, Union, Iterator, Optional, Sequence, cast
 
 import pendulum
 
@@ -7,13 +7,13 @@ from dagster import _check as check
 from dagster._annotations import experimental
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
-from ...asset_check_spec import AssetCheckKey
-from ...asset_checks import AssetChecksDefinition
-from ...asset_selection import AssetSelection
+from ..utils import FRESH_UNTIL_METADATA_KEY, seconds_in_words, ensure_no_duplicate_asset_checks
 from ...decorators import sensor
 from ...run_request import RunRequest, SkipReason
-from ...sensor_definition import DefaultSensorStatus, SensorDefinition, SensorEvaluationContext
-from ..utils import FRESH_UNTIL_METADATA_KEY, ensure_no_duplicate_asset_checks, seconds_in_words
+from ...asset_checks import AssetChecksDefinition
+from ...asset_selection import AssetSelection
+from ...asset_check_spec import AssetCheckKey
+from ...sensor_definition import SensorDefinition, DefaultSensorStatus, SensorEvaluationContext
 
 DEFAULT_FRESHNESS_SENSOR_NAME = "freshness_checks_sensor"
 MAXIMUM_RUNTIME_SECONDS = 35  # Due to GRPC communications, only allow this sensor to run for 40 seconds before pausing iteration and resuming in the next run. Leave a bit of time for run requests to be processed.

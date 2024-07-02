@@ -1,21 +1,21 @@
-import inspect
 import os
-from pathlib import Path
+import inspect
 from typing import Any, Dict
+from pathlib import Path
 
 import pytest
+from dagster_dbt import DbtProject
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster_dbt.asset_decorator import dbt_assets
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.metadata.source_code import (
-    AnchorBasedFilePathMapping,
-    LocalFileCodeReference,
     UrlCodeReference,
+    LocalFileCodeReference,
+    AnchorBasedFilePathMapping,
     link_to_git,
     with_source_code_references,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster_dbt import DbtProject
-from dagster_dbt.asset_decorator import dbt_assets
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
 from ..dbt_projects import test_jaffle_shop_path
 

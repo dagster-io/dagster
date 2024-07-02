@@ -1,25 +1,25 @@
+from typing import TYPE_CHECKING, Any, Union, Mapping, Callable, Optional, AbstractSet, overload
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Mapping, Optional, Union, overload
 
 import dagster._check as check
 from dagster._annotations import deprecated_param
 from dagster._core.decorator_utils import format_docstring_for_description
 
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
-from ..hook_definition import HookDefinition
-from ..job_definition import JobDefinition
-from ..logger_definition import LoggerDefinition
-from ..metadata import RawMetadataValue
-from ..policy import RetryPolicy
-from ..resource_definition import ResourceDefinition
 from ..utils import normalize_tags
+from ..config import ConfigMapping
+from ..policy import RetryPolicy
+from ..metadata import RawMetadataValue
+from ..job_definition import JobDefinition
+from ..hook_definition import HookDefinition
+from ..graph_definition import GraphDefinition
 from ..version_strategy import VersionStrategy
+from ..logger_definition import LoggerDefinition
+from ..resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from ..executor_definition import ExecutorDefinition
     from ..partition import PartitionedConfig, PartitionsDefinition
     from ..run_config import RunConfig
+    from ..executor_definition import ExecutorDefinition
 
 
 class _Job:

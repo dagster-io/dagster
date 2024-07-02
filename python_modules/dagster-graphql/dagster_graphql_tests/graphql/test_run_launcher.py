@@ -1,9 +1,9 @@
 from typing import Any
 
 from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

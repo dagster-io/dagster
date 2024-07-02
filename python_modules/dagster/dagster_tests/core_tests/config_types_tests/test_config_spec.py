@@ -1,5 +1,5 @@
 import pytest
-from dagster import DagsterInvalidConfigDefinitionError, Noneable, Permissive, Selector, op
+from dagster import Noneable, Selector, Permissive, DagsterInvalidConfigDefinitionError, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

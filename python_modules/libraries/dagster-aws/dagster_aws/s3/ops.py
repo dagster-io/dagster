@@ -1,17 +1,17 @@
-from typing import Any, Generator, Mapping
+from typing import Any, Mapping, Generator
 
 from dagster import (
-    AssetMaterialization,
-    Field,
-    FileHandle,
     In,
-    MetadataValue,
     Out,
+    Field,
     Output,
+    FileHandle,
     StringSource,
+    MetadataValue,
+    AssetMaterialization,
+    op,
     _check as check,
     dagster_type_loader,
-    op,
 )
 from dagster._core.types.dagster_type import PythonObjectDagsterType
 

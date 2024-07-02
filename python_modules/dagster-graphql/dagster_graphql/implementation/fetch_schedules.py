@@ -1,36 +1,36 @@
 import time
-from typing import TYPE_CHECKING, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Set, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.selector import (
+    ScheduleSelector,
     JobSubsetSelector,
     RepositorySelector,
-    ScheduleSelector,
 )
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
+from dagster._core.definitions.run_request import InstigatorType
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from .loader import RepositoryScopedBatchLoader
 from .utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
+from .loader import RepositoryScopedBatchLoader
 
 if TYPE_CHECKING:
-    from ..schema.instigation import GrapheneDryRunInstigationTick
     from ..schema.schedules import (
         GrapheneSchedule,
         GrapheneScheduler,
         GrapheneSchedules,
         GrapheneScheduleStateResult,
     )
+    from ..schema.instigation import GrapheneDryRunInstigationTick
 
 
 def start_schedule(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneScheduleStateResult":
-    from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
+    from ..schema.instigation import GrapheneInstigationState
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
     location = graphene_info.context.get_code_location(schedule_selector.location_name)
@@ -46,8 +46,8 @@ def start_schedule(
 def stop_schedule(
     graphene_info: ResolveInfo, schedule_origin_id: str, schedule_selector_id: str
 ) -> "GrapheneScheduleStateResult":
-    from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
+    from ..schema.instigation import GrapheneInstigationState
 
     instance = graphene_info.context.instance
 
@@ -81,8 +81,8 @@ def stop_schedule(
 def reset_schedule(
     graphene_info: ResolveInfo, schedule_selector: ScheduleSelector
 ) -> "GrapheneScheduleStateResult":
-    from ..schema.instigation import GrapheneInstigationState
     from ..schema.schedules import GrapheneScheduleStateResult
+    from ..schema.instigation import GrapheneInstigationState
 
     check.inst_param(schedule_selector, "schedule_selector", ScheduleSelector)
 

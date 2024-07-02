@@ -1,12 +1,12 @@
 from dagster import (
-    ConfigurableIOManager,
-    InputContext,
-    IOManager,
     Out,
+    IOManager,
+    InputContext,
     OutputContext,
-    io_manager,
-    job,
+    ConfigurableIOManager,
     op,
+    job,
+    io_manager,
 )
 
 

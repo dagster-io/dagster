@@ -1,13 +1,13 @@
 import sys
+from typing import TypeVar, Optional
 from pathlib import Path
-from typing import Optional, TypeVar
 
 import dagster._check as check
-from botocore import __version__ as botocore_version
-from botocore.config import Config
 from dagster import ConfigurableResource
-from packaging import version
+from botocore import __version__ as botocore_version
 from pydantic import Field
+from packaging import version
+from botocore.config import Config
 
 from dagster_aws import __file__ as dagster_aws_init_py
 

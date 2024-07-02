@@ -1,14 +1,14 @@
-import pathlib
 import pickle
-import subprocess
+import pathlib
 import tempfile
+import subprocess
 
 import requests
-from dagster import AssetSelection, Definitions, EnvVar, asset, define_asset_job
+from dagster import EnvVar, Definitions, AssetSelection, asset, define_asset_job
 from dagster_openai import OpenAIResource
+from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
 
 

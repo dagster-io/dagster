@@ -1,11 +1,11 @@
-from dagster import Definitions, StringSource, load_assets_from_package_module, make_values_resource
-from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
+from dagster import Definitions, StringSource, make_values_resource, load_assets_from_package_module
+from dagster_wandb import wandb_resource, wandb_artifacts_io_manager
 
 from . import assets
-from .ops.launch.run_launch_agent import run_launch_agent_example
-from .ops.launch.run_launch_job import run_launch_job_example
-from .ops.partitioned_job import partitioned_job_example
 from .ops.simple_job import simple_job_example
+from .ops.partitioned_job import partitioned_job_example
+from .ops.launch.run_launch_job import run_launch_job_example
+from .ops.launch.run_launch_agent import run_launch_agent_example
 
 wandb_config = make_values_resource(
     entity=StringSource,

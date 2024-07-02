@@ -1,9 +1,9 @@
 import datetime
 
 from dagster import (
+    Output,
     AssetOut,
     DataVersion,
-    Output,
     SourceAsset,
     asset,
     multi_asset,

@@ -1,52 +1,52 @@
 from typing import Optional
 
-import dagster._check as check
 import pytest
+import dagster._check as check
 from dagster import (
-    AssetExecutionContext,
-    AssetMaterialization,
-    AssetOut,
-    AssetsDefinition,
-    DagsterInstance,
-    DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    InputContext,
-    IOManager,
-    IOManagerDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Output,
-    OutputContext,
-    PartitionsDefinition,
+    AssetOut,
+    IOManager,
     SourceAsset,
+    InputContext,
+    OutputContext,
+    DagsterInstance,
+    AssetsDefinition,
+    MultiPartitionKey,
+    IOManagerDefinition,
+    AssetMaterialization,
+    PartitionsDefinition,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    DagsterInvalidDefinitionError,
+    materialize,
+    define_asset_job,
     build_asset_context,
     daily_partitioned_config,
-    define_asset_job,
     hourly_partitioned_config,
-    materialize,
 )
+from dagster._time import create_datetime, parse_time_string
 from dagster._check import CheckError
-from dagster._core.definitions import asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.materialize import materialize_to_memory
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.test_utils import (
+    freeze_time,
+    raise_exception_on_warnings,
+    assert_namedtuple_lists_equal,
+)
+from dagster._core.definitions import asset, multi_asset
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import (
-    assert_namedtuple_lists_equal,
-    freeze_time,
-    raise_exception_on_warnings,
-)
-from dagster._time import create_datetime, parse_time_string
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 
 @pytest.fixture(autouse=True)

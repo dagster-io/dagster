@@ -3,10 +3,10 @@ plot_data = None
 # start_example
 
 import pandas as pd
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_snowflake_pandas import SnowflakePandasIOManager
+from dagster_aws.s3.io_manager import s3_pickle_io_manager
 
-from dagster import Definitions, EnvVar, asset
+from dagster import EnvVar, Definitions, asset
 
 
 @asset(io_manager_key="warehouse_io_manager")

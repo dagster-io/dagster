@@ -22,8 +22,8 @@
 # limitations under the License.
 """Wrappers for gracefully retrying on error."""
 
-import logging
 import time
+import logging
 from functools import partial
 
 log = logging.getLogger(__name__)

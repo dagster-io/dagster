@@ -1,25 +1,25 @@
+from typing import TYPE_CHECKING, Any, List, Union, Mapping, Iterable, Iterator, Optional, Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping, MetadataValue
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._annotations import public, deprecated, deprecated_param
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.metadata import MetadataValue, ArbitraryMetadataMapping
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 if TYPE_CHECKING:
-    from dagster._core.definitions import PartitionsDefinition
-    from dagster._core.definitions.op_definition import OpDefinition
-    from dagster._core.definitions.resource_definition import Resources
     from dagster._core.events import DagsterEvent
-    from dagster._core.execution.context.system import StepExecutionContext
+    from dagster._core.definitions import PartitionsDefinition
     from dagster._core.log_manager import DagsterLogManager
     from dagster._core.types.dagster_type import DagsterType
+    from dagster._core.execution.context.system import StepExecutionContext
+    from dagster._core.definitions.op_definition import OpDefinition
+    from dagster._core.definitions.resource_definition import Resources
 
     from .output import OutputContext
 
@@ -68,8 +68,8 @@ class InputContext:
         # deprecated
         metadata: Optional[ArbitraryMetadataMapping] = None,
     ):
-        from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.resource_definition import Resources, IContainsGenerator
 
         self._name = name
         self._job_name = job_name
@@ -475,8 +475,8 @@ class InputContext:
         The asset observation will be yielded from the run and appear in the event log.
         Only valid if the context has an asset key.
         """
-        from dagster._core.definitions.metadata import normalize_metadata
         from dagster._core.events import DagsterEvent
+        from dagster._core.definitions.metadata import normalize_metadata
 
         metadata = check.mapping_param(metadata, "metadata", key_type=str)
         self._user_generated_metadata = {
@@ -596,10 +596,10 @@ def build_input_context(
                 do_something
     """
     from dagster._core.definitions import OpDefinition, PartitionsDefinition
+    from dagster._core.types.dagster_type import DagsterType
     from dagster._core.execution.context.output import OutputContext
     from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.context_creation_job import initialize_console_manager
-    from dagster._core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
     check.opt_mapping_param(definition_metadata, "definition_metadata", key_type=str)

@@ -1,32 +1,32 @@
 import os
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, Iterator, Optional
+from contextlib import contextmanager
 from urllib.parse import urljoin, urlparse
 
 import sqlalchemy as db
-from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
+from sqlalchemy.engine import Connection
 from typing_extensions import Self
 
 from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._config.config_schema import UserConfigSchema
+from dagster._utils import mkdir_p
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._core.storage.sql import (
     AlembicVersion,
-    check_alembic_revision,
     create_engine,
-    get_alembic_config,
-    run_alembic_downgrade,
-    run_alembic_upgrade,
     stamp_alembic_rev,
+    get_alembic_config,
+    run_alembic_upgrade,
+    run_alembic_downgrade,
+    check_alembic_revision,
 )
 from dagster._core.storage.sqlite import create_db_conn_string
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import mkdir_p
+from dagster._config.config_schema import UserConfigSchema
 
-from ..schema import InstanceInfo, RunsTable, RunStorageSqlMetadata, RunTagsTable
+from ..schema import RunsTable, InstanceInfo, RunTagsTable, RunStorageSqlMetadata
 from ..sql_run_storage import SqlRunStorage
 
 if TYPE_CHECKING:

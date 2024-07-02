@@ -5,9 +5,9 @@ from typing import IO
 
 import cloud_service  # type: ignore
 from dagster_pipes import (
+    PipesParams,
     PipesBlobStoreMessageWriter,
     PipesBlobStoreMessageWriterChannel,
-    PipesParams,
 )
 
 

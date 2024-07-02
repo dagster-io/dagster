@@ -1,47 +1,47 @@
+import re
 import hashlib
 import inspect
-import re
-from functools import partial
 from typing import (
     Any,
-    Callable,
+    Set,
     Dict,
     List,
+    Union,
     Mapping,
-    NamedTuple,
+    Callable,
     Optional,
     Sequence,
-    Set,
-    Union,
+    NamedTuple,
     cast,
 )
+from functools import partial
 
 from dagster import (
+    Output,
+    Nothing,
     AssetKey,
     AssetOut,
     AssetsDefinition,
-    Nothing,
     OpExecutionContext,
-    Output,
     _check as check,
     multi_asset,
 )
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
+from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import RawMetadataMapping
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterStepOutputNotFoundError
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster._core.definitions.cacheable_assets import (
+    CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
+)
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
-from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.utils import (
+    metadata_for_table,
     generate_materializations,
     get_fivetran_connector_url,
-    metadata_for_table,
 )
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 
 
 def _build_fivetran_assets(

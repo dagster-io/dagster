@@ -1,10 +1,10 @@
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, NamedTuple
 
 from typing_extensions import Final
 
 import dagster._check as check
-from dagster._core.code_pointer import CodePointer
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._core.code_pointer import CodePointer
 
 DEFAULT_DAGSTER_ENTRY_POINT: Final = ["dagster"]
 

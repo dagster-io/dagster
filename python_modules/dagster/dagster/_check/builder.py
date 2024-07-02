@@ -1,21 +1,21 @@
-import collections.abc
 import sys
-from contextlib import contextmanager
-from contextvars import ContextVar
+import collections.abc
 from typing import (
     Any,
-    Callable,
-    ForwardRef,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Tuple,
     Type,
-    TypeVar,
+    Tuple,
     Union,
+    Mapping,
+    TypeVar,
+    Callable,
+    Optional,
+    ForwardRef,
+    NamedTuple,
     get_args,
     get_origin,
 )
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 from typing_extensions import Annotated
 

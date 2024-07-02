@@ -1,31 +1,40 @@
-import inspect
-import json
 import os
 import sys
-from functools import lru_cache
+import json
+import inspect
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Iterable,
     List,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
+    TypeVar,
+    Callable,
+    Iterable,
     Optional,
     Sequence,
-    Tuple,
-    TypeVar,
-    Union,
+    NamedTuple,
+    AbstractSet,
     overload,
 )
+from functools import lru_cache
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._utils import hash_collection
+from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    JobPythonOrigin,
+    RepositoryPythonOrigin,
+)
+from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,
@@ -34,27 +43,18 @@ from dagster._core.code_pointer import (
     get_python_file_from_target,
 )
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.origin import (
-    DEFAULT_DAGSTER_ENTRY_POINT,
-    JobPythonOrigin,
-    RepositoryPythonOrigin,
-)
-from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
-from dagster._utils import hash_collection
 
 from .events import AssetKey
 from .job_base import IJob
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.source_asset import SourceAsset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.repository_definition import (
-        PendingRepositoryDefinition,
         RepositoryLoadData,
+        PendingRepositoryDefinition,
     )
-    from dagster._core.definitions.source_asset import SourceAsset
 
     from .graph_definition import GraphDefinition
     from .repository_definition import RepositoryDefinition
@@ -588,10 +588,10 @@ def _is_list_of_assets(
 
 
 def _check_is_loadable(definition: T_LoadableDefinition) -> T_LoadableDefinition:
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from .graph_definition import GraphDefinition
+    from .definitions_class import Definitions
+    from .repository_definition import RepositoryDefinition, PendingRepositoryDefinition
 
     if not (
         isinstance(
@@ -638,9 +638,9 @@ def def_from_pointer(
 ) -> LoadableDefinition:
     target = pointer.load_target()
 
-    from .graph_definition import GraphDefinition
     from .job_definition import JobDefinition
-    from .repository_definition import PendingRepositoryDefinition, RepositoryDefinition
+    from .graph_definition import GraphDefinition
+    from .repository_definition import RepositoryDefinition, PendingRepositoryDefinition
 
     if isinstance(
         target,
@@ -696,16 +696,16 @@ def repository_def_from_target_def(
     target: object, repository_load_data: Optional["RepositoryLoadData"] = None
 ) -> Optional["RepositoryDefinition"]:
     from .assets import AssetsDefinition
-    from .definitions_class import Definitions
-    from .graph_definition import GraphDefinition
+    from .source_asset import SourceAsset
     from .job_definition import JobDefinition
+    from .graph_definition import GraphDefinition
+    from .definitions_class import Definitions
     from .repository_definition import (
         SINGLETON_REPOSITORY_NAME,
+        RepositoryDefinition,
         CachingRepositoryData,
         PendingRepositoryDefinition,
-        RepositoryDefinition,
     )
-    from .source_asset import SourceAsset
 
     if isinstance(target, Definitions):
         # reassign to handle both repository and pending repo case

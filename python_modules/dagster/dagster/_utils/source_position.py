@@ -1,5 +1,5 @@
+from typing import Any, Union, Mapping, Optional, Sequence, NamedTuple, cast
 from pathlib import Path
-from typing import Any, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from dagster import _check as check
 

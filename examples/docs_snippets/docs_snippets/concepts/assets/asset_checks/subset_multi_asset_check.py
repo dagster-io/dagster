@@ -1,11 +1,11 @@
 from typing import Iterable
 
 from dagster import (
-    AssetCheckExecutionContext,
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSpec,
     AssetKey,
+    AssetCheckKey,
+    AssetCheckSpec,
+    AssetCheckResult,
+    AssetCheckExecutionContext,
     multi_asset_check,
 )
 

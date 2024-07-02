@@ -5,16 +5,12 @@ import pytest
 from dagster import (
     DagsterInstance,
     ExecutorRequirement,
+    op,
+    job,
     _check as check,
     execute_job,
-    job,
-    multiprocess_executor,
-    op,
     reconstructable,
-)
-from dagster._core.definitions.executor_definition import (
-    _core_multiprocess_executor_creation,
-    executor,
+    multiprocess_executor,
 )
 from dagster._core.errors import (
     DagsterInvalidConfigError,
@@ -22,10 +18,14 @@ from dagster._core.errors import (
     DagsterUnmetExecutorRequirementsError,
 )
 from dagster._core.events import DagsterEventType, RunFailureReason
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.multiprocess import MultiprocessExecutor
-from dagster._core.storage.tags import RUN_FAILURE_REASON_TAG
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.definitions.executor_definition import (
+    executor,
+    _core_multiprocess_executor_creation,
+)
 
 
 def get_job_for_executor(executor_def, execution_config=None):

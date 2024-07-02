@@ -1,4 +1,4 @@
-from dagster import Definitions, EnvVar, asset
+from dagster import EnvVar, Definitions, asset
 from dagster._core.test_utils import environ
 from docs_snippets.tutorial.connecting import (
     connecting,

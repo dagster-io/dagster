@@ -3,22 +3,22 @@ from typing import Tuple
 
 import pytest
 from dagster import (
-    Config,
     Field as LegacyDagsterField,
-    asset,
+    Config,
     op,
-    schedule,
+    asset,
     sensor,
+    schedule,
 )
-from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.errors import (
-    DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
+    DagsterInvalidDagsterTypeInPythonicConfigDefinitionError,
 )
+from dagster._config.pythonic_config import ConfigurableResource, ConfigurableResourceFactory
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 def test_invalid_config_type_basic() -> None:

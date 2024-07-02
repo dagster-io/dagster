@@ -1,7 +1,7 @@
-from dagster import DependencyDefinition, GraphDefinition, In, Int, Out, Output, op
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster import In, Int, Out, Output, GraphDefinition, DependencyDefinition, op
 from dagster._core.instance import DagsterInstance
+from dagster._core.execution.api import execute_plan, create_execution_plan
+from dagster._core.definitions.job_base import InMemoryJob
 
 
 def define_two_int_pipeline():

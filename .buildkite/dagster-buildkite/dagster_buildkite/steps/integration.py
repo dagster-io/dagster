@@ -1,21 +1,21 @@
 import os
-from typing import Callable, List, Optional, Union
+from typing import List, Union, Callable, Optional
 
 import packaging.version
 
-from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
-from ..package_spec import PackageSpec, UnsupportedVersionsFunction
-from ..python_version import AvailablePythonVersion
-from ..step_builder import BuildkiteQueue
 from ..utils import (
     BuildkiteStep,
     BuildkiteTopLevelStep,
-    connect_sibling_docker_container,
     has_helm_changes,
-    library_version_from_core_version,
     network_buildkite_container,
+    connect_sibling_docker_container,
+    library_version_from_core_version,
 )
+from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, LATEST_DAGSTER_RELEASE
 from .test_project import test_project_depends_fn
+from ..package_spec import PackageSpec, UnsupportedVersionsFunction
+from ..step_builder import BuildkiteQueue
+from ..python_version import AvailablePythonVersion
 
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 DAGSTER_CURRENT_BRANCH = "current_branch"

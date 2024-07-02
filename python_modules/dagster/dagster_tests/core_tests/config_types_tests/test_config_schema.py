@@ -1,5 +1,5 @@
 import pytest
-from dagster import ConfigMapping, Field, graph, op
+from dagster import Field, ConfigMapping, op, graph
 from dagster._check import CheckError
 from dagster._config import ConfigAnyInstance
 

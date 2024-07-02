@@ -2,10 +2,10 @@ import random
 
 import pandas as pd
 import pandera as pa
-from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing import Series
+from dagster_pandera import pandera_schema_to_dagster_type
 
-from dagster import Out, job, op
+from dagster import Out, op, job
 
 APPLE_STOCK_PRICES = {
     "name": ["AAPL", "AAPL", "AAPL", "AAPL", "AAPL"],

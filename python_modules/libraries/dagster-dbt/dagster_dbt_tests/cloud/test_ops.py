@@ -1,13 +1,13 @@
 import pytest
 import responses
 from dagster import Failure, job
-from dagster._check import CheckError
 from dagster_dbt import dbt_cloud_run_op
+from dagster._check import CheckError
 
 from .utils import (
-    SAMPLE_API_PREFIX,
     SAMPLE_JOB_ID,
     SAMPLE_RUN_ID,
+    SAMPLE_API_PREFIX,
     sample_job_details,
     sample_run_details,
     sample_run_results,

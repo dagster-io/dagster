@@ -1,53 +1,53 @@
-import asyncio
 import sys
+import asyncio
 from datetime import datetime
 from functools import partial
 
 import pytest
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    DailyPartitionsDefinition,
-    DynamicOut,
-    DynamicOutput,
-    ExpectationResult,
-    Failure,
-    Field,
     In,
-    MultiPartitionsDefinition,
-    Noneable,
-    Nothing,
     Out,
+    Field,
     Output,
-    RetryRequested,
+    Failure,
+    Nothing,
+    AssetKey,
+    Noneable,
     Selector,
-    StaticPartitionsDefinition,
+    DynamicOut,
     TimeWindow,
-    asset,
-    build_op_context,
-    graph,
-    job,
+    DynamicOutput,
+    RetryRequested,
+    AssetObservation,
+    ExpectationResult,
+    AssetMaterialization,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     op,
+    job,
+    asset,
+    graph,
     resource,
+    build_op_context,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.time_window_partitions import get_time_partitions_def
-from dagster._core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvalidPropertyError,
-    DagsterInvariantViolationError,
-    DagsterResourceFunctionError,
-    DagsterStepOutputNotFoundError,
-    DagsterTypeCheckDidNotPass,
-)
-from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
-from dagster._core.execution.context.invocation import DirectOpExecutionContext, build_asset_context
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._time import create_datetime
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvalidPropertyError,
+    DagsterResourceFunctionError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
+)
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
+from dagster._core.execution.context.compute import OpExecutionContext, AssetExecutionContext
+from dagster._core.execution.context.invocation import DirectOpExecutionContext, build_asset_context
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 
 
 def test_op_invocation_no_arg():

@@ -1,4 +1,4 @@
-from dagster import AssetKey, MaterializeResult, TableColumn, TableSchema, asset
+from dagster import AssetKey, TableColumn, TableSchema, MaterializeResult, asset
 
 
 # Definition metadata

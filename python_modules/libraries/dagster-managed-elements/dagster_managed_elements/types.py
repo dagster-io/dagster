@@ -1,6 +1,6 @@
 import enum
 from abc import ABC, abstractmethod
-from typing import Any, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Any, Tuple, Union, Optional, Sequence, NamedTuple, OrderedDict
 
 import click
 import dagster._check as check

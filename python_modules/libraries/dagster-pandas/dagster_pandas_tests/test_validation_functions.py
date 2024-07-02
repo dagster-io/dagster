@@ -1,12 +1,12 @@
+from numpy import nan as NaN
 from dagster_pandas.constraints import (
+    nonnull,
+    non_null_validation,
     all_unique_validator,
-    categorical_column_validator_factory,
     column_range_validation_factory,
     dtype_in_set_validation_factory,
-    non_null_validation,
-    nonnull,
+    categorical_column_validator_factory,
 )
-from numpy import nan as NaN
 
 
 def test_unique():

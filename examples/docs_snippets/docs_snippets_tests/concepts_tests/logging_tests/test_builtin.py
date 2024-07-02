@@ -1,9 +1,9 @@
-import pytest
 import yaml
+import pytest
 
 from dagster._utils import file_relative_path
+from docs_snippets.concepts.logging.logging_jobs import prod_logs, local_logs
 from docs_snippets.concepts.logging.builtin_logger import demo_job, demo_job_error
-from docs_snippets.concepts.logging.logging_jobs import local_logs, prod_logs
 
 
 def test_demo_job():

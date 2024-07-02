@@ -4,22 +4,22 @@
 
 import typing
 
-import pytest
 import yaml
+import pytest
 
 from dagster import (
-    DagsterType,
-    DagsterTypeCheckDidNotPass,
     In,
-    Nothing,
-    OpExecutionContext,
     Out,
+    Nothing,
+    DagsterType,
+    OpExecutionContext,
     PythonObjectDagsterType,
-    dagster_type_loader,
-    job,
-    make_python_type_usable_as_dagster_type,
+    DagsterTypeCheckDidNotPass,
     op,
+    job,
+    dagster_type_loader,
     usable_as_dagster_type,
+    make_python_type_usable_as_dagster_type,
 )
 from dagster._utils.test import wrap_op_in_graph_and_execute
 

@@ -1,4 +1,4 @@
-from dagster import RunRequest, job, op, repository, schedule, sensor
+from dagster import RunRequest, op, job, sensor, schedule, repository
 
 
 @op

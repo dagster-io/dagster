@@ -2,20 +2,20 @@ import os
 import time
 
 import pytest
-from dagster._core.definitions.events import AssetKey
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import poll_for_finished_run
 from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._utils.yaml_utils import merge_yamls, load_yaml_from_path
 from dagster_test.test_project import (
     ReOriginatedExternalJobForTest,
     find_local_test_image,
+    get_test_project_recon_job,
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_job,
     get_test_project_workspace_and_external_job,
 )
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

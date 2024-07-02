@@ -1,16 +1,16 @@
-from typing import Sequence, Type, TypeVar
+from typing import Type, TypeVar, Sequence
 
 from pydantic import BaseModel, ValidationError, parse_obj_as
 
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 
+from .yaml_utils import parse_yaml_with_source_positions
 from .source_position import (
     KeyPath,
     ValueAndSourcePositionTree,
     populate_source_position_and_key_paths,
 )
-from .yaml_utils import parse_yaml_with_source_positions
 
 T = TypeVar("T", bound=BaseModel)
 

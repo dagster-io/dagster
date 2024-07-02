@@ -1,14 +1,14 @@
 import logging
 
+from pytest import fixture
 from dagster import AssetKey, DagsterInstance, observable_source_asset
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_auto_observe_run_requests,
 )
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-from pytest import fixture
 
 
 def test_single_observable_source_asset_no_auto_observe():

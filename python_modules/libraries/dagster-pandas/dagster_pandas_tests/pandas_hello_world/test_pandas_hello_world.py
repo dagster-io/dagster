@@ -1,10 +1,10 @@
 import os
 
-from dagster._cli.job import do_execute_command
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster._cli.job import do_execute_command
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.reconstruct import ReconstructableJob
 
 
 def test_execute_job():

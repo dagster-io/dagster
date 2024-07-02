@@ -1,13 +1,13 @@
 from typing import List, Mapping, Optional
 
-from airflow.models.connection import Connection
-from airflow.models.dag import DAG
 from dagster import (
     ResourceDefinition,
     ScheduleDefinition,
     _check as check,
 )
+from airflow.models.dag import DAG
 from dagster._utils.schedules import is_valid_cron_schedule
+from airflow.models.connection import Connection
 
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 

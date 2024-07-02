@@ -2,42 +2,42 @@ import hashlib
 from abc import ABC, abstractmethod, abstractproperty
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Iterator,
+    Set,
     List,
+    Union,
     Mapping,
-    NamedTuple,
+    Iterator,
     Optional,
     Sequence,
-    Set,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._core.definitions import InputDefinition, JobDefinition, NodeHandle
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster._core.definitions.version_strategy import ResourceVersionContext
+from dagster._serdes import whitelist_for_serdes
 from dagster._core.errors import (
+    DagsterTypeLoadingError,
     DagsterExecutionLoadInputError,
     DagsterInvariantViolationError,
-    DagsterTypeLoadingError,
     user_code_error_boundary,
 )
+from dagster._core.definitions import NodeHandle, JobDefinition, InputDefinition
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._serdes import whitelist_for_serdes
+from dagster._core.definitions.version_strategy import ResourceVersionContext
 
+from .utils import build_resources_for_manager, op_execution_error_boundary
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
-from .utils import build_resources_for_manager, op_execution_error_boundary
 
 if TYPE_CHECKING:
+    from dagster._core.storage.input_manager import InputManager
     from dagster._core.execution.context.input import InputContext
     from dagster._core.execution.context.system import StepExecutionContext
-    from dagster._core.storage.input_manager import InputManager
 
 StepInputUnion: TypeAlias = Union[
     "StepInput", "UnresolvedMappedStepInput", "UnresolvedCollectStepInput"

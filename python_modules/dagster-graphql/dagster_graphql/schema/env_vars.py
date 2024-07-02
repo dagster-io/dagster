@@ -3,8 +3,8 @@ from typing import List, Sequence
 import graphene
 from dagster._core.remote_representation.external_data import EnvVarConsumer
 
-from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.schema.util import non_null_list
+from dagster_graphql.schema.errors import GraphenePythonError
 
 
 class GrapheneEnvVarConsumerType(graphene.Enum):

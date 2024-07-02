@@ -1,8 +1,8 @@
 import graphene
 
-from .pipelines.pipeline import GraphenePipeline
-from .solids import GrapheneISolidDefinition, GrapheneSolidHandle
 from .util import non_null_list
+from .solids import GrapheneSolidHandle, GrapheneISolidDefinition
+from .pipelines.pipeline import GraphenePipeline
 
 
 class GrapheneNodeInvocationSite(graphene.ObjectType):

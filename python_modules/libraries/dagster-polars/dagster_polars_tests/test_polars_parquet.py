@@ -3,8 +3,8 @@ import os
 import polars as pl
 import polars.testing as pl_testing
 from dagster import asset, materialize
-from dagster_polars import PolarsParquetIOManager
 from hypothesis import given, settings
+from dagster_polars import PolarsParquetIOManager
 from polars.testing.parametric import dataframes
 
 from dagster_polars_tests.utils import get_saved_path

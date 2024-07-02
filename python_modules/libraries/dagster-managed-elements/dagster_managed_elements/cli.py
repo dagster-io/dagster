@@ -1,7 +1,7 @@
+import sys
+import logging
 import functools
 import importlib
-import logging
-import sys
 from types import ModuleType
 from typing import Optional, Sequence
 

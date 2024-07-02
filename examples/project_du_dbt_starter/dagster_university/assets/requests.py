@@ -1,13 +1,13 @@
 import base64
 
-import plotly.express as px
 import plotly.io as pio
-from dagster import Config, MaterializeResult, MetadataValue, asset
-from dagster_duckdb import DuckDBResource
+import plotly.express as px
+from dagster import Config, MetadataValue, MaterializeResult, asset
 from smart_open import open
+from dagster_duckdb import DuckDBResource
 
-from ..resources import smart_open_config
 from . import constants
+from ..resources import smart_open_config
 
 
 class AdhocRequestConfig(Config):

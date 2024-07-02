@@ -1,8 +1,8 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .resources import LazyPySparkResource, PySparkResource, lazy_pyspark_resource, pyspark_resource
 from .types import DataFrame
 from .version import __version__
+from .resources import PySparkResource, LazyPySparkResource, pyspark_resource, lazy_pyspark_resource
 
 DagsterLibraryRegistry.register("dagster-pyspark", __version__)
 

@@ -1,17 +1,17 @@
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetSelection,
-    Definitions,
-    ExecuteInProcessResult,
     Output,
+    Definitions,
+    AssetSelection,
+    AssetCheckResult,
+    ExecuteInProcessResult,
     asset,
     asset_check,
     define_asset_job,
 )
+from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.errors import DagsterInvalidSubsetError
 
 
 @asset

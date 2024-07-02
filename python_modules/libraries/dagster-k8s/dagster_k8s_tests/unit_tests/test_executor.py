@@ -2,29 +2,29 @@ import json
 from unittest import mock
 
 import pytest
-from dagster import job, op, repository
+from dagster import op, job, repository
 from dagster._config import process_config, resolve_to_config_type
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
-from dagster._core.execution.context_creation_job import create_context_free_log_manager
-from dagster._core.execution.retries import RetryMode
-from dagster._core.executor.init import InitExecutorContext
-from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.test_utils import (
-    create_run_for_test,
-    environ,
-    in_process_test_workspace,
-    instance_for_test,
-)
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.types import ExecuteStepArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
-from dagster_k8s.container_context import K8sContainerContext
-from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
 from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster._grpc.types import ExecuteStepArgs
+from dagster_k8s.executor import _K8S_EXECUTOR_CONFIG_SCHEMA, K8sStepHandler, k8s_job_executor
+from dagster._core.test_utils import (
+    environ,
+    instance_for_test,
+    create_run_for_test,
+    in_process_test_workspace,
+)
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.executor.init import InitExecutorContext
+from dagster_k8s.container_context import K8sContainerContext
+from dagster._core.execution.retries import RetryMode
+from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.execution.context.system import PlanData, PlanOrchestrationContext
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.execution.context_creation_job import create_context_free_log_manager
+from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
 
 
 @job(

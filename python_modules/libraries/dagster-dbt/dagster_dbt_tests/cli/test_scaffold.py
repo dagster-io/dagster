@@ -1,16 +1,16 @@
-import importlib
 import os
-import shutil
-import subprocess
 import sys
-from pathlib import Path
+import shutil
+import importlib
+import subprocess
 from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
+from dagster_dbt.errors import DagsterDbtManifestNotFoundError
 from dagster_dbt.cli.app import app
 from dagster_dbt.dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
-from dagster_dbt.errors import DagsterDbtManifestNotFoundError
-from typer.testing import CliRunner
 
 from ..dbt_projects import test_jaffle_shop_path
 

@@ -1,5 +1,5 @@
 import pytest
-from dagster import InitResourceContext, build_init_resource_context, resource
+from dagster import InitResourceContext, resource, build_init_resource_context
 from dagster._core.errors import DagsterInvariantViolationError
 
 

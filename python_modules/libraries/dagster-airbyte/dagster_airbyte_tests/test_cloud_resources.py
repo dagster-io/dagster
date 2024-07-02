@@ -3,7 +3,7 @@ import re
 import pytest
 import responses
 from dagster import Failure
-from dagster_airbyte import AirbyteCloudResource, AirbyteOutput, AirbyteState
+from dagster_airbyte import AirbyteState, AirbyteOutput, AirbyteCloudResource
 
 
 @responses.activate

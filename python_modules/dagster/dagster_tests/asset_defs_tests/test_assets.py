@@ -5,59 +5,59 @@ from typing import Sequence
 
 import pytest
 from dagster import (
-    AssetCheckSpec,
-    AssetExecutionContext,
-    AssetKey,
-    AssetOut,
-    AssetsDefinition,
-    BackfillPolicy,
-    DagsterEventType,
-    DailyPartitionsDefinition,
-    Definitions,
-    ExperimentalWarning,
-    FreshnessPolicy,
-    GraphOut,
-    IdentityPartitionMapping,
     In,
-    IOManager,
-    IOManagerDefinition,
-    LastPartitionMapping,
     Out,
     Output,
+    AssetKey,
+    AssetOut,
+    GraphOut,
+    IOManager,
+    Definitions,
+    AssetCheckSpec,
+    BackfillPolicy,
+    FreshnessPolicy,
+    AssetsDefinition,
+    DagsterEventType,
     ResourceDefinition,
-    build_asset_context,
-    define_asset_job,
-    fs_io_manager,
-    graph,
-    graph_multi_asset,
-    io_manager,
-    job,
-    materialize,
-    materialize_to_memory,
+    ExperimentalWarning,
+    IOManagerDefinition,
+    LastPartitionMapping,
+    AssetExecutionContext,
+    IdentityPartitionMapping,
+    DailyPartitionsDefinition,
     op,
+    job,
+    graph,
     resource,
+    io_manager,
+    materialize,
+    fs_io_manager,
     with_resources,
+    define_asset_job,
+    graph_multi_asset,
+    build_asset_context,
+    materialize_to_memory,
 )
 from dagster._check import CheckError
-from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.decorators.asset_decorator import graph_asset
-from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.result import MaterializeResult
-from dagster._core.definitions.tags import StorageKindTagSet
 from dagster._core.errors import (
+    DagsterInvalidPropertyError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
-    DagsterInvalidPropertyError,
     DagsterInvariantViolationError,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import create_test_asset_job, instance_for_test
+from dagster._core.test_utils import instance_for_test, create_test_asset_job
+from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.result import MaterializeResult
 from dagster._core.types.dagster_type import Nothing
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.asset_decorator import graph_asset
 
 
 def test_with_replaced_asset_keys():

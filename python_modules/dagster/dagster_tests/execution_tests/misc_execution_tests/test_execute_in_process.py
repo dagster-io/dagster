@@ -1,23 +1,23 @@
 import pytest
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    DagsterInvariantViolationError,
-    DynamicOut,
-    DynamicOutput,
     Out,
     Output,
+    AssetKey,
+    DynamicOut,
+    DynamicOutput,
     RetryRequested,
-    daily_partitioned_config,
-    graph,
-    job,
-    mem_io_manager,
+    AssetObservation,
+    AssetMaterialization,
+    DagsterInvariantViolationError,
     op,
+    job,
+    graph,
     resource,
+    mem_io_manager,
+    daily_partitioned_config,
 )
-from dagster._core.definitions.output import GraphOut
 from dagster._core.errors import DagsterMaxRetriesExceededError
+from dagster._core.definitions.output import GraphOut
 
 
 def get_solids():

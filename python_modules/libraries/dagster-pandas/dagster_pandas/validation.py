@@ -1,26 +1,26 @@
+from pandas import DataFrame, Timestamp
 from dagster import (
     DagsterInvariantViolationError,
     _check as check,
 )
-from pandas import DataFrame, Timestamp
 from pandas.core.dtypes.common import (
     is_bool_dtype,
     is_float_dtype,
+    is_string_dtype,
     is_integer_dtype,
     is_numeric_dtype,
-    is_string_dtype,
 )
 
 from dagster_pandas.constraints import (
-    CategoricalColumnConstraint,
-    ColumnDTypeFnConstraint,
-    ColumnDTypeInSetConstraint,
     Constraint,
-    ConstraintViolationException,
     DataFrameConstraint,
-    InRangeColumnConstraint,
-    NonNullableColumnConstraint,
     UniqueColumnConstraint,
+    ColumnDTypeFnConstraint,
+    InRangeColumnConstraint,
+    ColumnDTypeInSetConstraint,
+    CategoricalColumnConstraint,
+    NonNullableColumnConstraint,
+    ConstraintViolationException,
 )
 
 PANDAS_NUMERIC_TYPES = {"int64", "float"}

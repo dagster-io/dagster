@@ -1,8 +1,8 @@
-import json
 import os
+import json
 from unittest.mock import MagicMock, patch
 
-from dagster import DagsterInstance, SkipReason, build_sensor_context
+from dagster import SkipReason, DagsterInstance, build_sensor_context
 
 from assets_dynamic_partitions.release_sensor import release_sensor
 

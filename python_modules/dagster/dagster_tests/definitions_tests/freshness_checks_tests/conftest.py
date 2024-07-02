@@ -3,17 +3,17 @@ from typing import Iterator, Optional, Sequence
 
 import pytest
 from dagster import define_asset_job
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.definitions.metadata import TimestampMetadataValue
-from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._time import get_current_timestamp
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
-from dagster._time import get_current_timestamp
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKey, AssetObservation, AssetMaterialization
+from dagster._core.definitions.metadata import TimestampMetadataValue
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 @pytest.fixture(name="instance")

@@ -1,49 +1,49 @@
-from datetime import datetime
 from typing import Sequence
+from datetime import datetime
 
 import pytest
 from dagster import (
+    Out,
     AssetKey,
     AssetOut,
+    GraphOut,
     AssetsDefinition,
     DailyPartitionsDefinition,
-    GraphOut,
     HourlyPartitionsDefinition,
-    Out,
     StaticPartitionsDefinition,
-    define_asset_job,
+    op,
     graph,
     graph_asset,
+    define_asset_job,
     graph_multi_asset,
-    op,
 )
+from dagster._time import get_timezone, create_datetime
 from dagster._check import ParameterCheckError
+from dagster._serdes import unpack_value, serialize_value, deserialize_value
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.definitions import AssetIn, SourceAsset, asset, multi_asset
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
+from dagster._core.definitions.partition import ScheduleType
+from dagster._core.definitions.asset_spec import AssetSpec, AssetExecutionType
 from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._core.definitions.external_asset import external_assets_from_specs
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.external_asset import external_assets_from_specs
-from dagster._core.definitions.metadata import MetadataValue, TextMetadataValue, normalize_metadata
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import ScheduleType
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.remote_representation.external_data import (
-    ExternalAssetDependedBy,
-    ExternalAssetDependency,
+    SensorSnap,
     ExternalAssetNode,
     ExternalTargetData,
+    ExternalAssetDependedBy,
+    ExternalAssetDependency,
     ExternalTimeWindowPartitionsDefinitionData,
-    SensorSnap,
     external_asset_nodes_from_defs,
     external_multi_partitions_definition_from_def,
     external_time_window_partitions_definition_from_def,
 )
-from dagster._serdes import deserialize_value, serialize_value, unpack_value
-from dagster._time import create_datetime, get_timezone
-from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
 
 def _get_external_asset_nodes_from_definitions(

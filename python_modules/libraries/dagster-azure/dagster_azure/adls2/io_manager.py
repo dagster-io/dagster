@@ -1,7 +1,8 @@
 import pickle
+from typing import Any, Union, Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator, Union
 
+from upath import UPath
 from dagster import (
     InputContext,
     OutputContext,
@@ -9,17 +10,16 @@ from dagster import (
     _check as check,
     io_manager,
 )
+from pydantic import Field
+from dagster._utils import PICKLE_PROTOCOL
 from dagster._annotations import deprecated
+from dagster._utils.cached_method import cached_method
 from dagster._config.pythonic_config import ConfigurableIOManager
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
-from dagster._utils import PICKLE_PROTOCOL
-from dagster._utils.cached_method import cached_method
-from pydantic import Field
-from upath import UPath
 
-from dagster_azure.adls2.resources import ADLS2Resource
 from dagster_azure.adls2.utils import ResourceNotFoundError
+from dagster_azure.adls2.resources import ADLS2Resource
 
 
 class PickledObjectADLS2IOManager(UPathIOManager):

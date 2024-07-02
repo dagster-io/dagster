@@ -1,67 +1,67 @@
 import warnings
-from collections import defaultdict, namedtuple
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
+    Set,
     Dict,
-    Generic,
     List,
+    Type,
+    Tuple,
+    Union,
+    Generic,
     Mapping,
-    NamedTuple,
+    TypeVar,
+    Callable,
     NoReturn,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from collections import namedtuple, defaultdict
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._utils import is_named_tuple_instance
 from dagster._annotations import public
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._utils import is_named_tuple_instance
+from dagster._core.definitions.op_definition import OpDefinition
 
+from .input import InputMapping, InputDefinition
+from .utils import NormalizedTags, normalize_tags, check_valid_name
 from .config import ConfigMapping
+from .output import OutputMapping, OutputDefinition
+from .policy import RetryPolicy
+from .inference import infer_output_props
 from .dependency import (
-    DependencyDefinition,
+    NodeInvocation,
     DependencyMapping,
-    DynamicCollectDependencyDefinition,
+    DependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
-    NodeInvocation,
+    DynamicCollectDependencyDefinition,
 )
-from .graph_definition import GraphDefinition
 from .hook_definition import HookDefinition
-from .inference import infer_output_props
-from .input import InputDefinition, InputMapping
-from .logger_definition import LoggerDefinition
 from .node_definition import NodeDefinition
-from .output import OutputDefinition, OutputMapping
-from .policy import RetryPolicy
-from .resource_definition import ResourceDefinition
-from .utils import NormalizedTags, check_valid_name, normalize_tags
+from .graph_definition import GraphDefinition
 from .version_strategy import VersionStrategy
+from .logger_definition import LoggerDefinition
+from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.instance import DagsterInstance
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
     from .assets import AssetsDefinition
-    from .executor_definition import ExecutorDefinition
-    from .job_definition import JobDefinition
     from .partition import PartitionedConfig, PartitionsDefinition
+    from .job_definition import JobDefinition
+    from .executor_definition import ExecutorDefinition
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -506,8 +506,8 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
         self, node_name: str, output_node, input_name: str, input_bindings, arg_desc: str
     ) -> None:
         from .assets import AssetsDefinition
-        from .external_asset import create_external_asset_from_source_asset
         from .source_asset import SourceAsset
+        from .external_asset import create_external_asset_from_source_asset
 
         # already set - conflict between kwargs and args
         if input_bindings.get(input_name):
@@ -675,8 +675,8 @@ class PendingNodeInvocation(Generic[T_NodeDefinition]):
 
         from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-        from .executor_definition import execute_in_process_executor
         from .job_definition import JobDefinition
+        from .executor_definition import execute_in_process_executor
 
         input_values = check.opt_mapping_param(input_values, "input_values")
 

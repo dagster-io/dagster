@@ -1,30 +1,30 @@
+from typing import TYPE_CHECKING, Mapping, NewType, Optional, Sequence, NamedTuple, AbstractSet
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, NewType, Optional, Sequence
 
 from dagster import _check as check
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._utils.cached_method import cached_method
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    BaseTimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
+    get_time_partitions_def,
+)
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
     PartitionDimensionDefinition,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
-from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-    get_time_partitions_def,
-)
-from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph, BaseAssetNode
-    from dagster._core.definitions.data_version import CachingStaleStatusResolver
-    from dagster._core.definitions.definitions_class import Definitions
-    from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.instance import DagsterInstance
+    from dagster._core.definitions.partition import PartitionsDefinition
+    from dagster._core.definitions.data_version import CachingStaleStatusResolver
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+    from dagster._core.definitions.base_asset_graph import BaseAssetNode, BaseAssetGraph
+    from dagster._core.definitions.definitions_class import Definitions
 
 
 class TemporalContext(NamedTuple):
@@ -278,8 +278,8 @@ class AssetGraphView:
     ):
         import pendulum
 
-        from dagster._core.definitions.data_version import CachingStaleStatusResolver
         from dagster._core.instance import DagsterInstance
+        from dagster._core.definitions.data_version import CachingStaleStatusResolver
 
         instance = instance or DagsterInstance.ephemeral()
         stale_resolver = CachingStaleStatusResolver(

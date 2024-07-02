@@ -1,8 +1,8 @@
 import pytest
 from click.testing import CliRunner
-from dagster._cli.job import execute_print_command, job_print_command
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster._cli.job import job_print_command, execute_print_command
+from dagster._core.test_utils import instance_for_test
 
 from .test_cli_commands import launch_command_contexts, valid_external_job_target_cli_args
 

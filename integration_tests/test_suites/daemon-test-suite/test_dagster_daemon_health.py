@@ -3,19 +3,19 @@ from datetime import timedelta
 
 import pytest
 from dagster import DagsterInvariantViolationError
-from dagster._core.test_utils import environ, freeze_time, instance_for_test
-from dagster._core.workspace.load_target import EmptyWorkspaceTarget
-from dagster._daemon.controller import (
-    DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
-    DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE,
-    RELOAD_WORKSPACE_INTERVAL,
-    all_daemons_healthy,
-    all_daemons_live,
-    daemon_controller_from_instance,
-    get_daemon_statuses,
-)
 from dagster._time import get_current_datetime
 from dagster._utils.error import SerializableErrorInfo
+from dagster._core.test_utils import environ, freeze_time, instance_for_test
+from dagster._daemon.controller import (
+    RELOAD_WORKSPACE_INTERVAL,
+    DEFAULT_WORKSPACE_FRESHNESS_TOLERANCE,
+    DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
+    all_daemons_live,
+    all_daemons_healthy,
+    get_daemon_statuses,
+    daemon_controller_from_instance,
+)
+from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 
 
 def test_healthy():
@@ -104,7 +104,7 @@ def test_healthy_with_different_daemons():
 
 def test_thread_die_daemon(monkeypatch):
     with instance_for_test(overrides={}) as instance:
-        from dagster._daemon.daemon import SchedulerDaemon, SensorDaemon
+        from dagster._daemon.daemon import SensorDaemon, SchedulerDaemon
 
         iteration_ran = {"ran": False}
 

@@ -1,11 +1,11 @@
 from dagster import (
-    Field,
     Out,
+    Field,
     Output,
     String,
-    _check as check,
-    job,
     op,
+    job,
+    _check as check,
 )
 
 

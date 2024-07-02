@@ -1,5 +1,5 @@
 import pytest
-from dagster import build_op_context, op
+from dagster import op, build_op_context
 from dagster_gcp.gcs.resources import GCSResource, gcs_resource
 
 PROJECT_ID = "test-project1231"

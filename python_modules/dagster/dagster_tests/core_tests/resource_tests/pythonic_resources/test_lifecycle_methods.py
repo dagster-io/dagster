@@ -1,20 +1,20 @@
-import contextlib
 import re
+import contextlib
 from typing import Any, Dict, Generator
 
 import pytest
 from dagster import (
-    ConfigurableResource,
-    Definitions,
     RunConfig,
-    build_init_resource_context,
-    job,
+    Definitions,
+    ConfigurableResource,
     op,
+    job,
+    build_init_resource_context,
 )
+from pydantic import PrivateAttr
 from dagster._check import CheckError
 from dagster._core.errors import DagsterResourceFunctionError
 from dagster._core.execution.context.init import InitResourceContext
-from pydantic import PrivateAttr
 
 
 def test_basic_pre_teardown_after_execution() -> None:

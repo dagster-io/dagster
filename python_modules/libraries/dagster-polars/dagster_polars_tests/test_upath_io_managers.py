@@ -1,31 +1,31 @@
+from typing import Dict, Tuple, Optional
 from datetime import datetime, timedelta
-from typing import Dict, Optional, Tuple
 
 import polars as pl
-import polars.testing as pl_testing
 import pytest
+import polars.testing as pl_testing
 from dagster import (
-    AssetExecutionContext,
     AssetIn,
+    MultiPartitionKey,
+    OpExecutionContext,
+    AssetExecutionContext,
+    MultiPartitionMapping,
+    IdentityPartitionMapping,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionKey,
-    MultiPartitionMapping,
     MultiPartitionsDefinition,
-    OpExecutionContext,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
     materialize,
 )
 from dagster_polars import (
-    BasePolarsUPathIOManager,
+    StorageMetadata,
     DataFramePartitions,
     LazyFramePartitions,
     PolarsDeltaIOManager,
     PolarsParquetIOManager,
-    StorageMetadata,
+    BasePolarsUPathIOManager,
 )
 
 from dagster_polars_tests.utils import get_saved_path

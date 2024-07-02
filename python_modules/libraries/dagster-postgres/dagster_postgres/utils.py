@@ -1,23 +1,23 @@
-import logging
 import time
+import logging
+from typing import Any, Mapping, TypeVar, Callable, Iterator, Optional
 from contextlib import contextmanager
-from typing import Any, Callable, Iterator, Mapping, Optional, TypeVar
 from urllib.parse import quote, urlencode
 
-import alembic.config
 import psycopg2
+import sqlalchemy
+import alembic.config
+import sqlalchemy.exc
 import psycopg2.errorcodes
 import psycopg2.extensions
-import sqlalchemy
-import sqlalchemy.exc
 from dagster import _check as check
-from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
+from sqlalchemy.engine import Connection
+from dagster._core.storage.sql import get_alembic_config
 
 # re-export
 from dagster._core.storage.config import pg_config as pg_config
+from dagster._core.definitions.policy import Jitter, Backoff, calculate_delay
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-from dagster._core.storage.sql import get_alembic_config
-from sqlalchemy.engine import Connection
 
 T = TypeVar("T")
 

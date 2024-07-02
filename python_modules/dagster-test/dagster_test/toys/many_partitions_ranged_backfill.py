@@ -5,11 +5,11 @@ unnecessary writes.
 """
 
 from dagster import (
-    AssetExecutionContext,
-    BackfillPolicy,
-    Definitions,
-    HourlyPartitionsDefinition,
     IOManager,
+    Definitions,
+    BackfillPolicy,
+    AssetExecutionContext,
+    HourlyPartitionsDefinition,
     asset,
 )
 

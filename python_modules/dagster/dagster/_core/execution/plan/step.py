@@ -2,26 +2,26 @@ from abc import abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    FrozenSet,
+    Set,
     List,
+    Union,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Union,
+    FrozenSet,
+    NamedTuple,
     cast,
 )
 
 from typing_extensions import TypeGuard
 
 import dagster._check as check
-from dagster._core.definitions.utils import normalize_tags
-from dagster._serdes.serdes import EnumSerializer, whitelist_for_serdes
 from dagster._utils.merger import merge_dicts
+from dagster._serdes.serdes import EnumSerializer, whitelist_for_serdes
+from dagster._core.definitions.utils import normalize_tags
 
-from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle
-from .inputs import StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput
+from .handle import StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle
+from .inputs import StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput
 from .outputs import StepOutput
 
 if TYPE_CHECKING:

@@ -1,21 +1,21 @@
 import math
 import tempfile
+from typing import Set, List
 from collections import defaultdict
-from typing import List, Set
 
 import pytest
-from dagster import job, op
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
+from dagster import op, job
+from dagster._core.utils import make_new_run_id
+from dagster._core.errors import DagsterInvariantViolationError, DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._utils.error import SerializableErrorInfo
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
+from dagster._core.execution.retries import RetryMode
 from dagster._core.execution.plan.objects import StepRetryData, StepSuccessData
 from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
-from dagster._core.test_utils import instance_for_test
-from dagster._core.utils import make_new_run_id
-from dagster._utils.error import SerializableErrorInfo
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 
 
 def define_foo_job():

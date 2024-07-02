@@ -1,10 +1,10 @@
 import time
 from typing import Any
 
-from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster_graphql import ShutdownRepositoryLocationStatus
-from dagster_graphql.client.client_queries import SHUTDOWN_REPOSITORY_LOCATION_MUTATION
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.client.client_queries import SHUTDOWN_REPOSITORY_LOCATION_MUTATION
 
 from ..graphql.graphql_context_test_suite import (
     GraphQLContextVariant,

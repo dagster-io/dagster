@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class IOutputManagerDefinition:

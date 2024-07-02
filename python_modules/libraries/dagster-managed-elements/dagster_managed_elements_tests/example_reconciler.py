@@ -1,9 +1,9 @@
 from typing import Optional
 
 from dagster_managed_elements import (
-    ManagedElementCheckResult,
     ManagedElementDiff,
     ManagedElementReconciler,
+    ManagedElementCheckResult,
 )
 
 

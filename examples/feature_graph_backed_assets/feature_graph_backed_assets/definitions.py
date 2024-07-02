@@ -1,13 +1,13 @@
 from dagster import (
-    AssetsDefinition,
-    AssetSelection,
     Definitions,
+    AssetSelection,
+    AssetsDefinition,
     define_asset_job,
     load_assets_from_package_module,
 )
 
 from . import assets
-from .graphs_and_ops import layover_breakdown_2022, us_assets
+from .graphs_and_ops import us_assets, layover_breakdown_2022
 
 airline_job = define_asset_job(
     "airline_job", AssetSelection.assets("passenger_flights").downstream()

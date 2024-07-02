@@ -2,9 +2,9 @@ import os
 from enum import Enum
 from typing import Dict, List, Optional
 
-from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
-from .python_version import AvailablePythonVersion
 from .utils import CommandStep, safe_getenv
+from .python_version import AvailablePythonVersion
+from .images.versions import BUILDKITE_TEST_IMAGE_VERSION
 
 DEFAULT_TIMEOUT_IN_MIN = 25
 

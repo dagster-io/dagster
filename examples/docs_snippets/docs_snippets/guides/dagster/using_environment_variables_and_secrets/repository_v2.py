@@ -4,9 +4,9 @@ from dagster_snowflake_pandas import (
     SnowflakePandasIOManager,
     snowflake_pandas_io_manager,
 )
-from development_to_production.assets import comments, items, stories
+from development_to_production.assets import items, stories, comments
 
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 # start_new
 # __init__.py

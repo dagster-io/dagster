@@ -3,10 +3,10 @@ from typing import Iterator, Optional
 
 import pendulum
 
-from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
-from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo
+from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter
 
 RUN_BATCH_SIZE = 1000
 

@@ -7,73 +7,73 @@ in the user_context module.
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
     Set,
+    Dict,
+    List,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.dependency import OpNode
-from dagster._core.definitions.events import AssetKey, AssetLineageInfo
-from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.job_base import IJob
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import infer_partition_mapping
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.repository_definition.repository_definition import (
-    RepositoryDefinition,
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.tags import (
+    PARTITION_NAME_TAG,
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+    MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._core.executor.base import Executor
+from dagster._core.execution.retries import RetryMode
+from dagster._core.definitions.events import AssetKey, AssetLineageInfo
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.storage.io_manager import IOManager
+from dagster._core.types.dagster_type import DagsterType
+from dagster._core.execution.plan.step import ExecutionStep
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.job_base import IJob
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.definitions.partition import PartitionsSubset, PartitionsDefinition
+from dagster._core.execution.plan.handle import StepHandle, ResolvedFromDynamicStepHandle
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.definitions.dependency import OpNode
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.partition_mapping import infer_partition_mapping
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     has_one_dimension_time_window_partitioning,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
-from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.step import ExecutionStep
-from dagster._core.execution.retries import RetryMode
-from dagster._core.executor.base import Executor
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.tags import (
-    ASSET_PARTITION_RANGE_END_TAG,
-    ASSET_PARTITION_RANGE_START_TAG,
-    MULTIDIMENSIONAL_PARTITION_PREFIX,
-    PARTITION_NAME_TAG,
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
 )
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.types.dagster_type import DagsterType
 
-from .data_version_cache import DataVersionCache, InputAssetVersionInfo
 from .input import InputContext
 from .output import OutputContext, get_output_context
+from .data_version_cache import DataVersionCache, InputAssetVersionInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.data_version import DataVersion
-    from dagster._core.definitions.dependency import NodeHandle
-    from dagster._core.definitions.resource_definition import Resources
+    from dagster._core.instance import DagsterInstance
     from dagster._core.execution.plan.plan import ExecutionPlan
     from dagster._core.execution.plan.state import KnownExecutionState
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.definitions.dependency import NodeHandle
+    from dagster._core.definitions.data_version import DataVersion
+    from dagster._core.definitions.resource_definition import Resources
 
     from .hook import HookContext
 

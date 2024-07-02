@@ -4,32 +4,32 @@ import pendulum
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
-from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.run_request import SensorResult
 from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
-from dagster._core.definitions.run_request import SensorResult
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
+from .utils import normalize_tags, check_valid_name
 from .asset_selection import AssetSelection
 from .sensor_definition import (
-    DefaultSensorStatus,
-    SensorDefinition,
-    SensorEvaluationContext,
     SensorType,
+    SensorDefinition,
+    DefaultSensorStatus,
+    SensorEvaluationContext,
 )
-from .utils import check_valid_name, normalize_tags
 
 
 def evaluate_scheduling_conditions(context: SensorEvaluationContext):
-    from dagster._core.definitions.asset_daemon_context import build_run_requests
     from dagster._daemon.asset_daemon import (
-        asset_daemon_cursor_from_instigator_serialized_cursor,
         asset_daemon_cursor_to_instigator_serialized_cursor,
+        asset_daemon_cursor_from_instigator_serialized_cursor,
     )
+    from dagster._core.definitions.asset_daemon_context import build_run_requests
 
     asset_graph = check.not_none(context.repository_def).asset_graph
 

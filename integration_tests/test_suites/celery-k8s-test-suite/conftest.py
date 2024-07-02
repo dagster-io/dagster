@@ -2,14 +2,14 @@ import os
 
 import docker
 import pytest
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 # fixtures: redundant alias marks them as used imports
 from dagster_k8s_test_infra.cluster import (
     dagster_instance as dagster_instance,
-    define_cluster_provider_fixture,
     helm_postgres_url as helm_postgres_url,
+    define_cluster_provider_fixture,
 )
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 

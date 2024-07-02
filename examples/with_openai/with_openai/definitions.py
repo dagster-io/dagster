@@ -1,8 +1,8 @@
-import json
 import os
+import json
 
-from dagster import Definitions, EnvVar, RunRequest, SensorResult, load_assets_from_modules, sensor
-from dagster_aws.s3 import S3PickleIOManager, S3Resource
+from dagster import EnvVar, RunRequest, Definitions, SensorResult, sensor, load_assets_from_modules
+from dagster_aws.s3 import S3Resource, S3PickleIOManager
 from dagster_openai import OpenAIResource
 
 from . import assets

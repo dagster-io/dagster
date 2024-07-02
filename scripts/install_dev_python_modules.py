@@ -1,7 +1,7 @@
 # ruff: noqa: T201
+import sys
 import argparse
 import subprocess
-import sys
 from typing import List, Optional
 
 # We allow extra packages to be passed in via the command line because pip's version resolution

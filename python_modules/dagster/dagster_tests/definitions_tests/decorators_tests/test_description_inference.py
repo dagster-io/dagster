@@ -1,4 +1,4 @@
-from dagster import graph, job, op, resource
+from dagster import op, job, graph, resource
 
 
 def test_description_inference():

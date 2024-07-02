@@ -1,24 +1,24 @@
 import inspect
-from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from contextlib import contextmanager
 
 import dagster._check as check
-from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
+from dagster._core.definitions.configurable import ConfigurableDefinition
 
 from ..._config import Shape
 from .resource_requirement import ensure_requirements_satisfied
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.resource_definition import ResourceDefinition
     from dagster._core.execution.context.init import InitResourceContext, UnboundInitResourceContext
+    from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 def resource_invocation_result(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> Any:
-    from ..execution.context.init import UnboundInitResourceContext
     from .resource_definition import ResourceDefinition, has_at_least_one_parameter
+    from ..execution.context.init import UnboundInitResourceContext
 
     check.inst_param(resource_def, "resource_def", ResourceDefinition)
     check.opt_inst_param(init_context, "init_context", UnboundInitResourceContext)
@@ -49,11 +49,11 @@ def resource_invocation_result(
 def _check_invocation_requirements(
     resource_def: "ResourceDefinition", init_context: Optional["UnboundInitResourceContext"]
 ) -> "InitResourceContext":
-    from dagster._core.definitions.resource_definition import has_at_least_one_parameter
     from dagster._core.execution.context.init import (
         InitResourceContext,
         build_init_resource_context,
     )
+    from dagster._core.definitions.resource_definition import has_at_least_one_parameter
 
     context_provided = has_at_least_one_parameter(resource_def.resource_fn)
     if context_provided and resource_def.required_resource_keys and init_context is None:
@@ -94,8 +94,8 @@ def _check_invocation_requirements(
 
 
 def _get_friendly_string(configurable_def: ConfigurableDefinition) -> str:
-    from dagster._core.definitions.logger_definition import LoggerDefinition
     from dagster._core.definitions.node_definition import NodeDefinition
+    from dagster._core.definitions.logger_definition import LoggerDefinition
     from dagster._core.definitions.resource_definition import ResourceDefinition
 
     if isinstance(configurable_def, ResourceDefinition):

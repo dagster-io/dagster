@@ -1,8 +1,8 @@
 from dagster import (
     AutoMaterializePolicy,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
     repository,
 )

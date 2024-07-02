@@ -2,18 +2,18 @@ import os
 import sys
 
 import pytest
-from dagster import DagsterInvariantViolationError, RepositoryDefinition
+from dagster import RepositoryDefinition, DagsterInvariantViolationError
+from dagster._utils import alter_sys_path, file_relative_path, restore_sys_modules
+from dagster._core.errors import DagsterImportError
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstruct import repository_def_from_pointer
-from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
-from dagster._core.errors import DagsterImportError
 from dagster._core.workspace.autodiscovery import (
     LOAD_ALL_ASSETS,
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
     loadable_targets_from_python_package,
 )
-from dagster._utils import alter_sys_path, file_relative_path, restore_sys_modules
+from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
 
 
 def test_single_repository():

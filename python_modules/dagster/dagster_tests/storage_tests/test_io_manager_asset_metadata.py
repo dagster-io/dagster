@@ -1,14 +1,14 @@
 from dagster import (
     AssetIn,
     AssetOut,
-    AssetsDefinition,
     GraphOut,
+    AssetsDefinition,
+    op,
     asset,
     graph,
-    graph_multi_asset,
     materialize,
     multi_asset,
-    op,
+    graph_multi_asset,
 )
 from dagster._core.storage.io_manager import IOManager
 

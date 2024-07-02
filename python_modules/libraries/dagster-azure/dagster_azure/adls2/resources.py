@@ -1,26 +1,26 @@
 from typing import Any, Dict, Union
 
-from azure.identity import DefaultAzureCredential
-from azure.storage.filedatalake import DataLakeLeaseClient
 from dagster import (
-    Config,
-    ConfigurableResource,
     Field as DagsterField,
-    Permissive,
+    Config,
     Selector,
+    Permissive,
     StringSource,
+    ConfigurableResource,
     resource,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.cached_method import cached_method
-from dagster._utils.merger import merge_dicts
 from pydantic import Field
+from azure.identity import DefaultAzureCredential
 from typing_extensions import Literal
+from dagster._utils.merger import merge_dicts
+from azure.storage.filedatalake import DataLakeLeaseClient
+from dagster._utils.cached_method import cached_method
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from dagster_azure.blob.utils import BlobServiceClient, create_blob_client
 
-from .file_manager import ADLS2FileManager
 from .utils import DataLakeServiceClient, create_adls2_client
+from .file_manager import ADLS2FileManager
 
 
 class ADLS2SASToken(Config):

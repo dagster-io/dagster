@@ -1,76 +1,76 @@
-import functools
-import logging
 import os
-from contextlib import ExitStack
-from datetime import datetime
+import logging
+import functools
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Iterator,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
     Union,
+    Mapping,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    NamedTuple,
     cast,
     overload,
 )
+from datetime import datetime
+from contextlib import ExitStack
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, experimental_param, public
-from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._time import parse_time_string
+from dagster._seven import JSONDecodeError
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._serdes import serialize_value, whitelist_for_serdes
+from dagster._annotations import public, deprecated_param, experimental_param
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
     RunStatusSensorExecutionError,
+    DagsterInvariantViolationError,
     user_code_error_boundary,
 )
-from dagster._core.event_api import RunStatusChangeEventType, RunStatusChangeRecordsFilter
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent, DagsterEventType
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import JSONDecodeError
-from dagster._time import parse_time_string
-from dagster._utils import utc_datetime_from_timestamp
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.event_api import RunStatusChangeEventType, RunStatusChangeRecordsFilter
 from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter, DagsterRunStatus
+from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 
-from .graph_definition import GraphDefinition
+from .target import ExecutableDefinition
 from .job_definition import JobDefinition
+from .graph_definition import GraphDefinition
 from .sensor_definition import (
-    DagsterRunReaction,
-    DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
     RunRequest,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SensorResult,
     SensorType,
     SkipReason,
+    SensorResult,
+    SensorDefinition,
+    DagsterRunReaction,
+    DefaultSensorStatus,
+    SensorEvaluationContext,
+    RawSensorEvaluationFunctionReturn,
     get_context_param_name,
     get_or_create_sensor_context,
     validate_and_get_resource_dict,
 )
-from .target import ExecutableDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.resource_definition import ResourceDefinition
     from dagster._core.definitions.selector import (
-        CodeLocationSelector,
         JobSelector,
         RepositorySelector,
+        CodeLocationSelector,
     )
+    from dagster._core.definitions.resource_definition import ResourceDefinition
 
 RunStatusSensorEvaluationFunction: TypeAlias = Union[
     Callable[..., RawSensorEvaluationFunctionReturn],
@@ -197,8 +197,8 @@ class RunStatusSensorContext:
 
     @property
     def resources(self) -> Resources:
-        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
         from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
 
         if not self._resources:
             """
@@ -634,9 +634,9 @@ class RunStatusSensorDefinition(SensorDefinition):
         required_resource_keys: Optional[Set[str]] = None,
     ):
         from dagster._core.definitions.selector import (
-            CodeLocationSelector,
             JobSelector,
             RepositorySelector,
+            CodeLocationSelector,
         )
 
         check.str_param(name, "name")

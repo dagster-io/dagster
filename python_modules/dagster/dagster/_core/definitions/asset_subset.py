@@ -1,17 +1,17 @@
 import datetime
 import operator
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Union, Callable, Optional, NamedTuple, AbstractSet, cast
 
 import dagster._check as check
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.partition import (
-    AllPartitionsSubset,
-    PartitionsDefinition,
-    PartitionsSubset,
-)
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._model import InstanceOf
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.partition import (
+    PartitionsSubset,
+    AllPartitionsSubset,
+    PartitionsDefinition,
+)
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 
 if TYPE_CHECKING:
     from dagster._core.instance import DynamicPartitionsStore

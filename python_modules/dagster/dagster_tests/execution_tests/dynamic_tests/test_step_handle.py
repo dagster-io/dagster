@@ -1,7 +1,7 @@
 from dagster._core.execution.plan.handle import (
-    ResolvedFromDynamicStepHandle,
     StepHandle,
     UnresolvedStepHandle,
+    ResolvedFromDynamicStepHandle,
 )
 
 

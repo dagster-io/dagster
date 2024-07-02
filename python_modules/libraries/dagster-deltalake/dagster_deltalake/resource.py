@@ -1,10 +1,10 @@
-from typing import Optional, Union
+from typing import Union, Optional
 
 from dagster import ConfigurableResource
-from deltalake import DeltaTable
 from pydantic import Field
+from deltalake import DeltaTable
 
-from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
+from .config import S3Config, GcsConfig, AzureConfig, LocalConfig, ClientConfig
 
 
 class DeltaTableResource(ConfigurableResource):

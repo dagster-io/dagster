@@ -1,29 +1,29 @@
-from typing import AbstractSet, Iterable
+from typing import Iterable, AbstractSet
 
 import pytest
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
-    AssetsDefinition,
-    AutoMaterializePolicy,
-    DagsterInstance,
+    IOManager,
     DataVersion,
     Definitions,
-    IOManager,
-    JobDefinition,
     SourceAsset,
-    _check as check,
+    JobDefinition,
+    DagsterInstance,
+    AssetsDefinition,
+    AssetExecutionContext,
+    AutoMaterializePolicy,
     asset,
+    _check as check,
     observable_source_asset,
 )
 from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.external_asset import (
-    create_external_asset_from_source_asset,
     external_assets_from_specs,
+    create_external_asset_from_source_asset,
 )
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 
 
 def test_external_asset_basic_creation() -> None:

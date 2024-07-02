@@ -1,12 +1,12 @@
 import shutil
 
 from dagster import (
-    AssetExecutionContext,
     AssetSpec,
     Definitions,
+    AssetExecutionContext,
     PipesSubprocessClient,
-    file_relative_path,
     multi_asset,
+    file_relative_path,
 )
 
 

@@ -10,9 +10,9 @@ def get_iris_data_for_date(*args, **kwargs):
 import pandas as pd
 
 from dagster import (
+    MultiPartitionKey,
     AssetExecutionContext,
     DailyPartitionsDefinition,
-    MultiPartitionKey,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,

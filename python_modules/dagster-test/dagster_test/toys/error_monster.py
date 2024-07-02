@@ -1,19 +1,19 @@
 from dagster import (
-    Failure,
-    Field,
     In,
     Int,
-    IOManager,
     Out,
-    ResourceDefinition,
-    RetryRequested,
+    Field,
     String,
+    Failure,
+    IOManager,
+    RetryRequested,
+    ResourceDefinition,
+    op,
     graph,
     io_manager,
-    op,
 )
-from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._utils import segfault
+from dagster._core.definitions.executor_definition import in_process_executor
 
 
 class ExampleException(Exception):

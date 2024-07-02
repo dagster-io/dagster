@@ -3,9 +3,9 @@ from dagster import (
     _check as check,
 )
 from dagster._core.test_utils import wait_for_runs_to_finish
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUBSCRIPTION_QUERY
 from dagster_graphql.test.utils import execute_dagster_graphql, execute_dagster_graphql_subscription
+from dagster_graphql.client.query import SUBSCRIPTION_QUERY, LAUNCH_PIPELINE_EXECUTION_MUTATION
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
 
 
 def get_all_logs_for_finished_run_via_subscription(context, run_id):

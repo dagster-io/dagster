@@ -1,9 +1,9 @@
 from typing import List
 
-import dagster._check as check
 import graphene
-from dagster._core.definitions.events import AssetKey
+import dagster._check as check
 from dagster._utils.error import SerializableErrorInfo
+from dagster._core.definitions.events import AssetKey
 
 from .util import ResolveInfo, non_null_list
 

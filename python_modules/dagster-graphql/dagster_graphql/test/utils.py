@@ -1,17 +1,17 @@
-import asyncio
 import sys
-from contextlib import contextmanager
+import asyncio
+from typing import Any, Dict, Mapping, Iterator, Optional, Sequence
 from pathlib import Path
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
+from contextlib import contextmanager
 
-import dagster._check as check
 import graphene
+import dagster._check as check
+from typing_extensions import Protocol, TypeAlias, TypedDict
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.test_utils import wait_for_runs_to_finish
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from typing_extensions import Protocol, TypeAlias, TypedDict
+from dagster._core.remote_representation.external import ExternalRepository
 
 from dagster_graphql import __file__ as dagster_graphql_init_py
 from dagster_graphql.schema import create_schema

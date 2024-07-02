@@ -1,9 +1,9 @@
-import enum
 import os
+import enum
 from typing import List, Mapping
 
 import pytest
-from dagster import Config, ConfigurableResource, Definitions, EnvVar, asset
+from dagster import Config, EnvVar, Definitions, ConfigurableResource, asset
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
 

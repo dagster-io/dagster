@@ -1,13 +1,13 @@
+from typing import Any, Dict, Union, Mapping, Callable, Iterator, Optional, Sequence, AbstractSet
 from argparse import Namespace
-from typing import AbstractSet, Any, Callable, Dict, Iterator, Mapping, Optional, Sequence, Union
 
 import dateutil
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    MetadataValue,
     Output,
+    AssetKey,
+    MetadataValue,
+    AssetObservation,
+    AssetMaterialization,
     _check as check,
 )
 from dagster._core.definitions.metadata import RawMetadataValue
@@ -225,9 +225,9 @@ def select_unique_ids_from_manifest(
     """Method to apply a selection string to an existing manifest.json file."""
     import dbt.graph.cli as graph_cli
     import dbt.graph.selector as graph_selector
-    from dbt.contracts.graph.manifest import Manifest
-    from dbt.graph.selector_spec import IndirectSelection, SelectionSpec
     from networkx import DiGraph
+    from dbt.graph.selector_spec import SelectionSpec, IndirectSelection
+    from dbt.contracts.graph.manifest import Manifest
 
     # NOTE: this was faster than calling `Manifest.from_dict`, so we are keeping this.
     class _DictShim(dict):
@@ -326,7 +326,7 @@ def get_dbt_resource_props_by_dbt_unique_id_from_manifest(
 
 
 def _set_flag_attrs(kvs: Dict[str, Any]):
-    from dbt.flags import get_flag_dict, set_flags
+    from dbt.flags import set_flags, get_flag_dict
 
     new_flags = Namespace()
     for global_key, global_value in get_flag_dict().items():

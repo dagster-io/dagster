@@ -1,7 +1,7 @@
 import pandas as pd
-from dagster import DagsterEventType, In, file_relative_path, graph, op
-from dagster._core.definitions.metadata import MetadataValue
+from dagster import In, DagsterEventType, op, graph, file_relative_path
 from dagster_pandas import DataFrame
+from dagster._core.definitions.metadata import MetadataValue
 
 
 def test_basic_pd_df_metadata():

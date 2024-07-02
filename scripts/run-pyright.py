@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 # ruff: noqa: T201
 
-import argparse
-import json
 import os
 import re
-import shutil
-import subprocess
 import sys
-from contextlib import contextmanager
+import json
+import shutil
+import argparse
+import subprocess
+from typing import Dict, List, Mapping, Iterator, Optional, Sequence, cast
 from functools import reduce
 from itertools import groupby
-from typing import Dict, Iterator, List, Mapping, Optional, Sequence, cast
+from contextlib import contextmanager
 
 import tomli
-from typing_extensions import Final, Literal, NotRequired, TypedDict
+from typing_extensions import Final, Literal, TypedDict, NotRequired
 
 parser = argparse.ArgumentParser(
     prog="run-pyright",

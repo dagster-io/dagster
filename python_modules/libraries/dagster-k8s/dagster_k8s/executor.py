@@ -1,41 +1,41 @@
-from typing import Iterator, List, Optional, cast
+from typing import List, Iterator, Optional, cast
 
 import kubernetes.config
 from dagster import (
     Field,
-    IntSource,
     Noneable,
+    IntSource,
     StringSource,
     _check as check,
     executor,
 )
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.events import DagsterEvent, EngineEventData
-from dagster._core.execution.retries import RetryMode, get_retries_config
-from dagster._core.execution.tags import get_tag_concurrency_limits_config
+from dagster._utils.merger import merge_dicts
 from dagster._core.executor.base import Executor
 from dagster._core.executor.init import InitExecutorContext
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
+from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.executor.step_delegating import (
-    CheckStepHealthResult,
-    StepDelegatingExecutor,
     StepHandler,
     StepHandlerContext,
+    CheckStepHealthResult,
+    StepDelegatingExecutor,
 )
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 
 from dagster_k8s.launcher import K8sRunLauncher
 
-from .client import DagsterKubernetesClient
-from .container_context import K8sContainerContext
 from .job import (
     USER_DEFINED_K8S_CONFIG_SCHEMA,
     DagsterK8sJobConfig,
     UserDefinedDagsterK8sConfig,
-    construct_dagster_k8s_job,
     get_k8s_job_name,
+    construct_dagster_k8s_job,
     get_user_defined_k8s_config,
 )
+from .client import DagsterKubernetesClient
+from .container_context import K8sContainerContext
 
 _K8S_EXECUTOR_CONFIG_SCHEMA = merge_dicts(
     DagsterK8sJobConfig.config_type_job(),

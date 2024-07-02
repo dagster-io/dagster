@@ -6,28 +6,28 @@ import pytest
 import responses
 from dagster import (
     AssetKey,
+    MetadataValue,
     AssetSelection,
+    FreshnessPolicy,
     AutoMaterializePolicy,
     DailyPartitionsDefinition,
-    FreshnessPolicy,
-    MetadataValue,
     asset,
     define_asset_job,
     file_relative_path,
 )
-from dagster._config.field_utils import EnvVar
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.test_utils import environ, instance_for_test
 from dagster_dbt import (
-    DagsterDbtCloudJobInvariantViolationError,
     DbtCloudClientResource,
+    DagsterDbtCloudJobInvariantViolationError,
     load_assets_from_dbt_cloud_job,
 )
-from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._config.field_utils import EnvVar
 from dagster_dbt.cloud.resources import DbtCloudClient
+from dagster_dbt.cloud.asset_defs import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR
+from dagster._core.definitions.asset_graph import AssetGraph
 
+from .utils import DBT_CLOUD_API_TOKEN, DBT_CLOUD_ACCOUNT_ID, sample_get_environment_variables
 from ..legacy.utils import assert_assets_match_project
-from .utils import DBT_CLOUD_ACCOUNT_ID, DBT_CLOUD_API_TOKEN, sample_get_environment_variables
 
 DBT_CLOUD_PROJECT_ID = 12
 DBT_CLOUD_JOB_ID = 123

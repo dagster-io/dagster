@@ -1,6 +1,6 @@
 import os
 
-from dagster import Array, BoolSource, IntSource, Noneable, StringSource
+from dagster import Array, Noneable, IntSource, BoolSource, StringSource
 from dagster._config import process_config
 from dagster._core.test_utils import environ
 

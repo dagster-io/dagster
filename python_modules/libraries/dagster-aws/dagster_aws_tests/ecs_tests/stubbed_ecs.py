@@ -1,15 +1,15 @@
-import copy
-import itertools
 import re
-import threading
+import copy
 import time
 import uuid
-from collections import defaultdict
+import itertools
+import threading
 from operator import itemgetter
+from collections import defaultdict
 
 import boto3
-from botocore.exceptions import ClientError
 from botocore.stub import Stubber
+from botocore.exceptions import ClientError
 
 
 def stubbed(function):

@@ -1,10 +1,10 @@
 import enum
-from typing import NamedTuple, Optional
+from typing import Optional, NamedTuple
 
 import dagster._check as check
-from dagster._core.events.log import DagsterEventType, EventLogEntry
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils import datetime_as_float
+from dagster._serdes.serdes import deserialize_value
+from dagster._core.events.log import EventLogEntry, DagsterEventType
 
 
 class AssetCheckInstanceSupport(enum.Enum):

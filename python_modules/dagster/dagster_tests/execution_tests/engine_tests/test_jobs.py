@@ -1,7 +1,7 @@
 import time
 
-from dagster import DynamicOut, Out, job, op
-from dagster._core.definitions.events import DynamicOutput, Output
+from dagster import Out, DynamicOut, op, job
+from dagster._core.definitions.events import Output, DynamicOutput
 
 from .test_step_delegating_executor import test_step_delegating_executor
 

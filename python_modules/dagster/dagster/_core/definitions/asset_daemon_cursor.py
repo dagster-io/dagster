@@ -1,29 +1,29 @@
-import dataclasses
 import json
-from dataclasses import dataclass
+import dataclasses
+from typing import TYPE_CHECKING, Mapping, Optional, Sequence, NamedTuple
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence
+from dataclasses import dataclass
 
-from dagster._core.definitions.events import AssetKey
 from dagster._serdes.serdes import (
+    WhitelistMap,
+    PackableValue,
+    UnpackContext,
     FieldSerializer,
     JsonSerializableValue,
-    PackableValue,
     SerializableNonScalarKeyMapping,
-    UnpackContext,
-    WhitelistMap,
     pack_value,
     unpack_value,
     whitelist_for_serdes,
 )
+from dagster._core.definitions.events import AssetKey
 
 from .base_asset_graph import BaseAssetGraph
 
 if TYPE_CHECKING:
     from .declarative_automation.serialized_objects import (
-        AssetConditionEvaluationState,
         AssetConditionSnapshot,
         AutomationConditionCursor,
+        AssetConditionEvaluationState,
     )
 
 

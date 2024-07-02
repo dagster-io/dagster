@@ -1,16 +1,16 @@
 import pytest
 from dagster import DagsterInstance, GraphDefinition, op, resource
-from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.log_manager import DagsterLogManager
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context_creation_job import PlanExecutionContextManager
+from dagster._core.execution.retries import RetryMode
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.execution.resources_init import (
-    resource_initialization_event_generator,
     resource_initialization_manager,
     single_resource_event_generator,
+    resource_initialization_event_generator,
 )
-from dagster._core.execution.retries import RetryMode
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 
 
 def test_generator_exit():
@@ -63,8 +63,8 @@ def test_clean_event_generator_exit():
     """Testing for generator cleanup
     (see https://amir.rachum.com/blog/2017/03/03/generator-cleanup/).
     """
-    from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
     from dagster._core.execution.context.init import InitResourceContext
+    from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 
     job_def = gen_basic_resource_job()
     instance = DagsterInstance.ephemeral()

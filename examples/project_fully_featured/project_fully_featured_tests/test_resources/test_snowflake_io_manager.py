@@ -1,15 +1,15 @@
 import os
 import uuid
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 
 import pytest
+from pandas import DataFrame as PandasDataFrame
 from dagster import AssetKey, asset, build_input_context, build_output_context
+from pyspark.sql import Row, SparkSession
+from pyspark.sql.types import StringType, StructType, IntegerType, StructField
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from pandas import DataFrame as PandasDataFrame
-from pyspark.sql import Row, SparkSession
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 from project_fully_featured.resources import SHARED_SNOWFLAKE_CONF
 from project_fully_featured.resources.snowflake_io_manager import (

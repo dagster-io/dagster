@@ -1,4 +1,4 @@
-from dagster import DagsterType, In, Out, graph, job, op
+from dagster import In, Out, DagsterType, op, job, graph
 from dagster._core.storage.io_manager import IOManager, io_manager
 
 

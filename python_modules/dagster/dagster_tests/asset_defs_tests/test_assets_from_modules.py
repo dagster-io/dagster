@@ -1,21 +1,21 @@
 import re
-from typing import Sequence, Union, cast
+from typing import Union, Sequence, cast
 
 import pytest
 from dagster import (
     AssetKey,
+    SourceAsset,
+    FreshnessPolicy,
     AssetsDefinition,
     DagsterInvalidDefinitionError,
-    FreshnessPolicy,
-    SourceAsset,
     asset,
-    load_assets_from_current_module,
     load_assets_from_modules,
-    load_assets_from_package_module,
     load_assets_from_package_name,
+    load_assets_from_current_module,
+    load_assets_from_package_module,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 get_unique_asset_identifier = lambda asset: (
     asset.op.name if isinstance(asset, AssetsDefinition) else asset.key

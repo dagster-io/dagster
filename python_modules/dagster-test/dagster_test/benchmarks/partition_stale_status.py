@@ -1,24 +1,24 @@
 # ruff: noqa: T201
 import argparse
 from random import randint
-from typing import Sequence, Union
+from typing import Union, Sequence
 
 from dagster import StaticPartitionsDefinition, asset
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.data_version import (
-    SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
-    CachingStaleStatusResolver,
-    StaleStatus,
-)
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance_for_test import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.assets import AssetsDefinition
 from dagster._utils.test.data_versions import materialize_asset
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.data_version import (
+    SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
+    StaleStatus,
+    CachingStaleStatusResolver,
+)
+from dagster._core.definitions.source_asset import SourceAsset
 
 from dagster_test.utils.benchmark import ProfilingSession
 

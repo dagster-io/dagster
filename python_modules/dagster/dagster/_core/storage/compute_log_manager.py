@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
 from enum import Enum
-from typing import Callable, Iterator, NamedTuple, Optional
+from typing import Callable, Iterator, Optional, NamedTuple
+from contextlib import contextmanager
 
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
 from dagster._core.storage.dagster_run import DagsterRun
 
 MAX_BYTES_FILE_READ = 33554432  # 32 MB

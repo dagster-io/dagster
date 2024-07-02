@@ -1,28 +1,28 @@
-import functools
-import inspect
 import re
+import inspect
 import textwrap
-from inspect import Parameter, signature
+import functools
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    ContextManager,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
     Type,
-    TypeVar,
     Union,
+    Mapping,
+    TypeVar,
+    Callable,
+    Optional,
+    Sequence,
+    ContextManager,
     cast,
 )
+from inspect import Parameter, signature
 
 from typing_extensions import (
-    Concatenate,
     ParamSpec,
     TypeAlias,
     TypeGuard,
+    Concatenate,
     get_type_hints as typing_get_type_hints,
 )
 

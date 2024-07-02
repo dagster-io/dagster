@@ -1,7 +1,7 @@
 import logging
 from unittest import mock
 
-from dagster import job, op
+from dagster import op, job
 from dagster._loggers import colored_console_logger
 from dagster_papertrail import papertrail_logger
 

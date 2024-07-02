@@ -1,6 +1,6 @@
 import os
 
-from dagster import OpExecutionContext, job, make_values_resource, op
+from dagster import OpExecutionContext, op, job, make_values_resource
 
 # start_file_example
 

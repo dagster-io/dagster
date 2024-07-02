@@ -1,25 +1,25 @@
 import os
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Type, Mapping, Optional, Sequence, NamedTuple
 
 import yaml
 
 import dagster._check as check
-from dagster._serdes import ConfigurableClassData, class_from_code_pointer, whitelist_for_serdes
+from dagster._serdes import ConfigurableClassData, whitelist_for_serdes, class_from_code_pointer
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance, DagsterInstanceOverrides
-    from dagster._core.launcher.base import RunLauncher
-    from dagster._core.run_coordinator.base import RunCoordinator
-    from dagster._core.scheduler.scheduler import Scheduler
-    from dagster._core.secrets.loader import SecretsLoader
-    from dagster._core.storage.base_storage import DagsterStorage
-    from dagster._core.storage.compute_log_manager import ComputeLogManager
-    from dagster._core.storage.event_log.base import EventLogStorage
     from dagster._core.storage.root import LocalArtifactStorage
+    from dagster._core.launcher.base import RunLauncher
+    from dagster._core.secrets.loader import SecretsLoader
     from dagster._core.storage.runs.base import RunStorage
+    from dagster._core.scheduler.scheduler import Scheduler
+    from dagster._core.run_coordinator.base import RunCoordinator
+    from dagster._core.storage.base_storage import DagsterStorage
+    from dagster._core.storage.event_log.base import EventLogStorage
     from dagster._core.storage.schedules.base import ScheduleStorage
+    from dagster._core.storage.compute_log_manager import ComputeLogManager
 
 
 def compute_logs_directory(base: str) -> str:

@@ -1,4 +1,4 @@
-from typing import Iterable, Mapping, NamedTuple, Optional
+from typing import Mapping, Iterable, Optional, NamedTuple
 
 import dagster._check as check
 from dagster._config import ConfigType

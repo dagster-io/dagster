@@ -1,22 +1,22 @@
 from dagster import (
+    Output,
     AssetKey,
     AssetOut,
     DagsterEventType,
-    Output,
-    asset,
-    job,
-    materialize_to_memory,
-    multi_asset,
     op,
+    job,
+    asset,
+    multi_asset,
+    materialize_to_memory,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.test_utils import instance_for_test
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.definitions_class import Definitions
 
 
 def test_asset_mat_planned_event_step_key():

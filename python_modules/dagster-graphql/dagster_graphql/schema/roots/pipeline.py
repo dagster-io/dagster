@@ -1,10 +1,10 @@
 import graphene
 
 from ..errors import (
+    GraphenePythonError,
     GrapheneGraphNotFoundError,
     GrapheneInvalidSubsetError,
     GraphenePipelineNotFoundError,
-    GraphenePythonError,
 )
 from ..pipelines.pipeline import GrapheneGraph, GraphenePipeline
 

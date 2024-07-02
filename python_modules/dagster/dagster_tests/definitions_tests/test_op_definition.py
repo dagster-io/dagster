@@ -1,7 +1,7 @@
 import sys
 
 import pytest
-from dagster import DagsterInvariantViolationError, In, Nothing, OpDefinition, Out, Output, job, op
+from dagster import In, Out, Output, Nothing, OpDefinition, DagsterInvariantViolationError, op, job
 
 
 def test_op_def_direct():

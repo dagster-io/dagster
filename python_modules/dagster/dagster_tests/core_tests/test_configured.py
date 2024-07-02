@@ -1,4 +1,4 @@
-from dagster import job, op, resource
+from dagster import op, job, resource
 
 
 def test_configured_ops_and_resources():

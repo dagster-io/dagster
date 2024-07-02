@@ -1,65 +1,65 @@
-import logging
 import sys
+import logging
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Generator,
+    Type,
+    Union,
     Generic,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Type,
-    TypeVar,
-    Union,
+    Generator,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from contextlib import contextmanager
 
 import dagster._check as check
-from dagster._core.definitions import ExecutorDefinition, JobDefinition
-from dagster._core.definitions.executor_definition import check_cross_process_constraints
+from dagster._utils import EventGenerationManager
+from dagster._loggers import default_loggers, default_system_loggers
+from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
+from dagster._core.events import DagsterEvent, RunFailureReason
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.instance import DagsterInstance
+from dagster._core.definitions import JobDefinition, ExecutorDefinition
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.definitions.job_base import IJob
+from dagster._core.execution.memoization import validate_reexecution_memoization
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.execution.resources_init import (
+    resource_initialization_manager,
+    get_required_resource_keys_to_init,
+)
+from dagster._core.definitions.executor_definition import check_cross_process_constraints
+from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
-from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster._core.errors import DagsterError, DagsterUserCodeExecutionError
-from dagster._core.events import DagsterEvent, RunFailureReason
-from dagster._core.execution.memoization import validate_reexecution_memoization
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.execution.resources_init import (
-    get_required_resource_keys_to_init,
-    resource_initialization_manager,
-)
-from dagster._core.execution.retries import RetryMode
-from dagster._core.executor.init import InitExecutorContext
-from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._loggers import default_loggers, default_system_loggers
-from dagster._utils import EventGenerationManager
-from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .context.logger import InitLoggerContext
 from .context.system import (
-    ExecutionData,
-    IPlanContext,
     PlanData,
+    IPlanContext,
+    ExecutionData,
     PlanExecutionContext,
     PlanOrchestrationContext,
 )
 
 if TYPE_CHECKING:
-    from dagster._core.execution.plan.outputs import StepOutputHandle
     from dagster._core.executor.base import Executor
+    from dagster._core.execution.plan.outputs import StepOutputHandle
 
 
 def initialize_console_manager(

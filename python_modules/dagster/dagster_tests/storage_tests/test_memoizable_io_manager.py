@@ -3,20 +3,20 @@ from tempfile import TemporaryDirectory
 
 from dagster import (
     ResourceDefinition,
-    build_init_resource_context,
+    op,
+    job,
+    io_manager,
     build_input_context,
     build_output_context,
-    io_manager,
-    job,
-    op,
+    build_init_resource_context,
 )
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.storage.memoizable_io_manager import (
     MemoizableIOManager,
     VersionedPickledObjectFilesystemIOManager,
     versioned_filesystem_io_manager,
 )
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
-from dagster._core.test_utils import instance_for_test
 
 
 def test_versioned_pickled_object_filesystem_io_manager():

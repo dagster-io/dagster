@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
 
-from airflow.models import DagBag
 from dagster import repository
+from airflow.models import DagBag
 
 # start_repo_marker_0
 from dagster_airflow import (
@@ -10,9 +10,9 @@ from dagster_airflow import (
     make_schedules_and_jobs_from_airflow_dag_bag,
 )
 
+from with_airflow.airflow_simple_dag import simple_dag
 from with_airflow.airflow_complex_dag import complex_dag
 from with_airflow.airflow_kubernetes_dag import kubernetes_dag
-from with_airflow.airflow_simple_dag import simple_dag
 
 airflow_simple_dag = make_dagster_job_from_airflow_dag(simple_dag)
 airflow_complex_dag = make_dagster_job_from_airflow_dag(complex_dag)

@@ -1,22 +1,22 @@
 import inspect
-from typing import Any, Callable, NamedTuple, Optional, Sequence, Set
+from typing import Any, Set, Callable, Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.resource_annotation import get_resource_args
 
+from .utils import check_valid_name
 from .events import AssetKey
+from .target import ExecutableDefinition
 from .run_request import RunRequest, SkipReason
 from .sensor_definition import (
+    SensorType,
+    SensorDefinition,
     DefaultSensorStatus,
     RawSensorEvaluationFunctionReturn,
-    SensorDefinition,
-    SensorType,
     validate_and_get_resource_dict,
 )
-from .target import ExecutableDefinition
-from .utils import check_valid_name
 
 
 class AssetSensorParamNames(NamedTuple):

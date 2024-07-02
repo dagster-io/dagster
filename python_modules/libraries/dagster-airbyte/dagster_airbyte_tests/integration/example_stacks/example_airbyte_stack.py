@@ -1,12 +1,12 @@
 import os
 
 from dagster_airbyte import (
+    AirbyteSource,
+    AirbyteSyncMode,
     AirbyteConnection,
     AirbyteDestination,
     AirbyteDestinationNamespace,
     AirbyteManagedElementReconciler,
-    AirbyteSource,
-    AirbyteSyncMode,
     airbyte_resource,
 )
 

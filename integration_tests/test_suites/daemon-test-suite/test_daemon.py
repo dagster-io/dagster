@@ -1,14 +1,14 @@
-import datetime
 import time
+import datetime
 
+from utils import start_daemon
+from dagster._time import get_current_datetime
 from dagster._core.test_utils import freeze_time, instance_for_test
 from dagster._daemon.controller import (
-    DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DEFAULT_HEARTBEAT_INTERVAL_SECONDS,
+    DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     all_daemons_healthy,
 )
-from dagster._time import get_current_datetime
-from utils import start_daemon
 
 
 def test_heartbeat():

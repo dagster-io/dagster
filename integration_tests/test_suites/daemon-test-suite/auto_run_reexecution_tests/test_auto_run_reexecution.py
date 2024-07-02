@@ -1,25 +1,25 @@
-import logging
 import time
+import logging
 from typing import cast
 
-from dagster import DagsterEvent, DagsterEventType, DagsterInstance, EventLogEntry
-from dagster._core.events import JobFailureData, RunFailureReason
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
+from dagster import DagsterEvent, EventLogEntry, DagsterInstance, DagsterEventType
 from dagster._core.snap import snapshot_from_execution_plan
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
+from dagster._core.events import JobFailureData, RunFailureReason
+from dagster._core.test_utils import MockedRunCoordinator, instance_for_test, create_run_for_test
 from dagster._core.storage.tags import (
     MAX_RETRIES_TAG,
-    RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
     RETRY_STRATEGY_TAG,
+    RETRY_ON_ASSET_OR_OP_FAILURE_TAG,
 )
-from dagster._core.test_utils import MockedRunCoordinator, create_run_for_test, instance_for_test
-from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
-    consume_new_runs_for_automatic_reexecution,
-    filter_runs_to_should_retry,
-    get_reexecution_strategy,
-)
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.storage.dagster_run import RunsFilter, DagsterRunStatus
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 from dagster._daemon.auto_run_reexecution.event_log_consumer import EventLogConsumerDaemon
+from dagster._daemon.auto_run_reexecution.auto_run_reexecution import (
+    get_reexecution_strategy,
+    filter_runs_to_should_retry,
+    consume_new_runs_for_automatic_reexecution,
+)
 
 from .utils import foo, get_foo_job_handle
 

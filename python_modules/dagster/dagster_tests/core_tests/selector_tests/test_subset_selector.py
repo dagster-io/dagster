@@ -1,13 +1,13 @@
 import pytest
-from dagster import In, asset, define_asset_job, in_process_executor, job, op, repository
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster import In, op, job, asset, repository, define_asset_job, in_process_executor
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterExecutionStepNotFoundError
 from dagster._core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
-    clause_to_subset,
-    generate_dep_graph,
     parse_clause,
+    clause_to_subset,
     parse_op_queries,
+    generate_dep_graph,
     parse_step_selection,
 )
 

@@ -3,15 +3,15 @@ import os
 from dagster import (
     AssetKey,
     AssetsDefinition,
-    asset,
-    define_asset_job,
     op,
+    asset,
     repository,
     with_resources,
+    define_asset_job,
 )
 from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
 )
 
 
@@ -42,7 +42,7 @@ def foo():
 
 
 def define_demo_execution_repo():
-    from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+    from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
     from dagster_docker import docker_executor
 
     @repository

@@ -3,28 +3,28 @@ from typing import Any, Mapping, Optional, Sequence
 import dask
 import dask.distributed
 from dagster import (
-    Executor,
     Field,
-    Permissive,
+    Executor,
     Selector,
+    Permissive,
     StringSource,
     _check as check,
     _seven,
     multiple_process_executor_requirements,
 )
-from dagster._core.definitions.executor_definition import executor
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._utils import iterate_with_context
 from dagster._core.errors import raise_execution_interrupts
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.execution.context.system import PlanOrchestrationContext
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
+from dagster._core.execution.api import execute_plan, create_execution_plan
+from dagster._core.execution.retries import RetryMode
+from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._utils import iterate_with_context
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.definitions.executor_definition import executor
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"

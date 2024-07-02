@@ -1,15 +1,15 @@
 from unittest import mock
 
-from dagster import DagsterEventType, ResourceDefinition, job, op
+from dagster import DagsterEventType, ResourceDefinition, op, job
 from docs_snippets.concepts.ops_jobs_graphs.op_hooks import (
     a,
     notif_all,
     notif_all_dev,
     notif_all_prod,
     selective_notif,
+    test_my_success_hook,
     slack_message_on_failure,
     slack_message_on_success,
-    test_my_success_hook,
 )
 from docs_snippets.concepts.ops_jobs_graphs.op_hooks_context import my_failure_hook
 

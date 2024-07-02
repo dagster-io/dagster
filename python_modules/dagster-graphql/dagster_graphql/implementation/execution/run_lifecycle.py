@@ -1,19 +1,19 @@
-from typing import Optional, Sequence, Tuple, cast
+from typing import Tuple, Optional, Sequence, cast
 
 import dagster._check as check
+from dagster._core.utils import make_new_run_id
 from dagster._core.errors import DagsterRunNotFoundError
-from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._utils.merger import merge_dicts
 from dagster._core.instance import DagsterInstance
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.remote_representation import CodeLocation
 from dagster._core.remote_representation.external import ExternalJob
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.utils import make_new_run_id
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster._utils.merger import merge_dicts
 
-from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 from ..utils import ExecutionParams
+from ..external import ensure_valid_config, get_external_execution_plan_or_raise
 
 
 def _get_run(instance: DagsterInstance, run_id: str) -> DagsterRun:

@@ -1,20 +1,20 @@
 from collections.abc import (
+    Set,
+    Sized,
+    Mapping,
     Callable,
-    Container,
     Hashable,
-    ItemsView,
     Iterable,
     Iterator,
     KeysView,
-    Mapping,
+    Sequence,
+    Container,
+    ItemsView,
+    MutableSet,
+    ValuesView,
     MappingView,
     MutableMapping,
     MutableSequence,
-    MutableSet,
-    Sequence,
-    Set,
-    Sized,
-    ValuesView,
 )
 
 __all__ = [

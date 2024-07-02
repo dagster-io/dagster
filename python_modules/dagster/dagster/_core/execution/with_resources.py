@@ -1,13 +1,13 @@
-from typing import Any, Iterable, List, Mapping, Optional, Sequence, TypeVar, cast
+from typing import Any, List, Mapping, TypeVar, Iterable, Optional, Sequence, cast
 
 from dagster import _check as check
-from dagster._core.execution.build_resources import wrap_resources_for_execution
 from dagster._utils.merger import merge_dicts
+from dagster._core.execution.build_resources import wrap_resources_for_execution
 
-from ..._config import Shape
-from ..definitions.resource_requirement import ResourceAddable
-from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
 from ..errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
+from ..._config import Shape
+from ..definitions.utils import DEFAULT_IO_MANAGER_KEY
+from ..definitions.resource_requirement import ResourceAddable
 
 T = TypeVar("T", bound=ResourceAddable)
 

@@ -3,11 +3,11 @@ from typing import NamedTuple
 import sqlalchemy as db
 from tqdm import tqdm
 
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._core.assets import AssetDetails
+from dagster._serdes.serdes import deserialize_value
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._serdes.serdes import deserialize_value
-from dagster._utils import utc_datetime_from_timestamp
 
 SECONDARY_INDEX_ASSET_KEY = "asset_key_table"  # builds the asset key table from the event log
 ASSET_KEY_INDEX_COLS = "asset_key_index_columns"  # extracts index columns from the asset_keys table
@@ -74,9 +74,9 @@ def migrate_asset_key_data(event_log_storage, print_fn=None):
 
 
 def migrate_asset_keys_index_columns(event_log_storage, print_fn=None):
+    from dagster._serdes import serialize_value
     from dagster._core.definitions.events import AssetKey
     from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
-    from dagster._serdes import serialize_value
 
     from .schema import AssetKeyTable, SqlEventLogStorageTable
 

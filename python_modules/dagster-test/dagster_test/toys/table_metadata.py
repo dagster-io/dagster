@@ -6,9 +6,9 @@ The asset does nothing. It exists just to have a place to attach the TableMetada
 from dagster import MetadataValue, asset
 from dagster._core.definitions.metadata.table import (
     TableColumn,
-    TableColumnConstraints,
     TableRecord,
     TableSchema,
+    TableColumnConstraints,
 )
 
 table_metadata = MetadataValue.table(

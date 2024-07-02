@@ -1,17 +1,17 @@
 import base64
-from datetime import datetime
 from enum import Enum
-from typing import Callable, Literal, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
+from typing import Tuple, Union, Literal, Mapping, Callable, Optional, Sequence, NamedTuple
+from datetime import datetime
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._seven import json
+from dagster._serdes import whitelist_for_serdes
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._serdes import whitelist_for_serdes
-from dagster._seven import json
+from dagster._core.definitions.events import AssetKey, AssetObservation, AssetMaterialization
 
 EventHandlerFn: TypeAlias = Callable[[EventLogEntry, str], None]
 

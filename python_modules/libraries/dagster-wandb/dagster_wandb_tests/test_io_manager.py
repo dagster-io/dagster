@@ -1,22 +1,22 @@
 import os
 from unittest.mock import ANY, MagicMock, patch
 
-import pytest
 import wandb
-from callee import EndsWith, Regex
+import pytest
+from wandb import Artifact
+from callee import Regex, EndsWith
 from dagster import (
     AssetKey,
-    DagsterRunMetadataValue,
     IntMetadataValue,
-    TextMetadataValue,
     UrlMetadataValue,
-    build_init_resource_context,
+    TextMetadataValue,
+    DagsterRunMetadataValue,
     build_input_context,
     build_output_context,
+    build_init_resource_context,
 )
-from dagster_wandb import WandbArtifactsIOManagerError, wandb_artifacts_io_manager, wandb_resource
+from dagster_wandb import WandbArtifactsIOManagerError, wandb_resource, wandb_artifacts_io_manager
 from dagster_wandb.io_manager import UNIT_TEST_RUN_ID
-from wandb import Artifact
 
 DAGSTER_RUN_ID = UNIT_TEST_RUN_ID
 DAGSTER_RUN_ID_SHORT = DAGSTER_RUN_ID[0:8]

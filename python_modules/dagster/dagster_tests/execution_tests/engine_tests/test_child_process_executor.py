@@ -1,18 +1,18 @@
-import multiprocessing
 import os
 import time
+import multiprocessing
 
 import pytest
+from dagster._utils import segfault
 from dagster._core.executor.child_process_executor import (
-    ChildProcessCommand,
-    ChildProcessCrashException,
-    ChildProcessDoneEvent,
     ChildProcessEvent,
+    ChildProcessCommand,
+    ChildProcessDoneEvent,
     ChildProcessStartEvent,
+    ChildProcessCrashException,
     ChildProcessSystemErrorEvent,
     execute_child_process_command,
 )
-from dagster._utils import segfault
 
 
 class DoubleAStringChildProcessCommand(ChildProcessCommand):

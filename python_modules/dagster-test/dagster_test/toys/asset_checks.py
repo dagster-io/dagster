@@ -1,29 +1,29 @@
-import random
 import time
+import random
 
 from dagster import (
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    AssetExecutionContext,
+    In,
+    Output,
+    Nothing,
     AssetKey,
     AssetOut,
-    AssetSelection,
-    DailyPartitionsDefinition,
-    In,
-    MaterializeResult,
+    AssetCheckKey,
     MetadataValue,
-    Nothing,
-    Output,
+    AssetCheckSpec,
+    AssetSelection,
+    AssetCheckResult,
+    MaterializeResult,
+    AssetCheckSeverity,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    op,
     asset,
     asset_check,
-    build_metadata_bounds_checks,
-    define_asset_job,
     graph_asset,
-    graph_multi_asset,
     multi_asset,
-    op,
+    define_asset_job,
+    graph_multi_asset,
+    build_metadata_bounds_checks,
 )
 
 

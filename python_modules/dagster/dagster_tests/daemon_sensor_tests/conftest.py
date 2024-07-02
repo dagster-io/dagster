@@ -4,15 +4,15 @@ from typing import Iterator, Optional
 
 import pytest
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
-    create_test_daemon_workspace_context,
     instance_for_test,
+    create_test_daemon_workspace_context,
 )
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import ModuleTarget
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.remote_representation.external import ExternalRepository
 
 
 @pytest.fixture(params=["synchronous", "threadpool"])

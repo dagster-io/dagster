@@ -3,15 +3,15 @@ import re
 import uuid
 from unittest import mock
 
-import httplib2
 import pytest
-from dagster import RunConfig, _seven, job
+import httplib2
+from dagster import RunConfig, job, _seven
 from dagster_gcp import (
     DataprocOpConfig,
     DataprocResource,
-    configurable_dataproc_op,
     dataproc_op,
     dataproc_resource,
+    configurable_dataproc_op,
 )
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "default_project")

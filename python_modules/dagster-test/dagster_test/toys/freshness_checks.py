@@ -4,17 +4,17 @@ from datetime import timedelta
 
 import pendulum
 from dagster import (
-    AssetExecutionContext,
     MetadataValue,
     ObserveResult,
     ScheduleDefinition,
+    AssetExecutionContext,
     TimestampMetadataValue,
-    _check as check,
     asset,
-    build_last_update_freshness_checks,
-    build_sensor_for_freshness_checks,
+    _check as check,
     define_asset_job,
     observable_source_asset,
+    build_sensor_for_freshness_checks,
+    build_last_update_freshness_checks,
 )
 from dagster._core.definitions.asset_selection import KeysAssetSelection
 

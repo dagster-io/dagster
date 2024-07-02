@@ -1,10 +1,10 @@
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
 from random import Random
-from typing import Sequence, Union
+from typing import Union, Sequence
+from datetime import datetime, timedelta
+from dataclasses import asdict, dataclass
 
-from dagster import ConfigurableResource
 from faker import Faker
+from dagster import ConfigurableResource
 from pydantic import Field
 
 # This file holds a resource you'll use in the tutorial

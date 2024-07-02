@@ -1,6 +1,6 @@
-from typing import Optional, Union
+from typing import Union, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra, BaseModel
 
 
 class TickRetentionByType(BaseModel):

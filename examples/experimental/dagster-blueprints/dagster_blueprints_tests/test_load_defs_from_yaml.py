@@ -1,24 +1,24 @@
 import os
 import sys
+from typing import List, Union, Literal, Sequence
 from pathlib import Path
-from typing import List, Literal, Sequence, Union
 
 import pytest
-from dagster import AssetKey, asset, job
+from dagster import AssetKey, job, asset
+from pydantic import ValidationError
 from dagster._check import CheckError
-from dagster._core.definitions.metadata.source_code import (
-    CodeReferencesMetadataSet,
-    LocalFileCodeReference,
-)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
 from dagster_blueprints.blueprint import (
     Blueprint,
     BlueprintDefinitions,
     DagsterBuildDefinitionsFromConfigError,
 )
 from dagster_blueprints.load_from_yaml import YamlBlueprintsLoader, load_defs_from_yaml
-from pydantic import ValidationError
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1, USING_PYDANTIC_2
+from dagster._core.definitions.metadata.source_code import (
+    LocalFileCodeReference,
+    CodeReferencesMetadataSet,
+)
 
 
 class SimpleAssetBlueprint(Blueprint):

@@ -11,7 +11,7 @@ dagstermill.yield_result(3, output_name="my_output")
 # start_py_file
 from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op
 
-from dagster import Out, file_relative_path, job, op
+from dagster import Out, op, job, file_relative_path
 
 my_notebook_op = define_dagstermill_op(
     name="my_notebook",

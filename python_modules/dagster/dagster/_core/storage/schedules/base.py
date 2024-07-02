@@ -1,22 +1,22 @@
 import abc
-from typing import Mapping, Optional, Sequence, Set
+from typing import Set, Mapping, Optional, Sequence
 
 from dagster import AssetKey
+from dagster._utils import PrintFn
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
+from dagster._core.storage.sql import AlembicVersion
+from dagster._core.scheduler.instigation import (
+    TickData,
+    TickStatus,
+    InstigatorTick,
+    InstigatorState,
+    InstigatorStatus,
+    AutoMaterializeAssetEvaluationRecord,
+)
+from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.scheduler.instigation import (
-    AutoMaterializeAssetEvaluationRecord,
-    InstigatorState,
-    InstigatorStatus,
-    InstigatorTick,
-    TickData,
-    TickStatus,
-)
-from dagster._core.storage.sql import AlembicVersion
-from dagster._utils import PrintFn
 
 
 class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref[T_DagsterInstance]):

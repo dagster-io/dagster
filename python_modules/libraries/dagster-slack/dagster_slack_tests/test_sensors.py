@@ -7,15 +7,15 @@ from dagster import (
     AssetKey,
     AssetSelection,
     FreshnessPolicy,
-    build_freshness_policy_sensor_context,
     repository,
-)
-from dagster._core.test_utils import environ
-from dagster_slack.sensors import (
-    make_slack_on_freshness_policy_status_change_sensor,
-    make_slack_on_run_failure_sensor,
+    build_freshness_policy_sensor_context,
 )
 from slack_sdk.web.client import WebClient
+from dagster_slack.sensors import (
+    make_slack_on_run_failure_sensor,
+    make_slack_on_freshness_policy_status_change_sensor,
+)
+from dagster._core.test_utils import environ
 
 
 def test_slack_run_failure_sensor_def():

@@ -1,17 +1,17 @@
+from typing import TYPE_CHECKING, Set, Dict, Mapping, Iterable, Optional, NamedTuple, AbstractSet
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, NamedTuple, Optional, Set
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 
+from .events import AssetKey
 from ..errors import DagsterInvariantViolationError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
-from .events import AssetKey
 from .graph_definition import GraphDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph import AssetGraph, AssetNode
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.asset_graph import AssetNode, AssetGraph
     from dagster._core.definitions.partition_mapping import PartitionMapping
 
 

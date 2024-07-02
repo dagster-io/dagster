@@ -1,14 +1,14 @@
 import graphene
 
+from .errors import (
+    GraphenePythonError,
+    GraphenePipelineNotFoundError,
+    GrapheneConfigTypeNotFoundError,
+)
 from .config_types import (
-    GrapheneCompositeConfigType,
     GrapheneEnumConfigType,
     GrapheneRegularConfigType,
-)
-from .errors import (
-    GrapheneConfigTypeNotFoundError,
-    GraphenePipelineNotFoundError,
-    GraphenePythonError,
+    GrapheneCompositeConfigType,
 )
 
 

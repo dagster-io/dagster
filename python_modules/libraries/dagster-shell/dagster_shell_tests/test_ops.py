@@ -1,12 +1,12 @@
 import os
 
 import pytest
-from dagster import Failure, job, op
-from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.output import GraphOut
+from dagster import Failure, op, job
+from dagster_shell import shell_op, create_shell_script_op, create_shell_command_op
 from dagster._utils.test import wrap_op_in_graph_and_execute
-from dagster_shell import create_shell_command_op, create_shell_script_op, shell_op
+from dagster._core.definitions.config import ConfigMapping
+from dagster._core.definitions.output import GraphOut
+from dagster._core.definitions.decorators.graph_decorator import graph
 
 
 @pytest.mark.parametrize("factory", [create_shell_command_op])

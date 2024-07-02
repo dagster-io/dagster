@@ -1,12 +1,12 @@
 from typing import List, Optional
 
-from dagster import Config, In, Nothing, Out, Output, op
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster import In, Out, Config, Output, Nothing, op
 from pydantic import Field
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
+from .types import DbtCloudOutput
 from ..utils import generate_materializations
 from .resources import DEFAULT_POLL_INTERVAL
-from .types import DbtCloudOutput
 
 
 class DbtCloudRunOpConfig(Config):

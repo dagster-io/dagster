@@ -1,9 +1,9 @@
 import logging
 
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.execution.context.logger import InitLoggerContext
-from dagster._core.log_manager import DagsterLogManager
 from dagster._utils.log import construct_single_handler_logger
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.execution.context.logger import InitLoggerContext
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 
 class LogTestHandler(logging.Handler):

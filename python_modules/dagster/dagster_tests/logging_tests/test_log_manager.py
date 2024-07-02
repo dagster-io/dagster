@@ -1,22 +1,22 @@
-import logging
 import sys
+import logging
 import textwrap
 from typing import Optional
 
 import pytest
 from dagster import DagsterEvent
-from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.errors import DagsterUserCodeExecutionError, user_code_error_boundary
-from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
-from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._core.log_manager import (
     DagsterLogHandler,
-    DagsterLogHandlerMetadata,
     DagsterLogManager,
     DagsterLogRecordMetadata,
+    DagsterLogHandlerMetadata,
     construct_log_record_message,
 )
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.execution.plan.objects import ErrorSource, StepFailureData
+from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 
 
 def _construct_log_handler_metadata(**kwargs) -> DagsterLogRecordMetadata:

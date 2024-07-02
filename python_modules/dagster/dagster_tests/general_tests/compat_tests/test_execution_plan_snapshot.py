@@ -1,27 +1,27 @@
 import os
 
-from dagster import DynamicOut, DynamicOutput, In, List, Out, Output, fs_io_manager, job, op
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import create_execution_plan, execute_run
-from dagster._core.execution.plan.inputs import (
-    FromConfig,
-    FromDefaultValue,
-    FromDynamicCollect,
-    FromInputManager,
-    FromMultipleSources,
-    FromPendingDynamicStepOutput,
-    FromStepOutput,
-    FromUnresolvedStepOutput,
-)
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.input_manager import input_manager
+from dagster import In, Out, List, Output, DynamicOut, DynamicOutput, op, job, fs_io_manager
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
+from dagster._core.instance import DagsterInstance
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.execution.api import execute_run, create_execution_plan
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.execution.plan.inputs import (
+    FromConfig,
+    FromStepOutput,
+    FromDefaultValue,
+    FromInputManager,
+    FromDynamicCollect,
+    FromMultipleSources,
+    FromUnresolvedStepOutput,
+    FromPendingDynamicStepOutput,
+)
+from dagster._core.storage.input_manager import input_manager
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
 
 
 @op(out=Out(int))

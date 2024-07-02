@@ -1,4 +1,4 @@
-from docs_snippets.deploying.executors.executors import defs, other_job, the_job
+from docs_snippets.deploying.executors.executors import defs, the_job, other_job
 
 
 def test_executor_direct_examples():

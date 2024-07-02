@@ -3,30 +3,30 @@ import warnings
 import pytest
 from dagster import (
     AssetKey,
-    Definitions,
     IOManager,
-    IOManagerDefinition,
+    Definitions,
     ResourceDefinition,
-    build_asset_context,
-    execute_job,
+    IOManagerDefinition,
+    resource,
     io_manager,
+    execute_job,
     mem_io_manager,
     reconstructable,
-    resource,
+    build_asset_context,
 )
-from dagster._core.definitions import AssetsDefinition, SourceAsset, asset
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.execution.with_resources import with_resources
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.definitions import SourceAsset, AssetsDefinition, asset
 from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.definitions.materialize import materialize
+from dagster._core.execution.with_resources import with_resources
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 
 @pytest.fixture

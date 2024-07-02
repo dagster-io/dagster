@@ -1,37 +1,37 @@
 import re
 import time
+from typing import Any, Dict, List, Tuple, Generator
 from functools import partial
-from typing import Any, Dict, Generator, List, Tuple
 
 import pytest
 from dagster import (
-    AssetMaterialization,
-    AssetObservation,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    DagsterType,
-    DagsterTypeCheckDidNotPass,
-    DynamicOut,
-    DynamicOutput,
-    ExpectationResult,
     In,
-    Nothing,
     Out,
     Output,
-    build_op_context,
-    graph,
-    job,
-    mem_io_manager,
+    Nothing,
+    DynamicOut,
+    DagsterType,
+    DynamicOutput,
+    AssetObservation,
+    ExpectationResult,
+    AssetMaterialization,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     op,
+    job,
+    graph,
+    mem_io_manager,
+    build_op_context,
 )
-from dagster._config.field import Field
-from dagster._core.definitions.dependency import DependencyDefinition
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._config.field import Field
 from dagster._core.test_utils import instance_for_test
-from dagster._core.types.dagster_type import Int, String
 from dagster._core.utility_ops import create_stub_op
+from dagster._core.types.dagster_type import Int, String
+from dagster._core.definitions.dependency import DependencyDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 
 def execute_in_graph(an_op, raise_on_error=True, run_config=None):

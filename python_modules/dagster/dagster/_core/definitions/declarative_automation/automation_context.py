@@ -1,35 +1,35 @@
-import datetime
 import logging
-from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional
+import datetime
+from typing import TYPE_CHECKING, Any, Mapping, Optional, NamedTuple, AbstractSet
 
 import pendulum
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.asset_graph_view.asset_graph_view import (
-    AssetGraphView,
     AssetSlice,
+    AssetGraphView,
     TemporalContext,
 )
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-    AutomationResult,
-)
-from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AutomationConditionCursor,
     AutomationConditionNodeCursor,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationResult,
+    AutomationCondition,
+)
+from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
 
 from .legacy.legacy_context import LegacyRuleEvaluationContext
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
 
 def _has_legacy_condition(condition: AutomationCondition):

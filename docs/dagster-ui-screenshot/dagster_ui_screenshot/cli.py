@@ -2,16 +2,16 @@ from typing import Optional
 
 import click
 
-from dagster_ui_screenshot.commands.asset_svg import generate_svg as _svg
-from dagster_ui_screenshot.commands.audit import audit as _audit
-from dagster_ui_screenshot.commands.capture import capture as _capture
-from dagster_ui_screenshot.commands.show import show as _show
+from dagster_ui_screenshot.utils import load_spec, normalize_output_path, spec_id_to_relative_path
 from dagster_ui_screenshot.defaults import (
-    DEFAULT_OUTPUT_ROOT,
     DEFAULT_SPEC_DB,
+    DEFAULT_OUTPUT_ROOT,
     DEFAULT_WORKSPACE_ROOT,
 )
-from dagster_ui_screenshot.utils import load_spec, normalize_output_path, spec_id_to_relative_path
+from dagster_ui_screenshot.commands.show import show as _show
+from dagster_ui_screenshot.commands.audit import audit as _audit
+from dagster_ui_screenshot.commands.capture import capture as _capture
+from dagster_ui_screenshot.commands.asset_svg import generate_svg as _svg
 
 
 @click.group(

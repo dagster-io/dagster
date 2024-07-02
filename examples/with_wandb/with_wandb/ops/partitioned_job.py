@@ -2,14 +2,14 @@ from typing import List
 
 from dagster import (
     In,
-    OpExecutionContext,
     Out,
+    OpExecutionContext,
+    op,
     job,
     make_values_resource,
-    op,
     static_partitioned_config,
 )
-from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
+from dagster_wandb import wandb_resource, wandb_artifacts_io_manager
 
 AWS_REGIONS = [
     "us-west-1",

@@ -1,48 +1,48 @@
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Dict,
-    Iterable,
     List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Type,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
 )
 
 import dagster._check as check
+from dagster._utils import hash_collection
+from dagster._serdes import whitelist_for_serdes
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
-from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.metadata import MetadataMapping
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.schedule_definition import ScheduleDefinition
-from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import check_valid_name
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
-from dagster._serdes import whitelist_for_serdes
-from dagster._utils import hash_collection
 from dagster._utils.cached_method import cached_method
+from dagster._core.definitions.utils import check_valid_name
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.cacheable_assets import AssetsDefinitionCacheableData
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
 
-from .repository_data import CachingRepositoryData, RepositoryData
+from .repository_data import RepositoryData, CachingRepositoryData
 from .valid_definitions import RepositoryListDefinition as RepositoryListDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions import AssetsDefinition
     from dagster._core.definitions.asset_checks import AssetChecksDefinition
-    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
     from dagster._core.storage.asset_value_loader import AssetValueLoader
+    from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 
 @whitelist_for_serdes

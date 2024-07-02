@@ -1,4 +1,4 @@
-from dagster import configured, resource
+from dagster import resource, configured
 
 # start_op_marker
 

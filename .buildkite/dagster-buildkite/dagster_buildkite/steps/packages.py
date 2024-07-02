@@ -1,18 +1,18 @@
 import os
 from glob import glob
+from typing import List, Iterable, Optional
 from pathlib import Path
-from typing import Iterable, List, Optional
 
-from dagster_buildkite.defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE, GIT_REPO_ROOT
+from dagster_buildkite.utils import (
+    BuildkiteStep,
+    network_buildkite_container,
+    connect_sibling_docker_container,
+    has_storage_test_fixture_changes,
+)
+from dagster_buildkite.defines import GIT_REPO_ROOT, GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
 from dagster_buildkite.package_spec import PackageSpec
 from dagster_buildkite.python_version import AvailablePythonVersion
 from dagster_buildkite.steps.test_project import test_project_depends_fn
-from dagster_buildkite.utils import (
-    BuildkiteStep,
-    connect_sibling_docker_container,
-    has_storage_test_fixture_changes,
-    network_buildkite_container,
-)
 
 
 def build_example_packages_steps() -> List[BuildkiteStep]:

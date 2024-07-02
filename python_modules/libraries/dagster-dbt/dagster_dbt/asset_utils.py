@@ -1,68 +1,68 @@
-import hashlib
 import os
+import hashlib
 import textwrap
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
+    Set,
     Dict,
-    FrozenSet,
     List,
+    Tuple,
     Mapping,
     Optional,
     Sequence,
-    Set,
-    Tuple,
+    FrozenSet,
+    AbstractSet,
     cast,
 )
+from pathlib import Path
 
 from dagster import (
-    AssetCheckKey,
-    AssetCheckSpec,
+    In,
+    Out,
+    Nothing,
     AssetDep,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
-    AssetSelection,
-    AutoMaterializePolicy,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    DefaultScheduleStatus,
-    FreshnessPolicy,
-    In,
-    Nothing,
-    Out,
     RunConfig,
-    ScheduleDefinition,
     TableColumn,
     TableSchema,
+    AssetCheckKey,
+    AssetCheckSpec,
+    AssetSelection,
+    FreshnessPolicy,
+    AssetsDefinition,
+    ScheduleDefinition,
+    AutoMaterializePolicy,
+    DefaultScheduleStatus,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     _check as check,
     define_asset_job,
+)
+from dagster._utils.merger import merge_dicts
+from dagster._utils.warnings import deprecation_warning
+from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.definitions.metadata.source_code import (
+    LocalFileCodeReference,
+    CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue,
 )
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     validate_and_assign_output_names_to_check_specs,
 )
-from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.definitions.metadata.source_code import (
-    CodeReferencesMetadataSet,
-    CodeReferencesMetadataValue,
-    LocalFileCodeReference,
-)
-from dagster._core.definitions.tags import StorageKindTagSet
-from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import deprecation_warning
 
 from .utils import (
     ASSET_RESOURCE_TYPES,
     dagster_name_fn,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
     select_unique_ids_from_manifest,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
 )
 
 if TYPE_CHECKING:
-    from .dagster_dbt_translator import DagsterDbtTranslator, DbtManifestWrapper
     from .dbt_project import DbtProject
+    from .dagster_dbt_translator import DbtManifestWrapper, DagsterDbtTranslator
 
 DAGSTER_DBT_MANIFEST_METADATA_KEY = "dagster_dbt/manifest"
 DAGSTER_DBT_TRANSLATOR_METADATA_KEY = "dagster_dbt/dagster_dbt_translator"

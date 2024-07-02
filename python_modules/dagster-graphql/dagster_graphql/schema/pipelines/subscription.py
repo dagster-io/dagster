@@ -1,8 +1,8 @@
 import graphene
 
-from ..logs.events import GrapheneDagsterRunEvent
 from ..util import non_null_list
 from .pipeline import GrapheneRun
+from ..logs.events import GrapheneDagsterRunEvent
 
 
 class GraphenePipelineRunLogsSubscriptionSuccess(graphene.ObjectType):

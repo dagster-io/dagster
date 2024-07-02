@@ -1,30 +1,30 @@
-import json
 import os
+import json
 import subprocess
-from collections import deque
-from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from typing import (
     Any,
+    List,
+    Union,
+    Mapping,
+    TypeVar,
     Callable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    TypeVar,
-    Union,
+    NamedTuple,
 )
+from collections import deque
+from concurrent.futures import Future, TimeoutError, ThreadPoolExecutor
 
 import dagster._check as check
 from dagster._core.utils import coerce_valid_log_level
 
+from .types import DbtCliOutput
 from ..errors import (
     DagsterDbtCliFatalRuntimeError,
     DagsterDbtCliHandledRuntimeError,
     DagsterDbtCliOutputsNotFoundError,
 )
-from .types import DbtCliOutput
 
 DEFAULT_DBT_TARGET_PATH = "target"
 

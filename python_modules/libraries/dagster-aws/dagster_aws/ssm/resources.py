@@ -1,24 +1,24 @@
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Generator, cast
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, cast
 
 from dagster import (
-    Config,
     Field as LegacyDagsterField,
+    Config,
     resource,
 )
+from pydantic import Field
+from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import environ
 from dagster._config.field_utils import Shape
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.test_utils import environ
-from dagster._utils.merger import merge_dicts
-from pydantic import Field
 
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
 from .parameters import (
     construct_ssm_client,
     get_parameters_by_name,
-    get_parameters_by_paths,
     get_parameters_by_tags,
+    get_parameters_by_paths,
 )
 
 if TYPE_CHECKING:

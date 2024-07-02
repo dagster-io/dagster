@@ -1,9 +1,9 @@
 import pytest
-from dagster import AssetKey, AssetMaterialization, TableColumn, TableSchema
+from dagster import AssetKey, TableColumn, TableSchema, AssetMaterialization
 from dagster._check import CheckError
+from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.definitions.metadata.table import TableColumnDep, TableColumnLineage
-from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
 
 
 @pytest.fixture(autouse=True)

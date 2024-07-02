@@ -2,9 +2,9 @@ from unittest.mock import patch
 
 from dagster import materialize_to_memory
 from docs_snippets.concepts.assets.multi_asset_conditional_materialization import (
-    assets_1_and_2,
     downstream1,
     downstream2,
+    assets_1_and_2,
 )
 
 

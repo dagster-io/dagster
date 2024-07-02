@@ -1,9 +1,9 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 from .events import AssetKey, CoercibleToAssetKey
 from .metadata import RawMetadataMapping

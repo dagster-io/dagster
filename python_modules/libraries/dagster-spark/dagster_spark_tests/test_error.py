@@ -2,10 +2,10 @@ import os
 import uuid
 
 import yaml
-from dagster._utils import file_relative_path
-from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_spark import spark_resource
+from dagster._utils import file_relative_path
 from dagster_spark.ops import create_spark_op
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 CONFIG_FILE = """
 ops:

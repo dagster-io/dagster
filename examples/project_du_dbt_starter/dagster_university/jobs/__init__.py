@@ -1,6 +1,6 @@
 from dagster import AssetSelection, define_asset_job
 
-from ..partitions import monthly_partition, weekly_partition
+from ..partitions import weekly_partition, monthly_partition
 
 trips_by_week = AssetSelection.assets("trips_by_week")
 adhoc_request = AssetSelection.assets("adhoc_request")

@@ -1,6 +1,6 @@
 import pytest
-from dagster import build_op_context, job
-from dagster_dbt import dbt_build_op, dbt_cli_resource, dbt_run_op, dbt_seed_op, dbt_test_op
+from dagster import job, build_op_context
+from dagster_dbt import dbt_run_op, dbt_seed_op, dbt_test_op, dbt_build_op, dbt_cli_resource
 
 
 def test_seed_op(test_project_dir, dbt_config_dir):

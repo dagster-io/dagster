@@ -6,23 +6,23 @@ import pytest
 from dagster import (
     AssetKey,
     DagsterInstance,
-    DailyPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MultiPartitionsDefinition,
     PartitionsDefinition,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._time import create_datetime
+from dagster._serdes import serialize_value, deserialize_value
 from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.time_window_partitions import (
-    PartitionKeysTimeWindowPartitionsSubset,
     PersistedTimeWindow,
     TimeWindowPartitionsSubset,
+    PartitionKeysTimeWindowPartitionsSubset,
 )
-from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime
 
 partitions_defs = [
     None,

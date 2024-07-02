@@ -1,23 +1,23 @@
+from typing import List, Optional, Sequence, NamedTuple, cast
 from datetime import datetime, timedelta
-from typing import List, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.definitions.partition import (
+    PartitionsSubset,
     AllPartitionsSubset,
     PartitionsDefinition,
-    PartitionsSubset,
 )
 from dagster._core.definitions.partition_mapping import PartitionMapping, UpstreamPartitionsResult
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     TimeWindow,
-    TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
+    BaseTimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.instance import DynamicPartitionsStore
-from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

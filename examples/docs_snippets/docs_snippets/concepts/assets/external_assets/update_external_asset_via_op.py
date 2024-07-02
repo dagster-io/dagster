@@ -1,11 +1,11 @@
 from dagster import (
-    AssetMaterialization,
     AssetSpec,
     Definitions,
     OpExecutionContext,
-    external_asset_from_spec,
-    job,
+    AssetMaterialization,
     op,
+    job,
+    external_asset_from_spec,
 )
 
 

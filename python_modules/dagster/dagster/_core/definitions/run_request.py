@@ -1,39 +1,39 @@
-from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
+    Set,
     List,
+    Union,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Union,
+    NamedTuple,
     cast,
 )
+from datetime import datetime
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.utils import NormalizedTags, normalize_tags
+from dagster._utils.error import SerializableErrorInfo
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._core.storage.tags import (
+    PARTITION_NAME_TAG,
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
-    PARTITION_NAME_TAG,
 )
-from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo
+from dagster._core.definitions.utils import NormalizedTags, normalize_tags
+from dagster._core.definitions.events import AssetKey, AssetObservation, AssetMaterialization
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
+    from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )
@@ -208,8 +208,8 @@ class RunRequest(
         current_time: Optional[datetime] = None,
         dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
     ) -> "RunRequest":
-        from dagster._core.definitions.job_definition import JobDefinition
         from dagster._core.definitions.partition import PartitionedConfig, PartitionsDefinition
+        from dagster._core.definitions.job_definition import JobDefinition
 
         if self.partition_key is None:
             check.failed(
@@ -286,8 +286,8 @@ def _check_valid_partition_key_after_dynamic_partitions_requests(
     current_time: Optional[datetime] = None,
     dynamic_partitions_store: Optional[DynamicPartitionsStore] = None,
 ):
-    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
     from dagster._core.definitions.partition import DynamicPartitionsDefinition
+    from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
     if isinstance(partitions_def, MultiPartitionsDefinition):
         multipartition_key = partitions_def.get_partition_key_from_str(partition_key)

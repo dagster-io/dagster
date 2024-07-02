@@ -1,9 +1,9 @@
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import Field, BaseModel
 
-from ..dagster.subschema import Global, ServiceAccount
 from ..utils import kubernetes
+from ..dagster.subschema import Global, ServiceAccount
 from .subschema.user_deployments import UserDeployment
 
 

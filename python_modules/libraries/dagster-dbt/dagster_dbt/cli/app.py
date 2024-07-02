@@ -1,22 +1,22 @@
 import os
 import shutil
-from pathlib import Path
 from typing import Any, Dict, Iterator
+from pathlib import Path
 
-import typer
 import yaml
+import typer
+from jinja2 import Environment, FileSystemLoader
+from rich.syntax import Syntax
+from rich.console import Console
+from typing_extensions import Annotated
 from dagster._cli.project import check_if_pypi_package_conflict_exists
 from dagster._core.code_pointer import load_python_file
 from dagster._core.definitions.load_assets_from_modules import find_objects_in_module_of_types
-from jinja2 import Environment, FileSystemLoader
-from rich.console import Console
-from rich.syntax import Syntax
-from typing_extensions import Annotated
 
-from ..dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
-from ..dbt_project import DbtProject
 from ..include import STARTER_PROJECT_PATH
 from ..version import __version__ as dagster_dbt_version
+from ..dbt_project import DbtProject
+from ..dbt_core_version import DBT_CORE_VERSION_UPPER_BOUND
 
 app = typer.Typer(
     no_args_is_help=True,

@@ -1,16 +1,16 @@
 from collections import OrderedDict
 
-from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    execute_dagster_graphql_and_finish_runs,
     infer_repository_selector,
+    execute_dagster_graphql_and_finish_runs,
 )
+from dagster_graphql.client.query import LAUNCH_PARTITION_BACKFILL_MUTATION
 
 from .graphql_context_test_suite import (
+    ReadonlyGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_PARTITION_SETS_FOR_PIPELINE_QUERY = """

@@ -1,8 +1,8 @@
 # start_job
 
 from dagster import (
-    AssetExecutionContext,
     Config,
+    AssetExecutionContext,
     asset,
     define_asset_job,
     static_partitioned_config,

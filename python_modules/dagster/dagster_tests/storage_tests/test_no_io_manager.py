@@ -1,6 +1,6 @@
 from typing import Any
 
-from dagster import IOManager, asset, job, materialize, op
+from dagster import IOManager, op, job, asset, materialize
 
 
 class TestIOManager(IOManager):

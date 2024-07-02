@@ -2,46 +2,46 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
-    ContextManager,
-    Iterator,
     List,
+    Union,
     Mapping,
+    Iterator,
     Optional,
     Sequence,
-    Union,
+    ContextManager,
     cast,
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
+from dagster._annotations import public, deprecated, deprecated_param
+from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
+from dagster._utils.warnings import normalize_renamed_param
 from dagster._core.definitions.events import (
     AssetKey,
-    AssetMaterialization,
     AssetObservation,
     CoercibleToAssetKey,
+    AssetMaterialization,
 )
 from dagster._core.definitions.metadata import (
-    ArbitraryMetadataMapping,
     MetadataValue,
     RawMetadataValue,
+    ArbitraryMetadataMapping,
 )
+from dagster._core.execution.plan.utils import build_resources_for_manager
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.errors import DagsterInvalidMetadata, DagsterInvariantViolationError
-from dagster._core.execution.plan.utils import build_resources_for_manager
-from dagster._utils.warnings import normalize_renamed_param
 
 if TYPE_CHECKING:
+    from dagster._core.events import DagsterEvent
     from dagster._core.definitions import JobDefinition, PartitionsDefinition
+    from dagster._core.log_manager import DagsterLogManager
+    from dagster._core.types.dagster_type import DagsterType
+    from dagster._core.execution.plan.plan import ExecutionPlan
+    from dagster._core.system_config.objects import ResolvedRunConfig
+    from dagster._core.execution.plan.outputs import StepOutputHandle
+    from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.definitions.op_definition import OpDefinition
     from dagster._core.definitions.resource_definition import Resources
-    from dagster._core.events import DagsterEvent
-    from dagster._core.execution.context.system import StepExecutionContext
-    from dagster._core.execution.plan.outputs import StepOutputHandle
-    from dagster._core.execution.plan.plan import ExecutionPlan
-    from dagster._core.log_manager import DagsterLogManager
-    from dagster._core.system_config.objects import ResolvedRunConfig
-    from dagster._core.types.dagster_type import DagsterType
 
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
@@ -115,8 +115,8 @@ class OutputContext:
         # deprecated
         metadata: Optional[ArbitraryMetadataMapping] = None,
     ):
-        from dagster._core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.resource_definition import Resources, IContainsGenerator
 
         self._step_key = step_key
         self._name = name
@@ -875,8 +875,8 @@ def build_output_context(
 
     """
     from dagster._core.definitions import OpDefinition
-    from dagster._core.execution.context_creation_job import initialize_console_manager
     from dagster._core.types.dagster_type import DagsterType
+    from dagster._core.execution.context_creation_job import initialize_console_manager
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")

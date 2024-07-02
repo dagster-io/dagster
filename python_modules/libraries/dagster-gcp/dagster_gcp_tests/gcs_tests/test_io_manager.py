@@ -1,47 +1,47 @@
 import pickle
 
 import pytest
+from upath import UPath
 from dagster import (
-    AssetsDefinition,
-    DagsterInstance,
-    DynamicOut,
-    DynamicOutput,
-    GraphIn,
-    GraphOut,
     In,
     Int,
     Out,
+    GraphIn,
+    GraphOut,
+    DynamicOut,
+    DynamicOutput,
+    DagsterInstance,
+    AssetsDefinition,
     ResourceDefinition,
     StaticPartitionsDefinition,
+    op,
+    job,
     asset,
+    graph,
+    resource,
+    materialize,
     build_input_context,
     build_output_context,
-    graph,
-    job,
-    materialize,
-    op,
-    resource,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.dagster_run import DagsterRun as DagsterRun
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.types.dagster_type import resolve_dagster_type
+from google.cloud import storage
+from dagster_gcp.gcs import FakeGCSClient, FakeConfigurableGCSClient
 from dagster._core.utils import make_new_run_id
-from dagster_gcp.gcs import FakeConfigurableGCSClient, FakeGCSClient
+from dagster._core.events import DagsterEventType
+from dagster_gcp.gcs.resources import gcs_resource
 from dagster_gcp.gcs.io_manager import (
     GCSPickleIOManager,
     PickledObjectGCSIOManager,
     gcs_pickle_io_manager,
 )
-from dagster_gcp.gcs.resources import gcs_resource
-from google.cloud import storage
-from upath import UPath
+from dagster._core.execution.api import execute_plan, create_execution_plan
+from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.storage.dagster_run import DagsterRun as DagsterRun
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 
 @resource

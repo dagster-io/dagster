@@ -1,27 +1,27 @@
-import logging
 import time
-from typing import AbstractSet, Iterator, NamedTuple, Sequence
+import logging
+from typing import Iterator, Sequence, NamedTuple, AbstractSet
 
 import mock
 import pytest
 from dagster import AutomationCondition, asset
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._utils import file_relative_path
+from dagster._serdes.serdes import serialize_value, deserialize_value
+from dagster._core.test_utils import MockedRunLauncher, instance_for_test, in_process_test_workspace
+from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.test_utils import MockedRunLauncher, in_process_test_workspace, instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._daemon.asset_daemon import AssetDaemon
-from dagster._serdes.serdes import deserialize_value, serialize_value
-from dagster._utils import file_relative_path
 
-from .user_space_ds_defs import amp_sensor, downstream, upstream
+from .user_space_ds_defs import upstream, amp_sensor, downstream
 
 
 class AutomationTickResult(NamedTuple):

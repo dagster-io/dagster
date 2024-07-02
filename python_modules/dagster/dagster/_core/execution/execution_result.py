@@ -1,22 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Callable, List, Optional, Sequence, Set, cast
+from typing import Set, List, Callable, Optional, Sequence, AbstractSet, cast
 
 import dagster._check as check
-from dagster._core.definitions import AssetCheckEvaluation, JobDefinition, NodeHandle
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterError, DagsterInvariantViolationError
 from dagster._core.events import (
-    AssetObservationData,
     DagsterEvent,
     DagsterEventType,
     ExpectationResult,
-    StepExpectationResultData,
+    AssetObservationData,
     StepMaterializationData,
+    StepExpectationResultData,
 )
-from dagster._core.execution.plan.objects import StepFailureData
+from dagster._core.definitions import NodeHandle, JobDefinition, AssetCheckEvaluation
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
+from dagster._core.definitions.events import AssetObservation, AssetMaterialization
 from dagster._core.execution.plan.step import StepKind
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.execution.plan.objects import StepFailureData
 
 
 class ExecutionResult(ABC):

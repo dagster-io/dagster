@@ -1,9 +1,9 @@
 from enum import Enum
-from typing import Iterable, NamedTuple, Optional
+from typing import Iterable, Optional, NamedTuple
 
 import dagster._check as check
-from dagster._annotations import experimental, public
 from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import public, experimental
 from dagster._utils.warnings import disable_dagster_warnings
 
 

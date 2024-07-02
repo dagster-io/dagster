@@ -1,33 +1,33 @@
 from abc import abstractmethod
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Sequence,
     Tuple,
     Union,
+    Mapping,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    AbstractSet,
 )
 
 import dagster._check as check
-from dagster._core.definitions.configurable import NamedConfigurableDefinition
-from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.configurable import NamedConfigurableDefinition
 
+from .utils import NormalizedTags, normalize_tags, check_valid_name
 from .hook_definition import HookDefinition
-from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
     from dagster._core.types.dagster_type import DagsterType
 
+    from .input import InputDefinition
+    from .output import OutputDefinition
+    from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
     from .asset_layer import AssetLayer
     from .composition import PendingNodeInvocation
-    from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
-    from .input import InputDefinition
     from .op_definition import OpDefinition
-    from .output import OutputDefinition
 
 
 # base class for OpDefinition and GraphDefinition

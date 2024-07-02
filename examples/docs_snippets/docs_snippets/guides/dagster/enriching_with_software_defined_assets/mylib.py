@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from pandas import DataFrame
 
-from dagster import InputContext, IOManager, OutputContext, io_manager
+from dagster import IOManager, InputContext, OutputContext, io_manager
 
 
 def create_db_connection() -> Any:

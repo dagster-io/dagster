@@ -1,8 +1,8 @@
-import tempfile
 import time
-from concurrent.futures import ThreadPoolExecutor
+import tempfile
+from typing import Any, Dict, Tuple, Mapping, Iterator, Optional, NamedTuple, cast
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from dagster import (
@@ -10,37 +10,37 @@ from dagster import (
     _check as check,
     file_relative_path,
 )
-from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
-from dagster._core.definitions.sensor_definition import SensorType
+from dagster._time import get_current_datetime
 from dagster._core.events import DagsterEvent, DagsterEventType
-from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.remote_representation import CodeLocation, ExternalRepository
-from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
+from dagster._serdes.serdes import deserialize_value
+from dagster._core.events.log import EventLogEntry
 from dagster._core.test_utils import (
-    create_test_daemon_workspace_context,
     environ,
     freeze_time,
     instance_for_test,
+    create_test_daemon_workspace_context,
 )
+from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
 from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.remote_representation import CodeLocation, ExternalRepository
+from dagster._core.scheduler.instigation import TickStatus, SensorInstigatorData
 from dagster._core.workspace.load_target import WorkspaceFileTarget, WorkspaceLoadTarget
-from dagster._serdes.serdes import deserialize_value
-from dagster._time import get_current_datetime
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.definitions.run_status_sensor_definition import RunStatusSensorCursor
 
 from .conftest import create_workspace_load_target
 from .test_sensor_run import (
-    daily_partitioned_job,
-    evaluate_sensors,
-    failure_job,
-    failure_job_2,
     foo_job,
-    hanging_job,
     the_job,
+    failure_job,
+    hanging_job,
+    failure_job_2,
     validate_tick,
+    evaluate_sensors,
+    daily_partitioned_job,
     wait_for_all_runs_to_finish,
 )
 

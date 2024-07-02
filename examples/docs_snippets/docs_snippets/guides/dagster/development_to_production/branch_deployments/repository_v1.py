@@ -6,7 +6,7 @@ from dagster_snowflake_pandas import SnowflakePandasIOManager
 # __init__.py
 from dagster import Definitions
 
-from ..assets import comments, items, stories
+from ..assets import items, stories, comments
 
 snowflake_config = {
     "account": "abc1234.us-east-1",

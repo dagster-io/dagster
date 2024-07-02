@@ -1,12 +1,12 @@
 import time
-from datetime import datetime
 from typing import Optional
+from datetime import datetime
 
 import jwt
 import requests
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 def to_seconds(dt):

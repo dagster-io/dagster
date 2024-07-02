@@ -3,13 +3,13 @@ from dagster import (
     AssetKey,
     Definitions,
     asset_check,
-    load_asset_checks_from_current_module,
-    load_asset_checks_from_modules,
-    load_asset_checks_from_package_module,
-    load_asset_checks_from_package_name,
     load_assets_from_modules,
-    load_assets_from_package_module,
     load_assets_from_package_name,
+    load_asset_checks_from_modules,
+    load_assets_from_package_module,
+    load_asset_checks_from_package_name,
+    load_asset_checks_from_current_module,
+    load_asset_checks_from_package_module,
 )
 
 from dagster_tests.definitions_tests.decorators_tests.test_asset_check_decorator import (

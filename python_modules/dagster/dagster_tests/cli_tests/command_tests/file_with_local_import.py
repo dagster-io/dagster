@@ -1,6 +1,6 @@
 # type: ignore
 import dummy_local_file  # noqa: F401
-from dagster import job, op
+from dagster import op, job
 
 
 @op

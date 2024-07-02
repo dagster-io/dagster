@@ -1,9 +1,9 @@
-import contextlib
 import os
 import shutil
 import tempfile
+import contextlib
 
-from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
+from dagster._core.definitions.resource_definition import resource, dagster_maintained_resource
 
 
 class TempfileManager:

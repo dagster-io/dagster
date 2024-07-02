@@ -1,7 +1,7 @@
-from pathlib import Path
 from typing import Dict, Tuple
+from pathlib import Path
 
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 
 def get_version() -> Tuple[str, str]:

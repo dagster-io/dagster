@@ -1,9 +1,9 @@
-import datetime
 import os
-import threading
 import zlib
-from contextlib import contextmanager
+import datetime
+import threading
 from typing import Iterator
+from contextlib import contextmanager
 
 from .telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
 

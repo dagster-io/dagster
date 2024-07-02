@@ -1,5 +1,5 @@
-import hashlib
 import re
+import hashlib
 from typing import Any, Mapping
 
 from dagster._core.remote_representation.origin import RemoteJobOrigin

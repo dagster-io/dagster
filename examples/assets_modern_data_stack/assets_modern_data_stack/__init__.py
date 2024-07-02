@@ -4,15 +4,15 @@ from dagster import (
     define_asset_job,
     load_assets_from_package_module,
 )
+from dagster_airbyte import AirbyteResource
 from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
     build_sensor_for_freshness_checks,
 )
-from dagster_airbyte import AirbyteResource
 
 from . import assets
-from .assets.forecasting import freshness_checks
 from .db_io_manager import DbIOManager
 from .utils.constants import AIRBYTE_CONFIG, POSTGRES_CONFIG, dbt_resource
+from .assets.forecasting import freshness_checks
 
 # The freshness check sensor will run our freshness checks even if the underlying asset fails to run, for whatever reason.
 freshness_check_sensor = build_sensor_for_freshness_checks(freshness_checks=freshness_checks)

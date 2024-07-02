@@ -1,7 +1,7 @@
 import pytest
-from dagster import AssetExecutionContext, ConfigurableResource, OpExecutionContext, asset, op
+from dagster import OpExecutionContext, ConfigurableResource, AssetExecutionContext, op, asset
 from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.execution.context.invocation import build_asset_context, build_op_context
+from dagster._core.execution.context.invocation import build_op_context, build_asset_context
 
 
 def test_direct_op_invocation() -> None:

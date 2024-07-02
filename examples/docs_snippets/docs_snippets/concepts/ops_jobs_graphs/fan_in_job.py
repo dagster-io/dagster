@@ -2,7 +2,7 @@
 
 from typing import List
 
-from dagster import job, op
+from dagster import op, job
 
 
 @op

@@ -1,5 +1,5 @@
-from datetime import datetime
 from typing import Any, Mapping, Optional
+from datetime import datetime
 
 import dagster._check as check
 from dagster._vendored.dateutil.parser import isoparse

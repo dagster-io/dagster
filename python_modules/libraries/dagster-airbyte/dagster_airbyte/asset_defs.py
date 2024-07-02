@@ -1,57 +1,57 @@
-import hashlib
-import inspect
 import os
 import re
+import hashlib
+import inspect
 from abc import abstractmethod
-from functools import partial
-from itertools import chain
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
     cast,
 )
+from functools import partial
+from itertools import chain
 
 import yaml
 from dagster import (
+    Output,
+    Nothing,
     AssetKey,
     AssetOut,
-    AutoMaterializePolicy,
-    FreshnessPolicy,
-    Nothing,
-    Output,
-    ResourceDefinition,
     SourceAsset,
+    FreshnessPolicy,
+    ResourceDefinition,
+    AutoMaterializePolicy,
     _check as check,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._utils.merger import merge_dicts
 from dagster._core.definitions import AssetsDefinition, multi_asset
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
 from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from dagster._core.definitions.metadata import MetadataValue, TableSchemaMetadataValue
-from dagster._core.definitions.metadata.table import TableSchema
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.metadata.table import TableSchema
+from dagster._core.definitions.cacheable_assets import (
+    CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
+)
 
-from dagster_airbyte.resources import AirbyteCloudResource, AirbyteResource, BaseAirbyteResource
 from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
-    generate_materializations,
     generate_table_schema,
+    generate_materializations,
     is_basic_normalization_operation,
 )
+from dagster_airbyte.resources import AirbyteResource, BaseAirbyteResource, AirbyteCloudResource
 
 
 def _table_to_output_name_fn(table: str) -> str:

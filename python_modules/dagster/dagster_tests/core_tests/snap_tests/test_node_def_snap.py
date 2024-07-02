@@ -1,8 +1,8 @@
-from dagster import In, Out, graph, op
-from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, build_graph_def_snap
-from dagster._core.snap.node import OpDefSnap, build_op_def_snap
+from dagster import In, Out, op, graph
 from dagster._serdes import serialize_value
+from dagster._core.snap import GraphDefSnap, DependencyStructureIndex, build_graph_def_snap
 from dagster._serdes.serdes import deserialize_value
+from dagster._core.snap.node import OpDefSnap, build_op_def_snap
 
 
 def test_basic_op_definition():

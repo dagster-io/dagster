@@ -3,22 +3,22 @@ import subprocess
 from typing import List, Union
 
 import pytest
-from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from kubernetes import client as k8s_client
 from kubernetes.client import models
-from schema.charts.dagster.subschema.global_ import Global
-from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.dagster_user_deployments.subschema.user_deployments import (
-    ReadinessProbeWithEnabled,
-    UserDeployment,
-    UserDeploymentIncludeConfigInLaunchedRuns,
-    UserDeployments,
-)
-from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 from schema.charts.utils import kubernetes
 from schema.utils.helm_template import HelmTemplate
+from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster.subschema.global_ import Global
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+from schema.charts.dagster_user_deployments.subschema.user_deployments import (
+    UserDeployment,
+    UserDeployments,
+    ReadinessProbeWithEnabled,
+    UserDeploymentIncludeConfigInLaunchedRuns,
+)
 
-from .utils import create_complex_user_deployment, create_simple_user_deployment
+from .utils import create_simple_user_deployment, create_complex_user_deployment
 
 
 @pytest.fixture(name="template")

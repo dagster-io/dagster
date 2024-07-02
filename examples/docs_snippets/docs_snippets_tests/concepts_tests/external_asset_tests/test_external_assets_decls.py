@@ -1,6 +1,6 @@
+import docs_snippets.concepts.assets.external_assets.single_declaration
 import docs_snippets.concepts.assets.external_assets.external_asset_deps
 import docs_snippets.concepts.assets.external_assets.normal_asset_depending_on_external
-import docs_snippets.concepts.assets.external_assets.single_declaration
 from dagster import AssetKey, Definitions
 
 

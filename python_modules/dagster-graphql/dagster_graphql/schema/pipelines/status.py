@@ -1,5 +1,5 @@
-import dagster._check as check
 import graphene
+import dagster._check as check
 
 
 class GrapheneRunStatus(graphene.Enum):

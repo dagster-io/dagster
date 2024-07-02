@@ -2,13 +2,13 @@ import datetime
 from typing import Mapping, Optional
 
 import pendulum
-from airflow.models.dag import DAG
-from airflow.models.dagrun import DagRun
 from dagster import (
-    DagsterInvariantViolationError,
     DagsterRun,
+    DagsterInvariantViolationError,
     _check as check,
 )
+from airflow.models.dag import DAG
+from airflow.models.dagrun import DagRun
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
 
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment

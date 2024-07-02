@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Set, Union, cast
+from typing import TYPE_CHECKING, Any, Set, List, Union, Optional, Sequence, cast
 
 import graphene
 from dagster import (
@@ -6,94 +6,94 @@ from dagster import (
     DagsterError,
     _check as check,
 )
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer, ChangeReason
+from dagster._core.utils import is_valid_email
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEventType
+from dagster._core.event_api import AssetRecordsFilter
+from dagster._core.snap.node import OpDefSnap, GraphDefSnap
 from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.partition import PartitionsDefinition, CachingDynamicPartitionsLoader
+from dagster._core.remote_representation import CodeLocation, ExternalRepository
+from dagster._core.workspace.permissions import Permissions
 from dagster._core.definitions.data_version import (
     NULL_DATA_VERSION,
-    StaleCauseCategory,
     StaleStatus,
+    StaleCauseCategory,
 )
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader, PartitionsDefinition
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 from dagster._core.definitions.partition_mapping import PartitionMapping
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.events import DagsterEventType
-from dagster._core.remote_representation import CodeLocation, ExternalRepository
+from dagster._core.definitions.asset_graph_differ import ChangeReason, AssetGraphDiffer
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.remote_representation.external_data import (
     ExternalAssetNode,
-    ExternalDynamicPartitionsDefinitionData,
-    ExternalMultiPartitionsDefinitionData,
     ExternalPartitionsDefinitionData,
+    ExternalMultiPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
+    ExternalDynamicPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.node import GraphDefSnap, OpDefSnap
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
-from dagster._core.utils import is_valid_email
-from dagster._core.workspace.permissions import Permissions
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
-from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
-from dagster_graphql.implementation.fetch_assets import (
-    get_asset_materializations,
-    get_asset_observations,
-)
-from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.schema.tags import GrapheneDefinitionTag
 from dagster_graphql.schema.inputs import GraphenePipelineSelector
-from dagster_graphql.schema.instigators import GrapheneInstigator
+from dagster_graphql.schema.solids import (
+    GrapheneSolidDefinition,
+    GrapheneResourceRequirement,
+    GrapheneCompositeSolidDefinition,
+)
+from dagster_graphql.schema.sensors import GrapheneSensor
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.schedules import GrapheneSchedule
+from dagster_graphql.schema.instigators import GrapheneInstigator
+from dagster_graphql.schema.config_types import GrapheneConfigTypeField
+from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.partition_sets import (
-    GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinition,
+    GrapheneDimensionPartitionKeys,
     GraphenePartitionDefinitionType,
 )
-from dagster_graphql.schema.schedules import GrapheneSchedule
-from dagster_graphql.schema.sensors import GrapheneSensor
-from dagster_graphql.schema.solids import (
-    GrapheneCompositeSolidDefinition,
-    GrapheneResourceRequirement,
-    GrapheneSolidDefinition,
+from dagster_graphql.implementation.fetch_assets import (
+    get_asset_observations,
+    get_asset_materializations,
 )
-from dagster_graphql.schema.tags import GrapheneDefinitionTag
+from dagster_graphql.implementation.fetch_asset_checks import has_asset_checks
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 
-from ..implementation.fetch_assets import (
-    build_partition_statuses,
-    get_freshness_info,
-    get_partition_subsets,
-)
-from ..implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
-from ..schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
 from . import external
-from .asset_key import GrapheneAssetKey
-from .auto_materialize_policy import GrapheneAutoMaterializePolicy
+from .util import ResolveInfo, non_null_list
+from .errors import GrapheneAssetNotFoundError
 from .backfill import GrapheneBackfillPolicy
+from .asset_key import GrapheneAssetKey
+from .logs.events import GrapheneObservationEvent, GrapheneMaterializationEvent
 from .dagster_types import (
     GrapheneDagsterType,
     GrapheneListDagsterType,
-    GrapheneNullableDagsterType,
     GrapheneRegularDagsterType,
+    GrapheneNullableDagsterType,
     to_dagster_type,
 )
-from .errors import GrapheneAssetNotFoundError
-from .freshness_policy import GrapheneAssetFreshnessInfo, GrapheneFreshnessPolicy
-from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
+from .freshness_policy import GrapheneFreshnessPolicy, GrapheneAssetFreshnessInfo
 from .partition_mappings import GraphenePartitionMapping
 from .pipelines.pipeline import (
-    GrapheneAssetPartitionStatuses,
-    GrapheneDefaultPartitionStatuses,
-    GrapheneMultiPartitionStatuses,
-    GraphenePartitionStats,
-    GraphenePipeline,
     GrapheneRun,
+    GraphenePipeline,
+    GraphenePartitionStats,
     GrapheneTimePartitionStatuses,
+    GrapheneAssetPartitionStatuses,
+    GrapheneMultiPartitionStatuses,
+    GrapheneDefaultPartitionStatuses,
 )
-from .util import ResolveInfo, non_null_list
+from ..schema.asset_checks import AssetChecksOrErrorUnion, GrapheneAssetChecksOrError
+from ..implementation.loader import StaleStatusLoader, CrossRepoAssetDependedByLoader
+from .auto_materialize_policy import GrapheneAutoMaterializePolicy
+from ..implementation.fetch_assets import (
+    get_freshness_info,
+    get_partition_subsets,
+    build_partition_statuses,
+)
 
 if TYPE_CHECKING:
     from .external import GrapheneRepository

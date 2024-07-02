@@ -1,4 +1,4 @@
-from .defaults import broker_transport_options, task_default_priority, task_default_queue
+from .defaults import task_default_queue, task_default_priority, broker_transport_options
 
 DEFAULT_CONFIG = {
     # 'task_queue_max_priority': 10,

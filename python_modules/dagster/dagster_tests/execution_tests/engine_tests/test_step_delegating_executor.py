@@ -1,42 +1,42 @@
 import os
-import subprocess
+import time
 import tempfile
 import threading
-import time
+import subprocess
 
 import pytest
 from dagster import (
     AssetKey,
-    AssetsDefinition,
     DagsterInstance,
-    asset,
-    define_asset_job,
-    executor,
-    job,
+    AssetsDefinition,
     op,
-    reconstructable,
+    job,
+    asset,
+    executor,
     repository,
+    reconstructable,
+    define_asset_job,
 )
 from dagster._config import Permissive
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
-from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 from dagster._core.events import DagsterEventType
+from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.execution.api import ReexecutionOptions, execute_job
 from dagster._core.execution.retries import RetryMode
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.executor.step_delegating import (
+    StepHandler,
     CheckStepHealthResult,
     StepDelegatingExecutor,
-    StepHandler,
 )
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
-from dagster._core.test_utils import environ, instance_for_test
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.definitions.repository_definition import AssetsDefinitionCacheableData
 
 from .retry_jobs import (
-    assert_expected_failure_behavior,
     get_dynamic_job_op_failure,
+    assert_expected_failure_behavior,
     get_dynamic_job_resource_init_failure,
 )
 

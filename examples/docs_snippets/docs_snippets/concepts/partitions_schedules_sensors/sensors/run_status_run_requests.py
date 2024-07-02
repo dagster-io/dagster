@@ -1,9 +1,9 @@
 from dagster import (
-    DagsterRunStatus,
     RunRequest,
     SkipReason,
-    run_failure_sensor,
+    DagsterRunStatus,
     run_status_sensor,
+    run_failure_sensor,
 )
 
 status_reporting_job = None

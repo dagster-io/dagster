@@ -1,29 +1,30 @@
-import datetime
 import os
-import pickle
-import platform
-import shutil
 import sys
 import time
 import uuid
-from contextlib import contextmanager
+import pickle
+import shutil
+import datetime
+import platform
 from typing import List, Optional
+from contextlib import contextmanager
 
+from wandb import Artifact
 from dagster import (
-    Field,
-    InitResourceContext,
-    InputContext,
     Int,
+    Field,
+    String,
     IOManager,
+    InputContext,
     MetadataValue,
     OutputContext,
-    String,
+    InitResourceContext,
     io_manager,
 )
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
-from wandb import Artifact
 from wandb.data_types import WBValue
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 
+from .version import __version__
 from .resources import WANDB_CLOUD_HOST
 from .utils.errors import (
     WandbArtifactsIOManagerError,
@@ -37,7 +38,6 @@ from .utils.pickling import (
     pickle_artifact_content,
     unpickle_artifact_content,
 )
-from .version import __version__
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict

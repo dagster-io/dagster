@@ -3,35 +3,35 @@ from importlib import resources
 
 import mock
 import pytest
-from dagster_tests.cli_tests.command_tests.assets import fail_asset
 from mock import MagicMock
+from dagster_tests.cli_tests.command_tests.assets import fail_asset
 
 from dagster import Definitions
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from docs_snippets.concepts.assets.asset_checks.factory import (
+    defs as factory_defs,
+    make_check,
+    check_blobs,
+)
+from docs_snippets.concepts.assets.asset_checks.blocking import defs as blocking_defs
+from docs_snippets.concepts.assets.asset_checks.metadata import defs as metadata_defs
+from docs_snippets.concepts.assets.asset_checks.severity import defs as severity_defs
+from docs_snippets.concepts.assets.asset_checks.orders_check import defs as orders_defs
 from docs_snippets.concepts.assets.asset_checks.asset_with_check import (
     defs as asset_with_check_defs,
 )
-from docs_snippets.concepts.assets.asset_checks.blocking import defs as blocking_defs
-from docs_snippets.concepts.assets.asset_checks.factory import (
-    check_blobs,
-    defs as factory_defs,
-    make_check,
+from docs_snippets.concepts.assets.asset_checks.source_data_freshness_complete import (
+    defs as source_data_freshness_complete_defs,
+)
+from docs_snippets.concepts.assets.asset_checks.source_data_freshness_in_pieces import (
+    defs as source_data_freshness_in_pieces_defs,
 )
 from docs_snippets.concepts.assets.asset_checks.materializable_freshness_complete import (
     defs as materializable_freshness_complete_defs,
 )
 from docs_snippets.concepts.assets.asset_checks.materializable_freshness_in_pieces import (
     defs as materializable_freshness_in_pieces_defs,
-)
-from docs_snippets.concepts.assets.asset_checks.metadata import defs as metadata_defs
-from docs_snippets.concepts.assets.asset_checks.orders_check import defs as orders_defs
-from docs_snippets.concepts.assets.asset_checks.severity import defs as severity_defs
-from docs_snippets.concepts.assets.asset_checks.source_data_freshness_complete import (
-    defs as source_data_freshness_complete_defs,
-)
-from docs_snippets.concepts.assets.asset_checks.source_data_freshness_in_pieces import (
-    defs as source_data_freshness_in_pieces_defs,
 )
 
 

@@ -1,38 +1,38 @@
-import copy
 import os
-import pickle
 import sys
-import tempfile
+import copy
 import uuid
-from typing import Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Type, Union, cast
+import pickle
+import tempfile
+from typing import Any, Set, Type, Union, Mapping, Callable, Iterable, Optional, Sequence, cast
 
 import nbformat
 import papermill
 from dagster import (
     In,
-    OpDefinition,
     Out,
     Output,
+    OpDefinition,
     _check as check,
     _seven,
 )
-from dagster._config.pythonic_config import Config, infer_schema_from_config_class
-from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
-from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.utils import normalize_tags
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.input import build_input_context
-from dagster._core.execution.context.system import StepExecutionContext
-from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._serdes import pack_value
 from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
-from dagster._utils.error import serializable_error_info_from_exc_info
+from papermill.iorw import write_ipynb, load_notebook_node
+from dagster._serdes import pack_value
 from papermill.engines import papermill_engines
-from papermill.iorw import load_notebook_node, write_ipynb
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.definitions.events import Failure, RetryRequested, AssetMaterialization
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.execution.context.input import build_input_context
+from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
 from .compat import ExecutionError
 from .engine import DagstermillEngine

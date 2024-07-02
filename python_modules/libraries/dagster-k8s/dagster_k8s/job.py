@@ -3,28 +3,28 @@ import json
 import random
 import string
 from enum import Enum
-from typing import Any, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence, NamedTuple
 
-import dagster._check as check
 import kubernetes
+import dagster._check as check
 from dagster import (
-    Array,
-    BoolSource,
-    Enum as DagsterEnum,
-    Field,
     Map,
+    Enum as DagsterEnum,
+    Array,
+    Field,
     Noneable,
+    BoolSource,
     StringSource,
 )
-from dagster._config import Permissive, Shape, validate_config
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.utils import parse_env_var
+from dagster._config import Shape, Permissive, validate_config
 from dagster._serdes import whitelist_for_serdes
+from dagster._core.utils import parse_env_var
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
-from .models import k8s_model_from_dict, k8s_snake_case_dict
 from .utils import get_common_labels, sanitize_k8s_label
+from .models import k8s_model_from_dict, k8s_snake_case_dict
 
 # To retry step worker, users should raise RetryRequested() so that the dagster system is aware of the
 # retry. As an example, see retry_job in dagster_test.test_project.test_jobs.repo

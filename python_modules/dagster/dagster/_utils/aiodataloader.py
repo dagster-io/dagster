@@ -1,30 +1,30 @@
 # Copied from https://github.com/syrusakbary/aiodataloader
 
 import sys
-from asyncio import (
-    AbstractEventLoop,
-    Future,
-    ensure_future,
-    gather,
-    get_event_loop,
-    iscoroutine,
-    iscoroutinefunction,
-)
-from collections import namedtuple
-from functools import partial
 from typing import (
     Any,
-    Callable,
-    Coroutine,
+    List,
+    Union,
     Generic,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    MutableMapping,
     Optional,
-    TypeVar,
-    Union,
+    Coroutine,
+    MutableMapping,
 )
+from asyncio import (
+    Future,
+    AbstractEventLoop,
+    gather,
+    iscoroutine,
+    ensure_future,
+    get_event_loop,
+    iscoroutinefunction,
+)
+from functools import partial
+from collections import namedtuple
 
 if sys.version_info >= (3, 10):
     from typing import TypeGuard

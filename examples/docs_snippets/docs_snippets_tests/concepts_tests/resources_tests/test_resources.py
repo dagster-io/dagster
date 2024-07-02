@@ -1,18 +1,18 @@
-from dagster import build_init_resource_context, build_op_context
+from dagster import build_op_context, build_init_resource_context
 from docs_snippets.concepts.resources.resources import (
-    cereal_fetcher,
     connect,
-    db_connection,
     db_resource,
-    do_database_stuff_dev,
-    do_database_stuff_job,
-    do_database_stuff_prod,
-    op_requires_resources,
+    db_connection,
+    cereal_fetcher,
     test_cm_resource,
     test_my_resource,
-    test_my_resource_with_context,
     use_db_connection,
     uses_db_connection,
+    do_database_stuff_dev,
+    do_database_stuff_job,
+    op_requires_resources,
+    do_database_stuff_prod,
+    test_my_resource_with_context,
 )
 
 

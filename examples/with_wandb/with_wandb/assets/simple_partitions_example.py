@@ -1,8 +1,8 @@
 import random
 
 from dagster import (
-    AssetExecutionContext,
     AssetIn,
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,

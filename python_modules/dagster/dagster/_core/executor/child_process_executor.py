@@ -1,12 +1,12 @@
 """Facilities for running arbitrary commands in child processes."""
 
 import os
-import queue
 import sys
+import queue
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Union, Iterator, Optional, NamedTuple
 from multiprocessing import Queue
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
-from typing import TYPE_CHECKING, Iterator, NamedTuple, Optional, Union
 
 from typing_extensions import Literal
 

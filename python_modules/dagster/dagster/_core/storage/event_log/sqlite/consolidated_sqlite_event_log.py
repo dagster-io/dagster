@@ -1,29 +1,29 @@
-import logging
 import os
-from collections import defaultdict
-from contextlib import contextmanager
+import logging
 from typing import Any, Mapping, Optional
+from contextlib import contextmanager
+from collections import defaultdict
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
-from typing_extensions import Self
 from watchdog.events import PatternMatchingEventHandler
+from typing_extensions import Self
 from watchdog.observers import Observer
 
 import dagster._check as check
+from dagster._utils import mkdir_p
 from dagster._config import StringSource
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.event_log.base import EventLogCursor
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._core.storage.sql import (
-    check_alembic_revision,
     create_engine,
+    stamp_alembic_rev,
     get_alembic_config,
     run_alembic_upgrade,
-    stamp_alembic_rev,
+    check_alembic_revision,
 )
 from dagster._core.storage.sqlite import create_db_conn_string
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import mkdir_p
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.storage.event_log.base import EventLogCursor
 
 from ..schema import SqlEventLogStorageMetadata
 from ..sql_event_log import SqlDbConnection, SqlEventLogStorage

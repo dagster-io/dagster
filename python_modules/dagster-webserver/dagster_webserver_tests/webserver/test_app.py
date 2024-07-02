@@ -1,20 +1,20 @@
 import gc
 
-import objgraph
 import pytest
+import objgraph
 from dagster import (
-    __version__ as dagster_version,
-    job,
     op,
+    job,
+    __version__ as dagster_version,
 )
-from dagster._core.events import DagsterEventType
-from dagster._serdes import unpack_value
 from dagster._seven import json
+from dagster._serdes import unpack_value
+from dagster._core.events import DagsterEventType
 from dagster._utils.error import SerializableErrorInfo
+from starlette.testclient import TestClient
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.version import __version__ as dagster_webserver_version
-from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
 subscription PipelineRunLogsSubscription($runId: ID!) {

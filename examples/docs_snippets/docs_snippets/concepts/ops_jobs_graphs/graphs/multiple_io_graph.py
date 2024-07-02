@@ -1,5 +1,5 @@
 # start_marker
-from dagster import OpExecutionContext, graph, op
+from dagster import OpExecutionContext, op, graph
 
 
 @op

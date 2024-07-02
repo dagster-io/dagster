@@ -1,19 +1,19 @@
 import sys
+from typing import TYPE_CHECKING, Any, Type, Callable, Iterator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Type
 
 import dagster._check as check
-from dagster._core.definitions.events import Failure, RetryRequested
 from dagster._core.errors import (
     DagsterError,
-    DagsterExecutionInterruptedError,
     DagsterUserCodeExecutionError,
+    DagsterExecutionInterruptedError,
     raise_execution_interrupts,
 )
+from dagster._core.definitions.events import Failure, RetryRequested
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.resource_definition import Resources
     from dagster._core.execution.context.system import StepExecutionContext
+    from dagster._core.definitions.resource_definition import Resources
 
 
 def build_resources_for_manager(

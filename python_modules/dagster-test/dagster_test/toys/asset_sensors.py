@@ -6,11 +6,11 @@ from dagster import (
     RunRequest,
     SkipReason,
     StaticPartitionsDefinition,
-    asset,
+    op,
     job,
+    asset,
     multi_asset,
     multi_asset_sensor,
-    op,
 )
 
 

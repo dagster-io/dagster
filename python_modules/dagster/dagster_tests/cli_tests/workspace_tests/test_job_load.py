@@ -1,11 +1,11 @@
 import click
 import pytest
 from click.testing import CliRunner
-from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
-from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalJob
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
+from dagster._cli.workspace.cli_target import job_target_argument, get_external_job_from_kwargs
+from dagster._core.remote_representation import ExternalJob
 
 
 def load_pipeline_via_cli_runner(cli_args):

@@ -1,30 +1,25 @@
 from typing import (
     Any,
-    Callable,
     Dict,
-    Iterable,
     List,
-    Mapping,
-    Optional,
-    Sequence,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
     cast,
 )
 
 import dagster._check as check
 from dagster import AssetKey
-from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
-from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.execution.context.init import build_init_resource_context
+from dagster._annotations import public, deprecated, experimental
 from dagster._utils.merger import deep_merge_dicts
 from dagster_managed_elements import (
-    ManagedElementCheckResult,
     ManagedElementDiff,
     ManagedElementError,
+    ManagedElementCheckResult,
 )
 from dagster_managed_elements.types import (
     SECRET_MASK_VALUE,
@@ -32,7 +27,14 @@ from dagster_managed_elements.types import (
     is_key_secret,
 )
 from dagster_managed_elements.utils import UNSET, diff_dicts
+from dagster._core.definitions.events import CoercibleToAssetKeyPrefix
+from dagster._core.execution.context.init import build_init_resource_context
+from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
+from dagster_airbyte.utils import is_basic_normalization_operation
+from dagster_airbyte.resources import AirbyteResource
 from dagster_airbyte.asset_defs import (
     AirbyteConnectionMetadata,
     AirbyteInstanceCacheableAssetsDefinition,
@@ -40,17 +42,15 @@ from dagster_airbyte.asset_defs import (
 )
 from dagster_airbyte.managed.types import (
     MANAGED_ELEMENTS_DEPRECATION_MSG,
-    AirbyteConnection,
-    AirbyteDestination,
-    AirbyteDestinationNamespace,
     AirbyteSource,
     AirbyteSyncMode,
+    AirbyteConnection,
+    AirbyteDestination,
+    InitializedAirbyteSource,
+    AirbyteDestinationNamespace,
     InitializedAirbyteConnection,
     InitializedAirbyteDestination,
-    InitializedAirbyteSource,
 )
-from dagster_airbyte.resources import AirbyteResource
-from dagster_airbyte.utils import is_basic_normalization_operation
 
 
 def gen_configured_stream_json(

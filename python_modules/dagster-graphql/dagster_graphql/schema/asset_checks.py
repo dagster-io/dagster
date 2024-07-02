@@ -1,27 +1,27 @@
-from typing import TYPE_CHECKING, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Union, Optional, Sequence, cast
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster import EventLogEntry
+from dagster._core.events import DagsterEventType
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.events import DagsterEventType
 from dagster._core.remote_representation.external_data import ExternalAssetCheck
 from dagster._core.storage.asset_check_execution_record import (
     AssetCheckExecutionRecord,
     AssetCheckExecutionResolvedStatus,
 )
 
-from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.util import non_null_list
 from dagster_graphql.schema.errors import GrapheneError
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
-from dagster_graphql.schema.util import non_null_list
+from dagster_graphql.implementation.events import iterate_metadata_entries
 
-from .asset_key import GrapheneAssetKey
 from .util import ResolveInfo
+from .asset_key import GrapheneAssetKey
 
 if TYPE_CHECKING:
     from ..implementation.asset_checks_loader import (

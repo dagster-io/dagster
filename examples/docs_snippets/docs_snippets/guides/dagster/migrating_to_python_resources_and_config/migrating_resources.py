@@ -6,9 +6,9 @@ from dagster import Definitions, define_asset_job
 def initial_code_base() -> Definitions:
     # begin_initial_codebase
     from dagster import (
-        AssetExecutionContext,
         Definitions,
         InitResourceContext,
+        AssetExecutionContext,
         asset,
         resource,
     )
@@ -74,7 +74,7 @@ def convert_resource() -> Definitions:
 
 def new_style_resource_on_context() -> Definitions:
     # begin_new_style_resource_on_context
-    from dagster import AssetExecutionContext, ConfigurableResource, Definitions, asset
+    from dagster import Definitions, ConfigurableResource, AssetExecutionContext, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str
@@ -97,7 +97,7 @@ def new_style_resource_on_context() -> Definitions:
 
 
 def new_style_resource_on_param() -> Definitions:
-    from dagster import ConfigurableResource, Definitions, OpExecutionContext, asset
+    from dagster import Definitions, OpExecutionContext, ConfigurableResource, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str
@@ -132,7 +132,7 @@ def old_third_party_resource() -> Definitions:
     # Alternatively could have been imported from third-party library
     # from fancy_db import FancyDbClient
 
-    from dagster import AssetExecutionContext, InitResourceContext, asset, resource
+    from dagster import InitResourceContext, AssetExecutionContext, asset, resource
 
     @resource(config_schema={"conn_string": str})
     def fancy_db_resource(context: InitResourceContext) -> FancyDbClient:
@@ -169,7 +169,7 @@ def old_resource_code_contextmanager() -> Definitions:
 
     # begin_old_resource_code_contextmanager
 
-    from dagster import AssetExecutionContext, InitResourceContext, asset, resource
+    from dagster import InitResourceContext, AssetExecutionContext, asset, resource
 
     @resource(config_schema={"conn_string": str})
     def fancy_db_resource(context: InitResourceContext) -> Iterator[FancyDbClient]:
@@ -241,7 +241,7 @@ def new_third_party_resource_old_code_broken() -> Definitions:
         def execute_query(self, query: str) -> None: ...
 
     # begin_new_third_party_resource
-    from dagster import AssetExecutionContext, ConfigurableResource, asset
+    from dagster import ConfigurableResource, AssetExecutionContext, asset
 
     class FancyDbResource(ConfigurableResource):
         conn_string: str
@@ -286,8 +286,8 @@ def new_third_party_resource_fixed() -> Definitions:
 
     # begin_new_third_party_resource_with_interface
     from dagster import (
-        AssetExecutionContext,
         ConfigurableResource,
+        AssetExecutionContext,
         IAttachDifferentObjectToOpContext,
         asset,
     )

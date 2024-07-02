@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Mapping, Set
+from typing import Set, Mapping
 
 
 class DaemonCursorStorage:

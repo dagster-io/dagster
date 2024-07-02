@@ -1,4 +1,4 @@
-from dagster import AssetMaterialization, AssetSpec, Definitions, OpExecutionContext, job, op
+from dagster import AssetSpec, Definitions, OpExecutionContext, AssetMaterialization, op, job
 from dagster._core.definitions.external_asset import external_assets_from_specs
 
 asset_one = AssetSpec("asset_one")

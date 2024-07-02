@@ -1,17 +1,17 @@
 import os
-import signal
-import subprocess
-import tempfile
 import time
+import signal
+import tempfile
+import subprocess
 
-import requests
 import yaml
-from dagster import DagsterEventType, DagsterInstance
-from dagster._core.test_utils import environ, new_cwd
-from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import wait_for_grpc_server
+import requests
+from dagster import DagsterInstance, DagsterEventType
 from dagster._utils import find_free_port
 from dagster_graphql import DagsterGraphQLClient
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import wait_for_grpc_server
+from dagster._core.test_utils import environ, new_cwd
 
 
 def _wait_for_dagit_running(dagit_port):

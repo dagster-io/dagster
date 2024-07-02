@@ -2,24 +2,27 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
-    Generic,
     List,
+    Union,
+    Generic,
     Mapping,
-    NamedTuple,
+    TypeVar,
+    Callable,
     Optional,
     Sequence,
-    TypeVar,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
 from typing_extensions import Self
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, experimental_param, public
+from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import PublicAttr, public, deprecated, experimental_param
+from dagster._serdes.serdes import NamedTupleSerializer
+from dagster._core.storage.tags import REPORTING_USER_TAG, MULTIDIMENSIONAL_PARTITION_PREFIX
 from dagster._core.definitions.asset_key import (
     AssetKey as AssetKey,
     CoercibleToAssetKey as CoercibleToAssetKey,
@@ -27,23 +30,20 @@ from dagster._core.definitions.asset_key import (
     parse_asset_key_string,
 )
 from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
     _OLD_DATA_VERSION_TAG,
     _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
-    DATA_VERSION_TAG,
     DataVersion,
 )
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX, REPORTING_USER_TAG
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
 
+from .utils import DEFAULT_OUTPUT, check_valid_name
 from .metadata import (
-    MetadataFieldSerializer,
-    MetadataMapping,
     MetadataValue,
+    MetadataMapping,
     RawMetadataValue,
+    MetadataFieldSerializer,
     normalize_metadata,
 )
-from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.output import OutputContext

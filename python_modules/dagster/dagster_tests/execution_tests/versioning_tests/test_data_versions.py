@@ -1,63 +1,63 @@
 import re
-from datetime import datetime, timedelta
 from random import randint
+from datetime import datetime, timedelta
 from unittest import mock
 
 import pytest
 from dagster import (
     AssetIn,
-    AssetMaterialization,
     AssetOut,
-    DagsterInstance,
-    MaterializeResult,
     RunConfig,
     SourceAsset,
+    DagsterInstance,
+    MaterializeResult,
+    AssetMaterialization,
     asset,
     materialize,
     observable_source_asset,
 )
-from dagster._config.field import Field
-from dagster._config.pythonic_config import Config
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_TAG,
-    SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
-    DataProvenance,
-    DataVersion,
-    StaleCause,
-    StaleCauseCategory,
-    StaleStatus,
-    compute_logical_data_version,
-    extract_data_provenance_from_entry,
-    extract_data_version_from_entry,
-)
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey, Output
-from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.partition_mapping import AllPartitionMapping
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._utils import Counter, traced_counter
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.instance_for_test import instance_for_test
+from dagster._config.field import Field
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._utils import Counter, traced_counter
+from dagster._config.pythonic_config import Config
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.events import Output, AssetKey, AssetKeyPartitionKey
+from dagster._core.definitions.observe import observe
 from dagster._utils.test.data_versions import (
+    materialize_asset,
+    materialize_twice,
+    materialize_assets,
     assert_code_version,
     assert_data_version,
-    assert_different_versions,
-    assert_provenance_match,
-    assert_provenance_no_match,
     assert_same_versions,
+    assert_provenance_match,
+    assert_different_versions,
     get_stale_status_resolver,
+    assert_provenance_no_match,
     get_upstream_version_from_mat_provenance,
-    materialize_asset,
-    materialize_assets,
-    materialize_twice,
 )
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
+    StaleCause,
+    DataVersion,
+    StaleStatus,
+    DataProvenance,
+    StaleCauseCategory,
+    compute_logical_data_version,
+    extract_data_version_from_entry,
+    extract_data_provenance_from_entry,
+)
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.definitions.partition_mapping import AllPartitionMapping
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
 from dagster_tests.core_tests.instance_tests.test_instance_data_versions import (
     create_test_event_log_entry,

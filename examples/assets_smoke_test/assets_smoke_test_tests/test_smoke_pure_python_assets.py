@@ -1,5 +1,5 @@
-from dagster import InMemoryIOManager, TableSchema, load_assets_from_modules, materialize
-from pandas import DataFrame, Series
+from pandas import Series, DataFrame
+from dagster import TableSchema, InMemoryIOManager, materialize, load_assets_from_modules
 
 from assets_smoke_test import pure_python_assets
 

@@ -1,13 +1,13 @@
 from dagster import (
-    CodeLocationSelector,
-    DagsterRunStatus,
+    RunRequest,
     Definitions,
     JobSelector,
-    RunRequest,
-    job,
+    DagsterRunStatus,
+    CodeLocationSelector,
     op,
-    run_failure_sensor,
+    job,
     run_status_sensor,
+    run_failure_sensor,
 )
 
 success_job_defs_name = (

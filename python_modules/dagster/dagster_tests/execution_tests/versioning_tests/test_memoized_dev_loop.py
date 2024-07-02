@@ -3,23 +3,23 @@ from typing import Any, Mapping, Sequence
 
 import pytest
 from dagster import (
-    DagsterInvariantViolationError,
+    In,
     DynamicOut,
     DynamicOutput,
-    In,
-    graph,
+    DagsterInvariantViolationError,
     op,
+    graph,
     resource,
 )
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.definitions.version_strategy import VersionStrategy
-from dagster._core.execution.api import ReexecutionOptions, create_execution_plan, execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.input_manager import input_manager
-from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.execution.api import ReexecutionOptions, execute_job, create_execution_plan
+from dagster._core.storage.input_manager import input_manager
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.version_strategy import VersionStrategy
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 
 from .memoized_dev_loop_job import op_job
 

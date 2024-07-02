@@ -1,14 +1,14 @@
 import os
-from collections import defaultdict
 from typing import Mapping, Optional, Sequence
+from collections import defaultdict
 
 import pendulum
 
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
 
 from .instance import DagsterInstance
-from .storage.dagster_run import DagsterRun, DagsterRunStatus, RunOpConcurrency, RunRecord
 from .storage.tags import GLOBAL_CONCURRENCY_TAG
+from .storage.dagster_run import RunRecord, DagsterRun, DagsterRunStatus, RunOpConcurrency
 
 
 def compute_run_op_concurrency_info_for_snapshot(

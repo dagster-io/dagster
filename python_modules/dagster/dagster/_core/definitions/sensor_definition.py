@@ -1,74 +1,74 @@
 import inspect
 import logging
-from collections import defaultdict
-from contextlib import ExitStack
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
+    Set,
     Dict,
+    List,
+    Type,
+    Tuple,
+    Union,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
+    NamedTuple,
     cast,
 )
+from contextlib import ExitStack
+from collections import defaultdict
 
 import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-from dagster._core.definitions.instigation_logger import InstigationLogger
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.resource_definition import Resources
-from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
+from dagster._utils import IHasInternalInit, normalize_to_repository
+from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import public, deprecated, deprecated_param
 from dagster._core.errors import (
+    DagsterInvalidSubsetError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
-    DagsterInvalidSubsetError,
     DagsterInvariantViolationError,
 )
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._serdes import whitelist_for_serdes
-from dagster._utils import IHasInternalInit, normalize_to_repository
 from dagster._utils.merger import merge_dicts
+from dagster._core.instance import DagsterInstance
 from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.definitions.events import AssetObservation, AssetMaterialization
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.partition import CachingDynamicPartitionsLoader
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import Resources
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
+from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 
-from ..decorator_utils import get_function_params
-from .asset_selection import AssetSelection, KeysAssetSelection
-from .run_request import (
-    AddDynamicPartitionsRequest,
-    DagsterRunReaction,
-    DeleteDynamicPartitionsRequest,
-    RunRequest,
-    SensorResult,
-    SkipReason,
-)
-from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
 from .utils import check_valid_name
+from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
+from .run_request import (
+    RunRequest,
+    SkipReason,
+    SensorResult,
+    DagsterRunReaction,
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
+from .asset_selection import AssetSelection, KeysAssetSelection
+from ..decorator_utils import get_function_params
 
 if TYPE_CHECKING:
     from dagster import ResourceDefinition
+    from dagster._core.remote_representation.origin import CodeLocationOrigin
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
 
 
 @whitelist_for_serdes
@@ -160,9 +160,9 @@ class SensorEvaluationContext:
         # deprecated param
         last_completion_time: Optional[float] = None,
     ):
+        from dagster._core.remote_representation.origin import CodeLocationOrigin
         from dagster._core.definitions.definitions_class import Definitions
         from dagster._core.definitions.repository_definition import RepositoryDefinition
-        from dagster._core.remote_representation.origin import CodeLocationOrigin
 
         self._exit_stack = ExitStack()
         self._instance_ref = check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
@@ -259,8 +259,8 @@ class SensorEvaluationContext:
     @property
     def resources(self) -> Resources:
         """Resources: A mapping from resource key to instantiated resources for this sensor."""
-        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
         from dagster._core.execution.build_resources import build_resources
+        from dagster._core.definitions.scoped_resources_builder import IContainsGenerator
 
         if not self._resources:
             """
@@ -1152,9 +1152,9 @@ def build_sensor_context(
             my_sensor(context)
 
     """
+    from dagster._core.execution.build_resources import wrap_resources_for_execution
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.execution.build_resources import wrap_resources_for_execution
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")

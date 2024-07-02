@@ -7,9 +7,9 @@
 # processes.
 
 import os
-import signal
 import sys
 import time
+import signal
 
 
 def watch(args):

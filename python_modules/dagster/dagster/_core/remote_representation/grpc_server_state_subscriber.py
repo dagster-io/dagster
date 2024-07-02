@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, Optional, NamedTuple
 
 import dagster._check as check
 

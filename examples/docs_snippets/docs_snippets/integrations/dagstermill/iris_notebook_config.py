@@ -12,7 +12,7 @@ def iris_dataset():
 # start
 from dagstermill import define_dagstermill_asset
 
-from dagster import AssetIn, Field, Int, file_relative_path
+from dagster import Int, Field, AssetIn, file_relative_path
 
 iris_kmeans_jupyter_notebook = define_dagstermill_asset(
     name="iris_kmeans_jupyter",
@@ -36,7 +36,7 @@ iris_kmeans_jupyter_notebook = define_dagstermill_asset(
 
 from dagstermill import ConfigurableLocalOutputNotebookIOManager
 
-from dagster import AssetSelection, define_asset_job, with_resources
+from dagster import AssetSelection, with_resources, define_asset_job
 
 assets_with_resource = with_resources(
     [iris_kmeans_jupyter_notebook, iris_dataset],

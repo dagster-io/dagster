@@ -2,13 +2,13 @@ import typing
 
 from dagster._utils.typing_api import (
     flatten_unions,
+    is_typing_type,
     get_optional_inner_type,
+    is_closed_python_set_type,
     is_closed_python_dict_type,
     is_closed_python_list_type,
-    is_closed_python_optional_type,
-    is_closed_python_set_type,
     is_closed_python_tuple_type,
-    is_typing_type,
+    is_closed_python_optional_type,
 )
 
 

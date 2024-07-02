@@ -2,13 +2,13 @@ from typing import Any, Mapping, Optional, Sequence
 
 from dagster import _check as check
 from dagster._annotations import deprecated
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.errors import DagsterAssetCheckFailedError
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterAssetCheckFailedError
 from dagster._core.types.dagster_type import Nothing
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 class AssetChecksDefinition(AssetsDefinition):
@@ -63,9 +63,9 @@ def build_asset_with_blocking_check(
     asset_def: "AssetsDefinition",
     checks: Sequence["AssetsDefinition"],
 ) -> "AssetsDefinition":
-    from dagster import AssetIn, In, OpExecutionContext, Output, op
-    from dagster._core.definitions.decorators.asset_decorator import graph_asset_no_defaults
+    from dagster import In, Output, AssetIn, OpExecutionContext, op
     from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+    from dagster._core.definitions.decorators.asset_decorator import graph_asset_no_defaults
 
     check_specs = []
     for c in checks:

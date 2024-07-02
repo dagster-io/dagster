@@ -1,7 +1,7 @@
 from docs_snippets.guides.dagster.reexecution.reexecution_api import (
-    from_failure_result,
-    initial_result,
     result,
+    initial_result,
+    from_failure_result,
 )
 
 

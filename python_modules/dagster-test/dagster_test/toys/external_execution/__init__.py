@@ -1,9 +1,9 @@
 import os
 import sys
 
-from dagster import AssetExecutionContext, Config, Definitions, asset
-from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster import Config, Definitions, AssetExecutionContext, asset
 from pydantic import Field
+from dagster._core.pipes.subprocess import PipesSubprocessClient
 
 # Add package container to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -74,7 +74,7 @@ defs = Definitions(
 )
 
 if __name__ == "__main__":
-    from dagster import instance_for_test, materialize
+    from dagster import materialize, instance_for_test
 
     with instance_for_test() as instance:
         materialize(

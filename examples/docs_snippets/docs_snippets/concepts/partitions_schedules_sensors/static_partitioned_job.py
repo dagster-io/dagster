@@ -1,4 +1,4 @@
-from dagster import Config, OpExecutionContext, job, op, static_partitioned_config
+from dagster import Config, OpExecutionContext, op, job, static_partitioned_config
 
 CONTINENTS = [
     "Africa",

@@ -1,29 +1,29 @@
 import os
+from typing import Any, Dict, List, Iterator, Optional
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
 
 import pytest
 from dagster_dbt import DbtCliResource
 from dagster_dbt.core.resources_v2 import DbtCliInvocation
 
 from .dbt_projects import (
-    test_asset_checks_path,
-    test_asset_key_exceptions_path,
-    test_dagster_dbt_mixed_freshness_path,
-    test_dbt_alias_path,
-    test_dbt_model_versions_path,
-    test_dbt_python_interleaving_path,
-    test_dbt_semantic_models_path,
-    test_dbt_source_freshness_path,
-    test_dbt_unit_tests_path,
-    test_duplicate_source_asset_key_path,
-    test_jaffle_shop_path,
-    test_last_update_freshness_multiple_assets_defs_path,
-    test_last_update_freshness_path,
-    test_meta_config_path,
     test_metadata_path,
-    test_time_partition_freshness_multiple_assets_defs_path,
+    test_dbt_alias_path,
+    test_jaffle_shop_path,
+    test_meta_config_path,
+    test_asset_checks_path,
+    test_dbt_unit_tests_path,
+    test_dbt_model_versions_path,
+    test_dbt_semantic_models_path,
+    test_asset_key_exceptions_path,
+    test_dbt_source_freshness_path,
+    test_last_update_freshness_path,
+    test_dbt_python_interleaving_path,
     test_time_partition_freshness_path,
+    test_duplicate_source_asset_key_path,
+    test_dagster_dbt_mixed_freshness_path,
+    test_last_update_freshness_multiple_assets_defs_path,
+    test_time_partition_freshness_multiple_assets_defs_path,
 )
 
 

@@ -1,35 +1,35 @@
-import collections.abc
 import operator
+import collections.abc
 from abc import ABC, abstractmethod
+from typing import List, Union, Iterable, Optional, Sequence, AbstractSet, cast
 from functools import reduce
-from typing import AbstractSet, Iterable, List, Optional, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, experimental_param, public
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
-from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._core.selector.subset_selector import (
-    fetch_connected,
-    fetch_sinks,
-    fetch_sources,
-    parse_clause,
-)
 from dagster._model import DagsterModel
+from dagster._annotations import public, deprecated, experimental, experimental_param
+from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.selector.subset_selector import (
+    fetch_sinks,
+    parse_clause,
+    fetch_sources,
+    fetch_connected,
+)
+from dagster._core.definitions.resolved_asset_deps import resolve_similar_asset_names
 
-from .asset_check_spec import AssetCheckKey
+from .assets import AssetsDefinition
 from .asset_key import (
     AssetKey,
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
     key_prefix_from_coercible,
 )
-from .assets import AssetsDefinition
-from .base_asset_graph import BaseAssetGraph
 from .source_asset import SourceAsset
+from .asset_check_spec import AssetCheckKey
+from .base_asset_graph import BaseAssetGraph
 
 CoercibleToAssetSelection: TypeAlias = Union[
     str,

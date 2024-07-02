@@ -1,20 +1,20 @@
 import os
 import sys
 import tempfile
+from typing import Any, Mapping, Sequence, Generator
 from contextlib import contextmanager
-from typing import Any, Generator, Mapping, Sequence
 
 import pytest
-from dagster import job, op
-from dagster._core.events import DagsterEventType
-from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster._core.test_utils import instance_for_test
-from dagster._serdes import ConfigurableClassData
+from dagster import op, job
 from dagster._time import get_current_datetime
+from dagster._serdes import ConfigurableClassData
 from typing_extensions import Self
+from dagster._core.events import DagsterEventType
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogContext
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 
 from .utils.captured_log_manager import TestCapturedLogManager
 

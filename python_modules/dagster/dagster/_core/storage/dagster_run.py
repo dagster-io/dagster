@@ -1,44 +1,44 @@
-from datetime import datetime
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Dict,
-    Iterable,
     List,
+    Union,
     Mapping,
-    NamedTuple,
+    Iterable,
     Optional,
     Sequence,
-    Union,
+    NamedTuple,
+    AbstractSet,
 )
+from datetime import datetime
 
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._core.utils import make_new_run_id
 from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.events import AssetKey
 from dagster._core.loader import InstanceLoadableBy
 from dagster._core.origin import JobPythonOrigin
-from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
-from dagster._core.utils import make_new_run_id
 from dagster._serdes.serdes import NamedTupleSerializer, whitelist_for_serdes
+from dagster._core.storage.tags import ROOT_RUN_ID_TAG, PARENT_RUN_ID_TAG
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 from .tags import (
+    TICK_ID_TAG,
     BACKFILL_ID_TAG,
-    REPOSITORY_LABEL_TAG,
+    SENSOR_NAME_TAG,
     RESUME_RETRY_TAG,
     SCHEDULE_NAME_TAG,
-    SENSOR_NAME_TAG,
-    TICK_ID_TAG,
+    REPOSITORY_LABEL_TAG,
 )
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.external import ExternalSchedule, ExternalSensor
     from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.remote_representation.external import ExternalSensor, ExternalSchedule
 
 
 @whitelist_for_serdes(storage_name="PipelineRunStatus")

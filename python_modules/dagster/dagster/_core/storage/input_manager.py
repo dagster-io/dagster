@@ -1,18 +1,18 @@
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Union, Callable, Optional, AbstractSet, cast, overload
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Callable, Optional, Union, cast, overload
 
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
 from dagster._core.decorator_utils import has_at_least_one_parameter
 from dagster._core.definitions.config import is_callable_valid_config_arg
+from dagster._core.definitions.resource_definition import ResourceFunction, ResourceDefinition
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext

@@ -1,13 +1,13 @@
 from collections import defaultdict
 
 import pytest
-from dagster import DynamicOut, DynamicOutput, Int, Out, Output, graph, job, op, resource
+from dagster import Int, Out, Output, DynamicOut, DynamicOutput, op, job, graph, resource
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.definitions import failure_hook, success_hook
-from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import Failure, HookExecutionResult
 from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 
 
 class SomeUserException(Exception):

@@ -2,10 +2,10 @@ import warnings
 from datetime import datetime
 
 import pytest
-from dagster import DagsterInvalidDefinitionError, ScheduleDefinition, build_schedule_context, graph
-from dagster._core.definitions.decorators.op_decorator import op
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster import ScheduleDefinition, DagsterInvalidDefinitionError, graph, build_schedule_context
 from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.decorators.op_decorator import op
 
 
 def test_default_name():

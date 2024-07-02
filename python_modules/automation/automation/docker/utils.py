@@ -1,8 +1,8 @@
 # ruff: noqa: T201
-import subprocess
 import sys
-from datetime import datetime, timezone
+import subprocess
 from typing import Dict, Optional
+from datetime import datetime, timezone
 
 import dagster._check as check
 

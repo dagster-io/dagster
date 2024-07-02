@@ -3,18 +3,18 @@ Pydantic 1 and 2, while the general_tests do not.
 """
 
 import pytest
+from pydantic import Field
 from dagster._model import DagsterModel
-from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 from dagster._serdes.errors import SerializationError
 from dagster._serdes.serdes import (
     WhitelistMap,
-    _whitelist_for_serdes,
-    deserialize_value,
     pack_value,
-    serialize_value,
     unpack_value,
+    serialize_value,
+    deserialize_value,
+    _whitelist_for_serdes,
 )
-from pydantic import Field
+from dagster._model.pydantic_compat_layer import USING_PYDANTIC_1
 
 
 def test_pydantic_alias():

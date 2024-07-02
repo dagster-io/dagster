@@ -1,6 +1,6 @@
 from dagster import Failure, job
-from dagster._core.definitions.decorators import op
 from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.decorators import op
 
 
 def test_failure():

@@ -1,4 +1,4 @@
-from dagster import FilesystemIOManager, graph, op, repository, schedule
+from dagster import FilesystemIOManager, op, graph, schedule, repository
 from dagster_docker import docker_executor
 
 

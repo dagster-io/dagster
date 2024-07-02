@@ -4,37 +4,37 @@ from typing import Any
 import pytest
 import responses
 from dagster import (
+    EnvVar,
     AssetIn,
     AssetKey,
-    EnvVar,
-    InputContext,
     IOManager,
+    InputContext,
     OutputContext,
     asset,
     io_manager,
 )
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.metadata.table import TableColumn, TableSchema
-from dagster._core.execution.with_resources import with_resources
-from dagster._core.instance_for_test import environ
+from responses import matchers
 from dagster_fivetran import FivetranResource
 from dagster_fivetran.asset_defs import (
     FivetranConnectionMetadata,
     load_assets_from_fivetran_instance,
 )
-from responses import matchers
+from dagster._core.instance_for_test import environ
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.materialize import materialize
+from dagster._core.execution.with_resources import with_resources
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from dagster_fivetran_tests.utils import (
     DEFAULT_CONNECTOR_ID,
     DEFAULT_CONNECTOR_ID_2,
-    get_complex_sample_connector_schema_config,
+    get_sample_sync_response,
+    get_sample_groups_response,
+    get_sample_update_response,
     get_sample_connector_response,
     get_sample_connectors_response,
     get_sample_connectors_response_multiple,
-    get_sample_groups_response,
-    get_sample_sync_response,
-    get_sample_update_response,
+    get_complex_sample_connector_schema_config,
 )
 
 

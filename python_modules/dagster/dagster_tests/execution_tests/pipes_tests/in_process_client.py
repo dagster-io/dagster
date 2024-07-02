@@ -1,28 +1,28 @@
+from typing import List, Callable, Iterator, Optional
 from contextlib import contextmanager
-from typing import Callable, Iterator, List, Optional
 
-from dagster._annotations import public
-from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-)
-from dagster._core.pipes.context import build_external_execution_context_data
-from dagster._core.pipes.utils import PipesMessageHandler, open_pipes_session
 from dagster_pipes import (
-    PipesContext,
-    PipesContextData,
-    PipesContextLoader,
     PipesExtras,
+    PipesParams,
+    PipesContext,
     PipesMessage,
+    PipesContextData,
+    PipesParamsLoader,
+    PipesContextLoader,
     PipesMessageWriter,
     PipesMessageWriterChannel,
-    PipesParams,
-    PipesParamsLoader,
 )
+from dagster._annotations import public
+from dagster._core.pipes.utils import PipesMessageHandler, open_pipes_session
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesMessageReader,
+    PipesContextInjector,
+    PipesClientCompletedInvocation,
+)
+from dagster._core.pipes.context import build_external_execution_context_data
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 
 
 class InProcessPipesContextLoader(PipesContextLoader):

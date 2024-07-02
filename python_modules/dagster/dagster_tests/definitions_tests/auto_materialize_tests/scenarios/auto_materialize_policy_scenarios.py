@@ -1,43 +1,43 @@
 import datetime
 
-from dagster import Field, PartitionKeyRange, StringSource
+from dagster import Field, StringSource, PartitionKeyRange
+from dagster._time import create_datetime
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule_impls import (
+    DiscardOnMaxMaterializationsExceededRule,
+)
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
     WaitingOnAssetsRuleEvaluationData,
 )
-from dagster._core.definitions.auto_materialize_rule_impls import (
-    DiscardOnMaxMaterializationsExceededRule,
-)
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._time import create_datetime
 
-from ..base_scenario import (
-    AssetEvaluationSpec,
-    AssetReconciliationScenario,
-    asset_def,
-    run,
-    run_request,
-    single_asset_run,
-    with_auto_materialize_policy,
-)
 from .asset_graphs import (
     one_parent_starts_later_and_nonexistent_upstream_partitions_allowed,
     one_parent_starts_later_and_nonexistent_upstream_partitions_not_allowed,
 )
+from ..base_scenario import (
+    AssetEvaluationSpec,
+    AssetReconciliationScenario,
+    run,
+    asset_def,
+    run_request,
+    single_asset_run,
+    with_auto_materialize_policy,
+)
 from .basic_scenarios import diamond
-from .freshness_policy_scenarios import daily_to_unpartitioned
 from .partition_scenarios import (
     hourly_partitions_def,
     hourly_to_daily_partitions,
-    two_assets_in_sequence_one_partition,
     two_partitions_partitions_def,
+    two_assets_in_sequence_one_partition,
     unpartitioned_with_one_parent_partitioned,
 )
+from .freshness_policy_scenarios import daily_to_unpartitioned
 
 lazy_assets_nothing_dep = [
     asset_def("asset1"),

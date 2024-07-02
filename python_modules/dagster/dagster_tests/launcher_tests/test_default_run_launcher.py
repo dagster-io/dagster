@@ -1,9 +1,9 @@
-import json
 import os
 import re
 import sys
-import tempfile
+import json
 import time
+import tempfile
 from typing import Any, Mapping
 
 import pytest
@@ -12,26 +12,26 @@ from dagster import (
     DefaultRunLauncher,
     _check as check,
     _seven,
-    file_relative_path,
     repository,
-)
-from dagster._core.definitions import op
-from dagster._core.errors import DagsterLaunchFailedError
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._core.test_utils import (
-    environ,
-    instance_for_test,
-    poll_for_event,
-    poll_for_finished_run,
-    poll_for_step_start,
+    file_relative_path,
 )
 from dagster._core.utils import make_new_run_id
-from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.types import CancelExecutionRequest
+from dagster._core.errors import DagsterLaunchFailedError
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import (
+    environ,
+    poll_for_event,
+    instance_for_test,
+    poll_for_step_start,
+    poll_for_finished_run,
+)
+from dagster._core.definitions import op
+from dagster._core.storage.tags import GRPC_INFO_TAG
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @op

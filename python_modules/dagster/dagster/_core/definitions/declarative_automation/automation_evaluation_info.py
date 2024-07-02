@@ -1,10 +1,10 @@
-from typing import NamedTuple, Optional
+from typing import Optional, NamedTuple
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
+from dagster._core.definitions.metadata import MetadataMapping
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, AssetGraphView
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetSubsetWithMetadata,
 )
-from dagster._core.definitions.metadata import MetadataMapping
 
 
 class AssetSliceWithMetadata(NamedTuple):

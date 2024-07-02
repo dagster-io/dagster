@@ -1,6 +1,6 @@
 import docker
 import pytest
-from dagster import RetryRequested, job, op
+from dagster import RetryRequested, op, job
 from dagster_docker import docker_container_op, execute_docker_container
 from dagster_docker.ops.docker_container_op import _get_container_name
 

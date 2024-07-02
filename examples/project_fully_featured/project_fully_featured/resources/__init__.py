@@ -1,15 +1,15 @@
 import os
 
+from dagster_dbt import DbtCliResource
 from dagster._utils import file_relative_path
 from dagster_aws.s3 import S3Resource
-from dagster_aws.s3.io_manager import S3PickleIOManager
-from dagster_dbt import DbtCliResource
 from dagster_pyspark import pyspark_resource
+from dagster_aws.s3.io_manager import S3PickleIOManager
 
-from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 from .hn_resource import HNAPIClient, HNAPISubsampleClient
-from .parquet_io_manager import LocalPartitionedParquetIOManager, S3PartitionedParquetIOManager
+from .parquet_io_manager import S3PartitionedParquetIOManager, LocalPartitionedParquetIOManager
 from .snowflake_io_manager import SnowflakeIOManager
+from .duckdb_parquet_io_manager import DuckDBPartitionedParquetIOManager
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../dbt_project")
 dbt_local_resource = DbtCliResource(

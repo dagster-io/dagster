@@ -4,8 +4,8 @@ from typing import Any, Dict, List
 
 import yaml
 from dagster import AssetsDefinition
-from dagster._core.execution.context.compute import AssetExecutionContext
 from dagster._utils import file_relative_path
+from dagster._core.execution.context.compute import AssetExecutionContext
 
 try:
     from yaml import CLoader as Loader

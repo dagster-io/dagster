@@ -1,24 +1,24 @@
 import pytest
+from mock import ANY, MagicMock, patch
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
-    AssetSelection,
     AssetSpec,
     Definitions,
+    AssetSelection,
     OpExecutionContext,
+    AssetExecutionContext,
     StaticPartitionsDefinition,
-    asset,
-    define_asset_job,
-    graph_asset,
-    materialize_to_memory,
-    multi_asset,
     op,
+    asset,
+    graph_asset,
+    multi_asset,
+    define_asset_job,
+    materialize_to_memory,
 )
+from dagster_openai import OpenAIResource, with_usage_metadata
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.init import build_init_resource_context
-from dagster._utils.test import wrap_op_in_graph_and_execute
-from dagster_openai import OpenAIResource, with_usage_metadata
-from mock import ANY, MagicMock, patch
 
 
 @patch("dagster_openai.resources.Client")

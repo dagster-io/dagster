@@ -1,5 +1,5 @@
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 LOGGER_QUERY = """
 query LoggerQuery($selector: PipelineSelector!) {

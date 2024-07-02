@@ -1,11 +1,11 @@
-import multiprocessing
 import os
 import time
-from functools import partial
-from pathlib import Path
+import multiprocessing
 from signal import SIGSEGV
+from pathlib import Path
+from functools import partial
 
-from dagster._utils import run_with_concurrent_update_guard, segfault
+from dagster._utils import segfault, run_with_concurrent_update_guard
 
 
 def _update_file(file_path: Path):

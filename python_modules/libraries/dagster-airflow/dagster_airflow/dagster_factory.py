@@ -1,8 +1,6 @@
 import os
-from typing import List, Mapping, Optional, Tuple
+from typing import List, Tuple, Mapping, Optional
 
-from airflow.models.connection import Connection
-from airflow.models.dagbag import DagBag
 from dagster import (
     Definitions,
     JobDefinition,
@@ -10,19 +8,21 @@ from dagster import (
     ScheduleDefinition,
     _check as check,
 )
+from airflow.models.dagbag import DagBag
+from airflow.models.connection import Connection
 
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
+from dagster_airflow.resources import (
+    make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
+)
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from dagster_airflow.dagster_schedule_factory import (
     _is_dag_is_schedule,
     make_dagster_schedule_from_airflow_dag,
 )
 from dagster_airflow.patch_airflow_example_dag import patch_airflow_example_dag
-from dagster_airflow.resources import (
-    make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
-)
 from dagster_airflow.resources.airflow_ephemeral_db import AirflowEphemeralDatabase
 from dagster_airflow.resources.airflow_persistent_db import AirflowPersistentDatabase
-from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 
 
 def make_dagster_definitions_from_airflow_dag_bag(

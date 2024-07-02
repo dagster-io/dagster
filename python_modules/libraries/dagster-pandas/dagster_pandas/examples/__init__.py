@@ -1,13 +1,13 @@
 from dagster import (
     FilesystemIOManager,
+    graph,
+    repository,
     config_from_files,
     file_relative_path,
-    graph,
     in_process_executor,
-    repository,
 )
 
-from .pandas_hello_world.ops import always_fails_op, papermill_pandas_hello_world, sum_op, sum_sq_op
+from .pandas_hello_world.ops import sum_op, sum_sq_op, always_fails_op, papermill_pandas_hello_world
 
 
 @graph

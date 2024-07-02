@@ -1,59 +1,59 @@
 """Structured representations of system events."""
 
-import logging
 import os
 import sys
 import uuid
+import logging
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Dict,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Tuple,
     Union,
+    Mapping,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
 import dagster._check as check
+from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
 from dagster._annotations import public
+from dagster._core.errors import HookExecutionError, DagsterInvariantViolationError
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration
+from dagster._serdes.serdes import UnpackContext, EnumSerializer, is_whitelisted_for_serdes_object
 from dagster._core.definitions import (
     AssetKey,
-    AssetMaterialization,
+    NodeHandle,
+    HookDefinition,
     AssetObservation,
     ExpectationResult,
-    HookDefinition,
-    NodeHandle,
+    AssetMaterialization,
 )
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    RawMetadataValue,
+    MetadataFieldSerializer,
+    normalize_metadata,
+)
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.execution.plan.handle import StepHandle, ResolvedFromDynamicStepHandle
+from dagster._core.execution.plan.inputs import StepInputData
+from dagster._core.execution.plan.objects import StepRetryData, StepFailureData, StepSuccessData
+from dagster._core.execution.plan.outputs import StepOutputData
+from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
 )
-from dagster._core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
-from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
-    MetadataValue,
-    RawMetadataValue,
-    normalize_metadata,
-)
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.errors import DagsterInvariantViolationError, HookExecutionError
-from dagster._core.execution.context.system import IPlanContext, IStepContext, StepExecutionContext
-from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
-from dagster._core.execution.plan.inputs import StepInputData
-from dagster._core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
-from dagster._core.execution.plan.outputs import StepOutputData
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._serdes import NamedTupleSerializer, whitelist_for_serdes
-from dagster._serdes.serdes import EnumSerializer, UnpackContext, is_whitelisted_for_serdes_object
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster._utils.timing import format_duration
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import ObjectStoreOperation

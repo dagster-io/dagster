@@ -1,9 +1,9 @@
 from ..base_scenario import (
     AssetReconciliationScenario,
-    asset_def,
-    multi_asset_def,
     run,
+    asset_def,
     run_request,
+    multi_asset_def,
     single_asset_run,
 )
 

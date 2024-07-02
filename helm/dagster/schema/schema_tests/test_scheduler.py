@@ -1,14 +1,14 @@
-import pytest
 import yaml
+import pytest
 from kubernetes.client import models
-from schema.charts.dagster.subschema.scheduler import (
-    DaemonSchedulerConfig,
-    Scheduler,
-    SchedulerConfig,
-    SchedulerType,
-)
-from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
+from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster.subschema.scheduler import (
+    Scheduler,
+    SchedulerType,
+    SchedulerConfig,
+    DaemonSchedulerConfig,
+)
 
 
 @pytest.fixture(name="template")

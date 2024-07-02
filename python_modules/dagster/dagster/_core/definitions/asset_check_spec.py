@@ -1,15 +1,15 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, Union, Mapping, Iterable, Optional, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.assets import AssetsDefinition
+    from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
     from dagster._core.definitions.source_asset import SourceAsset
 
 

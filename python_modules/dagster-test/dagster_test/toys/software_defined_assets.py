@@ -1,6 +1,6 @@
 import time
 
-from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset, with_resources
+from dagster import AssetKey, IOManager, SourceAsset, IOManagerDefinition, asset, with_resources
 
 sfo_q2_weather_sample = SourceAsset(key=AssetKey("sfo_q2_weather_sample"))
 

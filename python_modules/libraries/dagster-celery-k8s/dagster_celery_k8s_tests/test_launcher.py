@@ -4,29 +4,29 @@ from unittest import mock
 import pytest
 from dagster import reconstructable
 from dagster._check import CheckError
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.launcher import LaunchRunContext
-from dagster._core.remote_representation import RepositoryHandle
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._core.test_utils import (
-    create_run_for_test,
-    environ,
-    in_process_test_workspace,
-    instance_for_test,
-)
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster_k8s.job import UserDefinedDagsterK8sConfig
+from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
 from dagster._grpc.types import ExecuteRunArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
 from dagster._utils.merger import merge_dicts
+from dagster._core.launcher import LaunchRunContext
+from dagster._core.test_utils import (
+    environ,
+    instance_for_test,
+    create_run_for_test,
+    in_process_test_workspace,
+)
 from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
+from dagster_test.test_project import get_test_project_workspace_and_external_job
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
 from dagster_celery_k8s.launcher import (
     CeleryK8sRunLauncher,
     _get_validated_celery_k8s_executor_config,
 )
-from dagster_k8s.client import DEFAULT_WAIT_TIMEOUT
-from dagster_k8s.job import UserDefinedDagsterK8sConfig
-from dagster_test.test_project import get_test_project_workspace_and_external_job
+from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._core.remote_representation import RepositoryHandle
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 def test_empty_celery_config():

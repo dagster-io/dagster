@@ -1,8 +1,8 @@
-import logging
 import sys
 import time
+import logging
 from enum import Enum
-from typing import Any, Callable, List, Optional, Set, TypeVar
+from typing import Any, Set, List, TypeVar, Callable, Optional
 
 import kubernetes.client
 import kubernetes.client.rest
@@ -10,8 +10,8 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.storage.dagster_run import DagsterRunStatus
 from kubernetes.client.models import V1Job, V1JobStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 try:
     from kubernetes.client.models import EventsV1Event  # noqa

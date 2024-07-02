@@ -10,58 +10,58 @@ For local development:
   To test RotatingFileHandler, can set MAX_BYTES = 500
 """
 
-import datetime
-import hashlib
-import json
-import logging
 import os
-import platform
 import sys
+import json
 import uuid
-from functools import wraps
-from logging.handlers import RotatingFileHandler
+import hashlib
+import logging
+import datetime
+import platform
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
+    TypeVar,
+    Callable,
     Optional,
     Sequence,
-    Tuple,
-    TypeVar,
-    Union,
+    NamedTuple,
     overload,
 )
+from functools import wraps
+from logging.handlers import RotatingFileHandler
 
-import click
 import yaml
+import click
 from typing_extensions import ParamSpec
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
-from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster.version import __version__ as dagster_module_version
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEvent
+from dagster._utils.merger import merge_dicts
+from dagster._core.instance import DagsterInstance
 from dagster._core.definitions.job_base import IJob
+from dagster._core.execution.plan.objects import StepSuccessData
 from dagster._core.definitions.reconstruct import (
     ReconstructableJob,
     ReconstructableRepository,
     get_ephemeral_repository_name,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.system import PlanOrchestrationContext
-from dagster._core.execution.plan.objects import StepSuccessData
-from dagster._core.instance import DagsterInstance
-from dagster._utils.merger import merge_dicts
-from dagster.version import __version__ as dagster_module_version
+from dagster._core.definitions.backfill_policy import BackfillPolicyType
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicyType
 
 if TYPE_CHECKING:
+    from dagster._core.workspace.context import IWorkspaceProcessContext
     from dagster._core.remote_representation.external import (
         ExternalJob,
-        ExternalRepository,
         ExternalResource,
+        ExternalRepository,
     )
-    from dagster._core.workspace.context import IWorkspaceProcessContext
 
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"
@@ -460,8 +460,8 @@ def hash_name(name: str) -> str:
 
 def get_stats_from_external_repo(external_repo: "ExternalRepository") -> Mapping[str, str]:
     from dagster._core.remote_representation.external_data import (
-        ExternalDynamicPartitionsDefinitionData,
         ExternalMultiPartitionsDefinitionData,
+        ExternalDynamicPartitionsDefinitionData,
     )
 
     num_pipelines_in_repo = len(external_repo.get_all_external_jobs())

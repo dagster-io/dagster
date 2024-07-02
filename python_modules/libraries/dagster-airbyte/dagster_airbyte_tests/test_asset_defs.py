@@ -2,20 +2,20 @@ import pytest
 import responses
 from dagster import (
     AssetKey,
-    AutoMaterializePolicy,
-    FreshnessPolicy,
     TableColumn,
     TableSchema,
+    FreshnessPolicy,
+    AutoMaterializePolicy,
     asset,
     build_init_resource_context,
 )
-from dagster._core.definitions.materialize import materialize_to_memory
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.events import StepMaterializationData
 from dagster_airbyte import AirbyteCloudResource, airbyte_resource, build_airbyte_assets
+from dagster._core.events import StepMaterializationData
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.source_asset import SourceAsset
 
-from .utils import get_sample_connection_json, get_sample_job_json
+from .utils import get_sample_job_json, get_sample_connection_json
 
 
 @responses.activate

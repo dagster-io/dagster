@@ -1,17 +1,17 @@
 import json
-from collections import defaultdict
 from enum import Enum
 from pprint import pformat
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Tuple, Union, Literal, Optional, Sequence, overload
+from collections import defaultdict
 
 import polars as pl
-from dagster import InputContext, MetadataValue, MultiPartitionKey, OutputContext
+from dagster import InputContext, MetadataValue, OutputContext, MultiPartitionKey
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.upath_io_manager import is_dict_type
 
+from dagster_polars.types import StorageMetadata, DataFrameWithMetadata, LazyFrameWithMetadata
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
-from dagster_polars.types import DataFrameWithMetadata, LazyFrameWithMetadata, StorageMetadata
 
 try:
     from deltalake import DeltaTable

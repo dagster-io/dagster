@@ -1,11 +1,11 @@
 from dagster import (
+    MultiPartitionMapping,
+    StaticPartitionMapping,
+    IdentityPartitionMapping,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
-    HourlyPartitionsDefinition,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
     MultiPartitionsDefinition,
-    StaticPartitionMapping,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
 )

@@ -1,16 +1,16 @@
+from pandas import DataFrame
 from dagster import (
-    Definitions,
     EnvVar,
+    Definitions,
     SourceAsset,
     TableSchema,
     asset,
     load_assets_from_current_module,
 )
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._utils import file_relative_path
 from dagster_dbt import DbtCliResource, dbt_assets
+from dagster._utils import file_relative_path
 from dagster_snowflake_pandas import SnowflakePandasIOManager
-from pandas import DataFrame
+from dagster._core.execution.context.compute import AssetExecutionContext
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../dbt_project")
 dbt_resource = DbtCliResource(project_dir=DBT_PROJECT_DIR)

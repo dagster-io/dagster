@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from dagster import DependencyDefinition, GraphDefinition, In, Int, NodeInvocation, op
+from dagster import In, Int, NodeInvocation, GraphDefinition, DependencyDefinition, op
 
 
 def test_aliased_ops():

@@ -1,17 +1,17 @@
-import datahub.emitter.mce_builder as builder
 import pytest
 import responses
-from dagster import DagsterResourceFunctionError, OpExecutionContext, build_op_context, op
+import datahub.emitter.mce_builder as builder
+from dagster import OpExecutionContext, DagsterResourceFunctionError, op, build_op_context
 from dagster_datahub import (
     DatahubConnection,
-    DatahubKafkaEmitterResource,
     DatahubRESTEmitterResource,
-    datahub_kafka_emitter,
+    DatahubKafkaEmitterResource,
     datahub_rest_emitter,
+    datahub_kafka_emitter,
 )
+from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.configuration.common import ConfigurationError
 from datahub.emitter.kafka_emitter import MCE_KEY
-from datahub.emitter.mcp import MetadataChangeProposalWrapper
 from datahub.metadata.schema_classes import ChangeTypeClass, DatasetPropertiesClass
 
 

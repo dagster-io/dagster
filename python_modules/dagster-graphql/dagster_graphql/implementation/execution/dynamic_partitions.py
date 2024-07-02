@@ -19,9 +19,9 @@ def _repository_contains_dynamic_partitions_def(
     graphene_info, repository_selector: RepositorySelector, partitions_def_name: str
 ) -> bool:
     from dagster._core.remote_representation.external_data import (
-        ExternalDynamicPartitionsDefinitionData,
-        ExternalMultiPartitionsDefinitionData,
         ExternalPartitionsDefinitionData,
+        ExternalMultiPartitionsDefinitionData,
+        ExternalDynamicPartitionsDefinitionData,
     )
 
     def _is_matching_partitions_def(partitions_def_data: ExternalPartitionsDefinitionData):

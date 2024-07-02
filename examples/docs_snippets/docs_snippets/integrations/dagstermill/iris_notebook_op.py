@@ -3,7 +3,7 @@
 
 from dagstermill import ConfigurableLocalOutputNotebookIOManager, define_dagstermill_op
 
-from dagster import file_relative_path, job
+from dagster import job, file_relative_path
 
 k_means_iris = define_dagstermill_op(
     name="k_means_iris",

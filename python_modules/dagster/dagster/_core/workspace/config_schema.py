@@ -3,12 +3,12 @@ from typing import Dict, Mapping, cast
 
 import dagster._check as check
 from dagster._config import (
-    EvaluateValueResult,
     Field,
+    Selector,
     IntSource,
     ScalarUnion,
-    Selector,
     StringSource,
+    EvaluateValueResult,
     process_config,
 )
 from dagster._core.errors import DagsterInvalidConfigError

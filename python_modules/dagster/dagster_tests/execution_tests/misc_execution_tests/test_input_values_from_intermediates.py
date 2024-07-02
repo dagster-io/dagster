@@ -1,4 +1,4 @@
-from dagster import In, List, Optional, job, op
+from dagster import In, List, Optional, op, job
 
 
 def test_from_intermediates_from_multiple_outputs():

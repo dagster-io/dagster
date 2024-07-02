@@ -1,14 +1,14 @@
 import datetime
 
 from dagster import AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.asset_key import AssetKey
 
 from ..scenario_specs import (
-    daily_partitions_def,
     one_asset,
-    time_partitions_start_datetime,
     two_partitions_def,
+    daily_partitions_def,
+    time_partitions_start_datetime,
 )
 from .asset_condition_scenario import AutomationConditionScenarioState
 

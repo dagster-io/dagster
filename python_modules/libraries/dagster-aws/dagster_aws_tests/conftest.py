@@ -1,6 +1,6 @@
 import boto3
 import pytest
-from moto import mock_s3, mock_secretsmanager, mock_ssm
+from moto import mock_s3, mock_ssm, mock_secretsmanager
 
 
 # Make sure unit tests never connect to real AWS

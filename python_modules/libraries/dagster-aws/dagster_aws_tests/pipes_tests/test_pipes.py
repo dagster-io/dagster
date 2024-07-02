@@ -1,37 +1,37 @@
-import base64
-import inspect
-import json
 import re
+import json
+import base64
 import shutil
+import inspect
 import textwrap
-from contextlib import contextmanager
-from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Iterator
+from tempfile import NamedTemporaryFile
+from contextlib import contextmanager
 
 import boto3
 import pytest
 from dagster import asset, materialize, open_pipes_session
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_IS_USER_PROVIDED_TAG,
-    DATA_VERSION_TAG,
-)
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MarkdownMetadataValue
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.instance_for_test import instance_for_test
-from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster._core.pipes.utils import PipesEnvContextInjector
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
 from dagster_aws.pipes import (
     PipesLambdaClient,
-    PipesLambdaLogsMessageReader,
-    PipesS3ContextInjector,
     PipesS3MessageReader,
+    PipesS3ContextInjector,
+    PipesLambdaLogsMessageReader,
 )
-from moto.server import ThreadedMotoServer  # type: ignore  # (pyright bug)
+from dagster._core.pipes.utils import PipesEnvContextInjector
+from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MarkdownMetadataValue
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
+)
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
-from .fake_lambda import LOG_TAIL_LIMIT, FakeLambdaClient, LambdaFunctions
+from .fake_lambda import LOG_TAIL_LIMIT, LambdaFunctions, FakeLambdaClient
 
 _PYTHON_EXECUTABLE = shutil.which("python") or "python"
 

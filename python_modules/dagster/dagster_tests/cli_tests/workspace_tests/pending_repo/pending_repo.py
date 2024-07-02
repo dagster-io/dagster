@@ -1,7 +1,7 @@
 from dagster import AssetKey, AssetsDefinition, op, repository
 from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
 )
 
 

@@ -1,7 +1,7 @@
+from typing import Tuple, Mapping, TypeVar, Callable, Hashable
 from functools import wraps
-from typing import Callable, Hashable, Mapping, Tuple, TypeVar
 
-from typing_extensions import Concatenate, ParamSpec
+from typing_extensions import ParamSpec, Concatenate
 
 from dagster._seven import get_arg_names
 

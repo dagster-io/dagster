@@ -1,7 +1,7 @@
 import os
 import sys
 from io import StringIO
-from typing import Any, Callable, List, Type
+from typing import Any, List, Type, Callable
 
 from dagster._utils.indenting_printer import IndentingPrinter
 

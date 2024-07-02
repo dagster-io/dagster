@@ -1,25 +1,25 @@
-import logging
 import uuid
 import zlib
+import logging
 from abc import abstractmethod
-from collections import defaultdict
-from datetime import datetime
 from enum import Enum
 from typing import (
     Any,
-    Callable,
-    ContextManager,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    Dict,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
+    ContextManager,
     cast,
 )
+from datetime import datetime
+from collections import defaultdict
 
 import pendulum
 import sqlalchemy as db
@@ -27,11 +27,20 @@ import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
 
 import dagster._check as check
+from dagster._seven import JSONDecodeError
+from dagster._utils import PrintFn, utc_datetime_from_timestamp
+from dagster._serdes import serialize_value, deserialize_value
+from dagster._core.snap import (
+    JobSnapshot,
+    ExecutionPlanSnapshot,
+    create_job_snapshot_id,
+    create_execution_plan_snapshot_id,
+)
 from dagster._core.errors import (
-    DagsterInvariantViolationError,
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
+    DagsterInvariantViolationError,
 )
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
@@ -39,59 +48,50 @@ from dagster._core.events import (
     DagsterEventType,
     RunFailureReason,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation.origin import RemoteJobOrigin
-from dagster._core.snap import (
-    ExecutionPlanSnapshot,
-    JobSnapshot,
-    create_execution_plan_snapshot_id,
-    create_job_snapshot_id,
-)
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._utils.merger import merge_dicts
 from dagster._core.storage.sql import SqlAlchemyQuery
-from dagster._core.storage.sqlalchemy_compat import (
-    db_fetch_mappings,
-    db_scalar_subquery,
-    db_select,
-    db_subquery,
-)
 from dagster._core.storage.tags import (
-    PARTITION_NAME_TAG,
-    PARTITION_SET_TAG,
-    REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    PARTITION_SET_TAG,
+    PARTITION_NAME_TAG,
+    REPOSITORY_LABEL_TAG,
     RUN_FAILURE_REASON_TAG,
 )
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._seven import JSONDecodeError
-from dagster._utils import PrintFn, utc_datetime_from_timestamp
-from dagster._utils.merger import merge_dicts
-
-from ..dagster_run import (
-    DagsterRun,
-    DagsterRunStatus,
-    JobBucket,
-    RunPartitionData,
-    RunRecord,
-    RunsFilter,
-    TagBucket,
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.sqlalchemy_compat import (
+    db_select,
+    db_subquery,
+    db_fetch_mappings,
+    db_scalar_subquery,
 )
+from dagster._core.remote_representation.origin import RemoteJobOrigin
+
 from .base import RunStorage
+from .schema import (
+    RunsTable,
+    InstanceInfo,
+    RunTagsTable,
+    SnapshotsTable,
+    BulkActionsTable,
+    KeyValueStoreTable,
+    DaemonHeartbeatsTable,
+    SecondaryIndexMigrationTable,
+)
 from .migration import (
+    RUN_PARTITIONS,
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
-    RUN_PARTITIONS,
     MigrationFn,
 )
-from .schema import (
-    BulkActionsTable,
-    DaemonHeartbeatsTable,
-    InstanceInfo,
-    KeyValueStoreTable,
-    RunsTable,
-    RunTagsTable,
-    SecondaryIndexMigrationTable,
-    SnapshotsTable,
+from ..dagster_run import (
+    JobBucket,
+    RunRecord,
+    TagBucket,
+    DagsterRun,
+    RunsFilter,
+    DagsterRunStatus,
+    RunPartitionData,
 )
 
 

@@ -2,22 +2,22 @@
 
 import pytest
 from dagster import (
-    AssetKey,
-    GraphDefinition,
     Int,
-    IntMetadataValue,
+    AssetKey,
     IOManager,
     JobDefinition,
+    GraphDefinition,
+    IntMetadataValue,
     TextMetadataValue,
+    op,
+    job,
     asset,
     graph,
-    io_manager,
-    job,
-    multiprocess_executor,
-    op,
-    repository,
     resource,
+    io_manager,
+    repository,
     with_resources,
+    multiprocess_executor,
 )
 from dagster._check import CheckError
 

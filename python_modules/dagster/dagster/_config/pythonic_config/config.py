@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Set, Type, cast
+from typing import Any, Set, Dict, List, Type, Mapping, Optional, cast
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import TypeVar
@@ -10,14 +10,14 @@ from dagster import (
     Field as DagsterField,
     Shape,
 )
-from dagster._config.field_utils import EnvVar, IntEnvVar, Permissive
-from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 from dagster._core.errors import (
-    DagsterInvalidConfigDefinitionError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
+    DagsterInvalidConfigDefinitionError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
+from dagster._config.field_utils import EnvVar, IntEnvVar, Permissive
+from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
 from dagster._model.pydantic_compat_layer import (
     USING_PYDANTIC_2,
     ModelFieldCompat,
@@ -25,14 +25,14 @@ from dagster._model.pydantic_compat_layer import (
     model_config,
     model_fields,
 )
-from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD
+from dagster._core.definitions.definition_config_schema import DefinitionConfigSchema
 
+from .typing_utils import BaseConfigMeta
+from .conversion_utils import safe_is_subclass, _convert_pydantic_field
+from .type_check_utils import is_literal
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from .conversion_utils import _convert_pydantic_field, safe_is_subclass
-from .type_check_utils import is_literal
-from .typing_utils import BaseConfigMeta
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)
@@ -325,7 +325,7 @@ def _config_value_to_dict_representation(field: Optional[ModelFieldCompat], valu
     """Converts a config value to a dictionary representation. If a field is provided, it will be used
     to determine the appropriate dictionary representation in the case of discriminated unions.
     """
-    from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
+    from dagster._config.field_utils import is_dagster_env_var, env_var_to_config_dict
 
     if isinstance(value, dict):
         return {k: _config_value_to_dict_representation(None, v) for k, v in value.items()}

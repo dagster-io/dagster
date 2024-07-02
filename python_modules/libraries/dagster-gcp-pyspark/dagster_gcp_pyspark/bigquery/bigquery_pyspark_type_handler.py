@@ -1,12 +1,12 @@
-from typing import Any, Mapping, Optional, Sequence, Type
+from typing import Any, Type, Mapping, Optional, Sequence
 
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from dagster_gcp import BigQueryIOManager, build_bigquery_io_manager
-from dagster_gcp.bigquery.io_manager import BigQueryClient
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.types import StructType
+from dagster_gcp.bigquery.io_manager import BigQueryClient
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
 
 
 def _get_bigquery_write_options(

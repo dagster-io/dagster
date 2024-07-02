@@ -1,31 +1,31 @@
-import logging
 import sys
-from typing import Iterator, Mapping, Optional, Sequence, Union
+import logging
+from typing import Union, Mapping, Iterator, Optional, Sequence
 
 import dagster._check as check
+from dagster._utils import ensure_single_item
 from dagster._config import Field, process_config
-from dagster._core.definitions.executor_definition import (
-    ExecutorDefinition,
-    check_cross_process_constraints,
-    multi_or_in_process_executor,
-)
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.run_config import selector_for_named_defs
+from dagster._loggers import default_system_loggers
 from dagster._core.errors import (
     DagsterError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
 from dagster._core.events import DagsterEvent, RunFailureReason
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.executor.base import Executor
-from dagster._core.executor.init import InitExecutorContext
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
+from dagster._core.executor.base import Executor
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._loggers import default_system_loggers
-from dagster._utils import ensure_single_item
-from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.definitions.run_config import selector_for_named_defs
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.executor_definition import (
+    ExecutorDefinition,
+    multi_or_in_process_executor,
+    check_cross_process_constraints,
+)
 
 from .api import ExecuteRunWithPlanIterable, job_execution_iterator
 from .context.logger import InitLoggerContext

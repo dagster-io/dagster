@@ -1,19 +1,19 @@
 import os
-from pathlib import Path
 from typing import cast
+from pathlib import Path
 
 from dagster import AssetsDefinition, load_assets_from_modules
+from dagster._utils import file_relative_path
 from dagster._core.definitions.metadata import (
-    LocalFileCodeReference,
     UrlCodeReference,
+    LocalFileCodeReference,
     with_source_code_references,
 )
 from dagster._core.definitions.metadata.source_code import (
-    AnchorBasedFilePathMapping,
     FilePathMapping,
+    AnchorBasedFilePathMapping,
     link_to_git,
 )
-from dagster._utils import file_relative_path
 
 # path of the `dagster` package on the filesystem
 DAGSTER_PACKAGE_PATH = os.path.normpath(file_relative_path(__file__, "../../"))

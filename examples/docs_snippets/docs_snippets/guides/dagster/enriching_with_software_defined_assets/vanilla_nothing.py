@@ -1,8 +1,8 @@
 from pandas import read_sql
 
-from dagster import Definitions, In, Nothing, job, op
+from dagster import In, Nothing, Definitions, op, job
 
-from .mylib import create_db_connection, pickle_to_s3, train_recommender_model
+from .mylib import pickle_to_s3, create_db_connection, train_recommender_model
 
 
 @op

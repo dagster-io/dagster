@@ -1,10 +1,10 @@
-from dagster._core.test_utils import SingleThreadPoolExecutor, wait_for_futures
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
+from dagster._core.test_utils import SingleThreadPoolExecutor, wait_for_futures
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    infer_instigation_selector,
     infer_repository_selector,
+    infer_instigation_selector,
 )
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix

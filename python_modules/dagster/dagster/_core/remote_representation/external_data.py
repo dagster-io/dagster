@@ -4,99 +4,99 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 
-import inspect
 import json
+import inspect
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from enum import Enum
 from typing import (
     Any,
+    Set,
     Dict,
-    Iterable,
     List,
+    Type,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
+    Iterable,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
+    NamedTuple,
     cast,
 )
+from collections import defaultdict
 
 import pendulum
-from typing_extensions import Final, Self
+from typing_extensions import Self, Final
 
 from dagster import (
     StaticPartitionsDefinition,
     _check as check,
 )
-from dagster._config.pythonic_config import (
-    ConfigurableIOManagerFactoryResourceDefinition,
-    ConfigurableResourceFactoryResourceDefinition,
-    ResourceWithKeyMapping,
-)
+from dagster._serdes import whitelist_for_serdes
+from dagster._core.snap import JobSnapshot
+from dagster._core.utils import is_valid_email
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot, snap_from_config_type
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._utils.error import SerializableErrorInfo
+from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
+from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
 from dagster._core.definitions import (
-    AssetSelection,
     JobDefinition,
+    AssetSelection,
+    ScheduleDefinition,
     PartitionsDefinition,
     RepositoryDefinition,
-    ScheduleDefinition,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import is_base_asset_job_name
-from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._config.pythonic_config import (
+    ResourceWithKeyMapping,
+    ConfigurableResourceFactoryResourceDefinition,
+    ConfigurableIOManagerFactoryResourceDefinition,
 )
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
-from dagster._core.definitions.dependency import (
-    GraphNode,
-    Node,
-    NodeHandle,
-    NodeOutputHandle,
-    OpNode,
-)
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
-    MetadataMapping,
     MetadataValue,
+    MetadataMapping,
     TextMetadataValue,
+    MetadataFieldSerializer,
     normalize_metadata,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.asset_job import is_base_asset_job_name
+from dagster._core.definitions.partition import ScheduleType, DynamicPartitionsDefinition
+from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.dependency import (
+    Node,
+    OpNode,
+    GraphNode,
+    NodeHandle,
+    NodeOutputHandle,
+)
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, ScheduleType
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     get_builtin_partition_mapping_types,
 )
+from dagster._core.definitions.sensor_definition import (
+    SensorType,
+    SensorDefinition,
+    DefaultSensorStatus,
+)
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster._core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    SensorDefinition,
-    SensorType,
-)
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.snap import JobSnapshot
-from dagster._core.snap.mode import ResourceDefSnap, build_resource_def_snap
-from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._core.utils import is_valid_email
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.serdes import FieldSerializer, is_whitelisted_for_serdes_object
-from dagster._utils.error import SerializableErrorInfo
+from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.definition_config_schema import ConfiguredDefinitionConfigSchema
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
+)
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"

@@ -1,5 +1,5 @@
+from typing import Any, Mapping, Iterable, Optional
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional
 
 from dagster import AssetKey, AutoMaterializePolicy
 from dagster._annotations import public

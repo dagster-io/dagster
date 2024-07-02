@@ -1,8 +1,8 @@
 from pandas import DataFrame
 
-from dagster import Definitions, job, op
+from dagster import Definitions, op, job
 
-from .mylib import create_db_connection, fetch_products
+from .mylib import fetch_products, create_db_connection
 
 
 @op

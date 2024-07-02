@@ -2,8 +2,8 @@ import os
 import subprocess
 
 import pytest
-from dagster._utils import file_relative_path, pushd
-from dagster_dbt import DbtCliClientResource, DbtCliResource, dbt_cli_resource
+from dagster_dbt import DbtCliResource, DbtCliClientResource, dbt_cli_resource
+from dagster._utils import pushd, file_relative_path
 
 DBT_EXECUTABLE = "dbt"
 TEST_PROJECT_DIR = file_relative_path(__file__, "dagster_dbt_test_project")

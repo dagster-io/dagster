@@ -2,8 +2,8 @@ from typing import TYPE_CHECKING, Sequence
 
 import graphene
 
-from .asset_key import GrapheneAssetKey
 from .util import non_null_list
+from .asset_key import GrapheneAssetKey
 
 if TYPE_CHECKING:
     from dagster._core.definitions.metadata.table import TableColumnDep

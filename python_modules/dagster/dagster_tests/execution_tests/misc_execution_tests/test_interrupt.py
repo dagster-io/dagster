@@ -1,29 +1,29 @@
 import os
+import time
 import signal
 import tempfile
-import time
 from threading import Thread
 
 import pytest
 from dagster import (
-    DagsterEventType,
-    Failure,
     Field,
-    RetryPolicy,
     String,
-    _seven,
-    job,
+    Failure,
+    RetryPolicy,
+    DagsterEventType,
     op,
-    reconstructable,
+    job,
+    _seven,
     resource,
+    reconstructable,
 )
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.job_base import InMemoryJob
+from dagster._utils import send_interrupt, safe_tempfile_path
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts
-from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import safe_tempfile_path, send_interrupt
 from dagster._utils.interrupts import capture_interrupts, check_captured_interrupt
+from dagster._core.execution.api import execute_job, execute_run_iterator
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.executor_definition import in_process_executor
 
 
 def _send_kbd_int(temp_files):

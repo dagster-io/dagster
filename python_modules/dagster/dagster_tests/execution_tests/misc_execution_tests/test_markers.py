@@ -1,8 +1,8 @@
-from dagster import job, op, reconstructable
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster import op, job, reconstructable
 from dagster._core.events import MARKER_EVENTS
-from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.job_definition import JobDefinition
 
 
 def define_job() -> JobDefinition:

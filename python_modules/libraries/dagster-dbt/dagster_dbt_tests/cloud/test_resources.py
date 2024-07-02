@@ -6,19 +6,19 @@ from dagster import Failure
 from dagster._check import CheckError
 
 from .utils import (
-    SAMPLE_API_PREFIX,
-    SAMPLE_API_V3_PREFIX,
     SAMPLE_JOB_ID,
-    SAMPLE_PROJECT_ID,
     SAMPLE_RUN_ID,
-    sample_get_environment_variables,
+    SAMPLE_API_PREFIX,
+    SAMPLE_PROJECT_ID,
+    SAMPLE_API_V3_PREFIX,
     sample_job_details,
-    sample_list_artifacts,
-    sample_list_job_details,
     sample_run_details,
     sample_run_results,
     sample_runs_details,
+    sample_list_artifacts,
+    sample_list_job_details,
     sample_set_environment_variable,
+    sample_get_environment_variables,
 )
 
 

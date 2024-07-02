@@ -1,7 +1,7 @@
 # mypy: disable-error-code=annotation-unchecked
 
 import gc
-from typing import Dict, NamedTuple, Tuple
+from typing import Dict, Tuple, NamedTuple
 
 import objgraph
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method

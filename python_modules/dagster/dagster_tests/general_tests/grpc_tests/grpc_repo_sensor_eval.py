@@ -1,6 +1,6 @@
 import time
 
-from dagster import job, repository, sensor
+from dagster import job, sensor, repository
 
 
 @job

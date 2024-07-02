@@ -1,6 +1,6 @@
 import time
-from datetime import datetime, timedelta, timezone, tzinfo
 from typing import Union
+from datetime import tzinfo, datetime, timezone, timedelta
 
 import dagster._check as check
 from dagster._vendored.dateutil import parser

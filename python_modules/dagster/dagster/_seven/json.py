@@ -1,10 +1,10 @@
-from functools import partial
 from json import (
     dump as dump_,
-    dumps as dumps_,
     load as load_,
+    dumps as dumps_,
     loads as loads_,
 )
+from functools import partial
 
 try:
     from json import JSONDecodeError

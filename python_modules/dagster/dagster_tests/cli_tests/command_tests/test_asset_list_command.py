@@ -1,8 +1,8 @@
 from typing import Optional
 
 from click.testing import CliRunner
-from dagster._cli.asset import asset_list_command
 from dagster._utils import file_relative_path
+from dagster._cli.asset import asset_list_command
 
 
 def invoke_list(select: Optional[str] = None, partition: Optional[str] = None):

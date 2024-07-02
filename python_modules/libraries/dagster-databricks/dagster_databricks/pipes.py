@@ -1,34 +1,34 @@
-import base64
-import json
 import os
+import sys
+import json
+import time
+import base64
 import random
 import string
-import sys
-import time
+from typing import TextIO, Literal, Mapping, Iterator, Optional, Sequence
 from contextlib import ExitStack, contextmanager
-from typing import Iterator, Literal, Mapping, Optional, Sequence, TextIO
 
 import dagster._check as check
+from pydantic import Field
+from dagster_pipes import PipesExtras, PipesParams, PipesContextData
+from databricks.sdk import WorkspaceClient
 from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-)
+from dagster._core.errors import DagsterPipesExecutionError, DagsterExecutionInterruptedError
+from databricks.sdk.service import jobs, files
 from dagster._core.pipes.utils import (
-    PipesBlobStoreMessageReader,
-    PipesChunkedLogReader,
     PipesLogReader,
+    PipesChunkedLogReader,
+    PipesBlobStoreMessageReader,
     open_pipes_session,
 )
-from dagster_pipes import PipesContextData, PipesExtras, PipesParams
-from databricks.sdk import WorkspaceClient
-from databricks.sdk.service import files, jobs
-from pydantic import Field
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesMessageReader,
+    PipesContextInjector,
+    PipesClientCompletedInvocation,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 
 
 @experimental

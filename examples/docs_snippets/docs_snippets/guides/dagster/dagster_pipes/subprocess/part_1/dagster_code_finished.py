@@ -1,9 +1,9 @@
 import shutil
 
 from dagster import (
-    AssetExecutionContext,
     Definitions,
     MaterializeResult,
+    AssetExecutionContext,
     PipesSubprocessClient,
     asset,
     file_relative_path,

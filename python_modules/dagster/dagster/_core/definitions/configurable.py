@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, NamedTuple, Optional, Type, TypeVar, Union, cast
+from typing import Any, Type, Union, TypeVar, Callable, Optional, NamedTuple, cast
 
 from typing_extensions import Self
 
@@ -13,8 +13,8 @@ from dagster._core.decorator_utils import get_function_params
 
 from .definition_config_schema import (
     CoercableToConfigSchema,
-    ConfiguredDefinitionConfigSchema,
     IDefinitionConfigSchema,
+    ConfiguredDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
 
@@ -207,8 +207,8 @@ def _wrap_user_fn_if_pythonic_config(
     """
     from dagster._config.pythonic_config import (
         Config,
-        infer_schema_from_config_annotation,
         safe_is_subclass,
+        infer_schema_from_config_annotation,
     )
 
     if not isinstance(user_fn, Callable):

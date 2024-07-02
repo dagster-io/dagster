@@ -1,11 +1,11 @@
 import dagster._check as check
 from dagster import (
-    AutoMaterializePolicy,
-    AutomationCondition,
     Definitions,
+    AutomationCondition,
+    AutoMaterializePolicy,
     asset,
-    deserialize_value,
     serialize_value,
+    deserialize_value,
 )
 
 

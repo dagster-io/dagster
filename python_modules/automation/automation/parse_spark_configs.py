@@ -7,7 +7,7 @@ and codegens a file that contains dagster configurations for these parameters.
 import re
 import sys
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import Any, Dict, List, Union, Optional, NamedTuple, cast
 
 import click
 import requests

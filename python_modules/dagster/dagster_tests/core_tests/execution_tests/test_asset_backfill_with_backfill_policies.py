@@ -7,33 +7,33 @@ from dagster import (
     AssetDep,
     BackfillPolicy,
     DagsterInstance,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     PartitionKeyRange,
+    DailyPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
 )
-from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._time import (
+    create_datetime,
+    parse_time_string,
+    get_current_datetime,
+    get_current_timestamp,
+)
 from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
-from dagster._core.instance_for_test import instance_for_test
+from dagster._core.test_utils import freeze_time
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
 )
-from dagster._core.test_utils import freeze_time
-from dagster._time import (
-    create_datetime,
-    get_current_datetime,
-    get_current_timestamp,
-    parse_time_string,
-)
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.execution.asset_backfill import AssetBackfillData, AssetBackfillStatus
 
 from dagster_tests.core_tests.execution_tests.test_asset_backfill import (
-    execute_asset_backfill_iteration_consume_generator,
     get_asset_graph,
     run_backfill_to_completion,
+    execute_asset_backfill_iteration_consume_generator,
 )
 
 

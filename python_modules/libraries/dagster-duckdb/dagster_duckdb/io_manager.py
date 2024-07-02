@@ -1,21 +1,21 @@
 from abc import abstractmethod
+from typing import Any, Dict, Type, Optional, Sequence, cast
 from contextlib import contextmanager
-from typing import Any, Dict, Optional, Sequence, Type, cast
 
 import duckdb
-from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster import OutputContext, IOManagerDefinition, io_manager
+from pydantic import Field
+from dagster._utils.backoff import backoff
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
+    TableSlice,
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
-    TableSlice,
 )
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
-from dagster._utils.backoff import backoff
-from pydantic import Field
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 DUCKDB_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

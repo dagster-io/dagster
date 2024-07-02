@@ -1,4 +1,4 @@
-from typing import AbstractSet, Any, Mapping, Optional
+from typing import Any, Mapping, Optional, AbstractSet
 
 from dagster import (
     AssetKey,
@@ -8,14 +8,14 @@ from dagster import (
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
-from .asset_utils import get_asset_check_key_for_test, is_non_asset_node
-from .dagster_dbt_translator import DagsterDbtTranslator
-from .dbt_manifest import DbtManifestParam, validate_manifest
 from .utils import (
     ASSET_RESOURCE_TYPES,
-    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
     select_unique_ids_from_manifest,
+    get_dbt_resource_props_by_dbt_unique_id_from_manifest,
 )
+from .asset_utils import is_non_asset_node, get_asset_check_key_for_test
+from .dbt_manifest import DbtManifestParam, validate_manifest
+from .dagster_dbt_translator import DagsterDbtTranslator
 
 
 class DbtManifestAssetSelection(AssetSelection, arbitrary_types_allowed=True):

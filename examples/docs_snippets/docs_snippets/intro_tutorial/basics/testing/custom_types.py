@@ -2,7 +2,7 @@ import csv
 
 import requests
 
-from dagster import DagsterType, In, Out, get_dagster_logger, job, op
+from dagster import In, Out, DagsterType, op, job, get_dagster_logger
 
 
 # start_custom_types_marker_0

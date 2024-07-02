@@ -1,28 +1,28 @@
-import datetime
 import sys
 import uuid
+import datetime
 from unittest import mock
 
 import google
-import google.api_core.exceptions
 import pandas as pd
 import pytest
-from dagster import DagsterExecutionStepExecutionError, List, Nothing, job, op
-from dagster._config import process_config, validate_config
-from dagster._core.definitions import create_run_config_schema
-from dagster._core.definitions.input import In
-from dagster._core.definitions.output import Out
+import google.api_core.exceptions
+from dagster import List, Nothing, DagsterExecutionStepExecutionError, op, job
 from dagster_gcp import (
+    import_df_to_bq,
     bigquery_resource,
     bq_create_dataset,
     bq_delete_dataset,
     bq_op_for_queries,
-    import_df_to_bq,
     import_gcs_paths_to_bq,
 )
-from dagster_pandas import DataFrame
 from google.cloud import bigquery
+from dagster_pandas import DataFrame
+from dagster._config import process_config, validate_config
 from google.cloud.exceptions import NotFound
+from dagster._core.definitions import create_run_config_schema
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
 
 
 def dataset_exists(name):

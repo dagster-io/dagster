@@ -2,9 +2,9 @@ import threading
 from typing import Tuple
 
 import dagster._check as check
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._utils import send_interrupt
+from dagster._core.instance import InstanceRef, DagsterInstance
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 
 
 def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):

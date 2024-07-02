@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 def get_backfill(graphene_info: "ResolveInfo", backfill_id: str) -> "GraphenePartitionBackfill":
-    from ..schema.backfill import GrapheneBackfillNotFoundError, GraphenePartitionBackfill
+    from ..schema.backfill import GraphenePartitionBackfill, GrapheneBackfillNotFoundError
 
     backfill_job = graphene_info.context.instance.get_backfill(backfill_id)
     if backfill_job is None:

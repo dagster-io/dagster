@@ -13,30 +13,30 @@ materialization it was derived from.
 """
 
 import datetime
-from typing import AbstractSet, Dict, Mapping, Optional, Sequence, Tuple, cast
+from typing import Dict, Tuple, Mapping, Optional, Sequence, AbstractSet, cast
 
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions.asset_selection import KeysAssetSelection
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._utils import make_hashable, datetime_as_float
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.event_api import EventLogRecord
+from dagster._utils.cached_method import cached_method
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.storage.dagster_run import FINISHED_STATUSES, RunsFilter, DagsterRunStatus
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     DataVersion,
     get_input_event_pointer_tag,
 )
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.definitions.asset_selection import KeysAssetSelection
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.freshness_policy import FreshnessMinutes
 from dagster._core.definitions.time_window_partitions import (
     BaseTimeWindowPartitionsSubset,
     TimeWindowPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import EventLogRecord
-from dagster._core.storage.dagster_run import FINISHED_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._utils import datetime_as_float, make_hashable
-from dagster._utils.cached_method import cached_method
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 DATA_TIME_METADATA_KEY = "dagster/data_time"
 

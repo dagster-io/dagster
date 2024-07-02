@@ -1,17 +1,17 @@
 import functools
 from enum import Enum
-from hashlib import sha256
 from typing import (
     TYPE_CHECKING,
+    List,
+    Union,
+    Mapping,
     Callable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Union,
+    NamedTuple,
 )
+from hashlib import sha256
 
 from typing_extensions import Final
 
@@ -20,17 +20,17 @@ from dagster._annotations import deprecated, experimental
 from dagster._utils.cached_method import cached_method
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-    from dagster._core.definitions.events import (
-        AssetKey,
-        AssetKeyPartitionKey,
-        AssetMaterialization,
-        AssetObservation,
-    )
+    from dagster._core.instance import DagsterInstance
     from dagster._core.event_api import EventLogRecord
     from dagster._core.events.log import EventLogEntry
-    from dagster._core.instance import DagsterInstance
+    from dagster._core.definitions.events import (
+        AssetKey,
+        AssetObservation,
+        AssetKeyPartitionKey,
+        AssetMaterialization,
+    )
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+    from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 
 
 class UnknownValue:

@@ -2,11 +2,11 @@ import os
 import tempfile
 from unittest import mock
 
-from dagster import RunRequest, SensorResult, build_sensor_context, materialize
+from dagster import RunRequest, SensorResult, materialize, build_sensor_context
 from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.partitions_schedules_sensors.dynamic_partitioned_asset import (
-    image_sensor,
     images,
+    image_sensor,
 )
 
 DIR = "images"

@@ -1,7 +1,7 @@
 from dagster import (
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
 )
 

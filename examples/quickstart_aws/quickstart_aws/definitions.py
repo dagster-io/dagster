@@ -1,11 +1,11 @@
 from dagster import (
-    Definitions,
     EnvVar,
+    Definitions,
     ScheduleDefinition,
     define_asset_job,
     load_assets_from_package_module,
 )
-from dagster_aws.s3 import S3PickleIOManager, S3Resource
+from dagster_aws.s3 import S3Resource, S3PickleIOManager
 
 from . import assets
 

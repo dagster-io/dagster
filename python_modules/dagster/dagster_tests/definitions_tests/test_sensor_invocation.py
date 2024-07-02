@@ -1,56 +1,56 @@
-from contextlib import contextmanager
-from typing import Iterator, List, cast
+from typing import List, Iterator, cast
 from unittest import mock
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
+    Config,
+    Output,
     AssetKey,
     AssetOut,
-    AssetRecordsFilter,
-    AssetSelection,
-    Config,
-    DagsterInstance,
-    DagsterInvariantViolationError,
-    DagsterRunStatus,
-    DagsterUnknownPartitionError,
-    DailyPartitionsDefinition,
-    Definitions,
-    FreshnessPolicy,
-    Output,
     RunConfig,
     RunRequest,
     SkipReason,
+    Definitions,
     SourceAsset,
+    AssetSelection,
+    DagsterInstance,
+    FreshnessPolicy,
+    DagsterRunStatus,
+    AssetRecordsFilter,
+    DailyPartitionsDefinition,
     StaticPartitionsDefinition,
-    asset,
-    asset_sensor,
-    build_freshness_policy_sensor_context,
-    build_multi_asset_sensor_context,
-    build_run_status_sensor_context,
-    build_sensor_context,
-    define_asset_job,
-    freshness_policy_sensor,
+    DagsterUnknownPartitionError,
+    DagsterInvariantViolationError,
+    op,
     job,
+    asset,
+    sensor,
+    resource,
+    repository,
     materialize,
     multi_asset,
-    multi_asset_sensor,
-    op,
-    repository,
-    resource,
-    run_failure_sensor,
+    asset_sensor,
+    define_asset_job,
     run_status_sensor,
-    sensor,
+    multi_asset_sensor,
+    run_failure_sensor,
+    build_sensor_context,
+    freshness_policy_sensor,
     static_partitioned_config,
+    build_run_status_sensor_context,
+    build_multi_asset_sensor_context,
+    build_freshness_policy_sensor_context,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.execution.build_resources import build_resources
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.resource_annotation import ResourceParam
 
 
 def test_sensor_invocation_args():
@@ -1311,14 +1311,14 @@ def test_multi_asset_sensor_latest_materialization_records_by_partition_and_asse
 
 def test_build_multi_asset_sensor_context_asset_selection():
     from dagster_tests.asset_defs_tests.test_asset_selection import (
-        alice,
         bob,
-        candace,
+        alice,
         danny,
         earth,
         edgar,
         fiona,
         george,
+        candace,
     )
 
     @multi_asset_sensor(

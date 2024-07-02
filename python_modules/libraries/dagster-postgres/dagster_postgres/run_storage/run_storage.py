@@ -1,39 +1,39 @@
 import zlib
-from typing import ContextManager, Mapping, Optional
+from typing import Mapping, Optional, ContextManager
 
-import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
+import dagster._check as check
 import sqlalchemy.pool as db_pool
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.storage.config import PostgresStorageConfig, pg_config
-from dagster._core.storage.runs import (
-    DaemonHeartbeatsTable,
-    InstanceInfo,
-    RunStorageSqlMetadata,
-    SqlRunStorage,
-)
-from dagster._core.storage.runs.schema import KeyValueStoreTable, SnapshotsTable
-from dagster._core.storage.runs.sql_run_storage import SnapshotType
+import sqlalchemy.dialects as db_dialects
+from sqlalchemy import event
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from sqlalchemy.engine import Connection
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._core.storage.sql import (
     AlembicVersion,
-    check_alembic_revision,
     create_engine,
-    run_alembic_upgrade,
     stamp_alembic_rev,
+    run_alembic_upgrade,
+    check_alembic_revision,
 )
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from dagster._utils import utc_datetime_from_timestamp
-from sqlalchemy import event
-from sqlalchemy.engine import Connection
+from dagster._core.storage.runs import (
+    InstanceInfo,
+    SqlRunStorage,
+    DaemonHeartbeatsTable,
+    RunStorageSqlMetadata,
+)
+from dagster._core.storage.config import PostgresStorageConfig, pg_config
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.runs.schema import SnapshotsTable, KeyValueStoreTable
+from dagster._core.storage.runs.sql_run_storage import SnapshotType
 
 from ..utils import (
-    create_pg_connection,
     pg_alembic_config,
     pg_url_from_config,
-    retry_pg_connection_fn,
+    create_pg_connection,
     retry_pg_creation_fn,
+    retry_pg_connection_fn,
     set_pg_statement_timeout,
 )
 

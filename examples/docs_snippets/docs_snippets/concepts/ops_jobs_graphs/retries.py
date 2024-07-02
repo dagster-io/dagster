@@ -1,4 +1,4 @@
-from dagster import Backoff, Jitter, RetryPolicy, RetryRequested, job, op
+from dagster import Jitter, Backoff, RetryPolicy, RetryRequested, op, job
 
 
 def fails_sometimes():

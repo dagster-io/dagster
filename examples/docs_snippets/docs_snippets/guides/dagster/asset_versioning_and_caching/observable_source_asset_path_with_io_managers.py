@@ -1,19 +1,19 @@
 import os
-from hashlib import sha256
 from typing import Any
+from hashlib import sha256
 
 from dagster import (
+    IOManager,
     DataVersion,
     Definitions,
     InputContext,
-    IOManager,
     OutputContext,
     asset,
     file_relative_path,
     observable_source_asset,
 )
-from dagster._seven.temp_dir import get_system_temp_directory
 from dagster._utils import mkdir_p
+from dagster._seven.temp_dir import get_system_temp_directory
 
 
 # This simulates the I/O manager for our internal data lake

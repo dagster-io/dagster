@@ -2,28 +2,28 @@ from typing import List
 
 import pytest
 from dagster import (
-    DagsterEventType,
     GraphDefinition,
-    _check as check,
-    job,
+    DagsterEventType,
     op,
-    reconstructable,
+    job,
+    _check as check,
     resource,
+    reconstructable,
 )
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.job_base import InMemoryJob
+from dagster._grpc.impl import core_execute_run
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.test_utils import instance_for_test
 from dagster._core.execution.api import (
-    create_execution_plan,
-    execute_plan_iterator,
     execute_run,
     execute_run_iterator,
+    create_execution_plan,
+    execute_plan_iterator,
 )
 from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import instance_for_test
-from dagster._grpc.impl import core_execute_run
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.executor_definition import in_process_executor
 
 
 @resource

@@ -1,45 +1,45 @@
-import logging
 import os
 import sys
 import time
+import logging
 
 import kubernetes
 from dagster import (
-    DagsterEvent,
-    DagsterEventType,
-    DagsterInstance,
     Executor,
+    DagsterEvent,
+    DagsterInstance,
+    DagsterEventType,
     _check as check,
     executor,
     multiple_process_executor_requirements,
 )
-from dagster._cli.api import ExecuteStepArgs
-from dagster._core.errors import DagsterUnmetExecutorRequirementsError
-from dagster._core.events import EngineEventData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.events.utils import filter_dagster_events_from_cli_logs
-from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
-from dagster._core.execution.retries import RetryMode
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._serdes import pack_value, serialize_value, unpack_value
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
-from dagster_celery.core_execution_loop import DELEGATE_MARKER
-from dagster_celery.defaults import broker_url, result_backend
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
-from dagster_k8s.client import (
-    DagsterK8sAPIRetryLimitExceeded,
-    DagsterK8sError,
-    DagsterK8sJobStatusException,
-    DagsterK8sTimeoutError,
-    DagsterK8sUnrecoverableAPIError,
-    DagsterKubernetesClient,
-)
+from dagster._serdes import pack_value, unpack_value, serialize_value
 from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_k8s_job_name,
     get_user_defined_k8s_config,
 )
+from dagster._cli.api import ExecuteStepArgs
+from dagster_k8s.client import (
+    DagsterK8sError,
+    DagsterK8sTimeoutError,
+    DagsterKubernetesClient,
+    DagsterK8sJobStatusException,
+    DagsterK8sAPIRetryLimitExceeded,
+    DagsterK8sUnrecoverableAPIError,
+)
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import EngineEventData
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster_celery.config import DEFAULT_CONFIG, dict_wrapper
+from dagster_celery.defaults import broker_url, result_backend
+from dagster._core.events.log import EventLogEntry
+from dagster._core.events.utils import filter_dagster_events_from_cli_logs
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster_celery.core_execution_loop import DELEGATE_MARKER
+from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 from .launcher import CeleryK8sRunLauncher

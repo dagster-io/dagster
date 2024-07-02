@@ -1,17 +1,17 @@
-import logging
 import uuid
-from collections import defaultdict
-from contextlib import contextmanager
+import logging
 from typing import Any, Callable, Optional
+from contextlib import contextmanager
+from collections import defaultdict
 
 import sqlalchemy as db
 from sqlalchemy.pool import NullPool
 
-from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
-from dagster._core.storage.sqlite import create_in_memory_conn_string
 from dagster._serdes import ConfigurableClass
+from dagster._core.storage.sql import create_engine, stamp_alembic_rev, get_alembic_config
+from dagster._core.storage.sqlite import create_in_memory_conn_string
 from dagster._serdes.config_class import ConfigurableClassData
+from dagster._core.storage.event_log.base import EventLogCursor
 
 from .schema import SqlEventLogStorageMetadata
 from .sql_event_log import SqlEventLogStorage

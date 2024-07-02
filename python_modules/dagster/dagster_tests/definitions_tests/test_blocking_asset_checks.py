@@ -1,13 +1,13 @@
 from dagster import (
-    AssetCheckResult,
     AssetKey,
     Definitions,
+    AssetCheckResult,
     ExecuteInProcessResult,
     asset,
     asset_check,
 )
-from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
 from dagster._core.execution.context.compute import OpExecutionContext
 
 

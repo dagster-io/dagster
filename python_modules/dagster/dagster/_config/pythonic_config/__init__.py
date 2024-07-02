@@ -1,28 +1,28 @@
 from .config import (
     Config as Config,
     PermissiveConfig as PermissiveConfig,
-    _config_value_to_dict_representation as _config_value_to_dict_representation,
     infer_schema_from_config_class as infer_schema_from_config_class,
+    _config_value_to_dict_representation as _config_value_to_dict_representation,
 )
-from .conversion_utils import (
-    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
-    infer_schema_from_config_annotation as infer_schema_from_config_annotation,
-    safe_is_subclass as safe_is_subclass,
+from .resource import (
+    PartialResource as PartialResource,
+    ResourceDependency as ResourceDependency,
+    ConfigurableResource as ConfigurableResource,
+    ResourceWithKeyMapping as ResourceWithKeyMapping,
+    ConfigurableResourceFactory as ConfigurableResourceFactory,
+    ConfigurableResourceFactoryResourceDefinition as ConfigurableResourceFactoryResourceDefinition,
+    is_coercible_to_resource as is_coercible_to_resource,
+    attach_resource_id_to_key_mapping as attach_resource_id_to_key_mapping,
+    validate_resource_annotated_function as validate_resource_annotated_function,
 )
 from .io_manager import (
     ConfigurableIOManager as ConfigurableIOManager,
     ConfigurableIOManagerFactory as ConfigurableIOManagerFactory,
-    ConfigurableIOManagerFactoryResourceDefinition as ConfigurableIOManagerFactoryResourceDefinition,
     ConfigurableLegacyIOManagerAdapter as ConfigurableLegacyIOManagerAdapter,
+    ConfigurableIOManagerFactoryResourceDefinition as ConfigurableIOManagerFactoryResourceDefinition,
 )
-from .resource import (
-    ConfigurableResource as ConfigurableResource,
-    ConfigurableResourceFactory as ConfigurableResourceFactory,
-    ConfigurableResourceFactoryResourceDefinition as ConfigurableResourceFactoryResourceDefinition,
-    PartialResource as PartialResource,
-    ResourceDependency as ResourceDependency,
-    ResourceWithKeyMapping as ResourceWithKeyMapping,
-    attach_resource_id_to_key_mapping as attach_resource_id_to_key_mapping,
-    is_coercible_to_resource as is_coercible_to_resource,
-    validate_resource_annotated_function as validate_resource_annotated_function,
+from .conversion_utils import (
+    IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
+    safe_is_subclass as safe_is_subclass,
+    infer_schema_from_config_annotation as infer_schema_from_config_annotation,
 )

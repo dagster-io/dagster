@@ -4,19 +4,19 @@ from typing import Optional
 from unittest import mock
 
 import pytest
-from dagster._api.snapshot_schedule import (
-    sync_get_external_schedule_execution_data_ephemeral_grpc,
-    sync_get_external_schedule_execution_data_grpc,
-)
-from dagster._core.definitions.schedule_definition import ScheduleExecutionData
-from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
-from dagster._core.test_utils import instance_for_test
-from dagster._grpc.client import ephemeral_grpc_api_client
-from dagster._grpc.types import ExternalScheduleExecutionArgs
-from dagster._serdes import deserialize_value
 from dagster._time import get_current_datetime
+from dagster._serdes import deserialize_value
+from dagster._grpc.types import ExternalScheduleExecutionArgs
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._grpc.client import ephemeral_grpc_api_client
+from dagster._core.test_utils import instance_for_test
+from dagster._api.snapshot_schedule import (
+    sync_get_external_schedule_execution_data_grpc,
+    sync_get_external_schedule_execution_data_ephemeral_grpc,
+)
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+from dagster._core.remote_representation.external_data import ExternalScheduleExecutionErrorData
 
 from .utils import get_bar_repo_handle
 

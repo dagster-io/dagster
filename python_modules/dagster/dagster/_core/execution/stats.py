@@ -1,13 +1,13 @@
-from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, NamedTuple, Optional, Sequence, cast
+from typing import Any, Dict, Iterable, Optional, Sequence, NamedTuple, cast
+from collections import defaultdict
 
 import dagster._check as check
-from dagster._core.definitions import ExpectationResult
+from dagster._serdes import whitelist_for_serdes
 from dagster._core.events import MARKER_EVENTS, DagsterEventType, StepExpectationResultData
 from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions import ExpectationResult
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
-from dagster._serdes import whitelist_for_serdes
 
 
 def build_run_stats_from_events(

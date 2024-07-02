@@ -1,38 +1,38 @@
 import sys
-from contextlib import contextmanager
-from contextvars import ContextVar
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
+    List,
+    Type,
+    Tuple,
+    Union,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
+    NamedTuple,
     cast,
 )
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
-from dagster._core.workspace.context import BaseWorkspaceRequestContext
-from dagster._utils.error import serializable_error_info_from_exc_info
 from typing_extensions import ParamSpec, TypeAlias
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.selector import GraphSelector, JobSubsetSelector
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
 if TYPE_CHECKING:
-    from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
     from dagster_graphql.schema.util import ResolveInfo
+    from dagster_graphql.schema.errors import GrapheneError, GraphenePythonError
 
 P = ParamSpec("P")
 T = TypeVar("T")

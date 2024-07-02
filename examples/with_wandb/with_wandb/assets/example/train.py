@@ -9,9 +9,9 @@ Designed to show wandb integration with pytorch.
 import os
 
 import torch
+import wandb
 import torch.nn as nn
 import torchvision.transforms as transforms
-import wandb
 from torch.autograd import Variable
 
 from .fashion_data import fashion

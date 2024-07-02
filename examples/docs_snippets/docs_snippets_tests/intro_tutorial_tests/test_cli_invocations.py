@@ -3,12 +3,12 @@ import runpy
 from urllib.parse import urlencode
 
 import pytest
-from dagster_webserver.app import create_app_from_workspace_process_context
 from starlette.testclient import TestClient
+from dagster_webserver.app import create_app_from_workspace_process_context
 
+from dagster._utils import pushd, check_script, script_relative_path
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import check_script, pushd, script_relative_path
 
 PIPELINES_OR_ERROR_QUERY = """
 {

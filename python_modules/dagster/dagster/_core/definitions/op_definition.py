@@ -1,55 +1,55 @@
 import inspect
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
+    Tuple,
+    Union,
+    Mapping,
+    TypeVar,
     Callable,
     Iterator,
-    Mapping,
     Optional,
     Sequence,
-    Tuple,
-    TypeVar,
-    Union,
+    AbstractSet,
     cast,
 )
 
 from typing_extensions import TypeAlias, get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import deprecated, deprecated_param, public
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
-from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.resource_requirement import (
-    InputManagerRequirement,
-    OpDefinitionResourceRequirement,
-    OutputManagerRequirement,
-    ResourceRequirement,
-)
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._utils import IHasInternalInit
+from dagster._annotations import public, deprecated, deprecated_param
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
-from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster._utils import IHasInternalInit
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
+from dagster._core.definitions.op_invocation import direct_invocation_result
+from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.resource_requirement import (
+    ResourceRequirement,
+    InputManagerRequirement,
+    OutputManagerRequirement,
+    OpDefinitionResourceRequirement,
+)
 
+from .input import In, InputDefinition
+from .output import Out, OutputDefinition
+from .result import ObserveResult, MaterializeResult
+from .inference import infer_output_props
+from .hook_definition import HookDefinition
 from .definition_config_schema import (
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .hook_definition import HookDefinition
-from .inference import infer_output_props
-from .input import In, InputDefinition
-from .output import Out, OutputDefinition
-from .result import MaterializeResult, ObserveResult
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_layer import AssetLayer
@@ -576,12 +576,12 @@ def _validate_context_type_hint(fn):
     from inspect import _empty as EmptyAnnotation
 
     from dagster._core.decorator_utils import get_function_params
-    from dagster._core.definitions.decorators.op_decorator import is_context_provided
     from dagster._core.execution.context.compute import (
-        AssetCheckExecutionContext,
-        AssetExecutionContext,
         OpExecutionContext,
+        AssetExecutionContext,
+        AssetCheckExecutionContext,
     )
+    from dagster._core.definitions.decorators.op_decorator import is_context_provided
 
     params = get_function_params(fn)
     if is_context_provided(params):

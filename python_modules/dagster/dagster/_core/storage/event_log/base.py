@@ -1,44 +1,44 @@
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
     Tuple,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
 )
 
 import dagster._check as check
+from dagster._utils import PrintFn
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.events import AssetKey
+from dagster._core.events import DagsterEventType
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
 from dagster._core.event_api import (
-    AssetRecordsFilter,
     EventHandlerFn,
     EventLogCursor,
     EventLogRecord,
+    AssetRecordsFilter,
     EventRecordsFilter,
     EventRecordsResult,
     RunStatusChangeRecordsFilter,
 )
-from dagster._core.events import DagsterEventType
+from dagster._utils.warnings import deprecation_warning
+from dagster._core.storage.sql import AlembicVersion
+from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
+from dagster._utils.concurrency import ConcurrencyKeyInfo, ConcurrencyClaimStatus
 from dagster._core.execution.stats import (
     RunStepKeyStatsSnapshot,
     build_run_stats_from_events,
     build_run_step_stats_from_events,
 )
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
+from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.dagster_run import DagsterRunStatsSnapshot
-from dagster._core.storage.sql import AlembicVersion
-from dagster._core.storage.tags import MULTIDIMENSIONAL_PARTITION_PREFIX
-from dagster._utils import PrintFn
-from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
-from dagster._utils.warnings import deprecation_warning
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry

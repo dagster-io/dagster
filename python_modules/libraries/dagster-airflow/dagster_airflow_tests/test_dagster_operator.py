@@ -2,8 +2,8 @@ import unittest
 from datetime import datetime, timedelta
 from unittest import mock
 
-import pendulum
 import pytest
+import pendulum
 from airflow import (
     DAG,
     __version__ as airflow_version,

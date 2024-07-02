@@ -1,6 +1,6 @@
 import time
 
-from dagster import RetryRequested, graph, op
+from dagster import RetryRequested, op, graph
 
 
 @op

@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Generator, Mapping, Optional, Sequence, Tuple, Type, TypeVar
+from typing import Type, Tuple, Mapping, TypeVar, Callable, Optional, Sequence, Generator
 
 import dagster._check as check
 

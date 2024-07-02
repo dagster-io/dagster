@@ -1,7 +1,7 @@
-import json
 import os
-import subprocess
+import json
 import time
+import subprocess
 from contextlib import contextmanager
 
 import requests

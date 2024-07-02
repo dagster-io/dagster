@@ -1,26 +1,26 @@
-import dagster._check as check
 import pytest
+import dagster._check as check
 from dagster import (
     AssetKey,
-    AssetsDefinition,
-    AssetSelection,
-    DagsterInvalidDefinitionError,
     JobDefinition,
+    AssetSelection,
+    AssetsDefinition,
     RepositoryDefinition,
-    asset,
-    define_asset_job,
+    DagsterInvalidDefinitionError,
     op,
-    repository,
+    asset,
     resource,
+    repository,
     with_resources,
+    define_asset_job,
 )
 from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
 )
 from dagster._core.definitions.repository_definition import (
-    PendingRepositoryDefinition,
     RepositoryLoadData,
+    PendingRepositoryDefinition,
 )
 
 from .test_repository import define_empty_job, define_simple_job, define_with_resources_job

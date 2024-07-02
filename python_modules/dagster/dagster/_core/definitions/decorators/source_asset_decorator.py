@@ -1,10 +1,19 @@
-from typing import AbstractSet, Any, Callable, Mapping, Optional, Sequence, Set, Union, overload
+from typing import Any, Set, Union, Mapping, Callable, Optional, Sequence, AbstractSet, overload
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetExecutionType, AssetSpec
+from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.utils import validate_tags_strict
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.asset_spec import AssetSpec, AssetExecutionType
+from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.decorators.asset_decorator import (
     resolve_asset_key_and_name_for_decorator,
 )
@@ -13,15 +22,6 @@ from dagster._core.definitions.decorators.decorator_assets_definition_builder im
     DecoratorAssetsDefinitionBuilderArgs,
     create_check_specs_by_output_name,
 )
-from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import RawMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.source_asset import SourceAsset, SourceAssetObserveFunction
-from dagster._core.definitions.utils import validate_tags_strict
-from dagster._utils.warnings import disable_dagster_warnings
 
 
 @overload

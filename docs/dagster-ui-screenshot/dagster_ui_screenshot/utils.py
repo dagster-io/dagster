@@ -4,7 +4,7 @@ from glob import glob
 from typing import List, Sequence, cast
 
 import yaml
-from typing_extensions import NotRequired, TypeAlias, TypedDict
+from typing_extensions import TypeAlias, TypedDict, NotRequired
 
 
 class RawScreenshotSpec(TypedDict):

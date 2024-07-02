@@ -1,12 +1,12 @@
 import uuid
 
-import kubernetes
 import pytest
-from dagster import RetryRequested, job, op
-from dagster._core.test_utils import instance_for_test
-from dagster_k8s import execute_k8s_job, k8s_job_op
-from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
+import kubernetes
+from dagster import RetryRequested, op, job
+from dagster_k8s import k8s_job_op, execute_k8s_job
 from dagster_k8s.job import get_k8s_job_name
+from dagster_k8s.client import DagsterK8sError, DagsterKubernetesClient
+from dagster._core.test_utils import instance_for_test
 
 from .utils import _wait_k8s_job_to_delete
 

@@ -1,16 +1,16 @@
 import os
 import sys
 import tempfile
+from typing import Any, Mapping, Iterator, Optional
 from contextlib import ExitStack, contextmanager
-from typing import Any, Iterator, Mapping, Optional
 
 import yaml
 
 from dagster._utils.error import serializable_error_info_from_exc_info
 
+from .instance import DagsterInstance
 from .._utils.env import environ
 from .._utils.merger import merge_dicts
-from .instance import DagsterInstance
 
 
 @contextmanager

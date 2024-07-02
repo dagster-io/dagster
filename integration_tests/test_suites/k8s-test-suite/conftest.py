@@ -4,14 +4,14 @@ from typing import Iterator
 
 import docker
 import pytest
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 # fixtures: redundant alias marks them as used imports
 from dagster_k8s_test_infra.cluster import (
-    dagster_instance_for_k8s_run_launcher as dagster_instance_for_k8s_run_launcher,
     define_cluster_provider_fixture as define_cluster_provider_fixture,
+    dagster_instance_for_k8s_run_launcher as dagster_instance_for_k8s_run_launcher,
     helm_postgres_url_for_k8s_run_launcher as helm_postgres_url_for_k8s_run_launcher,
 )
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 pytest_plugins = ["dagster_k8s_test_infra.helm"]
 

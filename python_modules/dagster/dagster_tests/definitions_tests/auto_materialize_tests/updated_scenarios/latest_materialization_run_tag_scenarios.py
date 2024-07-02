@@ -1,10 +1,10 @@
-from dagster import AutoMaterializeAssetPartitionsFilter, AutoMaterializePolicy, AutoMaterializeRule
+from dagster import AutoMaterializeRule, AutoMaterializePolicy, AutoMaterializeAssetPartitionsFilter
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
+    two_assets_in_sequence,
     one_asset_depends_on_two,
     three_assets_in_sequence,
-    two_assets_in_sequence,
 )
 from .asset_daemon_scenario import AssetDaemonScenario
 

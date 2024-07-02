@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from dagster import Config, Definitions, EnvVar, RunConfig, asset
+from dagster import Config, EnvVar, RunConfig, Definitions, asset
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.test_utils import environ
 

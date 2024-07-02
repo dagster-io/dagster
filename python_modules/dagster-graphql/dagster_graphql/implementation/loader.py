@@ -1,23 +1,23 @@
-from collections import defaultdict
 from enum import Enum
+from typing import Any, Dict, List, Tuple, Optional, Sequence
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections import defaultdict
 
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.definitions.events import AssetKey
 from dagster._core.remote_representation import ExternalRepository
+from dagster._core.scheduler.instigation import InstigatorType, InstigatorState
+from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
 from dagster._core.remote_representation.external_data import (
+    ExternalAssetNode,
     ExternalAssetDependedBy,
     ExternalAssetDependency,
-    ExternalAssetNode,
 )
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorType
-from dagster._core.workspace.context import WorkspaceRequestContext
 
 
 class RepositoryDataType(Enum):

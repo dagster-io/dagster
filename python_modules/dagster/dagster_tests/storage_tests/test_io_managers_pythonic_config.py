@@ -3,23 +3,23 @@ import tempfile
 from typing import Any, Type
 
 from dagster import (
+    In,
     Config,
-    ConfigurableIOManagerFactory,
+    RunConfig,
     DataVersion,
     Definitions,
-    FilesystemIOManager,
-    In,
-    IOManagerDefinition,
-    RunConfig,
     StringSource,
+    FilesystemIOManager,
+    IOManagerDefinition,
+    ConfigurableIOManagerFactory,
+    op,
+    job,
     asset,
     io_manager,
-    job,
     observable_source_asset,
-    op,
 )
-from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResource
 from dagster._config.type_printer import print_config_type_to_string
+from dagster._config.pythonic_config import ConfigurableResource, ConfigurableIOManager
 from dagster._core.storage.io_manager import IOManager
 
 
@@ -301,7 +301,7 @@ def test_config_schemas() -> None:
 
 
 import pytest
-from dagster import InputContext, Out, OutputContext
+from dagster import Out, InputContext, OutputContext
 from dagster._core.errors import DagsterInvalidConfigError
 
 

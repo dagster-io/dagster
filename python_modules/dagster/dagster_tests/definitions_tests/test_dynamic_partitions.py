@@ -1,19 +1,19 @@
-from datetime import datetime
 from typing import Callable, Optional, Sequence
+from datetime import datetime
 
 import pytest
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
-    DagsterUnknownPartitionError,
     IOManager,
+    AssetExecutionContext,
+    DagsterUnknownPartitionError,
     asset,
     materialize,
     materialize_to_memory,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, Partition
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.partition import Partition, DynamicPartitionsDefinition
 
 
 @pytest.mark.parametrize(

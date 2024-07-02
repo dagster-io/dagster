@@ -1,16 +1,16 @@
 import pytest
 from kubernetes.client import models
+from schema.utils.helm_template import HelmTemplate
+from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster.subschema.ingress import (
-    FlowerIngressConfiguration,
     Ingress,
     IngressPath,
     IngressPathType,
     IngressTLSConfiguration,
+    FlowerIngressConfiguration,
     WebserverIngressConfiguration,
 )
 from schema.charts.dagster.subschema.webserver import Webserver
-from schema.charts.dagster.values import DagsterHelmValues
-from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template_function")

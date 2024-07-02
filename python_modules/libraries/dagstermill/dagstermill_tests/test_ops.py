@@ -1,24 +1,24 @@
-import importlib.util
 import os
 import pickle
 import tempfile
+import importlib.util
 from contextlib import contextmanager
 
-import nbformat
 import pytest
-from dagster import execute_job, job
-from dagster._check import CheckError
-from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path, safe_tempfile_path
+import nbformat
+from dagster import job, execute_job
 from dagstermill import DagstermillError
+from dagster._check import CheckError
+from dagster._utils import file_relative_path, safe_tempfile_path
 from dagstermill.compat import ExecutionError
-from dagstermill.examples.repository import custom_io_mgr_key_job
 from dagstermill.factory import define_dagstermill_op
-from jupyter_client.kernelspec import NoSuchKernel
 from nbconvert.preprocessors import ExecutePreprocessor
+from dagster._core.test_utils import instance_for_test
+from jupyter_client.kernelspec import NoSuchKernel
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagstermill.examples.repository import custom_io_mgr_key_job
+from dagster._core.definitions.metadata import PathMetadataValue, NotebookMetadataValue
+from dagster._core.definitions.reconstruct import ReconstructableJob
 
 DAGSTER_PANDAS_PRESENT = importlib.util.find_spec("dagster_pandas") is not None
 SKLEARN_PRESENT = importlib.util.find_spec("sklearn") is not None

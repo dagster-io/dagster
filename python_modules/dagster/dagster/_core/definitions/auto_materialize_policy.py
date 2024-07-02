@@ -1,12 +1,12 @@
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, FrozenSet, NamedTuple, AbstractSet
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
+from dagster._annotations import public, deprecated, experimental
 from dagster._serdes.serdes import (
-    NamedTupleSerializer,
     UnpackContext,
     UnpackedValue,
+    NamedTupleSerializer,
     whitelist_for_serdes,
 )
 
@@ -299,8 +299,8 @@ class AutoMaterializePolicy(
 
     def to_automation_condition(self) -> "AutomationCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
+        from .declarative_automation import OrAssetCondition, AndAssetCondition, NotAssetCondition
         from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from .declarative_automation import AndAssetCondition, NotAssetCondition, OrAssetCondition
 
         if self.asset_condition is not None:
             return self.asset_condition

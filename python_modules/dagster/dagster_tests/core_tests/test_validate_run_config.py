@@ -1,5 +1,5 @@
 import pytest
-from dagster import job, op, validate_run_config
+from dagster import op, job, validate_run_config
 from dagster._core.errors import DagsterInvalidConfigError
 
 

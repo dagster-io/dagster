@@ -2,8 +2,8 @@ from typing import Mapping, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions import ExecutorDefinition, IJob
 from dagster._core.instance import DagsterInstance
+from dagster._core.definitions import IJob, ExecutorDefinition
 
 
 class InitExecutorContext(

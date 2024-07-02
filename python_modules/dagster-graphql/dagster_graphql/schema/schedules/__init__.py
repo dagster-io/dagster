@@ -4,26 +4,26 @@ from dagster._core.workspace.permissions import Permissions
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from ...implementation.fetch_schedules import reset_schedule, start_schedule, stop_schedule
-from ...implementation.utils import (
-    assert_permission_for_location,
-    capture_error,
-    require_permission_check,
-)
+from .ticks import GrapheneInstigationTickStatus
 from ..errors import (
     GraphenePythonError,
-    GrapheneSchedulerNotDefinedError,
     GrapheneUnauthorizedError,
+    GrapheneSchedulerNotDefinedError,
 )
 from ..inputs import GrapheneScheduleSelector
-from ..instigation import GrapheneInstigationState
 from .schedules import (
     GrapheneSchedule,
-    GrapheneScheduleOrError,
     GrapheneSchedules,
+    GrapheneScheduleOrError,
     GrapheneSchedulesOrError,
 )
-from .ticks import GrapheneInstigationTickStatus
+from ..instigation import GrapheneInstigationState
+from ...implementation.utils import (
+    capture_error,
+    require_permission_check,
+    assert_permission_for_location,
+)
+from ...implementation.fetch_schedules import stop_schedule, reset_schedule, start_schedule
 
 
 class GrapheneScheduleStatus(graphene.Enum):
@@ -131,8 +131,8 @@ def types():
     from .ticks import (
         GrapheneScheduleTick,
         GrapheneScheduleTickFailureData,
-        GrapheneScheduleTickSpecificData,
         GrapheneScheduleTickSuccessData,
+        GrapheneScheduleTickSpecificData,
     )
 
     # Double check mutations don't appear twice

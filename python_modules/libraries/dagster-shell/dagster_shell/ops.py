@@ -1,19 +1,19 @@
 import os
 from enum import Enum
-from typing import AbstractSet, Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping, Optional, AbstractSet
 
 from dagster import (
+    In,
+    Out,
     Config,
     Failure,
-    In,
     Nothing,
     OpExecutionContext,
-    Out,
-    _check as check,
     op,
+    _check as check,
 )
-from dagster._core.definitions.op_definition import OpDefinition
 from pydantic import Field
+from dagster._core.definitions.op_definition import OpDefinition
 
 from .utils import execute, execute_script_file
 

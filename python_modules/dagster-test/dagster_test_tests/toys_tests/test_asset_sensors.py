@@ -1,6 +1,6 @@
-from dagster import build_multi_asset_sensor_context, instance_for_test, materialize
-from dagster_test.toys.asset_sensors import partitioned_assets, partitioned_multi_asset_sensor
+from dagster import materialize, instance_for_test, build_multi_asset_sensor_context
 from dagster_test.toys.repo import assets_with_sensors_repository
+from dagster_test.toys.asset_sensors import partitioned_assets, partitioned_multi_asset_sensor
 
 partitioned_asset = partitioned_assets[0]
 

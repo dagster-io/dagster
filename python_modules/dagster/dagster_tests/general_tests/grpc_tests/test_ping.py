@@ -1,26 +1,26 @@
-import json
-import logging
 import os
 import re
-import subprocess
-import threading
+import json
 import time
+import logging
+import threading
+import subprocess
 from unittest import mock
 
+import pytest
 import dagster._check as check
 import dagster._seven as seven
-import pytest
-from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster._core.test_utils import instance_for_test
-from dagster._core.utils import FuturesAwareThreadPoolExecutor
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
+from dagster._utils import find_free_port, safe_tempfile_path
+from dagster._core.utils import FuturesAwareThreadPoolExecutor
+from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._grpc.server import (
-    DagsterCodeServerUtilizationMetrics,
     GrpcServerProcess,
+    DagsterCodeServerUtilizationMetrics,
     open_server_process,
 )
-from dagster._serdes.ipc import interrupt_ipc_subprocess_pid
-from dagster._utils import find_free_port, safe_tempfile_path
+from dagster._core.test_utils import instance_for_test
 
 
 def _cleanup_process(process):

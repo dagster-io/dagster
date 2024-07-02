@@ -1,9 +1,8 @@
 import os
-from contextlib import contextmanager
 from typing import Any, Mapping, Optional, Sequence
+from contextlib import contextmanager
 
 import dagster._seven as seven
-from azure.identity import DefaultAzureCredential
 from dagster import (
     Field,
     Noneable,
@@ -11,20 +10,21 @@ from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._core.storage.cloud_storage_compute_log_manager import (
-    CloudStorageComputeLogManager,
-    PollingComputeLogSubscriptionManager,
-)
+from azure.identity import DefaultAzureCredential
+from dagster._utils import ensure_dir, ensure_file
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from typing_extensions import Self
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
-from typing_extensions import Self
+from dagster._core.storage.cloud_storage_compute_log_manager import (
+    CloudStorageComputeLogManager,
+    PollingComputeLogSubscriptionManager,
+)
 
-from .utils import create_blob_client, generate_blob_sas
+from .utils import generate_blob_sas, create_blob_client
 
 
 class AzureBlobComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):

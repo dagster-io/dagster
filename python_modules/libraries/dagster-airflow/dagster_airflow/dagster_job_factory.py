@@ -1,21 +1,21 @@
 from typing import List, Mapping, Optional
 
-from airflow.models.connection import Connection
-from airflow.models.dag import DAG
 from dagster import (
-    GraphDefinition,
     JobDefinition,
+    GraphDefinition,
     ResourceDefinition,
     _check as check,
 )
-from dagster._core.definitions.utils import normalize_tags
+from airflow.models.dag import DAG
 from dagster._core.instance import IS_AIRFLOW_INGEST_PIPELINE_STR
+from airflow.models.connection import Connection
+from dagster._core.definitions.utils import normalize_tags
 
-from dagster_airflow.airflow_dag_converter import get_graph_definition_args
+from dagster_airflow.utils import normalized_name
 from dagster_airflow.resources import (
     make_ephemeral_airflow_db_resource as make_ephemeral_airflow_db_resource,
 )
-from dagster_airflow.utils import normalized_name
+from dagster_airflow.airflow_dag_converter import get_graph_definition_args
 
 
 def make_dagster_job_from_airflow_dag(

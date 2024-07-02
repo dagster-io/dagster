@@ -1,12 +1,12 @@
 from typing import Any, Dict, List, Optional
 
-from dagster import AssetKey, Config, In, Nothing, Out, Output, op
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster import In, Out, Config, Output, Nothing, AssetKey, op
 from pydantic import Field
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 
-from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import generate_materializations
+from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL, FivetranResource
 
 
 class SyncConfig(Config):

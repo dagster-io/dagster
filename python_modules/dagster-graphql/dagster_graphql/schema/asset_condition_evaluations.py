@@ -1,25 +1,25 @@
 import enum
 import itertools
-from typing import Optional, Sequence, Union
+from typing import Union, Optional, Sequence
 
 import graphene
+from dagster._core.definitions.partition import PartitionsSubset, PartitionsDefinition
+from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluation,
 )
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
     GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
+from .util import ResolveInfo, non_null_list
 from .asset_key import GrapheneAssetKey
 from .partition_sets import GraphenePartitionKeyRange
-from .util import ResolveInfo, non_null_list
 
 
 class AssetConditionEvaluationStatus(enum.Enum):

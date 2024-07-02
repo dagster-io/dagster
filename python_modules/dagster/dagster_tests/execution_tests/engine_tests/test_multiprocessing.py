@@ -4,34 +4,34 @@ import time
 
 import pytest
 from dagster import (
-    Failure,
-    Field,
     In,
-    JobDefinition,
-    Nothing,
     Out,
+    Field,
     Output,
     String,
-    job,
-    multiprocess_executor,
+    Failure,
+    Nothing,
+    JobDefinition,
     op,
+    job,
     reconstructable,
+    multiprocess_executor,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.metadata import MetadataValue
+from dagster._utils import segfault, safe_tempfile_path
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType
-from dagster._core.execution import execution_result
-from dagster._core.execution.api import execute_job
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.execution import execution_result
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import safe_tempfile_path, segfault
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 
 from .retry_jobs import (
-    assert_expected_failure_behavior,
     get_dynamic_job_op_failure,
+    assert_expected_failure_behavior,
     get_dynamic_job_resource_init_failure,
 )
 

@@ -10,7 +10,7 @@ def iris_data():
 
 from dagster_gcp_pandas import BigQueryPandasIOManager
 
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 defs = Definitions(
     assets=[iris_data],

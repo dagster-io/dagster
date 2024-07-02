@@ -1,7 +1,7 @@
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
-    infer_repository_selector,
     infer_resource_selector,
+    infer_repository_selector,
 )
 
 TOP_LEVEL_RESOURCES_QUERY = """

@@ -1,64 +1,64 @@
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Iterator,
     Mapping,
+    Callable,
+    Iterator,
     Optional,
+    AbstractSet,
     cast,
 )
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental_param, public
-from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_TAG,
-    DataVersion,
-    DataVersionsByPartition,
-)
-from dagster._core.definitions.events import AssetKey, AssetObservation, CoercibleToAssetKey, Output
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import (
-    ArbitraryMetadataMapping,
-    MetadataMapping,
-    normalize_metadata,
-)
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.resource_requirement import (
-    ResourceAddable,
-    ResourceRequirement,
-    SourceAssetIOManagerRequirement,
-    ensure_requirements_satisfied,
-    get_resource_key_conflicts,
-)
-from dagster._core.definitions.result import ObserveResult
-from dagster._core.definitions.utils import (
-    DEFAULT_GROUP_NAME,
-    DEFAULT_IO_MANAGER_KEY,
-    normalize_group_name,
-)
+from dagster._annotations import PublicAttr, public, experimental_param
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidObservationError,
     DagsterInvariantViolationError,
 )
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.utils import (
+    DEFAULT_GROUP_NAME,
+    DEFAULT_IO_MANAGER_KEY,
+    normalize_group_name,
+)
+from dagster._core.definitions.events import Output, AssetKey, AssetObservation, CoercibleToAssetKey
+from dagster._core.definitions.result import ObserveResult
+from dagster._core.definitions.metadata import (
+    MetadataMapping,
+    ArbitraryMetadataMapping,
+    normalize_metadata,
+)
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    DataVersion,
+    DataVersionsByPartition,
+)
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.resource_requirement import (
+    ResourceAddable,
+    ResourceRequirement,
+    SourceAssetIOManagerRequirement,
+    get_resource_key_conflicts,
+    ensure_requirements_satisfied,
+)
 
 from .utils import validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._utils.merger import merge_dicts
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.storage.io_manager import IOManagerDefinition
 
 # Going with this catch-all for the time-being to permit pythonic resources
 SourceAssetObserveFunction: TypeAlias = Callable[..., Any]
@@ -73,11 +73,11 @@ SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION = "__source_asset_observation__"
 def wrap_source_asset_observe_fn_in_op_compute_fn(
     source_asset: "SourceAsset",
 ) -> "DecoratedOpFunction":
+    from dagster._core.execution.context.compute import OpExecutionContext
     from dagster._core.definitions.decorators.op_decorator import (
         DecoratedOpFunction,
         is_context_provided,
     )
-    from dagster._core.execution.context.compute import OpExecutionContext
 
     check.not_none(source_asset.observe_fn, "Must be an observable source asset")
     assert source_asset.observe_fn  # for type checker

@@ -2,32 +2,32 @@ import json
 from datetime import datetime
 from unittest import mock
 
-import kubernetes
 import pytest
+import kubernetes
 from dagster import DagsterRunStatus, job, reconstructable
-from dagster._core.launcher import LaunchRunContext
-from dagster._core.launcher.base import WorkerStatus
-from dagster._core.remote_representation import RepositoryHandle
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._core.test_utils import (
-    create_run_for_test,
-    in_process_test_workspace,
-    instance_for_test,
-)
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.types import ExecuteRunArgs
-from dagster._utils.hosted_user_process import external_job_from_recon_job
-from dagster._utils.merger import merge_dicts
+from kubernetes import __version__ as kubernetes_version
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
     UserDefinedDagsterK8sConfig,
     get_job_name_from_run_id,
 )
-from kubernetes import __version__ as kubernetes_version
+from dagster._grpc.types import ExecuteRunArgs
+from dagster._utils.merger import merge_dicts
+from dagster._core.launcher import LaunchRunContext
+from dagster._core.test_utils import (
+    instance_for_test,
+    create_run_for_test,
+    in_process_test_workspace,
+)
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.launcher.base import WorkerStatus
 from kubernetes.client.models.v1_job import V1Job
+from dagster._utils.hosted_user_process import external_job_from_recon_job
+from dagster._core.remote_representation import RepositoryHandle
 from kubernetes.client.models.v1_job_status import V1JobStatus
 from kubernetes.client.models.v1_object_meta import V1ObjectMeta
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 
 if kubernetes_version >= "13":
     from kubernetes.client.models.core_v1_event import CoreV1Event

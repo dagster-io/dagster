@@ -1,14 +1,14 @@
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     List,
+    Tuple,
+    Union,
+    TypeVar,
+    Callable,
     Optional,
     Sequence,
-    Tuple,
-    TypeVar,
-    Union,
 )
 
 from dagster import (
@@ -17,21 +17,21 @@ from dagster import (
     FreshnessPolicySensorContext,
     freshness_policy_sensor,
 )
-from dagster._annotations import deprecated_param, experimental
-from dagster._core.definitions import GraphDefinition, JobDefinition
+from dagster._annotations import experimental, deprecated_param
+from slack_sdk.web.client import WebClient
+from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.definitions import JobDefinition, GraphDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._utils.warnings import normalize_renamed_param
-from slack_sdk.web.client import WebClient
 
 if TYPE_CHECKING:
     from dagster._core.definitions.selector import (
-        CodeLocationSelector,
         JobSelector,
         RepositorySelector,
+        CodeLocationSelector,
     )
 
 T = TypeVar("T", RunFailureSensorContext, FreshnessPolicySensorContext)

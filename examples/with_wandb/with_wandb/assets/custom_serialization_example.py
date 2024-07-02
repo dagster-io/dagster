@@ -1,11 +1,11 @@
 import numpy
 import onnxruntime as rt
-from dagster import AssetExecutionContext, AssetIn, AssetOut, asset, multi_asset
+from dagster import AssetIn, AssetOut, AssetExecutionContext, asset, multi_asset
 from skl2onnx import convert_sklearn
-from skl2onnx.common.data_types import FloatTensorType
 from sklearn.datasets import load_iris
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from skl2onnx.common.data_types import FloatTensorType
 
 
 @asset(

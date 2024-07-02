@@ -1,20 +1,20 @@
-from typing import Any, Iterator, Mapping, Optional, Union
+from typing import Any, Union, Mapping, Iterator, Optional
 
 from dagster import (
-    AssetExecutionContext,
-    AssetMaterialization,
-    ConfigurableResource,
     MaterializeResult,
     OpExecutionContext,
+    AssetMaterialization,
+    ConfigurableResource,
+    AssetExecutionContext,
     _check as check,
 )
-from dagster._annotations import experimental, public
-from dlt.common.pipeline import LoadInfo
-from dlt.extract.resource import DltResource
 from dlt.extract.source import DltSource
+from dlt.common.pipeline import LoadInfo
+from dagster._annotations import public, experimental
+from dlt.extract.resource import DltResource
 from dlt.pipeline.pipeline import Pipeline
 
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
+from .constants import META_KEY_SOURCE, META_KEY_PIPELINE, META_KEY_TRANSLATOR
 from .translator import DagsterDltTranslator
 
 

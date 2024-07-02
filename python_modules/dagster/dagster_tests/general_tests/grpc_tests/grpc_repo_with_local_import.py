@@ -1,5 +1,5 @@
 import dummy_local_file as dummy_local_file  # type: ignore
-from dagster import job, op, repository
+from dagster import op, job, repository
 
 
 @op

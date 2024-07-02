@@ -1,7 +1,7 @@
 from time import sleep
 from typing import List, Tuple
 
-from dagster import Field, Out, Output, graph, op
+from dagster import Out, Field, Output, op, graph
 from dagster._core.execution.context.compute import OpExecutionContext
 
 

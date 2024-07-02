@@ -1,10 +1,10 @@
 import os
 
-import pyarrow as pa
 import pytest
-from dagster import Out, graph, op
-from dagster_deltalake import DeltaLakePyarrowIOManager, LocalConfig, WriterEngine
+import pyarrow as pa
+from dagster import Out, op, graph
 from deltalake import DeltaTable
+from dagster_deltalake import LocalConfig, WriterEngine, DeltaLakePyarrowIOManager
 
 
 @pytest.fixture

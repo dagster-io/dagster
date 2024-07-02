@@ -1,8 +1,8 @@
 import os
 
-from dagster import ConfigurableIOManager, Definitions, asset
-from pyspark.sql import DataFrame, Row, SparkSession
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+from dagster import Definitions, ConfigurableIOManager, asset
+from pyspark.sql import Row, DataFrame, SparkSession
+from pyspark.sql.types import StringType, StructType, IntegerType, StructField
 
 
 class LocalParquetIOManager(ConfigurableIOManager):

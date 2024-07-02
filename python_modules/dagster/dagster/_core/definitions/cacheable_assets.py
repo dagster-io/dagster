@@ -1,22 +1,22 @@
+import json
 import hashlib
 import inspect
-import json
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Any, List, Union, Mapping, Optional, Sequence, NamedTuple, AbstractSet
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._utils import hash_collection
+from dagster._serdes import whitelist_for_serdes
 from dagster._config.field_utils import compute_fields_hash
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import RawMetadataMapping
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.resource_requirement import ResourceAddable
-from dagster._serdes import whitelist_for_serdes
-from dagster._utils import hash_collection
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 
 @whitelist_for_serdes

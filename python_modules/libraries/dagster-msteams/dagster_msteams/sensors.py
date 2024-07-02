@@ -1,14 +1,14 @@
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Union, Callable, Optional, Sequence
 
 from dagster import DefaultSensorStatus
 from dagster._annotations import deprecated_param
-from dagster._core.definitions import GraphDefinition, JobDefinition
+from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.definitions import JobDefinition, GraphDefinition
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,
     run_failure_sensor,
 )
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._utils.warnings import normalize_renamed_param
 
 from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient

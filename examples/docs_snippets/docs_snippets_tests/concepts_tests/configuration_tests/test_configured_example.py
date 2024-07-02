@@ -1,12 +1,12 @@
 import yaml
 
-from dagster import graph, op
+from dagster import op, graph
 from dagster._utils import file_relative_path
 from docs_snippets.concepts.configuration.config_map_example import unsigned_s3_session
 from docs_snippets.concepts.configuration.configured_example import (
-    east_unsigned_s3_session,
     s3_session,
     west_signed_s3_session,
+    east_unsigned_s3_session,
     west_unsigned_s3_session,
 )
 

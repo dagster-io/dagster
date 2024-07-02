@@ -1,15 +1,15 @@
 # pylint doesn't know about pytest fixtures
 
+import time
 import tempfile
 import threading
-import time
 from collections import OrderedDict
 
-from dagster._core.storage.dagster_run import RunsFilter
-from dagster._core.test_utils import instance_for_test
 from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.dagster_run import RunsFilter
 
-from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
+from .utils import execute_on_thread, start_celery_worker, execute_eagerly_on_celery
 
 
 def test_eager_priority_job():

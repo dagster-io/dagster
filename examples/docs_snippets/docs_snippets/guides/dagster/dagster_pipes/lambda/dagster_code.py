@@ -5,7 +5,7 @@
 import boto3
 from dagster_aws.pipes import PipesLambdaClient
 
-from dagster import AssetExecutionContext, Definitions, asset
+from dagster import Definitions, AssetExecutionContext, asset
 
 
 @asset

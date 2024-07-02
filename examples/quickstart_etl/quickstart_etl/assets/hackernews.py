@@ -1,12 +1,12 @@
-import base64
-import json
 import os
+import json
+import base64
 from io import BytesIO
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
+import matplotlib.pyplot as plt
+from dagster import MetadataValue, MaterializeResult, AssetExecutionContext, asset
 
 
 @asset(group_name="hackernews", compute_kind="HackerNews API")

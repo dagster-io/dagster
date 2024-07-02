@@ -1,7 +1,7 @@
 import tempfile
 
 import pytest
-from dagster import ConfigurableResource, build_sensor_context, sensor
+from dagster import ConfigurableResource, sensor, build_sensor_context
 from dagster._core.instance.ref import InstanceRef
 
 

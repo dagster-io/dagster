@@ -1,11 +1,11 @@
 import graphene
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
-from ...implementation.execution import gen_captured_log_data, gen_compute_logs, gen_events_for_run
+from ..util import ResolveInfo, non_null_list
 from ..external import GrapheneLocationStateChangeSubscription, gen_location_state_changes
 from ..logs.compute_logs import GrapheneCapturedLogs, GrapheneComputeIOType, GrapheneComputeLogFile
 from ..pipelines.subscription import GraphenePipelineRunLogsSubscriptionPayload
-from ..util import ResolveInfo, non_null_list
+from ...implementation.execution import gen_compute_logs, gen_events_for_run, gen_captured_log_data
 
 
 class GrapheneSubscription(graphene.ObjectType):

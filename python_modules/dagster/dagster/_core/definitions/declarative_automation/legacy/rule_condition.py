@@ -1,15 +1,15 @@
 from typing import TYPE_CHECKING, Optional
 
 from dagster._annotations import experimental
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 
 from .asset_condition import AssetCondition
 
 if TYPE_CHECKING:
-    from ..automation_condition import AutomationResult
     from ..automation_context import AutomationContext
+    from ..automation_condition import AutomationResult
 
 
 @experimental

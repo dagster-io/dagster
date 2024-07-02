@@ -1,8 +1,8 @@
 from dagster import (
     AssetKey,
-    AssetMaterialization,
-    DagsterInstance,
     SensorResult,
+    DagsterInstance,
+    AssetMaterialization,
     build_sensor_context,
 )
 from docs_snippets.concepts.assets.external_assets.external_asset_using_sensor import (

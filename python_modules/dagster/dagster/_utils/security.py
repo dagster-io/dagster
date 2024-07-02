@@ -1,5 +1,5 @@
-import hashlib
 import sys
+import hashlib
 from typing import Union
 
 

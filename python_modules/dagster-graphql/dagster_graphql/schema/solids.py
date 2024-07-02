@@ -1,28 +1,28 @@
+from typing import TYPE_CHECKING, List, Union, Mapping, Optional, Sequence
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, Mapping, Optional, Sequence, Union
 
-import dagster._check as check
 import graphene
+import dagster._check as check
+from dagster._core.snap import OpDefSnap, GraphDefSnap, DependencyStructureIndex
+from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
 from dagster._core.definitions import NodeHandle
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
+from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.remote_representation import RepresentedJob
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
 from dagster._core.remote_representation.external import ExternalJob
 from dagster._core.remote_representation.historical import HistoricalJob
-from dagster._core.snap import DependencyStructureIndex, GraphDefSnap, OpDefSnap
-from dagster._core.snap.node import InputMappingSnap, OutputMappingSnap
-from dagster._core.storage.dagster_run import RunsFilter
-from dagster._core.storage.tags import COMPUTE_KIND_TAG, LEGACY_COMPUTE_KIND_TAG
 
-from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
-from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.implementation.asset_checks_loader import AssetChecksLoader
 
-from .config_types import GrapheneConfigTypeField
-from .dagster_types import GrapheneDagsterType, GrapheneDagsterTypeUnion, to_dagster_type
+from .util import ResolveInfo, non_null_list
 from .errors import GrapheneError
 from .metadata import GrapheneMetadataItemDefinition
-from .util import ResolveInfo, non_null_list
+from .config_types import GrapheneConfigTypeField
+from .dagster_types import GrapheneDagsterType, GrapheneDagsterTypeUnion, to_dagster_type
 
 if TYPE_CHECKING:
     from .asset_graph import GrapheneAssetNode

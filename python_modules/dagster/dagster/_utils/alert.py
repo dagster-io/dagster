@@ -1,17 +1,17 @@
-import datetime
-import smtplib
 import ssl
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
+import smtplib
+import datetime
+from typing import TYPE_CHECKING, Union, Callable, Optional, Sequence
 
 from dagster._annotations import deprecated_param
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.sensor_definition import SensorDefinition, DefaultSensorStatus
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.graph_definition import GraphDefinition
-    from dagster._core.definitions.job_definition import JobDefinition
-    from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
     from dagster._core.definitions.selector import JobSelector, RepositorySelector
+    from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.run_status_sensor_definition import RunFailureSensorContext
     from dagster._core.definitions.unresolved_asset_job_definition import (
         UnresolvedAssetJobDefinition,
     )

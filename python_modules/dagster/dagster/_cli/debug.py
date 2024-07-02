@@ -4,9 +4,9 @@ from typing import List, Tuple
 import click
 from tqdm import tqdm
 
-from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
 from dagster._serdes import deserialize_value
+from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.dagster_run import RunsFilter, DagsterRunStatus
 
 from .utils import get_instance_for_cli
 

@@ -1,13 +1,13 @@
-import datetime
 import json
+import datetime
 
 from dagster import StaticPartitionsDefinition, asset
+from dagster._serdes.serdes import serialize_value, deserialize_value
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_daemon_cursor import (
     AssetDaemonCursor,
     backcompat_deserialize_asset_daemon_cursor_str,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._serdes.serdes import deserialize_value, serialize_value
 
 partitions = StaticPartitionsDefinition(partition_keys=["a", "b", "c"])
 

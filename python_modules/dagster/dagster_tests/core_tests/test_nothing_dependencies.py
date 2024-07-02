@@ -2,20 +2,20 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
-    AssetMaterialization,
-    DagsterInvalidDefinitionError,
-    DagsterTypeCheckDidNotPass,
     In,
     Int,
+    Out,
     List,
+    Output,
     Nothing,
     Optional,
-    Out,
-    Output,
-    asset,
-    job,
-    materialize_to_memory,
+    AssetMaterialization,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvalidDefinitionError,
     op,
+    job,
+    asset,
+    materialize_to_memory,
 )
 from dagster._core.execution.api import create_execution_plan
 

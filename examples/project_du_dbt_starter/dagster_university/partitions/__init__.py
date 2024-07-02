@@ -1,7 +1,7 @@
 from dagster import (
     DailyPartitionsDefinition,
-    MonthlyPartitionsDefinition,
     WeeklyPartitionsDefinition,
+    MonthlyPartitionsDefinition,
 )
 
 from ..assets import constants

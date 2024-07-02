@@ -1,7 +1,7 @@
 import enum
 
 import pytest
-from dagster import DagsterInvalidConfigError, Enum, Field, config_mapping, graph, op
+from dagster import Enum, Field, DagsterInvalidConfigError, op, graph, config_mapping
 
 
 def test_empty_config_mapping():

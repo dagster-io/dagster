@@ -1,15 +1,15 @@
 # encoding: utf-8
 
-import contextlib
-import json
 import os
 import re
 import sys
+import json
+import contextlib
 
 import pytest
 from click.testing import CliRunner
 from dagster._check import CheckError
-from dagster._utils import file_relative_path, pushd
+from dagster._utils import pushd, file_relative_path
 from dagstermill.cli import create_notebook, retroactively_scaffold_notebook
 
 EXPECTED_IMPORT_STATEMENT = "from dagstermill.examples.repository import define_example_repository"

@@ -3,8 +3,8 @@ import tempfile
 
 import pytest
 from dagster import AssetExecutionContext, asset, materialize
-from dagster._core.pipes.utils import PipesFileContextInjector
 from dagster_docker.pipes import PipesDockerClient
+from dagster._core.pipes.utils import PipesFileContextInjector
 from dagster_test.test_project import (
     IS_BUILDKITE,
     find_local_test_image,

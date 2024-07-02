@@ -1,65 +1,65 @@
 # ruff: noqa: SLF001
-import datetime
-import json
 import os
 import re
-import sqlite3
+import json
 import time
-from collections import namedtuple
+import sqlite3
+import datetime
 from enum import Enum
 from gzip import GzipFile
-from typing import NamedTuple, Optional, Union
+from typing import Union, Optional, NamedTuple
+from collections import namedtuple
 
 import pytest
 import sqlalchemy as db
 from dagster import (
+    Output,
     AssetKey,
     AssetMaterialization,
-    Output,
-    _check as check,
-    asset,
-    file_relative_path,
-    job,
     op,
-)
-from dagster._cli.debug import DebugRunPayload
-from dagster._core.definitions.data_version import DATA_VERSION_TAG
-from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterInvalidInvocationError
-from dagster._core.events import DagsterEvent, StepMaterializationData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster._core.snap.job_snapshot import JobSnapshot
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.event_log.migration import migrate_event_log_data
-from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster._core.storage.migration.utils import upgrading_instance
-from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.tags import (
-    COMPUTE_KIND_TAG,
-    LEGACY_COMPUTE_KIND_TAG,
-    REPOSITORY_LABEL_TAG,
-)
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import create_snapshot_id
-from dagster._serdes.serdes import (
-    WhitelistMap,
-    _whitelist_for_serdes,
-    deserialize_value,
-    pack_value,
-    serialize_value,
+    job,
+    asset,
+    _check as check,
+    file_relative_path,
 )
 from dagster._time import get_current_timestamp
-from dagster._utils.error import SerializableErrorInfo
+from dagster._serdes import create_snapshot_id
+from dagster._cli.debug import DebugRunPayload
 from dagster._utils.test import copy_directory
+from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.events import DagsterEvent, StepMaterializationData
+from dagster._utils.error import SerializableErrorInfo
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._core.instance import InstanceRef, DagsterInstance
+from dagster._serdes.serdes import (
+    WhitelistMap,
+    pack_value,
+    serialize_value,
+    deserialize_value,
+    _whitelist_for_serdes,
+)
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.tags import (
+    COMPUTE_KIND_TAG,
+    REPOSITORY_LABEL_TAG,
+    LEGACY_COMPUTE_KIND_TAG,
+)
+from dagster._core.snap.job_snapshot import JobSnapshot
+from dagster._core.definitions.events import UNDEFINED_ASSET_KEY_PATH, AssetLineageInfo
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter, DagsterRunStatus
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.scheduler.instigation import InstigatorTick, InstigatorState
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.migration.utils import upgrading_instance
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.event_log.migration import migrate_event_log_data
+from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster._core.remote_representation.external_data import ExternalStaticPartitionsDefinitionData
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
@@ -677,9 +677,9 @@ def test_external_job_origin_instigator_origin():
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
     from dagster._core.remote_representation.origin import (
-        GrpcServerCodeLocationOrigin,
         RemoteInstigatorOrigin,
         RemoteRepositoryOrigin,
+        GrpcServerCodeLocationOrigin,
     )
 
     # serialize from current code, compare against old code
@@ -838,8 +838,8 @@ def test_instigators_table_backcompat():
 def test_jobs_selector_id_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
 
+    from dagster._core.storage.schedules.schema import JobTable, JobTickTable, InstigatorsTable
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
@@ -921,12 +921,12 @@ def test_repo_label_tag_migration():
 
 
 def test_add_bulk_actions_columns():
-    from dagster._core.remote_representation.origin import (
-        GrpcServerCodeLocationOrigin,
-        RemotePartitionSetOrigin,
-        RemoteRepositoryOrigin,
-    )
     from dagster._core.storage.runs.schema import BulkActionsTable
+    from dagster._core.remote_representation.origin import (
+        RemoteRepositoryOrigin,
+        RemotePartitionSetOrigin,
+        GrpcServerCodeLocationOrigin,
+    )
 
     src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
 
@@ -1117,9 +1117,9 @@ def _get_table_row_count(run_storage, table, with_non_null_id=False):
 
 def test_add_primary_keys():
     from dagster._core.storage.runs.schema import (
-        DaemonHeartbeatsTable,
         InstanceInfo,
         KeyValueStoreTable,
+        DaemonHeartbeatsTable,
     )
 
     src_dir = file_relative_path(__file__, "snapshot_1_1_22_pre_primary_key/sqlite")

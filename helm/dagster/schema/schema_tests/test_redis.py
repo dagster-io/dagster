@@ -2,10 +2,10 @@ import base64
 
 import pytest
 from kubernetes.client import models
+from schema.utils.helm_template import HelmTemplate
+from schema.charts.dagster.values import DagsterHelmValues
 from schema.charts.dagster.subschema.redis import Redis
 from schema.charts.dagster.subschema.run_launcher import RunLauncher, RunLauncherType
-from schema.charts.dagster.values import DagsterHelmValues
-from schema.utils.helm_template import HelmTemplate
 
 
 @pytest.fixture(name="template")

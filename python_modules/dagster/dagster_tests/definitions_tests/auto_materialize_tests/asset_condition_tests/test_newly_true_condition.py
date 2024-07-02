@@ -1,10 +1,10 @@
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.declarative_automation import NewlyTrueCondition
-from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset
-from .asset_condition_scenario import AutomationConditionScenarioState
 from .test_dep_condition import get_hardcoded_condition
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_newly_true_condition() -> None:

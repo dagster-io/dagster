@@ -5,23 +5,23 @@ from typing_extensions import Self
 
 import dagster._seven as seven
 from dagster import _check as check
-from dagster._config.config_schema import UserConfigSchema
+from dagster._serdes import ConfigurableClass, deserialize_value
 from dagster._core.errors import (
-    DagsterInvariantViolationError,
     DagsterLaunchFailedError,
     DagsterUserCodeProcessError,
+    DagsterInvariantViolationError,
 )
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster._serdes import ConfigurableClass, deserialize_value
-from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.merger import merge_dicts
+from dagster._core.storage.tags import GRPC_INFO_TAG
+from dagster._serdes.config_class import ConfigurableClassData
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.dagster_run import DagsterRun
 
-from .base import LaunchRunContext, RunLauncher
+from .base import RunLauncher, LaunchRunContext
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance
     from dagster._grpc.client import DagsterGrpcClient
+    from dagster._core.instance import DagsterInstance
 
 
 # note: this class is a top level export, so we defer many imports til use for performance
@@ -57,7 +57,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         instance: "DagsterInstance", run: DagsterRun, grpc_client: "DagsterGrpcClient"
     ):
         # defer for perf
-        from dagster._grpc.types import ExecuteExternalJobArgs, StartRunResult
+        from dagster._grpc.types import StartRunResult, ExecuteExternalJobArgs
 
         instance.add_run_tags(
             run.run_id,
@@ -150,7 +150,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
 
     def terminate(self, run_id):
         # defer for perf
-        from dagster._grpc.types import CancelExecutionRequest, CancelExecutionResult
+        from dagster._grpc.types import CancelExecutionResult, CancelExecutionRequest
 
         check.str_param(run_id, "run_id")
         if not self.has_instance:

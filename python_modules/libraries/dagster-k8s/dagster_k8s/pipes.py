@@ -1,43 +1,43 @@
 import os
 import random
 import string
-from contextlib import contextmanager
+from typing import Any, Set, Union, Mapping, Iterator, Optional, Sequence
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence, Set, Union
+from contextlib import contextmanager
 
 import kubernetes
 from dagster import (
     OpExecutionContext,
     _check as check,
 )
-from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-    PipesParams,
-)
-from dagster._core.pipes.context import PipesMessageHandler
-from dagster._core.pipes.utils import (
-    PipesEnvContextInjector,
-    extract_message_or_forward_to_stdout,
-    open_pipes_session,
-)
 from dagster_pipes import (
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
-    PipesDefaultMessageWriter,
     PipesExtras,
+    PipesDefaultMessageWriter,
     encode_env_var,
 )
+from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.pipes.utils import (
+    PipesEnvContextInjector,
+    open_pipes_session,
+    extract_message_or_forward_to_stdout,
+)
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesParams,
+    PipesMessageReader,
+    PipesContextInjector,
+    PipesClientCompletedInvocation,
+)
+from dagster._core.pipes.context import PipesMessageHandler
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 
-from dagster_k8s.client import DEFAULT_WAIT_BETWEEN_ATTEMPTS
 from dagster_k8s.utils import get_common_labels
+from dagster_k8s.client import DEFAULT_WAIT_BETWEEN_ATTEMPTS
 
-from .client import DagsterKubernetesClient, WaitForPodState
+from .client import WaitForPodState, DagsterKubernetesClient
 from .models import k8s_model_from_dict, k8s_snake_case_dict
 
 

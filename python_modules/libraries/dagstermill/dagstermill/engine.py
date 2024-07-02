@@ -4,9 +4,9 @@ from papermill.log import logger
 from .compat import ExecutionError, is_papermill_2
 
 if is_papermill_2():
-    from papermill.clientwrap import PapermillNotebookClient
+    from papermill.utils import remove_args, merge_kwargs
     from papermill.engines import NBClientEngine
-    from papermill.utils import merge_kwargs, remove_args
+    from papermill.clientwrap import PapermillNotebookClient
 
     class DagstermillNotebookClient(PapermillNotebookClient):
         def papermill_execute_cells(self):

@@ -1,15 +1,15 @@
-import json
 import os
+import json
 import sqlite3
 import tempfile
 
-from dagster import EnvVar, asset, file_relative_path, materialize
+from dagster import EnvVar, asset, materialize, file_relative_path
 from dagster._core.test_utils import environ
 from dagster_embedded_elt.sling import SlingMode, SlingResource
 from dagster_embedded_elt.sling.resources import (
-    SlingConnectionResource,
     SlingSourceConnection,
     SlingTargetConnection,
+    SlingConnectionResource,
 )
 
 

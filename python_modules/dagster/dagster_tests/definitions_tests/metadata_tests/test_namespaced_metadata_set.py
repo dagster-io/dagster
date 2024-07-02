@@ -1,10 +1,10 @@
-from typing import Optional, Union
+from typing import Union, Optional
 
 import pytest
-from dagster import FloatMetadataValue, IntMetadataValue, UrlMetadataValue
+from dagster import IntMetadataValue, UrlMetadataValue, FloatMetadataValue
+from pydantic import ValidationError
 from dagster._check import CheckError
 from dagster._core.definitions.metadata import NamespacedMetadataSet
-from pydantic import ValidationError
 
 
 def test_extract_primitive_coercion():

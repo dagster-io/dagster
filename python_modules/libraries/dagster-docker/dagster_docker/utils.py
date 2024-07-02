@@ -3,8 +3,8 @@ from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._utils.merger import merge_dicts
 from docker_image import reference
+from dagster._utils.merger import merge_dicts
 
 from .container_context import DOCKER_CONTAINER_CONTEXT_SCHEMA
 

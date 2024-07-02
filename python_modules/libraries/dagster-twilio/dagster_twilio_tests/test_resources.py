@@ -2,8 +2,8 @@ import os
 
 import pytest
 from dagster import op
-from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_twilio import TwilioResource, twilio_resource
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from twilio.base.exceptions import TwilioRestException
 
 

@@ -1,74 +1,74 @@
-import hashlib
 import os
+import hashlib
 from typing import Dict
 
 import pytest
 from dagster import (
-    AssetCheckKey,
-    AssetCheckSpec,
+    In,
+    Out,
+    Field,
+    Output,
+    GraphIn,
+    Nothing,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
-    AssetSpec,
-    DagsterEventType,
-    DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    DataVersionsByPartition,
-    Definitions,
-    DependencyDefinition,
-    Field,
-    GraphIn,
     GraphOut,
-    HourlyPartitionsDefinition,
-    In,
-    InputContext,
+    AssetSpec,
     IOManager,
-    Nothing,
+    Definitions,
+    InputContext,
+    AssetCheckKey,
     ObserveResult,
-    Out,
-    Output,
     OutputContext,
+    AssetCheckSpec,
+    AssetsDefinition,
+    DagsterEventType,
     ResourceDefinition,
+    DependencyDefinition,
+    DataVersionsByPartition,
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
-    build_reconstructable_job,
-    define_asset_job,
-    graph,
-    io_manager,
-    materialize_to_memory,
-    multi_asset,
-    multi_observable_source_asset,
-    observable_source_asset,
+    DagsterInvalidDefinitionError,
     op,
+    graph,
     resource,
+    io_manager,
+    multi_asset,
     with_resources,
+    define_asset_job,
+    materialize_to_memory,
+    observable_source_asset,
+    build_reconstructable_job,
+    multi_observable_source_asset,
 )
+from dagster._utils import safe_tempfile_path
 from dagster._config import StringSource
-from dagster._core.definitions import AssetIn, SourceAsset, asset
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_job import get_base_asset_jobs
-from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
-from dagster._core.definitions.data_version import DataVersion
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
-from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap import DependencyStructureIndex
+from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.test_utils import (
+    ignore_warning,
+    instance_for_test,
+    create_test_asset_job,
+    raise_exception_on_warnings,
+)
+from dagster._core.definitions import AssetIn, SourceAsset, asset
+from dagster._core.execution.api import execute_run_iterator
 from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_graph_def,
 )
-from dagster._core.test_utils import (
-    create_test_asset_job,
-    ignore_warning,
-    instance_for_test,
-    raise_exception_on_warnings,
-)
-from dagster._utils import safe_tempfile_path
-from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.asset_job import get_base_asset_jobs
+from dagster._core.definitions.dependency import NodeHandle, NodeInvocation
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.data_version import DataVersion
+from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
+from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.load_assets_from_modules import prefix_assets
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 
 
 @pytest.fixture(autouse=True)

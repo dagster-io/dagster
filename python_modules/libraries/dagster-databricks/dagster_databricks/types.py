@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Optional, NamedTuple
 
 from databricks.sdk.service import jobs
 

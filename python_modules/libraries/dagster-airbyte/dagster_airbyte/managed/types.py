@@ -1,11 +1,11 @@
 import json
 from abc import ABC
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Dict, List, Union, Mapping, Optional
 
 import dagster._check as check
-from dagster._annotations import deprecated, public
 from typing_extensions import Self
+from dagster._annotations import public, deprecated
 
 MANAGED_ELEMENTS_DEPRECATION_MSG = (
     "Dagster is deprecating support for ingestion-as-code."

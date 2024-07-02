@@ -5,8 +5,8 @@
 #
 # See: https://github.com/python/mypy/issues/7281
 
+from typing import Any, Mapping, Optional, NamedTuple, AbstractSet
 from collections import namedtuple
-from typing import AbstractSet, Any, Mapping, NamedTuple, Optional
 
 import dagster._check as check
 from dagster._core.errors import DagsterUnknownResourceError

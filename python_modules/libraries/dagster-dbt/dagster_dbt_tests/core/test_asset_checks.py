@@ -1,26 +1,26 @@
 import os
-from typing import Any, Callable, Dict, List, Optional, Set, cast
+from typing import Any, Set, Dict, List, Callable, Optional, cast
 
 import pytest
 from dagster import (
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
-    AssetExecutionContext,
     AssetKey,
-    AssetsDefinition,
+    AssetCheckKey,
+    AssetCheckSpec,
     AssetSelection,
+    AssetCheckResult,
+    AssetsDefinition,
+    AssetCheckSeverity,
+    AssetExecutionContext,
     ExecuteInProcessResult,
     asset_check,
     materialize,
 )
-from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
+from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
 
-from ..dbt_projects import test_asset_checks_path, test_dbt_alias_path
+from ..dbt_projects import test_dbt_alias_path, test_asset_checks_path
 
 pytest.importorskip("dbt.version", "1.6")
 

@@ -1,5 +1,5 @@
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._core.workspace.permissions import PermissionResult
 
 

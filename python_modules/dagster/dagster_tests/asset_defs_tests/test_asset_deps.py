@@ -2,19 +2,19 @@ import pytest
 from dagster import (
     AssetKey,
     AssetOut,
-    FilesystemIOManager,
     IOManager,
     SourceAsset,
+    FilesystemIOManager,
     TimeWindowPartitionMapping,
     asset,
     materialize,
     multi_asset,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind
+from dagster._core.definitions.asset_dep import AssetDep
+from dagster._core.definitions.asset_spec import AssetSpec
 
 ### Tests for AssetDep
 

@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Dict
 
 import pytest
-from dagster import Config, RunConfig, config_mapping, graph, job, op
+from dagster import Config, RunConfig, op, job, graph, config_mapping
 from dagster._check import CheckError
 
 

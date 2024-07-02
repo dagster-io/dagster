@@ -1,9 +1,9 @@
 from typing import Any, Dict
 
 import wandb
-from dagster import Field, InitResourceContext, String, StringSource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster import Field, String, StringSource, InitResourceContext, resource
 from wandb.sdk.internal.internal_api import Api
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 WANDB_CLOUD_HOST: str = "https://api.wandb.ai"
 

@@ -1,52 +1,52 @@
 import operator
-from functools import reduce
+from typing import Tuple, Union, Iterable, AbstractSet
 from inspect import isclass
-from typing import AbstractSet, Iterable, Tuple, Union
+from functools import reduce
 
 import pytest
 from dagster import (
     AssetIn,
     AssetOut,
     AssetSpec,
+    SourceAsset,
+    MultiPartitionMapping,
+    IdentityPartitionMapping,
     DailyPartitionsDefinition,
     DimensionPartitionMapping,
-    IdentityPartitionMapping,
-    MultiPartitionMapping,
     MultiPartitionsDefinition,
-    SourceAsset,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset_check,
     multi_asset,
 )
+from pydantic import ValidationError
+from dagster._serdes import deserialize_value
+from typing_extensions import TypeAlias
+from dagster._serdes.serdes import _WHITELIST_MAP
 from dagster._core.definitions import AssetSelection, asset
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_selection import (
-    AllAssetCheckSelection,
     AllSelection,
-    AndAssetSelection,
-    AssetCheckKeysSelection,
-    AssetChecksForAssetKeysSelection,
-    DownstreamAssetSelection,
-    GroupsAssetSelection,
-    KeyPrefixesAssetSelection,
-    KeysAssetSelection,
     OrAssetSelection,
-    ParentSourcesAssetSelection,
-    RequiredNeighborsAssetSelection,
+    AndAssetSelection,
+    KeysAssetSelection,
     RootsAssetSelection,
     SinksAssetSelection,
+    GroupsAssetSelection,
+    AllAssetCheckSelection,
     SubtractAssetSelection,
     UpstreamAssetSelection,
+    AssetCheckKeysSelection,
+    DownstreamAssetSelection,
+    KeyPrefixesAssetSelection,
+    ParentSourcesAssetSelection,
+    RequiredNeighborsAssetSelection,
+    AssetChecksForAssetKeysSelection,
 )
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.events import AssetKey
-from dagster._serdes import deserialize_value
-from dagster._serdes.serdes import _WHITELIST_MAP
-from pydantic import ValidationError
-from typing_extensions import TypeAlias
 
 earth = SourceAsset(["celestial", "earth"], group_name="planets")
 

@@ -1,5 +1,5 @@
-from pathlib import Path
 from typing import List, Sequence
+from pathlib import Path
 
 import lkml
 import yaml

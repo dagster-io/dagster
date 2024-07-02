@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import setup, find_packages
 
 setup(
     name="assets_modern_data_stack",

@@ -1,4 +1,4 @@
-from dagster import configured, resource
+from dagster import resource, configured
 
 
 @resource(config_schema={"region": str, "use_unsigned_session": bool})

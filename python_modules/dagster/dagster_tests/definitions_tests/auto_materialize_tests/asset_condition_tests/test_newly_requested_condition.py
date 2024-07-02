@@ -1,10 +1,10 @@
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.declarative_automation import NewlyRequestedCondition
 from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset
-from .asset_condition_scenario import AutomationConditionScenarioState
 from .test_dep_condition import get_hardcoded_condition
+from .asset_condition_scenario import AutomationConditionScenarioState
 
 
 def test_requested_previous_tick() -> None:

@@ -1,42 +1,42 @@
 from uuid import uuid4
 
 import pytest
-from azure.storage.filedatalake import DataLakeLeaseClient
+from upath import UPath
 from dagster import (
-    AssetIn,
-    AssetKey,
-    DagsterInstance,
-    DagsterRun,
-    DynamicOut,
-    DynamicOutput,
-    GraphOut,
     In,
     Int,
     Out,
+    AssetIn,
+    AssetKey,
+    GraphOut,
+    DagsterRun,
+    DynamicOut,
+    DynamicOutput,
+    DagsterInstance,
+    op,
     asset,
+    graph,
+    resource,
     build_input_context,
     build_output_context,
-    graph,
-    op,
-    resource,
 )
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster_azure.blob import create_blob_client
 from dagster._core.utils import make_new_run_id
 from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster._core.events import DagsterEventType
+from azure.storage.filedatalake import DataLakeLeaseClient
+from dagster._core.execution.api import execute_plan, create_execution_plan
 from dagster_azure.adls2.resources import adls2_resource
-from dagster_azure.blob import create_blob_client
-from upath import UPath
+from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster_azure.adls2.fake_adls2_resource import fake_adls2_resource
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 
 def fake_io_manager_factory(io_manager):

@@ -1,14 +1,14 @@
 from typing import Iterator
 
 import pytest
-from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external import ExternalJob
-from dagster._core.run_coordinator import SubmitRunContext
-from dagster._core.run_coordinator.base import RunCoordinator
-from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster._utils.merger import merge_dicts
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test, create_run_for_test
+from dagster._core.run_coordinator import SubmitRunContext
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.run_coordinator.base import RunCoordinator
+from dagster._core.remote_representation.external import ExternalJob
+from dagster._core.run_coordinator.default_run_coordinator import DefaultRunCoordinator
 
 from dagster_tests.api_tests.utils import get_bar_workspace
 

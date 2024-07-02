@@ -1,12 +1,12 @@
 import os
 import subprocess
 
-import pytest
 import yaml
+import pytest
 from dagster_test.fixtures.docker_compose import (
+    network_name_from_yml,
     connect_container_to_network,
     disconnect_container_from_network,
-    network_name_from_yml,
 )
 
 pytest_plugins = ["dagster_test.fixtures"]

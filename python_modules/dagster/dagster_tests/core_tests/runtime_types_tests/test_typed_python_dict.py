@@ -1,5 +1,5 @@
 import pytest
-from dagster import DagsterTypeCheckDidNotPass, Dict, In, Out, op
+from dagster import In, Out, Dict, DagsterTypeCheckDidNotPass, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

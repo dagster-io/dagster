@@ -1,5 +1,5 @@
 import copy
-from typing import Any, Dict, Mapping, TypeVar, Union, cast
+from typing import Any, Dict, Union, Mapping, TypeVar, cast
 
 import dagster._check as check
 

@@ -1,20 +1,20 @@
 from typing import Optional, Sequence
 
 from dagster import (
+    Definitions,
+    TableSchema,
     AssetSelection,
     DagsterInstance,
-    Definitions,
-    ExecuteInProcessResult,
     MaterializeResult,
-    TableSchema,
+    ExecuteInProcessResult,
     asset,
-    build_column_schema_change_checks,
-    define_asset_job,
     materialize,
+    define_asset_job,
+    build_column_schema_change_checks,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.metadata import TableMetadataSet
 from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 
 
 def execute_checks(asset_checks, instance=None) -> ExecuteInProcessResult:

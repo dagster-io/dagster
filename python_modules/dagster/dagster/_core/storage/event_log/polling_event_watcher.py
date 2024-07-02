@@ -1,5 +1,5 @@
 import threading
-from typing import Callable, List, MutableMapping, NamedTuple, Optional
+from typing import List, Callable, Optional, NamedTuple, MutableMapping
 
 import dagster._check as check
 from dagster._core.events.log import EventLogEntry

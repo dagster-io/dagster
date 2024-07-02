@@ -2,15 +2,15 @@ import datetime
 from typing import Any, Dict
 
 import pytest
+from pytest import fixture
 from dagster import (
-    DagsterTypeCheckDidNotPass,
     DailyPartitionsDefinition,
+    DagsterTypeCheckDidNotPass,
     HourlyPartitionsDefinition,
     asset,
     materialize,
 )
 from dagster._core.instance_for_test import instance_for_test
-from pytest import fixture
 
 
 @fixture

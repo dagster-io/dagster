@@ -60,7 +60,7 @@ source_table_freshness_checks = build_last_update_freshness_checks(
 # end_freshness_checks_marker
 
 # start_defs_marker
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 defs = Definitions(
     assets=[source_tables],

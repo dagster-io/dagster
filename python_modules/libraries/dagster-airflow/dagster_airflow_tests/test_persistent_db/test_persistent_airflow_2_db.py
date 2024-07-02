@@ -1,27 +1,27 @@
-import datetime
 import os
+import datetime
 import tempfile
 from typing import List
 
-import pytest
 import pytz
-from _pytest.mark.structures import ParameterSet
+import pytest
 from airflow import __version__ as airflow_version
-from airflow.models import Pool, Variable
 from dagster import (
-    DagsterInstance,
     JobDefinition,
+    DagsterInstance,
     ReexecutionOptions,
     RepositoryDefinition,
-    build_reconstructable_job,
     execute_job,
+    build_reconstructable_job,
 )
-from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from airflow.models import Pool, Variable
 from dagster_airflow import (
+    make_persistent_airflow_db_resource,
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
-    make_persistent_airflow_db_resource,
 )
+from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR
+from _pytest.mark.structures import ParameterSet
 
 from dagster_airflow_tests.marks import requires_persistent_db
 

@@ -1,22 +1,22 @@
 from abc import abstractmethod
+from typing import Type, Optional, Sequence, Generator, cast
 from contextlib import contextmanager
-from typing import Generator, Optional, Sequence, Type, cast
 
-from dagster import IOManagerDefinition, OutputContext, io_manager
+from dagster import OutputContext, IOManagerDefinition, io_manager
+from pydantic import Field
+from google.cloud import bigquery
 from dagster._annotations import experimental
+from google.api_core.exceptions import NotFound
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.db_io_manager import (
     DbClient,
+    TableSlice,
+    TimeWindow,
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
-    TableSlice,
-    TimeWindow,
 )
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
-from google.api_core.exceptions import NotFound
-from google.cloud import bigquery
-from pydantic import Field
 
 from .utils import setup_gcp_creds
 

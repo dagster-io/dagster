@@ -1,65 +1,65 @@
 from abc import abstractmethod
-from contextlib import ExitStack
 from typing import (
-    AbstractSet,
     Any,
+    Set,
     Dict,
     List,
+    Union,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from contextlib import ExitStack
 
 import dagster._check as check
+from dagster._core.errors import (
+    DagsterInvalidPropertyError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
+from dagster._utils.merger import merge_dicts
+from dagster._core.instance import DagsterInstance
+from dagster._utils.warnings import deprecation_warning
+from dagster._core.log_manager import DagsterLogManager
+from dagster._utils.forked_pdb import ForkedPdb
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.composition import PendingNodeInvocation
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
-    AssetMaterialization,
+    UserEvent,
     AssetObservation,
     ExpectationResult,
-    UserEvent,
+    AssetMaterialization,
 )
-from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.types.dagster_type import DagsterType
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.dependency import Node, NodeHandle
+from dagster._core.definitions.composition import PendingNodeInvocation
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.hook_definition import HookDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.resource_definition import (
+    Resources,
     IContainsGenerator,
     ResourceDefinition,
-    Resources,
     ScopedResourcesBuilder,
 )
 from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
-from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.definitions.repository_definition import RepositoryDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     has_one_dimension_time_window_partitioning,
 )
-from dagster._core.errors import (
-    DagsterInvalidInvocationError,
-    DagsterInvalidPropertyError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.execution.build_resources import build_resources, wrap_resources_for_execution
-from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.forked_pdb import ForkedPdb
-from dagster._utils.merger import merge_dicts
-from dagster._utils.warnings import deprecation_warning
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
-from .compute import AssetExecutionContext, OpExecutionContext
-from .system import StepExecutionContext, TypeCheckContext
+from .system import TypeCheckContext, StepExecutionContext
+from .compute import OpExecutionContext, AssetExecutionContext
 
 
 def _property_msg(prop_name: str, method_name: str) -> str:

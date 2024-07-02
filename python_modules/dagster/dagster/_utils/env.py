@@ -1,6 +1,6 @@
 import os
+from typing import Mapping, Iterator
 from contextlib import contextmanager
-from typing import Iterator, Mapping
 
 
 @contextmanager

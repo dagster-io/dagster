@@ -1,15 +1,15 @@
-import datetime
 import logging
+import datetime
 from typing import (
-    AbstractSet,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
     Tuple,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 from unittest.mock import MagicMock, patch
@@ -18,19 +18,19 @@ import mock
 import pytest
 from dagster import (
     AssetIn,
+    Nothing,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
-    DagsterInstance,
-    DagsterRunStatus,
-    DailyPartitionsDefinition,
-    Definitions,
-    HourlyPartitionsDefinition,
-    LastPartitionMapping,
-    Nothing,
-    PartitionKeyRange,
-    PartitionsDefinition,
     RunRequest,
+    Definitions,
+    DagsterInstance,
+    AssetsDefinition,
+    DagsterRunStatus,
+    PartitionKeyRange,
+    LastPartitionMapping,
+    PartitionsDefinition,
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
@@ -38,55 +38,55 @@ from dagster import (
     materialize,
     multi_asset,
 )
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._time import create_datetime, get_current_datetime, get_current_timestamp
+from dagster._utils import Counter, traced_counter
+from dagster._serdes import serialize_value, deserialize_value
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.test_utils import environ, freeze_time, instance_for_test
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.storage.dagster_run import RunsFilter
 from dagster._core.definitions.selector import (
+    PartitionsSelector,
     PartitionRangeSelector,
     PartitionsByAssetSelector,
-    PartitionsSelector,
 )
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
-    AssetBackfillIterationResult,
     AssetBackfillStatus,
+    AssetBackfillIterationResult,
     execute_asset_backfill_iteration_inner,
     get_canceling_asset_backfill_iteration_data,
 )
-from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
-from dagster._core.storage.dagster_run import RunsFilter
-from dagster._core.storage.tags import (
-    ASSET_PARTITION_RANGE_END_TAG,
-    ASSET_PARTITION_RANGE_START_TAG,
-    BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
-)
-from dagster._core.test_utils import environ, freeze_time, instance_for_test
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime, get_current_datetime, get_current_timestamp
-from dagster._utils import Counter, traced_counter
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.remote_representation.external_data import external_asset_nodes_from_defs
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import do_run
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.asset_graphs import (
-    multipartitioned_self_dependency,
     one_asset_self_dependency,
-    root_assets_different_partitions_same_downstream,
+    multipartitioned_self_dependency,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
+    root_assets_different_partitions_same_downstream,
 )
 from dagster_tests.definitions_tests.auto_materialize_tests.scenarios.partition_scenarios import (
-    hourly_to_daily_partitions,
-    non_partitioned_after_partitioned,
+    two_dynamic_assets,
     one_asset_one_partition,
     one_asset_two_partitions,
+    hourly_to_daily_partitions,
+    non_partitioned_after_partitioned,
     partitioned_after_non_partitioned,
+    unpartitioned_after_dynamic_asset,
     two_assets_in_sequence_one_partition,
     two_assets_in_sequence_two_partitions,
-    two_dynamic_assets,
-    unpartitioned_after_dynamic_asset,
 )
 
 

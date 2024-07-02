@@ -1,12 +1,12 @@
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Union, Callable, Optional, cast, overload
 
 import dagster._check as check
 from dagster._annotations import public
 from dagster._core.errors import DagsterInvalidInvocationError
 
-from ..decorator_utils import get_function_params
 from .config import is_callable_valid_config_arg
 from .configurable import AnonymousConfigurableDefinition
+from ..decorator_utils import get_function_params
 from .definition_config_schema import (
     CoercableToConfigSchema,
     convert_user_facing_definition_config_schema,

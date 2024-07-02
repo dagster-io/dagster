@@ -1,4 +1,4 @@
-from dagster import asset, define_asset_job, graph, job, op, to_job
+from dagster import op, job, asset, graph, to_job, define_asset_job
 
 # start_asset_tags
 

@@ -1,6 +1,6 @@
-import functools
 import glob
-from typing import Any, Dict, List, Mapping, Sequence, Type, cast
+import functools
+from typing import Any, Dict, List, Type, Mapping, Sequence, cast
 
 import yaml
 
@@ -8,8 +8,8 @@ import dagster._check as check
 
 from .merger import deep_merge_dicts
 from .source_position import (
-    KeyPathSegment,
     LineCol,
+    KeyPathSegment,
     SourcePosition,
     SourcePositionTree,
     ValueAndSourcePositionTree,

@@ -1,4 +1,4 @@
-from dagster import job, op, repository
+from dagster import op, job, repository
 
 
 @op

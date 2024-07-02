@@ -1,7 +1,7 @@
 import re
 
 import pytest
-from dagster import AssetCheckSpec, AssetKey, SourceAsset, asset
+from dagster import AssetKey, SourceAsset, AssetCheckSpec, asset
 
 
 def test_coerce_asset_key():

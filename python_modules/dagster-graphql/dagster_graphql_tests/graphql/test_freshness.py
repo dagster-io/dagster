@@ -2,15 +2,15 @@ from datetime import datetime, timezone
 
 from dagster import (
     Definitions,
-    FreshnessPolicy,
     ObserveResult,
+    FreshnessPolicy,
     RepositoryDefinition,
     observable_source_asset,
 )
-from dagster._core.definitions.data_time import DATA_TIME_METADATA_KEY
-from dagster._core.definitions.observe import observe
 from dagster._core.test_utils import instance_for_test
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, define_out_of_process_context
+from dagster._core.definitions.observe import observe
+from dagster._core.definitions.data_time import DATA_TIME_METADATA_KEY
 
 GET_FRESHNESS_INFO = """
     query AssetNodeQuery($assetKeys: [AssetKeyInput!]!) {

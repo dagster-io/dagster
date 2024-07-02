@@ -6,8 +6,8 @@ from dagster._core.execution.retries import RetryMode
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
-    from dagster._core.execution.context.system import PlanOrchestrationContext
     from dagster._core.execution.plan.plan import ExecutionPlan
+    from dagster._core.execution.context.system import PlanOrchestrationContext
 
 
 class Executor(ABC):

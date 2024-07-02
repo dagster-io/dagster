@@ -1,6 +1,6 @@
 import os
-from decimal import Decimal
 from typing import Any, Dict, cast
+from decimal import Decimal
 
 import mock
 import pytest
@@ -9,16 +9,16 @@ from dagster import (
     _check as check,
     materialize,
 )
-from dagster._core.definitions.events import AssetMaterialization, Output
-from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
-from dagster._core.definitions.metadata.table import TableRecord
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import (
-    DbtCliInvocation,
     DbtCliResource,
+    DbtCliInvocation,
     DbtDagsterEventType,
     _get_dbt_resource_props_from_event,
 )
+from dagster._core.definitions.events import Output, AssetMaterialization
+from dagster._core.definitions.metadata.table import TableRecord
+from dagster._core.definitions.metadata.metadata_value import MetadataValue, TableMetadataValue
 
 from ..conftest import _create_dbt_invocation
 from ..dbt_projects import test_jaffle_shop_path

@@ -1,14 +1,14 @@
 import pytest
 from dagster import (
-    DagsterInvalidConfigError,
-    DependencyDefinition,
-    GraphDefinition,
     In,
-    JobDefinition,
-    List,
-    NodeInvocation,
     Out,
+    List,
     String,
+    JobDefinition,
+    NodeInvocation,
+    GraphDefinition,
+    DependencyDefinition,
+    DagsterInvalidConfigError,
     op,
 )
 

@@ -1,98 +1,98 @@
-import datetime
-import logging
+import time
 import random
 import string
+import logging
+import datetime
 import threading
-import time
-from concurrent.futures import ThreadPoolExecutor
-from contextlib import ExitStack
 from typing import Any
 from unittest import mock
+from contextlib import ExitStack
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    AssetSelection,
-    AutoMaterializePolicy,
-    CodeLocationSelector,
-    DagsterInstance,
-    DagsterRunStatus,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     Field,
-    HourlyPartitionsDefinition,
-    JobSelector,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Output,
-    RepositorySelector,
+    AssetKey,
+    JobSelector,
     SourceAsset,
+    AssetSelection,
+    DagsterInstance,
+    AssetObservation,
+    DagsterRunStatus,
+    MultiPartitionKey,
+    RepositorySelector,
+    AssetMaterialization,
+    CodeLocationSelector,
+    AutoMaterializePolicy,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     WeeklyPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
-    asset_check,
-    define_asset_job,
-    load_asset_checks_from_current_module,
-    load_assets_from_current_module,
-    materialize,
-    multi_asset_sensor,
     repository,
+    asset_check,
+    materialize,
+    define_asset_job,
+    multi_asset_sensor,
     run_failure_sensor,
+    load_assets_from_current_module,
+    load_asset_checks_from_current_module,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
-)
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.decorators.sensor_decorator import asset_sensor, sensor
-from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.definitions.multi_asset_sensor_definition import (
-    MultiAssetSensorEvaluationContext,
-)
-from dagster._core.definitions.run_request import InstigatorType, SensorResult
-from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster._core.definitions.sensor_definition import (
-    DefaultSensorStatus,
-    RunRequest,
-    SensorEvaluationContext,
-    SensorType,
-    SkipReason,
-)
+from dagster._time import create_datetime, get_current_datetime
+from dagster._daemon import get_default_daemon_logger
 from dagster._core.events import DagsterEventType
+from dagster._daemon.daemon import SpanMarker
+from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster._core.test_utils import (
+    BlockingThreadPoolExecutor,
+    freeze_time,
+    wait_for_futures,
+    instance_for_test,
+    create_test_daemon_workspace_context,
+)
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.remote_representation import (
     ExternalSensor,
     RemoteInstigatorOrigin,
     RemoteRepositoryOrigin,
 )
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
-    DynamicPartitionsRequestResult,
+    TickStatus,
     InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
-    TickStatus,
+    DynamicPartitionsRequestResult,
 )
-from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._core.test_utils import (
-    BlockingThreadPoolExecutor,
-    create_test_daemon_workspace_context,
-    freeze_time,
-    instance_for_test,
-    wait_for_futures,
-)
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.daemon import SpanMarker
-from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
-from dagster._time import create_datetime, get_current_datetime
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.run_request import SensorResult, InstigatorType
 from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.definitions.sensor_definition import (
+    RunRequest,
+    SensorType,
+    SkipReason,
+    DefaultSensorStatus,
+    SensorEvaluationContext,
+)
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.definitions.decorators.sensor_decorator import sensor, asset_sensor
+from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
+from dagster._core.definitions.multi_asset_sensor_definition import (
+    MultiAssetSensorEvaluationContext,
+)
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
+)
 
 from .conftest import create_workspace_load_target
 

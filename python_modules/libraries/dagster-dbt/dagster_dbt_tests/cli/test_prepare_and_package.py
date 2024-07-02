@@ -1,17 +1,17 @@
-import importlib
 import os
-import shutil
 import sys
-from pathlib import Path
+import shutil
+import importlib
 from typing import cast
+from pathlib import Path
 
-import pytest
 import yaml
+import pytest
 from dagster import AssetsDefinition, materialize
-from dagster_dbt.cli.app import app
-from dagster_dbt.core.resources_v2 import DbtCliResource
-from dagster_dbt.dbt_project import DbtProject
 from typer.testing import CliRunner
+from dagster_dbt.cli.app import app
+from dagster_dbt.dbt_project import DbtProject
+from dagster_dbt.core.resources_v2 import DbtCliResource
 
 runner = CliRunner()
 

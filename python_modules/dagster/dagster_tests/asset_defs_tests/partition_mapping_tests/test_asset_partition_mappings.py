@@ -1,55 +1,55 @@
 import inspect
-from datetime import datetime, timedelta
 from typing import Optional
+from datetime import datetime, timedelta
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
-    AssetExecutionContext,
     AssetIn,
-    AssetMaterialization,
-    AssetsDefinition,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    DailyPartitionsDefinition,
-    IdentityPartitionMapping,
     IOManager,
-    IOManagerDefinition,
-    LastPartitionMapping,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    MultiToSingleDimensionPartitionMapping,
-    PartitionsDefinition,
     SourceAsset,
-    SpecificPartitionsPartitionMapping,
+    AssetsDefinition,
+    MultiPartitionKey,
+    AllPartitionMapping,
+    IOManagerDefinition,
+    AssetMaterialization,
+    LastPartitionMapping,
+    PartitionsDefinition,
+    AssetExecutionContext,
+    IdentityPartitionMapping,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
-    asset,
-    define_asset_job,
-    graph,
-    instance_for_test,
-    materialize,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
+    SpecificPartitionsPartitionMapping,
+    MultiToSingleDimensionPartitionMapping,
     op,
+    asset,
+    graph,
+    materialize,
+    define_asset_job,
+    instance_for_test,
 )
-from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.test_utils import assert_namedtuple_lists_equal
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.partition import (
+    PartitionsSubset,
     DefaultPartitionsSubset,
     DynamicPartitionsDefinition,
-    PartitionsSubset,
 )
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     UpstreamPartitionsResult,
     get_builtin_partition_mapping_types,
 )
-from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.test_utils import assert_namedtuple_lists_equal
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 
 
 def test_access_partition_keys_from_context_non_identity_partition_mapping():

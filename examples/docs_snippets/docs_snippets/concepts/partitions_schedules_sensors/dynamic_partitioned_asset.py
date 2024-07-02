@@ -1,16 +1,16 @@
 import os
 
 from dagster import (
-    AssetExecutionContext,
-    AssetSelection,
-    Definitions,
-    DynamicPartitionsDefinition,
     RunRequest,
-    SensorEvaluationContext,
+    Definitions,
     SensorResult,
+    AssetSelection,
+    AssetExecutionContext,
+    SensorEvaluationContext,
+    DynamicPartitionsDefinition,
     asset,
-    define_asset_job,
     sensor,
+    define_asset_job,
 )
 
 # start_dynamic_partitions_marker

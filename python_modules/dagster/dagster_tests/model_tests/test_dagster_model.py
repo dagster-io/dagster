@@ -1,18 +1,18 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
+from pydantic import ValidationError
 from dagster._model import DagsterModel
 from dagster._record import (
     _INJECTED_DEFAULT_VALS_LOCAL_VAR,
     IHaveNew,
-    build_args_and_assignment_strs,
-    check,
     copy,
+    check,
     record,
     record_custom,
+    build_args_and_assignment_strs,
 )
 from dagster._utils.cached_method import CACHED_METHOD_CACHE_FIELD, cached_method
-from pydantic import ValidationError
 
 
 def test_runtime_typecheck() -> None:

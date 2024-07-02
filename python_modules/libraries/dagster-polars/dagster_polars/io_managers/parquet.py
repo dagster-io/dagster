@@ -1,17 +1,17 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Union, Literal, Optional, cast, overload
 
 import polars as pl
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from dagster import InputContext, OutputContext
+from pyarrow import Table
+from packaging.version import Version
 from dagster._annotations import experimental
 from fsspec.implementations.local import LocalFileSystem
-from packaging.version import Version
-from pyarrow import Table
 
+from dagster_polars.types import StorageMetadata, LazyFrameWithMetadata
 from dagster_polars.io_managers.base import BasePolarsUPathIOManager
-from dagster_polars.types import LazyFrameWithMetadata, StorageMetadata
 
 if TYPE_CHECKING:
     from upath import UPath

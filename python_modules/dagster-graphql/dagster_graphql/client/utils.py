@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, Optional, NamedTuple
 
 
 class DagsterGraphQLClientError(Exception):

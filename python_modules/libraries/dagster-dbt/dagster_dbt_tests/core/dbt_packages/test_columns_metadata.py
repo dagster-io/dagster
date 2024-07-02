@@ -1,26 +1,26 @@
-import json
 import os
+import json
 import subprocess
 from typing import Any, Dict, Optional
 
 import pytest
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
-    AssetSelection,
     TableColumn,
+    TableSchema,
+    AssetSelection,
     TableColumnDep,
     TableColumnLineage,
-    TableSchema,
+    AssetExecutionContext,
     materialize,
 )
-from dagster._core.definitions.metadata import TableMetadataSet
+from sqlglot import Dialect
+from pytest_mock import MockFixture
 from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
-from pytest_mock import MockFixture
-from sqlglot import Dialect
+from dagster._core.definitions.metadata import TableMetadataSet
 
-from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
+from ...dbt_projects import test_metadata_path, test_jaffle_shop_path
 
 pytestmark: pytest.MarkDecorator = pytest.mark.derived_metadata
 

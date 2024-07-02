@@ -1,29 +1,29 @@
-import json
 import os
-import threading
+import json
 import time
+import threading
 from abc import abstractmethod
-from collections import defaultdict
+from typing import IO, Union, Iterator, Optional, Sequence
 from contextlib import contextmanager
-from typing import IO, Iterator, Optional, Sequence, Union
+from collections import defaultdict
 
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._core.instance import T_DagsterInstance
-from dagster._core.storage.captured_log_manager import (
-    CapturedLogContext,
-    CapturedLogData,
-    CapturedLogManager,
-    CapturedLogMetadata,
-    CapturedLogSubscription,
-)
 from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
-    ComputeLogFileData,
     ComputeLogManager,
+    ComputeLogFileData,
     ComputeLogSubscription,
+)
+from dagster._core.storage.captured_log_manager import (
+    CapturedLogData,
+    CapturedLogContext,
+    CapturedLogManager,
+    CapturedLogMetadata,
+    CapturedLogSubscription,
 )
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,

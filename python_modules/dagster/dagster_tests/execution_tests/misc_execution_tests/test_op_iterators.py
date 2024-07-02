@@ -1,6 +1,6 @@
-from dagster import AssetMaterialization, Output, op
-from dagster._annotations import experimental
+from dagster import Output, AssetMaterialization, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._annotations import experimental
 
 
 def test_generator_return_op():

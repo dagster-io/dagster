@@ -1,19 +1,19 @@
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Iterator,
+    Type,
     Mapping,
-    NamedTuple,
+    Iterator,
     Optional,
     Sequence,
-    Type,
+    NamedTuple,
+    AbstractSet,
 )
 
 from dagster._utils.merger import merge_dicts
 
-from ..errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from .utils import DEFAULT_IO_MANAGER_KEY
+from ..errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 
 if TYPE_CHECKING:
     from .resource_definition import ResourceDefinition
@@ -37,7 +37,7 @@ class ResourceRequirement(ABC):
 
     @property
     def is_io_manager_requirement(self) -> bool:
-        from ..storage.io_manager import IInputManagerDefinition, IOManagerDefinition
+        from ..storage.io_manager import IOManagerDefinition, IInputManagerDefinition
 
         return (
             self.expected_type == IOManagerDefinition

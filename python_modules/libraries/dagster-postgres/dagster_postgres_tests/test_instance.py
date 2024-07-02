@@ -1,14 +1,14 @@
 import tempfile
 from urllib.parse import unquote, urlparse
 
+import yaml
 import pytest
 import sqlalchemy as db
-import yaml
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.test_utils import instance_for_test
-from dagster._utils.test.postgres_instance import TestPostgresInstance
 from dagster_postgres.utils import get_conn, get_conn_string
+from dagster._core.test_utils import instance_for_test
+from dagster._core.instance.ref import InstanceRef
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 
 def full_pg_config(hostname):

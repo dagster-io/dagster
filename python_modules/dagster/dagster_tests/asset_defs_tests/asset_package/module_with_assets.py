@@ -1,8 +1,8 @@
 from dagster import AssetKey, SourceAsset, asset
 from dagster._core.definitions.metadata import (
+    LocalFileCodeReference,
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
-    LocalFileCodeReference,
 )
 
 # importing this makes it show up twice when we collect everything

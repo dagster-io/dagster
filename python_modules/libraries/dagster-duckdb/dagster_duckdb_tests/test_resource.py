@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 import pytest
-from dagster import asset, job, materialize, op
+from dagster import op, job, asset, materialize
 from dagster_duckdb import DuckDBResource
 
 

@@ -1,8 +1,8 @@
 from dagster import (
     AssetKey,
+    SourceAsset,
     AutoMaterializePolicy,
     DailyPartitionsDefinition,
-    SourceAsset,
     asset,
     repository,
 )

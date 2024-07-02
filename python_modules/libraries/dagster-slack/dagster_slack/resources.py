@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
 from slack_sdk.web.client import WebClient
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 class SlackResource(ConfigurableResource):

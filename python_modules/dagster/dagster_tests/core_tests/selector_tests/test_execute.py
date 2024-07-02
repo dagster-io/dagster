@@ -2,9 +2,9 @@ import re
 
 import pytest
 from dagster import ReexecutionOptions, execute_job, reconstructable
-from dagster._core.definitions.events import AssetKey
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterExecutionStepNotFoundError
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.events import AssetKey
 
 from .test_subset_selector import foo_job, get_asset_selection_job
 

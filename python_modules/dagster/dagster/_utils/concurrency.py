@@ -1,7 +1,7 @@
 import os
-from datetime import datetime
 from enum import Enum
-from typing import List, NamedTuple, Optional, Set
+from typing import Set, List, Optional, NamedTuple
+from datetime import datetime
 
 from dagster import _check as check
 

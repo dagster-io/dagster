@@ -1,16 +1,16 @@
 from typing import Any
 
 import pytest
-from dagster import job, multiprocess_executor, op, reconstructable
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import instance_for_test
-from dagster_pyspark import (
-    LazyPySparkResource,
-    PySparkResource,
-    lazy_pyspark_resource,
-    pyspark_resource,
-)
+from dagster import op, job, reconstructable, multiprocess_executor
 from pyspark.sql import SparkSession
+from dagster_pyspark import (
+    PySparkResource,
+    LazyPySparkResource,
+    pyspark_resource,
+    lazy_pyspark_resource,
+)
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
 
 
 def assert_job_runs_with_resource(resource_def):

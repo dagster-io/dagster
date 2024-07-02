@@ -1,31 +1,31 @@
 import pickle
-from typing import Any, Callable, Tuple
+from typing import Any, Tuple, Callable
 
 import pytest
 from dagster import (
-    ConfigurableResource,
-    GraphIn,
-    GraphOut,
-    IAttachDifferentObjectToOpContext,
     In,
     Int,
     Out,
     Output,
-    StaticPartitionsDefinition,
+    GraphIn,
+    GraphOut,
     VersionStrategy,
+    ConfigurableResource,
+    StaticPartitionsDefinition,
+    IAttachDifferentObjectToOpContext,
+    op,
+    job,
     asset,
     graph,
-    job,
-    op,
     resource,
 )
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster_aws.s3.utils import construct_s3_client
 from dagster._core.test_utils import instance_for_test
 from dagster_aws.s3.io_manager import S3PickleIOManager, s3_pickle_io_manager
-from dagster_aws.s3.utils import construct_s3_client
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 
 class S3TestResource(ConfigurableResource, IAttachDifferentObjectToOpContext):

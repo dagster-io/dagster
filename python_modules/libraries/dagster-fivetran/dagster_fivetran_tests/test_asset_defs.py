@@ -1,22 +1,22 @@
 import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError
-from dagster._core.definitions.materialize import materialize
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_fivetran import fivetran_resource
-from dagster_fivetran.asset_defs import build_fivetran_assets
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster_fivetran.resources import (
     FIVETRAN_API_BASE,
-    FIVETRAN_API_VERSION_PATH,
     FIVETRAN_CONNECTOR_PATH,
+    FIVETRAN_API_VERSION_PATH,
 )
+from dagster_fivetran.asset_defs import build_fivetran_assets
+from dagster._core.definitions.materialize import materialize
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
-    get_sample_connector_response,
-    get_sample_connector_schema_config,
     get_sample_sync_response,
     get_sample_update_response,
+    get_sample_connector_response,
+    get_sample_connector_schema_config,
 )
 
 

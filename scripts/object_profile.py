@@ -1,7 +1,7 @@
 # ruff: noqa: T201
+import timeit
 import cProfile
 import subprocess
-import timeit
 from tempfile import TemporaryDirectory
 
 # This script provides a way to measure the performance of instantiating an object.

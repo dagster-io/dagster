@@ -1,4 +1,4 @@
-from dagster._config import Array, Field, ScalarUnion, Shape
+from dagster._config import Array, Field, Shape, ScalarUnion
 
 
 def get_tag_concurrency_limits_config():

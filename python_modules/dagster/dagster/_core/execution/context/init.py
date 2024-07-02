@@ -1,16 +1,16 @@
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Union, Mapping, Optional
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.resource_definition import (
-    IContainsGenerator,
-    ResourceDefinition,
-    Resources,
-)
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.resource_definition import (
+    Resources,
+    IContainsGenerator,
+    ResourceDefinition,
+)
 
 
 class InitResourceContext:

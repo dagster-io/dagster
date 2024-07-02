@@ -1,5 +1,5 @@
-from contextlib import contextmanager
 from typing import Iterator, Sequence
+from contextlib import contextmanager
 
 import sqlalchemy as db
 from alembic import op

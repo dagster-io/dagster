@@ -2,35 +2,35 @@ from datetime import datetime, timedelta
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
-    AssetExecutionContext,
     AssetKey,
     DagsterInstance,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    IdentityPartitionMapping,
     MultiPartitionKey,
-    MultiPartitionsDefinition,
-    SpecificPartitionsPartitionMapping,
+    AllPartitionMapping,
+    AssetExecutionContext,
     StaticPartitionMapping,
+    IdentityPartitionMapping,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    SpecificPartitionsPartitionMapping,
     asset,
     materialize,
     multi_asset,
 )
 from dagster._check import CheckError
+from dagster._core.test_utils import instance_for_test
 from dagster._core.definitions.asset_dep import AssetDep
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partition import DefaultPartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.partition_mapping import (
-    DimensionPartitionMapping,
     MultiPartitionMapping,
+    DimensionPartitionMapping,
     MultiToSingleDimensionPartitionMapping,
 )
-from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 
 
 def test_get_downstream_partitions_single_key_in_range():

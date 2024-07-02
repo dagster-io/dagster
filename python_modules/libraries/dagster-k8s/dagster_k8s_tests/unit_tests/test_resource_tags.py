@@ -1,14 +1,14 @@
 import pytest
-from dagster import DynamicOut, DynamicOutput, job, op
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.plan.state import KnownExecutionState
+from dagster import DynamicOut, DynamicOutput, op, job
 from dagster_k8s.job import (
-    K8S_RESOURCE_REQUIREMENTS_KEY,
     USER_DEFINED_K8S_CONFIG_KEY,
+    K8S_RESOURCE_REQUIREMENTS_KEY,
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.plan.state import KnownExecutionState
 
 
 # CPU units are millicpu

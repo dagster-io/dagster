@@ -3,9 +3,9 @@ from abc import ABC
 from typing import Any, Mapping, Optional, Sequence
 
 from dagster import (
-    DagsterInvariantViolationError,
     Failure,
     MetadataValue,
+    DagsterInvariantViolationError,
     _check as check,
 )
 

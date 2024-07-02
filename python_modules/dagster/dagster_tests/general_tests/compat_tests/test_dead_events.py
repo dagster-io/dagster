@@ -1,8 +1,8 @@
 from os import path
 
+from dagster._serdes import deserialize_value
 from dagster._core.events import DagsterEvent, DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._serdes import deserialize_value
 
 
 def test_dead_events():

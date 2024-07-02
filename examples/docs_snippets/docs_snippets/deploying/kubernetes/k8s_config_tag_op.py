@@ -1,6 +1,6 @@
 from dagster_k8s import k8s_job_executor
 
-from dagster import OpExecutionContext, job, op
+from dagster import OpExecutionContext, op, job
 
 
 # fmt: off

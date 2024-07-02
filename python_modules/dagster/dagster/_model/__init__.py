@@ -1,8 +1,8 @@
+from typing import TYPE_CHECKING, Any, Dict, TypeVar, Hashable, Optional
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Dict, Hashable, Optional, TypeVar
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
-from typing_extensions import Annotated, Self, TypeAlias
+from typing_extensions import Self, Annotated, TypeAlias
 
 from .pydantic_compat_layer import USING_PYDANTIC_2
 

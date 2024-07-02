@@ -1,27 +1,27 @@
-from contextlib import contextmanager
 from typing import Iterator, Optional
+from contextlib import contextmanager
 
 import sqlalchemy as db
+from sqlalchemy.pool import NullPool
 from packaging.version import parse
 from sqlalchemy.engine import Connection
-from sqlalchemy.pool import NullPool
 
 from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._config.config_schema import UserConfigSchema
+from dagster._utils import mkdir_p
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._core.storage.sql import (
     AlembicVersion,
-    check_alembic_revision,
     create_engine,
+    stamp_alembic_rev,
     get_alembic_config,
     run_alembic_upgrade,
-    stamp_alembic_rev,
+    check_alembic_revision,
 )
-from dagster._core.storage.sqlite import create_db_conn_string, get_sqlite_version
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import mkdir_p
+from dagster._core.storage.sqlite import get_sqlite_version, create_db_conn_string
+from dagster._config.config_schema import UserConfigSchema
 
 from ..schema import ScheduleStorageSqlMetadata
 from ..sql_schedule_storage import SqlScheduleStorage

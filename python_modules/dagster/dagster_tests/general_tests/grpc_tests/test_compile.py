@@ -1,5 +1,5 @@
-import subprocess
 import sys
+import subprocess
 
 
 def test_compiled_protobuf(tmp_path):

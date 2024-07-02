@@ -1,23 +1,23 @@
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Union, Optional
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._core.events import AssetLineageInfo, DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.plan.objects import ErrorSource
 from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+from dagster._core.execution.plan.objects import ErrorSource
 
 from dagster_graphql.schema.tags import GrapheneEventTag
 
-from ...implementation.events import construct_basic_params
-from ...implementation.fetch_runs import gen_run_by_id, get_step_stats
-from ..asset_checks import GrapheneAssetCheckEvaluation
-from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
-from ..errors import GraphenePythonError, GrapheneRunNotFoundError
-from ..metadata import GrapheneMetadataEntry
 from ..runs import GrapheneStepEventStatus
 from ..util import ResolveInfo, non_null_list
+from ..errors import GraphenePythonError, GrapheneRunNotFoundError
+from ..metadata import GrapheneMetadataEntry
 from .log_level import GrapheneLogLevel
+from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
+from ..asset_checks import GrapheneAssetCheckEvaluation
+from ...implementation.events import construct_basic_params
+from ...implementation.fetch_runs import gen_run_by_id, get_step_stats
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.pipelines.pipeline import GrapheneRun

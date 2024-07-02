@@ -4,18 +4,18 @@ import tempfile
 from unittest import mock
 
 import pytest
-from dagster import DagsterEventType, graph, op
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.event_log import SqliteEventLogStorage
-from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
+from dagster import DagsterEventType, op, graph
+from dagster._time import get_current_datetime
+from dagster_azure.blob import FakeBlobServiceClient, AzureBlobComputeLogManager
+from dagster._core.instance import InstanceRef, InstanceType, DagsterInstance
+from dagster._core.test_utils import environ, ensure_dagster_tests_import
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import ensure_dagster_tests_import, environ
-from dagster._time import get_current_datetime
-from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager

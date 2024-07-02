@@ -1,7 +1,7 @@
 import typing
 from time import sleep
 
-from dagster import Config, In, Int, List, Out, Output, job, op
+from dagster import In, Int, Out, List, Config, Output, op, job
 from pydantic import Field
 
 

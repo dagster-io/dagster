@@ -1,26 +1,26 @@
-import datetime
 import json
-import logging
 import time
+import logging
+import datetime
 from enum import Enum
 from typing import Any, Mapping, Optional, Sequence, cast
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urljoin, urlencode
 
 import requests
 from dagster import (
-    ConfigurableResource,
     Failure,
-    IAttachDifferentObjectToOpContext,
     MetadataValue,
-    __version__,
+    ConfigurableResource,
+    IAttachDifferentObjectToOpContext,
     _check as check,
-    get_dagster_logger,
     resource,
+    __version__,
+    get_dagster_logger,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
+from dagster._utils.merger import deep_merge_dicts
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from .types import DbtCloudOutput
 

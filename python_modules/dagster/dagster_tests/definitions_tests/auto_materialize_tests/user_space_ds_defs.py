@@ -1,4 +1,4 @@
-from dagster import AutomationCondition, DefaultSensorStatus, Definitions, asset
+from dagster import Definitions, AutomationCondition, DefaultSensorStatus, asset
 from dagster._core.definitions.auto_materialize_sensor_definition import AutomationSensorDefinition
 
 eager_policy = AutomationCondition.eager().as_auto_materialize_policy()

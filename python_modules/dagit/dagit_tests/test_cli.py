@@ -1,6 +1,6 @@
 import os
-import subprocess
 import time
+import subprocess
 
 from dagster import asset
 

@@ -1,46 +1,46 @@
 import os
-import string
 import sys
+import string
 import tempfile
+from typing import Tuple, NoReturn, Optional, ContextManager
 from contextlib import contextmanager
-from typing import ContextManager, NoReturn, Optional, Tuple
 
 import mock
 import pytest
-from click.testing import CliRunner
 from dagster import (
     Out,
     Output,
-    ScheduleDefinition,
     String,
-    graph,
-    in_process_executor,
-    job,
+    ScheduleDefinition,
     op,
+    job,
+    graph,
     repository,
+    in_process_executor,
 )
 from dagster._cli import ENV_PREFIX, cli
+from click.testing import CliRunner
+from dagster._utils import file_relative_path
+from dagster.version import __version__
 from dagster._cli.job import job_execute_command
 from dagster._cli.run import (
-    run_delete_command,
     run_list_command,
-    run_migrate_command,
     run_wipe_command,
+    run_delete_command,
+    run_migrate_command,
 )
-from dagster._cli.workspace.cli_target import ClickArgMapping
-from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster._core.definitions.sensor_definition import RunRequest
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
-from dagster._core.test_utils import instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
-from dagster._utils import file_relative_path
-from dagster._utils.merger import merge_dicts
-from dagster.version import __version__
 from typing_extensions import TypeAlias
+from dagster._grpc.server import GrpcServerProcess
+from dagster._utils.merger import merge_dicts
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._cli.workspace.cli_target import ClickArgMapping
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.definitions.decorators.sensor_decorator import sensor
 
 
 @op
@@ -934,8 +934,8 @@ def create_repo_run(instance):
 
 
 def get_repo_runs(instance, repo_label):
-    from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
+    from dagster._core.storage.dagster_run import RunsFilter
 
     return instance.get_runs(filters=RunsFilter(tags={REPOSITORY_LABEL_TAG: repo_label}))
 

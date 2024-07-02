@@ -1,34 +1,34 @@
 import dataclasses
+from typing import Tuple, Mapping, Optional, Sequence
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Mapping, Optional, Sequence, Tuple
 
-import dagster._check as check
 import mock
+import dagster._check as check
 from dagster import AssetKey
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.test_utils import freeze_time
+from dagster._core.definitions.events import CoercibleToAssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.declarative_automation.automation_condition import (
-    AutomationCondition,
-    AutomationResult,
-)
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AutomationConditionCursor,
+)
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationResult,
+    AutomationCondition,
+)
 from dagster._core.definitions.declarative_automation.legacy.legacy_context import (
     LegacyRuleEvaluationContext,
 )
 from dagster._core.definitions.declarative_automation.operators.boolean_operators import (
     AndAssetCondition,
 )
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AutomationConditionCursor,
-)
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
-from dagster._core.test_utils import freeze_time
-from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
 from ..scenario_state import ScenarioState
 

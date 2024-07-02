@@ -1,19 +1,19 @@
+from typing import TYPE_CHECKING, Dict, List, Optional, Generator, cast
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Generator, List, Optional, cast
 
 from dagster import (
     Field as LegacyDagsterField,
     resource,
 )
+from pydantic import Field
+from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import environ
 from dagster._config.field_utils import Shape
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.test_utils import environ
-from dagster._utils.merger import merge_dicts
-from pydantic import Field
 
 from dagster_aws.utils import ResourceWithBoto3Configuration
 
-from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
+from .secrets import get_tagged_secrets, get_secrets_from_arns, construct_secretsmanager_client
 
 if TYPE_CHECKING:
     import botocore

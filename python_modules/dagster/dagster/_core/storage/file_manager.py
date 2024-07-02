@@ -1,20 +1,20 @@
 import io
 import os
-import shutil
 import uuid
+import shutil
 from abc import ABC, abstractmethod
+from typing import Union, TextIO, BinaryIO, Iterator, Optional, ContextManager
 from contextlib import contextmanager
-from typing import BinaryIO, ContextManager, Iterator, Optional, TextIO, Union
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._config import Field, StringSource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource, resource
-from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.instance import DagsterInstance
 from dagster._utils import mkdir_p
+from dagster._config import Field, StringSource
+from dagster._annotations import public
+from dagster._core.instance import DagsterInstance
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.definitions.resource_definition import resource, dagster_maintained_resource
 
 from .temp_file_manager import TempfileManager
 

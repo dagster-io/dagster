@@ -1,58 +1,58 @@
 import json
 import shlex
-from argparse import ArgumentParser, Namespace
-from contextlib import suppress
 from typing import (
     Any,
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Optional,
+    Sequence,
+    FrozenSet,
     cast,
 )
+from argparse import Namespace, ArgumentParser
+from contextlib import suppress
 
 import dagster._check as check
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
-    AutoMaterializePolicy,
-    FreshnessPolicy,
     MetadataValue,
-    PartitionsDefinition,
+    FreshnessPolicy,
+    AssetsDefinition,
     ResourceDefinition,
+    PartitionsDefinition,
+    AssetExecutionContext,
+    AutoMaterializePolicy,
     multi_asset,
     with_resources,
 )
 from dagster._annotations import experimental, experimental_param
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.execution.context.init import build_init_resource_context
+from dagster._core.definitions.cacheable_assets import (
+    CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
+)
 
 from dagster_dbt.asset_utils import (
+    get_deps,
+    get_asset_deps,
     default_asset_key_fn,
-    default_auto_materialize_policy_fn,
     default_description_fn,
     default_freshness_policy_fn,
+    default_auto_materialize_policy_fn,
     default_group_from_dbt_resource_props,
-    get_asset_deps,
-    get_deps,
 )
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator
 
-from ..errors import DagsterDbtCloudJobInvariantViolationError
 from ..utils import ASSET_RESOURCE_TYPES, result_to_events
-from .resources import DbtCloudClient, DbtCloudClientResource, DbtCloudRunStatus
+from ..errors import DagsterDbtCloudJobInvariantViolationError
+from .resources import DbtCloudClient, DbtCloudRunStatus, DbtCloudClientResource
 
 DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR = "DBT_DAGSTER_COMPILE_RUN_ID"
 

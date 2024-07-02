@@ -2,8 +2,8 @@ import os
 import shutil
 import subprocess
 
-import pytest
 import yaml
+import pytest
 from dagster import file_relative_path
 
 pytest_plugins = ["dagster_test.fixtures"]

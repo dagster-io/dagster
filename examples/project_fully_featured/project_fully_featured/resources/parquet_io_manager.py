@@ -3,15 +3,15 @@ from typing import Union
 
 import pandas
 from dagster import (
-    ConfigurableIOManager,
     InputContext,
     OutputContext,
     ResourceDependency,
+    ConfigurableIOManager,
     _check as check,
 )
+from pyspark.sql import DataFrame as PySparkDataFrame
 from dagster._seven.temp_dir import get_system_temp_directory
 from dagster_pyspark.resources import PySparkResource
-from pyspark.sql import DataFrame as PySparkDataFrame
 
 
 class PartitionedParquetIOManager(ConfigurableIOManager):

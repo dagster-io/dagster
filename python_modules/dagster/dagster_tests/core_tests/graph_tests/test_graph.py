@@ -1,45 +1,45 @@
 import enum
 import json
+from typing import Any, List, Optional
 from datetime import datetime
 from itertools import count
-from typing import Any, List, Optional
 
 import pytest
 from dagster import (
-    ConfigMapping,
-    DagsterInstance,
-    DagsterTypeCheckDidNotPass,
-    DynamicOut,
-    DynamicOutput,
+    In,
+    Out,
     Enum,
     Field,
-    GraphOut,
-    In,
-    InputMapping,
-    Nothing,
-    Out,
-    Permissive,
     Shape,
-    graph,
-    input_manager,
-    logger,
+    Nothing,
+    GraphOut,
+    DynamicOut,
+    Permissive,
+    InputMapping,
+    ConfigMapping,
+    DynamicOutput,
+    DagsterInstance,
+    DagsterTypeCheckDidNotPass,
     op,
+    graph,
+    logger,
     resource,
     success_hook,
+    input_manager,
 )
+from dagster._time import parse_time_string
 from dagster._check import CheckError
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
+from dagster._loggers import json_console_logger
 from dagster._core.errors import (
-    DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
+    DagsterConfigMappingFunctionError,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster._loggers import json_console_logger
-from dagster._time import parse_time_string
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.time_window_partitions import TimeWindow, DailyPartitionsDefinition
 
 
 def get_ops():

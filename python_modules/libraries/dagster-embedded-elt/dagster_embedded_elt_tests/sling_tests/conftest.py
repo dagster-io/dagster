@@ -2,14 +2,14 @@ import os
 import sqlite3
 from pathlib import Path
 
-import pytest
 import yaml
+import pytest
 from dagster import file_relative_path
 from dagster_embedded_elt.sling import (
-    SlingConnectionResource,
     SlingResource,
     SlingSourceConnection,
     SlingTargetConnection,
+    SlingConnectionResource,
 )
 
 base_replication_config_path = (

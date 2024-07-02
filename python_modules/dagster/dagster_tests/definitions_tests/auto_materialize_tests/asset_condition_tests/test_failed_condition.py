@@ -1,6 +1,6 @@
 from dagster import AutomationCondition
-from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.asset_key import AssetKey
 
 from ..base_scenario import run_request
 from ..scenario_specs import one_asset, two_partitions_def

@@ -1,13 +1,13 @@
+import os
 import base64
 import inspect
-import os
-import subprocess
 import textwrap
-from contextlib import contextmanager
+import subprocess
 from typing import Any, Callable, Iterator, Optional
+from contextlib import contextmanager
 
-import dagster._check as check
 import pytest
+import dagster._check as check
 from databricks.sdk import WorkspaceClient
 from databricks.sdk.service import files
 

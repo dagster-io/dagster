@@ -3,16 +3,16 @@ class. This resource provides an easy way to configure mlflow for logging variou
 things from dagster runs.
 """
 
-import atexit
 import sys
-from itertools import islice
+import atexit
 from os import environ
 from typing import Any, Optional
+from itertools import islice
 
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from mlflow.entities.run_status import RunStatus
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),

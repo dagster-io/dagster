@@ -1,48 +1,48 @@
-import inspect
+import sys
 import json
 import pickle
-import sys
-from datetime import datetime, timedelta
-from pathlib import Path
+import inspect
 from typing import Any, Dict, List, Optional, cast
+from pathlib import Path
+from datetime import datetime, timedelta
 
 import fsspec
 import pytest
+from upath import UPath
 from dagster import (
-    AllPartitionMapping,
-    AssetExecutionContext,
-    AssetIn,
-    ConfigurableIOManager,
-    DagsterInvariantViolationError,
-    DagsterType,
-    DailyPartitionsDefinition,
     Field,
-    HourlyPartitionsDefinition,
-    InitResourceContext,
+    AssetIn,
+    DagsterType,
     InputContext,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    OpExecutionContext,
     OutputContext,
+    MultiPartitionKey,
+    OpExecutionContext,
+    AllPartitionMapping,
+    InitResourceContext,
+    AssetExecutionContext,
+    ConfigurableIOManager,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DagsterInvariantViolationError,
     asset,
-    build_init_resource_context,
-    build_input_context,
-    build_output_context,
     io_manager,
     materialize,
+    build_input_context,
+    build_output_context,
+    build_init_resource_context,
 )
-from dagster._core.events import HandledOutputData
-from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._core.storage.upath_io_manager import UPathIOManager
-from fsspec.asyn import AsyncFileSystem
 from pydantic import (
     Field as PydanticField,
     PrivateAttr,
 )
-from upath import UPath
+from fsspec.asyn import AsyncFileSystem
+from dagster._core.events import HandledOutputData
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.storage.upath_io_manager import UPathIOManager
 
 
 class DummyIOManager(UPathIOManager):

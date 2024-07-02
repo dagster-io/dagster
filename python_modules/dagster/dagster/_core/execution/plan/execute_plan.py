@@ -1,32 +1,32 @@
 import sys
-from contextlib import ExitStack
 from typing import Iterator, Optional, Sequence, cast
+from contextlib import ExitStack
 
 import dagster._check as check
-from dagster._core.definitions import Failure, HookExecutionResult, RetryRequested
 from dagster._core.errors import (
     DagsterError,
-    DagsterExecutionInterruptedError,
-    DagsterMaxRetriesExceededError,
-    DagsterUserCodeExecutionError,
     HookExecutionError,
+    DagsterUserCodeExecutionError,
+    DagsterMaxRetriesExceededError,
+    DagsterExecutionInterruptedError,
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._core.definitions import Failure, RetryRequested, HookExecutionResult
+from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.compute_logs import create_compute_log_file_key
-from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
-from dagster._core.execution.plan.execute_step import core_dagster_event_sequence_for_step
-from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 from dagster._core.execution.plan.objects import (
     ErrorSource,
-    StepFailureData,
     StepRetryData,
+    StepFailureData,
     UserFailureData,
     step_failure_event_from_exc_info,
 )
-from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
+from dagster._core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster._core.storage.captured_log_manager import CapturedLogManager
-from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
 
 
 def inner_plan_execution_iterator(

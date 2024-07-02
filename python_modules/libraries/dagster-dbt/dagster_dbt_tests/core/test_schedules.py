@@ -1,10 +1,10 @@
 from typing import Any, Dict, Mapping, Optional, Sequence, cast
 
 import pytest
-from dagster import DefaultScheduleStatus, RunConfig
+from dagster import RunConfig, DefaultScheduleStatus
+from dagster_dbt import DbtManifestAssetSelection, dbt_assets, build_schedule_from_dbt_selection
 from dagster._core.definitions.asset_selection import AndAssetSelection
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster_dbt import DbtManifestAssetSelection, build_schedule_from_dbt_selection, dbt_assets
 
 
 @pytest.mark.parametrize(

@@ -1,29 +1,29 @@
 import time
-from multiprocessing import Process
 from typing import List
+from multiprocessing import Process
 
 import pytest
 from dagster import (
-    AssetSelection,
     DynamicOutput,
+    AssetSelection,
     OpExecutionContext,
     ReexecutionOptions,
-    define_asset_job,
-    execute_job,
-    fs_io_manager,
-    graph_asset,
-    in_process_executor,
-    job,
     op,
+    job,
+    execute_job,
+    graph_asset,
+    fs_io_manager,
     reconstructable,
+    define_asset_job,
+    in_process_executor,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.events import Output
-from dagster._core.definitions.output import DynamicOut, Out
 from dagster._core.errors import DagsterExecutionStepNotFoundError
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.events import Output
+from dagster._core.definitions.output import Out, DynamicOut
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.decorators.asset_decorator import asset
 
 
 @op

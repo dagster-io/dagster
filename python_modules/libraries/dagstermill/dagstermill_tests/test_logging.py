@@ -1,23 +1,23 @@
+import os
 import json
 import logging
-import os
 
 import pytest
 from dagster import (
     String,
-    _seven as seven,
-    execute_job,
     job,
+    _seven as seven,
     logger,
+    execute_job,
     reconstructable,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path
-from dagstermill.examples.repository import hello_logging
 from dagstermill.io_managers import (
     ConfigurableLocalOutputNotebookIOManager,
     local_output_notebook_io_manager,
 )
+from dagster._core.test_utils import instance_for_test
+from dagstermill.examples.repository import hello_logging
 
 
 class LogTestFileHandler(logging.Handler):

@@ -1,8 +1,8 @@
 from dagster import reconstructable
-from dagster._core.definitions import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.execution.api import execute_job
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions import op
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 @op(tags={"dagster/priority": "-1"})

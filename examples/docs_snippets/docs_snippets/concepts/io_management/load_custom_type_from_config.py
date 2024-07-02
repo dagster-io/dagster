@@ -2,11 +2,11 @@
 from typing import Dict, Union
 
 from dagster import (
-    DagsterTypeLoaderContext,
     OpExecutionContext,
-    dagster_type_loader,
-    job,
+    DagsterTypeLoaderContext,
     op,
+    job,
+    dagster_type_loader,
     usable_as_dagster_type,
 )
 

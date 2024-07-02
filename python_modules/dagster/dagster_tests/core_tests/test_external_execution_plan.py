@@ -1,44 +1,44 @@
 import os
-import pickle
 import re
+import pickle
 from typing import Optional, Sequence
 
 import pytest
 from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    DagsterEventType,
-    DagsterExecutionStepNotFoundError,
-    DependencyDefinition,
-    GraphDefinition,
     In,
     Int,
     Out,
+    AssetKey,
+    GraphDefinition,
+    AssetsDefinition,
+    DagsterEventType,
+    DependencyDefinition,
+    DagsterExecutionStepNotFoundError,
+    op,
     asset,
+    repository,
+    mem_io_manager,
+    reconstructable,
     define_asset_job,
     file_relative_path,
     in_process_executor,
-    mem_io_manager,
-    op,
-    reconstructable,
-    repository,
 )
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
+from dagster._core.events import DagsterEvent
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_plan, create_execution_plan
 from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.metadata.metadata_value import MetadataValue
-from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.cacheable_assets import (
+    CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
+)
+from dagster._core.definitions.metadata.metadata_value import MetadataValue
 from dagster._core.definitions.repository_definition.valid_definitions import (
     PendingRepositoryListDefinition,
 )
-from dagster._core.events import DagsterEvent
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.instance import DagsterInstance
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.test_utils import instance_for_test
 
 
 def define_inty_job(using_file_system=False):

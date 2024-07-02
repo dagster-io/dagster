@@ -1,43 +1,43 @@
 import hashlib
 import itertools
-from datetime import datetime
-from functools import lru_cache, reduce
 from typing import (
+    Set,
     Dict,
     List,
+    Type,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
+    NamedTuple,
     cast,
 )
+from datetime import datetime
+from functools import reduce, lru_cache
 
 import pendulum
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.errors import (
+    DagsterUnknownPartitionError,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
-    DagsterUnknownPartitionError,
 )
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.storage.tags import (
     MULTIDIMENSIONAL_PARTITION_PREFIX,
     get_multidimensional_partition_tag,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 
 from .partition import (
-    DefaultPartitionsSubset,
-    DynamicPartitionsDefinition,
-    PartitionsDefinition,
     PartitionsSubset,
+    PartitionsDefinition,
+    DefaultPartitionsSubset,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
 )
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 

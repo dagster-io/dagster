@@ -1,21 +1,21 @@
 import typing
 
 from dagster._utils.typing_api import (
-    get_dict_key_value_types,
-    get_list_inner_type,
-    get_optional_inner_type,
     get_set_inner_type,
+    get_list_inner_type,
     get_tuple_type_params,
+    get_optional_inner_type,
+    get_dict_key_value_types,
+    is_closed_python_set_type,
     is_closed_python_dict_type,
     is_closed_python_list_type,
-    is_closed_python_optional_type,
-    is_closed_python_set_type,
     is_closed_python_tuple_type,
+    is_closed_python_optional_type,
 )
 
-from .dagster_type import List, Optional
-from .python_dict import Dict, create_typed_runtime_dict
 from .python_set import Set
+from .python_dict import Dict, create_typed_runtime_dict
+from .dagster_type import List, Optional
 from .python_tuple import Tuple, create_typed_tuple
 
 

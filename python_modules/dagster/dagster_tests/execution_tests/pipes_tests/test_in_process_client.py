@@ -1,20 +1,20 @@
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
     AssetSpec,
     Definitions,
-    ExecuteInProcessResult,
+    AssetCheckSpec,
+    AssetCheckResult,
     MaterializeResult,
+    AssetExecutionContext,
+    ExecuteInProcessResult,
     asset,
     asset_check,
     multi_asset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster_pipes import PipesContext, DagsterPipesError
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.execution.context.compute import AssetCheckExecutionContext
-from dagster_pipes import DagsterPipesError, PipesContext
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 
 from .in_process_client import InProcessPipesClient
 

@@ -1,35 +1,35 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Set, TypeVar, cast
+from typing import Any, Set, Dict, List, Mapping, TypeVar, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._utils import ensure_single_item
 
-from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
+from .snap import ConfigTypeSnap, ConfigFieldSnap, ConfigSchemaSnapshot
+from .field import resolve_to_config_type
+from .stack import EvaluationStack
 from .errors import (
     EvaluationError,
+    create_map_error,
     create_array_error,
+    create_scalar_error,
+    create_selector_type_error,
+    create_none_not_allowed_error,
+    create_pydantic_env_var_error,
+    create_field_not_defined_error,
     create_dict_type_mismatch_error,
     create_enum_type_mismatch_error,
     create_enum_value_missing_error,
-    create_field_not_defined_error,
-    create_field_substitution_collision_error,
     create_fields_not_defined_error,
-    create_map_error,
     create_missing_required_field_error,
     create_missing_required_fields_error,
-    create_none_not_allowed_error,
-    create_pydantic_env_var_error,
-    create_scalar_error,
     create_selector_multiple_fields_error,
-    create_selector_multiple_fields_no_field_selected_error,
-    create_selector_type_error,
     create_selector_unspecified_value_error,
+    create_field_substitution_collision_error,
+    create_selector_multiple_fields_no_field_selected_error,
 )
-from .evaluate_value_result import EvaluateValueResult
-from .field import resolve_to_config_type
+from .config_type import ConfigType, ConfigTypeKind, ConfigScalarKind
 from .post_process import post_process_config
-from .snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
-from .stack import EvaluationStack
 from .traversal_context import ValidationContext
+from .evaluate_value_result import EvaluateValueResult
 
 VALID_FLOAT_TYPES = tuple([int, float])
 

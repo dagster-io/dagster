@@ -4,33 +4,33 @@ from typing import Any
 import pytest
 import responses
 from dagster import (
-    AssetKey,
     EnvVar,
-    FreshnessPolicy,
-    InputContext,
+    AssetKey,
     IOManager,
+    InputContext,
     OutputContext,
+    FreshnessPolicy,
     asset,
     io_manager,
     materialize,
 )
 from dagster._check import ParameterCheckError
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster_airbyte import AirbyteResource, AirbyteCloudResource, airbyte_resource
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
+from dagster._core.instance_for_test import environ
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.execution.with_resources import with_resources
-from dagster._core.instance_for_test import environ
-from dagster_airbyte import AirbyteCloudResource, AirbyteResource, airbyte_resource
-from dagster_airbyte.asset_defs import AirbyteConnectionMetadata, load_assets_from_airbyte_instance
+from dagster._core.definitions.metadata.table import TableColumn, TableSchema
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from .utils import (
-    get_instance_connections_json,
+    get_project_job_json,
+    get_project_connection_json,
     get_instance_operations_json,
     get_instance_workspaces_json,
-    get_project_connection_json,
-    get_project_job_json,
+    get_instance_connections_json,
 )
 
 TEST_FRESHNESS_POLICY = FreshnessPolicy(maximum_lag_minutes=60)

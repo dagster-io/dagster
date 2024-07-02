@@ -1,14 +1,14 @@
-from typing import Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, Optional, Sequence, NamedTuple
 
 import dagster._check as check
-from dagster._core.definitions.job_definition import JobDefinition
+from dagster._serdes import whitelist_for_serdes
+from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
     MetadataValue,
+    MetadataFieldSerializer,
     normalize_metadata,
 )
-from dagster._core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster._serdes import whitelist_for_serdes
+from dagster._core.definitions.job_definition import JobDefinition
 
 
 def build_dagster_type_namespace_snapshot(

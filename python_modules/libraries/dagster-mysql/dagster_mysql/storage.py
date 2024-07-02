@@ -1,18 +1,18 @@
 from typing import Optional
 
 from dagster import _check as check
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.storage.base_storage import DagsterStorage
-from dagster._core.storage.config import MySqlStorageConfig, mysql_config
-from dagster._core.storage.event_log import EventLogStorage
-from dagster._core.storage.runs import RunStorage
-from dagster._core.storage.schedules import ScheduleStorage
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._core.storage.runs import RunStorage
+from dagster._core.storage.config import MySqlStorageConfig, mysql_config
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.event_log import EventLogStorage
+from dagster._core.storage.schedules import ScheduleStorage
+from dagster._core.storage.base_storage import DagsterStorage
 
+from .utils import mysql_url_from_config
 from .event_log import MySQLEventLogStorage
 from .run_storage import MySQLRunStorage
 from .schedule_storage import MySQLScheduleStorage
-from .utils import mysql_url_from_config
 
 
 class DagsterMySQLStorage(DagsterStorage, ConfigurableClass):

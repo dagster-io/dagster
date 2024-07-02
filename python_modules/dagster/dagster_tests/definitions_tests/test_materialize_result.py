@@ -1,24 +1,24 @@
 import asyncio
-from typing import Generator, Tuple
+from typing import Tuple, Generator
 
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
     AssetKey,
     AssetOut,
     AssetSpec,
     IOManager,
+    AssetCheckSpec,
+    AssetCheckResult,
     MaterializeResult,
+    AssetExecutionContext,
     StaticPartitionsDefinition,
     asset,
-    instance_for_test,
     materialize,
     multi_asset,
+    instance_for_test,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.execution.context.invocation import build_asset_context
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 

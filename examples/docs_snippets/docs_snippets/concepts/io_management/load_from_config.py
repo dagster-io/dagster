@@ -1,4 +1,4 @@
-from dagster import OpExecutionContext, job, op
+from dagster import OpExecutionContext, op, job
 
 
 # def_start_marker

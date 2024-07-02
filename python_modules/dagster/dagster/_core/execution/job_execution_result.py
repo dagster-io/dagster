@@ -2,15 +2,15 @@ from typing import Any, Dict, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions import JobDefinition, NodeHandle
-from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.system import StepExecutionContext
-from dagster._core.execution.plan.outputs import StepOutputData
-from dagster._core.execution.plan.utils import build_resources_for_manager
-from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions import NodeHandle, JobDefinition
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.types.dagster_type import DagsterType
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.execution.plan.utils import build_resources_for_manager
+from dagster._core.execution.plan.outputs import StepOutputData
+from dagster._core.execution.context.system import StepExecutionContext
 
 from .execution_result import ExecutionResult
 

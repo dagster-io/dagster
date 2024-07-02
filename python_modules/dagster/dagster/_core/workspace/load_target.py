@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from typing import NamedTuple, Optional, Sequence
+from typing import Optional, Sequence, NamedTuple
 
 import tomli
 
@@ -12,9 +12,9 @@ from dagster._core.remote_representation.origin import (
 
 from .load import (
     location_origin_from_module_name,
-    location_origin_from_package_name,
     location_origin_from_python_file,
     location_origins_from_yaml_paths,
+    location_origin_from_package_name,
 )
 
 

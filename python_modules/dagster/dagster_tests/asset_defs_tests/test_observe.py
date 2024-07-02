@@ -2,18 +2,11 @@ from typing import Optional
 
 import pytest
 from dagster import (
+    IOManager,
     ConfigurableResource,
     DataVersionsByPartition,
-    IOManager,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.definitions.observe import observe
-from dagster._core.definitions.resource_definition import ResourceDefinition, resource
-from dagster._core.definitions.result import ObserveResult
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
@@ -21,6 +14,13 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.result import ObserveResult
+from dagster._core.definitions.observe import observe
+from dagster._core.definitions.metadata import TextMetadataValue
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
+from dagster._core.definitions.resource_definition import ResourceDefinition, resource
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 
 
 def _get_current_data_version(

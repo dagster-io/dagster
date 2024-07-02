@@ -1,6 +1,6 @@
-from contextlib import contextmanager
+from typing import Any, Mapping, Iterator, Optional, Sequence
 from datetime import datetime
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from contextlib import contextmanager
 
 from dagster import (
     ConfigurableResource,
@@ -8,9 +8,9 @@ from dagster import (
     _check as check,
     resource,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from google.cloud import bigquery
 from pydantic import Field
+from google.cloud import bigquery
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from .utils import setup_gcp_creds
 

@@ -1,22 +1,22 @@
-from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
+    Union,
     Callable,
     Optional,
     Sequence,
-    Union,
+    AbstractSet,
     cast,
     overload,
 )
+from functools import update_wrapper
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from ...decorator_utils import get_function_params, validate_expected_params
 from ..events import HookExecutionResult
 from ..hook_definition import HookDefinition
+from ...decorator_utils import get_function_params, validate_expected_params
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent

@@ -1,16 +1,16 @@
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, Union, Optional, cast, overload
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._builtins import BuiltinEnum
-from dagster._config import UserConfigSchema
-from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
-from dagster._serdes import serialize_value
 from dagster._seven import is_subclass
 from dagster._utils import is_enum_value
-from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
+from dagster._config import UserConfigSchema
+from dagster._serdes import serialize_value
+from dagster._builtins import BuiltinEnum
+from dagster._annotations import public
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._utils.typing_api import is_typing_type, is_closed_python_optional_type
 
-from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
+from .config_type import Array, ConfigType, ConfigTypeKind, ConfigAnyInstance
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
@@ -96,8 +96,8 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         return ConfigType.from_builtin_enum(obj)
 
     from .primitive_mapping import (
-        is_supported_config_python_builtin,
         remap_python_builtin_for_config,
+        is_supported_config_python_builtin,
     )
 
     if is_supported_config_python_builtin(obj):
@@ -107,8 +107,8 @@ def resolve_to_config_type(obj: object) -> Union[ConfigType, bool]:
         return ConfigAnyInstance
 
     # Special error messages for passing a DagsterType
-    from dagster._core.types.dagster_type import DagsterType, List, ListType
     from dagster._core.types.python_set import Set, _TypedPythonSet
+    from dagster._core.types.dagster_type import List, ListType, DagsterType
     from dagster._core.types.python_tuple import Tuple, _TypedPythonTuple
 
     if _is_config_type_class(obj):
@@ -268,8 +268,8 @@ class Field:
         is_required: Optional[bool] = None,
         description: Optional[str] = None,
     ):
-        from .post_process import resolve_defaults
         from .validate import validate_config
+        from .post_process import resolve_defaults
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 
@@ -289,7 +289,7 @@ class Field:
                 "required arguments should not specify default values",
             )
 
-        from dagster._config.field_utils import env_var_to_config_dict, is_dagster_env_var
+        from dagster._config.field_utils import is_dagster_env_var, env_var_to_config_dict
 
         if is_dagster_env_var(default_value):
             default_value = env_var_to_config_dict(default_value)

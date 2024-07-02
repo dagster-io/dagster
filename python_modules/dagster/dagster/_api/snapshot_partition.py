@@ -1,18 +1,18 @@
 from typing import TYPE_CHECKING, Sequence
 
 import dagster._check as check
+from dagster._serdes import deserialize_value
+from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
+from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.external_data import (
+    ExternalPartitionTagsData,
+    ExternalPartitionNamesData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
 )
-from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
-from dagster._serdes import deserialize_value
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

@@ -1,16 +1,16 @@
 import base64
 
-import geopandas as gpd
 import pandas as pd
-import plotly.express as px
+import geopandas as gpd
 import plotly.io as pio
-from dagster import AssetExecutionContext, AssetKey, MaterializeResult, MetadataValue, asset
-from dagster_duckdb import DuckDBResource
+import plotly.express as px
+from dagster import AssetKey, MetadataValue, MaterializeResult, AssetExecutionContext, asset
 from smart_open import open
+from dagster_duckdb import DuckDBResource
 
-from ..partitions import weekly_partition
-from ..resources import smart_open_config
 from . import constants
+from ..resources import smart_open_config
+from ..partitions import weekly_partition
 
 
 @asset(

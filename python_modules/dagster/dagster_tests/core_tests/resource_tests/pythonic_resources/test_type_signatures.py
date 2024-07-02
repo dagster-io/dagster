@@ -1,7 +1,7 @@
 import os
 import re
-import subprocess
 import tempfile
+import subprocess
 from typing import List
 
 import pytest

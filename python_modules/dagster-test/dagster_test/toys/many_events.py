@@ -1,14 +1,14 @@
 from dagster import (
-    AssetMaterialization,
-    ExpectationResult,
     In,
-    MetadataValue,
-    Nothing,
     Out,
     Output,
-    file_relative_path,
-    graph,
+    Nothing,
+    MetadataValue,
+    ExpectationResult,
+    AssetMaterialization,
     op,
+    graph,
+    file_relative_path,
 )
 
 MARKDOWN_EXAMPLE = "markdown_example.md"

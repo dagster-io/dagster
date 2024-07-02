@@ -1,14 +1,14 @@
-from typing import Optional, Sequence, Type
+from typing import Type, Optional, Sequence
 
 import pandas as pd
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from dagster_gcp.bigquery.io_manager import (
     BigQueryClient,
     BigQueryIOManager,
     build_bigquery_io_manager,
 )
+from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
 
 
 class BigQueryPandasTypeHandler(DbTypeHandler[pd.DataFrame]):

@@ -1,16 +1,16 @@
 from typing import Any
 
 import pytest
-from dagster import DagsterEventType, job, op
-from dagster._core.definitions.metadata import MetadataValue
+from dagster import DagsterEventType, op, job
 from dagster_aws.s3 import (
+    S3Resource,
     S3FileHandle,
     S3FileManagerResource,
-    S3Resource,
-    file_handle_to_s3,
-    s3_file_manager,
     s3_resource,
+    s3_file_manager,
+    file_handle_to_s3,
 )
+from dagster._core.definitions.metadata import MetadataValue
 
 
 @pytest.fixture(name="s3_resource_type", params=[True, False])

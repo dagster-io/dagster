@@ -2,7 +2,7 @@ import os
 from enum import Enum
 from typing import List
 
-from dagster_buildkite.utils import is_release_branch, safe_getenv
+from dagster_buildkite.utils import safe_getenv, is_release_branch
 
 
 class AvailablePythonVersion(str, Enum):

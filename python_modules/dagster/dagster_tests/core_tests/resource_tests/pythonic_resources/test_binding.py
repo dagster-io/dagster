@@ -2,26 +2,26 @@ from typing import cast
 
 import pytest
 from dagster import (
-    BindResourcesToJobs,
     Config,
-    ConfigurableIOManager,
-    ConfigurableResource,
-    Definitions,
-    FilesystemIOManager,
-    JobDefinition,
     RunRequest,
+    Definitions,
+    JobDefinition,
     ScheduleDefinition,
-    asset,
-    job,
+    BindResourcesToJobs,
+    FilesystemIOManager,
+    ConfigurableResource,
+    ConfigurableIOManager,
     op,
-    repository,
-    resource,
+    job,
+    asset,
     sensor,
+    resource,
+    repository,
 )
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.definitions.repository_definition.repository_data_builder import (
     build_caching_repository_data_from_dict,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_bind_resource_to_job_at_defn_time_err() -> None:

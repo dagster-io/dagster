@@ -1,9 +1,9 @@
-from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 from pyspark import SparkFiles
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.types import DoubleType, StringType, StructField, StructType
+from pyspark.sql.types import DoubleType, StringType, StructType, StructField
+from dagster_snowflake_pyspark import SnowflakePySparkIOManager
 
-from dagster import Definitions, EnvVar, asset
+from dagster import EnvVar, Definitions, asset
 
 SNOWFLAKE_JARS = "net.snowflake:snowflake-jdbc:3.8.0,net.snowflake:spark-snowflake_2.12:2.8.2-spark_3.0"
 

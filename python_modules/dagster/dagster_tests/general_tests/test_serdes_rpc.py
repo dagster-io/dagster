@@ -1,9 +1,9 @@
 import sys
 from collections import namedtuple
 
-from dagster._serdes import whitelist_for_serdes
-from dagster._serdes.ipc import IPCErrorMessage, ipc_read_event_stream, ipc_write_stream
 from dagster._utils import safe_tempfile_path
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, ipc_read_event_stream
 
 
 def test_write_read_stream():

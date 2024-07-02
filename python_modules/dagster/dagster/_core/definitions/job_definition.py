@@ -1,86 +1,86 @@
-import importlib
 import os
 import warnings
-from datetime import datetime
-from functools import cached_property, update_wrapper
+import importlib
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    Sequence,
+    AbstractSet,
     cast,
 )
+from datetime import datetime
+from functools import update_wrapper, cached_property
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental_param, public
+from dagster._utils import IHasInternalInit
 from dagster._config import Field, Shape, StringSource
-from dagster._config.config_type import ConfigType
+from dagster._core.utils import str_format_set
+from dagster._annotations import public, deprecated, experimental_param
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterInvalidSubsetError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
+from dagster._utils.merger import merge_dicts
 from dagster._config.validate import validate_config
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._config.config_type import ConfigType
+from dagster._core.definitions.utils import check_valid_name
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.storage.io_manager import (
+    IOManagerDefinition,
+    io_manager,
+    dagster_maintained_io_manager,
+)
+from dagster._core.types.dagster_type import DagsterType
+from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.dependency import Node, NodeHandle, NodeInvocation, NodeInputHandle
+from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
+from dagster._core.selector.subset_selector import OpSelectionData, AssetSelectionData
+from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
-from dagster._core.definitions.dependency import Node, NodeHandle, NodeInputHandle, NodeInvocation
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.op_selection import OpSelection, get_graph_subset
-from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.resource_requirement import (
     ResourceRequirement,
     ensure_requirements_satisfied,
 )
-from dagster._core.definitions.utils import check_valid_name
-from dagster._core.errors import (
-    DagsterInvalidConfigError,
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvalidSubsetError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.selector.subset_selector import AssetSelectionData, OpSelectionData
-from dagster._core.storage.io_manager import (
-    IOManagerDefinition,
-    dagster_maintained_io_manager,
-    io_manager,
-)
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
-from dagster._core.types.dagster_type import DagsterType
-from dagster._core.utils import str_format_set
-from dagster._utils import IHasInternalInit
-from dagster._utils.merger import merge_dicts
 
-from .asset_layer import AssetLayer
+from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
 from .config import ConfigMapping
-from .dependency import DependencyMapping, DependencyStructure, OpNode
-from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
-from .graph_definition import GraphDefinition, SubselectedGraphDefinition
-from .hook_definition import HookDefinition
-from .logger_definition import LoggerDefinition
 from .metadata import MetadataValue, RawMetadataValue, normalize_metadata
 from .partition import PartitionedConfig, PartitionsDefinition
-from .resource_definition import ResourceDefinition
+from .dependency import OpNode, DependencyMapping, DependencyStructure
+from .asset_layer import AssetLayer
 from .run_request import RunRequest
-from .utils import DEFAULT_IO_MANAGER_KEY, NormalizedTags, normalize_tags
+from .hook_definition import HookDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .version_strategy import VersionStrategy
+from .logger_definition import LoggerDefinition
+from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
+from .resource_definition import ResourceDefinition
 
 if TYPE_CHECKING:
+    from dagster._core.snap import JobSnapshot
     from dagster._config.snap import ConfigSchemaSnapshot
+    from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.definitions.assets import AssetsDefinition
     from dagster._core.definitions.run_config import RunConfig
-    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster._core.execution.resources_init import InitResourceContext
-    from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
     from dagster._core.remote_representation.job_index import JobIndex
-    from dagster._core.snap import JobSnapshot
+    from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
     from .run_config_schema import RunConfigSchema
 
@@ -637,10 +637,10 @@ class JobDefinition(IHasInternalInit):
             :py:class:`~dagster.ExecuteInProcessResult`
 
         """
-        from dagster._core.definitions.executor_definition import execute_in_process_executor
         from dagster._core.definitions.run_config import convert_config_input
         from dagster._core.execution.build_resources import wrap_resources_for_execution
         from dagster._core.execution.execute_in_process import core_execute_in_process
+        from dagster._core.definitions.executor_definition import execute_in_process_executor
 
         run_config = check.opt_mapping_param(convert_config_input(run_config), "run_config")
         op_selection = check.opt_sequence_param(op_selection, "op_selection", str)
@@ -913,8 +913,8 @@ class JobDefinition(IHasInternalInit):
         return self.get_job_index().job_snapshot
 
     def get_job_index(self) -> "JobIndex":
-        from dagster._core.remote_representation import JobIndex
         from dagster._core.snap import JobSnapshot
+        from dagster._core.remote_representation import JobIndex
 
         return JobIndex(JobSnapshot.from_job_def(self), self.get_parent_job_snapshot())
 
@@ -1241,8 +1241,8 @@ def _create_run_config_schema(
 ) -> "RunConfigSchema":
     from .run_config import (
         RunConfigSchemaCreationData,
-        construct_config_type_dictionary,
         define_run_config_schema_type,
+        construct_config_type_dictionary,
     )
     from .run_config_schema import RunConfigSchema
 

@@ -1,6 +1,6 @@
 # ruff: noqa: T201
-import importlib
 import pkgutil
+import importlib
 
 import dagster
 import sqlalchemy as db

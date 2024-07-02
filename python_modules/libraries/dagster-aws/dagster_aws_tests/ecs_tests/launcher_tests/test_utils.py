@@ -1,9 +1,9 @@
+from dagster_aws.ecs.utils import sanitize_family, get_task_definition_family
 from dagster._core.remote_representation.origin import (
-    RegisteredCodeLocationOrigin,
     RemoteJobOrigin,
     RemoteRepositoryOrigin,
+    RegisteredCodeLocationOrigin,
 )
-from dagster_aws.ecs.utils import get_task_definition_family, sanitize_family
 
 
 def test_sanitize_family():

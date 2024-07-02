@@ -1,6 +1,6 @@
 from with_airflow.repository import (
-    airflow_complex_dag,
     airflow_simple_dag,
+    airflow_complex_dag,
     airflow_simple_dag_with_execution_date,
 )
 

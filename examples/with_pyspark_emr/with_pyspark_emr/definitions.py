@@ -1,12 +1,12 @@
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
-from dagster import ConfigurableIOManager, Definitions, ResourceParam, asset
-from dagster_aws.emr import emr_pyspark_step_launcher
+from dagster import Definitions, ResourceParam, ConfigurableIOManager, asset
+from pyspark.sql import Row, DataFrame
 from dagster_aws.s3 import S3Resource
+from dagster_aws.emr import emr_pyspark_step_launcher
 from dagster_pyspark import PySparkResource
-from pyspark.sql import DataFrame, Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+from pyspark.sql.types import StringType, StructType, IntegerType, StructField
 
 
 class ParquetIOManager(ConfigurableIOManager):

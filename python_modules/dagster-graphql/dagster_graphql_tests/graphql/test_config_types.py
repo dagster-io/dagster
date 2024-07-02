@@ -2,13 +2,13 @@ import json
 from typing import Sequence
 
 import dagster._check as check
-from dagster._config import ALL_CONFIG_BUILTINS
-from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._utils import file_relative_path
-from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
+from dagster._config import ALL_CONFIG_BUILTINS
+from dagster_graphql.test.utils import GqlResult, infer_job_selector, execute_dagster_graphql
+from dagster._core.workspace.context import WorkspaceRequestContext
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .repo import csv_hello_world_ops_config
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 CONFIG_VALIDATION_QUERY = """
 query PipelineQuery(

@@ -1,19 +1,19 @@
 import pytest
 from dagster import (
+    In,
+    Enum,
+    Field,
+    Output,
+    String,
+    EnumValue,
     ConfigMapping,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
-    Enum,
-    EnumValue,
-    Field,
-    In,
-    Output,
-    String,
-    configured,
-    graph,
-    job,
-    mem_io_manager,
     op,
+    job,
+    graph,
+    configured,
+    mem_io_manager,
 )
 from dagster._core.definitions.input import GraphIn
 from dagster._core.system_config.composite_descent import composite_descent

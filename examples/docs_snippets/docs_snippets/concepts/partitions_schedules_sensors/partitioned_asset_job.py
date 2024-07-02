@@ -1,6 +1,6 @@
 from dagster import (
-    AssetSelection,
     Definitions,
+    AssetSelection,
     HourlyPartitionsDefinition,
     asset,
     define_asset_job,

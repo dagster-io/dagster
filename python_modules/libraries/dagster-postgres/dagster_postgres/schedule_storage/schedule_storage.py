@@ -1,38 +1,38 @@
-from typing import ContextManager, Optional, Sequence
+from typing import Optional, Sequence, ContextManager
 
-import dagster._check as check
 import pendulum
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
+import dagster._check as check
 import sqlalchemy.pool as db_pool
+import sqlalchemy.dialects as db_dialects
+from sqlalchemy import event
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from sqlalchemy.engine import Connection
+from dagster._core.storage.sql import (
+    AlembicVersion,
+    create_engine,
+    stamp_alembic_rev,
+    run_alembic_upgrade,
+    check_alembic_revision,
+)
+from dagster._core.storage.config import PostgresStorageConfig, pg_config
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.schedules import SqlScheduleStorage, ScheduleStorageSqlMetadata
+from dagster._core.scheduler.instigation import InstigatorState
+from dagster._core.storage.schedules.schema import (
+    InstigatorsTable,
+    AssetDaemonAssetEvaluationsTable,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
-from dagster._core.scheduler.instigation import InstigatorState
-from dagster._core.storage.config import PostgresStorageConfig, pg_config
-from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster._core.storage.schedules.schema import (
-    AssetDaemonAssetEvaluationsTable,
-    InstigatorsTable,
-)
-from dagster._core.storage.sql import (
-    AlembicVersion,
-    check_alembic_revision,
-    create_engine,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from sqlalchemy import event
-from sqlalchemy.engine import Connection
 
 from ..utils import (
-    create_pg_connection,
     pg_alembic_config,
     pg_url_from_config,
-    retry_pg_connection_fn,
+    create_pg_connection,
     retry_pg_creation_fn,
+    retry_pg_connection_fn,
     set_pg_statement_timeout,
 )
 

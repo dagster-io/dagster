@@ -1,9 +1,9 @@
 import time
 
-from dagster import job, op, repository
-from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster import op, job, repository
 from dagster._core.test_utils import instance_for_test
-from dagster_graphql.test.utils import define_out_of_process_context, execute_dagster_graphql
+from dagster_graphql.test.utils import execute_dagster_graphql, define_out_of_process_context
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 RUNS_QUERY = """
 query RunsQuery {

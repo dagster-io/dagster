@@ -1,29 +1,29 @@
 from typing import Iterator, Optional, cast
 
-import dagster._check as check
 import docker
 import docker.errors
+import dagster._check as check
 from dagster import Field, IntSource, executor
-from dagster._annotations import experimental
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster._core.events import DagsterEvent, EngineEventData
-from dagster._core.execution.retries import RetryMode, get_retries_config
-from dagster._core.execution.tags import get_tag_concurrency_limits_config
-from dagster._core.executor.base import Executor
-from dagster._core.executor.init import InitExecutorContext
-from dagster._core.executor.step_delegating import StepDelegatingExecutor
-from dagster._core.executor.step_delegating.step_handler.base import (
-    CheckStepHealthResult,
-    StepHandler,
-    StepHandlerContext,
-)
-from dagster._core.origin import JobPythonOrigin
 from dagster._core.utils import parse_env_var
 from dagster._grpc.types import ExecuteStepArgs
+from dagster._annotations import experimental
+from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.origin import JobPythonOrigin
 from dagster._serdes.utils import hash_str
 from dagster._utils.merger import merge_dicts
+from dagster._core.executor.base import Executor
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
+from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.executor.step_delegating import StepDelegatingExecutor
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.executor.step_delegating.step_handler.base import (
+    StepHandler,
+    StepHandlerContext,
+    CheckStepHealthResult,
+)
 
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_image, validate_docker_config
 
 from .container_context import DockerContainerContext
 

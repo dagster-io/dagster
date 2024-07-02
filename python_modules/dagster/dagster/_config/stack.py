@@ -1,4 +1,4 @@
-from typing import NamedTuple, Sequence, Tuple
+from typing import Tuple, Sequence, NamedTuple
 
 import dagster._check as check
 

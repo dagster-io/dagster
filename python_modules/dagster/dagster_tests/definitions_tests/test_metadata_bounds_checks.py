@@ -2,12 +2,12 @@ from typing import cast
 
 import pytest
 from dagster import (
-    AssetExecutionContext,
     AssetSelection,
     MaterializeResult,
+    AssetExecutionContext,
     asset,
-    build_metadata_bounds_checks,
     materialize,
+    build_metadata_bounds_checks,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
 

@@ -1,9 +1,9 @@
 from typing import Optional
 
 import pytest
-from dagster import job, op
-from dagster._config.pythonic_config import Config, ConfigurableResource
+from dagster import op, job
 from pydantic import ValidationError, validator
+from dagster._config.pythonic_config import Config, ConfigurableResource
 
 
 def test_validator_default_contract_nested() -> None:

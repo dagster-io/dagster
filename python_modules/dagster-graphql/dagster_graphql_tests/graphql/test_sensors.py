@@ -1,41 +1,41 @@
-import datetime
 import os
 import sys
+import datetime
 
 import pytest
-from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._time import get_timezone
+from dagster._utils import Counter, traced_counter
+from dagster._daemon import get_default_daemon_logger
+from dagster._utils.error import SerializableErrorInfo
+from dagster._daemon.sensor import execute_sensor_iteration
+from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
+from dagster_graphql.test.utils import (
+    main_repo_name,
+    infer_sensor_selector,
+    execute_dagster_graphql,
+    main_repo_location_name,
+    infer_repository_selector,
+)
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
+from dagster._core.remote_representation import RemoteRepositoryOrigin, InProcessCodeLocationOrigin
 from dagster._core.scheduler.instigation import (
+    TickData,
+    TickStatus,
     InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
-    TickData,
-    TickStatus,
 )
-from dagster._core.test_utils import SingleThreadPoolExecutor, freeze_time, wait_for_futures
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.sensor import execute_sensor_iteration
-from dagster._time import get_timezone
-from dagster._utils import Counter, traced_counter
-from dagster._utils.error import SerializableErrorInfo
-from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
-from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_sensor_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.sensor_definition import SensorType
 
 from .graphql_context_test_suite import (
+    ReadonlyGraphQLContextTestMatrix,
     ExecutingGraphQLContextTestMatrix,
     NonLaunchableGraphQLContextTestMatrix,
-    ReadonlyGraphQLContextTestMatrix,
 )
 
 GET_SENSORS_QUERY = """

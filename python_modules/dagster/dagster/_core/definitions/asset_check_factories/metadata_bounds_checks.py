@@ -1,18 +1,18 @@
 import re
-from typing import Optional, Sequence, Tuple, Union, cast
+from typing import Tuple, Union, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._annotations import experimental
-from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.utils import INVALID_NAME_CHARS
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
+from dagster._core.definitions.utils import INVALID_NAME_CHARS
+from dagster._core.definitions.events import AssetMaterialization
 
-from ..asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
-from ..asset_checks import AssetChecksDefinition
-from ..asset_key import AssetKey, CoercibleToAssetKey
-from ..assets import AssetsDefinition, SourceAsset
 from .utils import assets_to_keys, build_multi_asset_check
+from ..assets import SourceAsset, AssetsDefinition
+from ..asset_key import AssetKey, CoercibleToAssetKey
+from ..asset_checks import AssetChecksDefinition
+from ..asset_check_spec import AssetCheckKey, AssetCheckSpec, AssetCheckSeverity
 
 
 @experimental

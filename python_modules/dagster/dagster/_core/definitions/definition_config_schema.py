@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Union, Mapping, Callable, Optional
 
 import dagster._check as check
 from dagster._config import (
-    ConfigAnyInstance,
-    ConfigType,
-    EvaluateValueResult,
     Field,
+    ConfigType,
     UserConfigSchema,
-    convert_potential_field,
+    ConfigAnyInstance,
+    EvaluateValueResult,
     process_config,
+    convert_potential_field,
 )
 from dagster._core.errors import DagsterConfigMappingFunctionError, user_code_error_boundary
 

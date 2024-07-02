@@ -6,15 +6,15 @@ from unittest import mock
 
 import pytest
 from dagster import DagsterInstance, instance_for_test
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer, ChangeReason
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.definitions.events import AssetKey
+from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.asset_graph_differ import ChangeReason, AssetGraphDiffer
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
 
 
 @pytest.fixture

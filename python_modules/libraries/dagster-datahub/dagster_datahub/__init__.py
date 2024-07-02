@@ -1,13 +1,13 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
+from .version import __version__
 from .resources import (
     DatahubConnection,
-    DatahubKafkaEmitterResource,
     DatahubRESTEmitterResource,
-    datahub_kafka_emitter,
+    DatahubKafkaEmitterResource,
     datahub_rest_emitter,
+    datahub_kafka_emitter,
 )
-from .version import __version__
 
 DagsterLibraryRegistry.register("dagster-datahub", __version__)
 

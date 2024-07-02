@@ -1,12 +1,12 @@
 import tempfile
 
 import pytest
+from dagster import Output, AssetKey, AssetMaterialization, op, job
 from click.testing import CliRunner
-from dagster import AssetKey, AssetMaterialization, Output, job, op
-from dagster._cli.asset import asset_wipe_cache_command, asset_wipe_command
-from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-from dagster._core.test_utils import instance_for_test
 from dagster._seven import json
+from dagster._cli.asset import asset_wipe_command, asset_wipe_cache_command
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
 
 
 @pytest.fixture(name="instance_runner")

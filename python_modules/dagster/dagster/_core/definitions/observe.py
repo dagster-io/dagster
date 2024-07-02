@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Union, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._utils.warnings import disable_dagster_warnings
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._utils.warnings import disable_dagster_warnings
 
 from ..instance import DagsterInstance
 from .source_asset import SourceAsset

@@ -1,10 +1,10 @@
 from dagster import (
     Nothing,
-    _check as check,
     op,
+    _check as check,
 )
-from dagster._core.definitions.input import In
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.definitions.input import In
 
 
 def _core_create_snowflake_command(dagster_decorator, decorator_name, sql, parameters=None):

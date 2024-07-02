@@ -1,15 +1,15 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, Optional, NamedTuple
 
 import dagster._check as check
-from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
-    MetadataValue,
-    normalize_metadata,
-)
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.types import ExcInfo
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    MetadataFieldSerializer,
+    normalize_metadata,
+)
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.system import StepExecutionContext

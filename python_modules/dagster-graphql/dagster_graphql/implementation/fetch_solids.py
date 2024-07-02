@@ -15,9 +15,9 @@ def get_solids(repo):
 
 
 def get_used_solid_map(repo):
-    from ..schema.pipelines.pipeline import GraphenePipeline
     from ..schema.solids import build_solid_handles
-    from ..schema.used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
+    from ..schema.used_solid import GrapheneUsedSolid, GrapheneNodeInvocationSite
+    from ..schema.pipelines.pipeline import GraphenePipeline
 
     check.inst_param(repo, "repo", ExternalRepository)
 
@@ -53,8 +53,8 @@ def get_used_solid_map(repo):
 
 def get_graph_or_error(graphene_info, graph_selector):
     from ..schema.errors import GrapheneGraphNotFoundError
-    from ..schema.pipelines.pipeline import GrapheneGraph
     from ..schema.solids import build_solid_handles
+    from ..schema.pipelines.pipeline import GrapheneGraph
 
     check.inst_param(graph_selector, "graph_selector", GraphSelector)
     if not graphene_info.context.has_code_location(graph_selector.location_name):

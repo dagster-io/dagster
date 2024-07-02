@@ -1,5 +1,5 @@
-from pathlib import Path
 from typing import Sequence
+from pathlib import Path
 
 from dagster import PipesSubprocessClient
 from dagster_blueprints import YamlBlueprintsLoader

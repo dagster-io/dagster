@@ -1,7 +1,7 @@
-import itertools
 import os
 import shutil
 import tempfile
+import itertools
 from contextlib import contextmanager
 
 import dagster._check as check

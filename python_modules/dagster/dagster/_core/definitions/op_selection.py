@@ -1,33 +1,33 @@
 import itertools
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Dict,
-    Iterable,
     List,
-    NamedTuple,
+    Type,
+    Tuple,
+    Union,
+    Iterable,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
-from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.errors import DagsterInvalidSubsetError
 from dagster._core.definitions.dependency import (
-    DependencyDefinition,
-    DynamicCollectDependencyDefinition,
     GraphNode,
+    NodeHandle,
+    NodeOutput,
+    NodeInvocation,
+    DependencyDefinition,
     IDependencyDefinition,
     MultiDependencyDefinition,
-    NodeHandle,
-    NodeInvocation,
-    NodeOutput,
+    DynamicCollectDependencyDefinition,
 )
-from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
-from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.definitions.composition import MappedInputPlaceholder
 from dagster._core.selector.subset_selector import parse_op_queries
+from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.node_definition import NodeDefinition

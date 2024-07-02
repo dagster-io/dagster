@@ -1,6 +1,6 @@
 from dagster import (
-    AutoMaterializePolicy,
     Definitions,
+    AutoMaterializePolicy,
     asset,
     load_assets_from_current_module,
 )

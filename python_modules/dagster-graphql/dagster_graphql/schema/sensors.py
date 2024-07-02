@@ -1,44 +1,44 @@
 from typing import Optional
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
-from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
-from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.remote_representation.external import ExternalRepository
 
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import (
-    assert_permission_for_location,
     capture_error,
     require_permission_check,
+    assert_permission_for_location,
 )
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
-from ..implementation.fetch_sensors import (
-    get_sensor_next_tick,
-    reset_sensor,
-    set_sensor_cursor,
-    start_sensor,
-    stop_sensor,
-)
-from .asset_key import GrapheneAssetKey
-from .asset_selections import GrapheneAssetSelection
+from .util import ResolveInfo, non_null_list
 from .errors import (
     GraphenePythonError,
-    GrapheneRepositoryNotFoundError,
-    GrapheneSensorNotFoundError,
     GrapheneUnauthorizedError,
+    GrapheneSensorNotFoundError,
+    GrapheneRepositoryNotFoundError,
 )
 from .inputs import GrapheneSensorSelector
+from .asset_key import GrapheneAssetKey
 from .instigation import (
-    GrapheneDryRunInstigationTick,
     GrapheneInstigationState,
     GrapheneInstigationStatus,
+    GrapheneDryRunInstigationTick,
 )
-from .util import ResolveInfo, non_null_list
+from .asset_selections import GrapheneAssetSelection
+from ..implementation.fetch_sensors import (
+    stop_sensor,
+    reset_sensor,
+    start_sensor,
+    set_sensor_cursor,
+    get_sensor_next_tick,
+)
 
 
 class GrapheneTarget(graphene.ObjectType):

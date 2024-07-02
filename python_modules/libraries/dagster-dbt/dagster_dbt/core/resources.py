@@ -1,23 +1,23 @@
-from typing import Any, Iterator, Mapping, Optional, Sequence, Set
+from typing import Any, Set, Mapping, Iterator, Optional, Sequence
 
 import dagster._check as check
 from dagster import resource
+from pydantic import Field
 from dagster._annotations import public
+from dagster._utils.merger import merge_dicts
 from dagster._config.pythonic_config import ConfigurableResource, IAttachDifferentObjectToOpContext
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.merger import merge_dicts
-from pydantic import Field
 
-from ..dbt_resource import DbtClient
 from .types import DbtCliOutput
 from .utils import (
     DEFAULT_DBT_TARGET_PATH,
     execute_cli,
-    execute_cli_stream,
     parse_manifest,
     parse_run_results,
+    execute_cli_stream,
     remove_run_results,
 )
+from ..dbt_resource import DbtClient
 
 DEFAULT_DBT_EXECUTABLE = "dbt"
 

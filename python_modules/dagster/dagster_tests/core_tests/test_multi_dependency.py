@@ -1,20 +1,20 @@
 import pytest
 from dagster import (
-    Any,
-    DagsterInvalidDefinitionError,
-    DependencyDefinition,
-    GraphDefinition,
     In,
-    InputMapping,
+    Any,
     Int,
-    List,
-    MultiDependencyDefinition,
-    Nothing,
     Out,
+    List,
+    Nothing,
+    InputMapping,
     OutputMapping,
-    graph,
-    job,
+    GraphDefinition,
+    DependencyDefinition,
+    MultiDependencyDefinition,
+    DagsterInvalidDefinitionError,
     op,
+    job,
+    graph,
 )
 from dagster._core.definitions.composition import MappedInputPlaceholder
 

@@ -1,5 +1,5 @@
 import pandas as pd
-from dagster import GraphOut, graph, op
+from dagster import GraphOut, op, graph
 
 
 @op

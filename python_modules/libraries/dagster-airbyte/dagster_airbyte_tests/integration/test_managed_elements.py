@@ -3,18 +3,18 @@
 
 import os
 import time
-from datetime import datetime
 from typing import cast
+from datetime import datetime
 
 import mock
 import pytest
 import requests
 import requests_mock
 from dagster import AssetKey, materialize
-from dagster._core.events import StepMaterializationData
-from dagster._core.test_utils import environ
 from dagster._utils import file_relative_path
 from dagster_airbyte import airbyte_resource, load_assets_from_connections
+from dagster._core.events import StepMaterializationData
+from dagster._core.test_utils import environ
 from dagster_managed_elements import ManagedElementDiff
 from dagster_managed_elements.cli import apply, check
 from dagster_managed_elements.utils import diff_dicts

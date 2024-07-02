@@ -1,18 +1,18 @@
 import pytest
 from dagster import (
-    Any,
-    DagsterInvariantViolationError,
-    DagsterStepOutputNotFoundError,
     In,
+    Any,
     Out,
     Output,
-    execute_job,
-    job,
+    DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
     op,
+    job,
+    execute_job,
     reconstructable,
 )
-from dagster._core.test_utils import instance_for_test
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.test_utils import instance_for_test
 
 
 def test_multiple_outputs():

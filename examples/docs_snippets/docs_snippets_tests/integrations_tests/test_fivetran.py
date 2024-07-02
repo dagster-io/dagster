@@ -1,8 +1,8 @@
 import os
 
 from docs_snippets.integrations.fivetran.fivetran import (
-    scope_add_downstream_assets,
     scope_schedule_assets,
+    scope_add_downstream_assets,
 )
 
 

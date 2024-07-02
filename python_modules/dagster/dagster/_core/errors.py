@@ -16,8 +16,8 @@ Dagster runtime.
 """
 
 import sys
+from typing import TYPE_CHECKING, Any, Type, Callable, Iterator, Optional
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Type
 
 import dagster._check as check
 from dagster._utils.interrupts import raise_interrupts_as

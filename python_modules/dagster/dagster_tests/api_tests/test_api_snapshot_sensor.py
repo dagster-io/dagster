@@ -3,16 +3,16 @@ from typing import Optional
 from unittest import mock
 
 import pytest
+from dagster._serdes import deserialize_value
+from dagster._grpc.types import SensorExecutionArgs
+from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
+from dagster._grpc.client import ephemeral_grpc_api_client
 from dagster._api.snapshot_sensor import (
-    sync_get_external_sensor_execution_data_ephemeral_grpc,
     sync_get_external_sensor_execution_data_grpc,
+    sync_get_external_sensor_execution_data_ephemeral_grpc,
 )
 from dagster._core.definitions.sensor_definition import SensorExecutionData
-from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeUnreachableError
 from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
-from dagster._grpc.client import ephemeral_grpc_api_client
-from dagster._grpc.types import SensorExecutionArgs
-from dagster._serdes import deserialize_value
 
 from .utils import get_bar_repo_handle
 

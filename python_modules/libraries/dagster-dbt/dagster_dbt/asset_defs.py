@@ -1,68 +1,52 @@
-import json
 import os
-from pathlib import Path
+import json
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    AbstractSet,
     cast,
 )
+from pathlib import Path
 
 import dateutil
 from dagster import (
-    AssetCheckResult,
-    AssetKey,
-    AssetsDefinition,
-    AutoMaterializePolicy,
-    FreshnessPolicy,
     In,
-    OpExecutionContext,
     Out,
-    PartitionsDefinition,
+    AssetKey,
+    FreshnessPolicy,
+    AssetCheckResult,
+    AssetsDefinition,
     PermissiveConfig,
+    OpExecutionContext,
+    PartitionsDefinition,
+    AutoMaterializePolicy,
+    op,
     _check as check,
     get_dagster_logger,
-    op,
 )
 from dagster._annotations import deprecated_param
-from dagster._core.definitions.events import (
-    AssetMaterialization,
-    AssetObservation,
-    CoercibleToAssetKeyPrefix,
-    Output,
-)
-from dagster._core.definitions.metadata import RawMetadataMapping, RawMetadataValue
 from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
-
-from dagster_dbt.asset_utils import (
-    default_asset_key_fn,
-    default_auto_materialize_policy_fn,
-    default_description_fn,
-    default_freshness_policy_fn,
-    default_group_from_dbt_resource_props,
-    default_metadata_from_dbt_resource_props,
-    get_asset_deps,
-    get_deps,
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.definitions.events import (
+    Output,
+    AssetObservation,
+    AssetMaterialization,
+    CoercibleToAssetKeyPrefix,
 )
-from dagster_dbt.core.resources import DbtCliClient
-from dagster_dbt.core.resources_v2 import DbtCliResource
-from dagster_dbt.core.types import DbtCliOutput
-from dagster_dbt.core.utils import build_command_args_from_flags, execute_cli
-from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
-from dagster_dbt.errors import DagsterDbtError
+from dagster._core.definitions.metadata import RawMetadataValue, RawMetadataMapping
+
 from dagster_dbt.types import DbtOutput
 from dagster_dbt.utils import (
     ASSET_RESOURCE_TYPES,
@@ -70,6 +54,22 @@ from dagster_dbt.utils import (
     result_to_events,
     select_unique_ids_from_manifest,
 )
+from dagster_dbt.errors import DagsterDbtError
+from dagster_dbt.core.types import DbtCliOutput
+from dagster_dbt.core.utils import execute_cli, build_command_args_from_flags
+from dagster_dbt.asset_utils import (
+    get_deps,
+    get_asset_deps,
+    default_asset_key_fn,
+    default_description_fn,
+    default_freshness_policy_fn,
+    default_auto_materialize_policy_fn,
+    default_group_from_dbt_resource_props,
+    default_metadata_from_dbt_resource_props,
+)
+from dagster_dbt.core.resources import DbtCliClient
+from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, validate_opt_translator
 
 
 def _load_manifest_for_project(

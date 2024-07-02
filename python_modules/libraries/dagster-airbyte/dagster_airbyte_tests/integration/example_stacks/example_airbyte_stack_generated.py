@@ -1,13 +1,13 @@
 import os
 
 from dagster_airbyte import (
+    AirbyteSyncMode,
     AirbyteConnection,
     AirbyteManagedElementReconciler,
-    AirbyteSyncMode,
     airbyte_resource,
 )
-from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
 from dagster_airbyte.managed.generated.sources import FileSource
+from dagster_airbyte.managed.generated.destinations import LocalJsonDestination
 
 airbyte_instance = airbyte_resource.configured(
     {

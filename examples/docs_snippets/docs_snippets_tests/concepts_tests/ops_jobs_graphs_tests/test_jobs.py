@@ -1,32 +1,32 @@
-from docs_snippets.concepts.ops_jobs_graphs.branching_job import branching
-from docs_snippets.concepts.ops_jobs_graphs.dep_dsl import define_dep_dsl_graph
-from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
-    chained,
-    dynamic_graph,
-    multiple,
-    naive,
-    other_arg,
-    return_dynamic,
-)
-from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
 from docs_snippets.concepts.ops_jobs_graphs.jobs import (
     alias,
-    graph_result,
-    job_result,
-    one_plus_one,
-    one_plus_one_from_constructor,
-    tagged_add_one,
     the_job,
+    job_result,
+    graph_result,
+    one_plus_one,
+    tagged_add_one,
+    one_plus_one_from_constructor,
 )
-from docs_snippets.concepts.ops_jobs_graphs.jobs_from_graphs import local_job, prod_job
-from docs_snippets.concepts.ops_jobs_graphs.linear_job import linear
-from docs_snippets.concepts.ops_jobs_graphs.multiple_io_job import inputs_and_outputs
-from docs_snippets.concepts.ops_jobs_graphs.order_based_dependency_job import (
-    nothing_dependency,
+from docs_snippets.concepts.ops_jobs_graphs.dep_dsl import define_dep_dsl_graph
+from docs_snippets.concepts.ops_jobs_graphs.dynamic import (
+    naive,
+    chained,
+    multiple,
+    other_arg,
+    dynamic_graph,
+    return_dynamic,
 )
 from docs_snippets.concepts.ops_jobs_graphs.retries import (
-    default_and_override_job,
     retry_job,
+    default_and_override_job,
+)
+from docs_snippets.concepts.ops_jobs_graphs.fan_in_job import fan_in
+from docs_snippets.concepts.ops_jobs_graphs.linear_job import linear
+from docs_snippets.concepts.ops_jobs_graphs.branching_job import branching
+from docs_snippets.concepts.ops_jobs_graphs.multiple_io_job import inputs_and_outputs
+from docs_snippets.concepts.ops_jobs_graphs.jobs_from_graphs import prod_job, local_job
+from docs_snippets.concepts.ops_jobs_graphs.order_based_dependency_job import (
+    nothing_dependency,
 )
 
 

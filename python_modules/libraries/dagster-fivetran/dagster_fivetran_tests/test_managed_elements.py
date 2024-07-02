@@ -1,9 +1,10 @@
-import json
 import re
-from contextlib import AbstractContextManager
+import json
 from typing import Any, Dict, List, Tuple, cast
+from contextlib import AbstractContextManager
 
 import responses
+from requests import PreparedRequest
 from dagster_fivetran import (
     FivetranConnector,
     FivetranDestination,
@@ -16,7 +17,6 @@ from dagster_fivetran.managed.types import (
 )
 from dagster_managed_elements.types import ManagedElementDiff
 from dagster_managed_elements.utils import diff_dicts
-from requests import PreparedRequest
 
 
 def ok(contents: Dict[str, Any]) -> Any:

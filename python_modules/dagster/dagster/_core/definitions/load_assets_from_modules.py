@@ -1,23 +1,23 @@
 import inspect
 import pkgutil
-from importlib import import_module
 from types import ModuleType
-from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union, cast
+from typing import Set, Dict, List, Tuple, Union, Iterable, Iterator, Optional, Sequence, cast
+from importlib import import_module
 
 import dagster._check as check
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
+from .assets import AssetsDefinition
 from .asset_key import (
     AssetKey,
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from .assets import AssetsDefinition
-from .cacheable_assets import CacheableAssetsDefinition
 from .source_asset import SourceAsset
+from .cacheable_assets import CacheableAssetsDefinition
 
 
 def find_objects_in_module_of_types(module: ModuleType, types) -> Iterator:

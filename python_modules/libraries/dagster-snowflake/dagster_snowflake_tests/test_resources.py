@@ -1,27 +1,27 @@
 import os
 import uuid
-from contextlib import contextmanager
 from typing import Iterator
 from unittest import mock
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
+    EnvVar,
+    DataVersion,
+    ObserveResult,
     DagsterInstance,
     DagsterResourceFunctionError,
-    DataVersion,
-    EnvVar,
-    ObserveResult,
-    build_resources,
-    job,
-    observable_source_asset,
     op,
+    job,
+    build_resources,
+    observable_source_asset,
 )
-from dagster._check import CheckError
-from dagster._core.definitions.metadata import FloatMetadataValue
-from dagster._core.definitions.observe import observe
-from dagster._core.test_utils import environ
 from dagster._time import get_current_timestamp
-from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps, snowflake_resource
+from dagster._check import CheckError
+from dagster_snowflake import SnowflakeResource, snowflake_resource, fetch_last_updated_timestamps
+from dagster._core.test_utils import environ
+from dagster._core.definitions.observe import observe
+from dagster._core.definitions.metadata import FloatMetadataValue
 
 from .utils import create_mock_connector
 

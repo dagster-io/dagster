@@ -1,84 +1,84 @@
 import sys
 import threading
 from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, Tuple, Union, Mapping, Optional, Sequence, cast
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
 
 import dagster._check as check
-from dagster._api.get_server_id import sync_get_server_id
-from dagster._api.list_repositories import sync_list_repositories_grpc
-from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
-from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
-from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
-from dagster._api.snapshot_partition import (
-    sync_get_external_partition_config_grpc,
-    sync_get_external_partition_names_grpc,
-    sync_get_external_partition_set_execution_param_data_grpc,
-    sync_get_external_partition_tags_grpc,
+from dagster._serdes import deserialize_value
+from dagster._grpc.impl import (
+    get_notebook_data,
+    get_partition_tags,
+    get_partition_names,
+    get_partition_config,
+    get_external_sensor_execution,
+    get_external_schedule_execution,
+    get_partition_set_execution_param_data,
 )
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
-from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
-from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._grpc.types import GetCurrentRunsResult, GetCurrentImageResult
 from dagster._core.errors import (
     DagsterInvalidSubsetError,
-    DagsterInvariantViolationError,
     DagsterUserCodeProcessError,
+    DagsterInvariantViolationError,
 )
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.origin import RepositoryPythonOrigin
+from dagster._utils.merger import merge_dicts
 from dagster._core.instance import DagsterInstance
 from dagster._core.libraries import DagsterLibraryRegistry
-from dagster._core.origin import RepositoryPythonOrigin
+from dagster._api.snapshot_job import sync_get_external_job_subset_grpc
+from dagster._api.get_server_id import sync_get_server_id
+from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
+from dagster._core.code_pointer import CodePointer
+from dagster._core.execution.api import create_execution_plan
+from dagster._api.list_repositories import sync_list_repositories_grpc
+from dagster._api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
+from dagster._seven.compat.pendulum import PendulumDateTime
+from dagster._api.snapshot_partition import (
+    sync_get_external_partition_tags_grpc,
+    sync_get_external_partition_names_grpc,
+    sync_get_external_partition_config_grpc,
+    sync_get_external_partition_set_execution_param_data_grpc,
+)
+from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.remote_representation import ExternalJobSubsetResult
-from dagster._core.remote_representation.external import (
-    ExternalExecutionPlan,
-    ExternalJob,
-    ExternalPartitionSet,
-    ExternalRepository,
-)
-from dagster._core.remote_representation.external_data import (
-    ExternalPartitionNamesData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
-    external_partition_set_name_for_job_name,
-    external_repository_data_from_def,
-)
-from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._api.snapshot_execution_plan import sync_get_external_execution_plan_grpc
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.remote_representation.handle import JobHandle, RepositoryHandle
 from dagster._core.remote_representation.origin import (
     CodeLocationOrigin,
-    GrpcServerCodeLocationOrigin,
     InProcessCodeLocationOrigin,
+    GrpcServerCodeLocationOrigin,
 )
 from dagster._core.snap.execution_plan_snapshot import snapshot_from_execution_plan
-from dagster._grpc.impl import (
-    get_external_schedule_execution,
-    get_external_sensor_execution,
-    get_notebook_data,
-    get_partition_config,
-    get_partition_names,
-    get_partition_set_execution_param_data,
-    get_partition_tags,
+from dagster._core.remote_representation.external import (
+    ExternalJob,
+    ExternalRepository,
+    ExternalPartitionSet,
+    ExternalExecutionPlan,
 )
-from dagster._grpc.types import GetCurrentImageResult, GetCurrentRunsResult
-from dagster._serdes import deserialize_value
-from dagster._seven.compat.pendulum import PendulumDateTime
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.remote_representation.external_data import (
+    ExternalPartitionNamesData,
+    ExternalSensorExecutionErrorData,
+    ExternalScheduleExecutionErrorData,
+    external_repository_data_from_def,
+    external_partition_set_name_for_job_name,
+)
+from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.schedule_definition import ScheduleExecutionData
-    from dagster._core.definitions.sensor_definition import SensorExecutionData
     from dagster._core.remote_representation import (
+        ExternalPartitionTagsData,
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionSetExecutionParamData,
-        ExternalPartitionTagsData,
     )
+    from dagster._core.definitions.sensor_definition import SensorExecutionData
+    from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 
 
 class CodeLocation(AbstractContextManager):

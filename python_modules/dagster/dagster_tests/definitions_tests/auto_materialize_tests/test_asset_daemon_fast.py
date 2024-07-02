@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetMaterialization, AssetSelection, DagsterInstance, job, op
+from dagster import AssetSelection, DagsterInstance, AssetMaterialization, op, job
 from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 
 from .base_scenario import AssetReconciliationScenario, asset_def

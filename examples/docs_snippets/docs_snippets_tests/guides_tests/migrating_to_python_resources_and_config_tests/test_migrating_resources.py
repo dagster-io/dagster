@@ -1,13 +1,13 @@
 from docs_snippets.guides.dagster.migrating_to_python_resources_and_config.migrating_resources import (
     convert_resource,
     initial_code_base,
-    new_resource_code_contextmanager,
-    new_style_resource_on_context,
-    new_style_resource_on_param,
-    new_third_party_resource_fixed,
-    new_third_party_resource_old_code_broken,
-    old_resource_code_contextmanager,
     old_third_party_resource,
+    new_style_resource_on_param,
+    new_style_resource_on_context,
+    new_third_party_resource_fixed,
+    new_resource_code_contextmanager,
+    old_resource_code_contextmanager,
+    new_third_party_resource_old_code_broken,
 )
 
 

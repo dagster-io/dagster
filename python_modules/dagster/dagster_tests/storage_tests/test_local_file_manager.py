@@ -2,11 +2,11 @@ import os
 import tempfile
 from contextlib import contextmanager
 
-from dagster import LocalFileHandle, job, op
+from dagster import LocalFileHandle, op, job
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.file_manager import LocalFileManager, local_file_manager
 from dagster._core.test_utils import instance_for_test
 from dagster._utils.temp_file import get_temp_file_handle_with_data
+from dagster._core.storage.file_manager import LocalFileManager, local_file_manager
 
 
 @contextmanager

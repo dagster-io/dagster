@@ -1,23 +1,23 @@
 import pytest
 from dagster import (
+    In,
     AssetKey,
     AssetObservation,
-    In,
     StaticPartitionsDefinition,
-    asset,
-    build_input_context,
-    job,
-    materialize,
     op,
+    job,
+    asset,
+    materialize,
+    build_input_context,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.events import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
-from dagster._core.storage.input_manager import input_manager
-from dagster._core.storage.io_manager import IOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.events import AssetLineageInfo
+from dagster._core.storage.io_manager import IOManager
+from dagster._core.storage.input_manager import input_manager
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 
 
 def n_asset_keys(path, n):

@@ -1,14 +1,14 @@
-import datetime
 import os
+import datetime
 
 import pandas as pd
-from dagster import ConfigurableResource, EnvVar
-from dagster_dbt import DbtCliResource
-from dagster_duckdb_pandas import DuckDBPandasIOManager
-from dagster_gcp_pandas import BigQueryPandasIOManager
-from dagster_hex.resources import hex_resource
-from google.cloud import bigquery
+from dagster import EnvVar, ConfigurableResource
 from pydantic import Field
+from dagster_dbt import DbtCliResource
+from google.cloud import bigquery
+from dagster_gcp_pandas import BigQueryPandasIOManager
+from dagster_duckdb_pandas import DuckDBPandasIOManager
+from dagster_hex.resources import hex_resource
 
 FILE_PATH = os.path.dirname(__file__)
 DBT_PROJECT_DIR = os.path.join(FILE_PATH, "./dbt_project")

@@ -1,7 +1,7 @@
 from unittest import mock
 
-from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_snowflake import snowflake_resource
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_snowflake.ops import snowflake_solid_for_query
 
 from .utils import create_mock_connector

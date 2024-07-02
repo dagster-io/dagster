@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING, Any, Generic, Optional, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Type, Union, Generic, TypeVar, Optional, cast
 
 from pydantic import Field
-from typing_extensions import Annotated, Self, dataclass_transform, get_origin
+from typing_extensions import Self, Annotated, get_origin, dataclass_transform
 
 from dagster._core.errors import DagsterInvalidDagsterTypeInPythonicConfigDefinitionError
 

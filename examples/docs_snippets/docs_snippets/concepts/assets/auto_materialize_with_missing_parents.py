@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, AutoMaterializeRule, asset
+from dagster import AutoMaterializeRule, AutoMaterializePolicy, asset
 
 allow_missing_parents_policy = AutoMaterializePolicy.eager().without_rules(
     AutoMaterializeRule.skip_on_parent_missing(),

@@ -8,24 +8,24 @@ import pytest
 from dagster import (
     AssetIn,
     AssetKey,
-    DagsterInstance,
-    DailyPartitionsDefinition,
     Definitions,
-    IdentityPartitionMapping,
     SourceAsset,
+    DagsterInstance,
     StaticPartitionMapping,
+    IdentityPartitionMapping,
+    DailyPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.data_version import CachingStaleStatusResolver
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.test_utils import instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.workspace import CodeLocationEntry, CodeLocationLoadStatus
+from dagster._core.remote_representation import InProcessCodeLocationOrigin
+from dagster._core.definitions.data_version import CachingStaleStatusResolver
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 
 
 @asset

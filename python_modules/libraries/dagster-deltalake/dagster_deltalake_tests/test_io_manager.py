@@ -2,9 +2,9 @@ from datetime import datetime
 
 import pytest
 from dagster import TimeWindow
-from dagster._core.storage.db_io_manager import TablePartitionDimension
+from deltalake.schema import Field, Schema, PrimitiveType
 from dagster_deltalake.handler import partition_dimensions_to_dnf
-from deltalake.schema import Field, PrimitiveType, Schema
+from dagster._core.storage.db_io_manager import TablePartitionDimension
 
 TablePartitionDimension(
     partitions=TimeWindow(datetime(2020, 1, 2), datetime(2020, 2, 3)),

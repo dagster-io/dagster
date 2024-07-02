@@ -3,33 +3,33 @@ import typing
 
 import pytest
 from dagster import (
-    DagsterEventType,
-    DagsterInvalidDefinitionError,
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    Failure,
     In,
     Int,
-    List,
-    Optional,
     Out,
-    String,
+    List,
     Tuple,
+    String,
+    Failure,
+    Optional,
     TypeCheck,
-    check_dagster_type,
-    fs_io_manager,
-    job,
-    make_python_type_usable_as_dagster_type,
+    DagsterEventType,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     op,
+    job,
     resource,
+    fs_io_manager,
+    check_dagster_type,
+    make_python_type_usable_as_dagster_type,
 )
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.types.dagster_type import (
-    DagsterType,
     ListType,
+    DagsterType,
     PythonObjectDagsterType,
     resolve_dagster_type,
 )
+from dagster._core.definitions.metadata import MetadataValue
 
 
 class BarObj:

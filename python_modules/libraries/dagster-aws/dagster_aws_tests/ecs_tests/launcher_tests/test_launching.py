@@ -3,26 +3,26 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-import dagster_aws
 import pytest
-from botocore.exceptions import ClientError
+import dagster_aws
 from dagster._check import CheckError
-from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.launcher import LaunchRunContext
-from dagster._core.launcher.base import WorkerStatus
-from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RUN_WORKER_ID_TAG
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
-from dagster_aws.ecs.launcher import (
-    DEFAULT_LINUX_RESOURCES,
-    DEFAULT_WINDOWS_RESOURCES,
-    RUNNING_STATUSES,
-    STOPPED_STATUSES,
-)
+from botocore.exceptions import ClientError
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
 from dagster_aws.ecs.tasks import DagsterEcsTaskDefinitionConfig
 from dagster_aws.ecs.utils import get_task_definition_family
+from dagster._core.launcher import LaunchRunContext
+from dagster_aws.ecs.launcher import (
+    RUNNING_STATUSES,
+    STOPPED_STATUSES,
+    DEFAULT_LINUX_RESOURCES,
+    DEFAULT_WINDOWS_RESOURCES,
+)
+from dagster._core.code_pointer import FileCodePointer
+from dagster._core.storage.tags import RUN_WORKER_ID_TAG
+from dagster._core.launcher.base import WorkerStatus
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.definitions.metadata import MetadataValue
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])

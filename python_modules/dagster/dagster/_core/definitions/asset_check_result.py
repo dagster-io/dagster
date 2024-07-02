@@ -1,21 +1,21 @@
-from typing import TYPE_CHECKING, AbstractSet, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, Optional, NamedTuple, AbstractSet
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.definitions.events import (
+    AssetKey,
+    MetadataValue,
+    RawMetadataValue,
+    EventWithMetadata,
+    CoercibleToAssetKey,
+    normalize_metadata,
+)
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.definitions.events import (
-    AssetKey,
-    CoercibleToAssetKey,
-    EventWithMetadata,
-    MetadataValue,
-    RawMetadataValue,
-    normalize_metadata,
-)
-from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.compute import StepExecutionContext

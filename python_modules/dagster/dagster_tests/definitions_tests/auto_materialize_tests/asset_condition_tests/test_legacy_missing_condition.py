@@ -1,16 +1,16 @@
 import datetime
 
-from dagster import AutoMaterializePolicy, Definitions, asset
-from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
+from dagster import Definitions, AutoMaterializePolicy, asset
+from dagster._serdes import serialize_value
 from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
-from dagster._serdes import serialize_value
+from dagster._core.definitions.declarative_automation.legacy.asset_condition import AssetCondition
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
-    daily_partitions_def,
-    day_partition_key,
     one_asset,
+    day_partition_key,
+    daily_partitions_def,
     time_partitions_start_datetime,
 )
 from .asset_condition_scenario import AutomationConditionScenarioState

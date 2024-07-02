@@ -1,8 +1,8 @@
-from typing import AbstractSet, Any, Dict, Literal, Mapping, Optional
+from typing import Any, Dict, Literal, Mapping, Optional, AbstractSet
 
 from dagster import AssetExecutionContext
-from databricks.sdk.service.jobs import SubmitTask
 from pydantic import Field
+from databricks.sdk.service.jobs import SubmitTask
 
 from dagster_blueprints.blueprint_assets_definition import BlueprintAssetsDefinition
 

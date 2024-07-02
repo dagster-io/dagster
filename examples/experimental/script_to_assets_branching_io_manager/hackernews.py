@@ -1,9 +1,9 @@
 import base64
 from io import BytesIO
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 from wordcloud import STOPWORDS, WordCloud
 

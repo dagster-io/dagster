@@ -1,17 +1,17 @@
 import os
 import re
 
-from click.testing import CliRunner
 from dagster import file_relative_path
+from click.testing import CliRunner
 from dagster._cli.project import (
-    from_example_command,
-    scaffold_code_location_command,
     scaffold_command,
+    from_example_command,
     scaffold_repository_command,
+    scaffold_code_location_command,
 )
-from dagster._core.workspace.load_target import get_origins_from_toml
 from dagster._generate.download import AVAILABLE_EXAMPLES, EXAMPLES_TO_IGNORE, _get_url_for_version
 from dagster._generate.generate import _should_skip_file
+from dagster._core.workspace.load_target import get_origins_from_toml
 
 
 def test_project_scaffold_command_fails_when_dir_path_exists():

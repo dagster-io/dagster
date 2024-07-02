@@ -1,5 +1,5 @@
 # ruff: noqa: T201
-from dagster import job, op
+from dagster import op, job
 
 
 @op

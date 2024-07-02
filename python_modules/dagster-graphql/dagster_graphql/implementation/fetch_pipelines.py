@@ -6,13 +6,13 @@ from dagster._core.storage.dagster_run import DagsterRun
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from .external import get_external_job_or_raise, get_full_external_job_or_raise
 from .utils import JobSubsetSelector, UserFacingGraphQLError
+from .external import get_external_job_or_raise, get_full_external_job_or_raise
 
 if TYPE_CHECKING:
     from ..schema.pipelines.pipeline import GraphenePipeline
-    from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
+    from ..schema.pipelines.pipeline_ref import GrapheneUnknownPipeline
 
 
 def get_job_snapshot_or_error_from_job_selector(

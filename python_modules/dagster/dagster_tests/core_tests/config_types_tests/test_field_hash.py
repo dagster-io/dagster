@@ -1,4 +1,4 @@
-from dagster import Field, Permissive, Selector, Shape
+from dagster import Field, Shape, Selector, Permissive
 from dagster._config import compute_fields_hash
 
 

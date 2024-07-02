@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, FreshnessPolicy, asset
+from dagster import FreshnessPolicy, AutoMaterializePolicy, asset
 
 
 @asset

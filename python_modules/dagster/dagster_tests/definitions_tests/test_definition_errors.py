@@ -2,15 +2,15 @@ import re
 
 import pytest
 from dagster import (
-    DagsterInvalidConfigDefinitionError,
-    DagsterInvalidDefinitionError,
-    DependencyDefinition,
-    Field,
-    GraphDefinition,
     In,
-    OpDefinition,
     Out,
+    Field,
+    OpDefinition,
+    GraphDefinition,
     ResourceDefinition,
+    DependencyDefinition,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidConfigDefinitionError,
     op,
 )
 from dagster._check import ParameterCheckError

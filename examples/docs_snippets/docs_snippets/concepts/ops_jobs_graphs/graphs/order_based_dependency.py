@@ -8,7 +8,7 @@ def get_database_connection():
 
 
 # start_marker
-from dagster import In, Nothing, graph, op
+from dagster import In, Nothing, op, graph
 
 
 @op

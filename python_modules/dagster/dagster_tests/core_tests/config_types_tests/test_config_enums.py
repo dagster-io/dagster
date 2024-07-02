@@ -2,15 +2,15 @@ from enum import Enum as PythonEnum
 
 import pytest
 from dagster import (
+    Int,
+    Enum,
+    Field,
+    EnumValue,
+    GraphDefinition,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
-    Enum,
-    EnumValue,
-    Field,
-    GraphDefinition,
-    Int,
-    job,
     op,
+    job,
 )
 from dagster._config import Enum as ConfigEnum
 from dagster._config.validate import validate_config

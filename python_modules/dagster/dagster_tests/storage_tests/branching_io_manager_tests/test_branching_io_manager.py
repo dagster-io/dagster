@@ -2,19 +2,19 @@ import math
 import time
 from typing import Any, Optional, cast
 
-from dagster import Definitions, In, asset, job, op
+from dagster import In, Definitions, op, job, asset
+from dagster._core.instance import DagsterInstance
+from dagster._core.events.log import EventLogEntry
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.events.log import EventLogEntry
-from dagster._core.instance import DagsterInstance
 from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
 from .utils import (
     LOG,
+    DefinitionsRunner,
     AssetBasedInMemoryIOManager,
     ConfigurableAssetBasedInMemoryIOManager,
-    DefinitionsRunner,
 )
 
 

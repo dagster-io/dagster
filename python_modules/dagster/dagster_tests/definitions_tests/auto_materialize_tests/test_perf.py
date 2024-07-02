@@ -1,9 +1,9 @@
 import time
 
 from dagster import (
+    Definitions,
     AutomationCondition,
     DailyPartitionsDefinition,
-    Definitions,
     HourlyPartitionsDefinition,
 )
 from dagster_test.toys.auto_materializing.large_graph import AssetLayerConfig, build_assets

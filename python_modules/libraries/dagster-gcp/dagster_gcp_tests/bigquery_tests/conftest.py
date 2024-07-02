@@ -1,7 +1,7 @@
 import os
 import uuid
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 
 from google.cloud import bigquery
 

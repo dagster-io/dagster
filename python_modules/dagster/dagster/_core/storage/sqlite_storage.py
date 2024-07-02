@@ -5,17 +5,17 @@ import yaml
 from typing_extensions import Self, TypedDict
 
 from dagster import _check as check
-from dagster._config import StringSource
-from dagster._config.config_schema import UserConfigSchema
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import mkdir_p
+from dagster._config import StringSource
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._config.config_schema import UserConfigSchema
 
+from .runs.base import RunStorage
 from .base_storage import DagsterStorage
 from .event_log.base import EventLogStorage
-from .event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
-from .runs.base import RunStorage
-from .runs.sqlite.sqlite_run_storage import SqliteRunStorage
 from .schedules.base import ScheduleStorage
+from .runs.sqlite.sqlite_run_storage import SqliteRunStorage
+from .event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from .schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 
 if TYPE_CHECKING:

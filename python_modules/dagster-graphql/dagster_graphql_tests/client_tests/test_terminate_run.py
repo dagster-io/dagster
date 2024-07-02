@@ -1,6 +1,6 @@
 import pytest
-from dagster._core.utils import make_new_run_id
 from dagster_graphql import DagsterGraphQLClientError
+from dagster._core.utils import make_new_run_id
 
 from .conftest import MockClient, python_client_test_suite
 

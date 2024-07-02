@@ -1,23 +1,23 @@
-import collections.abc
 import inspect
+import collections.abc
 from os import PathLike, fspath
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Generator,
+    List,
+    Type,
+    Tuple,
+    Union,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
     NoReturn,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
+    Generator,
+    AbstractSet,
     cast,
     overload,
 )

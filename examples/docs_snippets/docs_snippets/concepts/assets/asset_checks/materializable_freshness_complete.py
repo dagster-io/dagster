@@ -3,8 +3,8 @@ from datetime import timedelta
 from dagster import (
     Definitions,
     asset,
-    build_last_update_freshness_checks,
     build_sensor_for_freshness_checks,
+    build_last_update_freshness_checks,
 )
 
 

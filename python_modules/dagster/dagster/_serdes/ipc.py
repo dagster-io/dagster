@@ -1,21 +1,21 @@
 import os
+import sys
 import signal
 import subprocess
-import sys
-from contextlib import contextmanager
 from io import TextIOWrapper
-from subprocess import Popen
 from time import sleep
-from typing import Any, Iterator, NamedTuple, Optional, Sequence, Tuple
+from typing import Any, Tuple, Iterator, Optional, Sequence, NamedTuple
+from contextlib import contextmanager
+from subprocess import Popen
 
 import dagster._check as check
 from dagster._core.errors import DagsterError
-from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
     serializable_error_info_from_exc_info,
 )
+from dagster._serdes.serdes import serialize_value, deserialize_value, whitelist_for_serdes
 
 
 def write_unary_input(input_file: str, obj: NamedTuple) -> None:

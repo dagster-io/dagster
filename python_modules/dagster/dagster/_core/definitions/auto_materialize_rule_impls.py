@@ -1,43 +1,43 @@
-import datetime
 import os
-from collections import defaultdict
+import datetime
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
+    Set,
     Dict,
-    Iterable,
     List,
     Mapping,
-    NamedTuple,
+    Iterable,
     Optional,
     Sequence,
-    Set,
+    NamedTuple,
+    AbstractSet,
 )
+from collections import defaultdict
 
 from dagster._annotations import deprecated, experimental
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.event_api import AssetRecordsFilter
+from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
+from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
+from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
+from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
 from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeDecisionType,
-    ParentUpdatedRuleEvaluationData,
-    WaitingOnAssetsRuleEvaluationData,
-)
-from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
-from dagster._core.definitions.freshness_based_auto_materialize import (
-    freshness_evaluation_results_for_asset_key,
-)
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.time_window_partitions import (
     TimeWindow,
     TimeWindowPartitionsDefinition,
     get_time_partitions_def,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter
-from dagster._core.storage.tags import AUTO_MATERIALIZE_TAG
-from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils.schedules import cron_string_iterator, reverse_cron_string_iterator
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeDecisionType,
+    ParentUpdatedRuleEvaluationData,
+    WaitingOnAssetsRuleEvaluationData,
+)
+from dagster._core.definitions.freshness_based_auto_materialize import (
+    freshness_evaluation_results_for_asset_key,
+)
 
 from .base_asset_graph import sort_key_for_asset_partition
 

@@ -3,26 +3,26 @@ from unittest.mock import MagicMock
 import pytest
 from dagster import (
     AssetKey,
-    AutoMaterializePolicy,
-    Definitions,
     SkipReason,
+    Definitions,
+    AutoMaterializePolicy,
     asset,
-    observable_source_asset,
     sensor,
+    observable_source_asset,
 )
+from dagster._core.test_utils import instance_for_test
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.origin import (
+    RemoteRepositoryOrigin,
+    RegisteredCodeLocationOrigin,
 )
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import external_repository_data_from_def
-from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.remote_representation.origin import (
-    RegisteredCodeLocationOrigin,
-    RemoteRepositoryOrigin,
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
 )
-from dagster._core.test_utils import instance_for_test
 
 
 @asset(auto_materialize_policy=AutoMaterializePolicy.eager())

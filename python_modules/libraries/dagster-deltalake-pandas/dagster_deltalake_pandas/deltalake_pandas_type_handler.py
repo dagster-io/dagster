@@ -1,10 +1,10 @@
-from typing import Any, Dict, Optional, Sequence, Tuple, Type
+from typing import Any, Dict, Type, Tuple, Optional, Sequence
 
 import pandas as pd
 import pyarrow as pa
-from dagster._core.storage.db_io_manager import DbTypeHandler
-from dagster_deltalake.handler import DeltalakeBaseArrowTypeHandler, DeltaLakePyArrowTypeHandler
+from dagster_deltalake.handler import DeltaLakePyArrowTypeHandler, DeltalakeBaseArrowTypeHandler
 from dagster_deltalake.io_manager import DeltaLakeIOManager
+from dagster._core.storage.db_io_manager import DbTypeHandler
 
 
 class DeltaLakePandasTypeHandler(DeltalakeBaseArrowTypeHandler[pd.DataFrame]):

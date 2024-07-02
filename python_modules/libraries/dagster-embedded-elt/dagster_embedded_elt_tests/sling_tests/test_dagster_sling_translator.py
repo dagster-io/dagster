@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, JsonMetadataValue
+from dagster import AssetKey, FreshnessPolicy, JsonMetadataValue, AutoMaterializePolicy
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 
 

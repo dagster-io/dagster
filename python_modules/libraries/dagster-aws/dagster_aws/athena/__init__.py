@@ -1,11 +1,11 @@
 from .resources import (
-    AthenaClient as AthenaClient,
-    AthenaClientResource as AthenaClientResource,
     AthenaError as AthenaError,
-    AthenaResource as AthenaResource,
+    AthenaClient as AthenaClient,
     AthenaTimeout as AthenaTimeout,
+    AthenaResource as AthenaResource,
     FakeAthenaClient as FakeAthenaClient,
     FakeAthenaResource as FakeAthenaResource,
+    AthenaClientResource as AthenaClientResource,
     athena_resource as athena_resource,
     fake_athena_resource as fake_athena_resource,
 )

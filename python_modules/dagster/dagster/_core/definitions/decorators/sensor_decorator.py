@@ -1,29 +1,29 @@
-import collections.abc
 import inspect
+import collections.abc
+from typing import Any, Set, Union, Callable, Optional, Sequence
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Sequence, Set, Union
 
 import dagster._check as check
 from dagster._annotations import experimental
 from dagster._core.definitions.asset_selection import AssetSelection, CoercibleToAssetSelection
 
-from ...errors import DagsterInvariantViolationError
-from ..asset_sensor_definition import AssetSensorDefinition
 from ..events import AssetKey
-from ..multi_asset_sensor_definition import (
-    AssetMaterializationFunction,
-    MultiAssetMaterializationFunction,
-    MultiAssetSensorDefinition,
-)
+from ..target import ExecutableDefinition
+from ...errors import DagsterInvariantViolationError
 from ..run_request import SensorResult
 from ..sensor_definition import (
+    RunRequest,
+    SkipReason,
+    SensorDefinition,
     DefaultSensorStatus,
     RawSensorEvaluationFunction,
-    RunRequest,
-    SensorDefinition,
-    SkipReason,
 )
-from ..target import ExecutableDefinition
+from ..asset_sensor_definition import AssetSensorDefinition
+from ..multi_asset_sensor_definition import (
+    MultiAssetSensorDefinition,
+    AssetMaterializationFunction,
+    MultiAssetMaterializationFunction,
+)
 
 
 def sensor(

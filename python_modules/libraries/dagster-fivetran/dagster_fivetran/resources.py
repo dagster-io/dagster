@@ -1,31 +1,31 @@
-import datetime
-import json
-import logging
 import os
+import json
 import time
-from typing import Any, Mapping, Optional, Sequence, Tuple
+import logging
+import datetime
+from typing import Any, Tuple, Mapping, Optional, Sequence
 from urllib.parse import urljoin
 
 import requests
 from dagster import (
     Failure,
-    InitResourceContext,
     MetadataValue,
-    __version__,
+    InitResourceContext,
     _check as check,
-    get_dagster_logger,
     resource,
+    __version__,
+    get_dagster_logger,
 )
-from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.cached_method import cached_method
-from dagster._vendored.dateutil import parser
 from pydantic import Field
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
+from dagster._vendored.dateutil import parser
+from dagster._utils.cached_method import cached_method
+from dagster._config.pythonic_config import ConfigurableResource
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from dagster_fivetran.types import FivetranOutput
-from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
+from dagster_fivetran.utils import get_fivetran_logs_url, get_fivetran_connector_url
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_API_VERSION_PATH = "v1/"

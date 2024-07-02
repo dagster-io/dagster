@@ -1,8 +1,8 @@
 from typing import Any, Callable, Optional
 
 from dagster import (
-    AssetsDefinition,
     AssetSpec,
+    AssetsDefinition,
     PartitionsDefinition,
     _check as check,
     multi_asset,
@@ -10,7 +10,7 @@ from dagster import (
 from dlt.extract.source import DltSource
 from dlt.pipeline.pipeline import Pipeline
 
-from .constants import META_KEY_PIPELINE, META_KEY_SOURCE, META_KEY_TRANSLATOR
+from .constants import META_KEY_SOURCE, META_KEY_PIPELINE, META_KEY_TRANSLATOR
 from .translator import DagsterDltTranslator
 
 

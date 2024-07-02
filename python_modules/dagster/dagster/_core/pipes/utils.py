@@ -1,38 +1,38 @@
-import datetime
-import json
 import os
 import sys
-import tempfile
+import json
 import time
+import datetime
+import tempfile
 import warnings
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from typing import TextIO, Iterator, Optional, Sequence
 from threading import Event, Thread
-from typing import Iterator, Optional, Sequence, TextIO
+from contextlib import contextmanager
 
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION_FIELD,
+    PipesExtras,
+    PipesParams,
+    PipesOpenedData,
     PipesContextData,
     PipesDefaultContextLoader,
     PipesDefaultMessageWriter,
-    PipesExtras,
-    PipesOpenedData,
-    PipesParams,
 )
 
 from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster._utils import tail_file
 from dagster._annotations import experimental
-from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
-from dagster._core.pipes.client import PipesContextInjector, PipesMessageReader
+from dagster._core.errors import DagsterPipesExecutionError, DagsterInvariantViolationError
+from dagster._core.pipes.client import PipesMessageReader, PipesContextInjector
 from dagster._core.pipes.context import (
-    PipesMessageHandler,
     PipesSession,
+    PipesMessageHandler,
     build_external_execution_context_data,
 )
-from dagster._utils import tail_file
 
 _CONTEXT_INJECTOR_FILENAME = "context"
 _MESSAGE_READER_FILENAME = "messages"

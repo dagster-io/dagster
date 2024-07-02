@@ -2,10 +2,10 @@ from typing import Dict, Optional, cast
 
 import pypd
 from dagster import ConfigurableResource, resource
+from pydantic import Field as PyField
+from dagster._utils.warnings import suppress_dagster_warnings
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.warnings import suppress_dagster_warnings
-from pydantic import Field as PyField
 
 
 class PagerDutyService(ConfigurableResource):

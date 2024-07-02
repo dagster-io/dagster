@@ -4,8 +4,8 @@ from dagster import (
     ResourceDefinition,
     _check as check,
 )
-from dagster._cli.config_scaffolder import scaffold_job_config, scaffold_type
 from dagster._config import config_type
+from dagster._cli.config_scaffolder import scaffold_type, scaffold_job_config
 from dagster._core.definitions.graph_definition import GraphDefinition
 
 

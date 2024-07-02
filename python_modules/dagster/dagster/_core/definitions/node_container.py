@@ -1,35 +1,35 @@
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
-    DefaultDict,
+    Set,
     Dict,
     List,
+    Tuple,
+    Union,
     Mapping,
+    TypeVar,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
+    DefaultDict,
 )
+from collections import defaultdict
 
 import dagster._check as check
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.op_definition import OpDefinition
 
 from .dependency import (
+    Node,
+    OpNode,
+    GraphNode,
+    NodeInvocation,
     DependencyMapping,
     DependencyStructure,
-    GraphNode,
     IDependencyDefinition,
-    Node,
-    NodeInvocation,
-    OpNode,
 )
 
 if TYPE_CHECKING:
-    from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
 
 T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
 
@@ -139,8 +139,8 @@ def create_execution_structure(
 
     as well as a dagster._core.definitions.dependency.DependencyStructure object.
     """
-    from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
 
     check.sequence_param(node_defs, "node_defs", of_type=NodeDefinition)
     check.mapping_param(

@@ -3,13 +3,13 @@ import time
 from contextlib import contextmanager
 from urllib.parse import urlparse
 
-import objgraph
-import pytest
 import yaml
-from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
+import pytest
+import objgraph
 from dagster._core.utils import make_new_run_id
 from dagster_mysql.event_log import MySQLEventLogStorage
+from dagster._core.test_utils import instance_for_test, ensure_dagster_tests_import
+from dagster._core.storage.event_log.base import EventLogCursor
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.utils.event_log_storage import (

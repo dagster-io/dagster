@@ -8,7 +8,7 @@ from dagster_airflow import (
     make_dagster_definitions_from_airflow_example_dags,
 )
 
-from dagster_airflow_tests.marks import requires_local_db, requires_no_db
+from dagster_airflow_tests.marks import requires_no_db, requires_local_db
 
 from ..airflow_utils import test_make_from_dagbag_inputs_airflow_2
 

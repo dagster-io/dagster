@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Optional
+from typing import TYPE_CHECKING, Optional, NamedTuple
 
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
 from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:

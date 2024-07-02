@@ -1,12 +1,12 @@
 from abc import ABC
+from typing import Any, Type, TypeVar, Optional, Sequence
 from inspect import Parameter
-from typing import Any, Optional, Sequence, Type, TypeVar
 
 from typing_extensions import Annotated
 
-from dagster._core.decorator_utils import get_function_params, get_type_hints
-from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._seven import is_subclass
+from dagster._core.decorator_utils import get_type_hints, get_function_params
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 
 def get_resource_args(fn) -> Sequence[Parameter]:

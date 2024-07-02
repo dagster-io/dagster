@@ -3,13 +3,13 @@ import sys
 
 import pytest
 from click import UsageError
-from click.testing import CliRunner
 from dagster import _seven
-from dagster._cli.job import execute_list_command, job_list_command
+from click.testing import CliRunner
+from dagster._utils import file_relative_path
+from dagster._cli.job import job_list_command, execute_list_command
+from dagster._grpc.server import GrpcServerProcess
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
-from dagster._utils import file_relative_path
 
 
 def no_print(_):

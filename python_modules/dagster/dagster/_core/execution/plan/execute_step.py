@@ -1,68 +1,68 @@
 import inspect
-from typing import Any, Dict, Iterable, Iterator, Mapping, Optional, Union, cast
+from typing import Any, Dict, Union, Mapping, Iterable, Iterator, Optional, cast
 
 from typing_extensions import TypedDict
 
 import dagster._check as check
-from dagster._core.definitions import (
-    AssetCheckEvaluation,
-    AssetCheckSeverity,
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    ExpectationResult,
-    Output,
-    OutputDefinition,
-    TypeCheck,
+from dagster._utils import iterate_with_context
+from dagster._core.errors import (
+    DagsterTypeCheckError,
+    DagsterTypeCheckDidNotPass,
+    DagsterAssetCheckFailedError,
+    DagsterInvariantViolationError,
+    DagsterStepOutputNotFoundError,
+    DagsterExecutionHandleOutputError,
+    user_code_error_boundary,
 )
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
+from dagster._utils.timing import time_execution_scope
+from dagster._utils.warnings import experimental_warning, disable_dagster_warnings
+from dagster._core.definitions import (
+    Output,
+    AssetKey,
+    TypeCheck,
+    AssetObservation,
+    OutputDefinition,
+    ExpectationResult,
+    AssetCheckSeverity,
+    AssetCheckEvaluation,
+    AssetMaterialization,
+)
+from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import DynamicOutput
+from dagster._core.definitions.result import AssetResult
+from dagster._core.types.dagster_type import DagsterType
+from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
+from dagster._core.execution.plan.inputs import StepInputData
+from dagster._core.definitions.asset_spec import AssetExecutionType
+from dagster._core.execution.plan.compute import execute_core_compute
+from dagster._core.execution.plan.objects import TypeCheckData, StepSuccessData
+from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
-    DATA_VERSION_IS_USER_PROVIDED_TAG,
     DATA_VERSION_TAG,
-    DEFAULT_DATA_VERSION,
     NULL_EVENT_POINTER,
+    DEFAULT_DATA_VERSION,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
     DataVersion,
-    compute_logical_data_version,
     get_input_data_version_tag,
     get_input_event_pointer_tag,
+    compute_logical_data_version,
 )
+from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
+from dagster._core.execution.context.system import TypeCheckContext, StepExecutionContext
+from dagster._core.execution.context.compute import enter_execution_context
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.events import DynamicOutput
-from dagster._core.definitions.metadata import MetadataValue, normalize_metadata
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     get_tags_from_multi_partition_key,
 )
-from dagster._core.definitions.result import AssetResult
-from dagster._core.definitions.source_asset import SYSTEM_METADATA_KEY_SOURCE_ASSET_OBSERVATION
-from dagster._core.errors import (
-    DagsterAssetCheckFailedError,
-    DagsterExecutionHandleOutputError,
-    DagsterInvariantViolationError,
-    DagsterStepOutputNotFoundError,
-    DagsterTypeCheckDidNotPass,
-    DagsterTypeCheckError,
-    user_code_error_boundary,
-)
-from dagster._core.events import DagsterEvent, DagsterEventBatchMetadata, generate_event_batch_id
-from dagster._core.execution.context.compute import enter_execution_context
-from dagster._core.execution.context.system import StepExecutionContext, TypeCheckContext
-from dagster._core.execution.plan.compute import execute_core_compute
-from dagster._core.execution.plan.inputs import StepInputData
-from dagster._core.execution.plan.objects import StepSuccessData, TypeCheckData
-from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster._core.storage.tags import BACKFILL_ID_TAG, MEMOIZED_RUN_TAG
-from dagster._core.types.dagster_type import DagsterType
-from dagster._utils import iterate_with_context
-from dagster._utils.timing import time_execution_scope
-from dagster._utils.warnings import disable_dagster_warnings, experimental_warning
 
+from .utils import op_execution_error_boundary
 from .compute import OpOutputUnion
 from .compute_generator import create_op_compute_wrapper
-from .utils import op_execution_error_boundary
 
 
 class AssetResultOutput(Output):

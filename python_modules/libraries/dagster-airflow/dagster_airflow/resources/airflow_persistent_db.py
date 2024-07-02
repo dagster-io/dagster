@@ -1,25 +1,25 @@
-import importlib
 import os
+import importlib
 from typing import List, Optional
 
 import airflow
-from airflow.models.connection import Connection
 from dagster import (
     Array,
-    DagsterRun,
     Field,
-    InitResourceContext,
-    ResourceDefinition,
+    DagsterRun,
     StringSource,
+    ResourceDefinition,
+    InitResourceContext,
     _check as check,
 )
+from airflow.models.connection import Connection
 
-from dagster_airflow.resources.airflow_db import AirflowDatabase
 from dagster_airflow.utils import (
+    serialize_connections,
     create_airflow_connections,
     is_airflow_2_loaded_in_environment,
-    serialize_connections,
 )
+from dagster_airflow.resources.airflow_db import AirflowDatabase
 
 
 class AirflowPersistentDatabase(AirflowDatabase):

@@ -3,8 +3,8 @@ import sqlite3
 
 import pytest
 from dagster import AssetSpec, Definitions
-from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling import SlingMode, SlingResource, build_sling_asset
+from dagster._core.definitions.materialize import materialize
 
 ASSET_SPEC = AssetSpec(
     key=["main", "tbl"],

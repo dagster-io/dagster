@@ -1,6 +1,6 @@
 import logging
 
-from dagster import Enum, EnumValue, Field, Int, configured, job, logger
+from dagster import Int, Enum, Field, EnumValue, job, logger, configured
 from dagster._core.utils import coerce_valid_log_level
 
 

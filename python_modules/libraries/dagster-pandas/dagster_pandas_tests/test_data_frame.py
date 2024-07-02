@@ -1,31 +1,31 @@
 from typing import List
 
 import pytest
+from pandas import DataFrame
 from dagster import (
-    DagsterInvariantViolationError,
-    DagsterType,
-    DynamicOutput,
-    Field,
     In,
     Out,
+    Field,
     Output,
     Selector,
+    DagsterType,
+    DynamicOutput,
+    DagsterInvariantViolationError,
+    op,
+    job,
+    graph,
     check_dagster_type,
     dagster_type_loader,
-    graph,
-    job,
-    op,
 )
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils import safe_tempfile_path
-from dagster_pandas.constraints import (
-    ColumnDTypeInSetConstraint,
-    InRangeColumnConstraint,
-    NonNullableColumnConstraint,
-)
 from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
 from dagster_pandas.validation import PandasColumn
-from pandas import DataFrame
+from dagster_pandas.constraints import (
+    InRangeColumnConstraint,
+    ColumnDTypeInSetConstraint,
+    NonNullableColumnConstraint,
+)
+from dagster._core.definitions.metadata import MetadataValue
 
 
 def test_create_pandas_dataframe_dagster_type():

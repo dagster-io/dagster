@@ -1,12 +1,12 @@
 import pytest
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.definitions.utils import (
     MAX_TITLE_LENGTH,
+    is_valid_title,
     check_valid_title,
     is_valid_definition_tag_key,
     is_valid_definition_tag_value,
-    is_valid_title,
 )
-from dagster._core.errors import DagsterInvariantViolationError
 
 
 def test_is_valid_definition_tag_key():

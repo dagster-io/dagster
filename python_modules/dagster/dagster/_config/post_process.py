@@ -5,11 +5,11 @@ import dagster._check as check
 from dagster._utils import ensure_single_item
 from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .config_type import ConfigType, ConfigTypeKind
-from .errors import EvaluationError, PostProcessingError, create_failed_post_processing_error
-from .evaluate_value_result import EvaluateValueResult
 from .stack import EvaluationStack
-from .traversal_context import TraversalContext, TraversalType
+from .errors import EvaluationError, PostProcessingError, create_failed_post_processing_error
+from .config_type import ConfigType, ConfigTypeKind
+from .traversal_context import TraversalType, TraversalContext
+from .evaluate_value_result import EvaluateValueResult
 
 
 def post_process_config(config_type: ConfigType, config_value: Any) -> EvaluateValueResult[Any]:

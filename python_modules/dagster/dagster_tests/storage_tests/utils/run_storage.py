@@ -1,50 +1,50 @@
 import sys
-import tempfile
 import time
+import tempfile
 import unittest
-from datetime import datetime, timedelta
 from typing import Optional
+from datetime import datetime, timedelta
 
 import pytest
-from dagster import _seven, job, op
-from dagster._core.definitions import GraphDefinition
+from dagster import op, job, _seven
+from dagster._time import create_datetime
+from dagster._serdes import serialize_pp
+from dagster._core.snap import create_job_snapshot_id
+from dagster._core.utils import make_new_run_id
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster._core.events import DagsterEvent, DagsterEventType, JobFailureData, RunFailureReason
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.instance import DagsterInstance, InstanceType
-from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster._core.remote_representation import (
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.snap import create_job_snapshot_id
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.event_log import InMemoryEventLogStorage
-from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
+from dagster._core.events import DagsterEvent, JobFailureData, DagsterEventType, RunFailureReason
+from dagster._daemon.types import DaemonHeartbeat
+from dagster._core.instance import InstanceType, DagsterInstance
+from dagster._daemon.daemon import SensorDaemon
+from dagster._core.test_utils import freeze_time
+from dagster._core.definitions import GraphDefinition
 from dagster._core.storage.root import LocalArtifactStorage
-from dagster._core.storage.runs.base import RunStorage
-from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
-from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import (
-    PARENT_RUN_ID_TAG,
-    PARTITION_NAME_TAG,
-    PARTITION_SET_TAG,
-    REPOSITORY_LABEL_TAG,
     ROOT_RUN_ID_TAG,
+    PARENT_RUN_ID_TAG,
+    PARTITION_SET_TAG,
+    PARTITION_NAME_TAG,
+    REPOSITORY_LABEL_TAG,
     RUN_FAILURE_REASON_TAG,
 )
-from dagster._core.test_utils import freeze_time
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import InMemoryEventLogStorage
+from dagster._core.storage.runs.base import RunStorage
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter, DagsterRunStatus
+from dagster._core.remote_representation import (
+    RemoteRepositoryOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+from dagster._core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
+from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import make_new_run_id
-from dagster._daemon.daemon import SensorDaemon
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import serialize_pp
-from dagster._time import create_datetime
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 
 win_py36 = _seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -1085,8 +1085,8 @@ class TestRunStorage:
             storage.add_run(run_with_missing_snapshot)
 
     def test_add_get_execution_snapshot(self, storage: RunStorage):
-        from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import snapshot_from_execution_plan
+        from dagster._core.execution.api import create_execution_plan
 
         job_def = GraphDefinition(name="some_pipeline", node_defs=[]).to_job()
         execution_plan = create_execution_plan(job_def)
@@ -1396,11 +1396,11 @@ class TestRunStorage:
         assert _get_run_by_id(storage, run_id).status == DagsterRunStatus.SUCCESS
 
     def test_debug_snapshot_import(self, storage):
-        from dagster._core.execution.api import create_execution_plan
         from dagster._core.snap import (
-            create_execution_plan_snapshot_id,
             snapshot_from_execution_plan,
+            create_execution_plan_snapshot_id,
         )
+        from dagster._core.execution.api import create_execution_plan
 
         run_id = make_new_run_id()
         run_to_add = TestRunStorage.build_run(job_name="pipeline_name", run_id=run_id)

@@ -2,18 +2,18 @@ import os
 
 from dagster import (
     Definitions,
-    FilesystemIOManager,
     ScheduleDefinition,
+    FilesystemIOManager,
     define_asset_job,
     load_assets_from_package_module,
 )
+from dagster_duckdb_pandas import DuckDBPandasIOManager
 from dagster._core.definitions.asset_check_factories.freshness_checks.sensor import (
     build_sensor_for_freshness_checks,
 )
-from dagster_duckdb_pandas import DuckDBPandasIOManager
 
-from .assets import forecasting, raw_data
-from .assets.dbt import DBT_PROJECT_DIR, dbt_project_assets, dbt_resource
+from .assets import raw_data, forecasting
+from .assets.dbt import DBT_PROJECT_DIR, dbt_resource, dbt_project_assets
 
 raw_data_assets = load_assets_from_package_module(
     raw_data,

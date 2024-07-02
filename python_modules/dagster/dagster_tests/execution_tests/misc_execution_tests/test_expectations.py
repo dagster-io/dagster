@@ -2,13 +2,13 @@ from typing import Sequence
 
 import pytest
 from dagster import (
-    DagsterEventType,
-    DagsterInvariantViolationError,
-    ExpectationResult,
     GraphDefinition,
+    DagsterEventType,
+    ExpectationResult,
+    DagsterInvariantViolationError,
     op,
 )
-from dagster._annotations import get_deprecated_info, is_deprecated
+from dagster._annotations import is_deprecated, get_deprecated_info
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.execution_result import ExecutionResult
 

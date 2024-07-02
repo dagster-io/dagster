@@ -1,9 +1,9 @@
-from typing import List, Optional, Union
+from typing import List, Union, Optional
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._config import ConfigTypeKind, get_recursive_type_keys
-from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._core.snap import ConfigTypeSnap, ConfigFieldSnap, ConfigSchemaSnapshot
 
 from .util import ResolveInfo, non_null_list
 

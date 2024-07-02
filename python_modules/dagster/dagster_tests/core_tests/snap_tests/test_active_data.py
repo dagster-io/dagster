@@ -1,21 +1,21 @@
-from concurrent.futures import ThreadPoolExecutor, wait
 from datetime import datetime
 from unittest import mock
+from concurrent.futures import ThreadPoolExecutor, wait
 
-from dagster import daily_partitioned_config, job, op, repository
-from dagster._core.definitions.decorators.schedule_decorator import schedule
+from dagster import op, job, repository, daily_partitioned_config
+from dagster._time import get_current_datetime
+from dagster._serdes import serialize_pp
+from dagster._core.test_utils import instance_for_test, in_process_test_workspace
+from dagster._core.snap.job_snapshot import create_job_snapshot_id
 from dagster._core.remote_representation import (
     external_job_data_from_def,
     external_repository_data_from_def,
 )
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.remote_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.snap.job_snapshot import create_job_snapshot_id
-from dagster._core.test_utils import in_process_test_workspace, instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import serialize_pp
-from dagster._time import get_current_datetime
+from dagster._core.definitions.decorators.schedule_decorator import schedule
 
 
 @op

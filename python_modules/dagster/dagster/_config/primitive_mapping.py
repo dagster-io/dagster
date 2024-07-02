@@ -1,8 +1,8 @@
 import dagster._check as check
-from dagster._builtins import Bool, Float, Int, String
+from dagster._builtins import Int, Bool, Float, String
 
-from .config_type import Array, ConfigAnyInstance
 from .field import resolve_to_config_type
+from .config_type import Array, ConfigAnyInstance
 from .field_utils import Permissive
 
 SUPPORTED_CONFIG_BUILTIN_MAP = {

@@ -1,9 +1,9 @@
 from typing import Optional
 
 import pytest
-from dagster import job, op
-from dagster._config.pythonic_config import Config
+from dagster import op, job
 from pydantic import ValidationError, validator
+from dagster._config.pythonic_config import Config
 
 
 def test_validators_basic() -> None:

@@ -1,9 +1,9 @@
 from typing import Tuple
 
 import pytest
-from dagster import DagsterTypeCheckDidNotPass, In, Out, op
-from dagster._core.types.python_tuple import create_typed_tuple
+from dagster import In, Out, DagsterTypeCheckDidNotPass, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.types.python_tuple import create_typed_tuple
 
 
 def test_vanilla_tuple_output():

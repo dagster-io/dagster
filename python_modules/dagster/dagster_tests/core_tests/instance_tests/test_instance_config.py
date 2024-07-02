@@ -1,7 +1,7 @@
 import pytest
 from dagster import file_relative_path
-from dagster._core.instance.config import dagster_instance_config
 from dagster._core.test_utils import environ
+from dagster._core.instance.config import dagster_instance_config
 
 
 @pytest.mark.parametrize("config_filename", ("dagster.yaml", "something.yaml"))

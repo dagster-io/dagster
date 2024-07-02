@@ -1,16 +1,16 @@
-import importlib
-import inspect
 import os
 import sys
+import inspect
+import importlib
 from abc import ABC, abstractmethod
 from types import ModuleType
-from typing import Callable, List, NamedTuple, Optional, Sequence, cast
+from typing import List, Callable, Optional, Sequence, NamedTuple, cast
 
 import dagster._check as check
-from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
-from dagster._serdes import whitelist_for_serdes
-from dagster._seven import get_import_error_message, import_module_from_path
+from dagster._seven import import_module_from_path, get_import_error_message
 from dagster._utils import alter_sys_path, hash_collection
+from dagster._serdes import whitelist_for_serdes
+from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 
 
 class CodePointer(ABC):
@@ -184,8 +184,8 @@ class FileCodePointer(
 
 
 def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
-    from dagster._core.definitions.load_assets_from_modules import assets_from_modules
     from dagster._core.workspace.autodiscovery import LOAD_ALL_ASSETS
+    from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 
     if fn_name == LOAD_ALL_ASSETS:
         # LOAD_ALL_ASSETS is a special symbol that's returned when, instead of loading a particular

@@ -1,8 +1,8 @@
 import graphene
 
-from .asset_key import GrapheneAssetKey
-from .table import GrapheneTable, GrapheneTableColumnLineageEntry, GrapheneTableSchema
 from .util import non_null_list
+from .table import GrapheneTable, GrapheneTableSchema, GrapheneTableColumnLineageEntry
+from .asset_key import GrapheneAssetKey
 
 
 class GrapheneMetadataItemDefinition(graphene.ObjectType):

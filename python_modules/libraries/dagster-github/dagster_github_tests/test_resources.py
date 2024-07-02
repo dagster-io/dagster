@@ -2,12 +2,12 @@ import time
 
 import requests
 import responses
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_github.resources import GithubClient, GithubResource
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 FAKE_PRIVATE_RSA_KEY = (
     rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())

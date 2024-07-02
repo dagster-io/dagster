@@ -4,7 +4,7 @@ import pandas as pd
 from dagster_snowflake import SnowflakeResource
 from snowflake.connector.pandas_tools import write_pandas
 
-from dagster import Definitions, EnvVar, MaterializeResult, asset
+from dagster import EnvVar, Definitions, MaterializeResult, asset
 
 snowflake = SnowflakeResource(
     account=EnvVar("SNOWFLAKE_ACCOUNT"),  # required

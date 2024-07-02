@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Set, Union, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
+from .assets import AssetsDefinition
 from ..errors import DagsterInvariantViolationError
 from ..instance import DagsterInstance
+from .source_asset import SourceAsset
 from ..storage.io_manager import IOManagerDefinition
 from ..storage.mem_io_manager import mem_io_manager
-from .assets import AssetsDefinition
-from .source_asset import SourceAsset
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection

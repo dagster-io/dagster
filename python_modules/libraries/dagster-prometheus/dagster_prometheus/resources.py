@@ -1,9 +1,9 @@
 import prometheus_client
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.execution.context.init import InitResourceContext
-from prometheus_client.exposition import default_handler
 from pydantic import Field, PrivateAttr
+from prometheus_client.exposition import default_handler
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 class PrometheusClient:

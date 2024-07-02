@@ -1,31 +1,31 @@
 from abc import ABC, abstractproperty
-from collections import defaultdict
 from enum import Enum
-from typing import AbstractSet, Dict, FrozenSet, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import Dict, Tuple, Union, Optional, Sequence, FrozenSet, NamedTuple, AbstractSet, cast
+from collections import defaultdict
 
 import dagster._check as check
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._serdes.serdes import (
     _WHITELIST_MAP,
-    NamedTupleSerializer,
+    WhitelistMap,
     PackableValue,
     UnpackContext,
     UnpackedValue,
-    WhitelistMap,
+    NamedTupleSerializer,
     deserialize_value,
     whitelist_for_serdes,
 )
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataValue, MetadataMapping
+from dagster._core.definitions.asset_subset import AssetSubset
 
+from .partition import PartitionsDefinition, SerializedPartitionsSubset
 from .declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetConditionEvaluationWithRunIds,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
+    AssetConditionEvaluation,
+    AssetConditionEvaluationWithRunIds,
 )
-from .partition import PartitionsDefinition, SerializedPartitionsSubset
 
 
 @whitelist_for_serdes
@@ -199,8 +199,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
     def _asset_condition_snapshot_from_rule_snapshot(
         self, rule_snapshot: AutoMaterializeRuleSnapshot
     ) -> "AssetConditionSnapshot":
-        from .declarative_automation.legacy.rule_condition import RuleCondition
         from .declarative_automation.serialized_objects import AssetConditionSnapshot
+        from .declarative_automation.legacy.rule_condition import RuleCondition
 
         unique_id_parts = [rule_snapshot.class_name, rule_snapshot.description]
         unique_id = non_secure_md5_hash_str("".join(unique_id_parts).encode())
@@ -261,11 +261,11 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         is_partitioned: bool,
         decision_type: AutoMaterializeDecisionType,
     ) -> Optional["AssetConditionEvaluation"]:
-        from .declarative_automation.operators.boolean_operators import (
-            NotAssetCondition,
-            OrAssetCondition,
-        )
         from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
+        from .declarative_automation.operators.boolean_operators import (
+            OrAssetCondition,
+            NotAssetCondition,
+        )
 
         partition_subsets_by_condition_by_rule_snapshot = defaultdict(list)
         for elt in partition_subsets_by_condition:
@@ -352,8 +352,8 @@ class BackcompatAutoMaterializeAssetEvaluationSerializer(NamedTupleSerializer):
         whitelist_map: WhitelistMap,
         context: UnpackContext,
     ) -> "AssetConditionEvaluationWithRunIds":
-        from .declarative_automation.operators.boolean_operators import AndAssetCondition
         from .declarative_automation.serialized_objects import HistoricalAllPartitionsSubsetSentinel
+        from .declarative_automation.operators.boolean_operators import AndAssetCondition
 
         asset_key = cast(AssetKey, unpacked_dict.get("asset_key"))
         partition_subsets_by_condition = cast(

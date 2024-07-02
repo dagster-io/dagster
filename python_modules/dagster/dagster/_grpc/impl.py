@@ -2,78 +2,78 @@
 
 import os
 import sys
-from contextlib import contextmanager, nullcontext
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Generator,
+    Tuple,
+    Union,
     Iterator,
     Optional,
     Sequence,
-    Tuple,
-    Union,
+    Generator,
+    AbstractSet,
 )
+from contextlib import nullcontext, contextmanager
 
 import pendulum
 
 import dagster._check as check
-from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-    PartitionedConfig,
-    PartitionsDefinition,
-)
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.repository_definition import RepositoryDefinition
-from dagster._core.definitions.sensor_definition import SensorEvaluationContext
+from dagster._utils import start_termination_thread
+from dagster._serdes import deserialize_value
+from dagster._grpc.types import ExecutionPlanSnapshotArgs
+from dagster._serdes.ipc import IPCErrorMessage
 from dagster._core.errors import (
-    DagsterExecutionInterruptedError,
+    SensorExecutionError,
+    ScheduleExecutionError,
     DagsterRunNotFoundError,
     PartitionExecutionError,
-    ScheduleExecutionError,
-    SensorExecutionError,
+    DagsterExecutionInterruptedError,
     user_code_error_boundary,
 )
 from dagster._core.events import DagsterEvent, EngineEventData
-from dagster._core.execution.api import create_execution_plan, execute_run_iterator
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.instance import DagsterInstance
+from dagster._core.definitions import ScheduleEvaluationContext
+from dagster._utils.interrupts import capture_interrupts
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.remote_representation import external_job_data_from_def
-from dagster._core.remote_representation.external_data import (
-    ExternalJobSubsetResult,
-    ExternalPartitionConfigData,
-    ExternalPartitionExecutionErrorData,
-    ExternalPartitionExecutionParamData,
-    ExternalPartitionNamesData,
-    ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
-    ExternalScheduleExecutionErrorData,
-    ExternalSensorExecutionErrorData,
-    job_name_for_external_partition_set_name,
+from dagster._core.execution.api import execute_run_iterator, create_execution_plan
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.partition import (
+    PartitionedConfig,
+    PartitionsDefinition,
+    DynamicPartitionsDefinition,
 )
+from dagster._core.remote_representation import external_job_data_from_def
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.remote_representation.origin import CodeLocationOrigin
 from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshotErrorData,
     snapshot_from_execution_plan,
 )
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._grpc.types import ExecutionPlanSnapshotArgs
-from dagster._serdes import deserialize_value
-from dagster._serdes.ipc import IPCErrorMessage
-from dagster._utils import start_termination_thread
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.interrupts import capture_interrupts
+from dagster._core.definitions.sensor_definition import SensorEvaluationContext
+from dagster._core.definitions.repository_definition import RepositoryDefinition
+from dagster._core.remote_representation.external_data import (
+    ExternalJobSubsetResult,
+    ExternalPartitionTagsData,
+    ExternalPartitionNamesData,
+    ExternalPartitionConfigData,
+    ExternalSensorExecutionErrorData,
+    ExternalScheduleExecutionErrorData,
+    ExternalPartitionExecutionErrorData,
+    ExternalPartitionExecutionParamData,
+    ExternalPartitionSetExecutionParamData,
+    job_name_for_external_partition_set_name,
+)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
 from .types import ExecuteExternalJobArgs
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.schedule_definition import ScheduleExecutionData
     from dagster._core.definitions.sensor_definition import SensorExecutionData
+    from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 
 
 class RunInSubprocessComplete:

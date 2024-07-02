@@ -7,8 +7,8 @@ Create Date: 2021-01-11 22:16:50.896040
 """
 
 from alembic import op
-from dagster._core.storage.migration.utils import get_currently_upgrading_instance, has_table
 from sqlalchemy import inspect
+from dagster._core.storage.migration.utils import has_table, get_currently_upgrading_instance
 
 # alembic magic breaks pylint
 

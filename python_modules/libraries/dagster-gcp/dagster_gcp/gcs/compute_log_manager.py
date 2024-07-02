@@ -1,8 +1,8 @@
-import datetime
-import json
 import os
+import json
+import datetime
+from typing import Any, Mapping, Iterator, Optional, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import dagster._seven as seven
 from dagster import (
@@ -10,21 +10,21 @@ from dagster import (
     StringSource,
     _check as check,
 )
+from google.cloud import storage
+from dagster._utils import ensure_dir, ensure_file
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from typing_extensions import Self
 from dagster._config.config_type import Noneable
-from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.cloud_storage_compute_log_manager import (
-    CloudStorageComputeLogManager,
-    PollingComputeLogSubscriptionManager,
-)
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
-from google.cloud import storage
-from typing_extensions import Self
+from dagster._core.storage.cloud_storage_compute_log_manager import (
+    CloudStorageComputeLogManager,
+    PollingComputeLogSubscriptionManager,
+)
 
 
 class GCSComputeLogManager(CloudStorageComputeLogManager, ConfigurableClass):

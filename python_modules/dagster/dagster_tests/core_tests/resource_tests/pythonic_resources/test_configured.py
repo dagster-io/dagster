@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 import pytest
-from dagster import Config, ConfigurableResource, InitResourceContext, configured, job, op, resource
+from dagster import Config, InitResourceContext, ConfigurableResource, op, job, resource, configured
 from dagster._check import CheckError
 
 

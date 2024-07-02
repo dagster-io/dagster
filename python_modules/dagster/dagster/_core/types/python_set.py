@@ -4,8 +4,8 @@ import dagster._check as check
 from dagster._config import Array
 from dagster._core.types.dagster_type import DagsterTypeKind
 
-from .config_schema import DagsterTypeLoader
 from .dagster_type import DagsterType, PythonObjectDagsterType, resolve_dagster_type
+from .config_schema import DagsterTypeLoader
 
 PythonSet = PythonObjectDagsterType(
     set, "PythonSet", description="""Represents a python dictionary to pass between ops"""

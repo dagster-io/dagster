@@ -1,4 +1,4 @@
-from dagster import Config, OpExecutionContext, RunConfig, job, op
+from dagster import Config, RunConfig, OpExecutionContext, op, job
 
 
 class DoSomethingConfig(Config):

@@ -3,9 +3,9 @@ from typing import Any, Mapping, Sequence
 from mock import MagicMock
 
 from dagster import (
+    Definitions,
     AssetCheckResult,
     AssetChecksDefinition,
-    Definitions,
     asset,
     asset_check,
 )

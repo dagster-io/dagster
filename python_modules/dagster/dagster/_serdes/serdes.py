@@ -13,46 +13,46 @@ Why not pickle?
   (in memory, not human readable, etc) just handle the json case effectively.
 """
 
-import collections.abc
 import dataclasses
+import collections.abc
 from abc import ABC, abstractmethod
-from dataclasses import is_dataclass
 from enum import Enum
-from functools import cached_property, partial
-from inspect import Parameter, signature
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
+    Set,
     Dict,
-    FrozenSet,
-    Generic,
-    Iterator,
     List,
+    Type,
+    Tuple,
+    Union,
+    Generic,
     Mapping,
-    NamedTuple,
+    Callable,
+    Iterator,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
+    FrozenSet,
+    NamedTuple,
+    AbstractSet,
     cast,
     overload,
 )
+from inspect import Parameter, signature
+from functools import partial, cached_property
+from dataclasses import is_dataclass
 
 from pydantic import BaseModel
-from typing_extensions import Final, Self, TypeAlias, TypeVar
+from typing_extensions import Self, Final, TypeVar, TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
-from dagster._record import as_dict, has_generated_new, is_record
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
+from dagster._record import as_dict, is_record, has_generated_new
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
 
-from .errors import DeserializationError, SerdesUsageError, SerializationError
+from .errors import SerdesUsageError, SerializationError, DeserializationError
 
 if TYPE_CHECKING:
     # There is no actual class backing Dataclasses, _typeshed provides this

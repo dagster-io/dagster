@@ -13,17 +13,17 @@ See:
 from typing import Any, Dict
 
 from dagster import (
-    Array,
+    Int,
     Bool,
     Enum,
-    EnumValue,
+    Array,
     Field,
-    Int,
-    Noneable,
-    Permissive,
-    Selector,
     Shape,
     String,
+    Noneable,
+    Selector,
+    EnumValue,
+    Permissive,
 )
 
 

@@ -1,18 +1,18 @@
-import threading
 import time
+import threading
 
 import pytest
-from dagster import Failure, RetryPolicy, graph, in_process_executor, job, op, repository
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import reconstructable
+from dagster import Failure, RetryPolicy, op, job, graph, repository, in_process_executor
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
 from dagster._core.test_utils import poll_for_finished_run
+from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
+from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
 
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,

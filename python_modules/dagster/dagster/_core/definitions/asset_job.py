@@ -1,56 +1,56 @@
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    AbstractSet,
 )
+from collections import defaultdict
 
 from toposort import CircularDependencyError
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_checks import has_only_asset_checks
+from dagster._core.utils import toposort
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvalidDefinitionError
+from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_checks import has_only_asset_checks
+from dagster._core.selector.subset_selector import AssetSelectionData
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
-from dagster._core.selector.subset_selector import AssetSelectionData
-from dagster._core.utils import toposort
-from dagster._utils.merger import merge_dicts
 
-from .asset_layer import AssetLayer
+from .utils import DEFAULT_IO_MANAGER_KEY
 from .assets import AssetsDefinition
 from .config import ConfigMapping
+from .events import AssetKey
+from .metadata import RawMetadataValue
+from .partition import PartitionedConfig, PartitionsDefinition
 from .dependency import (
-    BlockingAssetChecksDependencyDefinition,
-    DependencyDefinition,
-    DependencyMapping,
-    IDependencyDefinition,
     NodeHandle,
     NodeInvocation,
     NodeOutputHandle,
+    DependencyMapping,
+    DependencyDefinition,
+    IDependencyDefinition,
+    BlockingAssetChecksDependencyDefinition,
 )
-from .events import AssetKey
-from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition
+from .asset_layer import AssetLayer
 from .job_definition import JobDefinition, default_job_io_manager
-from .metadata import RawMetadataValue
-from .partition import PartitionedConfig, PartitionsDefinition
+from .graph_definition import GraphDefinition
+from .executor_definition import ExecutorDefinition
 from .resource_definition import ResourceDefinition
 from .resource_requirement import ensure_requirements_satisfied
-from .utils import DEFAULT_IO_MANAGER_KEY
 
 # Prefix for auto created jobs that are used to materialize assets
 ASSET_BASE_JOB_PREFIX = "__ASSET_JOB"

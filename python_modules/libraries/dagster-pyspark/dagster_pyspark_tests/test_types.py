@@ -1,15 +1,15 @@
 import pytest
 from dagster import file_relative_path
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.input import In
+from pyspark.sql import Row, SparkSession
 from dagster._utils import dict_without_keys
-from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_pyspark import (
     DataFrame as DagsterPySparkDataFrame,
-    lazy_pyspark_resource,
     pyspark_resource,
+    lazy_pyspark_resource,
 )
-from pyspark.sql import Row, SparkSession
+from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.definitions.input import In
+from dagster._core.definitions.decorators import op
 
 spark = SparkSession.builder.getOrCreate()  # type: ignore
 

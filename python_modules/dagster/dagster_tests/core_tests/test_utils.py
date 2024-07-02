@@ -1,19 +1,19 @@
 import time
 import warnings
-from concurrent.futures import as_completed
-from contextvars import ContextVar
 from typing import Dict, List, NamedTuple
+from contextvars import ContextVar
+from concurrent.futures import as_completed
 
-import dagster.version
 import pytest
-from dagster._core.libraries import DagsterLibraryRegistry
-from dagster._core.test_utils import environ
+import dagster.version
+from dagster._utils import hash_collection, library_version_from_core_version
 from dagster._core.utils import (
     InheritContextThreadPoolExecutor,
-    check_dagster_package_version,
     parse_env_var,
+    check_dagster_package_version,
 )
-from dagster._utils import hash_collection, library_version_from_core_version
+from dagster._core.libraries import DagsterLibraryRegistry
+from dagster._core.test_utils import environ
 
 
 def test_parse_env_var_no_equals():

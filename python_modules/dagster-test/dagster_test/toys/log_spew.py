@@ -1,6 +1,6 @@
 import time
 
-from dagster import In, Out, Output, graph, op
+from dagster import In, Out, Output, op, graph
 
 
 def nonce_op(name, n_inputs, n_outputs):

@@ -1,37 +1,37 @@
 import re
 import sys
-from collections import defaultdict, deque
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Callable,
+    Set,
     Dict,
-    FrozenSet,
+    List,
     Generic,
+    Mapping,
+    TypeVar,
+    Callable,
     Hashable,
     Iterable,
-    List,
-    Mapping,
-    MutableSet,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    TypeVar,
+    FrozenSet,
+    MutableSet,
+    NamedTuple,
+    AbstractSet,
 )
+from collections import deque, defaultdict
 
 from typing_extensions import Literal, TypeAlias
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.dependency import DependencyStructure
-from dagster._core.definitions.events import AssetKey
-from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster._utils import check
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterExecutionStepNotFoundError
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.dependency import DependencyStructure
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 if TYPE_CHECKING:
     from dagster._core.definitions.assets import AssetsDefinition
-    from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.job_definition import JobDefinition
+    from dagster._core.definitions.graph_definition import GraphDefinition
 
 MAX_NUM = sys.maxsize
 

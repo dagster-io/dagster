@@ -1,4 +1,4 @@
-from dagster import Array, Output, graph, op
+from dagster import Array, Output, op, graph
 
 
 @op(config_schema={"asset_key": Array(str), "ops": str})

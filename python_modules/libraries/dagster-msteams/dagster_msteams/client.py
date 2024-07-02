@@ -1,6 +1,6 @@
 from typing import Mapping, Optional
 
-from requests import codes, exceptions, post
+from requests import post, codes, exceptions
 
 
 class TeamsClient:

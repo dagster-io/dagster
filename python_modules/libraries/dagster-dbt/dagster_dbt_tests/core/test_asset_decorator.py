@@ -1,49 +1,49 @@
 import os
+from typing import Any, Set, Dict, Mapping, Optional, Sequence
 from pathlib import Path
-from typing import Any, Dict, Mapping, Optional, Sequence, Set
 
 import pytest
 from dagster import (
-    AssetKey,
-    AutoMaterializePolicy,
-    BackfillPolicy,
-    DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    Definitions,
-    DependencyDefinition,
-    FreshnessPolicy,
     Jitter,
-    LastPartitionMapping,
-    NodeInvocation,
-    OpDefinition,
-    PartitionMapping,
-    PartitionsDefinition,
+    AssetKey,
+    Definitions,
     RetryPolicy,
+    OpDefinition,
+    BackfillPolicy,
+    NodeInvocation,
+    FreshnessPolicy,
+    PartitionMapping,
+    DependencyDefinition,
+    LastPartitionMapping,
+    PartitionsDefinition,
+    AutoMaterializePolicy,
+    DailyPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DagsterInvalidDefinitionError,
     asset,
     materialize,
 )
-from dagster._core.definitions.tags import StorageKindTagSet
-from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._core.types.dagster_type import DagsterType
-from dagster_dbt.asset_decorator import dbt_assets
+from packaging import version
+from dbt.version import __version__ as dbt_version
 from dagster_dbt.asset_specs import build_dbt_asset_specs
 from dagster_dbt.asset_utils import DUPLICATE_ASSET_KEY_ERROR_MESSAGE
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
+from dagster._core.definitions.tags import StorageKindTagSet
+from dagster._core.definitions.utils import DEFAULT_IO_MANAGER_KEY
+from dagster._core.types.dagster_type import DagsterType
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslator, DagsterDbtTranslatorSettings
-from dbt.version import __version__ as dbt_version
-from packaging import version
+from dagster._core.execution.context.compute import AssetExecutionContext
 
 from ..dbt_projects import (
     test_dbt_alias_path,
-    test_dbt_model_versions_path,
-    test_dbt_python_interleaving_path,
-    test_dbt_semantic_models_path,
-    test_dbt_unit_tests_path,
     test_meta_config_path,
+    test_dbt_unit_tests_path,
+    test_dbt_model_versions_path,
+    test_dbt_semantic_models_path,
+    test_dbt_python_interleaving_path,
 )
 
 

@@ -8,18 +8,18 @@
 import dask.dataframe as dd
 from dagster import (
     Any,
-    Bool,
-    DagsterInvariantViolationError,
-    DagsterType,
-    Enum,
-    EnumValue,
-    Field,
     Int,
-    Permissive,
-    Selector,
+    Bool,
+    Enum,
+    Field,
     Shape,
     String,
+    Selector,
+    EnumValue,
     TypeCheck,
+    Permissive,
+    DagsterType,
+    DagsterInvariantViolationError,
     dagster_type_loader,
 )
 

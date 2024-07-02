@@ -1,12 +1,12 @@
-import datetime
 import re
-from typing import Any, Mapping, Type, TypeVar
+import datetime
+from typing import Any, Type, Mapping, TypeVar
 
-import dagster._check as check
 import kubernetes
+import dagster._check as check
 import kubernetes.client.models
-from dagster._vendored.dateutil.parser import parse
 from kubernetes.client.api_client import ApiClient
+from dagster._vendored.dateutil.parser import parse
 
 # Unclear what the correct type is to use for a bound here.
 T_KubernetesModel = TypeVar("T_KubernetesModel")

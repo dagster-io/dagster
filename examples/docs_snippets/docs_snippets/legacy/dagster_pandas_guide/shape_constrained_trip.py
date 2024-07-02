@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from dagster_pandas import RowCountConstraint, create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
+from dagster_pandas import RowCountConstraint, create_dagster_pandas_dataframe_type
 
-from dagster import Out, file_relative_path, job, op
+from dagster import Out, op, job, file_relative_path
 
 # start_create_type
 ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(

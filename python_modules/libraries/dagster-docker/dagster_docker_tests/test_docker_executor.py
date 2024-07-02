@@ -1,17 +1,17 @@
 import os
 
 import pytest
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import environ
 from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import environ
 from dagster._utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
+    get_test_project_recon_job,
     get_buildkite_registry_config,
     get_test_project_docker_image,
     get_test_project_environments_path,
-    get_test_project_recon_job,
 )
+from dagster._core.execution.api import execute_job
 
 from . import IS_BUILDKITE, docker_postgres_instance
 

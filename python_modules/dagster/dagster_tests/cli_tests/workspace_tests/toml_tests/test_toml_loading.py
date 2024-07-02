@@ -1,5 +1,5 @@
-from dagster._core.workspace.load_target import get_origins_from_toml
 from dagster._utils import file_relative_path
+from dagster._core.workspace.load_target import get_origins_from_toml
 
 
 def test_load_python_module_from_toml():

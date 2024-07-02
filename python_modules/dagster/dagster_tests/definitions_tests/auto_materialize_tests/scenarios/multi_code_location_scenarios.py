@@ -1,9 +1,9 @@
 from typing import Sequence
 
-from dagster import AssetsDefinition, FreshnessPolicy
+from dagster import FreshnessPolicy, AssetsDefinition
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-from ..base_scenario import AssetReconciliationScenario, asset_def, run, run_request
+from ..base_scenario import AssetReconciliationScenario, run, asset_def, run_request
 from .basic_scenarios import diamond
 
 freshness_30m = FreshnessPolicy(maximum_lag_minutes=30)

@@ -5,9 +5,9 @@ import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import DagBag
 from dagster_airflow import (
+    make_dagster_job_from_airflow_dag,
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
-    make_dagster_job_from_airflow_dag,
 )
 
 from dagster_airflow_tests.marks import requires_local_db

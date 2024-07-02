@@ -1,25 +1,25 @@
-import string
 import time
+import string
 
 from dagster import (
-    DynamicPartitionsDefinition,
     In,
     Int,
     Out,
     ScheduleDefinition,
-    asset,
-    define_asset_job,
-    job,
+    DynamicPartitionsDefinition,
     op,
-    repository,
+    job,
+    asset,
     schedule,
+    repository,
+    define_asset_job,
     usable_as_dagster_type,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
-from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.errors import DagsterError
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.definitions.decorators.sensor_decorator import sensor
 
 
 @op

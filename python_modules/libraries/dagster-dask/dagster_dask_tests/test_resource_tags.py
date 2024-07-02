@@ -1,5 +1,5 @@
-from dagster._core.definitions.decorators import op
 from dagster_dask.executor import get_dask_resource_requirements
+from dagster._core.definitions.decorators import op
 
 
 def test_resource_tags():

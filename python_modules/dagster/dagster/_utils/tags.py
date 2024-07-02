@@ -1,5 +1,5 @@
+from typing import TYPE_CHECKING, Any, Dict, Tuple, Union, Mapping, Optional, Sequence
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 from dagster import _check as check
 

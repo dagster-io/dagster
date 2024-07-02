@@ -1,13 +1,13 @@
-import itertools
-import logging
 import re
+import logging
+import itertools
+from typing import Any, Tuple, Literal, Mapping, Iterator, Optional, Sequence, cast
 from pathlib import Path
-from typing import Any, Iterator, Literal, Mapping, Optional, Sequence, Tuple, cast
 
 from dagster import AssetKey
-from dagster._annotations import experimental, public
-from sqlglot import exp, parse_one, to_table
-from sqlglot.optimizer import Scope, build_scope, optimize
+from sqlglot import exp, to_table, parse_one
+from sqlglot.optimizer import Scope, optimize, build_scope
+from dagster._annotations import public, experimental
 
 LookMLStructureType = Literal["dashboard", "explore", "table", "view"]
 

@@ -1,23 +1,23 @@
+from typing import IO, Any, Mapping, Optional, Sequence, Generator
 from contextlib import contextmanager
-from typing import IO, Any, Generator, Mapping, Optional, Sequence
 
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._core.storage.captured_log_manager import (
-    CapturedLogContext,
     CapturedLogData,
+    CapturedLogContext,
     CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
-    ComputeLogFileData,
     ComputeLogManager,
+    ComputeLogFileData,
 )
 
 

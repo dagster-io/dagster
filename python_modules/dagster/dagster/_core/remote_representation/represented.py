@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import AbstractSet, Optional, Sequence, Union
+from typing import Union, Optional, Sequence, AbstractSet
 
 import dagster._check as check
 from dagster._config import ConfigSchemaSnapshot
-from dagster._core.snap.dagster_types import DagsterTypeSnap
+from dagster._core.snap.mode import ModeDefSnap
+from dagster._core.snap.node import OpDefSnap, GraphDefSnap
 from dagster._core.snap.dep_snapshot import DependencyStructureIndex
 from dagster._core.snap.job_snapshot import JobSnapshot
-from dagster._core.snap.mode import ModeDefSnap
-from dagster._core.snap.node import GraphDefSnap, OpDefSnap
+from dagster._core.snap.dagster_types import DagsterTypeSnap
 
 from .job_index import JobIndex
 

@@ -4,40 +4,40 @@ from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
 from dagster import AssetKey, RunRequest
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._time import get_current_datetime
+from dagster._serdes.serdes import serialize_value
+from dagster_graphql.test.utils import infer_repository, execute_dagster_graphql
+from dagster._daemon.asset_daemon import (
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
+    asset_daemon_cursor_to_instigator_serialized_cursor,
+)
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
+from dagster._core.scheduler.instigation import (
+    TickData,
+    TickStatus,
+    InstigatorState,
+    InstigatorStatus,
+    SensorInstigatorData,
+)
+from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
+from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     deserialize_auto_materialize_asset_evaluation_to_asset_condition_evaluation_with_run_ids,
 )
 from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AssetConditionSnapshot,
     AssetConditionEvaluation,
     AssetConditionEvaluationWithRunIds,
-    AssetConditionSnapshot,
     HistoricalAllPartitionsSubsetSentinel,
 )
-from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
-from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.sensor_definition import SensorType
-from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
-from dagster._core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorStatus,
-    SensorInstigatorData,
-    TickData,
-    TickStatus,
-)
-from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._daemon.asset_daemon import (
-    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
-    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
-    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
-    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-    asset_daemon_cursor_to_instigator_serialized_cursor,
-)
-from dagster._serdes.serdes import serialize_value
-from dagster._time import get_current_datetime
-from dagster._vendored.dateutil.relativedelta import relativedelta
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_repository
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

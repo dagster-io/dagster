@@ -1,21 +1,21 @@
 import logging
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, NamedTuple
 
 from typing_extensions import Self
 
 from dagster import (
+    String,
+    IntSource,
     DagsterEvent,
     DagsterEventType,
-    IntSource,
-    String,
     _check as check,
 )
-from dagster._builtins import Bool
-from dagster._config import Array, Field, Noneable, ScalarUnion, Shape
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.instance import T_DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._config import Array, Field, Shape, Noneable, ScalarUnion
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._builtins import Bool
+from dagster._core.instance import T_DagsterInstance
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 
 from .base import RunCoordinator, SubmitRunContext
 

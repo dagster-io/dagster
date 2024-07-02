@@ -1,59 +1,59 @@
 from abc import ABC, ABCMeta, abstractmethod
-from contextlib import contextmanager
-from contextvars import ContextVar
-from inspect import _empty as EmptyAnnotation
 from typing import (
-    AbstractSet,
     Any,
+    Set,
     Dict,
-    Iterator,
     List,
+    Union,
     Mapping,
+    Iterator,
     Optional,
     Sequence,
-    Set,
-    Union,
+    AbstractSet,
     cast,
 )
+from inspect import _empty as EmptyAnnotation
+from contextlib import contextmanager
+from contextvars import ContextVar
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.data_version import (
-    DataProvenance,
-    DataVersion,
-    extract_data_provenance_from_entry,
-)
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.dependency import Node, NodeHandle
-from dagster._core.definitions.events import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    ExpectationResult,
-    UserEvent,
-)
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.repository_definition.repository_definition import (
-    RepositoryDefinition,
-)
-from dagster._core.definitions.step_launcher import StepLauncher
-from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._annotations import public, deprecated, experimental
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidPropertyError,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
 )
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._utils.forked_pdb import ForkedPdb
 from dagster._utils.warnings import deprecation_warning
+from dagster._core.log_manager import DagsterLogManager
+from dagster._utils.forked_pdb import ForkedPdb
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import (
+    AssetKey,
+    UserEvent,
+    AssetObservation,
+    ExpectationResult,
+    AssetMaterialization,
+)
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.dependency import Node, NodeHandle
+from dagster._core.definitions.data_version import (
+    DataVersion,
+    DataProvenance,
+    extract_data_provenance_from_entry,
+)
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
+)
 
 from .system import StepExecutionContext
 

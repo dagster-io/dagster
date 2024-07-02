@@ -1,9 +1,9 @@
-import logging
 import os
+import logging
 import subprocess
-from dataclasses import dataclass
+from typing import Set, Optional
 from pathlib import Path
-from typing import Optional, Set
+from dataclasses import dataclass
 
 
 def get_commit(rev):

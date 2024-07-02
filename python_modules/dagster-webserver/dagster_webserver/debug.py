@@ -4,12 +4,12 @@ from typing import Any, Optional
 import click
 from dagster import DagsterInstance
 from dagster._core.debug import DebugRunPayload
-from dagster._core.workspace.context import (
-    BaseWorkspaceRequestContext,
-    IWorkspaceProcessContext,
-    WorkspaceRequestContext,
-)
 from dagster._serdes.serdes import deserialize_value
+from dagster._core.workspace.context import (
+    WorkspaceRequestContext,
+    IWorkspaceProcessContext,
+    BaseWorkspaceRequestContext,
+)
 
 from .cli import (
     DEFAULT_WEBSERVER_HOST,

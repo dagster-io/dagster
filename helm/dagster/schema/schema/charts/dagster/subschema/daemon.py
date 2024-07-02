@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union, Optional
 
 from pydantic import Extra
 
+from .config import IntSource
 from ...utils import kubernetes
 from ...utils.utils import BaseModel, ConfigurableClass, create_json_schema_conditionals
-from .config import IntSource
 
 
 class RunCoordinatorType(str, Enum):

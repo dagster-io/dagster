@@ -1,46 +1,46 @@
-from datetime import datetime
 from pathlib import Path
+from datetime import datetime
 
-import pytest
 import pytz
+import pytest
 from dagster import (
-    AssetMaterialization,
-    AssetObservation,
-    BoolMetadataValue,
-    DagsterEventType,
-    FloatMetadataValue,
-    IntMetadataValue,
-    JsonMetadataValue,
     MetadataValue,
+    AssetObservation,
+    DagsterEventType,
+    IntMetadataValue,
+    UrlMetadataValue,
+    BoolMetadataValue,
+    JsonMetadataValue,
     NullMetadataValue,
     PathMetadataValue,
-    PythonArtifactMetadataValue,
     TextMetadataValue,
+    FloatMetadataValue,
+    AssetMaterialization,
     TimestampMetadataValue,
-    UrlMetadataValue,
-    job,
+    PythonArtifactMetadataValue,
     op,
+    job,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.snap.node import build_node_defs_snapshot
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     TableColumnLineageMetadataValue,
     normalize_metadata,
 )
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.metadata.table import (
     TableColumn,
-    TableColumnConstraints,
-    TableColumnDep,
-    TableColumnLineage,
-    TableConstraints,
     TableRecord,
     TableSchema,
+    TableColumnDep,
+    TableConstraints,
+    TableColumnLineage,
+    TableColumnConstraints,
 )
 from dagster._core.execution.execution_result import ExecutionResult
-from dagster._core.snap.node import build_node_defs_snapshot
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.decorators.asset_decorator import asset
 
 
 def step_events_of_type(result: ExecutionResult, node_name: str, event_type: DagsterEventType):

@@ -1,16 +1,16 @@
 from dagster import OpDefinition, build_op_context
 from docs_snippets.concepts.ops_jobs_graphs.ops import (
-    context_op,
-    my_configurable_op,
-    my_input_op,
-    my_multi_output_op,
-    my_multiple_output_annotation_op,
     my_op,
-    my_op_factory,
+    context_op,
+    my_input_op,
     my_output_op,
-    my_single_tuple_output_op,
+    my_op_factory,
     my_typed_input_op,
+    my_configurable_op,
+    my_multi_output_op,
     return_annotation_op,
+    my_single_tuple_output_op,
+    my_multiple_output_annotation_op,
 )
 
 

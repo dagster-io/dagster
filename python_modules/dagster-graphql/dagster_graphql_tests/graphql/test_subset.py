@@ -1,7 +1,7 @@
-from typing import AbstractSet, Any, Mapping
+from typing import Any, Mapping, AbstractSet
 
+from dagster_graphql.test.utils import GqlResult, infer_job_selector, execute_dagster_graphql
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import GqlResult, execute_dagster_graphql, infer_job_selector
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 

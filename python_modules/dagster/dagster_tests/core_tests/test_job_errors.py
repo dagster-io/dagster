@@ -2,20 +2,20 @@ import re
 
 import pytest
 from dagster import (
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    DependencyDefinition,
-    GraphDefinition,
     In,
-    OpDefinition,
     Out,
     Output,
-    _check as check,
-    job,
+    OpDefinition,
+    GraphDefinition,
+    DependencyDefinition,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvariantViolationError,
     op,
+    job,
+    _check as check,
 )
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.definitions.metadata import MetadataValue
 
 
 def did_op_succeed(op_name, result):

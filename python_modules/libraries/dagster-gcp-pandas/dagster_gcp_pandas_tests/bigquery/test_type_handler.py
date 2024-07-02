@@ -1,33 +1,33 @@
 import os
 import uuid
-from contextlib import contextmanager
 from typing import Iterator, Optional, cast
+from contextlib import contextmanager
 
 import pandas as pd
-import pandas_gbq
 import pytest
+import pandas_gbq
 from dagster import (
-    AssetExecutionContext,
+    Out,
+    EnvVar,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    EnvVar,
     MultiPartitionKey,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DynamicPartitionsDefinition,
+    op,
+    job,
     asset,
+    materialize,
     fs_io_manager,
     instance_for_test,
-    job,
-    materialize,
-    op,
 )
-from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
-from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
 from google.cloud import bigquery
+from dagster_gcp_pandas import BigQueryPandasIOManager, bigquery_pandas_io_manager
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

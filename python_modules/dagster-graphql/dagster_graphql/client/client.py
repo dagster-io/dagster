@@ -1,34 +1,34 @@
+from typing import Any, Dict, List, Union, Mapping, Iterable, Optional, Sequence
 from itertools import chain
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
 import dagster._check as check
 import requests.exceptions
-from dagster import DagsterRunStatus
-from dagster._annotations import deprecated, public
-from dagster._core.definitions.run_config import RunConfig, convert_config_input
-from dagster._core.definitions.utils import normalize_tags
 from gql import Client, gql
+from dagster import DagsterRunStatus
 from gql.transport import Transport
-from gql.transport.exceptions import TransportServerError
+from dagster._annotations import public, deprecated
 from gql.transport.requests import RequestsHTTPTransport
+from gql.transport.exceptions import TransportServerError
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.definitions.run_config import RunConfig, convert_config_input
 
-from .client_queries import (
-    CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
-    CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
-    GET_PIPELINE_RUN_STATUS_QUERY,
-    RELOAD_REPOSITORY_LOCATION_MUTATION,
-    SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
-    TERMINATE_RUN_JOB_MUTATION,
-    TERMINATE_RUNS_JOB_MUTATION,
-)
 from .utils import (
-    DagsterGraphQLClientError,
-    InvalidOutputErrorInfo,
     JobInfo,
+    InvalidOutputErrorInfo,
+    DagsterGraphQLClientError,
     ReloadRepositoryLocationInfo,
     ReloadRepositoryLocationStatus,
     ShutdownRepositoryLocationInfo,
     ShutdownRepositoryLocationStatus,
+)
+from .client_queries import (
+    TERMINATE_RUN_JOB_MUTATION,
+    TERMINATE_RUNS_JOB_MUTATION,
+    GET_PIPELINE_RUN_STATUS_QUERY,
+    CLIENT_SUBMIT_PIPELINE_RUN_MUTATION,
+    RELOAD_REPOSITORY_LOCATION_MUTATION,
+    SHUTDOWN_REPOSITORY_LOCATION_MUTATION,
+    CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
 )
 
 

@@ -1,4 +1,4 @@
-from dagster import FilesystemIOManager, job, op
+from dagster import FilesystemIOManager, op, job
 
 
 @op

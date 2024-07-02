@@ -1,39 +1,39 @@
-from typing import Any, Mapping, Optional, Sequence, Union, cast
+from typing import Any, Union, Mapping, Optional, Sequence, cast
 
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     OpExecutionContext,
     RepositoryDefinition,
+    DailyPartitionsDefinition,
     TimeWindowPartitionMapping,
-    asset,
-    job,
     op,
+    job,
+    asset,
     repository,
 )
-from dagster._config.pythonic_config import Config
-from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.test_utils import instance_for_test, wait_for_runs_to_finish
-from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
-    GqlAssetKey,
     GqlResult,
-    define_out_of_process_context,
-    execute_dagster_graphql,
+    GqlAssetKey,
     infer_job_selector,
+    execute_dagster_graphql,
     infer_repository_selector,
+    define_out_of_process_context,
 )
+from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
+from dagster._config.pythonic_config import Config
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.definitions.events import Output, AssetKey
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.data_version import DATA_VERSION_TAG, DataVersion
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 
 from dagster_graphql_tests.graphql.test_assets import (
+    GET_ASSET_JOB_NAMES,
     GET_ASSET_DATA_VERSIONS,
     GET_ASSET_DATA_VERSIONS_BY_PARTITION,
-    GET_ASSET_JOB_NAMES,
 )
 
 

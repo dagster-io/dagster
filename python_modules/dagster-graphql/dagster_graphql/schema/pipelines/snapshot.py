@@ -1,11 +1,11 @@
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._core.remote_representation import RepresentedJob
 
 from ..errors import (
+    GraphenePythonError,
     GraphenePipelineNotFoundError,
     GraphenePipelineSnapshotNotFoundError,
-    GraphenePythonError,
 )
 from ..solids import GrapheneSolidContainer
 from .pipeline import GrapheneIPipelineSnapshot, GrapheneIPipelineSnapshotMixin

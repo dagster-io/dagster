@@ -1,9 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandera as pa
+import matplotlib.pyplot as plt
 
-from dagster import AssetMaterialization, Field, In, OpExecutionContext, Out, job, op
+from dagster import In, Out, Field, OpExecutionContext, AssetMaterialization, op, job
 
 from .factory import pandera_schema_to_dagster_type
 

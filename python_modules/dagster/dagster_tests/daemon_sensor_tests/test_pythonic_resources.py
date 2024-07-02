@@ -1,57 +1,57 @@
 import os
 import sys
-from contextlib import contextmanager
 from typing import Iterator, Optional
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
     AssetKey,
-    IAttachDifferentObjectToOpContext,
     SensorEvaluationContext,
-    job,
-    multi_asset_sensor,
+    IAttachDifferentObjectToOpContext,
     op,
-    resource,
+    job,
     sensor,
+    resource,
+    multi_asset_sensor,
 )
+from dagster._time import get_timezone, create_datetime
 from dagster._check import ParameterCheckError
+from dagster._core.instance import DagsterInstance
+from dagster._core.events.log import EventLogEntry
+from dagster._core.test_utils import freeze_time, create_test_daemon_workspace_context
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.decorators.sensor_decorator import asset_sensor
-from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.freshness_policy_sensor_definition import (
-    FreshnessPolicySensorContext,
-    freshness_policy_sensor,
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.scheduler.instigation import TickStatus, InstigatorState, InstigatorStatus
+from dagster._core.workspace.load_target import ModuleTarget
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._vendored.dateutil.relativedelta import relativedelta
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.definitions.resource_annotation import ResourceParam
+from dagster._core.definitions.decorators.sensor_decorator import asset_sensor
+from dagster._core.definitions.run_status_sensor_definition import (
+    RunStatusSensorContext,
+    RunFailureSensorContext,
+    run_status_sensor,
+    run_failure_sensor,
 )
 from dagster._core.definitions.multi_asset_sensor_definition import (
     MultiAssetSensorEvaluationContext,
 )
+from dagster._core.definitions.freshness_policy_sensor_definition import (
+    FreshnessPolicySensorContext,
+    freshness_policy_sensor,
+)
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.run_status_sensor_definition import (
-    RunFailureSensorContext,
-    RunStatusSensorContext,
-    run_failure_sensor,
-    run_status_sensor,
-)
-from dagster._core.definitions.sensor_definition import RunRequest
-from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.instance import DagsterInstance
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import create_test_daemon_workspace_context, freeze_time
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import ModuleTarget
-from dagster._time import create_datetime, get_timezone
-from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_sensor_run import evaluate_sensors, validate_tick, wait_for_all_runs_to_start
+from .test_sensor_run import validate_tick, evaluate_sensors, wait_for_all_runs_to_start
 
 
 @op(out={})

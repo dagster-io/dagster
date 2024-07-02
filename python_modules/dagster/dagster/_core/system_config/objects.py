@@ -1,33 +1,33 @@
 """System-provided config objects and constructors."""
 
 from typing import (
-    AbstractSet,
     Any,
     Dict,
     List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Type,
     Union,
+    Mapping,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
 import dagster._check as check
+from dagster._utils import ensure_single_item
+from dagster._core.errors import (
+    DagsterInvalidConfigError,
+    DagsterConfigMappingFunctionError,
+    user_code_error_boundary,
+)
 from dagster._core.definitions.configurable import ConfigurableDefinition
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,
 )
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import (
-    DagsterConfigMappingFunctionError,
-    DagsterInvalidConfigError,
-    user_code_error_boundary,
-)
-from dagster._utils import ensure_single_item
 
 
 class OpConfig(

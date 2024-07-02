@@ -1,4 +1,4 @@
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Mapping, Callable, Optional
 
 from .types import ManagedElementDiff
 

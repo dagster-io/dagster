@@ -1,20 +1,20 @@
 import os
 
 import pytest
-from dagster import DagsterInstance, job, op, reconstructable, repository
-from dagster._core.execution.api import execute_job
-from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster import DagsterInstance, op, job, repository, reconstructable
 from dagster._core.test_utils import (
     environ,
+    step_succeeded,
+    step_did_not_run,
     instance_for_test,
     poll_for_finished_run,
-    step_did_not_run,
-    step_succeeded,
 )
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.execution.api import execute_job
 from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.workspace.load_target import PythonFileTarget
+from dagster._core.execution.plan.resume_retry import ReexecutionStrategy
 
 CONDITIONAL_FAIL_ENV = "DAGSTER_CONDIIONAL_FAIL"
 

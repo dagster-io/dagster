@@ -1,24 +1,24 @@
 from typing import Any, Dict, List
 
 from dagster import (
+    Config,
+    AssetIn,
     AllPartitionMapping,
     AssetExecutionContext,
-    AssetIn,
-    Config,
     StaticPartitionsDefinition,
     asset,
     define_asset_job,
 )
 from dagster_openai import OpenAIResource
-from langchain.chains.qa_with_sources import stuff_prompt
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
 from langchain.schema.output_parser import StrOutputParser
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.chains.qa_with_sources import stuff_prompt
 from langchain_community.vectorstores import FAISS
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-from .constants import SUMMARY_TEMPLATE
 from .utils import get_github_docs
+from .constants import SUMMARY_TEMPLATE
 
 docs_partitions_def = StaticPartitionsDefinition(
     [

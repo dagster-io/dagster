@@ -3,11 +3,11 @@ from typing import List
 import typer
 from typing_extensions import Annotated
 
+from dagster_dbt.cloud.resources import DBT_DEFAULT_HOST, DbtCloudResource
 from dagster_dbt.cloud.asset_defs import (
     DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR,
     DbtCloudCacheableAssetsDefinition,
 )
-from dagster_dbt.cloud.resources import DBT_DEFAULT_HOST, DbtCloudResource
 
 app = typer.Typer()
 

@@ -1,28 +1,28 @@
 from enum import Enum
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Union, Mapping, Optional, Sequence, NamedTuple
 
 from dagster import _check as check
-from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.run_request import RunRequest
-from dagster._core.definitions.utils import check_valid_title
-from dagster._core.errors import DagsterDefinitionChangedDeserializationError
-from dagster._core.execution.bulk_actions import BulkActionType
-from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
-from dagster._core.storage.tags import USER_TAG
-from dagster._core.workspace.workspace import IWorkspace
 from dagster._serdes import whitelist_for_serdes
+from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._utils.error import SerializableErrorInfo
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.definitions import AssetKey
+from dagster._core.storage.tags import USER_TAG
+from dagster._core.definitions.utils import check_valid_title
+from dagster._core.workspace.workspace import IWorkspace
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.execution.bulk_actions import BulkActionType
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.remote_representation.origin import RemotePartitionSetOrigin
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
-from ..definitions.selector import PartitionsByAssetSelector
 from .asset_backfill import (
     AssetBackfillData,
     PartitionedAssetBackfillStatus,
     UnpartitionedAssetBackfillStatus,
 )
+from ..definitions.selector import PartitionsByAssetSelector
 
 
 @whitelist_for_serdes

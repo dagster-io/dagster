@@ -1,44 +1,44 @@
-from typing import AbstractSet, Any, Dict, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, Dict, Union, Mapping, Optional, Sequence, NamedTuple, AbstractSet, cast
 
 from dagster import _check as check
 from dagster._config import (
     FIELD_NO_DEFAULT_PROVIDED,
-    Array,
-    ConfigEnumValueSnap,
-    ConfigFieldSnap,
-    ConfigSchemaSnapshot,
-    ConfigType,
-    ConfigTypeKind,
-    ConfigTypeSnap,
-    Enum,
-    EnumValue,
-    Field,
     Map,
+    Enum,
+    Array,
+    Field,
+    Shape,
     Noneable,
+    Selector,
+    EnumValue,
+    ConfigType,
     Permissive,
     ScalarUnion,
-    Selector,
-    Shape,
+    ConfigTypeKind,
+    ConfigTypeSnap,
+    ConfigFieldSnap,
+    ConfigEnumValueSnap,
+    ConfigSchemaSnapshot,
     get_builtin_scalar_by_name,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._serdes import deserialize_value, create_snapshot_id, whitelist_for_serdes
+from dagster._core.utils import toposort_flatten
+from dagster._serdes.serdes import NamedTupleSerializer
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
     MetadataValue,
     RawMetadataValue,
+    MetadataFieldSerializer,
     normalize_metadata,
 )
-from dagster._core.utils import toposort_flatten
-from dagster._serdes import create_snapshot_id, deserialize_value, whitelist_for_serdes
-from dagster._serdes.serdes import NamedTupleSerializer
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
-from .config_types import build_config_schema_snapshot
-from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
-from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
 from .mode import ModeDefSnap, build_mode_def_snap
-from .node import GraphDefSnap, NodeDefsSnapshot, OpDefSnap, build_node_defs_snapshot
+from .node import OpDefSnap, GraphDefSnap, NodeDefsSnapshot, build_node_defs_snapshot
+from .config_types import build_config_schema_snapshot
+from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
+from .dagster_types import DagsterTypeNamespaceSnapshot, build_dagster_type_namespace_snapshot
 
 
 def create_job_snapshot_id(snapshot: "JobSnapshot") -> str:

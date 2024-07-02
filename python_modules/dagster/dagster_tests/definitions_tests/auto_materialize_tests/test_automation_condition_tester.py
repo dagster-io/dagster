@@ -1,7 +1,7 @@
 from dagster import (
+    Definitions,
     AssetSelection,
     AutomationCondition,
-    Definitions,
     HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,

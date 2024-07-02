@@ -1,22 +1,22 @@
 import pytest
 import responses
-from dagster_dbt.cloud.cli import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR, app
 from typer.testing import CliRunner
+from dagster_dbt.cloud.cli import DAGSTER_DBT_COMPILE_RUN_ID_ENV_VAR, app
 
 from .utils import (
-    DBT_CLOUD_ACCOUNT_ID,
-    DBT_CLOUD_EMEA_HOST,
+    SAMPLE_JOB_ID,
     DBT_CLOUD_US_HOST,
     SAMPLE_API_PREFIX,
+    SAMPLE_PROJECT_ID,
+    DBT_CLOUD_EMEA_HOST,
+    DBT_CLOUD_ACCOUNT_ID,
     SAMPLE_API_V3_PREFIX,
     SAMPLE_EMEA_API_PREFIX,
     SAMPLE_EMEA_API_V3_PREFIX,
-    SAMPLE_JOB_ID,
-    SAMPLE_PROJECT_ID,
-    sample_get_environment_variables,
-    sample_list_job_details,
     sample_run_details,
+    sample_list_job_details,
     sample_set_environment_variable,
+    sample_get_environment_variables,
 )
 
 runner = CliRunner()

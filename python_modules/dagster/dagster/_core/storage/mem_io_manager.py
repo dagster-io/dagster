@@ -1,8 +1,8 @@
 from typing import Dict, Tuple
 
+from dagster._core.storage.io_manager import IOManager, io_manager, dagster_maintained_io_manager
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
 
 
 class InMemoryIOManager(IOManager):

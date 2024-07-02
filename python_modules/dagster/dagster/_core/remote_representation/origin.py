@@ -1,40 +1,40 @@
 import os
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Any,
-    Iterator,
     Mapping,
-    NamedTuple,
+    Iterator,
     NoReturn,
     Optional,
     Sequence,
+    NamedTuple,
     cast,
 )
+from contextlib import contextmanager
 
 import grpc
 
 import dagster._check as check
+from dagster._serdes import create_snapshot_id, whitelist_for_serdes
+from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
+from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
 from dagster._core.definitions.selector import (
     InstigatorSelector,
-    PartitionSetSelector,
     RepositorySelector,
+    PartitionSetSelector,
 )
-from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
-from dagster._core.instance.config import DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT
-from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 
 if TYPE_CHECKING:
+    from dagster._grpc.client import DagsterGrpcClient
     from dagster._core.instance import DagsterInstance
     from dagster._core.remote_representation.code_location import (
         CodeLocation,
-        GrpcServerCodeLocation,
         InProcessCodeLocation,
+        GrpcServerCodeLocation,
     )
-    from dagster._grpc.client import DagsterGrpcClient
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow

@@ -3,13 +3,13 @@ from contextlib import ExitStack
 
 import mock
 import pytest
-from dagster import job, op
+from dagster import op, job
+from dagster._core.utils import make_new_run_id
 from dagster._core.execution.plan.instance_concurrency_context import (
-    INITIAL_INTERVAL_VALUE,
     STEP_UP_BASE,
+    INITIAL_INTERVAL_VALUE,
     InstanceConcurrencyContext,
 )
-from dagster._core.utils import make_new_run_id
 
 from .conftest import CUSTOM_SLEEP_INTERVAL
 

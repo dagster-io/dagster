@@ -1,5 +1,5 @@
-import threading
 import time
+import threading
 
 from dagster._core.test_utils import instance_for_test
 

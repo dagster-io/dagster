@@ -1,9 +1,9 @@
 import dask.dataframe as dd
 from dagster import file_relative_path
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.input import In
-from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_dask import DataFrame
+from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.definitions.input import In
+from dagster._core.definitions.decorators import op
 
 
 @op(ins={"input_df": In(DataFrame)})

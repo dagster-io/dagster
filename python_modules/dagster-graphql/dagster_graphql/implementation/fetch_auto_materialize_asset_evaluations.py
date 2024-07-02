@@ -4,13 +4,13 @@ import dagster._check as check
 from dagster import AssetKey
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
+from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
 from dagster_graphql.schema.auto_materialize_asset_evaluations import (
-    GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
     GrapheneAutoMaterializeAssetEvaluationRecord,
     GrapheneAutoMaterializeAssetEvaluationRecords,
+    GrapheneAutoMaterializeAssetEvaluationNeedsMigrationError,
 )
-from dagster_graphql.schema.inputs import GrapheneAssetKeyInput
 
 if TYPE_CHECKING:
     from ..schema.util import ResolveInfo

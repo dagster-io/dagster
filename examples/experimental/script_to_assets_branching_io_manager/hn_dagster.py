@@ -2,21 +2,21 @@ import os
 
 import pandas
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterInstance,
-    Definitions,
-    OpExecutionContext,
     Output,
+    AssetKey,
+    Definitions,
+    DagsterInstance,
+    OpExecutionContext,
+    AssetMaterialization,
+    op,
+    job,
     asset,
     file_relative_path,
-    job,
-    op,
 )
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
-from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
 from hackernews import extract, transform
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.storage.fs_io_manager import PickledObjectFilesystemIOManager
+from dagster._core.storage.branching.branching_io_manager import BranchingIOManager
 
 
 @op

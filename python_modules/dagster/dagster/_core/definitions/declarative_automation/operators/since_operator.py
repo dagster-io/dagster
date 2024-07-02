@@ -2,8 +2,8 @@ from typing import Sequence
 
 from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
+from ..automation_condition import AutomationResult, AutomationCondition
 
 
 @whitelist_for_serdes

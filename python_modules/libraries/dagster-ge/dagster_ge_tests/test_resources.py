@@ -1,12 +1,12 @@
 import pytest
-from dagster import Output, job, op
+from pandas import read_csv
+from dagster import Output, op, job
 from dagster._utils import file_relative_path
 from dagster_ge.factory import (
     GEContextResource,
     ge_validation_op_factory,
     ge_validation_op_factory_v3,
 )
-from pandas import read_csv
 
 
 @op

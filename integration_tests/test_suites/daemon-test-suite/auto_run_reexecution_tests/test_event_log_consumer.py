@@ -1,7 +1,7 @@
-import logging
 import time
+import logging
 
-from dagster import DagsterEvent, DagsterEventType, EventLogEntry
+from dagster import DagsterEvent, EventLogEntry, DagsterEventType
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import create_run_for_test
 from dagster._daemon.auto_run_reexecution.event_log_consumer import (

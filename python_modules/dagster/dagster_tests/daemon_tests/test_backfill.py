@@ -1,78 +1,78 @@
-import json
 import os
+import sys
+import json
+import time
 import random
 import string
-import sys
-import time
 
-import dagster._check as check
 import mock
 import pytest
+import dagster._check as check
 from dagster import (
-    AllPartitionMapping,
-    Any,
-    AssetExecutionContext,
-    AssetIn,
-    AssetKey,
-    AssetsDefinition,
-    Config,
-    DagsterEventType,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    Field,
     In,
-    Nothing,
+    Any,
     Out,
+    Field,
+    Config,
+    AssetIn,
+    Nothing,
+    AssetKey,
+    DagsterInstance,
+    AssetsDefinition,
+    DagsterEventType,
+    AllPartitionMapping,
+    AssetExecutionContext,
     StaticPartitionMapping,
-    _seven,
-    asset,
-    daily_partitioned_config,
-    define_asset_job,
-    fs_io_manager,
-    graph,
-    job,
+    DailyPartitionsDefinition,
     op,
+    job,
+    asset,
+    graph,
+    _seven,
     repository,
+    fs_io_manager,
+    define_asset_job,
+    daily_partitioned_config,
 )
+from dagster._time import get_current_timestamp
+from dagster._seven import IS_WINDOWS, get_system_temp_directory
+from dagster._utils import touch_file
+from dagster._daemon import get_default_daemon_logger
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._utils.error import SerializableErrorInfo
+from dagster._core.test_utils import environ, step_failed, step_succeeded, step_did_not_run
+from dagster._daemon.backfill import execute_backfill_iteration
 from dagster._core.definitions import StaticPartitionsDefinition
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.storage.tags import (
+    BACKFILL_ID_TAG,
+    PARTITION_NAME_TAG,
+    ASSET_PARTITION_RANGE_END_TAG,
+    ASSET_PARTITION_RANGE_START_TAG,
+)
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import DynamicPartitionsDefinition, PartitionedConfig
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, RunsFilter, DagsterRunStatus
 from dagster._core.definitions.selector import (
+    PartitionsSelector,
     PartitionRangeSelector,
     PartitionsByAssetSelector,
-    PartitionsSelector,
 )
-from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.definitions.partition import PartitionedConfig, DynamicPartitionsDefinition
+from dagster._core.remote_representation import (
+    ExternalRepository,
+    RemoteRepositoryOrigin,
+    InProcessCodeLocationOrigin,
+)
 from dagster._core.execution.asset_backfill import (
     AssetBackfillData,
     get_asset_backfill_run_chunk_size,
 )
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation import (
-    ExternalRepository,
-    InProcessCodeLocationOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.storage.captured_log_manager import CapturedLogManager
+from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.dagster_run import IN_PROGRESS_RUN_STATUSES, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import (
-    ASSET_PARTITION_RANGE_END_TAG,
-    ASSET_PARTITION_RANGE_START_TAG,
-    BACKFILL_ID_TAG,
-    PARTITION_NAME_TAG,
-)
-from dagster._core.test_utils import environ, step_did_not_run, step_failed, step_succeeded
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.backfill import execute_backfill_iteration
-from dagster._seven import IS_WINDOWS, get_system_temp_directory
-from dagster._time import get_current_timestamp
-from dagster._utils import touch_file
-from dagster._utils.error import SerializableErrorInfo
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
 default_resource_defs = resource_defs = {"io_manager": fs_io_manager}
 

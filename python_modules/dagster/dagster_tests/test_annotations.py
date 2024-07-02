@@ -6,25 +6,25 @@ from typing import NamedTuple, get_type_hints
 
 import pytest
 from dagster import resource
+from dagster._check import CheckError
+from typing_extensions import Annotated
 from dagster._annotations import (
     PUBLIC,
     PublicAttr,
+    public,
+    is_public,
     deprecated,
-    deprecated_param,
     experimental,
+    is_deprecated,
+    is_experimental,
+    deprecated_param,
     experimental_param,
     get_deprecated_info,
-    get_experimental_info,
-    is_deprecated,
     is_deprecated_param,
-    is_experimental,
+    get_experimental_info,
     is_experimental_param,
-    is_public,
-    public,
 )
-from dagster._check import CheckError
 from dagster._utils.warnings import ExperimentalWarning
-from typing_extensions import Annotated
 
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 

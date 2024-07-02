@@ -2,7 +2,7 @@ import csv
 
 import requests
 
-from dagster import get_dagster_logger, job, op
+from dagster import op, job, get_dagster_logger
 
 
 # start_inputs_typed_marker_0

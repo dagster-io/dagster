@@ -6,7 +6,7 @@ def some_random_result():
 
 
 # start_random_job
-from dagster import in_process_executor, job, op
+from dagster import op, job, in_process_executor
 
 
 @op

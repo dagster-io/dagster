@@ -1,4 +1,4 @@
-from dagster import Int, Out, Output, graph, op
+from dagster import Int, Out, Output, op, graph
 
 
 @op(

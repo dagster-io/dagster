@@ -1,20 +1,20 @@
 from contextlib import contextmanager
 
 from dagster import (
-    DagsterInstance,
     Definitions,
-    _check as check,
+    DagsterInstance,
     asset,
+    _check as check,
+    sensor,
+    schedule,
     define_asset_job,
     observable_source_asset,
-    schedule,
-    sensor,
 )
+from dagster._core.test_utils import environ
+from dagster_graphql.test.utils import define_out_of_process_context
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.test_utils import environ
-from dagster_graphql.test.utils import define_out_of_process_context
 
 
 class MyResource(ConfigurableResource):

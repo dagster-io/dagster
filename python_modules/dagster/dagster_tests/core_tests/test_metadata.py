@@ -1,21 +1,21 @@
 from dagster import (
     AssetKey,
-    GraphDefinition,
-    IntMetadataValue,
-    JsonMetadataValue,
-    MetadataValue,
-    NodeInvocation,
     TableColumn,
-    TableColumnDep,
-    TableColumnLineage,
-    TableMetadataValue,
     TableRecord,
     TableSchema,
-    TableSchemaMetadataValue,
+    MetadataValue,
+    NodeInvocation,
+    TableColumnDep,
+    GraphDefinition,
+    IntMetadataValue,
     UrlMetadataValue,
+    JsonMetadataValue,
+    TableColumnLineage,
+    TableMetadataValue,
+    TableSchemaMetadataValue,
     op,
 )
-from dagster._serdes.serdes import deserialize_value, serialize_value
+from dagster._serdes.serdes import serialize_value, deserialize_value
 
 
 def test_op_instance_tags():

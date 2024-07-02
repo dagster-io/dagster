@@ -1,18 +1,18 @@
 from abc import ABC
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Tuple,
     Type,
-    TypeVar,
+    Tuple,
     Union,
+    Mapping,
+    TypeVar,
+    Callable,
+    Optional,
+    NamedTuple,
     overload,
 )
+from functools import partial
 
 from typing_extensions import dataclass_transform
 

@@ -1,26 +1,26 @@
-import hashlib
-import json
-import logging
 import sys
+import json
 import time
+import hashlib
+import logging
 from abc import abstractmethod
-from contextlib import contextmanager
 from typing import Any, Dict, List, Mapping, Optional, cast
+from contextlib import contextmanager
 
 import requests
 from dagster import (
-    ConfigurableResource,
     Failure,
+    ConfigurableResource,
     _check as check,
-    get_dagster_logger,
     resource,
+    get_dagster_logger,
 )
-from dagster._config.pythonic_config import infer_schema_from_config_class
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._utils.cached_method import cached_method
-from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
+from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.cached_method import cached_method
+from dagster._config.pythonic_config import infer_schema_from_config_class
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from dagster_airbyte.types import AirbyteOutput
 

@@ -1,20 +1,20 @@
-import logging
 import time
+import logging
+from typing import Mapping, Callable, Sequence
 from collections import defaultdict
-from typing import Callable, Mapping, Sequence
 
-from dagster import DagsterEvent, execute_job, job, op
-from dagster._core.definitions.events import DynamicOutput
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.node_definition import NodeDefinition
-from dagster._core.definitions.output import DynamicOut
-from dagster._core.definitions.reconstruct import reconstructable
+from dagster import DagsterEvent, op, job, execute_job
+from dagster._serdes import deserialize_value
+from dagster._loggers import colored_console_logger
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry, construct_event_logger
 from dagster._core.test_utils import instance_for_test
-from dagster._loggers import colored_console_logger
-from dagster._serdes import deserialize_value
+from dagster._core.definitions.events import DynamicOutput
+from dagster._core.definitions.output import DynamicOut
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.node_definition import NodeDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 
 def get_loggers(event_callback):

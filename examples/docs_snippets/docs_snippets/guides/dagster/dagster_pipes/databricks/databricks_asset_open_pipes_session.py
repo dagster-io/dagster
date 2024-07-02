@@ -1,7 +1,7 @@
 import os
 import sys
 
-from dagster_databricks import PipesDbfsContextInjector, PipesDbfsMessageReader
+from dagster_databricks import PipesDbfsMessageReader, PipesDbfsContextInjector
 from dagster_databricks.pipes import PipesDbfsLogReader
 
 from dagster import AssetExecutionContext, asset, open_pipes_session

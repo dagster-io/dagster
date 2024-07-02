@@ -2,23 +2,23 @@ from typing import Dict
 
 import pytest
 from dagster import (
-    DagsterType,
-    DagsterUnknownResourceError,
     In,
     Out,
-    ResourceDefinition,
     String,
-    dagster_type_loader,
-    graph,
-    job,
+    DagsterType,
+    ResourceDefinition,
+    DagsterUnknownResourceError,
     op,
-    repository,
+    job,
+    graph,
     resource,
+    repository,
+    dagster_type_loader,
     usable_as_dagster_type,
 )
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvalidDefinitionError
 from dagster._core.definitions.configurable import configured
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 
 
 def get_resource_init_job(resources_initted: Dict[str, bool]) -> JobDefinition:

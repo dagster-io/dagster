@@ -1,10 +1,10 @@
 from typing import Optional
 
+from schema.charts.utils import kubernetes
 from schema.charts.dagster_user_deployments.subschema.user_deployments import (
     UserDeployment,
     UserDeploymentIncludeConfigInLaunchedRuns,
 )
-from schema.charts.utils import kubernetes
 
 
 def create_simple_user_deployment(

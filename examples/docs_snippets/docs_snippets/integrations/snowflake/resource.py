@@ -4,7 +4,7 @@
 # start
 from dagster_snowflake import SnowflakeResource
 
-from dagster import Definitions, EnvVar, asset
+from dagster import EnvVar, Definitions, asset
 
 # this example executes a query against the IRIS_DATASET table created in Step 2 of the
 # Using Dagster with Snowflake tutorial

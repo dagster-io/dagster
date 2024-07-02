@@ -1,17 +1,17 @@
 # encoding: utf-8
-import hashlib
 import os
+import hashlib
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterator,
     List,
-    Mapping,
-    Optional,
-    Sequence,
     Type,
     Union,
+    Mapping,
+    Iterator,
+    Optional,
+    Sequence,
 )
 
 from typing_extensions import TypeGuard

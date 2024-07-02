@@ -1,9 +1,9 @@
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     Definitions,
-    MultiPartitionsDefinition,
     StaticPartitionMapping,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,

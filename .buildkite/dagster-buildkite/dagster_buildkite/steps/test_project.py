@@ -1,14 +1,14 @@
 import os
-from typing import List, Optional, Set
+from typing import Set, List, Optional
 
+from ..utils import GroupStep, BuildkiteLeafStep
 from ..defines import GCP_CREDS_FILENAME, GCP_CREDS_LOCAL_FILE
-from ..images.versions import (
-    BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
-    TEST_PROJECT_BASE_IMAGE_VERSION,
-)
-from ..python_version import AvailablePythonVersion
 from ..step_builder import CommandStepBuilder
-from ..utils import BuildkiteLeafStep, GroupStep
+from ..python_version import AvailablePythonVersion
+from ..images.versions import (
+    TEST_PROJECT_BASE_IMAGE_VERSION,
+    BUILDKITE_BUILD_TEST_PROJECT_IMAGE_IMAGE_VERSION,
+)
 
 # Some python packages depend on these images but we don't explicitly define that dependency anywhere other
 # than when we construct said package's Buildkite steps. Until we more explicitly define those dependencies

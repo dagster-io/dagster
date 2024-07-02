@@ -1,7 +1,7 @@
 import json
 from typing import Any, Mapping, Optional
 
-from dagster._config.snap import ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._config.snap import ConfigTypeSnap, ConfigSchemaSnapshot
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 

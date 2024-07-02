@@ -6,63 +6,63 @@ from dagster import ExperimentalWarning
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 import pendulum
-from dagster import AssetMaterialization, Output, graph, load_assets_from_modules, op, repository
+from dagster import Output, AssetMaterialization, op, graph, repository, load_assets_from_modules
 
 from dagster_test.toys import big_honkin_asset_graph as big_honkin_asset_graph_module
-from dagster_test.toys.asset_sensors import get_asset_sensors_repo
-from dagster_test.toys.branches import branch_failed_job, branch_job
+from dagster_test.toys.hammer import hammer_default_executor_job
+from dagster_test.toys.log_s3 import log_s3_job
+from dagster_test.toys.sleepy import sleepy_job
+from dagster_test.toys.dynamic import dynamic_job
+from dagster_test.toys.retries import retry_job
+from dagster_test.toys.branches import branch_job, branch_failed_job
+from dagster_test.toys.log_file import log_file_job
+from dagster_test.toys.log_spew import log_spew
+from dagster_test.toys.metadata import with_metadata
+from dagster_test.toys.log_asset import log_asset_job
+from dagster_test.toys.notebooks import hello_world_notebook_pipeline
+from dagster_test.toys.unreliable import unreliable_job
 from dagster_test.toys.composition import composition_job
+from dagster_test.toys.many_events import many_events, many_events_subset_job
+from dagster_test.toys.longitudinal import longitudinal_job
+from dagster_test.toys.asset_sensors import get_asset_sensors_repo
+from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
+from dagster_test.toys.nothing_input import nothing_job
+from dagster_test.toys.input_managers import df_stats_job
+from dagster_test.toys.partition_config import job_with_partition_config
 from dagster_test.toys.cross_repo_assets import (
+    upstream_repo_assets,
     downstream_repo1_assets,
     downstream_repo2_assets,
-    upstream_repo_assets,
 )
-from dagster_test.toys.dynamic import dynamic_job
-from dagster_test.toys.error_monster import error_monster_failing_job, error_monster_passing_job
-from dagster_test.toys.graph_backed_assets import graph_backed_asset
-from dagster_test.toys.hammer import hammer_default_executor_job
-from dagster_test.toys.input_managers import df_stats_job
-from dagster_test.toys.log_asset import log_asset_job
-from dagster_test.toys.log_file import log_file_job
-from dagster_test.toys.log_s3 import log_s3_job
-from dagster_test.toys.log_spew import log_spew
-from dagster_test.toys.longitudinal import longitudinal_job
-from dagster_test.toys.many_events import many_events, many_events_subset_job
-from dagster_test.toys.metadata import with_metadata
-from dagster_test.toys.multi_inputs_outputs import multi_inputs_outputs_job
-from dagster_test.toys.notebooks import hello_world_notebook_pipeline
-from dagster_test.toys.nothing_input import nothing_job
-from dagster_test.toys.partition_config import job_with_partition_config
-from dagster_test.toys.retries import retry_job
 from dagster_test.toys.run_status_sensors import (
-    cross_repo_job_sensor,
-    cross_repo_sensor,
-    cross_repo_success_job_sensor,
     fails_job,
-    fails_sensor,
-    instance_success_sensor,
-    return_multi_run_request_success_sensor,
-    return_run_request_succeeds_sensor,
     status_job,
+    fails_sensor,
     succeeds_job,
-    success_sensor_with_pipeline_run_reaction,
-    yield_multi_run_request_success_sensor,
+    cross_repo_sensor,
+    cross_repo_job_sensor,
+    instance_success_sensor,
+    cross_repo_success_job_sensor,
     yield_run_request_succeeds_sensor,
+    return_run_request_succeeds_sensor,
+    yield_multi_run_request_success_sensor,
+    return_multi_run_request_success_sensor,
+    success_sensor_with_pipeline_run_reaction,
 )
-from dagster_test.toys.sleepy import sleepy_job
+from dagster_test.toys.graph_backed_assets import graph_backed_asset
+from dagster_test.toys.multi_inputs_outputs import multi_inputs_outputs_job
 from dagster_test.toys.software_defined_assets import software_defined_assets
-from dagster_test.toys.unreliable import unreliable_job
 
+from .sensors import get_toys_sensors
+from .schedules import get_toys_schedules
 from .asset_checks import get_checks_and_assets
-from .auto_materializing.large_graph import (
-    auto_materialize_large_static_graph as auto_materialize_large_static_graph,
-    auto_materialize_large_time_graph as auto_materialize_large_time_graph,
-)
+from .freshness_checks import get_freshness_defs_pile
 from .auto_materializing.repo_1 import auto_materialize_repo_1 as auto_materialize_repo_1
 from .auto_materializing.repo_2 import auto_materialize_repo_2 as auto_materialize_repo_2
-from .freshness_checks import get_freshness_defs_pile
-from .schedules import get_toys_schedules
-from .sensors import get_toys_sensors
+from .auto_materializing.large_graph import (
+    auto_materialize_large_time_graph as auto_materialize_large_time_graph,
+    auto_materialize_large_static_graph as auto_materialize_large_static_graph,
+)
 
 
 @op

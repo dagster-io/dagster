@@ -1,4 +1,4 @@
-from dagster_aws.ssm.parameters import get_parameters_by_paths, get_parameters_by_tags
+from dagster_aws.ssm.parameters import get_parameters_by_tags, get_parameters_by_paths
 
 
 def test_get_parameters_from_tags(mock_ssm_client):

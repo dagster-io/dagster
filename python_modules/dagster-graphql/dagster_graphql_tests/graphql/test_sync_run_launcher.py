@@ -1,7 +1,7 @@
+from dagster._core.test_utils import instance_for_test, create_run_for_test
 from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster._core.test_utils import create_run_for_test, instance_for_test
 
-from .repo import get_main_workspace, main_repo_location_name, main_repo_name
+from .repo import main_repo_name, get_main_workspace, main_repo_location_name
 
 
 def test_sync_run_launcher_from_configurable_class():

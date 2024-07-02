@@ -2,15 +2,15 @@ import os
 
 from dagster import Definitions, graph
 
-from .clone_and_drop_db import drop_database_clone
 from .repository_v2 import (
-    clone_prod,
-    comments,
-    get_current_env,
     items,
-    resources,
     stories,
+    comments,
+    resources,
+    clone_prod,
+    get_current_env,
 )
+from .clone_and_drop_db import drop_database_clone
 
 # start_drop_db
 

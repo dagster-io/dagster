@@ -1,6 +1,6 @@
-import dagster._check as check
 import graphene
-from dagster._core.snap import ConfigSchemaSnapshot, ResourceDefSnap
+import dagster._check as check
+from dagster._core.snap import ResourceDefSnap, ConfigSchemaSnapshot
 
 from dagster_graphql.schema.util import ResolveInfo
 

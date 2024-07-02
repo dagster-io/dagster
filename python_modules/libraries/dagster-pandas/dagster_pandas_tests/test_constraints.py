@@ -1,18 +1,18 @@
 import pytest
-from dagster_pandas.constraints import (
-    CategoricalColumnConstraint,
-    ColumnDTypeInSetConstraint,
-    ConstraintViolationException,
-    InRangeColumnConstraint,
-    MaxValueColumnConstraint,
-    MinValueColumnConstraint,
-    NonNullableColumnConstraint,
-    RowCountConstraint,
-    StrictColumnsConstraint,
-    UniqueColumnConstraint,
-)
 from numpy import NaN
 from pandas import DataFrame
+from dagster_pandas.constraints import (
+    RowCountConstraint,
+    UniqueColumnConstraint,
+    InRangeColumnConstraint,
+    StrictColumnsConstraint,
+    MaxValueColumnConstraint,
+    MinValueColumnConstraint,
+    ColumnDTypeInSetConstraint,
+    CategoricalColumnConstraint,
+    NonNullableColumnConstraint,
+    ConstraintViolationException,
+)
 
 NAN_VALUES = [
     NaN,

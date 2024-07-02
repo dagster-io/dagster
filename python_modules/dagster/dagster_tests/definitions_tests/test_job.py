@@ -1,18 +1,18 @@
 import pytest
 from dagster import (
-    DagsterInvalidDefinitionError,
-    DependencyDefinition,
-    GraphDefinition,
     In,
     Int,
     Out,
     Output,
+    GraphDefinition,
+    DependencyDefinition,
+    DagsterInvalidDefinitionError,
+    op,
+    job,
     graph,
     in_process_executor,
-    job,
-    op,
-    usable_as_dagster_type,
     validate_run_config,
+    usable_as_dagster_type,
 )
 
 

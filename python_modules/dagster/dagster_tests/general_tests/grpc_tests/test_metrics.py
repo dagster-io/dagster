@@ -1,20 +1,20 @@
-import inspect
-import json
 import re
-import subprocess
-import threading
+import json
 import time
+import inspect
+import threading
+import subprocess
 from typing import Any
 
 import pytest
-from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import RemoteRepositoryOrigin
-from dagster._core.remote_representation.origin import GrpcServerCodeLocationOrigin
-from dagster._core.test_utils import instance_for_test
+from dagster._utils import find_free_port, file_relative_path
+from dagster._grpc.types import SensorExecutionArgs
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import METRICS_RETRIEVAL_FUNCTIONS, DagsterApiServer, wait_for_grpc_server
-from dagster._grpc.types import SensorExecutionArgs
-from dagster._utils import file_relative_path, find_free_port
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_representation import RemoteRepositoryOrigin
+from dagster._core.remote_representation.origin import GrpcServerCodeLocationOrigin
 
 
 def is_grpc_method(attr_name: str, obj: Any) -> bool:

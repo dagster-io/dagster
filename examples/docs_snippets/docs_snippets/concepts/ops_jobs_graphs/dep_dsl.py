@@ -5,7 +5,7 @@ from dagster._utils.yaml_utils import load_yaml_from_path
 # start
 import os
 
-from dagster import DependencyDefinition, GraphDefinition, NodeInvocation, op
+from dagster import NodeInvocation, GraphDefinition, DependencyDefinition, op
 
 
 @op

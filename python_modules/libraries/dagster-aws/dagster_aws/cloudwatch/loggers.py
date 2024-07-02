@@ -1,5 +1,5 @@
-import datetime
 import logging
+import datetime
 from typing import Optional
 
 import boto3

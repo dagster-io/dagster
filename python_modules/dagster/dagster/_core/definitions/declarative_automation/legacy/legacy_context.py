@@ -1,32 +1,32 @@
-import dataclasses
+import os
+import logging
 import datetime
 import functools
-import logging
-import os
-from collections import defaultdict
-from dataclasses import dataclass
+import dataclasses
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
-    FrozenSet,
+    Tuple,
     Mapping,
+    TypeVar,
+    Callable,
     Optional,
     Sequence,
-    Tuple,
-    TypeVar,
+    FrozenSet,
+    AbstractSet,
 )
+from collections import defaultdict
+from dataclasses import dataclass
 
 import pendulum
 
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    HistoricalAllPartitionsSubsetSentinel,
-)
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    HistoricalAllPartitionsSubsetSentinel,
+)
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 
 from ...asset_subset import AssetSubset, ValidAssetSubset
 from ..serialized_objects import (
@@ -39,9 +39,9 @@ if TYPE_CHECKING:
     from dagster._core.definitions.data_time import CachingDataTimeResolver
     from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
-    from ...asset_daemon_context import AssetDaemonContext
     from ...base_asset_graph import BaseAssetGraph
     from ..automation_condition import AutomationCondition
+    from ...asset_daemon_context import AssetDaemonContext
 
 T = TypeVar("T")
 
@@ -251,9 +251,9 @@ class LegacyRuleEvaluationContext:
         """Fetches the unique id corresponding to the DiscardOnMaxMaterializationsExceededRule, if
         that rule is part of the broader condition.
         """
-        from ...auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
         from ..operators import NotAssetCondition
         from .rule_condition import RuleCondition
+        from ...auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
 
         # if you have a discard condition, it'll be part of a structure of the form
         # Or(MaterializeCond, Not(SkipCond), Not(DiscardCond))

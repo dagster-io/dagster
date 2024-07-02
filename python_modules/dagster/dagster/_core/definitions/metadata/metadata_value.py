@@ -1,36 +1,36 @@
 import os
 from abc import ABC, abstractmethod
+from typing import Any, Union, Generic, Mapping, Callable, Optional, Sequence, NamedTuple
 from datetime import datetime
-from typing import Any, Callable, Generic, Mapping, NamedTuple, Optional, Sequence, Union
 
 from typing_extensions import Self, TypeVar
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr, experimental, public
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import PublicAttr, public, experimental
+from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes.serdes import PackableValue
+from dagster._core.definitions.asset_key import AssetKey
 
 from .table import (  # re-exported
     TableColumn as TableColumn,
-    TableColumnConstraints as TableColumnConstraints,
-    TableColumnDep as TableColumnDep,
-    TableColumnLineage as TableColumnLineage,
-    TableConstraints as TableConstraints,
     TableRecord as TableRecord,
     TableSchema as TableSchema,
+    TableColumnDep as TableColumnDep,
+    TableConstraints as TableConstraints,
+    TableColumnLineage as TableColumnLineage,
+    TableColumnConstraints as TableColumnConstraints,
 )
 
 T_Packable = TypeVar("T_Packable", bound=PackableValue, default=PackableValue, covariant=True)
 from dagster._serdes import pack_value
 from dagster._serdes.serdes import (
-    FieldSerializer,
-    JsonSerializableValue,
+    WhitelistMap,
     PackableValue,
     UnpackContext,
-    WhitelistMap,
+    FieldSerializer,
+    JsonSerializableValue,
 )
 
 # ########################

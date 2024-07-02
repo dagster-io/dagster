@@ -2,14 +2,14 @@ import sys
 from typing import Any
 
 import pytest
-from dagster import AssetsDefinition, ResourceDefinition, asset, job, op, resource, with_resources
+from dagster import AssetsDefinition, ResourceDefinition, op, job, asset, resource, with_resources
 from dagster._check import ParameterCheckError
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._config.pythonic_config import Config
 from dagster._core.definitions.asset_out import AssetOut
-from dagster._core.definitions.decorators.asset_decorator import multi_asset
 from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.resource_annotation import ResourceParam
-from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.decorators.asset_decorator import multi_asset
 
 
 def test_filter_out_resources():

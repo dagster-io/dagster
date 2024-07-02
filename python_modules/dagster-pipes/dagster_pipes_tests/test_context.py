@@ -1,20 +1,20 @@
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
 from dagster_pipes import (
     PIPES_PROTOCOL_VERSION,
     PIPES_PROTOCOL_VERSION_FIELD,
-    DagsterPipesError,
+    PipesParams,
     PipesContext,
+    PipesMessage,
+    PipesTimeWindow,
     PipesContextData,
+    DagsterPipesError,
     PipesContextLoader,
     PipesDataProvenance,
-    PipesMessage,
-    PipesParams,
     PipesPartitionKeyRange,
-    PipesTimeWindow,
 )
 
 TEST_PIPES_CONTEXT_DEFAULTS = PipesContextData(

@@ -1,5 +1,5 @@
-import json
 import os
+import json
 
 from automation.parse_dataproc_configs import ConfigParser
 

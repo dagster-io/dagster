@@ -1,8 +1,8 @@
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
 from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
-from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 from .repo import csv_hello_world_ops_config
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 RUN_CONFIG_SCHEMA_QUERY = """
 query($selector: PipelineSelector! $mode: String!)

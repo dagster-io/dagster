@@ -2,22 +2,22 @@ from typing import Mapping, Optional
 from urllib.parse import urljoin, urlparse
 
 import click
+import requests
 import dagster._check as check
 import dagster._seven as seven
-import requests
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster._cli.utils import get_instance_for_cli, get_temporary_instance_for_cli
+from dagster._utils.log import get_stack_trace_array
 from dagster._cli.workspace import workspace_target_argument
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME
-from dagster._utils.log import get_stack_trace_array
 
-from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema
 from .version import __version__
+from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 
 
 def create_dagster_graphql_cli():

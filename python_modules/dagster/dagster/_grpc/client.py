@@ -1,46 +1,46 @@
 import os
 import sys
-from contextlib import contextmanager
+from typing import Any, Dict, Type, Tuple, Iterator, NoReturn, Optional, Sequence, cast
 from threading import Event
-from typing import Any, Dict, Iterator, NoReturn, Optional, Sequence, Tuple, Type, cast
+from contextlib import contextmanager
 
-import google.protobuf.message
 import grpc
+import google.protobuf.message
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._serdes import serialize_value
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes import serialize_value
-from dagster._utils.error import serializable_error_info_from_exc_info
 
-from .__generated__ import DagsterApiStub, api_pb2
-from .server import GrpcServerProcess
 from .types import (
-    CanCancelExecutionRequest,
-    CancelExecutionRequest,
-    ExecuteExternalJobArgs,
-    ExecutionPlanSnapshotArgs,
-    ExternalScheduleExecutionArgs,
-    JobSubsetSnapshotArgs,
     PartitionArgs,
     PartitionNamesArgs,
-    PartitionSetExecutionParamArgs,
     SensorExecutionArgs,
+    JobSubsetSnapshotArgs,
+    CancelExecutionRequest,
+    ExecuteExternalJobArgs,
+    CanCancelExecutionRequest,
+    ExecutionPlanSnapshotArgs,
+    ExternalScheduleExecutionArgs,
+    PartitionSetExecutionParamArgs,
 )
 from .utils import (
-    default_grpc_timeout,
-    default_repository_grpc_timeout,
-    default_schedule_grpc_timeout,
-    default_sensor_grpc_timeout,
     max_rx_bytes,
     max_send_bytes,
+    default_grpc_timeout,
+    default_sensor_grpc_timeout,
+    default_schedule_grpc_timeout,
+    default_repository_grpc_timeout,
 )
+from .server import GrpcServerProcess
+from .__generated__ import DagsterApiStub, api_pb2
 
 CLIENT_HEARTBEAT_INTERVAL = 1
 

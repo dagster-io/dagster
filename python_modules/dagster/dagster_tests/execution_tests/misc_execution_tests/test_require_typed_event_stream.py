@@ -1,16 +1,16 @@
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 
 import pytest
-from dagster import OpExecutionContext, Out, asset, multi_asset, op
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.events import AssetKey, Output
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.result import MaterializeResult
-from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
+from dagster import Out, OpExecutionContext, op, asset, multi_asset
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.errors import DagsterInvariantViolationError, DagsterStepOutputNotFoundError
+from dagster._core.definitions.events import Output, AssetKey
+from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 EXTRA_ERROR_MESSAGE = "Hello"
 

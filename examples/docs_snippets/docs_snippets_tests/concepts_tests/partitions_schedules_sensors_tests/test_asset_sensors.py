@@ -1,24 +1,24 @@
 from dagster import (
     AssetKey,
-    DagsterInstance,
     RunRequest,
+    DagsterInstance,
     asset,
-    build_multi_asset_sensor_context,
-    materialize,
     repository,
+    materialize,
+    build_multi_asset_sensor_context,
 )
 from dagster._core.test_utils import instance_for_test
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.asset_sensors import (
-    asset_a_and_b_sensor,
-    asset_a_and_b_sensor_with_skip_reason,
-    downstream_daily_asset,
-    downstream_weekly_asset,
-    test_my_asset_sensor,
-    trigger_daily_asset_if_both_upstream_partitions_materialized,
-    trigger_daily_asset_when_any_upstream_partitions_have_new_materializations,
-    trigger_weekly_asset_from_daily_asset,
     upstream_daily_1,
     upstream_daily_2,
+    asset_a_and_b_sensor,
+    test_my_asset_sensor,
+    downstream_daily_asset,
+    downstream_weekly_asset,
+    asset_a_and_b_sensor_with_skip_reason,
+    trigger_weekly_asset_from_daily_asset,
+    trigger_daily_asset_if_both_upstream_partitions_materialized,
+    trigger_daily_asset_when_any_upstream_partitions_have_new_materializations,
 )
 
 

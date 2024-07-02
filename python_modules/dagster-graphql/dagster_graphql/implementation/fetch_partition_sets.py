@@ -1,20 +1,20 @@
+from typing import TYPE_CHECKING, Union, Optional, Sequence
 from collections import defaultdict
-from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 import dagster._check as check
-from dagster._core.definitions.selector import RepositorySelector
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
-from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunPartitionData, RunsFilter
+from dagster._utils.yaml_utils import dump_run_config_yaml
 from dagster._core.storage.tags import (
-    PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    PARTITION_NAME_TAG,
     REPOSITORY_LABEL_TAG,
     TagType,
     get_tag_type,
 )
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster._core.storage.dagster_run import RunsFilter, DagsterRunStatus, RunPartitionData
+from dagster._core.definitions.selector import RepositorySelector
+from dagster._core.remote_representation import RepositoryHandle, ExternalPartitionSet
+from dagster._core.remote_representation.external_data import ExternalPartitionExecutionErrorData
 
 from dagster_graphql.schema.util import ResolveInfo
 
@@ -22,14 +22,14 @@ if TYPE_CHECKING:
     from dagster_graphql.schema.errors import GraphenePartitionSetNotFoundError
     from dagster_graphql.schema.partition_sets import (
         GraphenePartition,
-        GraphenePartitionRun,
-        GraphenePartitionRunConfig,
         GraphenePartitions,
+        GraphenePartitionRun,
         GraphenePartitionSet,
         GraphenePartitionSets,
-        GraphenePartitionStatus,
-        GraphenePartitionStatusCounts,
         GraphenePartitionTags,
+        GraphenePartitionStatus,
+        GraphenePartitionRunConfig,
+        GraphenePartitionStatusCounts,
     )
 
 
@@ -135,8 +135,8 @@ def get_partition_tags(
     partition_set_name: str,
     partition_name: str,
 ) -> "GraphenePartitionTags":
-    from ..schema.partition_sets import GraphenePartitionTags
     from ..schema.tags import GraphenePipelineTag
+    from ..schema.partition_sets import GraphenePartitionTags
 
     check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
     check.str_param(partition_set_name, "partition_set_name")

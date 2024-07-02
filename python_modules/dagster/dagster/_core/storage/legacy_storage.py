@@ -1,63 +1,63 @@
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Set, Tuple, Union, Mapping, Iterable, Optional, Sequence
 
 from dagster import _check as check
+from dagster._utils import PrintFn
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from dagster._core.event_api import EventHandlerFn
+from dagster._utils.concurrency import ConcurrencyKeyInfo, ConcurrencyClaimStatus
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
-from dagster._core.definitions.events import AssetKey
-from dagster._core.event_api import EventHandlerFn
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecord
-from dagster._core.storage.event_log.base import AssetCheckSummaryRecord
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import PrintFn
-from dagster._utils.concurrency import ConcurrencyClaimStatus, ConcurrencyKeyInfo
 
+from .runs.base import RunStorage
 from .base_storage import DagsterStorage
 from .event_log.base import (
     AssetRecord,
-    EventLogConnection,
     EventLogRecord,
     EventLogStorage,
+    EventLogConnection,
     EventRecordsFilter,
     EventRecordsResult,
     PlannedMaterializationInfo,
 )
-from .runs.base import RunStorage
 from .schedules.base import ScheduleStorage
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
-    from dagster._core.definitions.run_request import InstigatorType
-    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
     from dagster._core.events import DagsterEvent, DagsterEventType
-    from dagster._core.events.log import EventLogEntry
-    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-    from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+    from dagster._daemon.types import DaemonHeartbeat
     from dagster._core.instance import DagsterInstance
-    from dagster._core.remote_representation.origin import RemoteJobOrigin
+    from dagster._core.event_api import AssetRecordsFilter, RunStatusChangeRecordsFilter
+    from dagster._core.events.log import EventLogEntry
+    from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+    from dagster._core.snap.job_snapshot import JobSnapshot
+    from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+    from dagster._core.storage.dagster_run import (
+        JobBucket,
+        RunRecord,
+        TagBucket,
+        DagsterRun,
+        RunsFilter,
+        RunPartitionData,
+        DagsterRunStatsSnapshot,
+    )
     from dagster._core.scheduler.instigation import (
-        AutoMaterializeAssetEvaluationRecord,
-        InstigatorState,
-        InstigatorStatus,
-        InstigatorTick,
         TickData,
         TickStatus,
+        InstigatorTick,
+        InstigatorState,
+        InstigatorStatus,
+        AutoMaterializeAssetEvaluationRecord,
     )
+    from dagster._core.definitions.run_request import InstigatorType
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
+    from dagster._core.remote_representation.origin import RemoteJobOrigin
     from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-    from dagster._core.snap.job_snapshot import JobSnapshot
-    from dagster._core.storage.dagster_run import (
-        DagsterRun,
-        DagsterRunStatsSnapshot,
-        JobBucket,
-        RunPartitionData,
-        RunRecord,
-        RunsFilter,
-        TagBucket,
-    )
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-    from dagster._daemon.types import DaemonHeartbeat
 
 
 class CompositeStorage(DagsterStorage, ConfigurableClass):

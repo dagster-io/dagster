@@ -4,31 +4,31 @@
 # See: https://github.com/dagster-io/dagster/issues/4209
 
 import os
+import time
 import pickle
 import tempfile
-import time
 
 import pytest
 from dagster import (
+    In,
     Any,
+    Int,
+    Set,
     Bool,
-    DagsterInvalidConfigError,
     Dict,
+    List,
     Field,
     Float,
-    In,
-    Int,
-    List,
+    Tuple,
+    String,
     Nothing,
     Optional,
-    Permissive,
     Selector,
-    Set,
-    String,
-    Tuple,
-    _check as check,
-    job,
+    Permissive,
+    DagsterInvalidConfigError,
     op,
+    job,
+    _check as check,
 )
 from dagster._utils.test import wrap_op_in_graph_and_execute
 

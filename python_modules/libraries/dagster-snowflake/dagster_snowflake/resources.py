@@ -1,25 +1,25 @@
-import base64
 import sys
+import base64
 import warnings
-from contextlib import closing, contextmanager
+from typing import Any, Dict, List, Union, Mapping, Iterator, Optional, Sequence
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union
+from contextlib import closing, contextmanager
 
 import dagster._check as check
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 from dagster import (
     ConfigurableResource,
     IAttachDifferentObjectToOpContext,
-    get_dagster_logger,
     resource,
+    get_dagster_logger,
 )
+from pydantic import Field, validator
 from dagster._annotations import public
+from cryptography.hazmat.backends import default_backend
+from dagster._utils.cached_method import cached_method
+from cryptography.hazmat.primitives import serialization
+from dagster._model.pydantic_compat_layer import compat_model_validator
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from dagster._core.storage.event_log.sql_event_log import SqlDbConnection
-from dagster._model.pydantic_compat_layer import compat_model_validator
-from dagster._utils.cached_method import cached_method
-from pydantic import Field, validator
 
 try:
     import snowflake.connector
@@ -444,8 +444,8 @@ class SnowflakeResource(ConfigurableResource, IAttachDifferentObjectToOpContext)
 
         """
         if self.connector == "sqlalchemy":
-            from snowflake.sqlalchemy import URL
             from sqlalchemy import create_engine
+            from snowflake.sqlalchemy import URL
 
             engine = create_engine(
                 URL(**self._sqlalchemy_connection_args), connect_args=self._sqlalchemy_engine_args

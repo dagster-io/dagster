@@ -2,9 +2,9 @@ import time
 from typing import Any
 
 from dagster._core.remote_representation.grpc_server_state_subscriber import (
+    LocationStateSubscriber,
     LocationStateChangeEvent,
     LocationStateChangeEventType,
-    LocationStateSubscriber,
 )
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite

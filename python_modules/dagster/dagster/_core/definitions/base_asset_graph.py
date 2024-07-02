@@ -1,47 +1,47 @@
 from abc import ABC, abstractmethod
-from collections import deque
-from datetime import datetime
-from functools import cached_property, total_ordering
 from heapq import heapify, heappop, heappush
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Callable,
+    Set,
     Dict,
+    List,
+    Tuple,
+    Union,
     Generic,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from datetime import datetime
+from functools import total_ordering, cached_property
+from collections import deque
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_subset import ValidAssetSubset
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.partition_mapping import PartitionMapping
+from dagster._core.utils import toposort
 from dagster._core.errors import DagsterInvalidInvocationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.selector.subset_selector import DependencyGraph, fetch_sources
-from dagster._core.utils import toposort
 from dagster._utils.cached_method import cached_method
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.asset_subset import ValidAssetSubset
+from dagster._core.selector.subset_selector import DependencyGraph, fetch_sources
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.partition_mapping import PartitionMapping
 
 from .events import AssetKeyPartitionKey
 from .partition import PartitionsSubset
-from .partition_key_range import PartitionKeyRange
 from .partition_mapping import UpstreamPartitionsResult, infer_partition_mapping
+from .partition_key_range import PartitionKeyRange
 from .time_window_partitions import get_time_partition_key, get_time_partitions_def
 
 if TYPE_CHECKING:

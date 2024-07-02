@@ -1,20 +1,20 @@
 import sys
-import threading
 import time
+import threading
 from unittest import mock
 
 import pytest
-from dagster import file_relative_path, job, repository
+from dagster import job, repository, file_relative_path
 from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._grpc.server import GrpcServerProcess
+from dagster._core.test_utils import instance_for_test
+from dagster._core.remote_representation.origin import (
+    RegisteredCodeLocationOrigin,
+    ManagedGrpcPythonEnvCodeLocationOrigin,
+)
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.remote_representation.code_location import GrpcServerCodeLocation
 from dagster._core.remote_representation.grpc_server_registry import GrpcServerRegistry
-from dagster._core.remote_representation.origin import (
-    ManagedGrpcPythonEnvCodeLocationOrigin,
-    RegisteredCodeLocationOrigin,
-)
-from dagster._core.test_utils import instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
 
 
 @job

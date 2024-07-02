@@ -1,5 +1,5 @@
 # start_marker
-from dagster_aws.s3 import S3PickleIOManager, S3Resource
+from dagster_aws.s3 import S3Resource, S3PickleIOManager
 
 from dagster import Definitions, asset
 

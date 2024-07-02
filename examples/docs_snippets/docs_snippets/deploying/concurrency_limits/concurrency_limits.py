@@ -1,4 +1,4 @@
-from dagster import asset, job, op, schedule
+from dagster import op, job, asset, schedule
 
 # start_marker_priority
 

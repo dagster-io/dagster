@@ -2,13 +2,13 @@ import datetime
 from abc import abstractmethod
 from typing import Optional
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
-from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
+from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
 
-from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
+from ..automation_condition import AutomationResult, AutomationCondition
 
 
 class SliceAutomationCondition(AutomationCondition):

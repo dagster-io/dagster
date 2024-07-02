@@ -1,16 +1,16 @@
-import contextlib
 import os
-from typing import Any, Callable, Dict, Iterator, List, NamedTuple, Optional
+import contextlib
+from typing import Any, Dict, List, Callable, Iterator, Optional, NamedTuple
 
-import dagster._check as check
 import yaml
+import dagster._check as check
 
+from .ecr import ecr_image, get_aws_region, get_aws_account_id
 from ..git import git_repo_root
-from .ecr import ecr_image, get_aws_account_id, get_aws_region
 from .utils import (
-    execute_docker_build,
-    execute_docker_push,
     execute_docker_tag,
+    execute_docker_push,
+    execute_docker_build,
     python_version_image_tag,
 )
 

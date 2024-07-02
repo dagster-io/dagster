@@ -1,22 +1,22 @@
-from typing import Callable, Iterator, Mapping, NamedTuple, NoReturn, cast
+from typing import Mapping, Callable, Iterator, NoReturn, NamedTuple, cast
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._config import EvaluateValueResult, process_config
-from dagster._core.definitions.asset_layer import AssetLayer
-from dagster._core.definitions.dependency import GraphNode, Node, NodeHandle, OpNode
-from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.run_config import define_node_shape
 from dagster._core.errors import (
-    DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
+    DagsterConfigMappingFunctionError,
     user_code_error_boundary,
 )
-from dagster._core.system_config.objects import OpConfig
 from dagster._utils.merger import merge_dicts
+from dagster._core.system_config.objects import OpConfig
+from dagster._core.definitions.dependency import Node, OpNode, GraphNode, NodeHandle
+from dagster._core.definitions.run_config import define_node_shape
+from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 RawNodeConfig: TypeAlias = Mapping[str, object]
 

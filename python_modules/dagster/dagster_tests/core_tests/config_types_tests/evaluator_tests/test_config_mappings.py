@@ -1,16 +1,16 @@
 import pytest
 from dagster import (
-    ConfigMapping,
-    DagsterConfigMappingFunctionError,
-    DagsterInvalidConfigError,
-    Field,
     In,
     Int,
+    Field,
     Output,
     String,
-    graph,
-    job,
+    ConfigMapping,
+    DagsterInvalidConfigError,
+    DagsterConfigMappingFunctionError,
     op,
+    job,
+    graph,
 )
 
 

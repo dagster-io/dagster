@@ -1,14 +1,14 @@
 from typing import Any, Dict
 
 from dagster import (
-    Bool,
-    Config,
-    Field as DagsterField,
     Int,
+    Bool,
+    Field as DagsterField,
+    Config,
     op,
 )
-from dagster._seven import json
 from pydantic import Field
+from dagster._seven import json
 
 from .configs import define_dataproc_submit_job_config
 from .resources import TWENTY_MINUTES, DataprocResource

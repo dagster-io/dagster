@@ -6,10 +6,10 @@ import dagster_graphql
 
 from .utils import (
     LegacyQueryHistoryInfo,
-    are_queries_compatible,
-    deserialize_from_query_filename,
     get_queries,
+    are_queries_compatible,
     serialize_to_query_filename,
+    deserialize_from_query_filename,
 )
 
 

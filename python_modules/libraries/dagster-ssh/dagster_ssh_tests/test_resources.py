@@ -1,14 +1,9 @@
-import logging
 import os
+import logging
 from unittest import mock
 
 import pytest
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
 from dagster import Field
-from dagster._core.definitions.decorators import op
-from dagster._core.execution.context.init import build_init_resource_context
 from dagster._seven import get_system_temp_directory
 from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster_ssh.resources import (
@@ -16,6 +11,11 @@ from dagster_ssh.resources import (
     key_from_str,
     ssh_resource as sshresource,
 )
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
+from dagster._core.definitions.decorators import op
+from dagster._core.execution.context.init import build_init_resource_context
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 
 def generate_ssh_key():

@@ -1,49 +1,49 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    DefaultDict,
+    Set,
     Dict,
+    List,
+    Type,
+    Tuple,
+    Union,
     Generic,
+    Mapping,
     Iterable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    Union,
+    NamedTuple,
+    AbstractSet,
+    DefaultDict,
     cast,
 )
+from collections import defaultdict
 
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import TypeVar, TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._record import record
-from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
+from dagster._record import record
+from dagster._annotations import PublicAttr, public
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._serdes.serdes import whitelist_for_serdes
+from dagster._core.definitions.policy import RetryPolicy
 
-from .hook_definition import HookDefinition
-from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
-from .output import OutputDefinition
+from .input import InputMapping, InputPointer, InputDefinition, FanInInputPointer
 from .utils import DEFAULT_OUTPUT, normalize_tags, struct_to_string
+from .output import OutputDefinition
+from .hook_definition import HookDefinition
 
 if TYPE_CHECKING:
     from dagster._core.definitions.op_definition import OpDefinition
 
     from .asset_layer import AssetLayer
     from .composition import MappedInputPlaceholder
-    from .graph_definition import GraphDefinition
     from .node_definition import NodeDefinition
+    from .graph_definition import GraphDefinition
     from .resource_requirement import ResourceRequirement
 
 T_DependencyKey = TypeVar("T_DependencyKey", str, "NodeInvocation")
@@ -134,8 +134,8 @@ class Node(ABC):
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
-        from .graph_definition import GraphDefinition
         from .node_definition import NodeDefinition
+        from .graph_definition import GraphDefinition
 
         self.name = check.str_param(name, "name")
         self.definition = check.inst_param(definition, "definition", NodeDefinition)

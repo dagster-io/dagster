@@ -1,41 +1,41 @@
-import collections.abc
-import itertools
 import warnings
+import itertools
+import collections.abc
 from abc import ABC, abstractmethod, abstractproperty
-from collections import defaultdict
-from datetime import datetime
-from functools import lru_cache
 from typing import (
-    Collection,
     Dict,
     List,
+    Type,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    Union,
+    Collection,
+    NamedTuple,
     cast,
 )
+from datetime import datetime
+from functools import lru_cache
+from collections import defaultdict
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, experimental, public
+from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import PublicAttr, public, experimental
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._utils.warnings import disable_dagster_warnings
+from dagster._utils.cached_method import cached_method
+from dagster._core.definitions.partition import (
+    PartitionsSubset,
+    AllPartitionsSubset,
+    PartitionsDefinition,
+    StaticPartitionsDefinition,
+)
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import (
-    AllPartitionsSubset,
-    PartitionsDefinition,
-    PartitionsSubset,
-    StaticPartitionsDefinition,
-)
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.instance import DynamicPartitionsStore
-from dagster._serdes import whitelist_for_serdes
-from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import disable_dagster_warnings
 
 
 class UpstreamPartitionsResult(NamedTuple):

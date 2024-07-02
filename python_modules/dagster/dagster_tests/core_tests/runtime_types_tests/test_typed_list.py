@@ -1,7 +1,7 @@
 import typing
 
 import pytest
-from dagster import DagsterTypeCheckDidNotPass, In, Out, op
+from dagster import In, Out, DagsterTypeCheckDidNotPass, op
 from dagster._utils.test import wrap_op_in_graph_and_execute
 
 

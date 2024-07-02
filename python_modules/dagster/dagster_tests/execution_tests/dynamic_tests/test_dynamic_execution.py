@@ -1,22 +1,22 @@
 import pytest
 from dagster import (
+    Out,
+    Field,
+    Output,
     DynamicOut,
     DynamicOutput,
-    Field,
-    Out,
-    Output,
     ReexecutionOptions,
-    execute_job,
-    graph,
-    job,
     op,
+    job,
+    graph,
+    execute_job,
     reconstructable,
 )
 from dagster._core.errors import DagsterExecutionStepNotFoundError
+from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import instance_for_test
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.test_utils import instance_for_test
-from dagster._utils.merger import merge_dicts
 
 
 @op(tags={"third": "3"})

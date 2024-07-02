@@ -1,12 +1,12 @@
-import functools
-import logging
 import os
+import logging
+import functools
 import subprocess
+from typing import Dict, List, Union, Optional, Sequence
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Union
 
-import packaging.version
 import yaml
+import packaging.version
 from typing_extensions import Literal, TypeAlias, TypedDict, TypeGuard
 
 from dagster_buildkite.git import ChangedFiles, get_commit_message

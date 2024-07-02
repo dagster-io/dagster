@@ -1,13 +1,13 @@
 import time
-from collections import defaultdict
 from types import TracebackType
-from typing import List, Optional, Set, Type
+from typing import Set, List, Type, Optional
+from collections import defaultdict
 
 from typing_extensions import Self
 
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._core.storage.dagster_run import DagsterRun
 
 INITIAL_INTERVAL_VALUE = 1
 STEP_UP_BASE = 1.1

@@ -1,22 +1,22 @@
-from importlib.metadata import version
 from unittest import mock
+from importlib.metadata import version
 
-import dagster
-import dagster_databricks
-import dagster_pyspark
 import pytest
+import dagster
+import dagster_pyspark
+import dagster_databricks
 from dagster import build_op_context
+from pytest_mock import MockerFixture
 from dagster_databricks import DatabricksClientResource
+from databricks.sdk.service import jobs, compute
+from dagster_databricks.resources import OauthCredentials, AzureServicePrincipalCredentials
 from dagster_databricks.databricks import (
     AuthTypeEnum,
-    DatabricksClient,
     DatabricksError,
+    DatabricksClient,
     DatabricksJobRunner,
     WorkspaceClientFactory,
 )
-from dagster_databricks.resources import AzureServicePrincipalCredentials, OauthCredentials
-from databricks.sdk.service import compute, jobs
-from pytest_mock import MockerFixture
 
 HOST = "https://uksouth.azuredatabricks.net"
 TOKEN = "super-secret-token"

@@ -1,17 +1,15 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union, cast
+from typing import Union, Mapping, Callable, Optional, NamedTuple, cast
 
 import dagster._check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
-from .decorators.schedule_decorator import schedule
-from .job_definition import JobDefinition
-from .multi_dimensional_partitions import MultiPartitionsDefinition
 from .partition import PartitionsDefinition, StaticPartitionsDefinition
 from .run_request import RunRequest, SkipReason
+from .job_definition import JobDefinition
 from .schedule_definition import (
-    DefaultScheduleStatus,
     RunRequestIterator,
     ScheduleDefinition,
+    DefaultScheduleStatus,
     ScheduleEvaluationContext,
 )
 from .time_window_partitions import (
@@ -19,6 +17,8 @@ from .time_window_partitions import (
     get_time_partitions_def,
     has_one_dimension_time_window_partitioning,
 )
+from .multi_dimensional_partitions import MultiPartitionsDefinition
+from .decorators.schedule_decorator import schedule
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 

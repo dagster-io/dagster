@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Iterator, Mapping, NamedTuple, Optional, Sequence
+from typing import Mapping, Iterator, Optional, Sequence, NamedTuple
 
 from dagster import (
     DagsterInstance,
     _check as check,
 )
+from dagster._grpc.types import ExecuteStepArgs
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._grpc.types import ExecuteStepArgs
+from dagster._core.execution.context.system import IStepContext, PlanOrchestrationContext
 
 
 class StepHandlerContext:

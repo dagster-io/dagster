@@ -1,10 +1,10 @@
 import os
-from typing import Any, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Mapping, Optional, Sequence, NamedTuple
 
-import dagster._check as check
 import requests
-from dagster._utils.backoff import backoff
+import dagster._check as check
 from dagster._utils.merger import merge_dicts
+from dagster._utils.backoff import backoff
 
 
 class DagsterEcsTaskDefinitionConfig(

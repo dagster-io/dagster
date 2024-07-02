@@ -1,46 +1,46 @@
-import dataclasses
 import itertools
+import dataclasses
+from typing import Any, Type, Tuple, Callable, Optional, Sequence, NamedTuple, cast
+from dataclasses import field, dataclass
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
-from typing import Any, Callable, NamedTuple, Optional, Sequence, Tuple, Type, cast
 
 import dagster._check as check
-from dagster import AssetKey, DagsterInstance, RunRequest, RunsFilter
-from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
-from dagster._core.definitions.asset_daemon_cursor import (
-    AssetDaemonCursor,
-    backcompat_deserialize_asset_daemon_cursor_str,
-)
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule_evaluation import (
-    AutoMaterializeRuleEvaluationData,
-)
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetSubsetWithMetadata,
-)
-from dagster._core.definitions.events import AssetKeyPartitionKey, CoercibleToAssetKey
-from dagster._core.definitions.repository_definition.valid_definitions import (
-    SINGLETON_REPOSITORY_NAME,
-)
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.scheduler.instigation import SensorInstigatorData, TickStatus
-from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster import AssetKey, RunRequest, RunsFilter, DagsterInstance
+from dagster._serdes.serdes import DeserializationError, serialize_value, deserialize_value
 from dagster._core.test_utils import freeze_time, wait_for_futures
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._daemon.asset_daemon import (
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
     AssetDaemon,
+    get_current_evaluation_id,
     _get_pre_sensor_auto_materialize_cursor,
     asset_daemon_cursor_from_instigator_serialized_cursor,
-    get_current_evaluation_id,
 )
-from dagster._serdes.serdes import DeserializationError, deserialize_value, serialize_value
+from dagster._core.definitions.events import CoercibleToAssetKey, AssetKeyPartitionKey
+from dagster._core.scheduler.instigation import TickStatus, SensorInstigatorData
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.remote_representation.origin import (
+    RemoteInstigatorOrigin,
+    RemoteRepositoryOrigin,
+)
+from dagster._core.definitions.asset_daemon_cursor import (
+    AssetDaemonCursor,
+    backcompat_deserialize_asset_daemon_cursor_str,
+)
+from dagster._core.definitions.asset_daemon_context import AssetDaemonContext
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_rule_evaluation import (
+    AutoMaterializeRuleEvaluationData,
+)
+from dagster._core.definitions.repository_definition.valid_definitions import (
+    SINGLETON_REPOSITORY_NAME,
+)
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AssetSubsetWithMetadata,
+    AssetConditionEvaluation,
+)
 
 from ..base_scenario import run_request
 from ..scenario_state import ScenarioSpec, ScenarioState, get_code_location_origin

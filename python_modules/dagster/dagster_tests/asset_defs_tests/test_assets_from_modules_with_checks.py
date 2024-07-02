@@ -1,12 +1,12 @@
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    AssetKey,
     Output,
+    AssetKey,
+    AssetCheckSpec,
+    AssetCheckResult,
+    AssetExecutionContext,
     asset,
-    load_assets_from_current_module,
     materialize,
+    load_assets_from_current_module,
 )
 
 

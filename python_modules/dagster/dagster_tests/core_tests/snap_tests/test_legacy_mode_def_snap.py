@@ -1,8 +1,8 @@
 from dagster import job, logger, resource
-from dagster._core.snap import JobSnapshot
-from dagster._core.snap.mode import ModeDefSnap
 from dagster._serdes import serialize_value
+from dagster._core.snap import JobSnapshot
 from dagster._serdes.serdes import deserialize_value
+from dagster._core.snap.mode import ModeDefSnap
 
 
 def test_mode_snap(snapshot):

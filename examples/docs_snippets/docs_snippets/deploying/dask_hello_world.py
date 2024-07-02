@@ -2,7 +2,7 @@
 
 from dagster_dask import dask_executor
 
-from dagster import job, op
+from dagster import op, job
 
 
 @op

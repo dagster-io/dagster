@@ -1,12 +1,12 @@
 import inspect
 from types import ModuleType
-from typing import Callable, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import Type, Tuple, Union, Callable, Optional, Sequence, NamedTuple
 
-from dagster import DagsterInvariantViolationError, GraphDefinition, RepositoryDefinition
+from dagster import GraphDefinition, RepositoryDefinition, DagsterInvariantViolationError
 from dagster._core.code_pointer import load_python_file, load_python_module
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 from dagster._core.definitions.repository_definition import PendingRepositoryDefinition
+from dagster._core.definitions.load_assets_from_modules import assets_from_modules
 
 LOAD_ALL_ASSETS = "<<LOAD_ALL_ASSETS>>"
 

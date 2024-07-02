@@ -1,4 +1,4 @@
-from dagster import In, job, op
+from dagster import In, op, job
 from dagster._core.storage.input_manager import input_manager
 
 

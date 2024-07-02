@@ -1,15 +1,15 @@
-from typing import Mapping, NamedTuple, Optional
+from typing import Mapping, Optional, NamedTuple
 
 import dagster._check as check
-from dagster._core.definitions import AssetMaterialization, NodeHandle
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._serdes import whitelist_for_serdes
+from dagster._core.definitions import NodeHandle, AssetMaterialization
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
     MetadataValue,
+    MetadataFieldSerializer,
     normalize_metadata,
 )
-from dagster._serdes import whitelist_for_serdes
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData

@@ -1,33 +1,33 @@
-import logging
 import os
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Tuple, Type, cast
+import logging
+from typing import TYPE_CHECKING, Any, Type, Tuple, Mapping, Optional, cast
 
 from dagster import (
-    Array,
     Bool,
+    Array,
     _check as check,
 )
 from dagster._config import (
     Field,
+    Selector,
     IntSource,
     Permissive,
     ScalarUnion,
-    Selector,
     StringSource,
     validate_config,
 )
-from dagster._config.source import BoolSource
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.config import mysql_config, pg_config
 from dagster._serdes import class_from_code_pointer
-from dagster._utils.concurrency import get_max_concurrency_limit_value
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster._utils.merger import merge_dicts
+from dagster._config.source import BoolSource
 from dagster._utils.yaml_utils import load_yaml_from_globs
+from dagster._utils.concurrency import get_max_concurrency_limit_value
+from dagster._core.storage.config import pg_config, mysql_config
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.instance import DagsterInstance
     from dagster._core.scheduler.instigation import TickStatus
+    from dagster._core.definitions.run_request import InstigatorType
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 
@@ -198,8 +198,8 @@ DEFAULT_LOCAL_CODE_SERVER_STARTUP_TIMEOUT = 180
 def get_default_tick_retention_settings(
     instigator_type: "InstigatorType",
 ) -> Mapping["TickStatus", int]:
-    from dagster._core.definitions.run_request import InstigatorType
     from dagster._core.scheduler.instigation import TickStatus
+    from dagster._core.definitions.run_request import InstigatorType
 
     if instigator_type == InstigatorType.SCHEDULE:
         return {

@@ -1,7 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .resources import SSHResource, ssh_resource
 from .version import __version__
+from .resources import SSHResource, ssh_resource
 
 DagsterLibraryRegistry.register("dagster-ssh", __version__)
 

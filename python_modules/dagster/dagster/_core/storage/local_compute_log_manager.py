@@ -1,13 +1,13 @@
 import os
-import shutil
 import sys
-from collections import defaultdict
-from contextlib import contextmanager
+import shutil
+from typing import IO, TYPE_CHECKING, Tuple, Mapping, Iterator, Optional, Sequence, Generator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Generator, Iterator, Mapping, Optional, Sequence, Tuple
+from contextlib import contextmanager
+from collections import defaultdict
 
-from typing_extensions import Final
 from watchdog.events import PatternMatchingEventHandler
+from typing_extensions import Final
 from watchdog.observers.polling import PollingObserver
 
 from dagster import (
@@ -16,27 +16,27 @@ from dagster import (
     StringSource,
     _check as check,
 )
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.execution.compute_logs import mirror_stream_to_file
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._seven import json
-from dagster._utils import ensure_dir, ensure_file, touch_file
+from dagster._utils import ensure_dir, touch_file, ensure_file
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.execution.compute_logs import mirror_stream_to_file
 
-from .captured_log_manager import (
-    CapturedLogContext,
-    CapturedLogData,
-    CapturedLogManager,
-    CapturedLogMetadata,
-    CapturedLogSubscription,
-)
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
-    ComputeLogFileData,
     ComputeLogManager,
+    ComputeLogFileData,
     ComputeLogSubscription,
+)
+from .captured_log_manager import (
+    CapturedLogData,
+    CapturedLogContext,
+    CapturedLogManager,
+    CapturedLogMetadata,
+    CapturedLogSubscription,
 )
 
 if TYPE_CHECKING:

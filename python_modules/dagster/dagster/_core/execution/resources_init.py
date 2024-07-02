@@ -1,49 +1,49 @@
 import inspect
-from collections import deque
-from contextlib import ContextDecorator
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Deque,
-    Dict,
-    Generator,
-    Mapping,
-    Optional,
     Set,
+    Dict,
+    Deque,
     Union,
+    Mapping,
+    Callable,
+    Optional,
+    Generator,
+    AbstractSet,
     cast,
 )
+from contextlib import ContextDecorator
+from collections import deque
 
 import dagster._check as check
+from dagster._utils import EventGenerationManager, ensure_gen
+from dagster._core.utils import toposort
+from dagster._core.errors import (
+    DagsterResourceFunctionError,
+    DagsterUserCodeExecutionError,
+    DagsterInvariantViolationError,
+    user_code_error_boundary,
+)
+from dagster._core.events import DagsterEvent
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.timing import format_duration, time_execution_scope
+from dagster._core.instance import DagsterInstance
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
+from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.execution.plan.inputs import (
+    StepInput,
+    UnresolvedMappedStepInput,
+    UnresolvedCollectStepInput,
+)
+from dagster._core.system_config.objects import ResourceConfig
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_definition import (
     ResourceDefinition,
     ScopedResourcesBuilder,
     has_at_least_one_parameter,
 )
-from dagster._core.errors import (
-    DagsterInvariantViolationError,
-    DagsterResourceFunctionError,
-    DagsterUserCodeExecutionError,
-    user_code_error_boundary,
-)
-from dagster._core.events import DagsterEvent
-from dagster._core.execution.plan.inputs import (
-    StepInput,
-    UnresolvedCollectStepInput,
-    UnresolvedMappedStepInput,
-)
-from dagster._core.execution.plan.plan import ExecutionPlan, StepHandleUnion
-from dagster._core.execution.plan.step import ExecutionStep, IExecutionStep
-from dagster._core.instance import DagsterInstance
-from dagster._core.log_manager import DagsterLogManager
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.system_config.objects import ResourceConfig
-from dagster._core.utils import toposort
-from dagster._utils import EventGenerationManager, ensure_gen
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.timing import format_duration, time_execution_scope
 
 from .context.init import InitResourceContext
 

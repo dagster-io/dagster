@@ -1,18 +1,20 @@
-import inspect
 import json
+import inspect
 import textwrap
 from typing import Any, List, Type, Union, cast
 
 import dagster._check as check
-from dagster import BoolSource, Field, IntSource, StringSource
+from dagster import Field, IntSource, BoolSource, StringSource
+from dagster._serdes import ConfigurableClass
+from sphinx.ext.autodoc import DataDocumenter
 from dagster._config.config_type import (
-    Array,
-    ConfigScalar,
-    ConfigType,
-    ConfigTypeKind,
     Enum,
+    Array,
     Noneable,
+    ConfigType,
     ScalarUnion,
+    ConfigScalar,
+    ConfigTypeKind,
 )
 from dagster._config.pythonic_config import (
     ConfigurableResource,
@@ -20,8 +22,6 @@ from dagster._config.pythonic_config import (
     infer_schema_from_config_class,
 )
 from dagster._core.definitions.configurable import ConfigurableDefinition
-from dagster._serdes import ConfigurableClass
-from sphinx.ext.autodoc import DataDocumenter
 
 
 def type_repr(config_type: ConfigType) -> str:

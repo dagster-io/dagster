@@ -1,89 +1,89 @@
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    FrozenSet,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Optional,
+    Sequence,
+    FrozenSet,
+    NamedTuple,
     cast,
 )
+from collections import defaultdict
 
 import dagster._check as check
+from dagster._core.utils import toposort
+from dagster._core.errors import (
+    DagsterInvariantViolationError,
+    DagsterExecutionStepNotFoundError,
+    DagsterUnmetExecutorRequirementsError,
+)
+from dagster._core.instance import InstanceRef, DagsterInstance
 from dagster._core.definitions import (
-    GraphDefinition,
-    InputDefinition,
     Node,
     NodeHandle,
     NodeOutput,
     OpDefinition,
+    GraphDefinition,
+    InputDefinition,
 )
-from dagster._core.definitions.asset_layer import AssetLayer
-from dagster._core.definitions.composition import MappedInputPlaceholder
-from dagster._core.definitions.dependency import (
-    BlockingAssetChecksDependencyDefinition,
-    DependencyStructure,
-    MultiDependencyDefinition,
-    NodeInput,
-)
-from dagster._core.definitions.executor_definition import ExecutorRequirement
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.repository_definition import RepositoryLoadData
-from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
-    DagsterUnmetExecutorRequirementsError,
-)
+from dagster._core.execution.retries import RetryMode
 from dagster._core.execution.plan.handle import (
-    ResolvedFromDynamicStepHandle,
     StepHandle,
     UnresolvedStepHandle,
+    ResolvedFromDynamicStepHandle,
 )
-from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
-from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.mem_io_manager import mem_io_manager
 from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.utils import toposort
-
-from ..context.output import get_output_context
-from ..resolve_versions import resolve_step_output_versions
-from .compute import create_step_outputs
-from .inputs import (
-    FromConfig,
-    FromDefaultValue,
-    FromDirectInputValue,
-    FromDynamicCollect,
-    FromInputManager,
-    FromLoadableAsset,
-    FromMultipleSources,
-    FromMultipleSourcesLoadSingleSource,
-    FromPendingDynamicStepOutput,
-    FromStepOutput,
-    FromUnresolvedStepOutput,
-    StepInput,
-    StepInputSource,
-    StepInputSourceUnion,
-    StepInputUnion,
-    UnresolvedCollectStepInput,
-    UnresolvedMappedStepInput,
+from dagster._core.definitions.dependency import (
+    NodeInput,
+    DependencyStructure,
+    MultiDependencyDefinition,
+    BlockingAssetChecksDependencyDefinition,
 )
-from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
-from .state import KnownExecutionState
+from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.definitions.asset_layer import AssetLayer
+from dagster._core.definitions.composition import MappedInputPlaceholder
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.executor_definition import ExecutorRequirement
+from dagster._core.definitions.repository_definition import RepositoryLoadData
+from dagster._core.execution.plan.instance_concurrency_context import InstanceConcurrencyContext
+
 from .step import (
+    StepKind,
     ExecutionStep,
     IExecutionStep,
-    StepKind,
-    UnresolvedCollectExecutionStep,
     UnresolvedMappedExecutionStep,
+    UnresolvedCollectExecutionStep,
 )
+from .state import KnownExecutionState
+from .inputs import (
+    StepInput,
+    FromConfig,
+    FromStepOutput,
+    StepInputUnion,
+    StepInputSource,
+    FromDefaultValue,
+    FromInputManager,
+    FromLoadableAsset,
+    FromDynamicCollect,
+    FromMultipleSources,
+    FromDirectInputValue,
+    StepInputSourceUnion,
+    FromUnresolvedStepOutput,
+    UnresolvedMappedStepInput,
+    UnresolvedCollectStepInput,
+    FromPendingDynamicStepOutput,
+    FromMultipleSourcesLoadSingleSource,
+)
+from .compute import create_step_outputs
+from .outputs import StepOutput, StepOutputHandle, UnresolvedStepOutputHandle
+from ..context.output import get_output_context
+from ..resolve_versions import resolve_step_output_versions
 
 if TYPE_CHECKING:
     from dagster._core.snap.execution_plan_snapshot import (
@@ -912,9 +912,9 @@ class ExecutionPlan(
         """Returns:
         ExecutionPlan: Execution plan that runs only unmemoized steps.
         """
-        from ...storage.memoizable_io_manager import MemoizableIOManager
-        from ..build_resources import build_resources, initialize_console_manager
         from ..resources_init import get_dependencies, resolve_resource_dependencies
+        from ..build_resources import build_resources, initialize_console_manager
+        from ...storage.memoizable_io_manager import MemoizableIOManager
 
         check.invariant(
             self.known_state.step_output_versions == {},

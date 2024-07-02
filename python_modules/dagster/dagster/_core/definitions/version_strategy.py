@@ -1,7 +1,7 @@
 import hashlib
 import inspect
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Optional, NamedTuple
 
 from dagster._annotations import public
 

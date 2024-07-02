@@ -1,39 +1,39 @@
-from typing import ContextManager, Optional, cast
+from typing import Optional, ContextManager, cast
 
-import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
+import dagster._check as check
 import sqlalchemy.exc as db_exc
 import sqlalchemy.pool as db_pool
-from dagster._config.config_schema import UserConfigSchema
+import sqlalchemy.dialects as db_dialects
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from sqlalchemy.engine import Connection
 from dagster._core.event_api import EventHandlerFn
 from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.sql import (
+    AlembicVersion,
+    create_engine,
+    stamp_alembic_rev,
+    run_alembic_upgrade,
+    check_alembic_revision,
+)
 from dagster._core.storage.config import MySqlStorageConfig, mysql_config
+from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
-    SqlEventLogStorageMetadata,
     SqlPollingEventWatcher,
+    SqlEventLogStorageMetadata,
 )
 from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.sql import (
-    AlembicVersion,
-    check_alembic_revision,
-    create_engine,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from sqlalchemy.engine import Connection
 
 from ..utils import (
-    create_mysql_connection,
     mysql_alembic_config,
     mysql_isolation_level,
     mysql_url_from_config,
-    retry_mysql_connection_fn,
+    create_mysql_connection,
     retry_mysql_creation_fn,
+    retry_mysql_connection_fn,
 )
 
 

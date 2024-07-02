@@ -1,10 +1,10 @@
+from dagster._core.test_utils import create_test_asset_job
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.definitions.data_version import extract_data_version_from_entry
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.instance_for_test import instance_for_test
-from dagster._core.test_utils import create_test_asset_job
 from docs_snippets.concepts.assets.observable_source_assets import (
-    foo_source_asset,
     observation_job,
+    foo_source_asset,
     observation_schedule,
 )
 

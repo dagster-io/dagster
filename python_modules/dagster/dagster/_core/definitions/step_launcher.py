@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Iterator, Mapping, NamedTuple, Optional
+from typing import TYPE_CHECKING, Mapping, Iterator, Optional, NamedTuple
 
 import dagster._check as check
-from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.reconstruct import ReconstructableJob
 
 if TYPE_CHECKING:
     from dagster._core.events import DagsterEvent
-    from dagster._core.execution.context.system import StepExecutionContext
     from dagster._core.execution.plan.state import KnownExecutionState
+    from dagster._core.execution.context.system import StepExecutionContext
 
 
 class StepRunRef(

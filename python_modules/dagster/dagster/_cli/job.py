@@ -2,7 +2,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from typing import Any, Tuple, Mapping, TypeVar, Callable, Iterator, Optional, Sequence, cast
 
 import click
 import pendulum
@@ -10,60 +10,60 @@ from tabulate import tabulate
 
 import dagster._check as check
 from dagster import __version__ as dagster_version
+from dagster._seven import IS_WINDOWS, JSONDecodeError, json
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
+from dagster._core.snap import JobSnapshot, NodeInvocationSnap
+from dagster._core.utils import make_new_backfill_id
+from dagster._core.errors import DagsterBackfillFailedError
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.merger import merge_dicts
+from dagster._core.instance import DagsterInstance
+from dagster._core.telemetry import telemetry_wrapper, log_external_repo_stats
+from dagster._core.definitions import JobDefinition
+from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.execution.api import execute_job, create_execution_plan
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._utils.indenting_printer import IndentingPrinter
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
-    ClickArgMapping,
-    ClickArgValue,
     ClickOption,
-    get_code_location_from_workspace,
-    get_external_job_from_external_repo,
-    get_external_job_from_kwargs,
-    get_external_repository_from_code_location,
-    get_external_repository_from_kwargs,
-    get_job_python_origin_from_kwargs,
-    get_workspace_from_kwargs,
-    job_repository_target_argument,
+    ClickArgValue,
+    ClickArgMapping,
     job_target_argument,
+    get_workspace_from_kwargs,
     python_job_config_argument,
     python_job_target_argument,
+    get_external_job_from_kwargs,
+    job_repository_target_argument,
+    get_code_location_from_workspace,
+    get_job_python_origin_from_kwargs,
+    get_external_job_from_external_repo,
+    get_external_repository_from_kwargs,
+    get_external_repository_from_code_location,
 )
-from dagster._core.definitions import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.workspace.workspace import IWorkspace
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.utils import normalize_tags
-from dagster._core.errors import DagsterBackfillFailedError
-from dagster._core.execution.api import create_execution_plan, execute_job
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.execution.execution_result import ExecutionResult
-from dagster._core.execution.job_backfill import create_backfill_run
-from dagster._core.instance import DagsterInstance
+from dagster._utils.hosted_user_process import recon_job_from_origin
 from dagster._core.remote_representation import (
-    CodeLocation,
     ExternalJob,
-    ExternalRepository,
+    CodeLocation,
     RepositoryHandle,
+    ExternalRepository,
 )
+from dagster._core.execution.job_backfill import create_backfill_run
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.execution.execution_result import ExecutionResult
 from dagster._core.remote_representation.external_data import (
     ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
 )
-from dagster._core.snap import JobSnapshot, NodeInvocationSnap
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import MEMOIZED_RUN_TAG
-from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
-from dagster._core.utils import make_new_backfill_id
-from dagster._core.workspace.workspace import IWorkspace
-from dagster._seven import IS_WINDOWS, JSONDecodeError, json
-from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, PrintFn
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.hosted_user_process import recon_job_from_origin
-from dagster._utils.indenting_printer import IndentingPrinter
-from dagster._utils.interrupts import capture_interrupts
-from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import dump_run_config_yaml, load_yaml_from_glob_list
 
-from .config_scaffolder import scaffold_job_config
 from .utils import get_instance_for_cli, get_possibly_temporary_instance_for_cli
+from .config_scaffolder import scaffold_job_config
 
 T = TypeVar("T")
 T_Callable = TypeVar("T_Callable", bound=Callable[..., Any])

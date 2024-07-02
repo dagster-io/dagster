@@ -2,47 +2,47 @@ import os
 import pickle
 import shutil
 import tempfile
+from typing import Tuple, Optional
 from datetime import datetime
-from typing import Optional, Tuple
 
 import pytest
 from dagster import (
+    In,
+    Output,
+    Nothing,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    In,
     MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    Nothing,
-    Output,
+    DagsterInstance,
+    AssetsDefinition,
     PartitionMapping,
+    MultiPartitionKey,
     PartitionsDefinition,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
-    _seven as seven,
-    define_asset_job,
-    graph,
-    job,
-    materialize,
     op,
+    job,
+    graph,
+    _seven as seven,
+    materialize,
     with_resources,
+    define_asset_job,
 )
-from dagster._core.definitions import AssetIn, asset, multi_asset
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
-from dagster._core.definitions.version_strategy import VersionStrategy
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions import AssetIn, asset, multi_asset
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.version_strategy import VersionStrategy
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
 
 
 def define_job(io_manager: IOManagerDefinition):

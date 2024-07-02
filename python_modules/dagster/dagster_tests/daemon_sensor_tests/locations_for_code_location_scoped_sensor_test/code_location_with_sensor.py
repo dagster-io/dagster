@@ -1,4 +1,4 @@
-from dagster import DagsterRunStatus, Definitions, RunRequest, job, op, run_status_sensor
+from dagster import RunRequest, Definitions, DagsterRunStatus, op, job, run_status_sensor
 
 
 @op

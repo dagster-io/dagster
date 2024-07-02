@@ -4,13 +4,13 @@ from dagster import (
     In,
     Nothing,
     OpExecutionContext,
-    _check as check,
     op,
+    _check as check,
 )
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from databricks.sdk.service import jobs
 from pydantic import Field
+from databricks.sdk.service import jobs
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.definitions.op_definition import OpDefinition
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 # wait at most 24 hours by default for run execution

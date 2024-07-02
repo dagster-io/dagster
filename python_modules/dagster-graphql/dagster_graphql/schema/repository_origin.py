@@ -1,7 +1,7 @@
 from typing import Sequence
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._core.remote_representation import RemoteRepositoryOrigin
 
 from .util import ResolveInfo, non_null_list

@@ -1,42 +1,42 @@
-from functools import update_wrapper
 from typing import (
-    Callable,
     Dict,
+    List,
+    Union,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
     Optional,
     Sequence,
-    TypeVar,
-    Union,
     overload,
 )
+from functools import update_wrapper
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.metadata import RawMetadataValue, normalize_metadata
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
 
-from ..executor_definition import ExecutorDefinition
-from ..graph_definition import GraphDefinition
 from ..job_definition import JobDefinition
+from ..graph_definition import GraphDefinition
 from ..logger_definition import LoggerDefinition
+from ..sensor_definition import SensorDefinition
+from ..executor_definition import ExecutorDefinition
+from ..schedule_definition import ScheduleDefinition
 from ..partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from ..repository_definition import (
     VALID_REPOSITORY_DATA_DICT_KEYS,
-    CachingRepositoryData,
-    PendingRepositoryDefinition,
-    PendingRepositoryListDefinition,
     RepositoryData,
     RepositoryDefinition,
+    CachingRepositoryData,
     RepositoryListDefinition,
+    PendingRepositoryDefinition,
+    PendingRepositoryListDefinition,
 )
-from ..schedule_definition import ScheduleDefinition
-from ..sensor_definition import SensorDefinition
 from ..unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 T = TypeVar("T")
@@ -103,7 +103,7 @@ class _Repository:
             Callable[[], RepositoryDictSpec],
         ],
     ) -> Union[RepositoryDefinition, PendingRepositoryDefinition]:
-        from dagster._core.definitions import AssetsDefinition, SourceAsset
+        from dagster._core.definitions import SourceAsset, AssetsDefinition
         from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
         check.callable_param(fn, "fn")

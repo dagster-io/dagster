@@ -1,9 +1,9 @@
 # pyright: reportUnusedExpression=none
 
 from airflow import models
+from airflow.utils.dates import days_ago
 from airflow.operators.dummy_operator import DummyOperator  # type: ignore
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
-from airflow.utils.dates import days_ago
 
 default_args = {"start_date": days_ago(1)}
 

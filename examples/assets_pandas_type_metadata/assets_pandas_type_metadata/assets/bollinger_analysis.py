@@ -2,12 +2,12 @@ from dagster import Config, asset
 from pydantic import Field
 
 from ..lib import (
-    AnomalousEventsDgType,
-    BollingerBandsDgType,
     StockPricesDgType,
+    BollingerBandsDgType,
+    AnomalousEventsDgType,
+    load_sp500_prices,
     compute_anomalous_events,
     compute_bollinger_bands_multi,
-    load_sp500_prices,
 )
 
 

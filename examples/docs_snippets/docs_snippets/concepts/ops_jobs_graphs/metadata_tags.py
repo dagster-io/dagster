@@ -1,4 +1,4 @@
-from dagster import MetadataValue, graph, job, op
+from dagster import MetadataValue, op, job, graph
 
 # start_metadata_on_job
 

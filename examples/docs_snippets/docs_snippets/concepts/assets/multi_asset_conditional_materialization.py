@@ -1,6 +1,6 @@
 import random
 
-from dagster import AssetOut, Output, asset, multi_asset
+from dagster import Output, AssetOut, asset, multi_asset
 
 
 @multi_asset(

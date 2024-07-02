@@ -1,4 +1,4 @@
-from dagster import job, op
+from dagster import op, job
 
 
 @op(

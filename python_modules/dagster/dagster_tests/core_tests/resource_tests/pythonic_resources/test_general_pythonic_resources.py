@@ -1,41 +1,41 @@
-import enum
 import sys
+import enum
 from abc import ABC, abstractmethod
 from typing import List, Mapping, Optional
 
 import mock
 import pytest
 from dagster import (
-    AssetExecutionContext,
     Config,
-    ConfigurableIOManagerFactory,
-    ConfigurableLegacyIOManagerAdapter,
-    ConfigurableResource,
-    DagsterInstance,
-    Definitions,
-    IAttachDifferentObjectToOpContext,
-    InitResourceContext,
     IOManager,
-    IOManagerDefinition,
-    ResourceDependency,
-    ResourceParam,
     RunConfig,
-    asset,
-    build_init_resource_context,
-    io_manager,
-    job,
-    materialize,
+    Definitions,
+    ResourceParam,
+    DagsterInstance,
+    ResourceDependency,
+    InitResourceContext,
+    IOManagerDefinition,
+    ConfigurableResource,
+    AssetExecutionContext,
+    ConfigurableIOManagerFactory,
+    IAttachDifferentObjectToOpContext,
+    ConfigurableLegacyIOManagerAdapter,
     op,
+    job,
+    asset,
     resource,
+    io_manager,
+    materialize,
+    build_init_resource_context,
 )
-from dagster._check import CheckError
-from dagster._config.pythonic_config import ConfigurableResourceFactory
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.cached_method import cached_method
 from pydantic import (
     Field as PyField,
     ValidationError,
 )
+from dagster._check import CheckError
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._utils.cached_method import cached_method
+from dagster._config.pythonic_config import ConfigurableResourceFactory
 
 
 def test_basic_structured_resource():

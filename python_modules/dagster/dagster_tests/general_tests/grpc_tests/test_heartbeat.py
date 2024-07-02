@@ -1,10 +1,10 @@
 import sys
 import time
 
+from dagster._utils import file_relative_path
+from dagster._grpc.server import GrpcServerProcess
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._grpc.server import GrpcServerProcess
-from dagster._utils import file_relative_path
 
 
 def test_heartbeat():

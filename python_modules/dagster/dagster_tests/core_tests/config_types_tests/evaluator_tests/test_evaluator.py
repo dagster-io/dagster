@@ -1,11 +1,11 @@
-from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, StringSource
+from dagster import Any, Int, Bool, Field, Shape, String, Noneable, Selector, StringSource
 from dagster._config import (
-    DagsterEvaluationErrorReason,
     EvaluateValueResult,
-    EvaluationStackListItemEntry,
-    EvaluationStackMapKeyEntry,
-    EvaluationStackMapValueEntry,
     EvaluationStackPathEntry,
+    EvaluationStackMapKeyEntry,
+    DagsterEvaluationErrorReason,
+    EvaluationStackListItemEntry,
+    EvaluationStackMapValueEntry,
     process_config,
     resolve_to_config_type,
 )

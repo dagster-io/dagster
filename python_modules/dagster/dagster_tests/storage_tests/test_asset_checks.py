@@ -1,9 +1,9 @@
 import pytest
 from dagster import DagsterInstance, asset
+from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.definitions_class import Definitions
 from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.test_utils import instance_for_test
 
 
 @pytest.fixture

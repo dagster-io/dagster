@@ -1,11 +1,11 @@
 # Contains mode, resources, loggers
-from typing import NamedTuple, Optional, Sequence
+from typing import Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
+from dagster._serdes import whitelist_for_serdes
 from dagster._core.definitions import LoggerDefinition, ResourceDefinition
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._serdes import whitelist_for_serdes
 
 
 def build_mode_def_snap(job_def: JobDefinition) -> "ModeDefSnap":

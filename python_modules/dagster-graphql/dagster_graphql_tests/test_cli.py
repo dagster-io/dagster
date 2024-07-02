@@ -1,15 +1,15 @@
-import json
 import os
-import tempfile
+import json
 import time
+import tempfile
 from contextlib import contextmanager
 
-from click.testing import CliRunner
 from dagster import _seven
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import instance_for_test
+from click.testing import CliRunner
 from dagster._utils import file_relative_path
 from dagster_graphql.cli import ui
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 
 @contextmanager

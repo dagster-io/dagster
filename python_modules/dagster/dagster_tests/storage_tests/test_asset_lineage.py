@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, DynamicOut, DynamicOutput, Out, Output, job, op
+from dagster import Out, Output, AssetKey, DynamicOut, DynamicOutput, op, job
 from dagster._core.definitions.events import AssetLineageInfo
 
 

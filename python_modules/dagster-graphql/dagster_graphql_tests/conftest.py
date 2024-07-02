@@ -5,8 +5,8 @@ import pytest
 from syrupy.extensions.amber import AmberSnapshotExtension
 
 if TYPE_CHECKING:
-    from syrupy.location import PyTestLocation
     from syrupy.types import SnapshotIndex
+    from syrupy.location import PyTestLocation
 
 
 @pytest.fixture(scope="session", autouse=True)

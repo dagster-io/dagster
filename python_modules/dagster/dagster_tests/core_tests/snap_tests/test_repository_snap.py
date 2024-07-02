@@ -1,39 +1,39 @@
 from typing import Dict, List, cast
 
 from dagster import (
-    AssetCheckSpec,
     AssetOut,
     Definitions,
-    asset,
-    asset_check,
-    graph,
-    job,
-    multi_asset,
+    AssetCheckSpec,
     op,
-    repository,
+    job,
+    asset,
+    graph,
+    sensor,
     resource,
     schedule,
-    sensor,
+    repository,
+    asset_check,
+    multi_asset,
 )
+from dagster._core.snap import JobSnapshot
 from dagster._config.field_utils import EnvVar
 from dagster._config.pythonic_config import Config, ConfigurableResource
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.repository_definition import (
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
-)
+from dagster._core.remote_representation import ExternalJobData, external_repository_data_from_def
+from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.definitions.resource_annotation import ResourceParam
 from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.remote_representation import ExternalJobData, external_repository_data_from_def
+from dagster._core.definitions.repository_definition import (
+    RepositoryDefinition,
+    PendingRepositoryDefinition,
+)
 from dagster._core.remote_representation.external_data import (
-    ExternalResourceData,
     NestedResource,
     NestedResourceType,
+    ExternalResourceData,
     ResourceJobUsageEntry,
 )
-from dagster._core.snap import JobSnapshot
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 
 def test_repository_snap_all_props():

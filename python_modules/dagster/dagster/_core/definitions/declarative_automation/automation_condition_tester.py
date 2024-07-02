@@ -1,22 +1,22 @@
-import datetime
 import logging
-from collections import defaultdict
+import datetime
+from typing import Union, Mapping, Optional, Sequence, AbstractSet
 from functools import cached_property
-from typing import AbstractSet, Mapping, Optional, Sequence, Union
+from collections import defaultdict
 
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._time import get_current_datetime
+from dagster._core.instance import DagsterInstance
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.instance import DagsterInstance
-from dagster._time import get_current_datetime
 
 
 class EvaluateAutomationConditionsResult:

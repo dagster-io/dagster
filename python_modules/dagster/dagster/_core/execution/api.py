@@ -1,50 +1,50 @@
 import sys
-from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Iterator,
     List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from contextlib import contextmanager
 
 import dagster._check as check
-from dagster._core.definitions import IJob, JobDefinition
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.definitions.repository_definition import RepositoryLoadData
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError, DagsterExecutionInterruptedError
 from dagster._core.events import DagsterEvent, EngineEventData, RunFailureReason
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.merger import merge_dicts
+from dagster._core.instance import InstanceRef, DagsterInstance
+from dagster._core.selector import parse_step_selection
+from dagster._core.telemetry import log_repo_stats, log_dagster_event, telemetry_wrapper
+from dagster._core.definitions import IJob, JobDefinition
+from dagster._utils.interrupts import capture_interrupts
+from dagster._core.execution.retries import RetryMode
+from dagster._core.definitions.events import AssetKey
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.definitions.reconstruct import ReconstructableJob
 from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.selector import parse_step_selection
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.telemetry import log_dagster_event, log_repo_stats, telemetry_wrapper
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.interrupts import capture_interrupts
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.repository_definition import RepositoryLoadData
 
 from .context_creation_job import (
     ExecutionContextManager,
     PlanExecutionContextManager,
     PlanOrchestrationContextManager,
-    orchestration_context_event_generator,
     scoped_job_context,
+    orchestration_context_event_generator,
 )
 from .job_execution_result import JobExecutionResult
 

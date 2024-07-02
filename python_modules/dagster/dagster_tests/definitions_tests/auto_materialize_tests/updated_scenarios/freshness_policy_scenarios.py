@@ -1,18 +1,18 @@
-from dagster import AutoMaterializePolicy, FreshnessPolicy
+from dagster import FreshnessPolicy, AutoMaterializePolicy
 from dagster._core.definitions.asset_spec import AssetSpec
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
-    daily_partitions_def,
-    day_partition_key,
     diamond,
     one_asset,
-    one_asset_depends_on_two,
-    time_partitions_start_str,
-    two_assets_depend_on_one,
+    day_partition_key,
+    daily_partitions_def,
     two_assets_in_sequence,
+    one_asset_depends_on_two,
+    two_assets_depend_on_one,
+    time_partitions_start_str,
 )
 from .asset_daemon_scenario import AssetDaemonScenario
 

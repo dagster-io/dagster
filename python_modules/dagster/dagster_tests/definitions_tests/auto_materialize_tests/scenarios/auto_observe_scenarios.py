@@ -7,9 +7,9 @@ from dagster import (
     asset,
     observable_source_asset,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._time import create_datetime
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 from ..base_scenario import AssetReconciliationScenario, run_request
 

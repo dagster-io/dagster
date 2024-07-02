@@ -1,20 +1,20 @@
 from typing import List, Sequence
 
 from dagster import _check as check
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
-    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._utils.warnings import disable_dagster_warnings
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.op_definition import OpDefinition
 from dagster._core.definitions.output import Out
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_IO_MANAGER_KEY,
+    SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
+    AssetSpec,
+    AssetExecutionType,
+)
 from dagster._core.definitions.source_asset import (
     SourceAsset,
     wrap_source_asset_observe_fn_in_op_compute_fn,
 )
-from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.op_definition import OpDefinition
 
 
 def external_asset_from_spec(spec: AssetSpec) -> AssetsDefinition:

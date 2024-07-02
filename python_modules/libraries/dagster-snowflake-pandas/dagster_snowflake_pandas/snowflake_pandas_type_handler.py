@@ -1,14 +1,14 @@
-from typing import Mapping, Optional, Sequence, Type
+from typing import Type, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
+from dagster._core.errors import DagsterInvariantViolationError
 from snowflake.connector.pandas_tools import write_pandas
+from dagster._core.definitions.metadata import RawMetadataValue, TableMetadataSet
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, SnowflakeIOManager
 
 
 def _table_exists(table_slice: TableSlice, connection):

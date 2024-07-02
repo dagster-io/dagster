@@ -1,23 +1,23 @@
 import string
 
 import pytest
-from dagster._api.snapshot_partition import (
-    sync_get_external_partition_config_grpc,
-    sync_get_external_partition_names_grpc,
-    sync_get_external_partition_set_execution_param_data_grpc,
-    sync_get_external_partition_tags_grpc,
-)
+from dagster._serdes import deserialize_value
+from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
+from dagster._api.snapshot_partition import (
+    sync_get_external_partition_tags_grpc,
+    sync_get_external_partition_names_grpc,
+    sync_get_external_partition_config_grpc,
+    sync_get_external_partition_set_execution_param_data_grpc,
+)
 from dagster._core.remote_representation import (
+    ExternalPartitionTagsData,
+    ExternalPartitionNamesData,
     ExternalPartitionConfigData,
     ExternalPartitionExecutionErrorData,
-    ExternalPartitionNamesData,
     ExternalPartitionSetExecutionParamData,
-    ExternalPartitionTagsData,
 )
-from dagster._grpc.types import PartitionArgs, PartitionNamesArgs, PartitionSetExecutionParamArgs
-from dagster._serdes import deserialize_value
 
 from .utils import get_bar_repo_code_location
 

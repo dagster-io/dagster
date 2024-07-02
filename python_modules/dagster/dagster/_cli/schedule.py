@@ -1,6 +1,6 @@
-import glob
 import os
-from typing import Optional, Sequence, Union
+import glob
+from typing import Union, Optional, Sequence
 
 import click
 
@@ -9,15 +9,15 @@ from dagster import (
     DagsterInvariantViolationError,
     __version__ as dagster_version,
 )
-from dagster._cli.workspace.cli_target import (
-    get_external_repository_from_kwargs,
-    repository_target_argument,
-)
-from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.instance import DagsterInstance
+from dagster._cli.workspace.cli_target import (
+    repository_target_argument,
+    get_external_repository_from_kwargs,
+)
+from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorStatus
-from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
+from dagster._core.definitions.run_request import InstigatorType
 
 from .utils import get_instance_for_cli
 

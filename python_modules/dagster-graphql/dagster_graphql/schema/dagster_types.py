@@ -1,21 +1,21 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, Union, Optional
 
-import dagster._check as check
 import graphene
+import dagster._check as check
+from typing_extensions import TypeAlias
 from dagster._core.snap import JobSnapshot
 from dagster._core.types.dagster_type import DagsterTypeKind
-from typing_extensions import TypeAlias
 
-from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster_graphql.implementation.events import iterate_metadata_entries
 
-from .config_types import GrapheneConfigType, GrapheneConfigTypeUnion, to_config_type
-from .errors import (
-    GrapheneDagsterTypeNotFoundError,
-    GraphenePipelineNotFoundError,
-    GraphenePythonError,
-)
 from .util import non_null_list
+from .errors import (
+    GraphenePythonError,
+    GraphenePipelineNotFoundError,
+    GrapheneDagsterTypeNotFoundError,
+)
+from .config_types import GrapheneConfigType, GrapheneConfigTypeUnion, to_config_type
 
 if TYPE_CHECKING:
     from dagster._core.snap.dagster_types import DagsterTypeSnap

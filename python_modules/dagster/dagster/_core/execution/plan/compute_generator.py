@@ -1,40 +1,40 @@
 import inspect
-from functools import wraps
 from typing import (
     Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
     Dict,
-    Iterator,
+    Type,
+    Tuple,
+    Union,
     Mapping,
+    Callable,
+    Iterator,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    Union,
+    Awaitable,
+    AsyncIterator,
     cast,
 )
+from functools import wraps
 
 from typing_extensions import get_args
 
-from dagster._config.pythonic_config import Config
-from dagster._core.definitions import (
-    AssetCheckResult,
-    AssetMaterialization,
-    DynamicOutput,
-    ExpectationResult,
-    Output,
-    OutputDefinition,
-)
-from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
-from dagster._core.definitions.input import InputDefinition
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.result import AssetResult, ObserveResult
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
 from dagster._utils import is_named_tuple_instance
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions import (
+    Output,
+    DynamicOutput,
+    AssetCheckResult,
+    OutputDefinition,
+    ExpectationResult,
+    AssetMaterialization,
+)
+from dagster._config.pythonic_config import Config
+from dagster._core.definitions.input import InputDefinition
+from dagster._core.definitions.result import AssetResult, ObserveResult
+from dagster._core.types.dagster_type import DagsterTypeKind, is_generic_output_annotation
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
 
 from ..context.compute import ExecutionContextTypes
 

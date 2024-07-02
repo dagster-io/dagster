@@ -29,41 +29,41 @@ communicated between user repositories and host processes such as dagster-webser
 """
 
 from dagster._config import (
-    ConfigEnumValueSnap as ConfigEnumValueSnap,
-    ConfigFieldSnap as ConfigFieldSnap,
-    ConfigSchemaSnapshot as ConfigSchemaSnapshot,
     ConfigTypeSnap as ConfigTypeSnap,
-    snap_from_config_type as snap_from_config_type,
+    ConfigFieldSnap as ConfigFieldSnap,
+    ConfigEnumValueSnap as ConfigEnumValueSnap,
+    ConfigSchemaSnapshot as ConfigSchemaSnapshot,
     snap_from_field as snap_from_field,
+    snap_from_config_type as snap_from_config_type,
 )
 
+from .mode import (
+    ModeDefSnap as ModeDefSnap,
+    LoggerDefSnap as LoggerDefSnap,
+    ResourceDefSnap as ResourceDefSnap,
+)
+from .node import (
+    OpDefSnap as OpDefSnap,
+    GraphDefSnap as GraphDefSnap,
+    build_graph_def_snap as build_graph_def_snap,
+)
 from .config_types import build_config_schema_snapshot as build_config_schema_snapshot
-from .dagster_types import (
-    build_dagster_type_namespace_snapshot as build_dagster_type_namespace_snapshot,
-)
 from .dep_snapshot import (
-    DependencyStructureIndex as DependencyStructureIndex,
     NodeInvocationSnap as NodeInvocationSnap,
-)
-from .execution_plan_snapshot import (
-    ExecutionPlanSnapshot as ExecutionPlanSnapshot,
-    ExecutionStepInputSnap as ExecutionStepInputSnap,
-    ExecutionStepOutputSnap as ExecutionStepOutputSnap,
-    ExecutionStepSnap as ExecutionStepSnap,
-    create_execution_plan_snapshot_id as create_execution_plan_snapshot_id,
-    snapshot_from_execution_plan as snapshot_from_execution_plan,
+    DependencyStructureIndex as DependencyStructureIndex,
 )
 from .job_snapshot import (
     JobSnapshot as JobSnapshot,
     create_job_snapshot_id as create_job_snapshot_id,
 )
-from .mode import (
-    LoggerDefSnap as LoggerDefSnap,
-    ModeDefSnap as ModeDefSnap,
-    ResourceDefSnap as ResourceDefSnap,
+from .dagster_types import (
+    build_dagster_type_namespace_snapshot as build_dagster_type_namespace_snapshot,
 )
-from .node import (
-    GraphDefSnap as GraphDefSnap,
-    OpDefSnap as OpDefSnap,
-    build_graph_def_snap as build_graph_def_snap,
+from .execution_plan_snapshot import (
+    ExecutionStepSnap as ExecutionStepSnap,
+    ExecutionPlanSnapshot as ExecutionPlanSnapshot,
+    ExecutionStepInputSnap as ExecutionStepInputSnap,
+    ExecutionStepOutputSnap as ExecutionStepOutputSnap,
+    snapshot_from_execution_plan as snapshot_from_execution_plan,
+    create_execution_plan_snapshot_id as create_execution_plan_snapshot_id,
 )

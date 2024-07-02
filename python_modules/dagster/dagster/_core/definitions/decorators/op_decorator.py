@@ -1,40 +1,40 @@
-from functools import lru_cache, update_wrapper
-from inspect import Parameter
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     List,
+    Union,
     Mapping,
-    NamedTuple,
+    Callable,
     Optional,
     Sequence,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
     overload,
 )
+from inspect import Parameter
+from functools import lru_cache, update_wrapper
 
 import dagster._check as check
-from dagster._annotations import deprecated_param
 from dagster._config import UserConfigSchema
+from dagster._annotations import deprecated_param
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._utils.warnings import config_argument_warning, normalize_renamed_param
 from dagster._core.decorator_utils import (
-    format_docstring_for_description,
     get_function_params,
-    get_valid_name_permutations,
     param_is_var_keyword,
     positional_arg_name_list,
+    get_valid_name_permutations,
+    format_docstring_for_description,
 )
+from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._core.definitions.inference import infer_input_props
 from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.types.dagster_type import DagsterTypeKind
-from dagster._utils.warnings import config_argument_warning, normalize_renamed_param
 
 from ..input import In, InputDefinition
+from ..utils import DEFAULT_OUTPUT
 from ..output import Out
 from ..policy import RetryPolicy
-from ..utils import DEFAULT_OUTPUT
 
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition

@@ -1,16 +1,16 @@
-import string
 import time
+import string
 
 from dagster import (
     In,
     Int,
     Out,
-    ScheduleDefinition,
     SkipReason,
-    job,
+    ScheduleDefinition,
     op,
-    repository,
+    job,
     sensor,
+    repository,
     usable_as_dagster_type,
 )
 from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition

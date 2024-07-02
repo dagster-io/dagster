@@ -2,30 +2,30 @@ import tempfile
 
 import pytest
 from dagster import (
+    In,
     AssetIn,
     AssetKey,
-    DagsterInstance,
-    DagsterInvalidDefinitionError,
-    In,
-    InputManager,
     IOManager,
+    InputManager,
+    DagsterInstance,
     IOManagerDefinition,
+    DagsterInvalidDefinitionError,
+    op,
+    job,
     asset,
     graph,
-    input_manager,
-    io_manager,
-    job,
-    materialize,
-    op,
     resource,
+    io_manager,
+    materialize,
+    input_manager,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import Failure, RetryRequested
-from dagster._core.definitions.metadata import MetadataValue
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import InstanceRef
+from dagster._core.definitions.events import Failure, RetryRequested
+from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.storage.input_manager import InputManagerDefinition
-from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.definitions.definitions_class import Definitions
 
 ### input manager tests
 

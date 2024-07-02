@@ -1,25 +1,25 @@
 # ruff: noqa: T201
 
 import os
-import subprocess
 import time
 import traceback
-from contextlib import contextmanager
+import subprocess
+from typing import Mapping, Iterator, Optional, Sequence
 from pathlib import Path
-from typing import Iterator, Mapping, Optional, Sequence
+from contextlib import contextmanager
 
-import dagster._check as check
 import docker
-import packaging.version
 import pytest
 import requests
-from dagster._core.storage.dagster_run import DagsterRunStatus
+import dagster._check as check
+import packaging.version
 from dagster._utils import (
     file_relative_path,
-    library_version_from_core_version,
     parse_package_version,
+    library_version_from_core_version,
 )
 from dagster_graphql import DagsterGraphQLClient
+from dagster._core.storage.dagster_run import DagsterRunStatus
 
 DAGSTER_CURRENT_BRANCH = "current_branch"
 MAX_TIMEOUT_SECONDS = 20

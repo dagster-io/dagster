@@ -1,9 +1,9 @@
-from dagster import Field, GraphDefinition, Int, Map, Noneable, ScalarUnion, String, op
+from dagster import Int, Map, Field, String, Noneable, ScalarUnion, GraphDefinition, op
 from dagster._config import (
+    snap_from_config_type,
+    resolve_to_config_type,
     get_recursive_type_keys,
     print_config_type_to_string,
-    resolve_to_config_type,
-    snap_from_config_type,
 )
 
 

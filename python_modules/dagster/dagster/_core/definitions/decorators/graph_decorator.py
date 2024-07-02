@@ -1,13 +1,13 @@
+from typing import Any, Union, Mapping, Callable, Optional, Sequence, overload
 from functools import update_wrapper
-from typing import Any, Callable, Mapping, Optional, Sequence, Union, overload
 
 import dagster._check as check
 from dagster._core.decorator_utils import format_docstring_for_description
 
-from ..config import ConfigMapping
-from ..graph_definition import GraphDefinition
 from ..input import GraphIn, InputDefinition
+from ..config import ConfigMapping
 from ..output import GraphOut, OutputDefinition
+from ..graph_definition import GraphDefinition
 
 
 class _Graph:

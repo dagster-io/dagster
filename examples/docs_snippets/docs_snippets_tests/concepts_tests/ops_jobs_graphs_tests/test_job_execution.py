@@ -1,10 +1,10 @@
 import yaml
 
 from docs_snippets.concepts.ops_jobs_graphs.job_execution import (
+    my_job,
+    ip_yaml,
     execute_subset,
     forkserver_job,
-    ip_yaml,
-    my_job,
 )
 
 

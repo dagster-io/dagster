@@ -1,4 +1,4 @@
-from dagster import graph, job, op
+from dagster import op, job, graph
 
 
 @op

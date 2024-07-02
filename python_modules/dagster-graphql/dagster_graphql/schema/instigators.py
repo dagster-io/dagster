@@ -1,7 +1,7 @@
 import graphene
 
-from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
+from .schedules import GrapheneSchedule
 
 
 class GrapheneInstigator(graphene.Union):

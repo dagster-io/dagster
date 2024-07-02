@@ -2,19 +2,19 @@ import re
 
 import pytest
 from dagster import (
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    Field,
     Int,
+    Field,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvariantViolationError,
     op,
     resource,
 )
-from dagster._core.definitions.decorators import graph
+from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.test_utils import nesting_graph
+from dagster._core.utility_ops import input_set, create_root_op, create_stub_op, create_op_with_deps
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
-from dagster._core.test_utils import nesting_graph
-from dagster._core.utility_ops import create_op_with_deps, create_root_op, create_stub_op, input_set
-from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.definitions.decorators import graph
 
 
 def test_single_op_in_isolation():

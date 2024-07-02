@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Union, Optional
 
 import boto3
 import dagster._check as check

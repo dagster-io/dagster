@@ -1,47 +1,47 @@
 import os
 import uuid
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 from unittest.mock import patch
 
-import pandas_gbq
 import pytest
+import pandas_gbq
 from dagster import (
-    AssetExecutionContext,
+    Out,
+    EnvVar,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    EnvVar,
-    IOManagerDefinition,
-    MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    MetadataValue,
+    MultiPartitionKey,
+    IOManagerDefinition,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DynamicPartitionsDefinition,
+    op,
+    job,
     asset,
-    build_input_context,
-    build_output_context,
+    materialize,
     fs_io_manager,
     instance_for_test,
-    job,
-    materialize,
-    op,
+    build_input_context,
+    build_output_context,
 )
-from dagster._core.storage.db_io_manager import TableSlice
 from dagster_gcp import build_bigquery_io_manager
+from pyspark.sql import DataFrame
+from google.cloud import bigquery
+from pyspark.sql.types import LongType, StringType, StructType, StructField
 from dagster_gcp_pyspark import (
     BigQueryPySparkIOManager,
     BigQueryPySparkTypeHandler,
     bigquery_pyspark_io_manager,
 )
-from google.cloud import bigquery
-from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, to_date
-from pyspark.sql.types import LongType, StringType, StructField, StructType
+from dagster._core.storage.db_io_manager import TableSlice
 
 resource_config = {
     "database": "database_abc",

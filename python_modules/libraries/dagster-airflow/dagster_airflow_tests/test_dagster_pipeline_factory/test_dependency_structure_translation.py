@@ -1,7 +1,7 @@
 from airflow import __version__ as airflow_version
 from airflow.models.dag import DAG
-from airflow.operators.dummy_operator import DummyOperator  # type: ignore
 from airflow.utils.dates import days_ago
+from airflow.operators.dummy_operator import DummyOperator  # type: ignore
 
 if airflow_version >= "2.0.0":
     from airflow.models.baseoperator import chain
@@ -9,8 +9,8 @@ else:
     from airflow.utils.helpers import chain
 
 
-from dagster._core.snap import JobSnapshot
 from dagster._serdes import serialize_pp
+from dagster._core.snap import JobSnapshot
 from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
 from dagster_airflow_tests.marks import requires_no_db

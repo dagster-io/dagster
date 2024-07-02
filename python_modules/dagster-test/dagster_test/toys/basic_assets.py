@@ -1,4 +1,4 @@
-from dagster import AssetSelection, MetadataValue, asset, define_asset_job
+from dagster import MetadataValue, AssetSelection, asset, define_asset_job
 
 
 @asset(group_name="basic_assets")

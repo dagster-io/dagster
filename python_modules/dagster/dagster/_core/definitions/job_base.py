@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, AbstractSet, Iterable, Optional
+from typing import TYPE_CHECKING, Iterable, Optional, AbstractSet
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 if TYPE_CHECKING:
     from .job_definition import JobDefinition

@@ -1,8 +1,8 @@
 # ruff: noqa: T201
 
+import time
 import datetime
 import subprocess
-import time
 from urllib.parse import urlunparse
 
 import requests

@@ -1,49 +1,49 @@
 import datetime
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Union, Mapping, Optional, Sequence, NamedTuple
 
 import pendulum
 
+from dagster._model import DagsterModel
 from dagster._annotations import experimental
-from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
+from dagster._utils.security import non_secure_md5_hash_str
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, TemporalContext
+from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
 from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
     AssetConditionSnapshot,
     AssetSubsetWithMetadata,
+    AssetConditionEvaluation,
     AutomationConditionCursor,
     AutomationConditionNodeCursor,
     get_serializable_candidate_subset,
 )
-from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import DagsterModel
-from dagster._utils.security import non_secure_md5_hash_str
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-    from .automation_context import AutomationContext
     from .operands import (
+        NewlyUpdatedCondition,
         CronTickPassedCondition,
+        NewlyRequestedCondition,
+        WillBeRequestedCondition,
         FailedAutomationCondition,
+        MissingAutomationCondition,
         InLatestTimeWindowCondition,
         InProgressAutomationCondition,
-        MissingAutomationCondition,
-        NewlyRequestedCondition,
-        NewlyUpdatedCondition,
-        WillBeRequestedCondition,
     )
     from .operators import (
-        AllDepsCondition,
-        AndAssetCondition,
-        AnyDepsCondition,
-        NewlyTrueCondition,
-        NotAssetCondition,
-        OrAssetCondition,
         SinceCondition,
+        AllDepsCondition,
+        AnyDepsCondition,
+        OrAssetCondition,
+        AndAssetCondition,
+        NotAssetCondition,
+        NewlyTrueCondition,
     )
+    from .automation_context import AutomationContext
 
 
 @experimental

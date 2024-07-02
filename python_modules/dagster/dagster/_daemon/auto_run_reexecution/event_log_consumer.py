@@ -1,12 +1,12 @@
-import logging
 import os
-from typing import TYPE_CHECKING, Callable, Dict, Iterator, List, Mapping, Optional, Sequence
+import logging
+from typing import TYPE_CHECKING, Dict, List, Mapping, Callable, Iterator, Optional, Sequence
 
 import dagster._check as check
 from dagster import DagsterEventType
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter
 
 from ..daemon import IntervalDaemon
 from .auto_run_reexecution import consume_new_runs_for_automatic_reexecution

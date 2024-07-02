@@ -1,4 +1,4 @@
-from dagster import DataVersion, Output, asset
+from dagster import Output, DataVersion, asset
 
 
 @asset(code_version="v2")

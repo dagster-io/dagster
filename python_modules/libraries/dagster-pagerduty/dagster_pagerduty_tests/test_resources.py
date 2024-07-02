@@ -1,5 +1,5 @@
 import responses
-from dagster import build_op_context, op
+from dagster import op, build_op_context
 from dagster_pagerduty import PagerDutyService, pagerduty_resource
 
 

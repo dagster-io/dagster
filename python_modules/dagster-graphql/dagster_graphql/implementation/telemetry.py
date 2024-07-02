@@ -1,6 +1,6 @@
 import json
-from datetime import datetime, timezone
 from typing import TYPE_CHECKING
+from datetime import datetime, timezone
 
 from dagster._core.telemetry import log_action
 

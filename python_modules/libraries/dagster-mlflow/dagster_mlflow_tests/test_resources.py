@@ -1,9 +1,9 @@
 """Unit testing the Mlflow class."""
 
-import logging
+import uuid
 import random
 import string
-import uuid
+import logging
 from copy import deepcopy
 from typing import Any, Mapping
 from unittest.mock import MagicMock, patch
@@ -12,8 +12,8 @@ import mlflow
 import pandas as pd
 import pytest
 from dagster import op
-from dagster._core.definitions.decorators.job_decorator import job
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 @pytest.fixture

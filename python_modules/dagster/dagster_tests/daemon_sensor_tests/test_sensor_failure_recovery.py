@@ -1,26 +1,26 @@
 import multiprocessing
 
 import pytest
-from dagster._core.definitions.run_request import InstigatorType
+from dagster._time import get_timezone, create_datetime
+from dagster._seven import IS_WINDOWS
+from dagster._daemon import get_default_daemon_logger
 from dagster._core.instance import DagsterInstance
-from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
+from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._core.test_utils import (
     SingleThreadPoolExecutor,
+    freeze_time,
+    wait_for_futures,
+    get_crash_signals,
     cleanup_test_instance,
     create_test_daemon_workspace_context,
-    freeze_time,
-    get_crash_signals,
-    wait_for_futures,
 )
-from dagster._daemon import get_default_daemon_logger
-from dagster._daemon.sensor import execute_sensor_iteration
-from dagster._seven import IS_WINDOWS
-from dagster._time import create_datetime, get_timezone
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.scheduler.instigation import TickStatus, InstigatorState, InstigatorStatus
+from dagster._core.definitions.run_request import InstigatorType
 from dagster._vendored.dateutil.relativedelta import relativedelta
 
-from .test_sensor_run import create_workspace_load_target, wait_for_all_runs_to_start
+from .test_sensor_run import wait_for_all_runs_to_start, create_workspace_load_target
 
 spawn_ctx = multiprocessing.get_context("spawn")
 

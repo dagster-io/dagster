@@ -1,4 +1,4 @@
-from dagster import Definitions, job, op
+from dagster import Definitions, op, job
 
 
 @op

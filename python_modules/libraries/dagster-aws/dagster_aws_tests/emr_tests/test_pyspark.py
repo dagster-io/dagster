@@ -1,28 +1,28 @@
 import os
-import subprocess
 import sys
+import subprocess
 from unittest import mock
 
 import pytest
-from dagster import reconstructable
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.decorators.graph_decorator import graph
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.input import In
-from dagster._core.definitions.no_step_launcher import no_step_launcher
-from dagster._core.definitions.output import Out
-from dagster._core.errors import DagsterSubprocessError
-from dagster._core.execution.api import execute_job
-from dagster._core.test_utils import instance_for_test
-from dagster._utils.merger import deep_merge_dicts
-from dagster._utils.test import create_test_pipeline_execution_context
-from dagster_aws.emr import EmrError, EmrJobRunner
-from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_resource
-from dagster_pyspark import DataFrame, pyspark_resource
 from moto import mock_emr
+from dagster import reconstructable
 from pyspark.sql import Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+from dagster_aws.s3 import s3_resource
+from dagster_aws.emr import EmrError, EmrJobRunner
+from dagster_pyspark import DataFrame, pyspark_resource
+from pyspark.sql.types import StringType, StructType, IntegerType, StructField
+from dagster._utils.test import create_test_pipeline_execution_context
+from dagster._core.errors import DagsterSubprocessError
+from dagster._utils.merger import deep_merge_dicts
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.decorators import op
+from dagster_aws.emr.pyspark_step_launcher import EmrPySparkStepLauncher, emr_pyspark_step_launcher
+from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.decorators.graph_decorator import graph
 
 S3_BUCKET = "dagster-scratch-80542c2"
 

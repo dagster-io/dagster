@@ -1,8 +1,8 @@
+from mock import patch
 from dagster import op
-from dagster._core.definitions.decorators.job_decorator import job
 from dagster_slack import slack_resource
 from dagster_slack.hooks import slack_on_failure, slack_on_success
-from mock import patch
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 class SomeUserException(Exception):

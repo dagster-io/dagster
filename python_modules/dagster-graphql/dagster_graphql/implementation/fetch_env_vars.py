@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 import dagster._check as check
-from dagster._core.definitions.selector import RepositorySelector
 from graphene import ResolveInfo
+from dagster._core.definitions.selector import RepositorySelector
 
 from dagster_graphql.schema.env_vars import (
     GrapheneEnvVarWithConsumers,

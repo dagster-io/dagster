@@ -1,4 +1,4 @@
-from dagster import RunRequest, ScheduleDefinition, asset, job, op, repository, sensor
+from dagster import RunRequest, ScheduleDefinition, op, job, asset, sensor, repository
 
 
 @asset

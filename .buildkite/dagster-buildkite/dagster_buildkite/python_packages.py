@@ -1,16 +1,16 @@
 # pyright: reportUnnecessaryTypeIgnoreComment=false
 
-import logging
 import os
+import logging
 import subprocess
+from typing import Set, Dict, Optional
+from pathlib import Path
 from distutils import core as distutils_core
 from importlib import reload
-from pathlib import Path
-from typing import Dict, Optional, Set
 
 from pkg_resources import Requirement, parse_requirements
 
-from dagster_buildkite.git import ChangedFiles, GitInfo
+from dagster_buildkite.git import GitInfo, ChangedFiles
 
 changed_filetypes = [".py", ".cfg", ".toml", ".yaml", ".ipynb", ".yml", ".ini", ".jinja"]
 

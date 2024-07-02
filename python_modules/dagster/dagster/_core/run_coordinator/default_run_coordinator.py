@@ -4,9 +4,9 @@ from typing import Mapping, Optional
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
 

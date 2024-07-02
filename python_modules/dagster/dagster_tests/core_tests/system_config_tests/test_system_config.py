@@ -1,28 +1,28 @@
 import re
 
 from dagster import (
-    Any,
-    DependencyDefinition,
-    Field,
-    GraphDefinition,
     In,
+    Any,
     Int,
-    NodeInvocation,
-    OpDefinition,
     Out,
-    ResourceDefinition,
+    Field,
     Shape,
     String,
-    job,
+    OpDefinition,
+    NodeInvocation,
+    GraphDefinition,
+    ResourceDefinition,
+    DependencyDefinition,
     op,
+    job,
 )
 from dagster._config import ConfigTypeKind, process_config
-from dagster._config.config_type import ConfigType
-from dagster._core.definitions import create_run_config_schema
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.run_config import RunConfigSchemaCreationData, define_node_shape
-from dagster._core.system_config.objects import OpConfig, ResolvedRunConfig, ResourceConfig
 from dagster._loggers import default_loggers
+from dagster._core.definitions import create_run_config_schema
+from dagster._config.config_type import ConfigType
+from dagster._core.system_config.objects import OpConfig, ResourceConfig, ResolvedRunConfig
+from dagster._core.definitions.run_config import RunConfigSchemaCreationData, define_node_shape
+from dagster._core.definitions.job_definition import JobDefinition
 
 
 def create_creation_data(job_def):

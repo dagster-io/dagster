@@ -1,68 +1,68 @@
 import os
-import tempfile
 import time
 import uuid
-from collections import defaultdict
-from threading import Thread
+import tempfile
 from typing import List
+from threading import Thread
+from collections import defaultdict
 
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetKey,
-    AssetsDefinition,
-    DynamicOut,
-    DynamicOutput,
-    Failure,
     Field,
     Output,
-    ResourceDefinition,
-    RetryPolicy,
-    RetryRequested,
     String,
+    Failure,
+    AssetKey,
+    DynamicOut,
+    RetryPolicy,
+    DynamicOutput,
+    RetryRequested,
+    AssetCheckResult,
+    AssetsDefinition,
+    ResourceDefinition,
+    op,
+    job,
     asset,
+    resource,
+    repository,
+    fs_io_manager,
+    with_resources,
+    reconstructable,
     define_asset_job,
     file_relative_path,
-    fs_io_manager,
-    job,
-    op,
-    reconstructable,
-    repository,
-    resource,
-    with_resources,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.no_step_launcher import no_step_launcher
-from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
+from dagster._utils import send_interrupt, safe_tempfile_path
 from dagster._core.events import DagsterEventType
+from dagster._utils.merger import merge_dicts, deep_merge_dicts
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 from dagster._core.execution.api import (
     ReexecutionOptions,
-    create_execution_plan,
     execute_job,
     execute_run_iterator,
+    create_execution_plan,
 )
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.reconstruct import ReconstructableJob, ReconstructableRepository
 from dagster._core.execution.context.system import IStepContext
-from dagster._core.execution.context_creation_job import PlanExecutionContextManager
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.cacheable_assets import (
+    CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
+)
+from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.execution.plan.external_step import (
     LocalExternalStepLauncher,
     local_external_step_launcher,
     step_context_to_step_run_ref,
     step_run_ref_to_step_context,
 )
-from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryMode
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test
-from dagster._utils import safe_tempfile_path, send_interrupt
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._core.execution.context_creation_job import PlanExecutionContextManager
 
 RUN_CONFIG_BASE = {"ops": {"return_two": {"config": {"a": "b"}}}}
 

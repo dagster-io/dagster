@@ -1,7 +1,7 @@
 import tempfile
+from typing import Literal
 from pathlib import Path
 from subprocess import Popen
-from typing import Literal
 
 from dagster import asset
 from dagster_blueprints import YamlBlueprintsLoader

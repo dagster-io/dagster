@@ -1,10 +1,10 @@
 from typing import Callable, Optional
 
 from dagster._annotations import deprecated_param
-from dagster._core.definitions import failure_hook
-from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.execution.context.hook import HookContext
 from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.definitions import failure_hook
+from dagster._core.execution.context.hook import HookContext
+from dagster._core.definitions.hook_definition import HookDefinition
 
 
 def _default_summary_fn(context: HookContext) -> str:

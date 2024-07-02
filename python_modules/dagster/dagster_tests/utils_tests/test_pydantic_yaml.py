@@ -1,12 +1,12 @@
 import traceback
 
 import pytest
+from pydantic import BaseModel, ValidationError
 from dagster._utils.pydantic_yaml import (
     parse_yaml_file_to_pydantic,
     parse_yaml_file_to_pydantic_sequence,
 )
 from dagster._utils.source_position import HasSourcePositionAndKeyPath
-from pydantic import BaseModel, ValidationError
 
 
 def test_parse_yaml_file_to_pydantic_error() -> None:

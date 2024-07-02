@@ -5,14 +5,14 @@ from unittest import mock
 
 import pytest
 from dagster import file_relative_path
-from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.remote_representation.feature_flags import CodeLocationFeatureFlags
-from dagster._core.test_utils import environ
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.load import location_origins_from_yaml_paths
 from dagster.version import __version__ as dagster_version
-from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql.version import __version__ as dagster_graphql_version
+from dagster._core.test_utils import environ
+from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster._core.workspace.load import location_origins_from_yaml_paths
+from dagster._core.remote_representation import ManagedGrpcPythonEnvCodeLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.remote_representation.feature_flags import CodeLocationFeatureFlags
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

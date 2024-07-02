@@ -1,49 +1,49 @@
-from functools import update_wrapper
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Iterator,
-    Mapping,
-    Optional,
     Union,
+    Mapping,
+    Callable,
+    Iterator,
+    Optional,
+    AbstractSet,
     cast,
     overload,
 )
+from functools import update_wrapper
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
+from dagster._utils import IHasInternalInit
+from dagster._annotations import public, experimental_param
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster._core.decorator_utils import format_docstring_for_description
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._utils import IHasInternalInit
 
 from ..decorator_utils import (
-    get_function_params,
-    has_at_least_one_parameter,
     is_required_param,
+    get_function_params,
     positional_arg_name_list,
     validate_expected_params,
+    has_at_least_one_parameter,
+)
+from .resource_invocation import resource_invocation_result
+from .resource_requirement import (
+    RequiresResources,
+    ResourceRequirement,
+    ResourceDependencyRequirement,
 )
 from .definition_config_schema import (
     CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from .resource_invocation import resource_invocation_result
-from .resource_requirement import (
-    RequiresResources,
-    ResourceDependencyRequirement,
-    ResourceRequirement,
-)
 from .scoped_resources_builder import (  # re-exported
-    IContainsGenerator as IContainsGenerator,
     Resources as Resources,
+    IContainsGenerator as IContainsGenerator,
     ScopedResourcesBuilder as ScopedResourcesBuilder,
 )
 

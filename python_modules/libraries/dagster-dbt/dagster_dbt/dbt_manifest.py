@@ -1,9 +1,9 @@
-from functools import lru_cache
+from typing import Any, Union, Mapping, cast
 from pathlib import Path
-from typing import Any, Mapping, Union, cast
+from functools import lru_cache
 
-import dagster._check as check
 import orjson
+import dagster._check as check
 
 from .errors import DagsterDbtManifestNotFoundError
 

@@ -1,7 +1,7 @@
 from docs_snippets.integrations.airbyte.airbyte import (
-    scope_add_downstream_assets,
     scope_define_instance,
     scope_schedule_assets,
+    scope_add_downstream_assets,
 )
 
 

@@ -1,21 +1,21 @@
-from typing import Optional, Sequence, Tuple
+from typing import Tuple, Optional, Sequence
 
 import graphene
 from dagster import PartitionsDefinition
-from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
-from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
-from dagster._core.definitions.declarative_automation.serialized_objects import (
-    AssetConditionEvaluation,
-    AssetSubsetWithMetadata,
-)
 from dagster._core.definitions.metadata import DagsterAssetMetadataValue
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
+from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeDecisionType
+from dagster._core.definitions.declarative_automation.serialized_objects import (
+    AssetSubsetWithMetadata,
+    AssetConditionEvaluation,
+)
+from dagster._core.definitions.declarative_automation.legacy.rule_condition import RuleCondition
 
 from dagster_graphql.schema.errors import GrapheneError
 
+from .util import non_null_list
 from .asset_key import GrapheneAssetKey
 from .auto_materialize_policy import GrapheneAutoMaterializeRule
-from .util import non_null_list
 
 GrapheneAutoMaterializeDecisionType = graphene.Enum.from_enum(AutoMaterializeDecisionType)
 

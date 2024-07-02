@@ -1,33 +1,33 @@
-from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    FrozenSet,
+    Type,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
+    TypeVar,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
+    FrozenSet,
+    NamedTuple,
+    AbstractSet,
 )
+from dataclasses import dataclass
 
-from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
-from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._utils import utc_datetime_from_timestamp
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.metadata import MetadataValue, MetadataMapping
+from dagster._core.definitions.partition import AllPartitionsSubset
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.asset_graph_view.asset_graph_view import TemporalContext
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.declarative_automation.automation_condition import (
-        AutomationResult,
-    )
     from dagster._core.definitions.declarative_automation.automation_context import (
         AutomationContext,
+    )
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationResult,
     )
 
 T = TypeVar("T")

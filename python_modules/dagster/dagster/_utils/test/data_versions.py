@@ -1,24 +1,24 @@
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast, overload
+from typing import Any, Dict, List, Tuple, Union, Mapping, Optional, Sequence, cast, overload
 
 from typing_extensions import Literal
 
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
+from dagster._core.instance import DagsterInstance
 from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.storage.io_manager import IOManager, io_manager
+from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.data_version import (
     CODE_VERSION_TAG,
     DATA_VERSION_TAG,
     INPUT_DATA_VERSION_TAG_PREFIX,
-    CachingStaleStatusResolver,
     DataVersion,
+    CachingStaleStatusResolver,
 )
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.definitions.materialize import materialize
-from dagster._core.definitions.run_config import RunConfig
 from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
 from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
-from dagster._core.instance import DagsterInstance
-from dagster._core.storage.io_manager import IOManager, io_manager
 
 
 class MaterializationTable:

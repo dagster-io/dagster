@@ -1,9 +1,9 @@
-import signal
 import sys
+import signal
 import threading
-from contextlib import contextmanager
 from types import FrameType
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Type, Iterator, Optional
+from contextlib import contextmanager
 
 from typing_extensions import TypeAlias
 

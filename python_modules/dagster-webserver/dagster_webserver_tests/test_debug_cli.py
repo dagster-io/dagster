@@ -1,11 +1,11 @@
 from os import path
 
 import uvicorn
+from dagster import op, job
 from click.testing import CliRunner
-from dagster import job, op
 from dagster._cli.debug import export_command
-from dagster._core.test_utils import instance_for_test
 from dagster_webserver.debug import webserver_debug_command
+from dagster._core.test_utils import instance_for_test
 
 
 @op

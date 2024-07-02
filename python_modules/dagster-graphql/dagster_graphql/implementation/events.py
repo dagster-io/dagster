@@ -1,74 +1,74 @@
 from math import isnan
-from typing import Any, Iterator, Mapping, Sequence, cast, no_type_check
+from typing import Any, Mapping, Iterator, Sequence, cast, no_type_check
 
 import dagster._check as check
 import dagster._seven as seven
 from dagster import (
-    BoolMetadataValue,
-    DagsterAssetMetadataValue,
-    DagsterJobMetadataValue,
-    FloatMetadataValue,
     IntMetadataValue,
+    UrlMetadataValue,
+    BoolMetadataValue,
     JsonMetadataValue,
-    MarkdownMetadataValue,
-    NotebookMetadataValue,
     NullMetadataValue,
     PathMetadataValue,
-    PythonArtifactMetadataValue,
-    TableMetadataValue,
-    TableSchemaMetadataValue,
     TextMetadataValue,
+    FloatMetadataValue,
+    TableMetadataValue,
+    MarkdownMetadataValue,
+    NotebookMetadataValue,
     TimestampMetadataValue,
-    UrlMetadataValue,
+    DagsterJobMetadataValue,
+    TableSchemaMetadataValue,
+    DagsterAssetMetadataValue,
+    PythonArtifactMetadataValue,
 )
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
-from dagster._core.definitions.metadata import (
-    CodeReferencesMetadataValue,
-    DagsterRunMetadataValue,
-    MetadataValue,
-    TableColumnLineageMetadataValue,
-)
-from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
 from dagster._core.events import (
+    LoadedInputData,
     DagsterEventType,
     HandledOutputData,
-    LoadedInputData,
     StepExpectationResultData,
 )
 from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    DagsterRunMetadataValue,
+    CodeReferencesMetadataValue,
+    TableColumnLineageMetadataValue,
+)
 from dagster._core.execution.plan.inputs import StepInputData
 from dagster._core.execution.plan.outputs import StepOutputData
+from dagster._core.definitions.metadata.source_code import LocalFileCodeReference
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluationPlanned
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Iterator[Any]:
+    from ..schema.table import GrapheneTable, GrapheneTableSchema
     from ..schema.metadata import (
-        GrapheneAssetMetadataEntry,
-        GrapheneBoolMetadataEntry,
-        GrapheneCodeReferencesMetadataEntry,
-        GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJobMetadataEntry,
-        GrapheneJsonMetadataEntry,
-        GrapheneLocalFileCodeReference,
-        GrapheneMarkdownMetadataEntry,
-        GrapheneNotebookMetadataEntry,
-        GrapheneNullMetadataEntry,
-        GraphenePathMetadataEntry,
-        GraphenePipelineRunMetadataEntry,
-        GraphenePythonArtifactMetadataEntry,
-        GrapheneTableColumnLineageEntry,
-        GrapheneTableColumnLineageMetadataEntry,
-        GrapheneTableMetadataEntry,
-        GrapheneTableSchemaMetadataEntry,
-        GrapheneTextMetadataEntry,
-        GrapheneTimestampMetadataEntry,
         GrapheneUrlCodeReference,
         GrapheneUrlMetadataEntry,
+        GrapheneBoolMetadataEntry,
+        GrapheneJsonMetadataEntry,
+        GrapheneNullMetadataEntry,
+        GraphenePathMetadataEntry,
+        GrapheneTextMetadataEntry,
+        GrapheneAssetMetadataEntry,
+        GrapheneFloatMetadataEntry,
+        GrapheneTableMetadataEntry,
+        GrapheneMarkdownMetadataEntry,
+        GrapheneNotebookMetadataEntry,
+        GrapheneLocalFileCodeReference,
+        GrapheneTimestampMetadataEntry,
+        GrapheneTableColumnLineageEntry,
+        GraphenePipelineRunMetadataEntry,
+        GrapheneTableSchemaMetadataEntry,
+        GrapheneCodeReferencesMetadataEntry,
+        GraphenePythonArtifactMetadataEntry,
+        GrapheneTableColumnLineageMetadataEntry,
     )
-    from ..schema.table import GrapheneTable, GrapheneTableSchema
 
     check.mapping_param(metadata, "metadata", key_type=str)
     for key, value in metadata.items():
@@ -217,44 +217,44 @@ def _to_metadata_entries(metadata: Mapping[str, MetadataValue]) -> Sequence[Any]
 def from_dagster_event_record(event_record: EventLogEntry, pipeline_name: str) -> Any:
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
-        GrapheneAlertFailureEvent,
-        GrapheneAlertStartEvent,
-        GrapheneAlertSuccessEvent,
-        GrapheneAssetCheckEvaluationEvent,
-        GrapheneAssetCheckEvaluationPlannedEvent,
-        GrapheneAssetMaterializationPlannedEvent,
         GrapheneEngineEvent,
-        GrapheneExecutionStepFailureEvent,
-        GrapheneExecutionStepInputEvent,
-        GrapheneExecutionStepOutputEvent,
-        GrapheneExecutionStepRestartEvent,
-        GrapheneExecutionStepSkippedEvent,
-        GrapheneExecutionStepStartEvent,
-        GrapheneExecutionStepSuccessEvent,
-        GrapheneExecutionStepUpForRetryEvent,
-        GrapheneHandledOutputEvent,
-        GrapheneHookCompletedEvent,
+        GrapheneRunStartEvent,
+        GrapheneAlertStartEvent,
+        GrapheneRunFailureEvent,
+        GrapheneRunSuccessEvent,
         GrapheneHookErroredEvent,
         GrapheneHookSkippedEvent,
         GrapheneLoadedInputEvent,
-        GrapheneLogsCapturedEvent,
-        GrapheneMaterializationEvent,
-        GrapheneObjectStoreOperationEvent,
         GrapheneObservationEvent,
+        GrapheneRunCanceledEvent,
+        GrapheneRunDequeuedEvent,
+        GrapheneRunEnqueuedEvent,
+        GrapheneRunStartingEvent,
+        GrapheneAlertFailureEvent,
+        GrapheneAlertSuccessEvent,
+        GrapheneLogsCapturedEvent,
+        GrapheneRunCancelingEvent,
+        GrapheneHandledOutputEvent,
+        GrapheneHookCompletedEvent,
+        GrapheneMaterializationEvent,
+        GrapheneStepWorkerStartedEvent,
+        GrapheneExecutionStepInputEvent,
+        GrapheneExecutionStepStartEvent,
+        GrapheneStepWorkerStartingEvent,
+        GrapheneExecutionStepOutputEvent,
         GrapheneResourceInitFailureEvent,
         GrapheneResourceInitStartedEvent,
         GrapheneResourceInitSuccessEvent,
-        GrapheneRunCanceledEvent,
-        GrapheneRunCancelingEvent,
-        GrapheneRunDequeuedEvent,
-        GrapheneRunEnqueuedEvent,
-        GrapheneRunFailureEvent,
-        GrapheneRunStartEvent,
-        GrapheneRunStartingEvent,
-        GrapheneRunSuccessEvent,
+        GrapheneAssetCheckEvaluationEvent,
+        GrapheneExecutionStepFailureEvent,
+        GrapheneExecutionStepRestartEvent,
+        GrapheneExecutionStepSkippedEvent,
+        GrapheneExecutionStepSuccessEvent,
+        GrapheneObjectStoreOperationEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneStepWorkerStartedEvent,
-        GrapheneStepWorkerStartingEvent,
+        GrapheneExecutionStepUpForRetryEvent,
+        GrapheneAssetCheckEvaluationPlannedEvent,
+        GrapheneAssetMaterializationPlannedEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches

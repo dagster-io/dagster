@@ -1,10 +1,10 @@
 from typing import Any, Dict
 
 import pytest
-from dagster import AssetCheckKey, AssetKey, AssetsDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster import AssetKey, AssetCheckKey, AssetsDefinition
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster._core.definitions.asset_graph import AssetGraph
 
 pytest.importorskip("dbt.version", "1.6")
 

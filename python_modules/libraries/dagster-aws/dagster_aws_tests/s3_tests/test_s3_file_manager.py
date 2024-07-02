@@ -1,16 +1,16 @@
 import uuid
 from unittest import mock
 
-import botocore
 import pytest
+import botocore
+from dagster import In, Out, DagsterResourceFunctionError, op, job, configured, build_op_context
 from botocore import exceptions
-from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
 from dagster_aws.s3 import (
     S3FileHandle,
     S3FileManager,
     S3FileManagerResource,
-    s3_file_manager,
     s3_resource,
+    s3_file_manager,
 )
 
 

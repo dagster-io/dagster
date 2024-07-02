@@ -1,10 +1,10 @@
-from pathlib import Path
 from typing import Any, Mapping
+from pathlib import Path
 
-from dagster import AssetExecutionContext, AssetKey, load_assets_from_package_module
-from dagster_dbt import DagsterDbtTranslator, DbtCliResource, dbt_assets
+from dagster import AssetKey, AssetExecutionContext, load_assets_from_package_module
+from dagster_dbt import DbtCliResource, DagsterDbtTranslator, dbt_assets
 
-from . import activity_analytics, core, recommender
+from . import core, recommender, activity_analytics
 
 CORE = "core"
 ACTIVITY_ANALYTICS = "activity_analytics"

@@ -1,48 +1,48 @@
-import _thread as thread
-import contextlib
-import contextvars
-import datetime
-import errno
-import functools
-import inspect
-import multiprocessing
 import os
 import re
-import signal
-import socket
-import subprocess
 import sys
-import tempfile
-import threading
 import time
 import uuid
-from datetime import timezone
+import errno
+import signal
+import socket
+import _thread as thread
+import inspect
+import datetime
+import tempfile
+import functools
+import threading
+import contextlib
+import subprocess
+import contextvars
+import multiprocessing
 from enum import Enum
 from signal import Signals
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
-    ContextManager,
+    Set,
     Dict,
-    Generator,
+    List,
+    Type,
+    Tuple,
+    Union,
     Generic,
+    Mapping,
+    TypeVar,
+    Callable,
     Hashable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
+    Generator,
+    NamedTuple,
+    AbstractSet,
+    ContextManager,
     cast,
     overload,
 )
+from datetime import timezone
 
 import packaging.version
 from filelock import FileLock
@@ -60,11 +60,11 @@ else:
     from pathlib2 import Path
 
 if TYPE_CHECKING:
+    from dagster._core.events import DagsterEvent
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition.repository_definition import (
         RepositoryDefinition,
     )
-    from dagster._core.events import DagsterEvent
 
 K = TypeVar("K")
 T = TypeVar("T")

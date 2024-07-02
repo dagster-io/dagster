@@ -1,9 +1,9 @@
-import json
 import os
+import json
 from typing import Tuple
 
 import requests
-from dagster import AssetSelection, RunRequest, SensorResult, SkipReason, sensor
+from dagster import RunRequest, SkipReason, SensorResult, AssetSelection, sensor
 
 from . import assets
 

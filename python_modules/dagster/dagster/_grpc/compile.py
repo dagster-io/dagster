@@ -6,9 +6,9 @@ This tooling should be invoked to regenerate the Python grpc artifacts by runnin
 """
 
 import os
+import sys
 import shutil
 import subprocess
-import sys
 
 import pkg_resources
 

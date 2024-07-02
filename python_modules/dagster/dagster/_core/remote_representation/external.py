@@ -1,86 +1,86 @@
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    List,
+    Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    AbstractSet,
+)
 from datetime import datetime
 from functools import cached_property
 from threading import RLock
-from typing import (
-    TYPE_CHECKING,
-    AbstractSet,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-)
 
 import dagster._check as check
 from dagster import AssetSelection
+from dagster._record import record
+from dagster._serdes import create_snapshot_id
+from dagster._core.snap import ExecutionPlanSnapshot
+from dagster._core.utils import toposort
 from dagster._config.snap import ConfigFieldSnap, ConfigSchemaSnapshot
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
+from dagster._core.instance import DagsterInstance
+from dagster._utils.schedules import schedule_execution_time_iterator
+from dagster._utils.cached_method import cached_method
+from dagster._core.snap.job_snapshot import JobSnapshot
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster._core.definitions.selector import (
+    SensorSelector,
+    ScheduleSelector,
     InstigatorSelector,
     RepositorySelector,
-    ScheduleSelector,
-    SensorSelector,
+)
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.execution.plan.handle import StepHandle, ResolvedFromDynamicStepHandle
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.remote_representation.origin import (
+    RemoteJobOrigin,
+    RemoteInstigatorOrigin,
+    RemoteRepositoryOrigin,
+    RemotePartitionSetOrigin,
 )
 from dagster._core.definitions.sensor_definition import (
     DEFAULT_SENSOR_DAEMON_INTERVAL,
-    DefaultSensorStatus,
     SensorType,
+    DefaultSensorStatus,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
-from dagster._core.instance import DagsterInstance
-from dagster._core.origin import JobPythonOrigin, RepositoryPythonOrigin
-from dagster._core.remote_representation.origin import (
-    RemoteInstigatorOrigin,
-    RemoteJobOrigin,
-    RemotePartitionSetOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.snap import ExecutionPlanSnapshot
-from dagster._core.snap.job_snapshot import JobSnapshot
-from dagster._core.utils import toposort
-from dagster._record import record
-from dagster._serdes import create_snapshot_id
-from dagster._utils.cached_method import cached_method
-from dagster._utils.schedules import schedule_execution_time_iterator
+from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
 
-from .external_data import (
-    DEFAULT_MODE_NAME,
-    EnvVarConsumer,
-    ExternalAssetCheck,
-    ExternalAssetNode,
-    ExternalJobData,
-    ExternalJobRef,
-    ExternalPresetData,
-    ExternalRepositoryData,
-    ExternalResourceData,
-    ExternalResourceValue,
-    ExternalSensorMetadata,
-    ExternalTargetData,
-    NestedResource,
-    PartitionSetSnap,
-    ResourceJobUsageEntry,
-    ScheduleSnap,
-    SensorSnap,
-)
-from .handle import InstigatorHandle, JobHandle, PartitionSetHandle, RepositoryHandle
+from .handle import JobHandle, InstigatorHandle, RepositoryHandle, PartitionSetHandle
 from .job_index import JobIndex
 from .represented import RepresentedJob
+from .external_data import (
+    DEFAULT_MODE_NAME,
+    SensorSnap,
+    ScheduleSnap,
+    EnvVarConsumer,
+    ExternalJobRef,
+    NestedResource,
+    ExternalJobData,
+    PartitionSetSnap,
+    ExternalAssetNode,
+    ExternalAssetCheck,
+    ExternalPresetData,
+    ExternalTargetData,
+    ExternalResourceData,
+    ExternalResourceValue,
+    ResourceJobUsageEntry,
+    ExternalRepositoryData,
+    ExternalSensorMetadata,
+)
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.scheduler.instigation import InstigatorState
     from dagster._core.snap.execution_plan_snapshot import ExecutionStepSnap
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
 _DELIMITER = "::"
 

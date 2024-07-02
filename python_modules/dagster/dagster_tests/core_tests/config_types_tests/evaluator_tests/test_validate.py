@@ -1,12 +1,12 @@
-from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
+from dagster import Field, Shape, Noneable, Selector, Permissive, ScalarUnion
 from dagster._config import (
+    EvaluationStackPathEntry,
+    EvaluationStackMapKeyEntry,
     DagsterEvaluationErrorReason,
     EvaluationStackListItemEntry,
-    EvaluationStackMapKeyEntry,
     EvaluationStackMapValueEntry,
-    EvaluationStackPathEntry,
-    resolve_to_config_type,
     validate_config,
+    resolve_to_config_type,
 )
 
 

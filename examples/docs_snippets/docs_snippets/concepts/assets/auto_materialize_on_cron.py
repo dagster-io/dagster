@@ -1,4 +1,4 @@
-from dagster import AutoMaterializePolicy, AutoMaterializeRule, asset
+from dagster import AutoMaterializeRule, AutoMaterializePolicy, asset
 
 materialize_on_cron_policy = AutoMaterializePolicy.eager().with_rules(
     # try to materialize this asset if it hasn't been materialized since the last cron tick

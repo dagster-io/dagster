@@ -2,7 +2,7 @@ import click
 from tqdm import tqdm
 
 from dagster import __version__ as dagster_version
-from dagster._cli.workspace.cli_target import get_external_job_from_kwargs, job_target_argument
+from dagster._cli.workspace.cli_target import job_target_argument, get_external_job_from_kwargs
 
 from .utils import get_instance_for_cli
 
@@ -86,9 +86,9 @@ def run_wipe_command(force):
 )
 @job_target_argument
 def run_migrate_command(from_label, **kwargs):
+    from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
     from dagster._core.storage.dagster_run import RunsFilter
     from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
-    from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
 
     if not from_label:
         raise click.UsageError("Must specify a --from repository label")

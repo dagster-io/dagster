@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from typing import Dict, Mapping, NamedTuple, Optional
+from typing import Dict, Mapping, Optional, NamedTuple
 
 
 @unique

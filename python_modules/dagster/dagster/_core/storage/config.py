@@ -2,7 +2,7 @@ from typing import Dict
 
 from typing_extensions import TypedDict
 
-from dagster._config import Field, IntSource, Permissive, Selector, StringSource
+from dagster._config import Field, Selector, IntSource, Permissive, StringSource
 from dagster._config.config_schema import UserConfigSchema
 
 

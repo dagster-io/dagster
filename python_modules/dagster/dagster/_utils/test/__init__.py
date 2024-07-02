@@ -1,61 +1,61 @@
 import os
 import shutil
 import tempfile
-from collections import defaultdict
+from typing import Any, Set, Dict, List, Type, Union, Mapping, Optional, cast
 from contextlib import contextmanager
-from typing import Any, Dict, List, Mapping, Optional, Set, Type, Union, cast
+from collections import defaultdict
 
 # top-level include is dangerous in terms of incurring circular deps
 from dagster import (
-    DagsterInvariantViolationError,
-    DependencyDefinition,
     NodeInvocation,
+    DependencyDefinition,
+    DagsterInvariantViolationError,
     _check as check,
 )
 from dagster._config import Field, StringSource
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions import (
-    GraphDefinition,
-    InputMapping,
-    JobDefinition,
-    OpDefinition,
-    OutputMapping,
-)
-from dagster._core.definitions.dependency import Node
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._serdes import ConfigurableClass
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.context.system import PlanExecutionContext
-from dagster._core.execution.context_creation_job import (
-    create_context_creation_data,
-    create_execution_data,
-    create_executor,
-    create_log_manager,
-    create_plan_data,
-)
-from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.instance import DagsterInstance
 from dagster._core.scheduler import Scheduler
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.event_log.base import EventLogConnection
-from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
-from dagster._core.storage.sqlite_storage import SqliteStorageConfig
+from dagster._core.definitions import (
+    InputMapping,
+    OpDefinition,
+    JobDefinition,
+    OutputMapping,
+    GraphDefinition,
+)
 from dagster._core.utility_ops import create_stub_op
-from dagster._serdes import ConfigurableClass
-from dagster._serdes.config_class import ConfigurableClassData
 from dagster._utils.concurrency import ConcurrencyClaimStatus
+from dagster._core.execution.api import create_execution_plan
+from dagster._serdes.config_class import ConfigurableClassData
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.dependency import Node
+from dagster._core.storage.event_log.base import EventLogConnection
+from dagster._core.storage.sqlite_storage import SqliteStorageConfig
+from dagster._core.execution.context.system import PlanExecutionContext
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.execution.context_creation_job import (
+    create_executor,
+    create_plan_data,
+    create_log_manager,
+    create_execution_data,
+    create_context_creation_data,
+)
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 
 # re-export
 from ..temp_file import (
     get_temp_dir as get_temp_dir,
-    get_temp_file_handle as get_temp_file_handle,
-    get_temp_file_handle_with_data as get_temp_file_handle_with_data,
     get_temp_file_name as get_temp_file_name,
-    get_temp_file_name_with_data as get_temp_file_name_with_data,
     get_temp_file_names as get_temp_file_names,
+    get_temp_file_handle as get_temp_file_handle,
+    get_temp_file_name_with_data as get_temp_file_name_with_data,
+    get_temp_file_handle_with_data as get_temp_file_handle_with_data,
 )
 
 

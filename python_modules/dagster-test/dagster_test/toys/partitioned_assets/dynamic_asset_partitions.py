@@ -3,8 +3,8 @@ from dagster import (
     AssetSelection,
     DagsterInstance,
     DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
     define_asset_job,
 )

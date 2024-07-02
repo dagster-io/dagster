@@ -1,20 +1,20 @@
 import os
-import pickle
 import re
+import pickle
+from typing import Any, Dict, Tuple, Callable
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Dict, Tuple
 
 from dagster import (
     DynamicOut,
     DynamicOutput,
-    ExecutorDefinition,
     JobDefinition,
+    ExecutorDefinition,
     ReexecutionOptions,
-    execute_job,
-    job,
     op,
-    reconstructable,
+    job,
     resource,
+    execute_job,
+    reconstructable,
 )
 from dagster._core.test_utils import instance_for_test
 

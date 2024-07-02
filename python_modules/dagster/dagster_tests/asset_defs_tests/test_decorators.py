@@ -2,48 +2,48 @@ from typing import Any
 
 import pytest
 from dagster import (
-    AllPartitionMapping,
-    AssetKey,
-    AssetOut,
-    DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    DimensionPartitionMapping,
-    FreshnessPolicy,
-    GraphIn,
-    IdentityPartitionMapping,
     In,
-    MultiPartitionMapping,
-    MultiPartitionsDefinition,
-    Nothing,
-    OpExecutionContext,
     Out,
     Output,
-    StaticPartitionsDefinition,
     String,
+    GraphIn,
+    Nothing,
+    AssetKey,
+    AssetOut,
+    FreshnessPolicy,
+    OpExecutionContext,
+    AllPartitionMapping,
+    MultiPartitionMapping,
+    IdentityPartitionMapping,
+    DailyPartitionsDefinition,
+    DimensionPartitionMapping,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
-    _check as check,
-    build_asset_context,
-    build_op_context,
-    graph,
-    graph_asset,
-    graph_multi_asset,
-    io_manager,
-    materialize,
-    materialize_to_memory,
+    DagsterInvalidDefinitionError,
     op,
+    graph,
+    _check as check,
     resource,
+    io_manager,
+    graph_asset,
+    materialize,
+    build_op_context,
+    graph_multi_asset,
+    build_asset_context,
+    materialize_to_memory,
 )
 from dagster._check import CheckError
-from dagster._config.pythonic_config import Config
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
 from dagster._core.definitions import AssetIn, AssetsDefinition, asset, multi_asset
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._config.pythonic_config import Config
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.config_mapping_decorator import config_mapping
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.definitions.resource_requirement import ensure_requirements_satisfied
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._core.test_utils import ignore_warning, raise_exception_on_warnings
-from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 @pytest.fixture(autouse=True)

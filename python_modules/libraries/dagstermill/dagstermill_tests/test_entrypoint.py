@@ -1,5 +1,5 @@
-import runpy
 import sys
+import runpy
 
 import pytest
 

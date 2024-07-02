@@ -1,5 +1,5 @@
-from dagster._utils.merger import deep_merge_dicts
 from dagster_airbyte import AirbyteState
+from dagster._utils.merger import deep_merge_dicts
 
 
 def get_sample_connection_json(stream_prefix="", **kwargs):

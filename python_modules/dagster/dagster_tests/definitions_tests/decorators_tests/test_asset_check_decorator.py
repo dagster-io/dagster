@@ -1,40 +1,40 @@
 import re
-from typing import Iterable, NamedTuple, Optional
+from typing import Iterable, Optional, NamedTuple
 
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetCheckSpec,
     AssetKey,
-    AssetSelection,
-    ConfigurableResource,
-    DagsterEventType,
-    DagsterInstance,
-    Definitions,
-    ExecuteInProcessResult,
     IOManager,
+    Definitions,
+    SourceAsset,
     MetadataValue,
     ObserveResult,
     ResourceParam,
-    SourceAsset,
-    _check as check,
+    AssetCheckSpec,
+    AssetSelection,
+    DagsterInstance,
+    AssetCheckResult,
+    DagsterEventType,
+    AssetCheckSeverity,
+    ConfigurableResource,
+    ExecuteInProcessResult,
     asset,
+    _check as check,
     asset_check,
     build_op_context,
     define_asset_job,
     multi_asset_check,
     observable_source_asset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     DagsterInvalidSubsetError,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
 )
-from dagster._core.execution.context.compute import AssetCheckExecutionContext
 from dagster._utils.error import SerializableErrorInfo
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.execution.context.compute import AssetCheckExecutionContext
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 
 def execute_assets_and_checks(

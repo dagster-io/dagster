@@ -1,10 +1,10 @@
-from typing import Optional, Sequence, Type
+from typing import Type, Optional, Sequence
 
 import pandas as pd
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import TableMetadataSet
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from dagster._core.definitions.metadata import TableMetadataSet
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
 
 
 class DuckDBPandasTypeHandler(DbTypeHandler[pd.DataFrame]):

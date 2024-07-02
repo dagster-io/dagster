@@ -1,7 +1,7 @@
 from typing import Optional
 
-import pydantic
 import pytest
+import pydantic
 from dagster._check import CheckError
 from dagster._core.definitions.tags import NamespacedTagSet
 

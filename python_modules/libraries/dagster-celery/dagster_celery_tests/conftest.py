@@ -1,7 +1,7 @@
 import os
-import subprocess
-import tempfile
 import time
+import tempfile
+import subprocess
 from typing import Iterator
 
 import docker

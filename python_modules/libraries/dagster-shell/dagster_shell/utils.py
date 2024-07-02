@@ -20,9 +20,9 @@
 # under the License.
 import os
 import signal
+from typing import Tuple, Mapping, Optional
 from logging import Logger
 from subprocess import PIPE, STDOUT, Popen
-from typing import Mapping, Optional, Tuple
 
 import dagster._check as check
 from dagster._utils import safe_tempfile_path

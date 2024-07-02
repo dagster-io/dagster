@@ -1,19 +1,19 @@
 import pytest
-from dagster import AutoMaterializePolicy, AutoMaterializeRule
+from dagster import AutoMaterializeRule, AutoMaterializePolicy
 from dagster._check import ParameterCheckError
 from dagster._core.definitions.auto_materialize_rule_impls import WaitingOnAssetsRuleEvaluationData
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
-    daily_partitions_def,
-    dynamic_partitions_def,
-    hour_partition_key,
-    hourly_partitions_def,
     one_asset,
-    one_asset_depends_on_two,
-    three_assets_not_subsettable,
-    time_partitions_start_str,
+    hour_partition_key,
     two_partitions_def,
+    daily_partitions_def,
+    hourly_partitions_def,
+    dynamic_partitions_def,
+    one_asset_depends_on_two,
+    time_partitions_start_str,
+    three_assets_not_subsettable,
 )
 from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 

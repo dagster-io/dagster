@@ -2,23 +2,23 @@ import re
 
 import pytest
 from dagster import (
-    __version__ as dagster_version,
-    graph,
-    job,
     op,
+    job,
+    graph,
+    __version__ as dagster_version,
 )
-from dagster._core.test_utils import environ, remove_none_recursively
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
-from dagster_k8s.container_context import K8sContainerContext
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
-    DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     USER_DEFINED_K8S_CONFIG_KEY,
+    DEFAULT_K8S_JOB_TTL_SECONDS_AFTER_FINISHED,
     K8sConfigMergeBehavior,
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
 from dagster_k8s.utils import sanitize_k8s_label
+from dagster._core.test_utils import environ, remove_none_recursively
+from dagster_k8s.container_context import K8sContainerContext
 
 
 def test_job_serialization():

@@ -1,15 +1,15 @@
 from time import time
 
 from dagster import (
-    DagsterRunStatus,
-    JobSelector,
-    RepositorySelector,
     RunRequest,
     SkipReason,
-    job,
+    JobSelector,
+    DagsterRunStatus,
+    RepositorySelector,
     op,
-    run_failure_sensor,
+    job,
     run_status_sensor,
+    run_failure_sensor,
 )
 from dagster._core.definitions.run_request import DagsterRunReaction
 

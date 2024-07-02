@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union, Optional
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra, BaseModel
 
 from .utils import (
     BaseModel as BaseModelWithNullableRequiredFields,

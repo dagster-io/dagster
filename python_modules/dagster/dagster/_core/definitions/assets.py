@@ -1,85 +1,85 @@
-import itertools
 import json
 import warnings
-from collections import defaultdict
-from functools import cached_property
+import itertools
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
+    Set,
     Dict,
+    List,
+    Tuple,
+    Union,
+    Mapping,
+    TypeVar,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
     Optional,
     Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
+    AbstractSet,
     cast,
 )
+from functools import cached_property
+from collections import defaultdict
 
 import dagster._check as check
-from dagster._annotations import experimental_param, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._utils import IHasInternalInit
+from dagster._record import IHaveNew, record, record_custom
+from dagster._core.utils import toposort_flatten
+from dagster._annotations import public, experimental_param
+from dagster._core.errors import (
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
+from dagster._utils.merger import merge_dicts
+from dagster._utils.security import non_secure_md5_hash_str
+from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
+from dagster._core.definitions.utils import (
+    DEFAULT_IO_MANAGER_KEY,
+    normalize_group_name,
+    validate_asset_owner,
+)
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
     SYSTEM_METADATA_KEY_AUTO_OBSERVE_INTERVAL_MINUTES,
     AssetExecutionType,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
 from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
+from dagster._core.definitions.op_selection import get_graph_subset
+from dagster._core.definitions.op_invocation import direct_invocation_result
+from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.op_invocation import direct_invocation_result
-from dagster._core.definitions.op_selection import get_graph_subset
 from dagster._core.definitions.partition_mapping import MultiPartitionMapping
 from dagster._core.definitions.resource_requirement import (
-    ExternalAssetIOManagerRequirement,
-    RequiresResources,
     ResourceAddable,
+    RequiresResources,
     ResourceRequirement,
+    ExternalAssetIOManagerRequirement,
     merge_resource_defs,
 )
-from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.definitions.utils import (
-    DEFAULT_IO_MANAGER_KEY,
-    normalize_group_name,
-    validate_asset_owner,
-)
-from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.utils import toposort_flatten
-from dagster._record import IHaveNew, record, record_custom
-from dagster._utils import IHasInternalInit
-from dagster._utils.merger import merge_dicts
-from dagster._utils.security import non_secure_md5_hash_str
-from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.time_window_partition_mapping import TimeWindowPartitionMapping
 
-from .asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
+from .utils import DEFAULT_GROUP_NAME, validate_tags_strict
 from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from .node_definition import NodeDefinition
-from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
+from .asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
+from .source_asset import SourceAsset
+from .op_definition import OpDefinition
+from .node_definition import NodeDefinition
 from .partition_mapping import (
     PartitionMapping,
     infer_partition_mapping,
     warn_if_partition_mapping_not_builtin,
 )
 from .resource_definition import ResourceDefinition
-from .source_asset import SourceAsset
-from .utils import DEFAULT_GROUP_NAME, validate_tags_strict
 
 if TYPE_CHECKING:
     from .base_asset_graph import AssetKeyOrCheckKey
@@ -728,8 +728,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         owners_by_output_name: Optional[Mapping[str, Sequence[str]]] = None,
     ) -> "AssetsDefinition":
         from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
-            _validate_check_specs_target_relevant_asset_keys,
             create_check_specs_by_output_name,
+            _validate_check_specs_target_relevant_asset_keys,
         )
 
         node_def = check.inst_param(node_def, "node_def", NodeDefinition)

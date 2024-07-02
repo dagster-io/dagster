@@ -1,17 +1,17 @@
 # ruff: noqa: T201
 
 import os
-import subprocess
 import time
 import uuid
+import subprocess
 from contextlib import contextmanager
 
-import dagster._check as check
 import kubernetes
+import dagster._check as check
 from dagster._utils import safe_tempfile_path
 
 from .cluster import ClusterConfig
-from .integration_utils import check_output, which_, within_docker
+from .integration_utils import which_, check_output, within_docker
 
 CLUSTER_INFO_DUMP_DIR = "kind-info-dump"
 

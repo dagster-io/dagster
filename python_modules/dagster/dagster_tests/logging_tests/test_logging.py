@@ -1,32 +1,32 @@
-import json
-import logging
 import re
 import sys
+import json
+import logging
 import threading
-from contextlib import contextmanager
 from functools import partial
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
     DagsterInvalidConfigError,
-    _check as check,
-    execute_job,
-    job,
     op,
-    reconstructable,
+    job,
+    _check as check,
     resource,
+    execute_job,
+    reconstructable,
 )
-from dagster._core.definitions import NodeHandle
+from dagster._loggers import json_console_logger, colored_console_logger, default_system_loggers
+from dagster._utils.test import wrap_op_in_graph_and_execute
 from dagster._core.events import DagsterEvent
-from dagster._core.execution.context.logger import InitLoggerContext
-from dagster._core.execution.plan.objects import StepFailureData
-from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._utils.error import SerializableErrorInfo
+from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions import NodeHandle
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR, DagsterLogManager
 from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test
-from dagster._loggers import colored_console_logger, default_system_loggers, json_console_logger
-from dagster._utils.error import SerializableErrorInfo
-from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.execution.plan.objects import StepFailureData
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.execution.context.logger import InitLoggerContext
 
 REGEX_UUID = r"[a-z-0-9]{8}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{4}\-[a-z-0-9]{12}"
 REGEX_TS = r"\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}"

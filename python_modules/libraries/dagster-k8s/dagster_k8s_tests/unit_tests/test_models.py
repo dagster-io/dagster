@@ -1,7 +1,7 @@
 import re
 
-import kubernetes
 import pytest
+import kubernetes
 from dagster_k8s.models import k8s_model_from_dict, k8s_snake_case_dict
 
 

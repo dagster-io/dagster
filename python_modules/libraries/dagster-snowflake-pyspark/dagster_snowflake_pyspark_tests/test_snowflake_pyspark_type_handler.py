@@ -1,46 +1,46 @@
 import os
 import uuid
+from typing import Any, Mapping, Iterator
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping
 from unittest.mock import patch
 
 import pytest
 from dagster import (
-    AssetExecutionContext,
+    Out,
+    EnvVar,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    EnvVar,
-    IOManagerDefinition,
-    MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    MetadataValue,
+    MultiPartitionKey,
+    IOManagerDefinition,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DynamicPartitionsDefinition,
+    op,
+    job,
     asset,
-    build_input_context,
-    build_output_context,
+    materialize,
     fs_io_manager,
     instance_for_test,
-    job,
-    materialize,
-    op,
+    build_input_context,
+    build_output_context,
 )
-from dagster._core.storage.db_io_manager import TableSlice
+from pyspark.sql import DataFrame
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.resources import SnowflakeResource
+from pyspark.sql.types import LongType, StringType, StructType, StructField
+from pyspark.sql.functions import col, to_date
 from dagster_snowflake_pyspark import (
     SnowflakePySparkIOManager,
     SnowflakePySparkTypeHandler,
     snowflake_pyspark_io_manager,
 )
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, to_date
-from pyspark.sql.types import LongType, StringType, StructField, StructType
+from dagster_snowflake.resources import SnowflakeResource
+from dagster._core.storage.db_io_manager import TableSlice
 
 resource_config = {
     "database": "database_abc",

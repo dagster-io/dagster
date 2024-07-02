@@ -1,15 +1,15 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Type, Union
+from typing import Type, Union, Mapping, Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
+from dagster._core.definitions.input import NoValueSentinel
 from dagster._core.definitions.events import (
     AssetKey,
     CoercibleToAssetKey,
     CoercibleToAssetKeyPrefix,
 )
-from dagster._core.definitions.input import NoValueSentinel
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.types.dagster_type import DagsterType, resolve_dagster_type
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 
 from .partition_mapping import PartitionMapping
 

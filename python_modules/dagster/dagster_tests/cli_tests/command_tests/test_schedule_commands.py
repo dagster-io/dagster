@@ -1,23 +1,23 @@
 import re
 
-import click
 import mock
+import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.schedule import (
-    check_repo_and_scheduler,
     schedule_list_command,
     schedule_logs_command,
-    schedule_restart_command,
-    schedule_start_command,
     schedule_stop_command,
     schedule_wipe_command,
+    schedule_start_command,
+    check_repo_and_scheduler,
+    schedule_restart_command,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalRepository
 from dagster._core.test_utils import environ
+from dagster._core.remote_representation import ExternalRepository
 
-from .test_cli_commands import schedule_command_contexts, scheduler_instance
+from .test_cli_commands import scheduler_instance, schedule_command_contexts
 
 
 @pytest.mark.parametrize("gen_schedule_args", schedule_command_contexts())

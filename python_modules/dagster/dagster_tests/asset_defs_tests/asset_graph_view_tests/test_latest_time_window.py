@@ -2,22 +2,22 @@ from datetime import datetime
 
 from dagster import (
     Definitions,
-    _check as check,
     asset,
+    _check as check,
 )
-from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, AssetSlice
+from dagster._time import create_datetime
+from dagster._core.instance import DagsterInstance
+from dagster._core.definitions.partition import (
+    StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
+)
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.asset_graph_view.asset_graph_view import AssetSlice, AssetGraphView
+from dagster._core.definitions.time_window_partitions import TimeWindow, DailyPartitionsDefinition
 from dagster._core.definitions.multi_dimensional_partitions import (
     MultiPartitionKey,
     MultiPartitionsDefinition,
 )
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-    StaticPartitionsDefinition,
-)
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.instance import DagsterInstance
-from dagster._time import create_datetime
 
 
 def _tw(asset_slice: AssetSlice) -> TimeWindow:

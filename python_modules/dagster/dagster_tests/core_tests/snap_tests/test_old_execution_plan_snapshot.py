@@ -3,9 +3,9 @@ from __future__ import unicode_literals
 import pytest
 from dagster import job
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._serdes.serdes import deserialize_value
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.snap.execution_plan_snapshot import ExecutionPlanSnapshot
-from dagster._serdes.serdes import deserialize_value
 
 OLD_EXECUTION_PLAN_SNAPSHOT = """{
   "__class__": "ExecutionPlanSnapshot",

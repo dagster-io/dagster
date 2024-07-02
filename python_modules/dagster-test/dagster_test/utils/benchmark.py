@@ -1,11 +1,11 @@
 import sys
 import time
+from typing import Any, List, TextIO, Mapping, Iterator, Optional
 from contextlib import contextmanager
 from dataclasses import dataclass
-from typing import Any, Iterator, List, Mapping, Optional, TextIO
 
-from rich.console import Console
 from rich.table import Table
+from rich.console import Console
 from typing_extensions import Self
 
 

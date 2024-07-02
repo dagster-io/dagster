@@ -1,12 +1,12 @@
 import os
 
-from dagster import Field, In, String, graph, op, resource
-from pyspark.sql import SparkSession, Window
+from dagster import In, Field, String, op, graph, resource
+from pyspark.sql import Window, SparkSession
 from pyspark.sql.functions import (
     col,
-    concat,
     lit,
     max as pyspark_max,
+    concat,
 )
 
 

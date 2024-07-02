@@ -7,7 +7,7 @@ parse_dataproc_configs.py \
 
 """
 
-from dagster import Bool, Field, Int, Permissive, Shape, String
+from dagster import Int, Bool, Field, Shape, String, Permissive
 
 
 def define_dataproc_job_config():

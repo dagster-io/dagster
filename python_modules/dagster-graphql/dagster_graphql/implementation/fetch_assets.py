@@ -1,19 +1,19 @@
 import datetime
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Iterator,
+    Optional,
+    Sequence,
+    AbstractSet,
     cast,
 )
+from collections import defaultdict
 
 import dagster._seven as seven
 from dagster import (
@@ -22,53 +22,53 @@ from dagster import (
     MultiPartitionsDefinition,
     _check as check,
 )
-from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
+from dagster._core.events import ASSET_EVENTS
+from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.event_api import AssetRecordsFilter
+from dagster._core.events.log import EventLogEntry
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.definitions.data_time import CachingDataTimeResolver
 from dagster._core.definitions.partition import (
-    CachingDynamicPartitionsLoader,
-    PartitionsDefinition,
     PartitionsSubset,
+    PartitionsDefinition,
+    CachingDynamicPartitionsLoader,
 )
+from dagster._core.definitions.asset_graph_differ import AssetGraphDiffer
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.storage.partition_status_cache import (
+    get_last_planned_storage_id,
+    is_cacheable_partition_type,
+    get_validated_partition_keys,
+    get_materialized_multipartitions,
+    get_and_update_asset_status_cache_value,
+    build_failed_and_in_progress_partition_subset,
+)
+from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
+from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
     PartitionRangeStatus,
-    TimeWindowPartitionsDefinition,
     TimeWindowPartitionsSubset,
+    BaseTimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
     fetch_flattened_time_window_ranges,
 )
-from dagster._core.event_api import AssetRecordsFilter
-from dagster._core.events import ASSET_EVENTS
-from dagster._core.events.log import EventLogEntry
-from dagster._core.instance import DynamicPartitionsStore
 from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalRepository
 from dagster._core.remote_representation.external_data import ExternalAssetNode
-from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
-from dagster._core.storage.event_log.sql_event_log import get_max_event_records_limit
-from dagster._core.storage.partition_status_cache import (
-    build_failed_and_in_progress_partition_subset,
-    get_and_update_asset_status_cache_value,
-    get_last_planned_storage_id,
-    get_materialized_multipartitions,
-    get_validated_partition_keys,
-    is_cacheable_partition_type,
-)
-from dagster._core.workspace.context import WorkspaceRequestContext
 
-from dagster_graphql.implementation.loader import CrossRepoAssetDependedByLoader, StaleStatusLoader
+from dagster_graphql.implementation.loader import StaleStatusLoader, CrossRepoAssetDependedByLoader
 
 if TYPE_CHECKING:
-    from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
+    from ..schema.util import ResolveInfo
     from ..schema.errors import GrapheneAssetNotFoundError
+    from ..schema.asset_graph import GrapheneAssetNode, GrapheneAssetNodeDefinitionCollision
+    from ..schema.roots.assets import GrapheneAssetConnection
     from ..schema.freshness_policy import GrapheneAssetFreshnessInfo
     from ..schema.pipelines.pipeline import (
         GrapheneAsset,
-        GrapheneDefaultPartitionStatuses,
-        GrapheneMultiPartitionStatuses,
         GrapheneTimePartitionStatuses,
+        GrapheneMultiPartitionStatuses,
+        GrapheneDefaultPartitionStatuses,
     )
-    from ..schema.roots.assets import GrapheneAssetConnection
-    from ..schema.util import ResolveInfo
 
 
 def _normalize_asset_cursor_str(cursor_string: Optional[str]) -> Optional[str]:
@@ -91,8 +91,8 @@ def get_assets(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> "GrapheneAssetConnection":
-    from ..schema.pipelines.pipeline import GrapheneAsset
     from ..schema.roots.assets import GrapheneAssetConnection
+    from ..schema.pipelines.pipeline import GrapheneAsset
 
     instance = graphene_info.context.instance
 
@@ -163,8 +163,8 @@ def get_additional_required_keys(
 def get_asset_node_definition_collisions(
     graphene_info: "ResolveInfo", asset_keys: AbstractSet[AssetKey]
 ) -> List["GrapheneAssetNodeDefinitionCollision"]:
-    from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
     from ..schema.external import GrapheneRepository
+    from ..schema.asset_graph import GrapheneAssetNodeDefinitionCollision
 
     repos: Dict[AssetKey, List[GrapheneRepository]] = defaultdict(list)
 
@@ -499,9 +499,9 @@ def build_partition_statuses(
     "GrapheneMultiPartitionStatuses",
 ]:
     from ..schema.pipelines.pipeline import (
+        GrapheneTimePartitionStatuses,
         GrapheneDefaultPartitionStatuses,
         GrapheneTimePartitionRangeStatus,
-        GrapheneTimePartitionStatuses,
     )
 
     if (
@@ -589,8 +589,8 @@ def get_2d_run_length_encoded_partitions(
     partitions_def: MultiPartitionsDefinition,
 ) -> "GrapheneMultiPartitionStatuses":
     from ..schema.pipelines.pipeline import (
-        GrapheneMultiPartitionRangeStatuses,
         GrapheneMultiPartitionStatuses,
+        GrapheneMultiPartitionRangeStatuses,
     )
 
     check.invariant(

@@ -1,11 +1,11 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Union, Callable, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._core.remote_representation import ExternalRepository
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey

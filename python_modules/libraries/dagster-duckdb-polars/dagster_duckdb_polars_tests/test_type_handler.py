@@ -4,21 +4,21 @@ import duckdb
 import polars as pl
 import pytest
 from dagster import (
-    AssetExecutionContext,
+    Out,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionKey,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DynamicPartitionsDefinition,
+    op,
     asset,
     graph,
-    instance_for_test,
     materialize,
-    op,
+    instance_for_test,
 )
 from dagster._check import CheckError
 from dagster_duckdb_polars import DuckDBPolarsIOManager, duckdb_polars_io_manager

@@ -3,9 +3,9 @@ import re
 import shlex
 from typing import List, Optional
 
-from dagster_buildkite.python_version import AvailablePythonVersion
-from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
 from dagster_buildkite.utils import CommandStep, make_buildkite_section_header
+from dagster_buildkite.step_builder import BuildkiteQueue, CommandStepBuilder
+from dagster_buildkite.python_version import AvailablePythonVersion
 
 _COMMAND_TYPE_TO_EMOJI_MAP = {
     "pytest": ":pytest:",

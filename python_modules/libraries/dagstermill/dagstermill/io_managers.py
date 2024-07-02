@@ -1,21 +1,21 @@
 import os
-from pathlib import Path
 from typing import Any, List, Optional, Sequence
+from pathlib import Path
 
 import dagster._check as check
 from dagster import (
     AssetKey,
+    IOManager,
+    InitResourceContext,
     AssetMaterialization,
     ConfigurableIOManagerFactory,
-    InitResourceContext,
-    IOManager,
 )
+from pydantic import Field
+from dagster._utils import mkdir_p
+from dagster._core.storage.io_manager import io_manager, dagster_maintained_io_manager
 from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
-from dagster._core.storage.io_manager import dagster_maintained_io_manager, io_manager
-from dagster._utils import mkdir_p
-from pydantic import Field
 
 from dagstermill.factory import _clean_path_for_windows
 

@@ -1,22 +1,22 @@
-import csv
 import io
 import os
+import csv
 import time
 import uuid
 from typing import Optional
 from urllib.parse import urlparse
 
 import boto3
-from botocore.stub import Stubber
 from dagster import (
     ConfigurableResource,
     _check as check,
     resource,
 )
-from dagster._annotations import deprecated
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.execution.context.init import InitResourceContext
 from pydantic import Field
+from botocore.stub import Stubber
+from dagster._annotations import deprecated
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 class AthenaError(Exception):

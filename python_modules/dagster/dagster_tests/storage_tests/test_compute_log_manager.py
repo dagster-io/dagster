@@ -1,30 +1,30 @@
 import tempfile
+from typing import IO, Optional, Sequence, Generator
 from contextlib import contextmanager
-from typing import IO, Generator, Optional, Sequence
 
-import dagster._check as check
 import pytest
-from dagster import job, op
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+import dagster._check as check
+from dagster import op, job
+from dagster._core.instance import InstanceRef, InstanceType, DagsterInstance
 from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import SqliteRunStorage
 from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.compute_log_manager import (
+    MAX_BYTES_FILE_READ,
+    ComputeIOType,
+    ComputeLogManager,
+    ComputeLogFileData,
+)
 from dagster._core.storage.captured_log_manager import (
-    CapturedLogContext,
     CapturedLogData,
+    CapturedLogContext,
     CapturedLogManager,
     CapturedLogMetadata,
     CapturedLogSubscription,
 )
-from dagster._core.storage.compute_log_manager import (
-    MAX_BYTES_FILE_READ,
-    ComputeIOType,
-    ComputeLogFileData,
-    ComputeLogManager,
-)
-from dagster._core.storage.event_log import SqliteEventLogStorage
-from dagster._core.storage.root import LocalArtifactStorage
-from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ, instance_for_test
 
 
 def test_compute_log_manager_instance():

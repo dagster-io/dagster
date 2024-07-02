@@ -1,62 +1,62 @@
 import json
-from collections import defaultdict
-from inspect import isfunction
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
+    Set,
     Dict,
-    Iterable,
     List,
+    Union,
     Mapping,
+    Callable,
+    Iterable,
     Optional,
     Sequence,
-    Set,
-    Union,
     cast,
 )
+from inspect import isfunction
+from collections import defaultdict
 
 import dagster._check as check
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._utils.warnings import deprecation_warning
 from dagster._config.pythonic_config import (
-    ConfigurableIOManagerFactoryResourceDefinition,
-    ConfigurableResourceFactoryResourceDefinition,
     ResourceWithKeyMapping,
+    ConfigurableResourceFactoryResourceDefinition,
+    ConfigurableIOManagerFactoryResourceDefinition,
 )
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import get_base_asset_jobs, is_base_asset_job_name
-from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
-)
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
     PartitionsDefinition,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
 )
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.schedule_definition import ScheduleDefinition
-from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._utils.warnings import deprecation_warning
+from dagster._core.definitions.auto_materialize_sensor_definition import (
+    AutoMaterializeSensorDefinition,
+)
 
 from .repository_data import CachingRepositoryData
 from .valid_definitions import VALID_REPOSITORY_DATA_DICT_KEYS, RepositoryListDefinition
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_check_spec import AssetCheckKey
     from dagster._core.definitions.events import AssetKey
+    from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 # We throw an error if the user attaches an instance of a custom `PartitionsDefinition` subclass to
 # a definition-- we can't support custom PartitionsDefinition subclasses due to us needing to load

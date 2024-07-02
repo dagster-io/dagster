@@ -1,15 +1,15 @@
 # ruff: noqa: T201
 
-import glob
 import os
-import pathlib
 import re
+import glob
 import signal
+import pathlib
 import subprocess
-from contextlib import contextmanager
-from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Dict, Optional
+from tempfile import TemporaryDirectory
+from contextlib import contextmanager
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By

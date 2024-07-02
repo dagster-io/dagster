@@ -1,16 +1,16 @@
-import logging
 import os
+import logging
+from typing import Union, Optional, Sequence
 from pathlib import Path
-from typing import Optional, Sequence, Union
 
 import yaml
-from dagster._annotations import public
-from dagster._record import IHaveNew, record_custom
 from dagster._utils import run_with_concurrent_update_guard
+from dagster._record import IHaveNew, record_custom
+from dagster._annotations import public
 
 from .errors import (
-    DagsterDbtManifestNotFoundError,
     DagsterDbtProjectNotFoundError,
+    DagsterDbtManifestNotFoundError,
     DagsterDbtProjectYmlFileNotFoundError,
 )
 

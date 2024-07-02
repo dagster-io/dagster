@@ -1,22 +1,22 @@
 """Internal py2/3 compatibility library. A little more than six."""
 
-import inspect
 import os
-import shlex
 import sys
 import time
+import shlex
+import inspect
 from types import ModuleType
-from typing import Any, Callable, List, Sequence, Type
+from typing import Any, List, Type, Callable, Sequence
 
 from typing_extensions import TypeGuard
 
-from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 from .json import (
     JSONDecodeError as JSONDecodeError,
     dump as dump,
     dumps as dumps,
 )
 from .temp_dir import get_system_temp_directory as get_system_temp_directory
+from .compat.pendulum import PendulumDateTime as PendulumDateTime  # re-exported
 
 IS_WINDOWS = os.name == "nt"
 IS_PYTHON_3_12 = (sys.version_info[0], sys.version_info[1]) == (3, 12)

@@ -1,27 +1,27 @@
 from collections import namedtuple
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._config import (
-    ConfigSchemaSnapshot,
     EvaluationError as DagsterEvaluationError,
-    EvaluationStackListItemEntry,
-    EvaluationStackMapKeyEntry,
-    EvaluationStackMapValueEntry,
+    ConfigSchemaSnapshot,
+    MissingFieldErrorData,
+    SelectorTypeErrorData,
+    MissingFieldsErrorData,
     EvaluationStackPathEntry,
     FieldNotDefinedErrorData,
-    FieldsNotDefinedErrorData,
-    MissingFieldErrorData,
-    MissingFieldsErrorData,
     RuntimeMismatchErrorData,
-    SelectorTypeErrorData,
+    FieldsNotDefinedErrorData,
+    EvaluationStackMapKeyEntry,
+    EvaluationStackListItemEntry,
+    EvaluationStackMapValueEntry,
 )
-from dagster._core.remote_representation.represented import RepresentedJob
 from dagster._utils.error import SerializableErrorInfo
 from graphene.types.generic import GenericScalar
+from dagster._core.remote_representation.represented import RepresentedJob
 
-from ..config_types import GrapheneConfigTypeField
 from ..util import non_null_list
+from ..config_types import GrapheneConfigTypeField
 
 
 class GrapheneEvaluationStackListItemEntry(graphene.ObjectType):

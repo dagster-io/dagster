@@ -1,44 +1,44 @@
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Dict,
-    Iterator,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
+    TypeVar,
+    Iterator,
     Optional,
     Sequence,
-    Tuple,
-    TypeVar,
-    Union,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
 from typing_extensions import TypeAlias
 
+from dagster._utils import check
+from dagster._config import ALL_CONFIG_BUILTINS, Field, Shape, Selector, ConfigType, Permissive
 from dagster._annotations import public
-from dagster._config import ALL_CONFIG_BUILTINS, ConfigType, Field, Permissive, Selector, Shape
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.input import InputDefinition
+from dagster._core.definitions.output import OutputDefinition
+from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
+from dagster._core.storage.input_manager import IInputManagerDefinition
+from dagster._core.storage.output_manager import IOutputManagerDefinition
 from dagster._core.definitions.asset_layer import AssetLayer
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,
-    execute_in_process_executor,
     in_process_executor,
+    execute_in_process_executor,
 )
-from dagster._core.definitions.input import InputDefinition
-from dagster._core.definitions.output import OutputDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.storage.input_manager import IInputManagerDefinition
-from dagster._core.storage.output_manager import IOutputManagerDefinition
-from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
-from dagster._utils import check
 
+from .dependency import Node, OpNode, GraphNode, NodeInput, NodeHandle, DependencyStructure
 from .configurable import ConfigurableDefinition
-from .definition_config_schema import IDefinitionConfigSchema
-from .dependency import DependencyStructure, GraphNode, Node, NodeHandle, NodeInput, OpNode
+from .op_definition import OpDefinition, NodeDefinition
 from .graph_definition import GraphDefinition
 from .logger_definition import LoggerDefinition
-from .op_definition import NodeDefinition, OpDefinition
 from .resource_definition import ResourceDefinition
+from .definition_config_schema import IDefinitionConfigSchema
 
 if TYPE_CHECKING:
     from .assets import AssetsDefinition

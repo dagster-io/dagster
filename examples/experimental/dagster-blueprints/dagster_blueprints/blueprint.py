@@ -1,24 +1,24 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, Mapping, NamedTuple, Optional, Union
+from typing import Any, Dict, Union, Mapping, Iterable, Optional, NamedTuple
 
 from dagster import _check as check
+from dagster._model import DagsterModel
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.executor.base import Executor
+from dagster._utils.source_position import HasSourcePositionAndKeyPath
+from dagster._core.definitions.assets import SourceAsset, AssetsDefinition
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.schedule_definition import ScheduleDefinition
 from dagster._core.definitions.partitioned_schedule import (
     UnresolvedPartitionedAssetScheduleDefinition,
 )
-from dagster._core.definitions.schedule_definition import ScheduleDefinition
-from dagster._core.definitions.sensor_definition import SensorDefinition
 from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.executor.base import Executor
-from dagster._model import DagsterModel
-from dagster._utils.source_position import HasSourcePositionAndKeyPath
 
 
 class DagsterBuildDefinitionsFromConfigError(Exception):

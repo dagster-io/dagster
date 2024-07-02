@@ -1,30 +1,30 @@
+import sys
 import copy
 import logging
-import logging.config
-import sys
-import traceback
 import warnings
+import traceback
+import logging.config
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
+    Union,
     Mapping,
-    NamedTuple,
+    Callable,
     Optional,
     Sequence,
-    Union,
+    NamedTuple,
 )
 
-import coloredlogs
 import structlog
+import coloredlogs
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.utils import coerce_valid_log_level
 from dagster._annotations import deprecated
 from dagster._core.definitions.logger_definition import LoggerDefinition, logger
-from dagster._core.utils import coerce_valid_log_level
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.logger import InitLoggerContext

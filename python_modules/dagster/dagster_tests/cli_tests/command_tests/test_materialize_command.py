@@ -1,10 +1,10 @@
 from typing import Optional
 
-from click.testing import CliRunner
 from dagster import AssetKey
+from click.testing import CliRunner
+from dagster._utils import file_relative_path
 from dagster._cli.asset import asset_materialize_command
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path
 
 
 def invoke_materialize(select: str, partition: Optional[str] = None):

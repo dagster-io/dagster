@@ -1,6 +1,6 @@
 from typing import Dict, TypeVar
 
-from dagster import job, op
+from dagster import op, job
 
 T = TypeVar("T")
 

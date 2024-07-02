@@ -1,10 +1,10 @@
 import pytest
-from dagster import Any, Enum, EnumValue, Field, Noneable, Permissive, String
+from dagster import Any, Enum, Field, String, Noneable, EnumValue, Permissive
 from dagster._check import CheckError, ParameterCheckError
 from dagster._config import (
+    Selector,
     ConfigType,
     ConfigTypeKind,
-    Selector,
     post_process_config,
     resolve_to_config_type,
 )

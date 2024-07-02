@@ -1,4 +1,4 @@
-from typing import Any, Literal, Tuple, Type, Union
+from typing import Any, Type, Tuple, Union, Literal
 
 from typing_extensions import (
     Literal as ExtLiteral,

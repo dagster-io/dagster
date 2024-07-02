@@ -1,6 +1,6 @@
 import re
-import subprocess
 import warnings
+import subprocess
 
 import pytest
 

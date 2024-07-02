@@ -1,18 +1,18 @@
 import subprocess
 
 import dagster._check as check
-from dagster import OpExecutionContext, RetryRequested, executor, job, op, reconstructable
+from dagster import RetryRequested, OpExecutionContext, op, job, executor, reconstructable
 from dagster._config import Permissive
-from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import instance_for_test
 from dagster._core.execution.api import execute_job
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating import (
+    StepHandler,
     CheckStepHealthResult,
     StepDelegatingExecutor,
-    StepHandler,
 )
-from dagster._core.test_utils import instance_for_test
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 
 
 class TestStepHandler(StepHandler):

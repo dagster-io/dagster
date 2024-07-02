@@ -8,22 +8,22 @@ from dagster import (
     DagsterInvariantViolationError,
     __version__ as dagster_version,
 )
-from dagster._cli.workspace.cli_target import (
-    get_code_location_from_kwargs,
-    get_external_repository_from_code_location,
-    get_external_repository_from_kwargs,
-    repository_target_argument,
-)
-from dagster._core.definitions.run_request import InstigatorType
+from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._core.instance import DagsterInstance
+from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster._cli.workspace.cli_target import (
+    repository_target_argument,
+    get_code_location_from_kwargs,
+    get_external_repository_from_kwargs,
+    get_external_repository_from_code_location,
+)
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
 )
-from dagster._utils.error import serializable_error_info_from_exc_info
-from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster._core.definitions.run_request import InstigatorType
 
 from .utils import get_instance_for_cli
 

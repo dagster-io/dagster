@@ -1,35 +1,35 @@
-from typing import AbstractSet, Any, Callable, Iterable, Mapping, Optional, Sequence, Set, Union
+from typing import Any, Set, Union, Mapping, Callable, Iterable, Optional, Sequence, AbstractSet
 
 from typing_extensions import TypeAlias
 
 from dagster import _check as check
 from dagster._config import UserConfigSchema
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_dep import CoercibleToAssetDep
-from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.asset_in import AssetIn
+from dagster._core.definitions.asset_dep import CoercibleToAssetDep
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import DEFAULT_OUTPUT
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.execution.build_resources import wrap_resources_for_execution
-from dagster._core.storage.tags import COMPUTE_KIND_TAG
-from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
+from .op_decorator import _Op
 from .asset_decorator import make_asset_deps
 from .decorator_assets_definition_builder import (
+    NamedIn,
     DecoratorAssetsDefinitionBuilder,
     DecoratorAssetsDefinitionBuilderArgs,
-    NamedIn,
     build_named_ins,
     compute_required_resource_keys,
     get_function_params_without_context_or_config_or_resources,
 )
-from .op_decorator import _Op
 
 AssetCheckFunctionReturn: TypeAlias = AssetCheckResult
 AssetCheckFunction: TypeAlias = Callable[..., AssetCheckFunctionReturn]

@@ -1,10 +1,10 @@
 from copy import deepcopy
-from typing import Any, Callable, Iterable, Mapping, Optional
+from typing import Any, Mapping, Callable, Iterable, Optional
 
 from dagster import (
-    AssetsDefinition,
     AssetSpec,
     BackfillPolicy,
+    AssetsDefinition,
     PartitionsDefinition,
     _check as check,
     multi_asset,
@@ -12,8 +12,8 @@ from dagster import (
 from dagster._utils.merger import deep_merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 
-from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
+from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 
 METADATA_KEY_TRANSLATOR = "dagster_embedded_elt/dagster_sling_translator"
 METADATA_KEY_REPLICATION_CONFIG = "dagster_embedded_elt/sling_replication_config"

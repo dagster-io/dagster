@@ -1,4 +1,4 @@
-from dagster import InputContext, IOManager, OutputContext, io_manager, job, op
+from dagster import IOManager, InputContext, OutputContext, op, job, io_manager
 
 
 def connect():

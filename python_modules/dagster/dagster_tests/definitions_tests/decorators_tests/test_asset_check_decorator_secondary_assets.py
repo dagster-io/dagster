@@ -2,15 +2,15 @@ import re
 
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetDep,
     AssetIn,
+    AssetDep,
+    AssetCheckResult,
     DagsterInvalidDefinitionError,
     asset,
     asset_check,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 from .test_asset_check_decorator import execute_assets_and_checks
 

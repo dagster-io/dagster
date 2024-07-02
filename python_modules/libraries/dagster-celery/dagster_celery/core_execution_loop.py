@@ -5,19 +5,19 @@ import dagster._check as check
 from celery.exceptions import TaskRevokedError
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEvent, EngineEventData
-from dagster._core.execution.context.system import PlanOrchestrationContext
-from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster._core.storage.tags import PRIORITY_TAG
-from dagster._serdes.serdes import deserialize_value
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._serdes.serdes import deserialize_value
+from dagster._core.storage.tags import PRIORITY_TAG
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.context.system import PlanOrchestrationContext
 
-from .defaults import task_default_priority, task_default_queue
-from .make_app import make_app
 from .tags import (
     DAGSTER_CELERY_QUEUE_TAG,
     DAGSTER_CELERY_RUN_PRIORITY_TAG,
     DAGSTER_CELERY_STEP_PRIORITY_TAG,
 )
+from .defaults import task_default_queue, task_default_priority
+from .make_app import make_app
 
 TICK_SECONDS = 1
 DELEGATE_MARKER = "celery_queue_wait"

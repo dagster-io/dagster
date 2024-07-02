@@ -1,12 +1,12 @@
 import dagster._check as check
-from dagster._builtins import Bool, Float, Int, String
+from dagster._builtins import Int, Bool, Float, String
 
+from .python_set import PythonSet
+from .python_dict import PythonDict
 from .dagster_type import (
     Any as RuntimeAny,
     List,
 )
-from .python_dict import PythonDict
-from .python_set import PythonSet
 from .python_tuple import PythonTuple
 
 # Type-ignores below are due to mypy bug tracking names imported from module's named "types".

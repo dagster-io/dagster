@@ -1,11 +1,11 @@
+from typing import Type, Tuple
 from inspect import Parameter, signature
-from typing import Tuple, Type
 
-import dagster as dagster
 import pytest
-from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
+import dagster as dagster
 from dagster._utils import IHasInternalInit
 from dagster._utils.test import get_all_direct_subclasses_of_marker
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
 INTERNAL_INIT_SUBCLASSES = get_all_direct_subclasses_of_marker(IHasInternalInit)
 

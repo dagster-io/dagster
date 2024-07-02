@@ -1,28 +1,28 @@
 import os
 from datetime import datetime
 
-import pyarrow as pa
 import pytest
+import pyarrow as pa
 from dagster import (
-    AssetExecutionContext,
+    Out,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
     MultiPartitionKey,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    Out,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DynamicPartitionsDefinition,
+    op,
     asset,
     graph,
-    instance_for_test,
     materialize,
-    op,
+    instance_for_test,
 )
-from dagster._check import CheckError
-from dagster_deltalake import DELTA_DATE_FORMAT, DeltaLakePyarrowIOManager, LocalConfig
 from deltalake import DeltaTable
+from dagster._check import CheckError
+from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig, DeltaLakePyarrowIOManager
 
 
 @pytest.fixture

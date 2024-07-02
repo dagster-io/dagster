@@ -1,33 +1,33 @@
 import inspect
-from typing import TYPE_CHECKING, Any, Dict, Mapping, NamedTuple, Set, Tuple, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Set, Dict, Tuple, Union, Mapping, TypeVar, NamedTuple, cast
 
 import dagster._check as check
-from dagster._core.decorator_utils import get_function_params
-from dagster._core.definitions.asset_check_result import AssetCheckResult
 from dagster._core.errors import (
+    DagsterTypeCheckDidNotPass,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
 )
+from dagster._core.decorator_utils import get_function_params
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
 from .events import (
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    DynamicOutput,
-    ExpectationResult,
     Output,
+    AssetKey,
+    DynamicOutput,
+    AssetObservation,
+    ExpectationResult,
+    AssetMaterialization,
 )
-from .output import DynamicOutputDefinition, OutputDefinition
+from .output import OutputDefinition, DynamicOutputDefinition
 from .result import AssetResult
 
 if TYPE_CHECKING:
-    from ..execution.context.compute import OpExecutionContext
-    from ..execution.context.invocation import BaseDirectExecutionContext
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
+    from .decorators.op_decorator import DecoratedOpFunction
+    from ..execution.context.compute import OpExecutionContext
+    from ..execution.context.invocation import BaseDirectExecutionContext
 
 T = TypeVar("T")
 
@@ -114,11 +114,11 @@ def direct_invocation_result(
         build_op_context,
     )
 
-    from ..execution.plan.compute_generator import invoke_compute_fn
     from .assets import AssetsDefinition
     from .composition import PendingNodeInvocation
-    from .decorators.op_decorator import DecoratedOpFunction
     from .op_definition import OpDefinition
+    from .decorators.op_decorator import DecoratedOpFunction
+    from ..execution.plan.compute_generator import invoke_compute_fn
 
     if isinstance(def_or_invocation, OpDefinition):
         op_def = def_or_invocation

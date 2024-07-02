@@ -1,6 +1,6 @@
 from dagster import (
-    InputContext,
     IOManager,
+    InputContext,
     OutputContext,
     build_input_context,
     build_output_context,

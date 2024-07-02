@@ -3,11 +3,11 @@
 import json
 import random
 import string
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 
 import cloud_service  # type: ignore
-from dagster_pipes import PipesContextData, PipesParams
+from dagster_pipes import PipesParams, PipesContextData
 
 from dagster import PipesContextInjector
 

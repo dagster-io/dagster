@@ -1,7 +1,7 @@
-import dagster._check as check
 import graphene
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
+import dagster._check as check
 from dagster._time import get_current_datetime
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
 
 class GrapheneAssetFreshnessInfo(graphene.ObjectType):

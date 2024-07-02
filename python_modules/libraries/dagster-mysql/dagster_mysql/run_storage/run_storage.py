@@ -1,37 +1,37 @@
-from typing import ContextManager, Mapping, Optional, cast
+from typing import Mapping, Optional, ContextManager, cast
 
-import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
+import dagster._check as check
 import sqlalchemy.pool as db_pool
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.storage.config import MySqlStorageConfig, mysql_config
-from dagster._core.storage.runs import (
-    DaemonHeartbeatsTable,
-    InstanceInfo,
-    RunStorageSqlMetadata,
-    SqlRunStorage,
-)
-from dagster._core.storage.runs.schema import KeyValueStoreTable
+import sqlalchemy.dialects as db_dialects
+from dagster._utils import utc_datetime_from_timestamp
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from sqlalchemy.engine import Connection
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._core.storage.sql import (
     AlembicVersion,
-    check_alembic_revision,
     create_engine,
-    run_alembic_upgrade,
     stamp_alembic_rev,
+    run_alembic_upgrade,
+    check_alembic_revision,
 )
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from dagster._utils import utc_datetime_from_timestamp
-from sqlalchemy.engine import Connection
+from dagster._core.storage.runs import (
+    InstanceInfo,
+    SqlRunStorage,
+    DaemonHeartbeatsTable,
+    RunStorageSqlMetadata,
+)
+from dagster._core.storage.config import MySqlStorageConfig, mysql_config
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.runs.schema import KeyValueStoreTable
 
 from ..utils import (
-    create_mysql_connection,
     mysql_alembic_config,
     mysql_isolation_level,
     mysql_url_from_config,
-    retry_mysql_connection_fn,
+    create_mysql_connection,
     retry_mysql_creation_fn,
+    retry_mysql_connection_fn,
 )
 
 MINIMUM_MYSQL_BUCKET_VERSION = "8.0.0"

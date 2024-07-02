@@ -1,85 +1,85 @@
-import contextlib
+import os
+import sys
+import json
+import random
+import logging
 import datetime
 import itertools
-import json
-import logging
-import os
-import random
-import sys
+import contextlib
 from typing import (
-    AbstractSet,
-    Iterable,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
 )
 
-import dagster._check as check
 import mock
 import pytest
+import dagster._check as check
 from dagster import (
+    Field,
+    Output,
     AssetIn,
+    Nothing,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
+    RunRequest,
+    DataVersion,
+    SourceAsset,
     AssetSelection,
     DagsterInstance,
-    DataVersion,
-    Field,
-    Nothing,
-    Output,
+    AssetsDefinition,
     PartitionMapping,
     PartitionsDefinition,
-    RunRequest,
-    SourceAsset,
     asset,
-    materialize_to_memory,
-    multi_asset,
-    observable_source_asset,
     repository,
+    multi_asset,
+    materialize_to_memory,
+    observable_source_asset,
 )
+from dagster._time import get_current_datetime
+from dagster._utils import SingleInstigatorDebugCrashFlags
+from dagster._core.events import DagsterEvent, DagsterEventType, AssetMaterializationPlannedData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.test_utils import (
+    InProcessTestWorkspaceLoadTarget,
+    freeze_time,
+    create_test_daemon_workspace_context,
+)
+from dagster._daemon.asset_daemon import AssetDaemon
+from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.definitions.observe import observe
+from dagster._core.storage.dagster_run import DagsterRun
+from dagster._core.definitions.partition import PartitionsSubset
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.data_version import DataVersionsByPartition
+from dagster._core.execution.asset_backfill import AssetBackfillData
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_daemon_context import (
     AssetDaemonContext,
     get_implicit_auto_materialize_policy,
 )
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeDecisionType,
     AutoMaterializeRuleEvaluation,
     AutoMaterializeRuleEvaluationData,
 )
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.data_version import DataVersionsByPartition
-from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import PartitionsSubset
-from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.events import AssetMaterializationPlannedData, DagsterEvent, DagsterEventType
-from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.asset_backfill import AssetBackfillData
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import (
-    InProcessTestWorkspaceLoadTarget,
-    create_test_daemon_workspace_context,
-    freeze_time,
-)
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._daemon.asset_daemon import AssetDaemon
-from dagster._time import get_current_datetime
-from dagster._utils import SingleInstigatorDebugCrashFlags
 
 
 class RunSpec(NamedTuple):

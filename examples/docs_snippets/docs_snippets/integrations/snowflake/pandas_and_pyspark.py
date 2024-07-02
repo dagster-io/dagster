@@ -13,14 +13,14 @@ def rose_dataset():
 
 # start_example
 
-from typing import Optional, Type
+from typing import Type, Optional
 
 import pandas as pd
 from dagster_snowflake import SnowflakeIOManager
 from dagster_snowflake_pandas import SnowflakePandasTypeHandler
 from dagster_snowflake_pyspark import SnowflakePySparkTypeHandler
 
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 
 class SnowflakePandasPySparkIOManager(SnowflakeIOManager):

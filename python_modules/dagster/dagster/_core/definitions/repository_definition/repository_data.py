@@ -2,30 +2,30 @@ from abc import ABC, abstractmethod
 from types import FunctionType
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
-    Callable,
     Dict,
+    Union,
     Mapping,
+    TypeVar,
+    Callable,
     Optional,
     Sequence,
-    TypeVar,
-    Union,
+    AbstractSet,
 )
 
 import dagster._check as check
 from dagster._annotations import public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
+from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.executor_definition import ExecutorDefinition
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.schedule_definition import ScheduleDefinition
-from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .caching_index import CacheingDefinitionIndex
 from .valid_definitions import RepositoryListDefinition

@@ -1,4 +1,4 @@
-from dagster import Definitions, graph, job, op
+from dagster import Definitions, op, job, graph
 from dagster_graphql import DagsterGraphQLClient
 
 

@@ -10,7 +10,7 @@ def iris_dataset():
 
 from dagster_snowflake import SnowflakeResource
 
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 defs = Definitions(
     assets=[iris_dataset],
@@ -32,7 +32,7 @@ defs = Definitions(
 
 from dagster_snowflake import SnowflakeResource
 
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 defs = Definitions(
     assets=[iris_dataset],

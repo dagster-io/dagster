@@ -4,12 +4,12 @@ from enum import Enum as PyEnum
 from dagster import Enum, EnumValue
 from dagster._config import ConfigScalar, ConfigScalarKind, PostProcessingError
 from google.cloud.bigquery.job import (
-    CreateDisposition,
     Encoding,
-    QueryPriority,
-    SchemaUpdateOption,
     SourceFormat,
+    QueryPriority,
     WriteDisposition,
+    CreateDisposition,
+    SchemaUpdateOption,
 )
 
 

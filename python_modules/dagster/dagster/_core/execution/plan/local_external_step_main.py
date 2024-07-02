@@ -1,15 +1,15 @@
 import os
-import pickle
 import sys
+import pickle
 from typing import TYPE_CHECKING, List
 
+from dagster._serdes import serialize_value
+from dagster._core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
-    external_instance_from_step_run_ref,
     run_step_from_ref,
+    external_instance_from_step_run_ref,
 )
-from dagster._core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster._serdes import serialize_value
 
 if TYPE_CHECKING:
     from dagster._core.events.log import EventLogEntry

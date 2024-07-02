@@ -3,12 +3,12 @@ import re
 import pytest
 
 from dagster import (
-    AssetMaterialization,
     InputContext,
     OutputContext,
+    AssetMaterialization,
+    resource,
     build_input_context,
     build_output_context,
-    resource,
 )
 from dagster._core.errors import DagsterInvariantViolationError
 

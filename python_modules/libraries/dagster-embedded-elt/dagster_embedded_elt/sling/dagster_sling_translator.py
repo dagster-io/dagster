@@ -1,8 +1,8 @@
 import re
+from typing import Any, Mapping, Iterable, Optional
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping, Optional
 
-from dagster import AssetKey, AutoMaterializePolicy, FreshnessPolicy, MetadataValue
+from dagster import AssetKey, MetadataValue, FreshnessPolicy, AutoMaterializePolicy
 from dagster._annotations import public
 
 

@@ -4,19 +4,19 @@ These make very heavy use of fixture dependency and scope. If you're unfamiliar 
 fixtures, read: https://docs.pytest.org/en/latest/fixture.html.
 """
 
-import importlib
 import time
-from datetime import datetime
+import importlib
 from typing import Generator
+from datetime import datetime
 
-import airflow
 import pytest
-from airflow.utils import db
+import airflow
 from dagster import DagsterInstance
-from dagster._core.test_utils import environ, instance_for_test
+from airflow.utils import db
 from dagster._utils import file_relative_path
-from dagster_airflow.utils import is_airflow_2_loaded_in_environment
 from sqlalchemy.exc import OperationalError
+from dagster_airflow.utils import is_airflow_2_loaded_in_environment
+from dagster._core.test_utils import environ, instance_for_test
 
 
 @pytest.fixture(name="docker_compose_file", scope="session")

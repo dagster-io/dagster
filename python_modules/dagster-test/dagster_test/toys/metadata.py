@@ -1,4 +1,4 @@
-from dagster import MetadataValue, job, op
+from dagster import MetadataValue, op, job
 
 
 @op

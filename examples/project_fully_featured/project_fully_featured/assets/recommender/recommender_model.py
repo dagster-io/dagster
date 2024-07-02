@@ -1,7 +1,7 @@
 import random
 
-from dagster import AssetIn, MetadataValue, Output, asset
-from pandas import DataFrame, Series
+from pandas import Series, DataFrame
+from dagster import Output, AssetIn, MetadataValue, asset
 from sklearn.decomposition import TruncatedSVD
 
 from .user_story_matrix import IndexedCooMatrix

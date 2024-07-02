@@ -1,61 +1,61 @@
 import re
-from datetime import datetime
 from typing import Any, Optional, Sequence
+from datetime import datetime
 
 import pytest
 from dagster import (
     AssetDep,
-    AssetExecutionContext,
     AssetKey,
-    AssetsDefinition,
     AssetSpec,
-    DagsterInvalidDefinitionError,
     Definitions,
+    SourceAsset,
+    AssetsDefinition,
     ResourceDefinition,
     ScheduleDefinition,
-    SourceAsset,
+    AssetExecutionContext,
+    DagsterInvalidDefinitionError,
+    op,
     asset,
-    build_schedule_from_partitioned_job,
-    create_repository_using_definitions_args,
-    define_asset_job,
     graph,
-    in_process_executor,
+    sensor,
+    repository,
     materialize,
-    mem_io_manager,
     multi_asset,
+    mem_io_manager,
+    with_resources,
+    define_asset_job,
+    in_process_executor,
     multiprocess_executor,
     observable_source_asset,
-    op,
-    repository,
-    sensor,
-    with_resources,
+    build_schedule_from_partitioned_job,
+    create_repository_using_definitions_args,
 )
 from dagster._check import CheckError
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test
+from dagster._core.executor.base import Executor
 from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
-    CacheableAssetsDefinition,
-)
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.executor_definition import executor
+from dagster._core.storage.io_manager import IOManagerDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.storage.mem_io_manager import InMemoryIOManager
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.logger_definition import logger
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.repository_definition import (
-    PendingRepositoryDefinition,
-    RepositoryDefinition,
+from dagster._core.definitions.cacheable_assets import (
+    CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
 )
+from dagster._core.definitions.logger_definition import logger
 from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster._core.definitions.executor_definition import executor
+from dagster._core.definitions.repository_definition import (
+    RepositoryDefinition,
+    PendingRepositoryDefinition,
+)
 from dagster._core.definitions.time_window_partitions import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
 )
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.executor.base import Executor
-from dagster._core.storage.io_manager import IOManagerDefinition
-from dagster._core.storage.mem_io_manager import InMemoryIOManager
-from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 def get_all_assets_from_defs(defs: Definitions):

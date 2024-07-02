@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     Any,
-    Mapping,
-    NamedTuple,
-    Optional,
     Type,
-    TypeVar,
     Union,
+    Mapping,
+    TypeVar,
+    Optional,
+    NamedTuple,
     cast,
     overload,
 )

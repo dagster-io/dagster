@@ -1,24 +1,24 @@
 import pytest
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterInvariantViolationError,
     Output,
+    AssetKey,
     RunRequest,
     SkipReason,
+    AssetMaterialization,
+    DagsterInvariantViolationError,
+    op,
+    job,
+    sensor,
     asset_sensor,
     build_sensor_context,
-    job,
-    op,
-    sensor,
 )
-from dagster._annotations import get_experimental_params
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.events import AssetObservation
-from dagster._core.definitions.run_request import SensorResult
+from dagster._annotations import get_experimental_params
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.events import AssetObservation
+from dagster._core.definitions.run_request import SensorResult
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 
 
 @op

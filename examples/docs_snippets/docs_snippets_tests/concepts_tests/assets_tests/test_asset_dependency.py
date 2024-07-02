@@ -1,6 +1,6 @@
 from docs_snippets.concepts.assets.asset_dependency import (
-    downstream_asset,
     upstream_asset,
+    downstream_asset,
 )
 
 

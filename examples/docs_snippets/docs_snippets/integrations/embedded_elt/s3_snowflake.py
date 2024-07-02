@@ -3,8 +3,8 @@
 
 # start_storage_config
 from dagster_embedded_elt.sling import (
-    SlingConnectionResource,
     SlingResource,
+    SlingConnectionResource,
     sling_assets,
 )
 

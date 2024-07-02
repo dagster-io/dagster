@@ -1,21 +1,21 @@
 import datetime
 from typing import Optional
 
-from dagster import DailyPartitionsDefinition, PartitionKeyRange
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
+from dagster import PartitionKeyRange, DailyPartitionsDefinition
+from dagster._time import create_datetime
 from dagster._core.events import DagsterEvent, StepMaterializationData
 from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._time import create_datetime
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.time_window_partitions import HourlyPartitionsDefinition
 
 from ..base_scenario import (
     AssetReconciliationScenario,
-    asset_def,
-    observable_source_asset_def,
     run,
+    asset_def,
     run_request,
+    observable_source_asset_def,
 )
 
 DEFAULT_JOB_NAME = "some_job"

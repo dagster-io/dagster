@@ -1,10 +1,10 @@
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSeverity,
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
     Output,
+    AssetKey,
+    AssetCheckResult,
+    AssetObservation,
+    AssetCheckSeverity,
+    AssetMaterialization,
 )
 
 

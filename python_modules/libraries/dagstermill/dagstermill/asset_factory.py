@@ -1,29 +1,29 @@
 import pickle
 import tempfile
-from typing import Any, Callable, Iterable, Mapping, Optional, Set, Type, Union, cast
+from typing import Any, Set, Type, Union, Mapping, Callable, Iterable, Optional, cast
 
 import dagster._check as check
 from dagster import (
-    AssetIn,
-    AssetKey,
-    AssetsDefinition,
-    Failure,
     Output,
-    PartitionsDefinition,
-    ResourceDefinition,
+    AssetIn,
+    Failure,
+    AssetKey,
     RetryPolicy,
-    RetryRequested,
     SourceAsset,
+    RetryRequested,
+    AssetsDefinition,
+    ResourceDefinition,
+    PartitionsDefinition,
     asset,
 )
-from dagster._config.pythonic_config import Config, infer_schema_from_config_class
-from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
-from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from dagster._core.definitions.utils import normalize_tags
-from dagster._core.execution.context.compute import OpExecutionContext
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.definitions.events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._config.pythonic_config.type_check_utils import safe_is_subclass
 
-from dagstermill.factory import _clean_path_for_windows, execute_notebook
+from dagstermill.factory import execute_notebook, _clean_path_for_windows
 
 
 def _make_dagstermill_asset_compute_fn(

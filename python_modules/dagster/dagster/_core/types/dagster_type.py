@@ -1,45 +1,45 @@
 import typing as t
 from abc import abstractmethod
 from enum import Enum as PythonEnum
-from functools import partial
 from typing import (
-    AbstractSet as TypingAbstractSet,
+    Type as TypingType,
     AnyStr,
-    Iterator as TypingIterator,
     Mapping,
+    Iterator as TypingIterator,
     Optional as TypingOptional,
     Sequence,
-    Type as TypingType,
+    AbstractSet as TypingAbstractSet,
     cast,
 )
+from functools import partial
 
 from typing_extensions import get_args, get_origin
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._builtins import BuiltinEnum
+from dagster._seven import is_subclass
 from dagster._config import (
     Array,
-    ConfigType,
     Noneable as ConfigNoneable,
+    ConfigType,
 )
-from dagster._core.definitions.events import DynamicOutput, Output, TypeCheck
-from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven import is_subclass
+from dagster._builtins import BuiltinEnum
+from dagster._annotations import public
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.definitions.events import Output, TypeCheck, DynamicOutput
+from dagster._core.definitions.metadata import MetadataValue, RawMetadataValue, normalize_metadata
 
+from .config_schema import DagsterTypeLoader
+from .builtin_config_schemas import BuiltinSchemas
 from ..definitions.resource_requirement import (
     RequiresResources,
     ResourceRequirement,
     TypeResourceRequirement,
 )
-from .builtin_config_schemas import BuiltinSchemas
-from .config_schema import DagsterTypeLoader
 
 if t.TYPE_CHECKING:
+    from dagster._core.execution.context.system import TypeCheckContext, DagsterTypeLoaderContext
     from dagster._core.definitions.node_definition import NodeDefinition
-    from dagster._core.execution.context.system import DagsterTypeLoaderContext, TypeCheckContext
 
 TypeCheckFn = t.Callable[["TypeCheckContext", AnyStr], t.Union[TypeCheck, bool]]
 
@@ -836,18 +836,18 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
     from dagster._utils.typing_api import is_typing_type
 
-    from ..definitions.result import MaterializeResult, ObserveResult
-    from .primitive_mapping import (
-        is_supported_runtime_python_builtin,
-        remap_python_builtin_for_runtime,
-    )
+    from .python_set import PythonSet, DagsterSetApi
     from .python_dict import (
         Dict as DDict,
         PythonDict,
     )
-    from .python_set import DagsterSetApi, PythonSet
-    from .python_tuple import DagsterTupleApi, PythonTuple
+    from .python_tuple import PythonTuple, DagsterTupleApi
     from .transform_typing import transform_typing_type
+    from .primitive_mapping import (
+        remap_python_builtin_for_runtime,
+        is_supported_runtime_python_builtin,
+    )
+    from ..definitions.result import ObserveResult, MaterializeResult
 
     check.invariant(
         not (isinstance(dagster_type, type) and is_subclass(dagster_type, ConfigType)),

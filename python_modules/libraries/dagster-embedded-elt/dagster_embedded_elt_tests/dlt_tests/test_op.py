@@ -1,7 +1,7 @@
 import duckdb
-from dagster import OpExecutionContext, job, op
-from dagster_embedded_elt.dlt import DagsterDltResource
 from dlt import Pipeline
+from dagster import OpExecutionContext, op, job
+from dagster_embedded_elt.dlt import DagsterDltResource
 
 from .dlt_test_sources.duckdb_with_transformer import pipeline
 

@@ -1,6 +1,6 @@
 import time
 
-from dagster import FilesystemIOManager, graph, job, op, repository, schedule
+from dagster import FilesystemIOManager, op, job, graph, schedule, repository
 from dagster_docker import docker_executor
 
 

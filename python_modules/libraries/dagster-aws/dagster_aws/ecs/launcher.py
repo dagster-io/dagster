@@ -1,49 +1,49 @@
-import json
-import logging
 import os
+import json
 import uuid
+import logging
 import warnings
-from collections import namedtuple
 from typing import Any, Dict, List, Mapping, Optional, Sequence
+from collections import namedtuple
 
 import boto3
-from botocore.exceptions import ClientError
 from dagster import (
     Array,
-    DagsterRunStatus,
     Field,
     Noneable,
     Permissive,
     ScalarUnion,
     StringSource,
+    DagsterRunStatus,
     _check as check,
 )
+from dagster._serdes import ConfigurableClass
+from typing_extensions import Self
+from botocore.exceptions import ClientError
+from dagster._grpc.types import ExecuteRunArgs
 from dagster._core.events import EngineEventData
 from dagster._core.instance import T_DagsterInstance
+from dagster._utils.backoff import backoff
+from dagster._core.storage.tags import RUN_WORKER_ID_TAG
 from dagster._core.launcher.base import (
-    CheckRunHealthResult,
-    LaunchRunContext,
     RunLauncher,
     WorkerStatus,
+    LaunchRunContext,
+    CheckRunHealthResult,
 )
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.storage.tags import RUN_WORKER_ID_TAG
-from dagster._grpc.types import ExecuteRunArgs
-from dagster._serdes import ConfigurableClass
 from dagster._serdes.config_class import ConfigurableClassData
-from dagster._utils.backoff import backoff
-from typing_extensions import Self
+from dagster._core.storage.dagster_run import DagsterRun
 
-from ..secretsmanager import get_secrets_from_arns
-from .container_context import SHARED_ECS_SCHEMA, SHARED_TASK_DEFINITION_FIELDS, EcsContainerContext
 from .tasks import (
     DagsterEcsTaskDefinitionConfig,
     get_current_ecs_task,
     get_current_ecs_task_metadata,
-    get_task_definition_dict_from_current_task,
     get_task_kwargs_from_current_task,
+    get_task_definition_dict_from_current_task,
 )
-from .utils import get_task_definition_family, get_task_logs, task_definitions_match
+from .utils import get_task_logs, task_definitions_match, get_task_definition_family
+from ..secretsmanager import get_secrets_from_arns
+from .container_context import SHARED_ECS_SCHEMA, SHARED_TASK_DEFINITION_FIELDS, EcsContainerContext
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 

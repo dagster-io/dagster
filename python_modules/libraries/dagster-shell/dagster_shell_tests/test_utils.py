@@ -1,9 +1,9 @@
-import logging
 import os
+import logging
 
 import pytest
-from dagster._core.test_utils import environ
 from dagster_shell.utils import execute, execute_script_file
+from dagster._core.test_utils import environ
 
 
 def test_bad_output_logging():

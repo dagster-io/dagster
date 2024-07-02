@@ -2,33 +2,33 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
-import kubernetes.config
 import kubernetes.watch
+import kubernetes.config
 from dagster import (
+    In,
     Enum as DagsterEnum,
     Field,
-    In,
-    Noneable,
     Nothing,
-    OpExecutionContext,
+    Noneable,
     Permissive,
     StringSource,
+    OpExecutionContext,
     op,
 )
 from dagster._annotations import experimental
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.merger import merge_dicts
 
-from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
-from ..container_context import K8sContainerContext
 from ..job import (
     DagsterK8sJobConfig,
     K8sConfigMergeBehavior,
     UserDefinedDagsterK8sConfig,
-    construct_dagster_k8s_job,
     get_k8s_job_name,
+    construct_dagster_k8s_job,
 )
+from ..client import DEFAULT_JOB_POD_COUNT, DagsterKubernetesClient, k8s_api_retry
 from ..launcher import K8sRunLauncher
+from ..container_context import K8sContainerContext
 
 K8S_JOB_OP_CONFIG = merge_dicts(
     DagsterK8sJobConfig.config_type_container(),

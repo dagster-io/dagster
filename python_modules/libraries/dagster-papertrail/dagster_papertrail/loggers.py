@@ -1,5 +1,5 @@
-import logging
 import socket
+import logging
 
 from dagster import Field, IntSource, StringSource, logger
 

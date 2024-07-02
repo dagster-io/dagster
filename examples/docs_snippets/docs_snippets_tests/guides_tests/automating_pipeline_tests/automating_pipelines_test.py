@@ -1,6 +1,6 @@
 import datetime
 
-from dagster import build_schedule_context, validate_run_config
+from dagster import validate_run_config, build_schedule_context
 from docs_snippets.guides.dagster.automating_pipelines.config_schedule import (
     configurable_job,
 )

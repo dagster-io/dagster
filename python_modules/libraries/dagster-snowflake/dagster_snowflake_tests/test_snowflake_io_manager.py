@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster import TimeWindow
-from dagster._core.storage.db_io_manager import TablePartitionDimension, TableSlice
+from dagster._core.storage.db_io_manager import TableSlice, TablePartitionDimension
 from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient, _get_cleanup_statement
 
 

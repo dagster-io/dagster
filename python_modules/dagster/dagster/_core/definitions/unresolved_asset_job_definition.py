@@ -1,32 +1,32 @@
 import warnings
+from typing import TYPE_CHECKING, Any, Union, Mapping, Optional, Sequence, NamedTuple, AbstractSet
 from datetime import datetime
 from itertools import groupby
-from typing import TYPE_CHECKING, AbstractSet, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 from dagster._annotations import deprecated
-from dagster._core.definitions import AssetKey
-from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.backfill_policy import resolve_backfill_policy
-from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.hook_definition import HookDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.run_request import RunRequest
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._core.definitions import AssetKey
+from dagster._core.definitions.asset_job import build_asset_job, get_asset_graph_for_job
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.run_request import RunRequest
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.backfill_policy import resolve_backfill_policy
+from dagster._core.definitions.hook_definition import HookDefinition
+from dagster._core.definitions.executor_definition import ExecutorDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 from .config import ConfigMapping
+from .policy import RetryPolicy
 from .metadata import RawMetadataValue
 from .partition import PartitionedConfig
-from .policy import RetryPolicy
 
 if TYPE_CHECKING:
     from dagster._core.definitions import JobDefinition
+    from dagster._core.definitions.run_config import RunConfig
     from dagster._core.definitions.asset_graph import AssetGraph
     from dagster._core.definitions.asset_selection import CoercibleToAssetSelection
-    from dagster._core.definitions.run_config import RunConfig
 
 
 class UnresolvedAssetJobDefinition(
@@ -121,8 +121,8 @@ class UnresolvedAssetJobDefinition(
             RunRequest: an object that requests a run to process the given partition.
         """
         from dagster._core.definitions.partition import (
-            DynamicPartitionsDefinition,
             PartitionedConfig,
+            DynamicPartitionsDefinition,
         )
 
         if not self.partitions_def:

@@ -1,5 +1,5 @@
 import docs_snippets.concepts.assets.external_assets.update_external_asset_via_op
-from dagster import AssetKey, DagsterInstance, Definitions
+from dagster import AssetKey, Definitions, DagsterInstance
 
 
 def test_external_assets_update_external_asset_via_op_0() -> None:

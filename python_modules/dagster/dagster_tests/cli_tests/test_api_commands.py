@@ -1,25 +1,25 @@
 import os
 
 import mock
-from click.testing import CliRunner
-from dagster import DagsterEventType, job, op, reconstructable
+from dagster import DagsterEventType, op, job, reconstructable
 from dagster._cli import api
+from click.testing import CliRunner
+from dagster._serdes import serialize_value
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
-from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryState
-from dagster._core.execution.stats import RunStepKeyStatsSnapshot
-from dagster._core.remote_representation import JobHandle
+from dagster._core.utils import make_new_run_id
 from dagster._core.test_utils import (
-    create_run_for_test,
-    ensure_dagster_tests_import,
     environ,
     instance_for_test,
+    create_run_for_test,
+    ensure_dagster_tests_import,
 )
-from dagster._core.utils import make_new_run_id
-from dagster._serdes import serialize_value
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+from dagster._core.execution.retries import RetryState
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.remote_representation import JobHandle
 
 ensure_dagster_tests_import()
-from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_job_handle
+from dagster_tests.api_tests.utils import get_foo_job_handle, get_bar_repo_handle
 
 
 def runner_execute_run(runner, cli_args):

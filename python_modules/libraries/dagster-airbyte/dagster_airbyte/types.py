@@ -1,4 +1,4 @@
-from typing import Any, Mapping, NamedTuple, Optional
+from typing import Any, Mapping, Optional, NamedTuple
 
 from dagster._core.definitions.metadata.table import TableSchema
 

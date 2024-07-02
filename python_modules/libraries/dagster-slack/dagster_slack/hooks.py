@@ -1,9 +1,9 @@
 from typing import Callable, Optional
 
 from dagster._annotations import deprecated_param
+from dagster._utils.warnings import normalize_renamed_param
 from dagster._core.definitions import failure_hook, success_hook
 from dagster._core.execution.context.hook import HookContext
-from dagster._utils.warnings import normalize_renamed_param
 
 
 def _default_status_message(context: HookContext, status: str) -> str:

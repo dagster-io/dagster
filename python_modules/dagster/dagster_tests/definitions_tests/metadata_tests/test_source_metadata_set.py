@@ -2,9 +2,9 @@ from typing import cast
 
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.definitions.metadata import (
+    LocalFileCodeReference,
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
-    LocalFileCodeReference,
 )
 
 

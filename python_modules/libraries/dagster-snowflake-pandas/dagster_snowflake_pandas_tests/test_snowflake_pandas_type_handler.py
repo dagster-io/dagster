@@ -1,50 +1,50 @@
 import os
 import uuid
+from typing import Any, Mapping, Iterator, cast
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, cast
 from unittest.mock import MagicMock, patch
 
 import pandas
 import pytest
+from pandas import DataFrame, Timestamp
 from dagster import (
-    AssetExecutionContext,
+    Out,
     AssetIn,
     AssetKey,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    IOManagerDefinition,
-    MetadataValue,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    Out,
-    StaticPartitionsDefinition,
     TableColumn,
     TableSchema,
+    MetadataValue,
+    MultiPartitionKey,
+    IOManagerDefinition,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    DynamicPartitionsDefinition,
+    op,
+    job,
     asset,
-    build_input_context,
-    build_output_context,
+    materialize,
     fs_io_manager,
     instance_for_test,
-    job,
-    materialize,
-    op,
+    build_input_context,
+    build_output_context,
 )
-from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.db_io_manager import TableSlice
 from dagster_snowflake import build_snowflake_io_manager
-from dagster_snowflake.resources import SnowflakeResource
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster_snowflake_pandas import (
     SnowflakePandasIOManager,
     SnowflakePandasTypeHandler,
     snowflake_pandas_io_manager,
 )
+from dagster_snowflake.resources import SnowflakeResource
+from dagster._core.storage.db_io_manager import TableSlice
+from dagster._core.definitions.metadata.metadata_value import IntMetadataValue
 from dagster_snowflake_pandas.snowflake_pandas_type_handler import (
     _convert_string_to_timestamp,
     _convert_timestamp_to_string,
 )
-from pandas import DataFrame, Timestamp
 
 resource_config = {
     "database": "database_abc",

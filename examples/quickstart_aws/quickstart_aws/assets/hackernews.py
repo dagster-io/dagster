@@ -1,11 +1,11 @@
-import base64
 import os
+import base64
 from io import BytesIO, StringIO
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
+import matplotlib.pyplot as plt
+from dagster import MetadataValue, MaterializeResult, AssetExecutionContext, asset
 from dagster_aws.s3 import S3Resource
 
 HACKERNEWS_TOPSTORY_IDS_CSV = "hackernews_topstory_ids.csv"

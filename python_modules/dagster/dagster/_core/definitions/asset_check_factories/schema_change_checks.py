@@ -1,17 +1,17 @@
-from typing import Dict, Mapping, Sequence, Tuple, Union, cast
+from typing import Dict, Tuple, Union, Mapping, Sequence, cast
 
 from pydantic import BaseModel
 
 from dagster._annotations import experimental
 from dagster._core.instance import DagsterInstance
 
-from ..asset_check_spec import AssetCheckKey, AssetCheckSeverity, AssetCheckSpec
-from ..asset_checks import AssetChecksDefinition
-from ..asset_key import AssetKey, CoercibleToAssetKey
-from ..assets import AssetsDefinition, SourceAsset
-from ..events import AssetMaterialization
-from ..metadata import TableColumn, TableMetadataSet, TableSchema
 from .utils import build_multi_asset_check
+from ..assets import SourceAsset, AssetsDefinition
+from ..events import AssetMaterialization
+from ..metadata import TableColumn, TableSchema, TableMetadataSet
+from ..asset_key import AssetKey, CoercibleToAssetKey
+from ..asset_checks import AssetChecksDefinition
+from ..asset_check_spec import AssetCheckKey, AssetCheckSpec, AssetCheckSeverity
 
 
 @experimental

@@ -1,35 +1,35 @@
 import gc
 import os
-import tempfile
 import time
 import types
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
-import pytest
 import yaml
+import pytest
 from dagster import (
-    DagsterEventType,
-    DagsterInvalidConfigError,
     In,
     Out,
     Output,
-    _check as check,
-    job,
+    DagsterEventType,
+    DagsterInvalidConfigError,
     op,
+    job,
+    _check as check,
 )
-from dagster._core.definitions.events import RetryRequested
-from dagster._core.execution.stats import StepEventStatus
-from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster._core.launcher import DefaultRunLauncher
-from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.storage.event_log import SqliteEventLogStorage
-from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
-from dagster._core.storage.root import LocalArtifactStorage
-from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import environ
 from packaging import version
 from sqlalchemy import __version__ as sqlalchemy_version
+from dagster._core.instance import InstanceRef, InstanceType, DagsterInstance
+from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.test_utils import environ
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import SqliteRunStorage
+from dagster._core.execution.stats import StepEventStatus
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.definitions.events import RetryRequested
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
 
 
 def test_fs_stores():

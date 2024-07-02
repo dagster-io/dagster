@@ -1,4 +1,4 @@
-from dagster import InputContext, IOManager, OutputContext
+from dagster import IOManager, InputContext, OutputContext
 from docs_snippets.guides.dagster.assets_ops_graphs.op_graph_asset_input import (
     send_emails_job,
 )

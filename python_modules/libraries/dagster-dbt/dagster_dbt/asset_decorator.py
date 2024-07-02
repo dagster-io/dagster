@@ -1,11 +1,11 @@
-from typing import Any, Callable, Mapping, Optional, Set
+from typing import Any, Set, Mapping, Callable, Optional
 
 from dagster import (
-    AssetsDefinition,
-    BackfillPolicy,
-    DagsterInvalidDefinitionError,
-    PartitionsDefinition,
     RetryPolicy,
+    BackfillPolicy,
+    AssetsDefinition,
+    PartitionsDefinition,
+    DagsterInvalidDefinitionError,
     TimeWindowPartitionsDefinition,
     multi_asset,
 )
@@ -14,12 +14,12 @@ from dagster._utils.warnings import suppress_dagster_warnings
 from dagster_dbt.dbt_project import DbtProject
 
 from .asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     build_dbt_multi_asset_args,
 )
-from .dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 from .dbt_manifest import DbtManifestParam, validate_manifest
+from .dagster_dbt_translator import DagsterDbtTranslator, validate_translator
 
 
 @suppress_dagster_warnings

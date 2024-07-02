@@ -1,6 +1,6 @@
 import os
 
-from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output, graph, op
+from dagster import Field, Output, AssetKey, MetadataValue, AssetMaterialization, op, graph
 
 
 @op(

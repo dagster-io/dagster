@@ -1,17 +1,17 @@
 import os
-from contextlib import contextmanager
 from typing import cast
+from contextlib import contextmanager
 
 import pytest
 from dagster import AssetKey, DagsterEventType
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.metadata import NotebookMetadataValue, PathMetadataValue
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.execution.api import execute_job
-from dagster._core.execution.execution_result import ExecutionResult
-from dagster._core.test_utils import instance_for_test
 from dagstermill.compat import ExecutionError
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
 from dagstermill.examples.repository import custom_io_mgr_key_asset
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.metadata import PathMetadataValue, NotebookMetadataValue
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.execution.execution_result import ExecutionResult
 
 
 def get_path(materialization_event):

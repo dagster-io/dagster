@@ -1,19 +1,19 @@
-import importlib.util
-import itertools
-import json
 import os
 import re
-import subprocess
 import sys
+import json
 import textwrap
+import itertools
+import subprocess
+import importlib.util
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Tuple, Optional, Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+import yaml
 import click
 import dagster._check as check
-import yaml
-from dagster._utils import file_relative_path, mkdir_p
+from dagster._utils import mkdir_p, file_relative_path
 from dagster._utils.merger import deep_merge_dicts
 
 

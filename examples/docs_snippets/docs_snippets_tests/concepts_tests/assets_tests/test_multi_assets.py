@@ -1,8 +1,8 @@
 from docs_snippets.concepts.assets.multi_assets import (
     my_assets,
-    my_complex_assets,
     my_function,
     split_actions,
+    my_complex_assets,
 )
 
 

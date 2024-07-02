@@ -1,4 +1,4 @@
-from dagster import DynamicOutput, Output
+from dagster import Output, DynamicOutput
 
 
 def test_output_object_equality():

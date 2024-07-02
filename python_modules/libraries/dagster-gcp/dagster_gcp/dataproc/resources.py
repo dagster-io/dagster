@@ -1,18 +1,18 @@
 import json
 import time
-from contextlib import contextmanager
 from typing import Any, Dict, Mapping, Optional
+from contextlib import contextmanager
 
-import dagster._check as check
 import yaml
+import dagster._check as check
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from googleapiclient.discovery import build
-from oauth2client.client import GoogleCredentials
 from pydantic import Field
+from oauth2client.client import GoogleCredentials
+from googleapiclient.discovery import build
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
-from .configs import define_dataproc_create_cluster_config
 from .types import DataprocError
+from .configs import define_dataproc_create_cluster_config
 
 TWENTY_MINUTES = 20 * 60
 DEFAULT_ITER_TIME_SEC = 5

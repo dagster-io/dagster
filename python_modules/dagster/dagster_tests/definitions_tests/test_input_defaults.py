@@ -2,14 +2,14 @@ from typing import Optional
 
 import pytest
 from dagster import (
+    In,
+    GraphIn,
+    Nothing,
     DagsterEventType,
     DagsterInvalidDefinitionError,
-    GraphIn,
-    In,
-    Nothing,
-    graph,
-    job,
     op,
+    job,
+    graph,
 )
 
 

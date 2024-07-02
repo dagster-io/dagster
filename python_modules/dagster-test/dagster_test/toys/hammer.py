@@ -1,7 +1,7 @@
-import random
 import time
+import random
 
-from dagster import Field, In, Out, Output, graph, op
+from dagster import In, Out, Field, Output, op, graph
 
 
 @op(

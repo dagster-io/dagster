@@ -1,18 +1,18 @@
-import datetime
 import os
+import datetime
 
-import dagster._check as check
-import pytest
 import yaml
+import pytest
+import dagster._check as check
 from dagster._utils import file_relative_path
 from dagster._utils.yaml_utils import (
+    merge_yamls,
+    merge_yaml_strings,
+    load_yaml_from_path,
     dump_run_config_yaml,
     load_run_config_yaml,
-    load_yaml_from_glob_list,
     load_yaml_from_globs,
-    load_yaml_from_path,
-    merge_yaml_strings,
-    merge_yamls,
+    load_yaml_from_glob_list,
 )
 
 

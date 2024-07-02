@@ -1,5 +1,5 @@
-from functools import update_wrapper
 from pathlib import Path
+from functools import update_wrapper
 from unittest.mock import MagicMock, patch
 
 

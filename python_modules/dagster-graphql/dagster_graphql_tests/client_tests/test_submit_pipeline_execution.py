@@ -1,7 +1,7 @@
 import pytest
-from dagster import Config, DagsterInvalidDefinitionError, RunConfig
+from dagster import Config, RunConfig, DagsterInvalidDefinitionError
+from dagster_graphql import InvalidOutputErrorInfo, DagsterGraphQLClientError
 from dagster._core.utils import make_new_run_id
-from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
 
 from .conftest import MockClient, python_client_test_suite
 

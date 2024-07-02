@@ -1,26 +1,26 @@
+from typing import Any, Union, Mapping, Iterator, Optional, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
 
 import docker
 from dagster import (
     OpExecutionContext,
     _check as check,
 )
+from dagster_pipes import PipesExtras, PipesParams, DagsterPipesError, PipesDefaultMessageWriter
 from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-)
-from dagster._core.pipes.context import PipesMessageHandler
 from dagster._core.pipes.utils import (
     PipesEnvContextInjector,
-    extract_message_or_forward_to_stdout,
     open_pipes_session,
+    extract_message_or_forward_to_stdout,
 )
-from dagster_pipes import DagsterPipesError, PipesDefaultMessageWriter, PipesExtras, PipesParams
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesMessageReader,
+    PipesContextInjector,
+    PipesClientCompletedInvocation,
+)
+from dagster._core.pipes.context import PipesMessageHandler
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 
 
 @experimental

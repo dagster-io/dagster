@@ -1,12 +1,12 @@
+from typing import Any, Tuple, Mapping, Optional, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Tuple
 
 import pytest
 from dagster import AssetKey
 from dagster_looker.asset_decorator import looker_assets
-from dagster_looker.dagster_looker_translator import DagsterLookerTranslator, LookMLStructureType
+from dagster_looker.dagster_looker_translator import LookMLStructureType, DagsterLookerTranslator
 
-from .looker_projects import test_exception_derived_table_path, test_retail_demo_path
+from .looker_projects import test_retail_demo_path, test_exception_derived_table_path
 
 
 def test_asset_deps() -> None:

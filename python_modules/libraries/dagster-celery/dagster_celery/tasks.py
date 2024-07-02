@@ -2,14 +2,14 @@ from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._serdes import unpack_value, serialize_value
+from dagster._grpc.types import ExecuteStepArgs
 from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster._grpc.types import ExecuteStepArgs
-from dagster._serdes import serialize_value, unpack_value
+from dagster._core.definitions.reconstruct import ReconstructableJob
 
-from .core_execution_loop import DELEGATE_MARKER
 from .executor import CeleryExecutor
+from .core_execution_loop import DELEGATE_MARKER
 
 
 def create_task(celery_app, **task_kwargs):

@@ -1,7 +1,7 @@
 from dagster import (
     AssetKey,
-    MaterializeResult,
     TableColumnDep,
+    MaterializeResult,
     TableColumnLineage,
     asset,
 )

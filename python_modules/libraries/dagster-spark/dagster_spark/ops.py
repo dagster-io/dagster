@@ -1,9 +1,9 @@
 from dagster import (
     In,
-    Nothing,
     Out,
-    _check as check,
+    Nothing,
     op,
+    _check as check,
 )
 from dagster._core.storage.tags import COMPUTE_KIND_TAG
 

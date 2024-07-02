@@ -1,8 +1,8 @@
 import pytest
 from dagster import AssetKey, SensorDefinition, asset, graph
-from dagster._core.definitions.decorators.op_decorator import op
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.decorators.op_decorator import op
 
 
 def test_jobs_attr():

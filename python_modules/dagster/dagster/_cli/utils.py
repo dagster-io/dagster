@@ -1,13 +1,13 @@
-import logging
 import os
+import logging
 import tempfile
-from contextlib import contextmanager
 from typing import Iterator, Optional
+from contextlib import contextmanager
 
-from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._utils.env import environ
+from dagster._core.instance import InstanceRef, DagsterInstance
 from dagster._core.instance.config import is_dagster_home_set
 from dagster._core.secrets.env_file import get_env_var_dict
-from dagster._utils.env import environ
 
 
 @contextmanager

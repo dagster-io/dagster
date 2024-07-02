@@ -1,7 +1,7 @@
 from typing import List
 
-from dagster import In, Out, job, make_values_resource, op
-from dagster_wandb import wandb_artifacts_io_manager, wandb_resource
+from dagster import In, Out, op, job, make_values_resource
+from dagster_wandb import wandb_resource, wandb_artifacts_io_manager
 
 MY_FIRST_LIST = "my_first_list"
 

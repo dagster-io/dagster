@@ -1,8 +1,8 @@
 import asyncio
 
 from dagster import Output
-from dagster._core.definitions.decorators import op
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.definitions.decorators import op
 
 
 def test_aio_op():

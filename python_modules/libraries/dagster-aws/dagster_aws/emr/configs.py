@@ -1,18 +1,18 @@
-from dagster import Bool, Field, Float, Int, Permissive, Shape, String
+from dagster import Int, Bool, Field, Float, Shape, String, Permissive
 
 from .types import (
-    EbsVolumeType,
-    EmrActionOnFailure,
-    EmrAdjustmentType,
-    EmrComparisonOperator,
-    EmrInstanceRole,
+    EmrUnit,
     EmrMarket,
+    EmrStatistic,
+    EbsVolumeType,
+    EmrInstanceRole,
+    EmrTimeoutAction,
+    EmrAdjustmentType,
+    EmrActionOnFailure,
     EmrRepoUpgradeOnBoot,
     EmrScaleDownBehavior,
-    EmrStatistic,
     EmrSupportedProducts,
-    EmrTimeoutAction,
-    EmrUnit,
+    EmrComparisonOperator,
 )
 
 

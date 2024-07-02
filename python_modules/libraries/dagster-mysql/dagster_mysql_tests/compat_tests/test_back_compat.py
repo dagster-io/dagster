@@ -1,21 +1,21 @@
 # ruff: noqa: SLF001
-import datetime
 import os
-import subprocess
+import datetime
 import tempfile
+import subprocess
 from urllib.parse import urlparse
 
 import pytest
 import sqlalchemy as db
-from dagster import AssetKey, AssetMaterialization, AssetObservation, Output, job, op
-from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster import Output, AssetKey, AssetObservation, AssetMaterialization, op, job
+from dagster._utils import file_relative_path
 from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._daemon.types import DaemonHeartbeat
 from dagster._core.instance import DagsterInstance
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.storage.sqlalchemy_compat import db_select
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.migration.bigint_migration import run_bigint_migration
-from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._daemon.types import DaemonHeartbeat
-from dagster._utils import file_relative_path
 
 
 def get_columns(instance, table_name: str):
@@ -139,8 +139,8 @@ def test_asset_observation_backcompat(conn_string):
 
 def test_jobs_selector_id_migration(conn_string):
     import sqlalchemy as db
+    from dagster._core.storage.schedules.schema import JobTable, JobTickTable, InstigatorsTable
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     hostname, port = _reconstruct_from_file(
         conn_string,
@@ -355,9 +355,9 @@ def _get_table_row_count(run_storage, table, with_non_null_id=False):
 
 def test_add_primary_keys(conn_string):
     from dagster._core.storage.runs.schema import (
-        DaemonHeartbeatsTable,
         InstanceInfo,
         KeyValueStoreTable,
+        DaemonHeartbeatsTable,
     )
 
     hostname, port = _reconstruct_from_file(

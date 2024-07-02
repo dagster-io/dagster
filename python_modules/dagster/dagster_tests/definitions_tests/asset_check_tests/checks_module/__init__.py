@@ -1,4 +1,4 @@
-from dagster import AssetCheckResult, AssetCheckSpec, Output, asset, asset_check
+from dagster import Output, AssetCheckSpec, AssetCheckResult, asset, asset_check
 
 
 @asset(check_specs=[AssetCheckSpec(name="in_op_check", asset="asset_1")])

@@ -2,21 +2,21 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-from dagster import IntMetadataValue, TextMetadataValue, job, op, repository
-from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
+from dagster import IntMetadataValue, TextMetadataValue, op, job, repository
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
+from dagster._serdes.serdes import deserialize_value
+from dagster._core.test_utils import instance_for_test
+from dagster._api.snapshot_repository import sync_get_streaming_external_repositories_data_grpc
 from dagster._core.remote_representation import (
     ExternalRepositoryData,
     ManagedGrpcPythonEnvCodeLocationOrigin,
 )
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import ExternalJobData
 from dagster._core.remote_representation.handle import RepositoryHandle
 from dagster._core.remote_representation.origin import RemoteRepositoryOrigin
-from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._serdes.serdes import deserialize_value
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external_data import ExternalJobData
 
 from .utils import get_bar_repo_code_location
 

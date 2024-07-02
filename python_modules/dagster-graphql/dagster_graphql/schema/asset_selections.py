@@ -4,10 +4,10 @@ import graphene
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.remote_representation.external import ExternalRepository
 
-from ..implementation.fetch_assets import get_asset_nodes_by_asset_key
-from ..implementation.utils import capture_error
-from .asset_key import GrapheneAssetKey
 from .util import non_null_list
+from .asset_key import GrapheneAssetKey
+from ..implementation.utils import capture_error
+from ..implementation.fetch_assets import get_asset_nodes_by_asset_key
 
 if TYPE_CHECKING:
     from .roots.assets import GrapheneAssetConnection

@@ -2,20 +2,20 @@ import os
 
 import dagster._check as check
 from dagster import (
-    ConfigurableResource,
-    IOManagerDefinition,
     ResourceDefinition,
+    IOManagerDefinition,
+    ConfigurableResource,
     file_relative_path,
 )
+from dagster_gcp import BigQueryIOManager
+from dagster_duckdb import DuckDBIOManager
 from dagster._config.pythonic_config import (
     ConfigurableIOManager,
+    ConfigurableResourceFactory,
     ConfigurableIOManagerFactory,
     ConfigurableLegacyIOManagerAdapter,
-    ConfigurableResourceFactory,
 )
 from dagster._core.storage.input_manager import InputManagerDefinition
-from dagster_duckdb import DuckDBIOManager
-from dagster_gcp import BigQueryIOManager
 from dagster_snowflake.snowflake_io_manager import SnowflakeIOManager
 
 

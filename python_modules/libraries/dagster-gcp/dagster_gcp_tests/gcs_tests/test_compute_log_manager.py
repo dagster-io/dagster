@@ -5,19 +5,19 @@ from typing import cast
 from unittest import mock
 
 import pytest
-from dagster import DagsterEventType, job, op
-from dagster._core.instance import DagsterInstance, InstanceType
-from dagster._core.instance.ref import InstanceRef
-from dagster._core.launcher import DefaultRunLauncher
-from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.storage.event_log import SqliteEventLogStorage
-from dagster._core.storage.root import LocalArtifactStorage
-from dagster._core.storage.runs import SqliteRunStorage
-from dagster._core.test_utils import ensure_dagster_tests_import, environ, instance_for_test
+from dagster import DagsterEventType, op, job
+from google.cloud import storage
 from dagster._time import get_current_datetime
 from dagster_gcp.gcs import GCSComputeLogManager
-from google.cloud import storage
+from dagster._core.instance import InstanceType, DagsterInstance
+from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.test_utils import environ, instance_for_test, ensure_dagster_tests_import
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import SqliteRunStorage
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import SqliteEventLogStorage
+from dagster._core.storage.compute_log_manager import ComputeIOType
 
 ensure_dagster_tests_import()
 from dagster_tests.storage_tests.test_captured_log_manager import TestCapturedLogManager

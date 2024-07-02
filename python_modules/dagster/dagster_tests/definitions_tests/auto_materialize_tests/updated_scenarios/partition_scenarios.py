@@ -2,42 +2,42 @@ import datetime
 
 from dagster import (
     AssetDep,
-    AutoMaterializePolicy,
     AutoMaterializeRule,
-    DimensionPartitionMapping,
-    IdentityPartitionMapping,
+    AutoMaterializePolicy,
     MultiPartitionMapping,
+    IdentityPartitionMapping,
+    DimensionPartitionMapping,
     TimeWindowPartitionMapping,
 )
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
-from dagster._core.definitions.timestamp import TimestampWithTimezone
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
-    daily_partitions_def,
-    day_partition_key,
-    dynamic_partitions_def,
-    hour_partition_key,
-    hourly_partitions_def,
-    hourly_to_daily,
-    multi_partition_key,
     one_asset,
-    one_asset_depends_on_two,
-    one_asset_self_dependency,
+    hourly_to_daily,
+    day_partition_key,
+    hour_partition_key,
     one_partitions_def,
+    two_partitions_def,
+    multi_partition_key,
+    daily_partitions_def,
+    hourly_partitions_def,
+    dynamic_partitions_def,
     self_partition_mapping,
-    static_multipartitions_def,
+    two_assets_in_sequence,
+    one_asset_depends_on_two,
     three_assets_in_sequence,
     time_multipartitions_def,
-    time_partitions_start_datetime,
-    time_partitions_start_str,
     two_assets_depend_on_one,
-    two_assets_in_sequence,
+    one_asset_self_dependency,
+    time_partitions_start_str,
+    static_multipartitions_def,
+    time_partitions_start_datetime,
     two_assets_in_sequence_fan_in_partitions,
     two_assets_in_sequence_fan_out_partitions,
-    two_partitions_def,
 )
 from .asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 

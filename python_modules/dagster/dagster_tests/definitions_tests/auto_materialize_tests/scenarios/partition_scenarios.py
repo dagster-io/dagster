@@ -1,25 +1,25 @@
 from dagster import (
     AssetKey,
+    PartitionKeyRange,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    PartitionKeyRange,
     StaticPartitionsDefinition,
 )
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
-from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
+from dagster._time import create_datetime
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
+from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.time_window_partitions import (
     HourlyPartitionsDefinition,
     TimeWindowPartitionsSubset,
 )
-from dagster._time import create_datetime
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.auto_materialize_rule_evaluation import AutoMaterializeRuleEvaluation
 
 from ..base_scenario import (
     AssetEvaluationSpec,
     AssetReconciliationScenario,
-    asset_def,
     run,
+    asset_def,
     run_request,
     with_auto_materialize_policy,
 )

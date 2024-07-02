@@ -1,4 +1,4 @@
-from typing import AbstractSet, Dict, Optional, Union
+from typing import Dict, Union, Optional, AbstractSet
 
 from dagster._utils.cached_method import cached_method
 

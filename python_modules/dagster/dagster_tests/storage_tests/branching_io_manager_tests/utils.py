@@ -1,20 +1,20 @@
+from typing import Any, Dict, List, Tuple, Union, Optional, Sequence
 from contextlib import contextmanager
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from dagster import (
     AssetKey,
-    DagsterInstance,
-    Definitions,
-    ExecuteInProcessResult,
-    InputContext,
     IOManager,
+    Definitions,
+    InputContext,
     OutputContext,
+    DagsterInstance,
+    ExecuteInProcessResult,
 )
-from dagster._config.pythonic_config.io_manager import ConfigurableIOManager
-from dagster._core.definitions.events import CoercibleToAssetKey
-from dagster._core.event_api import EventLogRecord
-from dagster._core.execution.context.init import InitResourceContext
 from pydantic import PrivateAttr
+from dagster._core.event_api import EventLogRecord
+from dagster._core.definitions.events import CoercibleToAssetKey
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._config.pythonic_config.io_manager import ConfigurableIOManager
 
 
 class DefinitionsRunner:

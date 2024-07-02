@@ -1,6 +1,6 @@
 import numpy as np
-from dagster import asset
 from pandas import DataFrame
+from dagster import asset
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix
 from sklearn.decomposition import TruncatedSVD
 

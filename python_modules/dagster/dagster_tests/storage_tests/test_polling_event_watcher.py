@@ -1,16 +1,16 @@
-import tempfile
 import time
+import tempfile
+from typing import Any, Mapping, Callable, Optional
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Optional
 
 import dagster._check as check
-from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+from typing_extensions import Self
+from dagster._core.utils import make_new_run_id
+from dagster._core.events import DagsterEvent, EngineEventData, DagsterEventType
 from dagster._core.events.log import EventLogEntry
+from dagster._serdes.config_class import ConfigurableClassData
 from dagster._core.storage.event_log import SqliteEventLogStorage, SqlPollingEventWatcher
 from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.utils import make_new_run_id
-from dagster._serdes.config_class import ConfigurableClassData
-from typing_extensions import Self
 
 
 class SqlitePollingEventLogStorage(SqliteEventLogStorage):

@@ -1,6 +1,6 @@
-from dagster import AssetIn, Definitions, asset, define_asset_job, job, op
-from dagster._core.definitions.asset_graph import AssetGraph
+from dagster import AssetIn, Definitions, op, job, asset, define_asset_job
 from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG
+from dagster._core.definitions.asset_graph import AssetGraph
 
 
 @asset(op_tags={GLOBAL_CONCURRENCY_TAG: "foo"}, key_prefix=["prefix"])

@@ -1,42 +1,42 @@
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
     Any,
     Dict,
     List,
+    Tuple,
+    Union,
     Mapping,
     Optional,
     Sequence,
-    Tuple,
-    Union,
+    AbstractSet,
 )
+from collections import defaultdict
 
 from dagster import (
     AssetKey,
     _check as check,
 )
-from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.errors import DagsterRunNotFoundError
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunRecord, RunsFilter
-from dagster._core.storage.event_log.base import AssetRecord
 from dagster._core.storage.tags import TagType, get_tag_type
+from dagster._core.storage.dagster_run import RunRecord, RunsFilter, DagsterRunStatus
+from dagster._core.definitions.selector import JobSubsetSelector
+from dagster._core.storage.event_log.base import AssetRecord
 
 from .external import ensure_valid_config, get_external_job_or_raise
 
 if TYPE_CHECKING:
     from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 
-    from ..schema.asset_graph import GrapheneAssetLatestInfo
+    from ..schema.runs import GrapheneRunTags, GrapheneRunGroup, GrapheneRunTagKeys
+    from ..schema.util import ResolveInfo
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.execution import GrapheneExecutionPlan
+    from ..schema.asset_graph import GrapheneAssetLatestInfo
     from ..schema.logs.events import GrapheneRunStepStats
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
-    from ..schema.pipelines.pipeline import GrapheneEventConnection, GrapheneRun
+    from ..schema.pipelines.pipeline import GrapheneRun, GrapheneEventConnection
     from ..schema.pipelines.pipeline_run_stats import GrapheneRunStatsSnapshot
-    from ..schema.runs import GrapheneRunGroup, GrapheneRunTagKeys, GrapheneRunTags
-    from ..schema.util import ResolveInfo
 
 
 async def gen_run_by_id(
@@ -86,9 +86,9 @@ def get_run_tags(
 
 
 def get_run_group(graphene_info: "ResolveInfo", run_id: str) -> "GrapheneRunGroup":
+    from ..schema.runs import GrapheneRunGroup
     from ..schema.errors import GrapheneRunGroupNotFoundError
     from ..schema.pipelines.pipeline import GrapheneRun
-    from ..schema.runs import GrapheneRunGroup
 
     instance = graphene_info.context.instance
     try:
@@ -352,9 +352,9 @@ def get_logs_for_run(
     cursor: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Union["GrapheneRunNotFoundError", "GrapheneEventConnection"]:
+    from .events import from_event_record
     from ..schema.errors import GrapheneRunNotFoundError
     from ..schema.pipelines.pipeline import GrapheneEventConnection
-    from .events import from_event_record
 
     instance = graphene_info.context.instance
     run = instance.get_run_by_id(run_id)

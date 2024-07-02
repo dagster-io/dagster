@@ -1,28 +1,28 @@
 from abc import abstractmethod
-from typing import AbstractSet, Any, Callable, Dict, Generic, Mapping, Optional, Type, Union, cast
+from typing import Any, Dict, Type, Union, Generic, Mapping, Callable, Optional, AbstractSet, cast
 
 from typing_extensions import TypeVar
 
-from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
-from dagster._core.definitions.resource_definition import ResourceDefinition, ResourceFunction
-from dagster._core.execution.context.init import InitResourceContext
-from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
 from dagster._utils.cached_method import cached_method
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition
+from dagster._core.execution.context.init import InitResourceContext
+from dagster._core.definitions.resource_definition import ResourceFunction, ResourceDefinition
+from dagster._core.definitions.definition_config_schema import CoercableToConfigSchema
 
+from .config import Config
+from .resource import (
+    T_Self,
+    ResourceId,
+    PartialResource,
+    ResourceWithKeyMapping,
+    AllowDelayedDependencies,
+    ConfigurableResourceFactory,
+)
+from .conversion_utils import TResValue
+from .type_check_utils import safe_is_subclass
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
 )
-from .config import Config
-from .conversion_utils import TResValue
-from .resource import (
-    AllowDelayedDependencies,
-    ConfigurableResourceFactory,
-    PartialResource,
-    ResourceId,
-    ResourceWithKeyMapping,
-    T_Self,
-)
-from .type_check_utils import safe_is_subclass
 
 try:
     from functools import cached_property  # type: ignore  # (py37 compat)

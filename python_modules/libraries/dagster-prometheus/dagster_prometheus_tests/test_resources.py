@@ -1,9 +1,9 @@
 import time
 
 from dagster import op
-from dagster._utils.test import wrap_op_in_graph_and_execute
+from prometheus_client import Enum, Info, Gauge, Counter, Summary, Histogram
 from dagster_prometheus import PrometheusResource
-from prometheus_client import Counter, Enum, Gauge, Histogram, Info, Summary
+from dagster._utils.test import wrap_op_in_graph_and_execute
 
 EPS = 0.001
 ENV = {}

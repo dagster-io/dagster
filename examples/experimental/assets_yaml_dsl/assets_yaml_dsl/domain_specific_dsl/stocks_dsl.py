@@ -10,9 +10,9 @@ try:
 except ImportError:
     from yaml import Loader
 
-from dagster import AssetKey, AssetsDefinition, asset, file_relative_path, multi_asset
-from dagster._core.definitions.asset_spec import AssetSpec
+from dagster import AssetKey, AssetsDefinition, asset, multi_asset, file_relative_path
 from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster._core.definitions.asset_spec import AssetSpec
 
 
 def load_yaml(relative_path: str) -> Dict[str, Any]:

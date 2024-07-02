@@ -8,7 +8,7 @@ def iris_dataset():
 
 # start_configuration
 
-from dagster_deltalake import DeltaLakePyarrowIOManager, LocalConfig
+from dagster_deltalake import LocalConfig, DeltaLakePyarrowIOManager
 
 from dagster import Definitions
 

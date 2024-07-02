@@ -1,50 +1,50 @@
 import mock
 import pytest
 from dagster import (
+    DagsterRun,
     DagsterEvent,
     DagsterInstance,
-    DagsterResourceFunctionError,
-    DagsterRun,
-    DagsterTypeCheckDidNotPass,
     RunStatusSensorDefinition,
-    build_run_status_sensor_context,
+    DagsterTypeCheckDidNotPass,
+    DagsterResourceFunctionError,
     build_sensor_context,
     multiprocess_executor,
+    build_run_status_sensor_context,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.sensor_definition import SensorDefinition
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.events import DagsterEventType
-from dagster._core.storage.fs_io_manager import fs_io_manager
-from dagster._core.test_utils import ensure_dagster_tests_import, instance_for_test
 from dagster._utils import file_relative_path
+from dagster._core.events import DagsterEventType
+from dagster_test.toys.repo import toys_repository
+from dagster._core.test_utils import instance_for_test, ensure_dagster_tests_import
 from dagster._utils.temp_file import get_temp_dir
-from dagster_test.toys.branches import branch
-from dagster_test.toys.composition import composition_job
+from dagster_test.toys.hammer import hammer
+from dagster_test.toys.sleepy import sleepy
 from dagster_test.toys.dynamic import dynamic
+from dagster_test.toys.retries import retry
+from dagster_test.toys.sensors import get_toys_sensors
+from dagster_test.toys.branches import branch
+from dagster_test.toys.log_spew import log_spew
+from dagster_test.toys.resources import resource_ops, lots_of_resources
+from dagster_test.toys.schedules import longitudinal_schedule
+from dagster_test.toys.composition import composition_job
+from dagster_test.toys.many_events import many_events
+from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal
 from dagster_test.toys.error_monster import (
-    define_errorable_resource,
     error_monster,
     errorable_io_manager,
+    define_errorable_resource,
 )
-from dagster_test.toys.hammer import hammer
-from dagster_test.toys.log_spew import log_spew
-from dagster_test.toys.longitudinal import IntentionalRandomFailure, longitudinal
-from dagster_test.toys.many_events import many_events
-from dagster_test.toys.pyspark_assets.pyspark_assets_job import dir_resources, pyspark_assets
-from dagster_test.toys.repo import toys_repository
-from dagster_test.toys.resources import lots_of_resources, resource_ops
-from dagster_test.toys.retries import retry
-from dagster_test.toys.schedules import longitudinal_schedule
-from dagster_test.toys.sensors import get_toys_sensors
-from dagster_test.toys.sleepy import sleepy
+from dagster._core.storage.fs_io_manager import fs_io_manager
 from dagster_test.toys.software_defined_assets import software_defined_assets
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.sensor_definition import SensorDefinition
+from dagster_test.toys.pyspark_assets.pyspark_assets_job import dir_resources, pyspark_assets
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 ensure_dagster_tests_import()
+from slack_sdk.web.client import WebClient
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
-from slack_sdk.web.client import WebClient
 
 
 @pytest.fixture(name="instance")

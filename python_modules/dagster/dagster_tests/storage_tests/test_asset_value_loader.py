@@ -3,18 +3,18 @@ from contextlib import contextmanager
 
 from dagster import (
     AssetKey,
-    DagsterInstance,
-    DailyPartitionsDefinition,
     IOManager,
+    SourceAsset,
+    DagsterInstance,
     PartitionKeyRange,
     ResourceDefinition,
-    SourceAsset,
+    DailyPartitionsDefinition,
     asset,
-    fs_io_manager,
-    io_manager,
-    materialize,
-    repository,
     resource,
+    io_manager,
+    repository,
+    materialize,
+    fs_io_manager,
     with_resources,
 )
 from dagster._core.test_utils import instance_for_test

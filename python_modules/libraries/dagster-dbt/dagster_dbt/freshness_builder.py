@@ -6,22 +6,22 @@ from dagster import (
     _check as check,
 )
 from dagster._annotations import experimental
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
+from dagster._core.definitions.asset_check_factories.utils import (
+    DEFAULT_FRESHNESS_SEVERITY,
+    assets_to_keys,
+    asset_to_keys_iterable,
+    ensure_no_duplicate_assets,
+)
 from dagster._core.definitions.asset_check_factories.freshness_checks.last_update import (
     build_last_update_freshness_checks,
 )
 from dagster._core.definitions.asset_check_factories.freshness_checks.time_partition import (
     build_time_partition_freshness_checks,
 )
-from dagster._core.definitions.asset_check_factories.utils import (
-    DEFAULT_FRESHNESS_SEVERITY,
-    asset_to_keys_iterable,
-    assets_to_keys,
-    ensure_no_duplicate_assets,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
-from dagster._core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
     from dagster import AssetKey

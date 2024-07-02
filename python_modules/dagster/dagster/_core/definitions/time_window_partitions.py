@@ -1,64 +1,64 @@
-import functools
-import hashlib
-import json
 import re
+import json
+import hashlib
+import functools
 from abc import abstractmethod, abstractproperty
-from datetime import date, datetime, timedelta
 from enum import Enum
-from functools import cached_property
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    FrozenSet,
-    Iterable,
     List,
+    Type,
+    Tuple,
+    Union,
     Mapping,
-    NamedTuple,
+    Callable,
+    Iterable,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    Union,
+    FrozenSet,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from datetime import date, datetime, timedelta
+from functools import cached_property
 
 import pendulum
 
 import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 from dagster._annotations import PublicAttr, public
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import NamedTupleSerializer
+from dagster._utils.schedules import (
+    cron_string_iterator,
+    is_valid_cron_schedule,
+    reverse_cron_string_iterator,
+    cron_string_repeats_every_hour,
+)
+from dagster._utils.cronstring import is_basic_daily, is_basic_hourly, get_fixed_minute_interval
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 from dagster._seven.compat.pendulum import (
     _IS_PENDULUM_1,
     PRE_TRANSITION,
     PendulumDateTime,
-    create_pendulum_time,
     to_timezone,
-)
-from dagster._utils.cronstring import get_fixed_minute_interval, is_basic_daily, is_basic_hourly
-from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
-from dagster._utils.schedules import (
-    cron_string_iterator,
-    cron_string_repeats_every_hour,
-    is_valid_cron_schedule,
-    reverse_cron_string_iterator,
+    create_pendulum_time,
 )
 
 from ..errors import DagsterInvalidDefinitionError, DagsterInvalidDeserializationVersionError
 from .partition import (
     DEFAULT_DATE_FORMAT,
-    AllPartitionsSubset,
-    PartitionedConfig,
-    PartitionsDefinition,
-    PartitionsSubset,
     ScheduleType,
+    PartitionsSubset,
+    PartitionedConfig,
+    AllPartitionsSubset,
+    PartitionsDefinition,
     cron_schedule_from_schedule_type_and_offsets,
 )
-from .partition_key_range import PartitionKeyRange
 from .timestamp import TimestampWithTimezone
+from .partition_key_range import PartitionKeyRange
 
 
 def is_second_ambiguous_time(dt: datetime, tz: str):

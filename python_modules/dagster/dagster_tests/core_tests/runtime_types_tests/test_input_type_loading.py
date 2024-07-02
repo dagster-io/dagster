@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 import pytest
-from dagster import DagsterInvalidConfigError, job, op
+from dagster import DagsterInvalidConfigError, op, job
 
 
 def test_dict_input():

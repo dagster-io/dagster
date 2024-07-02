@@ -5,10 +5,10 @@ from dagster import build_init_resource_context
 from dagster_census import CensusOutput, CensusResource, census_resource
 
 from .utils import (
-    get_destination_data,
-    get_source_data,
     get_sync_data,
+    get_source_data,
     get_sync_run_data,
+    get_destination_data,
     get_sync_trigger_data,
 )
 

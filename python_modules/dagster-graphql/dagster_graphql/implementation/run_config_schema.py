@@ -5,15 +5,15 @@ from dagster._config import validate_config_from_snap
 from dagster._core.remote_representation import RepresentedJob
 from dagster._core.remote_representation.external_data import DEFAULT_MODE_NAME
 
-from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 from dagster_graphql.schema.util import ResolveInfo
+from dagster_graphql.schema.errors import GrapheneModeNotFoundError
 
-from .external import get_external_job_or_raise
 from .utils import JobSubsetSelector, UserFacingGraphQLError
+from .external import get_external_job_or_raise
 
 if TYPE_CHECKING:
-    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
     from ..schema.run_config import GrapheneRunConfigSchema
+    from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
 
 def resolve_run_config_schema_or_error(
@@ -44,9 +44,9 @@ def resolve_is_run_config_valid(
     run_config: Mapping[str, object],
 ) -> "GraphenePipelineConfigValidationValid":
     from ..schema.pipelines.config import (
+        GrapheneRunConfigValidationInvalid,
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationValid,
-        GrapheneRunConfigValidationInvalid,
     )
 
     check.inst_param(represented_pipeline, "represented_pipeline", RepresentedJob)

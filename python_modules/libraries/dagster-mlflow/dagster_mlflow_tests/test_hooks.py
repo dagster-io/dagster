@@ -1,9 +1,9 @@
 from unittest.mock import Mock
 
 from dagster import Nothing, ResourceDefinition, op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.input import In
 from dagster_mlflow.hooks import _cleanup_on_success, end_mlflow_on_run_finished
+from dagster._core.definitions.input import In
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 def test_cleanup_on_success():

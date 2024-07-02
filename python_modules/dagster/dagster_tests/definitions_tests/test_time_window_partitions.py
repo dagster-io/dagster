@@ -1,38 +1,38 @@
 import pickle
 import random
-from datetime import datetime, timedelta
 from typing import Optional, Sequence, cast
+from datetime import datetime, timedelta
 
 import pytest
 from dagster import (
-    DagsterInvalidDefinitionError,
+    PartitionKeyRange,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    MonthlyPartitionsDefinition,
-    PartitionKeyRange,
-    TimeWindowPartitionsDefinition,
     WeeklyPartitionsDefinition,
+    MonthlyPartitionsDefinition,
+    DagsterInvalidDefinitionError,
+    TimeWindowPartitionsDefinition,
     daily_partitioned_config,
     hourly_partitioned_config,
-    monthly_partitioned_config,
     weekly_partitioned_config,
+    monthly_partitioned_config,
 )
+from dagster._time import create_datetime, parse_time_string
 from dagster._check import CheckError
-from dagster._core.definitions.time_window_partitions import (
-    BaseTimeWindowPartitionsSubset,
-    PartitionKeysTimeWindowPartitionsSubset,
-    PersistedTimeWindow,
-    ScheduleType,
-    TimeWindow,
-    TimeWindowPartitionsSubset,
-    dst_safe_strptime,
-)
-from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._serdes import serialize_value, deserialize_value
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.test_utils import freeze_time
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime, parse_time_string
 from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    ScheduleType,
+    PersistedTimeWindow,
+    TimeWindowPartitionsSubset,
+    BaseTimeWindowPartitionsSubset,
+    PartitionKeysTimeWindowPartitionsSubset,
+    dst_safe_strptime,
+)
 
 DATE_FORMAT = "%Y-%m-%d"
 

@@ -1,11 +1,11 @@
-from dagster._core.test_utils import environ
 from dagster._grpc.utils import (
-    default_grpc_server_shutdown_grace_period,
     default_grpc_timeout,
-    default_repository_grpc_timeout,
-    default_schedule_grpc_timeout,
     default_sensor_grpc_timeout,
+    default_schedule_grpc_timeout,
+    default_repository_grpc_timeout,
+    default_grpc_server_shutdown_grace_period,
 )
+from dagster._core.test_utils import environ
 
 
 def test_default_grpc_timeouts():

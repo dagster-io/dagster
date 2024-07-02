@@ -1,54 +1,54 @@
 import os
-import tempfile
 import time
+import tempfile
 from typing import Mapping
 
 import mock
 import pytest
 from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    DagsterInstance,
-    DagsterInvariantViolationError,
-    DagsterTypeCheckDidNotPass,
-    Definitions,
-    DynamicOut,
-    DynamicOutput,
-    Field,
     In,
-    IOManagerDefinition,
-    Nothing,
     Out,
+    Field,
+    Nothing,
+    AssetKey,
+    DynamicOut,
+    Definitions,
+    DynamicOutput,
+    DagsterInstance,
     ReexecutionOptions,
-    asset,
-    build_input_context,
-    build_output_context,
-    execute_job,
-    graph,
-    in_process_executor,
-    job,
-    materialize,
+    IOManagerDefinition,
+    AssetMaterialization,
+    DagsterTypeCheckDidNotPass,
+    DagsterInvariantViolationError,
     op,
-    reconstructable,
+    job,
+    asset,
+    graph,
     resource,
+    execute_job,
+    materialize,
+    reconstructable,
+    build_input_context,
+    in_process_executor,
+    build_output_context,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.events import Output
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.utils import make_new_run_id
 from dagster._core.errors import DagsterInvalidMetadata
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_plan, create_execution_plan
+from dagster._core.definitions.events import Output
+from dagster._core.storage.io_manager import IOManager, io_manager, dagster_maintained_io_manager
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
+from dagster._core.storage.fs_io_manager import fs_io_manager, custom_path_fs_io_manager
+from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext, get_output_context
-from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster._core.storage.io_manager import IOManager, dagster_maintained_io_manager, io_manager
-from dagster._core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
-from dagster._core.system_config.objects import ResolvedRunConfig
-from dagster._core.test_utils import instance_for_test
-from dagster._core.utils import make_new_run_id
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 
 
 def test_io_manager_with_config():

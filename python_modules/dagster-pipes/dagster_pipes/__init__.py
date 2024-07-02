@@ -1,41 +1,41 @@
-import base64
-import datetime
-import json
-import logging
 import os
 import sys
+import json
 import time
-import warnings
 import zlib
-from abc import ABC, abstractmethod
-from contextlib import ExitStack, contextmanager
+import base64
+import logging
+import datetime
+import warnings
 from io import StringIO
+from abc import ABC, abstractmethod
 from queue import Queue
-from threading import Event, Thread
-from traceback import TracebackException
 from typing import (
     IO,
     TYPE_CHECKING,
     Any,
-    ClassVar,
+    Set,
     Dict,
+    Type,
+    Union,
+    TextIO,
     Generic,
-    Iterable,
-    Iterator,
     Literal,
     Mapping,
+    TypeVar,
+    ClassVar,
+    Iterable,
+    Iterator,
     Optional,
     Sequence,
-    Set,
-    TextIO,
-    Type,
     TypedDict,
-    TypeVar,
-    Union,
     cast,
     final,
     get_args,
 )
+from threading import Event, Thread
+from traceback import TracebackException
+from contextlib import ExitStack, contextmanager
 
 if TYPE_CHECKING:
     from unittest.mock import MagicMock
@@ -912,8 +912,8 @@ class PipesDbfsMessageWriter(PipesBlobStoreMessageWriter):
         # selecting the "Spark UI" tab and then "Environment" on the job details page in the
         # Databricks UI.
         try:
-            from py4j.protocol import Py4JJavaError
             from pyspark.sql import SparkSession
+            from py4j.protocol import Py4JJavaError
         except ImportError as e:
             raise DagsterPipesError(
                 "`PipesDbfsMessageWriter` requires pyspark and py4j to be available for import."

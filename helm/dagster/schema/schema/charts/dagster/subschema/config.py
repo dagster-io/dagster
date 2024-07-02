@@ -1,6 +1,6 @@
 from typing import Union
 
-from pydantic import BaseModel, Extra
+from pydantic import Extra, BaseModel
 
 
 class Source(BaseModel):

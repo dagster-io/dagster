@@ -1,8 +1,8 @@
 from hashlib import sha256
 
 from dagster import (
-    DataVersion,
     Output,
+    DataVersion,
     asset,
     file_relative_path,
     observable_source_asset,

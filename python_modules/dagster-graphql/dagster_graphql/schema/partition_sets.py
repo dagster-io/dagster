@@ -1,48 +1,48 @@
 from typing import Optional, Sequence, cast
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster import MultiPartitionsDefinition
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation import ExternalPartitionSet, RepositoryHandle
+from dagster._utils.merger import merge_dicts
+from dagster._core.storage.tags import PARTITION_SET_TAG, PARTITION_NAME_TAG
+from dagster._core.storage.dagster_run import RunsFilter
+from dagster._core.remote_representation import RepositoryHandle, ExternalPartitionSet
 from dagster._core.remote_representation.external_data import (
-    ExternalDynamicPartitionsDefinitionData,
-    ExternalMultiPartitionsDefinitionData,
-    ExternalPartitionExecutionErrorData,
     ExternalPartitionsDefinitionData,
+    ExternalPartitionExecutionErrorData,
+    ExternalMultiPartitionsDefinitionData,
     ExternalStaticPartitionsDefinitionData,
+    ExternalDynamicPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster._core.storage.dagster_run import RunsFilter
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._utils.merger import merge_dicts
 
+from dagster_graphql.implementation.utils import capture_error
+from dagster_graphql.implementation.fetch_runs import get_runs
 from dagster_graphql.implementation.fetch_partition_sets import (
-    get_partition_by_name,
+    get_partitions,
+    get_partition_tags,
     get_partition_config,
+    get_partition_by_name,
     get_partition_set_partition_runs,
     get_partition_set_partition_statuses,
-    get_partition_tags,
-    get_partitions,
 )
-from dagster_graphql.implementation.fetch_runs import get_runs
-from dagster_graphql.implementation.utils import capture_error
 
-from .asset_key import GrapheneAssetKey
-from .backfill import GraphenePartitionBackfill
-from .errors import (
-    GrapheneDuplicateDynamicPartitionError,
-    GraphenePartitionSetNotFoundError,
-    GraphenePipelineNotFoundError,
-    GraphenePythonError,
-    GrapheneUnauthorizedError,
-)
-from .inputs import GrapheneRunsFilter
-from .pipelines.pipeline import GrapheneRun
-from .pipelines.status import GrapheneRunStatus
-from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
 from .util import ResolveInfo, non_null_list
+from .errors import (
+    GraphenePythonError,
+    GrapheneUnauthorizedError,
+    GraphenePipelineNotFoundError,
+    GraphenePartitionSetNotFoundError,
+    GrapheneDuplicateDynamicPartitionError,
+)
+from .inputs import GrapheneRunsFilter
+from .backfill import GraphenePartitionBackfill
+from .asset_key import GrapheneAssetKey
+from .pipelines.status import GrapheneRunStatus
+from .repository_origin import GrapheneRepositoryOrigin
+from .pipelines.pipeline import GrapheneRun
 
 
 class GrapheneAddDynamicPartitionSuccess(graphene.ObjectType):

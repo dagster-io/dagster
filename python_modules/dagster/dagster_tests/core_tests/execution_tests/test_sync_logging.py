@@ -1,10 +1,10 @@
 from typing import Iterator
 
-from dagster import AssetMaterialization, Output, asset, job, materialize, op
+from dagster import Output, AssetMaterialization, op, job, asset, materialize
+from dagster._core.instance import DagsterInstance
 from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import TextMetadataValue
-from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
-from dagster._core.instance import DagsterInstance
+from dagster._core.execution.context.compute import OpExecutionContext, AssetExecutionContext
 
 
 def assert_latest_mat_metadata_entry(

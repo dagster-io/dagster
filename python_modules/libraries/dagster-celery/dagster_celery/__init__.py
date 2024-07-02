@@ -1,7 +1,7 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .executor import celery_executor
 from .version import __version__
+from .executor import celery_executor
 
 DagsterLibraryRegistry.register("dagster-celery", __version__)
 

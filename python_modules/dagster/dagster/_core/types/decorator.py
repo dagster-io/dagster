@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, Optional, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Type, Union, TypeVar, Callable, Optional, overload
 
 import dagster._check as check
 

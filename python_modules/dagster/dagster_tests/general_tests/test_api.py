@@ -1,7 +1,7 @@
-import importlib
 import re
-import subprocess
 import sys
+import importlib
+import subprocess
 
 import pytest
 from dagster._module_alias_map import AliasedModuleFinder, get_meta_path_insertion_index

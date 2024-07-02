@@ -1,6 +1,6 @@
 from signal import Signals
 
-from dagster._utils import get_run_crash_explanation, get_terminate_signal
+from dagster._utils import get_terminate_signal, get_run_crash_explanation
 
 
 def test_get_run_crash_explanation():

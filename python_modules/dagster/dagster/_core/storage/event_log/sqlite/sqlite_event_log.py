@@ -1,56 +1,56 @@
-import contextlib
-import glob
-import logging
 import os
 import re
+import glob
+import time
+import logging
 import sqlite3
 import threading
-import time
-from collections import defaultdict
+import contextlib
+from typing import TYPE_CHECKING, Any, Union, Iterator, Optional, Sequence, ContextManager
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ContextManager, Iterator, Optional, Sequence, Union
+from collections import defaultdict
 
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
-from sqlalchemy.engine import Connection, Engine
-from sqlalchemy.pool import NullPool
 from tqdm import tqdm
+from sqlalchemy.pool import NullPool
 from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
+from sqlalchemy.engine import Engine, Connection
 from watchdog.observers import Observer
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._utils import mkdir_p
 from dagster._config import StringSource
-from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.events import AssetKey
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.event_api import EventHandlerFn, EventRecordsResult, RunStatusChangeRecordsFilter
 from dagster._core.events import (
-    ASSET_CHECK_EVENTS,
     ASSET_EVENTS,
+    ASSET_CHECK_EVENTS,
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
     DagsterEventType,
 )
-from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.dagster_run import DagsterRunStatus, RunsFilter
-from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
-from dagster._core.storage.sql import (
-    AlembicVersion,
-    check_alembic_revision,
-    create_engine,
-    get_alembic_config,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
-from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._core.storage.sqlite import create_db_conn_string
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import mkdir_p
+from dagster._core.event_api import EventHandlerFn, EventRecordsResult, RunStatusChangeRecordsFilter
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.sql import (
+    AlembicVersion,
+    create_engine,
+    stamp_alembic_rev,
+    get_alembic_config,
+    run_alembic_upgrade,
+    check_alembic_revision,
+)
+from dagster._core.storage.sqlite import create_db_conn_string
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.dagster_run import RunsFilter, DagsterRunStatus
+from dagster._core.storage.event_log.base import EventLogCursor, EventLogRecord, EventRecordsFilter
+from dagster._core.storage.sqlalchemy_compat import db_select
 
-from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
-from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
+from ..schema import SqlEventLogStorageTable, SqlEventLogStorageMetadata
+from ..sql_event_log import SqlEventLogStorage, RunShardedEventsCursor
 
 if TYPE_CHECKING:
     from dagster._core.storage.sqlite_storage import SqliteStorageConfig

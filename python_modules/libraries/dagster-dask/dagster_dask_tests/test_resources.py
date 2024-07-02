@@ -1,15 +1,15 @@
 from typing import Any, Dict, Mapping
 
 from dagster import Output, op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.output import Out
-from dagster._core.definitions.reconstruct import reconstructable
-from dagster._core.execution.api import execute_job
-from dagster._core.execution.execution_result import ExecutionResult
-from dagster._core.test_utils import instance_for_test
 from dagster_dask import dask_resource
 from dask.distributed import Client
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.execution.execution_result import ExecutionResult
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 @op(

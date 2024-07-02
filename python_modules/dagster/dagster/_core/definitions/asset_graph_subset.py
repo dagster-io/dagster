@@ -1,22 +1,21 @@
 import operator
-from collections import defaultdict
-from datetime import datetime
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
     Set,
+    Dict,
     Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from datetime import datetime
+from collections import defaultdict
 
 from dagster import _check as check
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
 from dagster._serdes.serdes import (
@@ -24,10 +23,11 @@ from dagster._serdes.serdes import (
     SerializableNonScalarKeyMapping,
     whitelist_for_serdes,
 )
+from dagster._core.definitions.partition import PartitionsSubset, PartitionsDefinition
 
+from .events import AssetKey, AssetKeyPartitionKey
 from .asset_subset import AssetSubset
 from .base_asset_graph import BaseAssetGraph
-from .events import AssetKey, AssetKeyPartitionKey
 
 
 class PartitionsSubsetMappingNamedTupleSerializer(NamedTupleSerializer):

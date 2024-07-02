@@ -1,8 +1,8 @@
-import logging
 import os
-from dataclasses import dataclass
+import logging
+from typing import List, Union, Mapping, Callable, Optional
 from pathlib import Path
-from typing import Callable, List, Mapping, Optional, Union
+from dataclasses import dataclass
 
 import pkg_resources
 from typing_extensions import TypeAlias
@@ -10,17 +10,17 @@ from typing_extensions import TypeAlias
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.python_packages import PythonPackages, changed_filetypes
 
-from .python_version import AvailablePythonVersion
-from .step_builder import BuildkiteQueue
-from .steps.tox import build_tox_step
 from .utils import (
+    GroupStep,
     BuildkiteLeafStep,
     BuildkiteTopLevelStep,
-    GroupStep,
     is_command_step,
-    is_feature_branch,
     message_contains,
+    is_feature_branch,
 )
+from .steps.tox import build_tox_step
+from .step_builder import BuildkiteQueue
+from .python_version import AvailablePythonVersion
 
 _CORE_PACKAGES = [
     "python_modules/dagster",

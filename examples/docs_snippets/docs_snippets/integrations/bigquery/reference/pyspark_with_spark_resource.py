@@ -1,10 +1,10 @@
-from dagster_gcp_pyspark import BigQueryPySparkIOManager
-from dagster_pyspark import pyspark_resource
 from pyspark import SparkFiles
 from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.types import DoubleType, StringType, StructField, StructType
+from dagster_pyspark import pyspark_resource
+from pyspark.sql.types import DoubleType, StringType, StructType, StructField
+from dagster_gcp_pyspark import BigQueryPySparkIOManager
 
-from dagster import AssetExecutionContext, Definitions, asset
+from dagster import Definitions, AssetExecutionContext, asset
 
 BIGQUERY_JARS = "com.google.cloud.spark:spark-bigquery-with-dependencies_2.12:0.28.0"
 

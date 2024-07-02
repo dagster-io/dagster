@@ -1,5 +1,5 @@
 import shlex
-from typing import AbstractSet, Literal, Mapping, Optional, Sequence, Union
+from typing import Union, Literal, Mapping, Optional, Sequence, AbstractSet
 
 from dagster import AssetExecutionContext
 from pydantic import Field

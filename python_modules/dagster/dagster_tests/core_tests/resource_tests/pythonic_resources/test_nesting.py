@@ -1,23 +1,23 @@
-import contextlib
 import enum
 import json
+import contextlib
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Callable, Optional
 
 import pytest
 from dagster import (
-    ConfigurableResource,
-    Definitions,
     Field,
-    ResourceDependency,
+    Definitions,
     ResourceParam,
+    ResourceDependency,
+    ConfigurableResource,
     asset,
     resource,
 )
 from dagster._check import CheckError
 from dagster._config.pythonic_config import ConfigurableIOManager, ConfigurableResourceFactory
-from dagster._core.execution.context.init import InitResourceContext
 from dagster._core.storage.io_manager import IOManager
+from dagster._core.execution.context.init import InitResourceContext
 
 
 def test_nested_resources() -> None:

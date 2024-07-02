@@ -1,4 +1,4 @@
-from dagster import In, Int, Out, job, op, repository, schedule
+from dagster import In, Int, Out, op, job, schedule, repository
 
 
 @op(ins={"num": In(Int)}, out=Out(Int))

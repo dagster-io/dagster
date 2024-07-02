@@ -1,7 +1,7 @@
-from typing import Any, Dict, Iterator, Mapping, Optional, Sequence
+from typing import Any, Dict, Mapping, Iterator, Optional, Sequence
 
 import dagster._check as check
-from dagster import AssetMaterialization, MetadataValue
+from dagster import MetadataValue, AssetMaterialization
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 

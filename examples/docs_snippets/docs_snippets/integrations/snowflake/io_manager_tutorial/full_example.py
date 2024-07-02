@@ -1,7 +1,7 @@
 import pandas as pd
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, EnvVar, SourceAsset, asset
+from dagster import EnvVar, Definitions, SourceAsset, asset
 
 iris_harvest_data = SourceAsset(key="iris_harvest_data")
 

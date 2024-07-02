@@ -1,95 +1,95 @@
-import contextlib
-import copy
 import os
+import sys
+import copy
+import uuid
 import shutil
 import signal
+import contextlib
 import subprocess
-import sys
-import uuid
-from argparse import ArgumentParser, Namespace
-from collections import abc
-from concurrent.futures import ThreadPoolExecutor
-from contextlib import suppress
-from dataclasses import InitVar, dataclass, field
-from pathlib import Path
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Dict,
-    Generic,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Generic,
+    Mapping,
+    Callable,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from pathlib import Path
+from argparse import Namespace, ArgumentParser
+from contextlib import suppress
+from collections import abc
+from dataclasses import InitVar, field, dataclass
+from concurrent.futures import ThreadPoolExecutor
 
-import dateutil.parser
 import orjson
+import dateutil.parser
 from dagster import (
+    Output,
     AssetCheckKey,
+    TableColumnDep,
     AssetCheckResult,
-    AssetCheckSeverity,
-    AssetExecutionContext,
-    AssetMaterialization,
     AssetObservation,
     AssetsDefinition,
-    ConfigurableResource,
+    AssetCheckSeverity,
     OpExecutionContext,
-    Output,
-    TableColumnDep,
     TableColumnLineage,
+    AssetMaterialization,
+    ConfigurableResource,
+    AssetExecutionContext,
     _check as check,
     get_dagster_logger,
 )
-from dagster._annotations import experimental, public
-from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidPropertyError
-from dagster._model.pydantic_compat_layer import compat_model_validator
-from dagster._utils import pushd
-from dagster._utils.warnings import disable_dagster_warnings
-from dbt.adapters.base.impl import BaseAdapter, BaseColumn
-from dbt.adapters.factory import get_adapter, register_adapter, reset_adapters
-from dbt.config import RuntimeConfig
-from dbt.config.runtime import load_profile, load_project
-from dbt.config.utils import parse_cli_vars
-from dbt.contracts.results import NodeStatus, TestStatus
-from dbt.flags import get_flags, set_from_args
-from dbt.node_types import NodeType
-from dbt.version import __version__ as dbt_version
-from packaging import version
+from sqlglot import MappingSchema, exp, to_table, parse_one
 from pydantic import Field, validator
-from sqlglot import MappingSchema, exp, parse_one, to_table
-from sqlglot.expressions import normalize_table_name
+from dbt.flags import get_flags, set_from_args
+from packaging import version
+from dbt.config import RuntimeConfig
+from dbt.version import __version__ as dbt_version
+from dagster._utils import pushd
+from dbt.node_types import NodeType
 from sqlglot.lineage import lineage
+from dbt.config.utils import parse_cli_vars
 from sqlglot.optimizer import optimize
 from typing_extensions import Final, Literal, TypeVar
+from dbt.config.runtime import load_profile, load_project
+from sqlglot.expressions import normalize_table_name
+from dagster._annotations import public, experimental
+from dagster._core.errors import DagsterInvalidPropertyError, DagsterExecutionInterruptedError
+from dbt.adapters.factory import get_adapter, reset_adapters, register_adapter
+from dbt.contracts.results import NodeStatus, TestStatus
+from dbt.adapters.base.impl import BaseColumn, BaseAdapter
+from dagster._utils.warnings import disable_dagster_warnings
+from dagster._core.definitions.metadata import TableMetadataSet, TextMetadataValue
+from dagster._model.pydantic_compat_layer import compat_model_validator
 
+from .utils import imap
+from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
+from ..errors import DagsterDbtCliRuntimeError
 from ..asset_utils import (
-    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     DAGSTER_DBT_SELECT_METADATA_KEY,
+    DAGSTER_DBT_EXCLUDE_METADATA_KEY,
     dagster_name_fn,
-    default_metadata_from_dbt_resource_props,
     get_asset_check_key_for_test,
+    default_metadata_from_dbt_resource_props,
     get_manifest_and_translator_from_dbt_assets,
 )
+from ..dbt_project import DbtProject
+from ..dbt_manifest import DbtManifestParam, validate_manifest
 from ..dagster_dbt_translator import (
     DagsterDbtTranslator,
-    validate_opt_translator,
     validate_translator,
+    validate_opt_translator,
 )
-from ..dbt_manifest import DbtManifestParam, validate_manifest
-from ..dbt_project import DbtProject
-from ..errors import DagsterDbtCliRuntimeError
-from ..utils import ASSET_RESOURCE_TYPES, get_dbt_resource_props_by_dbt_unique_id_from_manifest
-from .utils import imap
 
 IS_DBT_CORE_VERSION_LESS_THAN_1_8_0 = version.parse(dbt_version) < version.parse("1.8.0")
 
@@ -1514,10 +1514,10 @@ class DbtCliResource(ConfigurableResource):
         if IS_DBT_CORE_VERSION_LESS_THAN_1_8_0:
             register_adapter(config)  # type: ignore
         else:
-            from dbt.adapters.protocol import MacroContextGeneratorCallable
-            from dbt.context.providers import generate_runtime_macro_context
             from dbt.mp_context import get_mp_context
             from dbt.parser.manifest import ManifestLoader
+            from dbt.adapters.protocol import MacroContextGeneratorCallable
+            from dbt.context.providers import generate_runtime_macro_context
 
             register_adapter(config, get_mp_context())
             adapter = cast(BaseAdapter, get_adapter(config))

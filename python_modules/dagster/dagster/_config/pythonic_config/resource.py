@@ -1,20 +1,20 @@
-import contextlib
 import inspect
+import contextlib
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Dict,
-    Generator,
-    Generic,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
     Set,
+    Dict,
+    List,
     Type,
-    TypeVar,
     Union,
+    Generic,
+    Mapping,
+    TypeVar,
+    Callable,
+    Optional,
+    Generator,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
 
@@ -22,18 +22,18 @@ from typing_extensions import TypeAlias, TypeGuard, get_args, get_origin
 
 from dagster import Field as DagsterField
 from dagster._annotations import deprecated
-from dagster._config.field_utils import config_dictionary_from_values
-from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
-from dagster._config.validate import validate_config
-from dagster._core.definitions.definition_config_schema import (
-    ConfiguredDefinitionConfigSchema,
-    DefinitionConfigSchema,
-)
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._config.validate import validate_config
+from dagster._utils.typing_api import is_closed_python_optional_type
+from dagster._config.field_utils import config_dictionary_from_values
+from dagster._utils.cached_method import cached_method
 from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
 from dagster._model.pydantic_compat_layer import model_fields
-from dagster._utils.cached_method import cached_method
-from dagster._utils.typing_api import is_closed_python_optional_type
+from dagster._config.pythonic_config.typing_utils import TypecheckAllowPartialResourceInitParams
+from dagster._core.definitions.definition_config_schema import (
+    DefinitionConfigSchema,
+    ConfiguredDefinitionConfigSchema,
+)
 
 from .attach_other_object_to_context import (
     IAttachDifferentObjectToOpContext as IAttachDifferentObjectToOpContext,
@@ -53,18 +53,18 @@ from pydantic import BaseModel
 
 import dagster._check as check
 from dagster._core.decorator_utils import get_function_params
+from dagster._core.storage.io_manager import IOManagerDefinition
 from dagster._core.definitions.resource_definition import (
-    ResourceDefinition,
     ResourceFunction,
+    ResourceDefinition,
     ResourceFunctionWithContext,
     ResourceFunctionWithoutContext,
     has_at_least_one_parameter,
 )
-from dagster._core.storage.io_manager import IOManagerDefinition
 
 from .config import Config, MakeConfigCacheable, infer_schema_from_config_class
-from .conversion_utils import TResValue, _curry_config_schema
 from .typing_utils import BaseResourceMeta, LateBoundTypesForResourceTypeChecking
+from .conversion_utils import TResValue, _curry_config_schema
 
 T_Self = TypeVar("T_Self", bound="ConfigurableResourceFactory")
 ResourceId: TypeAlias = int

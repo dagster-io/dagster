@@ -1,10 +1,10 @@
 import base64
 from io import BytesIO
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
-from dagster import AssetExecutionContext, MetadataValue, asset
+import matplotlib.pyplot as plt
+from dagster import MetadataValue, AssetExecutionContext, asset
 from wordcloud import STOPWORDS, WordCloud
 
 

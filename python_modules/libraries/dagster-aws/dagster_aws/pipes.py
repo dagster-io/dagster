@@ -1,33 +1,33 @@
-import base64
-import json
 import os
+import json
+import base64
 import random
 import string
+from typing import TYPE_CHECKING, Any, Mapping, Iterator, Optional, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence
 
 import boto3
 import dagster._check as check
-from botocore.exceptions import ClientError
 from dagster import PipesClient
+from dagster_pipes import PipesDefaultMessageWriter
+from botocore.exceptions import ClientError
 from dagster._annotations import experimental
-from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.pipes.utils import (
+    PipesLogReader,
+    PipesEnvContextInjector,
+    PipesBlobStoreMessageReader,
+    open_pipes_session,
+    extract_message_or_forward_to_stdout,
+)
 from dagster._core.pipes.client import (
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
     PipesParams,
+    PipesMessageReader,
+    PipesContextInjector,
+    PipesClientCompletedInvocation,
 )
 from dagster._core.pipes.context import PipesMessageHandler
-from dagster._core.pipes.utils import (
-    PipesBlobStoreMessageReader,
-    PipesEnvContextInjector,
-    PipesLogReader,
-    extract_message_or_forward_to_stdout,
-    open_pipes_session,
-)
-from dagster_pipes import PipesDefaultMessageWriter
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 
 if TYPE_CHECKING:
     from dagster_pipes import PipesContextData

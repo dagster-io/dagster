@@ -1,11 +1,11 @@
 import pandas as pd
 
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    Definitions,
     Output,
+    Definitions,
+    AssetCheckSpec,
+    AssetCheckResult,
+    AssetExecutionContext,
     asset,
 )
 

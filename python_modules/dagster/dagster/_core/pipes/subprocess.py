@@ -1,26 +1,26 @@
 import os
 import signal
+from typing import Union, Mapping, Optional, Sequence
 from subprocess import Popen
-from typing import Mapping, Optional, Sequence, Union
 
 from dagster_pipes import PipesExtras
 
 from dagster import _check as check
-from dagster._annotations import experimental, public
-from dagster._core.definitions.resource_annotation import TreatAsResourceParam
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.pipes.client import (
-    PipesClient,
-    PipesClientCompletedInvocation,
-    PipesContextInjector,
-    PipesMessageReader,
-)
+from dagster._annotations import public, experimental
+from dagster._core.errors import DagsterPipesExecutionError, DagsterExecutionInterruptedError
 from dagster._core.pipes.utils import (
-    PipesTempFileContextInjector,
     PipesTempFileMessageReader,
+    PipesTempFileContextInjector,
     open_pipes_session,
 )
+from dagster._core.pipes.client import (
+    PipesClient,
+    PipesMessageReader,
+    PipesContextInjector,
+    PipesClientCompletedInvocation,
+)
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.resource_annotation import TreatAsResourceParam
 
 
 @experimental

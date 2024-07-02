@@ -1,15 +1,15 @@
-import logging
 import os
+import logging
 
 import mock
 import pytest
 import responses
 from click.testing import CliRunner
+from dagster._utils import pushd, script_relative_path
 from dagster._cli.job import job_execute_command
 from dagster._core.telemetry import cleanup_telemetry_logger
-from dagster._core.telemetry_upload import get_dagster_telemetry_url, upload_logs
 from dagster._core.test_utils import environ, instance_for_test
-from dagster._utils import pushd, script_relative_path
+from dagster._core.telemetry_upload import upload_logs, get_dagster_telemetry_url
 
 
 def path_to_file(path):

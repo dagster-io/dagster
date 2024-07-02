@@ -2,10 +2,10 @@ import calendar
 import datetime
 
 import pytest
-from dagster._time import create_datetime, get_timezone
+from dagster._time import get_timezone, create_datetime
 from dagster._utils.schedules import (
-    _croniter_string_iterator,
     cron_string_iterator,
+    _croniter_string_iterator,
     reverse_cron_string_iterator,
 )
 

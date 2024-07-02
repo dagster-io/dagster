@@ -1,7 +1,7 @@
 # start_marker
-from dagster_aws.s3 import S3PickleIOManager, S3Resource
+from dagster_aws.s3 import S3Resource, S3PickleIOManager
 
-from dagster import FilesystemIOManager, Out, job, op
+from dagster import Out, FilesystemIOManager, op, job
 
 
 @op(out=Out(io_manager_key="fs"))

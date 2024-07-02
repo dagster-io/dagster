@@ -1,7 +1,7 @@
 # type: ignore
 
-from autodiscover_src.jobs import hello_world_job
 from dagster import repository
+from autodiscover_src.jobs import hello_world_job
 
 
 @repository

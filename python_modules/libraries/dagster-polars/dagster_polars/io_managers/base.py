@@ -4,40 +4,40 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Tuple,
+    Union,
     Literal,
     Mapping,
     Optional,
-    Tuple,
-    Union,
     cast,
     get_args,
-    get_origin,
     overload,
+    get_origin,
 )
 
 import polars as pl
 from dagster import (
-    ConfigurableIOManager,
     EnvVar,
-    InitResourceContext,
     InputContext,
     MetadataValue,
     OutputContext,
     UPathIOManager,
+    InitResourceContext,
+    ConfigurableIOManager,
     _check as check,
 )
 from pydantic import PrivateAttr
 from pydantic.fields import Field
 
-from dagster_polars.io_managers.utils import get_polars_metadata
 from dagster_polars.types import (
-    DataFramePartitions,
-    DataFramePartitionsWithMetadata,
-    LazyFramePartitions,
-    LazyFramePartitionsWithMetadata,
-    LazyFrameWithMetadata,
     StorageMetadata,
+    DataFramePartitions,
+    LazyFramePartitions,
+    LazyFrameWithMetadata,
+    DataFramePartitionsWithMetadata,
+    LazyFramePartitionsWithMetadata,
 )
+from dagster_polars.io_managers.utils import get_polars_metadata
 
 if TYPE_CHECKING:
     from upath import UPath

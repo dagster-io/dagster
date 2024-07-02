@@ -1,8 +1,8 @@
 import os
 import shutil
+from typing import List
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List
 
 import mock
 import pytest

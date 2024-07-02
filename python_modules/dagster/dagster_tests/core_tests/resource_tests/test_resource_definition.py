@@ -1,40 +1,40 @@
-from contextlib import contextmanager
 from enum import Enum as PythonEnum
 from unittest import mock
+from contextlib import contextmanager
 
 import pytest
 from dagster import (
-    DagsterEventType,
-    DagsterInvariantViolationError,
-    DagsterResourceFunctionError,
-    Enum,
-    EnumValue,
-    Field,
-    GraphDefinition,
     Int,
-    ResourceDefinition,
+    Enum,
+    Field,
     String,
-    build_op_context,
+    EnumValue,
+    GraphDefinition,
+    DagsterEventType,
+    ResourceDefinition,
+    DagsterResourceFunctionError,
+    DagsterInvariantViolationError,
+    op,
+    job,
+    graph,
+    resource,
     configured,
     execute_job,
     fs_io_manager,
-    graph,
-    job,
-    op,
     reconstructable,
-    resource,
+    build_op_context,
 )
+from dagster._core.utils import coerce_valid_log_level
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterConfigMappingFunctionError
+from dagster._core.instance import DagsterInstance
+from dagster._core.events.log import EventLogEntry, construct_event_logger
+from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_plan, create_execution_plan
 from dagster._core.definitions.job_base import InMemoryJob
 from dagster._core.definitions.resource_definition import (
-    dagster_maintained_resource,
     make_values_resource,
+    dagster_maintained_resource,
 )
-from dagster._core.errors import DagsterConfigMappingFunctionError, DagsterInvalidDefinitionError
-from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._core.execution.api import create_execution_plan, execute_plan
-from dagster._core.instance import DagsterInstance
-from dagster._core.test_utils import instance_for_test
-from dagster._core.utils import coerce_valid_log_level
 
 
 def define_string_resource():

@@ -3,20 +3,20 @@ from typing import Sequence
 
 import pytest
 from dagster import (
+    PartitionKeyRange,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
+    HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    HourlyPartitionsDefinition,
-    MultiPartitionsDefinition,
-    PartitionKeyRange,
-    StaticPartitionsDefinition,
-    define_asset_job,
     job,
+    define_asset_job,
 )
 from dagster._check import CheckError
-from dagster._core.test_utils import instance_for_test
 from dagster._serdes import serialize_value
+from dagster._core.test_utils import instance_for_test
 
 
 @pytest.mark.parametrize(

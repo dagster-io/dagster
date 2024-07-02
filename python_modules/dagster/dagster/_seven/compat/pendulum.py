@@ -1,9 +1,9 @@
 import datetime
-from contextlib import contextmanager
 from unittest import mock
+from contextlib import contextmanager
 
-import packaging.version
 import pendulum
+import packaging.version
 from typing_extensions import TypeAlias
 
 _IS_PENDULUM_2 = (

@@ -1,14 +1,14 @@
-import datetime
 import json
-import logging
 import time
+import logging
+import datetime
 from typing import Any, Mapping, Optional
 
 import requests
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster import Field, Failure, StringSource, resource, __version__, get_dagster_logger
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import RequestException
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from .types import CensusOutput
 

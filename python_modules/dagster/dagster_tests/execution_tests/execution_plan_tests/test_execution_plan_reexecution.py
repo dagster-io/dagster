@@ -1,30 +1,30 @@
 import os
 import pickle
 
-import dagster._check as check
 import pytest
-from dagster import DependencyDefinition, In, Int, Out, op
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import reconstructable
+import dagster._check as check
+from dagster import In, Int, Out, DependencyDefinition, op
 from dagster._core.errors import (
-    DagsterExecutionStepNotFoundError,
-    DagsterInvariantViolationError,
     DagsterRunNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterExecutionStepNotFoundError,
 )
 from dagster._core.events import get_step_output_event
 from dagster._core.execution.api import (
     ReexecutionOptions,
-    create_execution_plan,
     execute_job,
     execute_plan,
+    create_execution_plan,
 )
-from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.instance_for_test import instance_for_test
-from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.definitions.reconstruct import reconstructable
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.executor_definition import in_process_executor
 
 
 @op(ins={"num": In(Int)}, out=Out(Int))

@@ -2,16 +2,16 @@ import json
 import logging
 import threading
 import traceback
-from contextlib import ExitStack
 from typing import IO, Any, List, Mapping, Optional, Sequence
+from contextlib import ExitStack
 
 from dagster import _seven
+from dagster._utils.log import create_console_logger
+from dagster._core.utils import coerce_valid_log_level
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.storage.compute_log_manager import ComputeIOType
-from dagster._core.utils import coerce_valid_log_level
-from dagster._utils.log import create_console_logger
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 
 
 class DispatchingLogHandler(logging.Handler):

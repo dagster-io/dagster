@@ -1,12 +1,12 @@
 import itertools
-from typing import List, NamedTuple, Optional, Sequence
+from typing import List, Optional, Sequence, NamedTuple
 
 from dagster import (
     AssetsDefinition,
+    PartitionsDefinition,
     AutoMaterializePolicy,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    PartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
     repository,

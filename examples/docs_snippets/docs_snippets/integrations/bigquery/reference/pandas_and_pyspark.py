@@ -13,14 +13,14 @@ def rose_data():
 
 # start_example
 
-from typing import Optional, Sequence, Type
+from typing import Type, Optional, Sequence
 
 import pandas as pd
 from dagster_gcp import BigQueryIOManager
 from dagster_gcp_pandas import BigQueryPandasTypeHandler
 from dagster_gcp_pyspark import BigQueryPySparkTypeHandler
 
-from dagster import DbTypeHandler, Definitions
+from dagster import Definitions, DbTypeHandler
 
 
 class MyBigQueryIOManager(BigQueryIOManager):

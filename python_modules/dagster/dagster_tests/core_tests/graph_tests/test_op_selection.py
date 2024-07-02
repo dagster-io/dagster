@@ -1,23 +1,23 @@
 # mypy: disable-error-code=return-value
-from datetime import datetime
 from typing import List
+from datetime import datetime
 
 import pytest
 from dagster import (
-    AssetKey,
-    ConfigMapping,
-    DynamicOut,
-    DynamicOutput,
     In,
-    graph,
-    job,
+    AssetKey,
+    DynamicOut,
+    ConfigMapping,
+    DynamicOutput,
     op,
+    job,
+    graph,
     repository,
 )
-from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvalidSubsetError
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvalidInvocationError
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 from dagster._core.storage.input_manager import input_manager
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
 
 
 @op

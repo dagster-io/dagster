@@ -4,26 +4,26 @@ import types
 
 import pytest
 from dagster import (
-    DagsterInvariantViolationError,
-    GraphDefinition,
     JobDefinition,
-    execute_job,
-    job,
+    GraphDefinition,
+    DagsterInvariantViolationError,
     op,
-    reconstructable,
+    job,
     repository,
+    execute_job,
+    reconstructable,
 )
-from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._utils import file_relative_path
+from dagster._core.snap import JobSnapshot, create_job_snapshot_id
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     JobPythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster._core.snap import JobSnapshot, create_job_snapshot_id
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path
+from dagster._core.code_pointer import FileCodePointer
 from dagster._utils.hosted_user_process import recon_job_from_origin
+from dagster._core.definitions.reconstruct import ReconstructableJob
 
 
 @op

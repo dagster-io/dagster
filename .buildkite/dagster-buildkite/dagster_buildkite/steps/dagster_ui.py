@@ -1,12 +1,12 @@
-from pathlib import Path
 from typing import List
+from pathlib import Path
 
 from dagster_buildkite.git import ChangedFiles
 from dagster_buildkite.package_spec import PackageSpec
 
-from ..python_version import AvailablePythonVersion
-from ..step_builder import CommandStepBuilder
 from ..utils import CommandStep, is_feature_branch
+from ..step_builder import CommandStepBuilder
+from ..python_version import AvailablePythonVersion
 
 
 def skip_if_no_dagster_ui_components_changes():

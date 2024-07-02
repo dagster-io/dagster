@@ -1,7 +1,7 @@
-import json
 import os
+import json
 
-from dagster import RunRequest, SensorEvaluationContext, SensorResult, sensor
+from dagster import RunRequest, SensorResult, SensorEvaluationContext, sensor
 
 from ..jobs import adhoc_request_job
 

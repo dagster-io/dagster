@@ -1,17 +1,17 @@
-import socket
 import ssl
 import time
+import socket
 from datetime import datetime, timedelta
 
 import botocore
 from dagster._vendored.dateutil.tz import tzutc
 from dagster_aws.utils.mrjob.utils import (
     _boto3_now,
+    _wrap_aws_client,
     _client_error_code,
+    strip_microseconds,
     _client_error_status,
     _is_retriable_client_error,
-    _wrap_aws_client,
-    strip_microseconds,
 )
 
 EPS = 10.0

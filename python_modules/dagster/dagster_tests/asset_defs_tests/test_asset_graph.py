@@ -1,48 +1,48 @@
+from typing import List, Callable, Optional
 from datetime import datetime
-from typing import Callable, List, Optional
 from unittest.mock import MagicMock
 
 import pytest
 from dagster import (
+    Out,
     AssetIn,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
-    DailyPartitionsDefinition,
     GraphOut,
-    HourlyPartitionsDefinition,
-    LastPartitionMapping,
-    Out,
+    AssetsDefinition,
     PartitionMapping,
+    LastPartitionMapping,
+    DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    op,
     asset,
     graph,
+    repository,
     multi_asset,
     multi_asset_check,
-    op,
-    repository,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.partition import PartitionsDefinition, PartitionsSubset
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
-from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
-from dagster._core.definitions.source_asset import SourceAsset
+from dagster._time import create_datetime, get_current_datetime
 from dagster._core.errors import DagsterDefinitionChangedDeserializationError
 from dagster._core.instance import DynamicPartitionsStore
-from dagster._core.remote_representation.external_data import (
-    external_asset_checks_from_defs,
-    external_asset_nodes_from_defs,
-)
 from dagster._core.test_utils import freeze_time, instance_for_test
-from dagster._time import create_datetime, get_current_datetime
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.partition import PartitionsSubset, PartitionsDefinition
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._core.definitions.partition_mapping import UpstreamPartitionsResult
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
+from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.remote_representation.external_data import (
+    external_asset_nodes_from_defs,
+    external_asset_checks_from_defs,
+)
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 
 
 def to_external_asset_graph(assets, asset_checks=None) -> BaseAssetGraph:

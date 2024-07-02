@@ -1,4 +1,4 @@
-from dagster import Config, OpExecutionContext, job, op
+from dagster import Config, OpExecutionContext, op, job
 
 
 class ProcessDateConfig(Config):

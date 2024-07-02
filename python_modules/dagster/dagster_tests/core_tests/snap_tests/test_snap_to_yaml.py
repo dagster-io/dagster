@@ -3,14 +3,14 @@ import sys
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 import pytest
-from dagster import Config, DagsterInstance, Field, job, op
-from dagster._config.field import resolve_to_config_type
+from dagster import Field, Config, DagsterInstance, op, job
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.remote_representation import InProcessCodeLocationOrigin
-from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
+from dagster._config.field import resolve_to_config_type
 from dagster._core.test_utils import instance_for_test
+from dagster._core.snap.snap_to_yaml import default_values_yaml_from_type_snap
+from dagster._core.remote_representation import InProcessCodeLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.definitions_class import Definitions
 
 if TYPE_CHECKING:
     from dagster._core.remote_representation.external import ExternalJob

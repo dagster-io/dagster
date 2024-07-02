@@ -3,17 +3,17 @@ from unittest.mock import Mock
 
 import pytest
 from dagster import DailyPartitionsDefinition, MultiPartitionsDefinition, StaticPartitionsDefinition
-from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
-from dagster._core.definitions.time_window_partitions import (
-    PartitionKeysTimeWindowPartitionsSubset,
-    PersistedTimeWindow,
-    TimeWindowPartitionsDefinition,
-    TimeWindowPartitionsSubset,
-)
+from dagster._time import create_datetime, get_current_datetime
+from dagster._serdes import serialize_value, deserialize_value
 from dagster._core.errors import DagsterInvalidDeserializationVersionError
 from dagster._core.test_utils import freeze_time
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._time import create_datetime, get_current_datetime
+from dagster._core.definitions.partition import AllPartitionsSubset, DefaultPartitionsSubset
+from dagster._core.definitions.time_window_partitions import (
+    PersistedTimeWindow,
+    TimeWindowPartitionsSubset,
+    TimeWindowPartitionsDefinition,
+    PartitionKeysTimeWindowPartitionsSubset,
+)
 
 
 def test_default_subset_cannot_deserialize_invalid_version():

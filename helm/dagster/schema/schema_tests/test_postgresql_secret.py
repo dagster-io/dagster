@@ -2,8 +2,8 @@ import subprocess
 
 import pytest
 from kubernetes.client import models
-from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
+from schema.charts.dagster.values import DagsterHelmValues
 
 
 @pytest.fixture(name="template")

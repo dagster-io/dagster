@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Dict, List
 
 from pydantic import (
-    BaseModel as PydanticBaseModel,
     Extra,
+    BaseModel as PydanticBaseModel,
 )
 
 

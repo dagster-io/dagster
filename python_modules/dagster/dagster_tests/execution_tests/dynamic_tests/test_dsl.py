@@ -1,12 +1,12 @@
 import pytest
 from dagster import (
-    DagsterInvalidDefinitionError,
+    GraphOut,
     DynamicOut,
     DynamicOutput,
-    GraphOut,
-    graph,
-    job,
+    DagsterInvalidDefinitionError,
     op,
+    job,
+    graph,
 )
 
 

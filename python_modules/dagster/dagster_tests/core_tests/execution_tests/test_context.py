@@ -1,39 +1,39 @@
-import dagster._check as check
 import pytest
+import dagster._check as check
 from dagster import (
-    AssetCheckExecutionContext,
-    AssetCheckResult,
-    AssetExecutionContext,
-    AssetOut,
-    DagsterInstance,
-    Definitions,
-    GraphDefinition,
-    OpExecutionContext,
     Output,
+    AssetOut,
+    Definitions,
+    DagsterInstance,
+    GraphDefinition,
+    AssetCheckResult,
+    OpExecutionContext,
+    AssetExecutionContext,
+    AssetCheckExecutionContext,
+    op,
+    job,
     asset,
+    repository,
     asset_check,
-    define_asset_job,
     execute_job,
     graph_asset,
-    graph_multi_asset,
-    job,
     materialize,
     multi_asset,
-    op,
     reconstructable,
-    repository,
+    define_asset_job,
+    graph_multi_asset,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.asset_check_spec import AssetCheckSpec
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test, raise_exception_on_warnings
+from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.definitions.asset_checks import build_asset_with_blocking_check
-from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
 )
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._core.test_utils import instance_for_test, raise_exception_on_warnings
 
 
 def test_op_execution_context():

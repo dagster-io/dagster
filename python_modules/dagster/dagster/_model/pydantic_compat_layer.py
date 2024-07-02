@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Type, Union, Literal, Optional, Sequence
 
 import pydantic
 from pydantic import BaseModel, ValidationError

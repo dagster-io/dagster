@@ -1,4 +1,4 @@
-from dagster import Float, In, Int, List, Out, graph, op
+from dagster import In, Int, Out, List, Float, op, graph
 
 
 @op(out=Out(Int))

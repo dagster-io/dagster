@@ -1,9 +1,9 @@
 import os
 
-import pytest
 import yaml
+import pytest
 from dagster import job
-from dagster_spark import create_spark_op, spark_resource
+from dagster_spark import spark_resource, create_spark_op
 
 CONFIG = """
 ops:

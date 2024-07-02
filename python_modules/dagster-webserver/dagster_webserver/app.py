@@ -1,10 +1,10 @@
 from typing import Optional
 
 from dagster import _check as check
-from dagster._core.execution.compute_logs import warn_if_compute_logs_disabled
+from starlette.applications import Starlette
 from dagster._core.telemetry import log_workspace_stats
 from dagster._core.workspace.context import IWorkspaceProcessContext
-from starlette.applications import Starlette
+from dagster._core.execution.compute_logs import warn_if_compute_logs_disabled
 
 from .webserver import DagsterWebserver
 

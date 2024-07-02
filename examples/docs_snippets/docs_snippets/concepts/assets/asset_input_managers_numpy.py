@@ -5,11 +5,11 @@ import pandas as pd
 
 from dagster import (
     AssetIn,
-    ConfigurableIOManager,
+    IOManager,
     Definitions,
     InputContext,
-    IOManager,
     OutputContext,
+    ConfigurableIOManager,
     asset,
     io_manager,
 )

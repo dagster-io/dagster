@@ -1,38 +1,38 @@
-from typing import ContextManager, Optional, Sequence, cast
+from typing import Optional, Sequence, ContextManager, cast
 
-import dagster._check as check
 import pendulum
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
+import dagster._check as check
 import sqlalchemy.pool as db_pool
+import sqlalchemy.dialects as db_dialects
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from sqlalchemy.engine import Connection
+from dagster._core.storage.sql import (
+    AlembicVersion,
+    create_engine,
+    stamp_alembic_rev,
+    run_alembic_upgrade,
+    check_alembic_revision,
+)
+from dagster._core.storage.config import MySqlStorageConfig, mysql_config
 from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.schedules import SqlScheduleStorage, ScheduleStorageSqlMetadata
+from dagster._core.storage.schedules.schema import (
+    InstigatorsTable,
+    AssetDaemonAssetEvaluationsTable,
+)
 from dagster._core.definitions.declarative_automation.serialized_objects import (
     AssetConditionEvaluationWithRunIds,
 )
-from dagster._core.storage.config import MySqlStorageConfig, mysql_config
-from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
-from dagster._core.storage.schedules.schema import (
-    AssetDaemonAssetEvaluationsTable,
-    InstigatorsTable,
-)
-from dagster._core.storage.sql import (
-    AlembicVersion,
-    check_alembic_revision,
-    create_engine,
-    run_alembic_upgrade,
-    stamp_alembic_rev,
-)
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from sqlalchemy.engine import Connection
 
 from ..utils import (
-    create_mysql_connection,
+    parse_mysql_version,
     mysql_alembic_config,
     mysql_isolation_level,
     mysql_url_from_config,
-    parse_mysql_version,
-    retry_mysql_connection_fn,
+    create_mysql_connection,
     retry_mysql_creation_fn,
+    retry_mysql_connection_fn,
 )
 
 MINIMUM_MYSQL_BATCH_VERSION = "8.0.0"

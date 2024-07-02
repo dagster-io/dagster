@@ -1,21 +1,21 @@
 import sys
 from abc import abstractmethod
+from enum import Enum
+from typing import Dict, Type, Union, Iterator, Optional, Sequence, cast
 from contextlib import contextmanager
 from dataclasses import dataclass
-from enum import Enum
-from typing import Dict, Iterator, Optional, Sequence, Type, Union, cast
 
 from dagster import OutputContext
+from pydantic import Field
 from dagster._config.pythonic_config import ConfigurableIOManagerFactory
-from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster._core.storage.db_io_manager import (
     DbClient,
+    TableSlice,
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
-    TableSlice,
 )
-from pydantic import Field
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict
@@ -27,7 +27,7 @@ if sys.version_info >= (3, 11):
 else:
     from typing_extensions import NotRequired
 
-from .config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
+from .config import S3Config, GcsConfig, AzureConfig, LocalConfig, ClientConfig
 
 DELTA_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 DELTA_DATE_FORMAT = "%Y-%m-%d"

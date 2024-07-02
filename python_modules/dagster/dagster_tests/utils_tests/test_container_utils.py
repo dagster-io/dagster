@@ -1,10 +1,10 @@
-from pathlib import Path
 from typing import Optional
+from pathlib import Path
 
 import mock
 import pytest
-from dagster._utils.container import CGroupVersion, retrieve_containerized_utilization_metrics
 from dagster._utils.env import environ
+from dagster._utils.container import CGroupVersion, retrieve_containerized_utilization_metrics
 
 
 @pytest.fixture

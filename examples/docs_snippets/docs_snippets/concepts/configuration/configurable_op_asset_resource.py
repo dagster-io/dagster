@@ -1,12 +1,12 @@
 from dagster import (
-    AssetExecutionContext,
-    InitResourceContext,
     OpExecutionContext,
-    asset,
-    job,
+    InitResourceContext,
+    AssetExecutionContext,
     op,
-    repository,
+    job,
+    asset,
     resource,
+    repository,
 )
 
 

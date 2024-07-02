@@ -1,6 +1,6 @@
 from unittest import mock
 
-from dagster import OpExecutionContext, build_op_context, job, op
+from dagster import OpExecutionContext, op, job, build_op_context
 from dagster_datadog import datadog_resource
 from dagster_datadog.resources import DatadogResource
 

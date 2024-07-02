@@ -1,22 +1,22 @@
 import time
 
 from dagster import AssetKey, DagsterEvent, DagsterEventType
+from dagster._core.utils import make_new_run_id
+from dagster._core.events import StepMaterializationData
+from dagster._core.event_api import EventLogRecord
+from dagster._core.events.log import EventLogEntry
+from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
+from dagster_graphql.client.query import ERROR_FRAGMENT
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.definitions.events import AssetMaterialization
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
 from dagster._core.definitions.asset_check_evaluation import (
     AssetCheckEvaluation,
     AssetCheckEvaluationPlanned,
     AssetCheckEvaluationTargetMaterializationData,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.events import AssetMaterialization
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.event_api import EventLogRecord
-from dagster._core.events import StepMaterializationData
-from dagster._core.events.log import EventLogEntry
-from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
-from dagster._core.utils import make_new_run_id
-from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster_graphql.client.query import ERROR_FRAGMENT
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

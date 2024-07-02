@@ -1,12 +1,12 @@
 from dagster._core.test_utils import wait_for_runs_to_finish
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .repo import csv_hello_world_ops_config
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 
 RUN_QUERY = """
 query RunQuery($runId: ID!) {

@@ -1,12 +1,12 @@
 from dagster._core.events import DagsterEventType
 from dagster_graphql.test.utils import (
+    infer_job_selector,
     execute_dagster_graphql,
     execute_dagster_graphql_subscription,
-    infer_job_selector,
 )
 
-from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .utils import sync_execute_get_run_log_data
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 
 CAPTURED_LOGS_QUERY = """
   query CapturedLogsQuery($logKey: [String!]!) {

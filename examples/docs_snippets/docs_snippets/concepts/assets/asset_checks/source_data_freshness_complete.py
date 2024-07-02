@@ -3,16 +3,16 @@ from datetime import timedelta
 from dagster_snowflake import SnowflakeResource, fetch_last_updated_timestamps
 
 from dagster import (
-    AssetSelection,
+    EnvVar,
     AssetSpec,
     Definitions,
-    EnvVar,
     MetadataValue,
     ObserveResult,
+    AssetSelection,
     ScheduleDefinition,
-    build_last_update_freshness_checks,
     define_asset_job,
     multi_observable_source_asset,
+    build_last_update_freshness_checks,
 )
 
 TABLE_SCHEMA = "PUBLIC"

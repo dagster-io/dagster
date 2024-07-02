@@ -2,20 +2,20 @@ import os
 import sqlite3
 from pathlib import Path
 
-import pytest
 import yaml
+import pytest
 from dagster import (
-    AssetExecutionContext,
-    AssetKey,
     Config,
+    AssetKey,
     FreshnessPolicy,
     JsonMetadataValue,
+    AssetExecutionContext,
     file_relative_path,
 )
-from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling import SlingReplicationParam, sling_assets
+from dagster_embedded_elt.sling.resources import SlingResource, SlingConnectionResource
+from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
 
 
 @pytest.mark.parametrize(

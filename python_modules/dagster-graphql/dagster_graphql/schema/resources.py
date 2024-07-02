@@ -1,25 +1,25 @@
 from typing import List
 
-import dagster._check as check
 import graphene
+import dagster._check as check
 from dagster._core.definitions.selector import ResourceSelector
 from dagster._core.remote_representation.external import ExternalResource
 from dagster._core.remote_representation.external_data import (
-    ExternalResourceConfigEnvVar,
-    ExternalResourceValue,
     NestedResourceType,
+    ExternalResourceValue,
     ResourceJobUsageEntry,
+    ExternalResourceConfigEnvVar,
 )
 
-from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 from dagster_graphql.schema.errors import (
     GraphenePythonError,
-    GrapheneRepositoryNotFoundError,
     GrapheneResourceNotFoundError,
+    GrapheneRepositoryNotFoundError,
 )
-from dagster_graphql.schema.pipelines.pipeline import GrapheneJob
 from dagster_graphql.schema.solids import GrapheneSolidHandle, build_solid_handles
-from dagster_graphql.schema.util import ResolveInfo, non_null_list
+from dagster_graphql.schema.asset_key import GrapheneAssetKey
+from dagster_graphql.schema.pipelines.pipeline import GrapheneJob
 
 from .config_types import GrapheneConfigTypeField
 

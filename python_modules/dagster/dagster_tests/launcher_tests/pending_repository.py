@@ -1,18 +1,18 @@
 from dagster import (
-    AssetKey,
-    AssetsDefinition,
-    DagsterInstance,
     In,
-    MetadataValue,
     Nothing,
-    asset,
-    define_asset_job,
+    AssetKey,
+    MetadataValue,
+    DagsterInstance,
+    AssetsDefinition,
     op,
+    asset,
     repository,
+    define_asset_job,
 )
 from dagster._core.definitions.cacheable_assets import (
-    AssetsDefinitionCacheableData,
     CacheableAssetsDefinition,
+    AssetsDefinitionCacheableData,
 )
 
 

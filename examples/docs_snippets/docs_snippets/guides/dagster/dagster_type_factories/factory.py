@@ -1,7 +1,7 @@
 import pandas as pd
 import pandera as pa
 
-from dagster import DagsterType, TypeCheck
+from dagster import TypeCheck, DagsterType
 
 
 def pandera_schema_to_dagster_type(schema, name, description):

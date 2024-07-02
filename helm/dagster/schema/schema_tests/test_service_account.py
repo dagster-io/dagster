@@ -2,11 +2,11 @@ import subprocess
 
 import pytest
 from kubernetes.client import models
-from schema.charts.dagster.subschema.global_ import Global
-from schema.charts.dagster.subschema.service_account import ServiceAccount
-from schema.charts.dagster.values import DagsterHelmValues
-from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
 from schema.utils.helm_template import HelmTemplate
+from schema.charts.dagster.values import DagsterHelmValues
+from schema.charts.dagster.subschema.global_ import Global
+from schema.charts.dagster_user_deployments.values import DagsterUserDeploymentsHelmValues
+from schema.charts.dagster.subschema.service_account import ServiceAccount
 
 
 @pytest.fixture(name="template")

@@ -1,12 +1,12 @@
 from dagster import (
-    AssetSelection,
-    DailyPartitionsDefinition,
     RunRequest,
     SkipReason,
+    AssetSelection,
+    DailyPartitionsDefinition,
     WeeklyPartitionsDefinition,
+    job,
     asset,
     define_asset_job,
-    job,
     multi_asset_sensor,
 )
 
@@ -28,8 +28,8 @@ class ReadMaterializationConfig(Config):
 # start_asset_sensor_marker
 from dagster import (
     AssetKey,
-    EventLogEntry,
     RunConfig,
+    EventLogEntry,
     SensorEvaluationContext,
     asset_sensor,
 )
@@ -53,7 +53,7 @@ def my_asset_sensor(context: SensorEvaluationContext, asset_event: EventLogEntry
 # end_asset_sensor_marker
 
 # start_asset_sensor_test_marker
-from dagster import DagsterInstance, build_sensor_context, materialize
+from dagster import DagsterInstance, materialize, build_sensor_context
 
 
 def test_my_asset_sensor():

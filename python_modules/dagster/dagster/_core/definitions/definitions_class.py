@@ -2,44 +2,44 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
-    Iterable,
     List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Type,
     Union,
+    Mapping,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
 )
 
 import dagster._check as check
-from dagster._annotations import deprecated, experimental, public
-from dagster._config.pythonic_config import attach_resource_id_to_key_mapping
-from dagster._core.definitions.asset_checks import AssetChecksDefinition
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
-from dagster._core.definitions.executor_definition import ExecutorDefinition
-from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._annotations import public, deprecated, experimental
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.execution.build_resources import wrap_resources_for_execution
-from dagster._core.execution.with_resources import with_resources
-from dagster._core.executor.base import Executor
 from dagster._core.instance import DagsterInstance
+from dagster._core.executor.base import Executor
 from dagster._utils.cached_method import cached_method
+from dagster._config.pythonic_config import attach_resource_id_to_key_mapping
+from dagster._core.definitions.events import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
+from dagster._core.execution.with_resources import with_resources
+from dagster._core.execution.build_resources import wrap_resources_for_execution
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.executor_definition import ExecutorDefinition
 
-from .assets import AssetsDefinition, SourceAsset
-from .cacheable_assets import CacheableAssetsDefinition
+from .assets import SourceAsset, AssetsDefinition
 from .decorators import repository
 from .job_definition import JobDefinition, default_job_io_manager
+from .cacheable_assets import CacheableAssetsDefinition
+from .sensor_definition import SensorDefinition
+from .schedule_definition import ScheduleDefinition
 from .partitioned_schedule import UnresolvedPartitionedAssetScheduleDefinition
 from .repository_definition import (
     SINGLETON_REPOSITORY_NAME,
-    PendingRepositoryDefinition,
     RepositoryDefinition,
+    PendingRepositoryDefinition,
 )
-from .schedule_definition import ScheduleDefinition
-from .sensor_definition import SensorDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 if TYPE_CHECKING:

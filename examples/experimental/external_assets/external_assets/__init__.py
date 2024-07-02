@@ -4,13 +4,13 @@ import kubernetes
 from dagster import Definitions
 from dagster_k8s import PipesK8sClient
 
-from .external_assets import external_asset_defs
 from .pipes import (
     telem_post_processing,
-    telem_post_processing_check,
     telem_post_processing_job,
+    telem_post_processing_check,
     telem_post_processing_sensor,
 )
+from .external_assets import external_asset_defs
 
 config_file = os.path.expanduser("~/.kube/config")
 

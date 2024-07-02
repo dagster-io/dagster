@@ -24,8 +24,8 @@
 mappings. Also includes basic utilities for working with boto3.
 """
 
-import socket
 import ssl
+import socket
 from datetime import datetime, timedelta
 
 import botocore

@@ -1,17 +1,17 @@
-import json
 import sys
-from datetime import date, datetime, time, timedelta
+import json
 from pprint import pformat
-from typing import Any, Dict, Mapping, Optional, Union
+from typing import Any, Dict, Union, Mapping, Optional
+from datetime import date, time, datetime, timedelta
 
 import polars as pl
 from dagster import (
-    MetadataValue,
-    OutputContext,
     TableColumn,
-    TableMetadataValue,
     TableRecord,
     TableSchema,
+    MetadataValue,
+    OutputContext,
+    TableMetadataValue,
 )
 
 POLARS_DATA_FRAME_ANNOTATIONS = [

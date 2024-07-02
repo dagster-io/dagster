@@ -2,7 +2,7 @@
 
 # This file is only loaded by old versions of dagster during backcompat testing.
 
-from dagster import graph, op, pipeline, repository, solid
+from dagster import op, graph, solid, pipeline, repository
 from dagster_graphql import DagsterGraphQLClient
 
 

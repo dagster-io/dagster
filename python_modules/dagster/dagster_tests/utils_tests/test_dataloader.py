@@ -1,6 +1,6 @@
 import asyncio
-from functools import cached_property
 from typing import List
+from functools import cached_property
 
 import pytest
 from dagster._model import DagsterModel

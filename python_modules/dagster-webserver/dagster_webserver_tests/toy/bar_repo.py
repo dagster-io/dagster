@@ -1,4 +1,4 @@
-from dagster import ScheduleDefinition, job, op, repository
+from dagster import ScheduleDefinition, op, job, repository
 
 
 @op

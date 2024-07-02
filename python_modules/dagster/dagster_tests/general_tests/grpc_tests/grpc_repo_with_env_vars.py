@@ -1,6 +1,6 @@
 import os
 
-from dagster import job, op, repository
+from dagster import op, job, repository
 
 if os.getenv("FOO") != "BAR":
     raise Exception("Missing env var")

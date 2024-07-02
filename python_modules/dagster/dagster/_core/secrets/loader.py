@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Optional
 
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
 
 
 class SecretsLoader(ABC, MayHaveInstanceWeakref[T_DagsterInstance]):

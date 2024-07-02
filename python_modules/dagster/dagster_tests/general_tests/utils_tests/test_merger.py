@@ -1,4 +1,4 @@
-from dagster._utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils.merger import merge_dicts, deep_merge_dicts
 
 
 def test_simple_merge():

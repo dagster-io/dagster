@@ -1,5 +1,5 @@
+from typing import Any, Tuple, Mapping
 from datetime import datetime, timezone
-from typing import Any, Mapping, Tuple
 
 from dagster import (
     AssetExecutionContext,

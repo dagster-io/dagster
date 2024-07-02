@@ -1,7 +1,7 @@
 # type: ignore
 
-from dagster import job
 from ops import example_two_op
+from dagster import job
 
 
 @job

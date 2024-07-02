@@ -1,7 +1,7 @@
 import subprocess
 
 import pytest
-from automation.docker.image_defs import copy_directories, get_image
+from automation.docker.image_defs import get_image, copy_directories
 
 
 @pytest.fixture(name="repo")

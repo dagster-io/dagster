@@ -1,20 +1,20 @@
-from typing import AbstractSet, List, Mapping, Optional, Set, Tuple
+from typing import Set, List, Tuple, Mapping, Optional, AbstractSet
 
-from airflow.models.connection import Connection
-from airflow.models.dag import DAG
 from dagster import (
     AssetKey,
-    AssetsDefinition,
-    GraphDefinition,
     OutputMapping,
+    GraphDefinition,
+    AssetsDefinition,
     TimeWindowPartitionsDefinition,
     _check as check,
 )
-from dagster._core.definitions.graph_definition import create_adjacency_lists
+from airflow.models.dag import DAG
 from dagster._utils.schedules import is_valid_cron_schedule
+from airflow.models.connection import Connection
+from dagster._core.definitions.graph_definition import create_adjacency_lists
 
-from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 from dagster_airflow.utils import DagsterAirflowError, normalized_name
+from dagster_airflow.dagster_job_factory import make_dagster_job_from_airflow_dag
 
 
 def _build_asset_dependencies(

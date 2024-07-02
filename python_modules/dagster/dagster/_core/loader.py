@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Dict, Type, Generic, TypeVar, Iterable, Optional
 from functools import partial
-from typing import TYPE_CHECKING, Dict, Generic, Iterable, Optional, Type, TypeVar
 
 from typing_extensions import Self
 

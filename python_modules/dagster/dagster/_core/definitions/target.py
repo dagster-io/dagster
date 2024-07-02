@@ -1,12 +1,12 @@
-from typing import NamedTuple, Optional, Sequence, Union
+from typing import Union, Optional, Sequence, NamedTuple
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster._utils.warnings import deprecation_warning
 
-from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
+from .graph_definition import GraphDefinition
 from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 
 ExecutableDefinition: TypeAlias = Union[

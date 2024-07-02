@@ -1,21 +1,21 @@
 import datetime
 
 from dagster import PartitionKeyRange
+from dagster._time import create_datetime
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
     AutoMaterializeRuleEvaluation,
     ParentUpdatedRuleEvaluationData,
 )
-from dagster._core.definitions.events import AssetKey
-from dagster._time import create_datetime
 
 from ..base_scenario import (
     AssetEvaluationSpec,
     AssetReconciliationScenario,
-    asset_def,
-    observable_source_asset_def,
     run,
+    asset_def,
     run_request,
+    observable_source_asset_def,
 )
 from .partition_scenarios import hourly_partitions_def, two_partitions_partitions_def
 

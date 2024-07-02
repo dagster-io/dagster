@@ -1,6 +1,6 @@
 import os
 
-from dagster import AutoMaterializePolicy, DataVersion, asset, observable_source_asset
+from dagster import DataVersion, AutoMaterializePolicy, asset, observable_source_asset
 
 
 @observable_source_asset(auto_observe_interval_minutes=1)

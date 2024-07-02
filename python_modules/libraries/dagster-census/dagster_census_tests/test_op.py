@@ -1,12 +1,12 @@
 import responses
-from dagster import job, op
+from dagster import op, job
 from dagster_census import CensusOutput, census_resource, census_trigger_sync_op
 
 from .utils import (
-    get_destination_data,
-    get_source_data,
     get_sync_data,
+    get_source_data,
     get_sync_run_data,
+    get_destination_data,
     get_sync_trigger_data,
 )
 

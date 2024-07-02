@@ -1,11 +1,11 @@
 import tempfile
 
 from dagster import (
-    FilesystemIOManager,
     ResourceDefinition,
-    load_assets_from_package_module,
+    FilesystemIOManager,
     materialize,
     mem_io_manager,
+    load_assets_from_package_module,
 )
 from dagster_pyspark import pyspark_resource
 

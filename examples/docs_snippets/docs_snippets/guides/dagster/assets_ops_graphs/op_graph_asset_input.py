@@ -1,4 +1,4 @@
-from dagster import asset, job, op
+from dagster import op, job, asset
 
 
 @asset

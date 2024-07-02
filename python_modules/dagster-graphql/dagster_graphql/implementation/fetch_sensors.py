@@ -1,20 +1,20 @@
 import time
-from typing import TYPE_CHECKING, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Set, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.run_request import InstigatorType
-from dagster._core.definitions.selector import JobSubsetSelector, RepositorySelector, SensorSelector
+from dagster._core.definitions.selector import SensorSelector, JobSubsetSelector, RepositorySelector
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
 )
 from dagster._core.workspace.permissions import Permissions
+from dagster._core.definitions.run_request import InstigatorType
 
 from dagster_graphql.schema.util import ResolveInfo
 
-from .loader import RepositoryScopedBatchLoader
 from .utils import UserFacingGraphQLError, assert_permission, assert_permission_for_location
+from .loader import RepositoryScopedBatchLoader
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.instigation import GrapheneDryRunInstigationTick

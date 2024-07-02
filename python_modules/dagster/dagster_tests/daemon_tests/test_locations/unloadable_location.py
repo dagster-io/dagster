@@ -1,7 +1,7 @@
 from dagster import (
     AssetIn,
-    DailyPartitionsDefinition,
     Definitions,
+    DailyPartitionsDefinition,
     TimeWindowPartitionMapping,
     asset,
 )

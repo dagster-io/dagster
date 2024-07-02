@@ -1,5 +1,5 @@
 # start_timeout
-from dagster import define_asset_job, job
+from dagster import job, define_asset_job
 
 
 @job(tags={"dagster/max_runtime": 10})

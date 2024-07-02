@@ -1,15 +1,15 @@
-from typing import TYPE_CHECKING, Iterable, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Union, Iterable, Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.partition_mapping import (
     PartitionMapping,
     warn_if_partition_mapping_not_builtin,
 )
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 
 from .events import AssetKey, CoercibleToAssetKey
 

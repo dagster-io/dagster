@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, NamedTuple, cast
 
 from dagster import (
     Array,
@@ -8,8 +8,8 @@ from dagster import (
     _check as check,
 )
 from dagster._config import process_config
-from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.container_context import process_shared_container_context_config
 from dagster._core.storage.dagster_run import DagsterRun
 
 if TYPE_CHECKING:

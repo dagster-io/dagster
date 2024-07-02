@@ -1,13 +1,13 @@
-from typing import Mapping, Optional, Sequence, Type
+from typing import Type, Mapping, Optional, Sequence
 
 import dagster._check as check
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.metadata import RawMetadataValue
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_snowflake import SnowflakeIOManager, build_snowflake_io_manager
-from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from pyspark.sql import DataFrame, SparkSession
+from dagster_snowflake import SnowflakeIOManager, build_snowflake_io_manager
 from pyspark.sql.types import StructType
+from dagster._core.definitions.metadata import RawMetadataValue
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
+from dagster_snowflake.snowflake_io_manager import SnowflakeDbClient
 
 SNOWFLAKE_CONNECTOR = "net.snowflake.spark.snowflake"
 

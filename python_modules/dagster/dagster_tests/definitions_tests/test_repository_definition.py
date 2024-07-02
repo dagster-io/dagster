@@ -1,47 +1,47 @@
-from collections import defaultdict
 from typing import Sequence
+from collections import defaultdict
 
 import pytest
 from dagster import (
     AssetKey,
-    AssetsDefinition,
-    DagsterInvalidDefinitionError,
-    DailyPartitionsDefinition,
-    GraphDefinition,
     IOManager,
-    JobDefinition,
-    OpDefinition,
-    ResourceDefinition,
-    SensorDefinition,
     SourceAsset,
-    asset,
-    build_schedule_from_partitioned_job,
-    define_asset_job,
-    executor,
-    graph,
-    in_process_executor,
-    io_manager,
-    job,
-    logger,
+    OpDefinition,
+    JobDefinition,
+    GraphDefinition,
+    AssetsDefinition,
+    SensorDefinition,
+    ResourceDefinition,
+    DailyPartitionsDefinition,
+    DagsterInvalidDefinitionError,
     op,
-    repository,
+    job,
+    asset,
+    graph,
+    logger,
+    sensor,
+    executor,
     resource,
     schedule,
-    sensor,
+    io_manager,
+    repository,
+    define_asset_job,
+    in_process_executor,
+    build_schedule_from_partitioned_job,
 )
 from dagster._check import CheckError
+from dagster._loggers import default_loggers
+from dagster._core.errors import DagsterInvalidSubsetError
+from dagster._core.definitions.partition import (
+    PartitionedConfig,
+    StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
+)
+from dagster._core.definitions.executor_definition import multi_or_in_process_executor
+from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.decorators.asset_check_decorator import asset_check
-from dagster._core.definitions.executor_definition import multi_or_in_process_executor
-from dagster._core.definitions.partition import (
-    DynamicPartitionsDefinition,
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
-from dagster._core.errors import DagsterInvalidSubsetError
-from dagster._loggers import default_loggers
 
 
 def create_single_node_job(name, called):

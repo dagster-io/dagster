@@ -2,25 +2,25 @@ import warnings
 
 import pytest
 from dagster import (
-    DependencyDefinition,
-    GraphDefinition,
-    GraphIn,
-    GraphOut,
     In,
     Int,
-    Nothing,
-    OpDefinition,
     Out,
     Output,
+    GraphIn,
+    Nothing,
+    GraphOut,
+    OpDefinition,
+    GraphDefinition,
+    DependencyDefinition,
+    op,
+    job,
     asset,
     graph,
-    job,
-    op,
 )
-from dagster._core.definitions.decorators.hook_decorator import event_list_hook, success_hook
-from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
+from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
+from dagster._core.definitions.decorators.hook_decorator import success_hook, event_list_hook
 
 
 def builder(graph):

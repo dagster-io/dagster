@@ -1,13 +1,13 @@
 import pytest
 from dagster import AssetSpec, multi_observable_source_asset
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.events import AssetKey
+from dagster._core.storage.io_manager import io_manager
+from dagster._core.definitions.observe import observe
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.definitions.data_version import DataVersion
 from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.observe import observe
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.storage.io_manager import io_manager
 
 
 def test_all_fields():

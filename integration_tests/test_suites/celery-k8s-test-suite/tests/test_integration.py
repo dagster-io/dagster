@@ -1,22 +1,22 @@
-import datetime
 import os
 import time
+import datetime
 from typing import Any, Mapping
 
 import boto3
 from dagster import DagsterEventType
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
-from dagster_k8s.test import wait_for_job_and_get_raw_logs
+from dagster_test.test_project import get_test_project_environments_path
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster_k8s_test_infra.integration_utils import (
-    can_terminate_run_over_graphql,
     image_pull_policy,
     launch_run_over_graphql,
     terminate_run_over_graphql,
+    can_terminate_run_over_graphql,
 )
-from dagster_test.test_project import get_test_project_environments_path
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

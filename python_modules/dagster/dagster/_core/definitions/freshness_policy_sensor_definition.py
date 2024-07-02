@@ -1,15 +1,11 @@
-from typing import Callable, Dict, Mapping, NamedTuple, Optional, Set, cast
+from typing import Set, Dict, Mapping, Callable, Optional, NamedTuple, cast
 
 import pendulum
 
 import dagster._check as check
+from dagster._seven import JSONDecodeError
+from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._annotations import PublicAttr, experimental
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
@@ -17,21 +13,25 @@ from dagster._core.errors import (
     user_code_error_boundary,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._serdes import serialize_value, whitelist_for_serdes
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import deserialize_value
-from dagster._seven import JSONDecodeError
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
 
 from .sensor_definition import (
-    DefaultSensorStatus,
-    RawSensorEvaluationFunctionReturn,
-    SensorDefinition,
-    SensorEvaluationContext,
     SensorType,
     SkipReason,
+    SensorDefinition,
+    DefaultSensorStatus,
+    SensorEvaluationContext,
+    RawSensorEvaluationFunctionReturn,
     get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
     validate_and_get_resource_dict,
+    get_sensor_context_from_args_or_kwargs,
 )
 
 

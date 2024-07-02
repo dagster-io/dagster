@@ -3,15 +3,15 @@ import pytest
 from dagster import Failure, graph
 from docs_snippets.concepts.ops_jobs_graphs.op_events import (
     my_asset_op,
-    my_expectation_op,
-    my_failure_op,
-    my_metadata_expectation_op,
-    my_metadata_output,
-    my_multiple_generic_output_op,
-    my_op_yields,
-    my_output_generic_op,
-    my_output_op,
     my_retry_op,
+    my_op_yields,
+    my_output_op,
+    my_failure_op,
+    my_expectation_op,
+    my_metadata_output,
+    my_output_generic_op,
+    my_metadata_expectation_op,
+    my_multiple_generic_output_op,
 )
 
 

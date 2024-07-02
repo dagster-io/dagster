@@ -2,10 +2,10 @@ from typing import List
 
 from dagster_buildkite.steps.tox import build_tox_step
 
-from ..python_version import AvailablePythonVersion
+from ..utils import GroupStep, BuildkiteStep, BuildkiteLeafStep, skip_if_no_docs_changes
+from .packages import build_example_packages_steps, build_dagster_ui_screenshot_steps
 from ..step_builder import CommandStepBuilder
-from ..utils import BuildkiteLeafStep, BuildkiteStep, GroupStep, skip_if_no_docs_changes
-from .packages import build_dagster_ui_screenshot_steps, build_example_packages_steps
+from ..python_version import AvailablePythonVersion
 
 
 def build_docs_steps() -> List[BuildkiteStep]:

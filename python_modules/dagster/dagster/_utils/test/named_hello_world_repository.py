@@ -1,4 +1,4 @@
-from dagster._core.definitions import job, op, repository
+from dagster._core.definitions import op, job, repository
 
 
 @op

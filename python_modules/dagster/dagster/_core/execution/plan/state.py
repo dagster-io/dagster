@@ -1,41 +1,41 @@
-from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
     Any,
+    Set,
     Dict,
     List,
+    Tuple,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Tuple,
+    NamedTuple,
     cast,
 )
+from collections import defaultdict
 
 from typing_extensions import TypeAlias
 
 import dagster._check as check
+from dagster._serdes import whitelist_for_serdes
 from dagster._core.errors import (
-    DagsterExecutionPlanSnapshotNotFoundError,
-    DagsterInvariantViolationError,
     DagsterRunNotFoundError,
+    DagsterInvariantViolationError,
+    DagsterExecutionPlanSnapshotNotFoundError,
 )
 from dagster._core.events import DagsterEventType
-from dagster._core.execution.plan.handle import StepHandle, UnresolvedStepHandle
-from dagster._core.execution.plan.outputs import StepOutputHandle
-from dagster._core.execution.plan.step import ResolvedFromDynamicStepHandle
-from dagster._core.execution.retries import RetryState
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._serdes import whitelist_for_serdes
 from dagster._serdes.serdes import (
+    WhitelistMap,
+    UnpackContext,
     FieldSerializer,
     UnknownSerdesValue,
-    UnpackContext,
-    WhitelistMap,
     pack_value,
 )
+from dagster._core.execution.retries import RetryState
+from dagster._core.execution.plan.step import ResolvedFromDynamicStepHandle
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
+from dagster._core.execution.plan.handle import StepHandle, UnresolvedStepHandle
+from dagster._core.execution.plan.outputs import StepOutputHandle
 
 if TYPE_CHECKING:
     from dagster._core.execution.plan.plan import StepHandleUnion

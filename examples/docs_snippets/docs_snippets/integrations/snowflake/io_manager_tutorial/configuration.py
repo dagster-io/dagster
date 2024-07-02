@@ -10,7 +10,7 @@ def iris_dataset():
 
 from dagster_snowflake_pandas import SnowflakePandasIOManager
 
-from dagster import Definitions, EnvVar
+from dagster import EnvVar, Definitions
 
 defs = Definitions(
     assets=[iris_dataset],

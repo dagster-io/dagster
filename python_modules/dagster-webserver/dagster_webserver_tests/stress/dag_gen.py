@@ -1,15 +1,15 @@
 import random
-from collections import defaultdict
 from typing import Dict
+from collections import defaultdict
 
 from dagster import (
-    DependencyDefinition,
-    Field,
-    GraphDefinition,
     In,
-    OpDefinition,
     Out,
+    Field,
     Output,
+    OpDefinition,
+    GraphDefinition,
+    DependencyDefinition,
     _check as check,
 )
 

@@ -1,10 +1,10 @@
+from typing import Iterator, Optional, Sequence, NamedTuple
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Iterator, NamedTuple, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.errors import DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
+from dagster._core.errors import DagsterInvariantViolationError
 
 
 @whitelist_for_serdes

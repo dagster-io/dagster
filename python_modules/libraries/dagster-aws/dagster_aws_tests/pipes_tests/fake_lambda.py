@@ -1,15 +1,15 @@
-import base64
 import io
-import json
 import os
-import subprocess
 import sys
+import json
+import base64
 import tempfile
 import traceback
+import subprocess
 from typing import Any, Dict
 
 import boto3
-from dagster_pipes import PipesMappingParamsLoader, PipesS3MessageWriter, open_dagster_pipes
+from dagster_pipes import PipesS3MessageWriter, PipesMappingParamsLoader, open_dagster_pipes
 
 
 class LambdaFunctions:

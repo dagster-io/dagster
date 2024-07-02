@@ -1,5 +1,5 @@
 import pytest
-from dagster import DagsterInvalidDefinitionError, DynamicOut, DynamicOutput, graph, job, op
+from dagster import DynamicOut, DynamicOutput, DagsterInvalidDefinitionError, op, job, graph
 
 
 @op(out=DynamicOut())

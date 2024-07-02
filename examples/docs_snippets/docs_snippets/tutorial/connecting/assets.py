@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import MaterializeResult, MetadataValue, asset
+from dagster import MetadataValue, MaterializeResult, asset
 
 # start_add_signsup_asset
 from .resources import DataGeneratorResource

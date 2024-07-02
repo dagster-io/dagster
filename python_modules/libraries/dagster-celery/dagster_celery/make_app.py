@@ -1,7 +1,7 @@
-from celery import Celery
-from celery.utils.collections import force_mapping
-from dagster._seven import is_module_available
 from kombu import Queue
+from celery import Celery
+from dagster._seven import is_module_available
+from celery.utils.collections import force_mapping
 
 
 def make_app(app_args=None):

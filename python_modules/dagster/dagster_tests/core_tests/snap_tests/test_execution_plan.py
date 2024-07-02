@@ -1,7 +1,7 @@
-from dagster import GraphOut, In, Out, graph, job, op
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.snap import create_job_snapshot_id, snapshot_from_execution_plan
+from dagster import In, Out, GraphOut, op, job, graph
 from dagster._serdes import serialize_pp
+from dagster._core.snap import create_job_snapshot_id, snapshot_from_execution_plan
+from dagster._core.execution.api import create_execution_plan
 
 
 def test_create_noop_execution_plan(snapshot):

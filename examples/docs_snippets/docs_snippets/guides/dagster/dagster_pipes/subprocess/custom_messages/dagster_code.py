@@ -3,9 +3,9 @@ import shutil
 import pandas as pd
 
 from dagster import (
-    AssetExecutionContext,
-    Definitions,
     Output,
+    Definitions,
+    AssetExecutionContext,
     PipesSubprocessClient,
     asset,
     file_relative_path,

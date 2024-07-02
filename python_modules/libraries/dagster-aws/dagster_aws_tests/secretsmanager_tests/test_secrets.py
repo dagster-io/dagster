@@ -1,7 +1,6 @@
-import json
 import os
+import json
 
-from dagster._core.execution.context.init import build_init_resource_context
 from dagster._core.test_utils import environ
 from dagster_aws.secretsmanager import (
     SecretsManagerSecretsResource,
@@ -9,6 +8,7 @@ from dagster_aws.secretsmanager import (
     secretsmanager_secrets_resource,
 )
 from dagster_aws.secretsmanager.secrets import get_tagged_secrets
+from dagster._core.execution.context.init import build_init_resource_context
 
 
 def test_get_secrets_from_arns(mock_secretsmanager_resource):

@@ -1,5 +1,5 @@
-import datetime
 import re
+import datetime
 
 import pytest
 import responses
@@ -8,11 +8,11 @@ from dagster_fivetran import FivetranOutput, fivetran_resource
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
-    get_complex_sample_connector_schema_config,
-    get_sample_connector_response,
-    get_sample_resync_response,
     get_sample_sync_response,
+    get_sample_resync_response,
     get_sample_update_response,
+    get_sample_connector_response,
+    get_complex_sample_connector_schema_config,
 )
 
 

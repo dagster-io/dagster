@@ -1,30 +1,30 @@
 import time
-from collections import namedtuple
 from unittest import mock
+from collections import namedtuple
 
-import kubernetes
 import pytest
+import kubernetes
 from dagster_k8s.client import (
-    DagsterK8sAPIRetryLimitExceeded,
     DagsterK8sError,
-    DagsterK8sUnrecoverableAPIError,
+    WaitForPodState,
     DagsterKubernetesClient,
     KubernetesWaitingReasons,
-    WaitForPodState,
+    DagsterK8sAPIRetryLimitExceeded,
+    DagsterK8sUnrecoverableAPIError,
 )
 from kubernetes.client.models import (
-    V1ContainerState,
-    V1ContainerStateRunning,
-    V1ContainerStateTerminated,
-    V1ContainerStateWaiting,
-    V1ContainerStatus,
     V1Job,
-    V1JobList,
-    V1JobStatus,
-    V1ObjectMeta,
     V1Pod,
+    V1JobList,
     V1PodList,
+    V1JobStatus,
     V1PodStatus,
+    V1ObjectMeta,
+    V1ContainerState,
+    V1ContainerStatus,
+    V1ContainerStateRunning,
+    V1ContainerStateWaiting,
+    V1ContainerStateTerminated,
 )
 
 

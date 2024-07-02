@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
 
-from .event_log.base import EventLogStorage
 from .runs.base import RunStorage
+from .event_log.base import EventLogStorage
 from .schedules.base import ScheduleStorage
 
 

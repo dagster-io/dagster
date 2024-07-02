@@ -3,7 +3,7 @@ import os
 # start_clone_db
 from dagster_snowflake import SnowflakeResource
 
-from dagster import In, Nothing, graph, op
+from dagster import In, Nothing, op, graph
 
 
 @op

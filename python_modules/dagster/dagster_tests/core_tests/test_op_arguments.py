@@ -1,7 +1,7 @@
 import pytest
 from dagster import In, op
-from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_op_input_arguments():

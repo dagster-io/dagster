@@ -1,10 +1,10 @@
 import time
 
 from dagster import Int, Output, RetryRequested, VersionStrategy, job
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.output import Out
-from dagster._core.test_utils import nesting_graph
 from dagster_celery import celery_executor
+from dagster._core.test_utils import nesting_graph
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.decorators import op
 
 # test_execute jobs
 

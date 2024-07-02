@@ -1,14 +1,14 @@
-from datetime import datetime
 from typing import cast
+from datetime import datetime
 
-from dagster import DailyPartitionsDefinition, PartitionKeyRange
+from dagster import PartitionKeyRange, DailyPartitionsDefinition
+from dagster._time import parse_time_string
 from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
     PartitionRangeStatus,
     PartitionTimeWindowStatus,
-    TimeWindow,
     fetch_flattened_time_window_ranges,
 )
-from dagster._time import parse_time_string
 
 DATE_FORMAT = "%Y-%m-%d"
 

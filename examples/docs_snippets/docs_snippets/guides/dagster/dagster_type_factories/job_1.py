@@ -1,8 +1,8 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
-from dagster import AssetMaterialization, OpExecutionContext, job, op
+from dagster import OpExecutionContext, AssetMaterialization, op, job
 
 
 @op

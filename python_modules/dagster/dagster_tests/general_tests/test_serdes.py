@@ -1,31 +1,31 @@
-import dataclasses
 import re
 import string
-from collections import namedtuple
+import dataclasses
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, NamedTuple, AbstractSet
+from collections import namedtuple
 
-import dagster._check as check
-import pydantic
 import pytest
+import pydantic
+import dagster._check as check
 from dagster._model import DagsterModel
 from dagster._record import IHaveNew, record, record_custom
-from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster._serdes.utils import hash_str
+from dagster._serdes.errors import SerdesUsageError, SerializationError, DeserializationError
 from dagster._serdes.serdes import (
+    WhitelistMap,
+    UnpackContext,
     EnumSerializer,
     FieldSerializer,
     NamedTupleSerializer,
-    SerializableNonScalarKeyMapping,
     SetToSequenceFieldSerializer,
-    UnpackContext,
-    WhitelistMap,
-    _whitelist_for_serdes,
-    deserialize_value,
+    SerializableNonScalarKeyMapping,
     pack_value,
-    serialize_value,
     unpack_value,
+    serialize_value,
+    deserialize_value,
+    _whitelist_for_serdes,
 )
-from dagster._serdes.utils import hash_str
 from dagster._utils.cached_method import cached_method
 
 

@@ -2,19 +2,19 @@ import csv
 from collections import OrderedDict
 
 from dagster import (
-    DependencyDefinition,
     In,
-    JobDefinition,
     OpDefinition,
-    dagster_type_loader,
+    JobDefinition,
+    DependencyDefinition,
     repository,
+    dagster_type_loader,
 )
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.types.dagster_type import PythonObjectDagsterType
-from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._legacy import OutputDefinition
+from dagster_graphql.test.utils import infer_job_selector, execute_dagster_graphql
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.types.dagster_type import PythonObjectDagsterType
 from dagster_graphql.schema.roots.mutation import execution_params_from_graphql
-from dagster_graphql.test.utils import execute_dagster_graphql, infer_job_selector
+from dagster._core.definitions.graph_definition import GraphDefinition
 
 from .production_query import PRODUCTION_QUERY
 

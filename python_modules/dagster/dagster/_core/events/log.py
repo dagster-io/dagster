@@ -1,19 +1,19 @@
-from typing import Callable, Mapping, NamedTuple, Optional, Union
+from typing import Union, Mapping, Callable, Optional, NamedTuple
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, public
-from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
-from dagster._core.definitions.events import AssetMaterialization, AssetObservation
-from dagster._core.definitions.logger_definition import LoggerDefinition
-from dagster._core.events import DagsterEvent, DagsterEventType
-from dagster._core.utils import coerce_valid_log_level
-from dagster._serdes.serdes import deserialize_value, serialize_value, whitelist_for_serdes
-from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.log import (
     StructuredLoggerHandler,
     StructuredLoggerMessage,
     construct_single_handler_logger,
 )
+from dagster._core.utils import coerce_valid_log_level
+from dagster._annotations import PublicAttr, public
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._utils.error import SerializableErrorInfo
+from dagster._serdes.serdes import serialize_value, deserialize_value, whitelist_for_serdes
+from dagster._core.definitions.events import AssetObservation, AssetMaterialization
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 
 
 @whitelist_for_serdes(

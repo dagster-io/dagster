@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Type, Union, cast, overload
+from typing import Any, Type, Union, Callable, Optional, cast, overload
 
 import dagster._check as check
 from dagster._config import UserConfigSchema
@@ -23,8 +23,8 @@ class _ConfigMapping:
 
         from dagster._config.pythonic_config import (
             Config,
-            infer_schema_from_config_annotation,
             safe_is_subclass,
+            infer_schema_from_config_annotation,
         )
         from dagster._core.definitions.run_config import RunConfig
 

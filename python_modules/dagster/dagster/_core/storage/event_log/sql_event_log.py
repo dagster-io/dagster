@@ -1,27 +1,27 @@
-import logging
 import os
+import logging
 from abc import abstractmethod
-from collections import OrderedDict, defaultdict
-from contextlib import contextmanager
-from datetime import datetime, timezone
-from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
-    ContextManager,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Tuple,
     Union,
+    Mapping,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    NamedTuple,
+    ContextManager,
     cast,
 )
+from datetime import datetime, timezone
+from functools import cached_property
+from contextlib import contextmanager
+from collections import OrderedDict, defaultdict
 
 import pendulum
 import sqlalchemy as db
@@ -31,86 +31,86 @@ from typing_extensions import TypeAlias
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.assets import AssetDetails
-from dagster._core.definitions.asset_check_evaluation import (
-    AssetCheckEvaluation,
-    AssetCheckEvaluationPlanned,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.events import AssetKey, AssetMaterialization
-from dagster._core.errors import (
-    DagsterEventLogInvalidForRun,
-    DagsterInvalidInvocationError,
-    DagsterInvariantViolationError,
-)
-from dagster._core.event_api import (
-    EventRecordsResult,
-    RunShardedEventsCursor,
-    RunStatusChangeRecordsFilter,
-)
-from dagster._core.events import (
-    ASSET_CHECK_EVENTS,
-    ASSET_EVENTS,
-    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
-    MARKER_EVENTS,
-    DagsterEventType,
-)
-from dagster._core.events.log import EventLogEntry
-from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
-from dagster._core.storage.asset_check_execution_record import (
-    AssetCheckExecutionRecord,
-    AssetCheckExecutionRecordStatus,
-)
-from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
-from dagster._core.storage.sqlalchemy_compat import (
-    db_case,
-    db_fetch_mappings,
-    db_select,
-    db_subquery,
-)
-from dagster._serdes import deserialize_value, serialize_value
-from dagster._serdes.errors import DeserializationError
 from dagster._utils import (
     PrintFn,
     datetime_as_float,
     utc_datetime_from_naive,
     utc_datetime_from_timestamp,
 )
-from dagster._utils.concurrency import (
-    ClaimedSlotInfo,
-    ConcurrencyClaimStatus,
-    ConcurrencyKeyInfo,
-    ConcurrencySlotStatus,
-    PendingStepInfo,
-    get_max_concurrency_limit_value,
+from dagster._serdes import serialize_value, deserialize_value
+from dagster._core.assets import AssetDetails
+from dagster._core.errors import (
+    DagsterEventLogInvalidForRun,
+    DagsterInvalidInvocationError,
+    DagsterInvariantViolationError,
+)
+from dagster._core.events import (
+    ASSET_EVENTS,
+    MARKER_EVENTS,
+    ASSET_CHECK_EVENTS,
+    EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
+    DagsterEventType,
+)
+from dagster._serdes.errors import DeserializationError
+from dagster._core.event_api import (
+    EventRecordsResult,
+    RunShardedEventsCursor,
+    RunStatusChangeRecordsFilter,
 )
 from dagster._utils.warnings import deprecation_warning
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.sql import SqlAlchemyRow, SqlAlchemyQuery
+from dagster._utils.concurrency import (
+    ClaimedSlotInfo,
+    PendingStepInfo,
+    ConcurrencyKeyInfo,
+    ConcurrencySlotStatus,
+    ConcurrencyClaimStatus,
+    get_max_concurrency_limit_value,
+)
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot, build_run_step_stats_from_events
+from dagster._core.definitions.events import AssetKey, AssetMaterialization
+from dagster._core.storage.sqlalchemy_compat import (
+    db_case,
+    db_select,
+    db_subquery,
+    db_fetch_mappings,
+)
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+)
+from dagster._core.storage.asset_check_execution_record import (
+    AssetCheckExecutionRecord,
+    AssetCheckExecutionRecordStatus,
+)
 
-from ..dagster_run import DagsterRunStatsSnapshot
 from .base import (
-    AssetCheckSummaryRecord,
     AssetEntry,
     AssetRecord,
-    AssetRecordsFilter,
-    EventLogConnection,
     EventLogCursor,
     EventLogRecord,
     EventLogStorage,
+    AssetRecordsFilter,
+    EventLogConnection,
     EventRecordsFilter,
+    AssetCheckSummaryRecord,
     PlannedMaterializationInfo,
 )
-from .migration import ASSET_DATA_MIGRATIONS, ASSET_KEY_INDEX_COLS, EVENT_LOG_DATA_MIGRATIONS
 from .schema import (
-    AssetCheckExecutionsTable,
-    AssetEventTagsTable,
     AssetKeyTable,
-    ConcurrencyLimitsTable,
-    ConcurrencySlotsTable,
-    DynamicPartitionsTable,
     PendingStepsTable,
-    SecondaryIndexMigrationTable,
+    AssetEventTagsTable,
+    ConcurrencySlotsTable,
+    ConcurrencyLimitsTable,
+    DynamicPartitionsTable,
     SqlEventLogStorageTable,
+    AssetCheckExecutionsTable,
+    SecondaryIndexMigrationTable,
 )
+from .migration import ASSET_KEY_INDEX_COLS, ASSET_DATA_MIGRATIONS, EVENT_LOG_DATA_MIGRATIONS
+from ..dagster_run import DagsterRunStatsSnapshot
 
 if TYPE_CHECKING:
     from dagster._core.storage.partition_status_cache import AssetStatusCacheValue

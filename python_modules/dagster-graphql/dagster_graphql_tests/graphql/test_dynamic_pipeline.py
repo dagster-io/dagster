@@ -1,20 +1,20 @@
 from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster_graphql.test.utils import (
+    infer_job_selector,
+    execute_dagster_graphql,
+    execute_dagster_graphql_and_finish_runs,
+)
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    execute_dagster_graphql_and_finish_runs,
-    infer_job_selector,
-)
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 from .utils import (
-    get_all_logs_for_finished_run_via_subscription,
     step_did_fail,
     step_did_not_run,
     step_did_succeed,
+    get_all_logs_for_finished_run_via_subscription,
 )
 
 

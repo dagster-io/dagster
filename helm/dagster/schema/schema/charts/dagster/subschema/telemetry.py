@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Extra
+from pydantic import Extra, BaseModel
 
 
 class Telemetry(BaseModel):

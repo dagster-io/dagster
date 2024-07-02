@@ -1,41 +1,41 @@
-import math
 import os
-import random
+import math
 import time
-from collections import defaultdict
+import random
+from typing import Any, Union, Mapping, Callable, Optional
 from contextlib import contextmanager
-from typing import Any, Callable, Mapping, Optional, Union
+from collections import defaultdict
 
 import boto3
 from dagster import (
-    AssetMaterialization,
-    Bool,
-    Field,
     In,
     Int,
-    IntSource,
+    Bool,
     List,
+    Field,
     Output,
+    IntSource,
     RetryRequested,
     VersionStrategy,
-    file_relative_path,
-    graph,
-    job,
+    AssetMaterialization,
     op,
-    repository,
+    job,
+    graph,
     resource,
+    repository,
+    file_relative_path,
 )
-from dagster._core.definitions.decorators import schedule
-from dagster._core.definitions.graph_definition import GraphDefinition
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.output import Out
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.test_utils import nesting_graph
 from dagster._utils import segfault
+from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
+from dagster_gcp.gcs import gcs_resource, gcs_pickle_io_manager
 from dagster._utils.merger import merge_dicts
+from dagster._core.test_utils import nesting_graph
 from dagster._utils.yaml_utils import merge_yamls
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-from dagster_gcp.gcs import gcs_pickle_io_manager, gcs_resource
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.decorators import schedule
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 

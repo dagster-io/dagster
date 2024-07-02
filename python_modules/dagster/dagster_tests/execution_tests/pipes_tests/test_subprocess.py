@@ -1,57 +1,57 @@
-import inspect
 import re
-import shutil
-import subprocess
-import textwrap
 import time
+import shutil
+import inspect
+import textwrap
+import subprocess
+from typing import Any, Callable, Iterator
+from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 from multiprocessing import Process
-from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Iterator
 
 import pytest
 from dagster import op
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_spec import AssetSpec
-from dagster._core.definitions.data_version import (
-    DATA_VERSION_IS_USER_PROVIDED_TAG,
-    DATA_VERSION_TAG,
+from dagster_pipes import DagsterPipesError
+from dagster._utils import process_is_alive
+from dagster._utils.env import environ
+from dagster._core.errors import DagsterPipesExecutionError, DagsterInvariantViolationError
+from dagster._core.instance import DagsterInstance
+from dagster._core.pipes.utils import (
+    PipesEnvContextInjector,
+    PipesTempFileMessageReader,
+    PipesTempFileContextInjector,
+    open_pipes_session,
 )
-from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
-from dagster._core.definitions.decorators.job_decorator import job
+from dagster._core.pipes.subprocess import PipesSubprocessClient
+from dagster._core.instance_for_test import instance_for_test
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.materialize import materialize
 from dagster._core.definitions.metadata import (
-    BoolMetadataValue,
-    DagsterAssetMetadataValue,
-    DagsterRunMetadataValue,
-    FloatMetadataValue,
     IntMetadataValue,
+    UrlMetadataValue,
+    BoolMetadataValue,
     JsonMetadataValue,
-    MarkdownMetadataValue,
-    NotebookMetadataValue,
     NullMetadataValue,
     PathMetadataValue,
     TextMetadataValue,
-    UrlMetadataValue,
+    FloatMetadataValue,
+    MarkdownMetadataValue,
+    NotebookMetadataValue,
+    DagsterRunMetadataValue,
+    DagsterAssetMetadataValue,
 )
 from dagster._core.definitions.partition import DynamicPartitionsDefinition
-from dagster._core.errors import DagsterInvariantViolationError, DagsterPipesExecutionError
-from dagster._core.execution.context.compute import AssetExecutionContext, OpExecutionContext
-from dagster._core.execution.context.invocation import build_asset_context
-from dagster._core.instance import DagsterInstance
-from dagster._core.instance_for_test import instance_for_test
-from dagster._core.pipes.subprocess import PipesSubprocessClient
-from dagster._core.pipes.utils import (
-    PipesEnvContextInjector,
-    PipesTempFileContextInjector,
-    PipesTempFileMessageReader,
-    open_pipes_session,
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.data_version import (
+    DATA_VERSION_TAG,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
 )
+from dagster._core.execution.context.compute import OpExecutionContext, AssetExecutionContext
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.execution.context.invocation import build_asset_context
+from dagster._core.definitions.decorators.job_decorator import job
 from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster._utils import process_is_alive
-from dagster._utils.env import environ
-from dagster_pipes import DagsterPipesError
+from dagster._core.definitions.decorators.asset_decorator import asset, multi_asset
 
 _PYTHON_EXECUTABLE = shutil.which("python")
 

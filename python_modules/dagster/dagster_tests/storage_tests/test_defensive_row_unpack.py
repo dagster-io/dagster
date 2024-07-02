@@ -2,11 +2,11 @@ import sys
 import zlib
 from unittest import mock
 
-from dagster import job, op
+from dagster import op, job
+from dagster._serdes import serialize_value
 from dagster._core.storage.runs.sql_run_storage import (
     defensively_unpack_execution_plan_snapshot_query,
 )
-from dagster._serdes import serialize_value
 
 
 def test_defensive_job_not_a_string():

@@ -4,35 +4,35 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from unittest.mock import patch
 
-import dagster._check as check
 import pytest
+import dagster._check as check
 from dagster import file_relative_path
-from dagster._core.instance import DagsterInstance, InstanceType
-from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster._core.run_coordinator import DefaultRunCoordinator
-from dagster._core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
-from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from graphql import DocumentNode, print_ast
+from dagster._utils import safe_tempfile_path
+from dagster_graphql import DagsterGraphQLClient
+from dagster._serdes.ipc import open_ipc_subprocess
+from dagster._utils.test import FilesystemTestScheduler
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.server import GrpcServerProcess, wait_for_grpc_server
+from dagster._utils.merger import merge_dicts
+from dagster._core.instance import InstanceType, DagsterInstance
+from dagster._core.test_utils import instance_for_test
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import InMemoryRunStorage
-from dagster._core.test_utils import instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster._core.run_coordinator import DefaultRunCoordinator
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import (
-    GrpcServerTarget,
     ModuleTarget,
+    GrpcServerTarget,
     PythonFileTarget,
     WorkspaceFileTarget,
 )
-from dagster._grpc.client import DagsterGrpcClient
-from dagster._grpc.server import GrpcServerProcess, wait_for_grpc_server
-from dagster._serdes.ipc import open_ipc_subprocess
-from dagster._utils import safe_tempfile_path
-from dagster._utils.merger import merge_dicts
-from dagster._utils.test import FilesystemTestScheduler
 from dagster._utils.test.postgres_instance import TestPostgresInstance
-from dagster_graphql import DagsterGraphQLClient
-from dagster_graphql.test.utils import execute_dagster_graphql
-from graphql import DocumentNode, print_ast
+from dagster._core.storage.event_log.sqlite import ConsolidatedSqliteEventLogStorage
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.storage.local_compute_log_manager import LocalComputeLogManager
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 
 
 def get_main_loadable_target_origin():

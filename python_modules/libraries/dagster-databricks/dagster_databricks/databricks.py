@@ -1,28 +1,28 @@
-import base64
-import logging
 import os
 import time
+import base64
+import logging
 from enum import Enum
+from typing import IO, Any, List, Tuple, Union, Mapping, Optional, cast
 from importlib.metadata import version
-from typing import IO, Any, List, Mapping, Optional, Tuple, Union, cast
 
 import dagster
 import dagster._check as check
-import dagster_pyspark
 import databricks_api
+import dagster_pyspark
 import databricks_cli.sdk
 import requests.exceptions
-from dagster._annotations import deprecated, public
 from databricks.sdk import WorkspaceClient
+from typing_extensions import Final
 from databricks.sdk.core import (
     Config,
     DefaultCredentials,
+    pat_auth,
     azure_service_principal,
     oauth_service_principal,
-    pat_auth,
 )
-from databricks.sdk.service import compute, jobs
-from typing_extensions import Final
+from dagster._annotations import public, deprecated
+from databricks.sdk.service import jobs, compute
 
 import dagster_databricks
 

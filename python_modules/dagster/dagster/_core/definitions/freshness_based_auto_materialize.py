@@ -9,18 +9,18 @@
 """
 
 import datetime
-from typing import TYPE_CHECKING, AbstractSet, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Tuple, Optional, Sequence, AbstractSet
 
-from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
-from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._seven.compat.pendulum import PendulumInterval
 from dagster._utils.schedules import cron_string_iterator
+from dagster._seven.compat.pendulum import PendulumInterval
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.asset_subset import AssetSubset, ValidAssetSubset
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 
 if TYPE_CHECKING:
     from .auto_materialize_rule_evaluation import TextRuleEvaluationData
-    from .declarative_automation.legacy.legacy_context import LegacyRuleEvaluationContext
     from .declarative_automation.serialized_objects import AssetSubsetWithMetadata
+    from .declarative_automation.legacy.legacy_context import LegacyRuleEvaluationContext
 
 
 def get_execution_period_for_policy(

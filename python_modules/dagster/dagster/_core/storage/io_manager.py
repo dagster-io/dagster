@@ -1,21 +1,21 @@
 from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Set, Union, Callable, Optional, AbstractSet, cast, overload
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional, Set, Union, cast, overload
 
 from typing_extensions import TypeAlias, TypeGuard
 
 import dagster._check as check
-from dagster._annotations import public
 from dagster._config import UserConfigSchema
+from dagster._annotations import public
 from dagster._core.definitions.config import is_callable_valid_config_arg
+from dagster._core.storage.input_manager import InputManager, IInputManagerDefinition
+from dagster._core.storage.output_manager import OutputManager, IOutputManagerDefinition
+from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.definitions.definition_config_schema import (
     CoercableToConfigSchema,
     IDefinitionConfigSchema,
     convert_user_facing_definition_config_schema,
 )
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.storage.input_manager import IInputManagerDefinition, InputManager
-from dagster._core.storage.output_manager import IOutputManagerDefinition, OutputManager
 
 from ..decorator_utils import get_function_params
 

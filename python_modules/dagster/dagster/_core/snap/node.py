@@ -1,22 +1,22 @@
-from typing import Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Union, Mapping, Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._config import ConfigFieldSnap, snap_from_field
+from dagster._serdes import whitelist_for_serdes
 from dagster._core.definitions import (
+    InputMapping,
+    OpDefinition,
+    JobDefinition,
+    OutputMapping,
     GraphDefinition,
     InputDefinition,
-    InputMapping,
-    JobDefinition,
-    OpDefinition,
     OutputDefinition,
-    OutputMapping,
 )
 from dagster._core.definitions.metadata import (
-    MetadataFieldSerializer,
     MetadataValue,
+    MetadataFieldSerializer,
     normalize_metadata,
 )
-from dagster._serdes import whitelist_for_serdes
 
 from .dep_snapshot import DependencyStructureSnapshot, build_dep_structure_snapshot_from_graph_def
 

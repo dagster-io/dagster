@@ -1,4 +1,4 @@
-from dagster import execute_job, job, multiprocess_executor, op, reconstructable
+from dagster import op, job, execute_job, reconstructable, multiprocess_executor
 from dagster._core.test_utils import instance_for_test
 
 

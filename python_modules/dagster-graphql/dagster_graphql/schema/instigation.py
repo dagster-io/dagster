@@ -1,51 +1,51 @@
 import sys
-from typing import Optional, Union
+from typing import Union, Optional
 
-import dagster._check as check
 import graphene
-from dagster._core.definitions.run_request import (
-    AddDynamicPartitionsRequest,
-    DeleteDynamicPartitionsRequest,
-    RunRequest,
-)
-from dagster._core.definitions.schedule_definition import ScheduleExecutionData
-from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
-from dagster._core.definitions.sensor_definition import SensorExecutionData
-from dagster._core.definitions.timestamp import TimestampWithTimezone
-from dagster._core.scheduler.instigation import (
-    DynamicPartitionsRequestResult,
-    InstigatorState,
-    InstigatorTick,
-    InstigatorType,
-    ScheduleInstigatorData,
-    SensorInstigatorData,
-)
-from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
-from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
-from dagster._core.workspace.permissions import Permissions
+import dagster._check as check
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.yaml_utils import dump_run_config_yaml
+from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter
+from dagster._core.definitions.selector import SensorSelector, ScheduleSelector
+from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.scheduler.instigation import (
+    InstigatorTick,
+    InstigatorType,
+    InstigatorState,
+    SensorInstigatorData,
+    ScheduleInstigatorData,
+    DynamicPartitionsRequestResult,
+)
+from dagster._core.workspace.permissions import Permissions
+from dagster._core.definitions.run_request import (
+    RunRequest,
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
+from dagster._core.definitions.sensor_definition import SensorExecutionData
+from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 
 from dagster_graphql.schema.asset_key import GrapheneAssetKey
 
-from ..implementation.fetch_instigators import get_tick_log_events
-from ..implementation.fetch_schedules import get_schedule_next_tick
-from ..implementation.fetch_sensors import get_sensor_next_tick
-from ..implementation.fetch_ticks import get_instigation_ticks
-from ..implementation.loader import RepositoryScopedBatchLoader
-from ..implementation.utils import UserFacingGraphQLError
+from .tags import GraphenePipelineTag
+from .util import ResolveInfo, non_null_list
 from .errors import (
     GrapheneError,
     GraphenePythonError,
-    GrapheneRepositoryLocationNotFound,
-    GrapheneRepositoryNotFoundError,
-    GrapheneScheduleNotFoundError,
     GrapheneSensorNotFoundError,
+    GrapheneScheduleNotFoundError,
+    GrapheneRepositoryNotFoundError,
+    GrapheneRepositoryLocationNotFound,
 )
 from .logs.log_level import GrapheneLogLevel
 from .repository_origin import GrapheneRepositoryOrigin
-from .tags import GraphenePipelineTag
-from .util import ResolveInfo, non_null_list
+from ..implementation.utils import UserFacingGraphQLError
+from ..implementation.loader import RepositoryScopedBatchLoader
+from ..implementation.fetch_ticks import get_instigation_ticks
+from ..implementation.fetch_sensors import get_sensor_next_tick
+from ..implementation.fetch_schedules import get_schedule_next_tick
+from ..implementation.fetch_instigators import get_tick_log_events
 
 GrapheneInstigationType = graphene.Enum.from_enum(InstigatorType, "InstigationType")
 

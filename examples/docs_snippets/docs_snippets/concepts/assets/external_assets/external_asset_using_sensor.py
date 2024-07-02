@@ -1,13 +1,13 @@
 import datetime
 
 from dagster import (
-    AssetMaterialization,
     AssetSpec,
     Definitions,
-    SensorEvaluationContext,
     SensorResult,
-    external_asset_from_spec,
+    AssetMaterialization,
+    SensorEvaluationContext,
     sensor,
+    external_asset_from_spec,
 )
 
 

@@ -1,8 +1,8 @@
 import asyncio
 import inspect
 from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, Union, Mapping, Optional
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Union
 
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
@@ -10,8 +10,8 @@ from fsspec.implementations.local import LocalFileSystem
 from dagster import (
     InputContext,
     MetadataValue,
-    MultiPartitionKey,
     OutputContext,
+    MultiPartitionKey,
     _check as check,
 )
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager

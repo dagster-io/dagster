@@ -1,30 +1,30 @@
-from collections import defaultdict
+from typing import Set, Dict, Union, Mapping, Iterable, Optional, Sequence, AbstractSet, DefaultDict
 from functools import cached_property
-from typing import AbstractSet, DefaultDict, Dict, Iterable, Mapping, Optional, Sequence, Set, Union
+from collections import defaultdict
 
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
-    AssetExecutionType,
-    AssetSpec,
-)
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.base_asset_graph import (
-    AssetKeyOrCheckKey,
-    BaseAssetGraph,
-    BaseAssetNode,
-)
 from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
+    AssetSpec,
+    AssetExecutionType,
+)
+from dagster._core.definitions.source_asset import SourceAsset
+from dagster._core.selector.subset_selector import generate_asset_dep_graph
+from dagster._core.definitions.backfill_policy import BackfillPolicy
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.base_asset_graph import (
+    BaseAssetNode,
+    BaseAssetGraph,
+    AssetKeyOrCheckKey,
+)
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.partition_mapping import PartitionMapping
 from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependencies
-from dagster._core.definitions.source_asset import SourceAsset
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.selector.subset_selector import generate_asset_dep_graph
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
 
 class AssetNode(BaseAssetNode):
@@ -170,8 +170,8 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
           or as dependencies, but for which no definition was provided.
         """
         from dagster._core.definitions.external_asset import (
-            create_external_asset_from_source_asset,
             external_asset_from_spec,
+            create_external_asset_from_source_asset,
         )
 
         # Convert any source assets to external assets

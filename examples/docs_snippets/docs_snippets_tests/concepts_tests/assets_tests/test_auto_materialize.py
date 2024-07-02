@@ -1,11 +1,11 @@
 from dagster import Definitions, load_assets_from_modules
 from docs_snippets.concepts.assets import (
-    auto_materialize_eager,
     auto_materialize_lazy,
-    auto_materialize_lazy_transitive,
-    auto_materialize_observable_source_asset,
+    auto_materialize_eager,
     auto_materialize_sensor,
+    auto_materialize_lazy_transitive,
     auto_materialize_time_partitions,
+    auto_materialize_observable_source_asset,
 )
 
 

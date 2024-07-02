@@ -1,34 +1,34 @@
-import collections.abc
 import re
 import sys
-from collections import defaultdict
-from contextlib import contextmanager
+import collections.abc
 from typing import (
-    AbstractSet,
     Any,
+    Set,
     Dict,
-    Iterable,
     List,
+    Type,
+    Union,
     Mapping,
+    TypeVar,
+    Iterable,
     Optional,
     Sequence,
-    Set,
-    Type,
-    TypeVar,
-    Union,
+    AbstractSet,
 )
+from contextlib import contextmanager
+from collections import defaultdict
 
-import dagster._check as check
 import pytest
-from dagster._annotations import PublicAttr
+import dagster._check as check
 from dagster._check import (
     CheckError,
-    ElementCheckError,
     EvalContext,
-    NotImplementedCheckError,
+    ElementCheckError,
     ParameterCheckError,
+    NotImplementedCheckError,
     build_check_call_str,
 )
+from dagster._annotations import PublicAttr
 
 
 @contextmanager

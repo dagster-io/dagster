@@ -1,6 +1,6 @@
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch, mock_open
 
-from dagster import load_assets_from_modules, materialize_to_memory
+from dagster import materialize_to_memory, load_assets_from_modules
 from docs_snippets.tutorial.managing_your_own_io import assets as assets_to_test
 
 

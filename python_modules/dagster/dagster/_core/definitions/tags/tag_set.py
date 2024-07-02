@@ -3,9 +3,9 @@ from typing import Any, cast
 from typing_extensions import TypeVar, get_args
 
 from dagster import _check as check
-from dagster._core.definitions.metadata.metadata_set import NamespacedKVSet
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import is_closed_python_optional_type
+from dagster._model.pydantic_compat_layer import model_fields
+from dagster._core.definitions.metadata.metadata_set import NamespacedKVSet
 
 T_NamespacedTagSet = TypeVar("T_NamespacedTagSet", bound="NamespacedTagSet")
 

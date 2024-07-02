@@ -1,6 +1,6 @@
 from time import sleep
 
-from dagster import Field, Int, Out, Output, graph, op
+from dagster import Int, Out, Field, Output, op, graph
 
 
 @op(

@@ -3,33 +3,33 @@ from types import FunctionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Mapping,
-    NamedTuple,
-    Optional,
     Set,
     Type,
-    TypeVar,
     Union,
+    Mapping,
+    TypeVar,
+    Callable,
+    Optional,
+    NamedTuple,
 )
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated_param, experimental_param
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import (
-    ArbitraryMetadataMapping,
-    MetadataValue,
-    RawMetadataValue,
-    normalize_metadata,
-)
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster._core.definitions.events import AssetKey
 from dagster._core.types.dagster_type import (  # BuiltinScalarDagsterType,
     DagsterType,
     resolve_dagster_type,
 )
+from dagster._core.definitions.metadata import (
+    MetadataValue,
+    RawMetadataValue,
+    ArbitraryMetadataMapping,
+    normalize_metadata,
+)
 
-from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
+from .inference import InferredInputProps
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.input import InputContext

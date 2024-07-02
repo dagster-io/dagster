@@ -1,7 +1,7 @@
-import gzip
-import json
 import os
 import re
+import gzip
+import json
 import shutil
 from typing import Any, Dict, List
 

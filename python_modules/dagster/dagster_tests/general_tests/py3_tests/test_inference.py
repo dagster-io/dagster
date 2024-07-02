@@ -1,22 +1,22 @@
 # ruff: noqa: D416
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import pytest
 from dagster import (
-    DagsterInvalidDefinitionError,
-    DagsterType,
     In,
     Int,
-    graph,
-    job,
-    make_python_type_usable_as_dagster_type,
+    DagsterType,
+    DagsterInvalidDefinitionError,
     op,
+    job,
+    graph,
     usable_as_dagster_type,
+    make_python_type_usable_as_dagster_type,
 )
-from dagster._core.definitions.inference import infer_input_props, infer_output_props
-from dagster._core.types.dagster_type import DagsterTypeKind
 from dagster._utils.test import wrap_op_in_graph_and_execute
+from dagster._core.types.dagster_type import DagsterTypeKind
+from dagster._core.definitions.inference import infer_input_props, infer_output_props
 
 
 def test_infer_op_description_from_docstring():

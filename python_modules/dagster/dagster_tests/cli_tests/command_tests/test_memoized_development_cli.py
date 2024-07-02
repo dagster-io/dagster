@@ -5,9 +5,9 @@ from io import BytesIO
 
 import yaml
 from dagster import execute_job, reconstructable
+from dagster._utils import file_relative_path
 from dagster._cli.job import execute_list_versions_command
 from dagster._core.test_utils import instance_for_test
-from dagster._utils import file_relative_path
 
 from ...execution_tests.versioning_tests.memoized_dev_loop_job import op_job
 

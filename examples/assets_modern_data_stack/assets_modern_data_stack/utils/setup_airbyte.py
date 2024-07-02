@@ -6,13 +6,13 @@ create an Airbyte Connection between the source database and destination databas
 import random
 from typing import Any, Dict, Mapping
 
-import dagster._check as check
 import numpy as np
 import pandas as pd
+import dagster._check as check
 from dagster_airbyte import AirbyteResource
 from dagster_postgres.utils import get_conn_string
 
-from .constants import PG_DESTINATION_CONFIG, PG_SOURCE_CONFIG
+from .constants import PG_SOURCE_CONFIG, PG_DESTINATION_CONFIG
 
 # configures the number of records for each table
 N_USERS = 100

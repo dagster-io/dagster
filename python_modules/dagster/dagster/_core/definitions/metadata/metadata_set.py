@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
+from typing import Any, Type, Mapping, Optional, AbstractSet
 from functools import lru_cache
-from typing import AbstractSet, Any, Mapping, Optional, Type
 
 from typing_extensions import TypeVar
 
 from dagster import _check as check
 from dagster._model import DagsterModel
-from dagster._model.pydantic_compat_layer import model_fields
 from dagster._utils.typing_api import flatten_unions
+from dagster._model.pydantic_compat_layer import model_fields
 
-from .metadata_value import MetadataValue, TableColumnLineage, TableSchema
+from .metadata_value import TableSchema, MetadataValue, TableColumnLineage
 
 # Python types that have a MetadataValue types that directly wraps them
 DIRECTLY_WRAPPED_METADATA_TYPES = {

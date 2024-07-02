@@ -2,25 +2,25 @@ import importlib
 from typing import TYPE_CHECKING
 
 import airflow
-from airflow.models.dag import DAG
 from dagster import (
-    DependencyDefinition,
     In,
-    MultiDependencyDefinition,
+    Out,
     Nothing,
+    RetryPolicy,
     OpDefinition,
     OpExecutionContext,
-    Out,
-    RetryPolicy,
-    _check as check,
+    DependencyDefinition,
+    MultiDependencyDefinition,
     op,
+    _check as check,
 )
+from airflow.models.dag import DAG
 from dagster._core.definitions.node_definition import NodeDefinition
 
 from dagster_airflow.utils import (
-    is_airflow_2_loaded_in_environment,
     normalized_name,
     replace_airflow_logger_handlers,
+    is_airflow_2_loaded_in_environment,
 )
 
 if TYPE_CHECKING:

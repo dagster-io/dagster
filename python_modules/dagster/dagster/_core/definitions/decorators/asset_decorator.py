@@ -1,49 +1,49 @@
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Set,
+    Dict,
     Tuple,
     Union,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     overload,
 )
 
 import dagster._check as check
 from dagster._annotations import deprecated_param, experimental_param
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._utils.warnings import disable_dagster_warnings
 from dagster._config.config_schema import UserConfigSchema
-from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.config import ConfigMapping
+from dagster._core.types.dagster_type import DagsterType
+from dagster._core.definitions.metadata import RawMetadataMapping, ArbitraryMetadataMapping
+from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.decorators.decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilder,
     validate_and_assign_output_names_to_check_specs,
 )
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping, RawMetadataMapping
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.types.dagster_type import DagsterType
-from dagster._utils.warnings import disable_dagster_warnings
 
-from ..asset_check_spec import AssetCheckSpec
+from ..input import GraphIn
+from ..utils import DEFAULT_OUTPUT, DEFAULT_IO_MANAGER_KEY, NoValueSentinel, validate_tags_strict
+from ..assets import AssetsDefinition
+from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from ..output import GraphOut
+from ..policy import RetryPolicy
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
-from ..asset_spec import AssetExecutionType, AssetSpec
-from ..assets import AssetsDefinition
-from ..backfill_policy import BackfillPolicy, BackfillPolicyType
-from ..decorators.graph_decorator import graph
-from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
-from ..input import GraphIn
-from ..output import GraphOut
 from ..partition import PartitionsDefinition
-from ..policy import RetryPolicy
+from ..asset_spec import AssetSpec, AssetExecutionType
+from ..backfill_policy import BackfillPolicy, BackfillPolicyType
+from ..asset_check_spec import AssetCheckSpec
 from ..resource_definition import ResourceDefinition
-from ..utils import DEFAULT_IO_MANAGER_KEY, DEFAULT_OUTPUT, NoValueSentinel, validate_tags_strict
+from ..decorators.graph_decorator import graph
 from .decorator_assets_definition_builder import (
     DecoratorAssetsDefinitionBuilderArgs,
     build_named_ins,

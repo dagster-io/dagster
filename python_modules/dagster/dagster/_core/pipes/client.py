@@ -1,22 +1,22 @@
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, List, Iterator, Optional, Sequence
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, List, Optional, Sequence
 
 from dagster_pipes import (
-    DagsterPipesError,
-    PipesContextData,
     PipesExtras,
-    PipesOpenedData,
     PipesParams,
+    PipesOpenedData,
+    PipesContextData,
+    DagsterPipesError,
 )
 
 import dagster._check as check
-from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._annotations import public, experimental
 from dagster._core.definitions.result import MaterializeResult
 from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.asset_check_result import AssetCheckResult
 
-from .context import PipesExecutionResult, PipesSession
+from .context import PipesSession, PipesExecutionResult
 
 if TYPE_CHECKING:
     from .context import PipesMessageHandler

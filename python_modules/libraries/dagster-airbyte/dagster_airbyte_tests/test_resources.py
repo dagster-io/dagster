@@ -1,19 +1,19 @@
 import re
-from typing import Any, Callable, Dict
+from typing import Any, Dict, Callable
 
 import pytest
 import responses
 from dagster import (
-    DagsterExecutionInterruptedError,
     Failure,
+    DagsterExecutionInterruptedError,
     _check as check,
     build_init_resource_context,
 )
-from dagster._core.definitions.metadata import MetadataValue
-from dagster_airbyte import AirbyteOutput, AirbyteResource, AirbyteState, airbyte_resource
+from dagster_airbyte import AirbyteState, AirbyteOutput, AirbyteResource, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
+from dagster._core.definitions.metadata import MetadataValue
 
-from .utils import get_sample_connection_json, get_sample_job_json, get_sample_job_list_json
+from .utils import get_sample_job_json, get_sample_job_list_json, get_sample_connection_json
 
 
 @pytest.fixture(name="airbyte_instance_constructor", params=[True, False], scope="module")

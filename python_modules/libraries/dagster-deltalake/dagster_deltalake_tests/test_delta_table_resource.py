@@ -1,11 +1,11 @@
 import os
 
-import pyarrow as pa
 import pytest
+import pyarrow as pa
 from dagster import asset, materialize
-from dagster_deltalake import DeltaTableResource
-from dagster_deltalake.config import AzureConfig, ClientConfig, GcsConfig, LocalConfig, S3Config
 from deltalake import write_deltalake
+from dagster_deltalake import DeltaTableResource
+from dagster_deltalake.config import S3Config, GcsConfig, AzureConfig, LocalConfig, ClientConfig
 
 
 def test_resource(tmp_path):

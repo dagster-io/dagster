@@ -1,9 +1,9 @@
 from typing import List
 
 import pytest
+from pydantic import Field, ValidationError, constr, conlist
 from dagster._config.pythonic_config import Config
 from dagster._model.pydantic_compat_layer import USING_PYDANTIC_2
-from pydantic import Field, ValidationError, conlist, constr
 
 
 def test_str_min_length() -> None:

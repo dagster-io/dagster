@@ -1,19 +1,19 @@
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, Mapping, Optional, Set, Union
+from typing import TYPE_CHECKING, Any, Set, Dict, Union, Mapping, Optional, AbstractSet
 
 import dagster._check as check
 from dagster._annotations import public
 
-from ...definitions.composition import PendingNodeInvocation
-from ...definitions.decorators.graph_decorator import graph
-from ...definitions.dependency import Node
-from ...definitions.hook_definition import HookDefinition
-from ...definitions.op_definition import OpDefinition
-from ...definitions.resource_definition import IContainsGenerator, Resources
+from .system import StepExecutionContext
 from ...errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
-from ...log_manager import DagsterLogManager
 from ..plan.step import ExecutionStep
 from ..plan.utils import RetryRequestedFromPolicy
-from .system import StepExecutionContext
+from ...log_manager import DagsterLogManager
+from ...definitions.dependency import Node
+from ...definitions.composition import PendingNodeInvocation
+from ...definitions.op_definition import OpDefinition
+from ...definitions.hook_definition import HookDefinition
+from ...definitions.resource_definition import Resources, IContainsGenerator
+from ...definitions.decorators.graph_decorator import graph
 
 if TYPE_CHECKING:
     from dagster._core.instance import DagsterInstance

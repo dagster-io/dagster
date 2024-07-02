@@ -1,5 +1,5 @@
-from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 from dagster._utils import file_relative_path
+from dagster._api.notebook_data import sync_get_streaming_external_notebook_data_grpc
 
 from .utils import get_bar_repo_code_location
 

@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Union
 
 import dagster._check as check
-from dagster._core.definitions.instigation_logger import get_instigation_log_records
-from dagster._core.definitions.selector import InstigatorSelector
 from dagster._core.log_manager import LOG_RECORD_METADATA_ATTR
+from dagster._core.definitions.selector import InstigatorSelector
+from dagster._core.definitions.instigation_logger import get_instigation_log_records
 from dagster._core.remote_representation.external import CompoundID
 
 if TYPE_CHECKING:
     from dagster_graphql.schema.util import ResolveInfo
 
     from ..schema.instigation import (
-        GrapheneInstigationEventConnection,
         GrapheneInstigationState,
+        GrapheneInstigationEventConnection,
         GrapheneInstigationStateNotFoundError,
     )
 

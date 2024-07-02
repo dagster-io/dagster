@@ -1,6 +1,6 @@
-from typing import Any, Iterator, Mapping, Optional, Sequence
+from typing import Any, Mapping, Iterator, Optional, Sequence
 
-from dagster import AssetMaterialization, MetadataValue
+from dagster import MetadataValue, AssetMaterialization
 from dagster._core.definitions.metadata.table import TableColumn, TableSchema
 
 from dagster_airbyte.types import AirbyteOutput

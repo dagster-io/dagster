@@ -2,13 +2,13 @@ from io import BytesIO
 
 import pandas as pd
 import requests
-from dagster import AssetExecutionContext, MaterializeResult, MetadataValue, asset
-from dagster_duckdb import DuckDBResource
+from dagster import MetadataValue, MaterializeResult, AssetExecutionContext, asset
 from smart_open import open
+from dagster_duckdb import DuckDBResource
 
-from ..partitions import monthly_partition
-from ..resources import smart_open_config
 from . import constants
+from ..resources import smart_open_config
+from ..partitions import monthly_partition
 
 
 @asset(

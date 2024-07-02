@@ -1,66 +1,66 @@
 import os
+from typing import Any, Dict, List, Union, Generic, Mapping, Optional, Sequence, NamedTuple, cast
 from datetime import datetime
-from typing import Any, Dict, Generic, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
-from typing_extensions import TypeAlias, TypeVar
+from typing_extensions import TypeVar, TypeAlias
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, deprecated_param
-from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import PublicAttr, deprecated, deprecated_param
+from dagster._core.errors import DagsterInvalidMetadata
 from dagster._serdes.serdes import (
-    FieldSerializer,
+    WhitelistMap,
     PackableValue,
     UnpackContext,
-    WhitelistMap,
+    FieldSerializer,
     pack_value,
 )
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster._core.definitions.asset_key import AssetKey
 
-from .metadata_set import (
-    NamespacedMetadataSet as NamespacedMetadataSet,
-    TableMetadataSet as TableMetadataSet,
-)
-from .metadata_value import (
-    BoolMetadataValue as BoolMetadataValue,
-    DagsterAssetMetadataValue as DagsterAssetMetadataValue,
-    DagsterJobMetadataValue as DagsterJobMetadataValue,
-    DagsterRunMetadataValue as DagsterRunMetadataValue,
-    FloatMetadataValue as FloatMetadataValue,
-    IntMetadataValue as IntMetadataValue,
-    JsonMetadataValue as JsonMetadataValue,
-    MarkdownMetadataValue as MarkdownMetadataValue,
-    MetadataValue as MetadataValue,
-    NotebookMetadataValue as NotebookMetadataValue,
-    NullMetadataValue as NullMetadataValue,
-    PathMetadataValue as PathMetadataValue,
-    PythonArtifactMetadataValue as PythonArtifactMetadataValue,
-    TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
-    TableMetadataValue as TableMetadataValue,
-    TableSchemaMetadataValue as TableSchemaMetadataValue,
-    TextMetadataValue as TextMetadataValue,
-    TimestampMetadataValue as TimestampMetadataValue,
-    UrlMetadataValue as UrlMetadataValue,
+from .table import (  # re-exported
+    TableColumn as TableColumn,
+    TableRecord as TableRecord,
+    TableSchema as TableSchema,
+    TableColumnDep as TableColumnDep,
+    TableConstraints as TableConstraints,
+    TableColumnLineage as TableColumnLineage,
+    TableColumnConstraints as TableColumnConstraints,
 )
 from .source_code import (
     DEFAULT_SOURCE_FILE_KEY as DEFAULT_SOURCE_FILE_KEY,
-    AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
-    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
-    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
-    LocalFileCodeReference as LocalFileCodeReference,
     UrlCodeReference as UrlCodeReference,
+    LocalFileCodeReference as LocalFileCodeReference,
+    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
+    AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
+    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     link_to_git as link_to_git,
     with_source_code_references as with_source_code_references,
 )
-from .table import (  # re-exported
-    TableColumn as TableColumn,
-    TableColumnConstraints as TableColumnConstraints,
-    TableColumnDep as TableColumnDep,
-    TableColumnLineage as TableColumnLineage,
-    TableConstraints as TableConstraints,
-    TableRecord as TableRecord,
-    TableSchema as TableSchema,
+from .metadata_set import (
+    TableMetadataSet as TableMetadataSet,
+    NamespacedMetadataSet as NamespacedMetadataSet,
+)
+from .metadata_value import (
+    MetadataValue as MetadataValue,
+    IntMetadataValue as IntMetadataValue,
+    UrlMetadataValue as UrlMetadataValue,
+    BoolMetadataValue as BoolMetadataValue,
+    JsonMetadataValue as JsonMetadataValue,
+    NullMetadataValue as NullMetadataValue,
+    PathMetadataValue as PathMetadataValue,
+    TextMetadataValue as TextMetadataValue,
+    FloatMetadataValue as FloatMetadataValue,
+    TableMetadataValue as TableMetadataValue,
+    MarkdownMetadataValue as MarkdownMetadataValue,
+    NotebookMetadataValue as NotebookMetadataValue,
+    TimestampMetadataValue as TimestampMetadataValue,
+    DagsterJobMetadataValue as DagsterJobMetadataValue,
+    DagsterRunMetadataValue as DagsterRunMetadataValue,
+    TableSchemaMetadataValue as TableSchemaMetadataValue,
+    DagsterAssetMetadataValue as DagsterAssetMetadataValue,
+    PythonArtifactMetadataValue as PythonArtifactMetadataValue,
+    TableColumnLineageMetadataValue as TableColumnLineageMetadataValue,
 )
 
 ArbitraryMetadataMapping: TypeAlias = Mapping[str, Any]

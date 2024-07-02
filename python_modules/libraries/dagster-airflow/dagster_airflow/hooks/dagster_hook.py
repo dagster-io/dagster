@@ -1,14 +1,14 @@
 import json
-import logging
 import time
+import logging
 from typing import Any, Mapping, Optional, cast
 
 # Type errors ignored because some of these imports target deprecated modules for compatibility with
 # airflow 1.x and 2.x.
 import requests
+from airflow.models import Connection
 from airflow.exceptions import AirflowException
 from airflow.hooks.base_hook import BaseHook  # type: ignore
-from airflow.models import Connection
 from dagster._core.storage.dagster_run import DagsterRunStatus
 
 from dagster_airflow.utils import is_airflow_2_loaded_in_environment

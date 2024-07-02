@@ -1,5 +1,5 @@
-import boto3
 import moto
+import boto3
 import pytest
 
 from .stubbed_ecs import ThreadsafeStubbedEcs

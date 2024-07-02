@@ -1,21 +1,21 @@
-import itertools
 import re
-from typing import TYPE_CHECKING, Callable, Sequence, Type, Union
+import itertools
+from typing import TYPE_CHECKING, Type, Union, Callable, Sequence
 
-import dagster._check as check
 import pandas as pd
 import pandera as pa
+import dagster._check as check
 from dagster import (
+    TypeCheck,
     DagsterType,
     TableColumn,
-    TableColumnConstraints,
-    TableConstraints,
     TableSchema,
-    TypeCheck,
+    TableConstraints,
     TypeCheckContext,
+    TableColumnConstraints,
 )
-from dagster._core.definitions.metadata import MetadataValue
 from dagster._core.libraries import DagsterLibraryRegistry
+from dagster._core.definitions.metadata import MetadataValue
 
 from .version import __version__
 

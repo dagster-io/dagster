@@ -1,120 +1,120 @@
-import datetime
-import logging  # noqa: F401; used by mock in string form
-import random
 import re
-import string
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+import random
+import string
+import logging  # noqa: F401; used by mock in string form
+import datetime
+from typing import List, Tuple, Optional, Sequence, cast
 from contextlib import ExitStack, contextmanager
-from typing import List, Optional, Sequence, Tuple, cast
+from concurrent.futures import ThreadPoolExecutor
 
 import mock
-import pendulum
 import pytest
+import pendulum
 import sqlalchemy as db
 from dagster import (
+    In,
+    Out,
+    Field,
+    Output,
     AssetKey,
-    AssetMaterialization,
+    JobDefinition,
+    EventLogRecord,
+    RetryRequested,
+    DagsterInstance,
     AssetObservation,
     AssetRecordsFilter,
-    DagsterInstance,
-    EventLogRecord,
     EventRecordsFilter,
-    Field,
-    In,
-    JobDefinition,
-    Out,
-    Output,
-    RetryRequested,
+    AssetMaterialization,
     RunShardedEventsCursor,
+    op,
+    job,
+    asset,
     _check as check,
     _seven as seven,
-    asset,
-    in_process_executor,
-    job,
-    op,
     resource,
+    in_process_executor,
 )
 from dagster._check import CheckError
+from dagster._utils import datetime_as_float
+from dagster._loggers import colored_console_logger
+from dagster._core.utils import make_new_run_id
 from dagster._core.assets import AssetDetails
-from dagster._core.definitions import ExpectationResult
-from dagster._core.definitions.asset_check_evaluation import (
-    AssetCheckEvaluation,
-    AssetCheckEvaluationPlanned,
-    AssetCheckEvaluationTargetMaterializationData,
-)
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
-from dagster._core.definitions.data_version import (
-    _OLD_DATA_VERSION_TAG,
-    _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
-    CODE_VERSION_TAG,
-    DATA_VERSION_IS_USER_PROVIDED_TAG,
-    DATA_VERSION_TAG,
-    INPUT_DATA_VERSION_TAG_PREFIX,
-    INPUT_EVENT_POINTER_TAG_PREFIX,
-)
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.dependency import NodeHandle
-from dagster._core.definitions.job_base import InMemoryJob
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
-from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import (
-    DailyPartitionsDefinition,
-    PartitionKeysTimeWindowPartitionsSubset,
-)
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
-from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter
 from dagster._core.events import (
     EVENT_TYPE_TO_PIPELINE_RUN_STATUS,
-    AssetMaterializationPlannedData,
-    AssetObservationData,
     DagsterEvent,
-    DagsterEventType,
     EngineEventData,
-    StepExpectationResultData,
+    DagsterEventType,
+    AssetObservationData,
     StepMaterializationData,
+    StepExpectationResultData,
+    AssetMaterializationPlannedData,
 )
+from dagster._core.instance import RUNLESS_RUN_ID, RUNLESS_JOB_NAME
+from dagster._serdes.serdes import deserialize_value
+from dagster._core.event_api import EventLogCursor, EventRecordsResult, RunStatusChangeRecordsFilter
 from dagster._core.events.log import EventLogEntry, construct_event_logger
-from dagster._core.execution.api import execute_run
-from dagster._core.execution.job_execution_result import JobExecutionResult
-from dagster._core.execution.plan.handle import StepHandle
-from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
-from dagster._core.execution.stats import StepEventStatus
-from dagster._core.instance import RUNLESS_JOB_NAME, RUNLESS_RUN_ID
-from dagster._core.remote_representation.external_data import (
-    external_partitions_definition_from_def,
-)
-from dagster._core.remote_representation.origin import (
-    InProcessCodeLocationOrigin,
-    RemoteJobOrigin,
-    RemoteRepositoryOrigin,
-)
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster._core.storage.event_log import InMemoryEventLogStorage, SqlEventLogStorage
-from dagster._core.storage.event_log.base import EventLogStorage
-from dagster._core.storage.event_log.migration import (
-    EVENT_LOG_DATA_MIGRATIONS,
-    migrate_asset_key_data,
-)
-from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
-from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
-from dagster._core.storage.io_manager import IOManager
-from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
-from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.test_utils import instance_for_test, create_run_for_test
+from dagster._core.definitions import ExpectationResult
 from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_END_TAG,
     ASSET_PARTITION_RANGE_START_TAG,
     MULTIDIMENSIONAL_PARTITION_PREFIX,
 )
-from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import make_new_run_id
-from dagster._loggers import colored_console_logger
-from dagster._serdes.serdes import deserialize_value
-from dagster._utils import datetime_as_float
 from dagster._utils.concurrency import ConcurrencySlotStatus
+from dagster._core.execution.api import execute_run
+from dagster._core.execution.stats import StepEventStatus
+from dagster._core.storage.event_log import SqlEventLogStorage, InMemoryEventLogStorage
+from dagster._core.storage.io_manager import IOManager
+from dagster._core.definitions.job_base import InMemoryJob
+from dagster._core.definitions.partition import PartitionKeyRange, StaticPartitionsDefinition
+from dagster._core.execution.plan.handle import StepHandle
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.execution.plan.objects import StepFailureData, StepSuccessData
+from dagster._core.storage.event_log.base import EventLogStorage
+from dagster._core.definitions.data_version import (
+    CODE_VERSION_TAG,
+    DATA_VERSION_TAG,
+    _OLD_DATA_VERSION_TAG,
+    INPUT_DATA_VERSION_TAG_PREFIX,
+    INPUT_EVENT_POINTER_TAG_PREFIX,
+    DATA_VERSION_IS_USER_PROVIDED_TAG,
+    _OLD_INPUT_DATA_VERSION_TAG_PREFIX,
+)
+from dagster._core.storage.event_log.schema import SqlEventLogStorageTable
+from dagster._core.storage.sqlalchemy_compat import db_select
+from dagster._core.storage.event_log.migration import (
+    EVENT_LOG_DATA_MIGRATIONS,
+    migrate_asset_key_data,
+)
+from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSeverity
+from dagster._core.remote_representation.origin import (
+    RemoteJobOrigin,
+    RemoteRepositoryOrigin,
+    InProcessCodeLocationOrigin,
+)
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.execution.job_execution_result import JobExecutionResult
+from dagster._core.storage.partition_status_cache import AssetStatusCacheValue
+from dagster._core.definitions.asset_check_evaluation import (
+    AssetCheckEvaluation,
+    AssetCheckEvaluationPlanned,
+    AssetCheckEvaluationTargetMaterializationData,
+)
+from dagster._core.definitions.time_window_partitions import (
+    DailyPartitionsDefinition,
+    PartitionKeysTimeWindowPartitionsSubset,
+)
+from dagster._core.remote_representation.external_data import (
+    external_partitions_definition_from_def,
+)
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 # py36 & 37 list.append not hashable
 

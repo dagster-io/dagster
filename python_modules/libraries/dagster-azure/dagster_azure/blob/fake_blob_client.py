@@ -1,8 +1,8 @@
 import io
 import random
+from unittest import mock
 from contextlib import contextmanager
 from dataclasses import dataclass
-from unittest import mock
 
 from .utils import ResourceNotFoundError
 

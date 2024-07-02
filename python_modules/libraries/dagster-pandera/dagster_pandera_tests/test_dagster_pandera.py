@@ -1,18 +1,18 @@
 import re
 
 import pandas as pd
-import pandera as pa
 import pytest
-from dagster import DagsterType, TypeCheck, check_dagster_type
+import pandera as pa
+from dagster import TypeCheck, DagsterType, check_dagster_type
+from dagster_pandera import pandera_schema_to_dagster_type
+from pandera.api.pandas.model_config import BaseConfig
 from dagster._core.definitions.metadata import TableSchemaMetadataValue
 from dagster._core.definitions.metadata.table import (
     TableColumn,
-    TableColumnConstraints,
-    TableConstraints,
     TableSchema,
+    TableConstraints,
+    TableColumnConstraints,
 )
-from dagster_pandera import pandera_schema_to_dagster_type
-from pandera.api.pandas.model_config import BaseConfig
 
 # ########################
 # ##### FIXTURES

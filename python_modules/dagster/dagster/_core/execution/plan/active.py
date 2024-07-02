@@ -2,43 +2,43 @@ import time
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
     Set,
+    Dict,
+    List,
     Type,
     Union,
+    Mapping,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
     cast,
 )
 
 from typing_extensions import Self
 
 import dagster._check as check
+from dagster._utils.tags import TagConcurrencyLimitsCounter
 from dagster._core.errors import (
-    DagsterExecutionInterruptedError,
-    DagsterInvariantViolationError,
     DagsterUnknownStepStateError,
+    DagsterInvariantViolationError,
+    DagsterExecutionInterruptedError,
 )
 from dagster._core.events import DagsterEvent
+from dagster._utils.interrupts import pop_captured_interrupt
+from dagster._core.storage.tags import PRIORITY_TAG, GLOBAL_CONCURRENCY_TAG
+from dagster._core.execution.retries import RetryMode, RetryState
+from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.execution.context.system import (
     IPlanContext,
     PlanExecutionContext,
     PlanOrchestrationContext,
 )
-from dagster._core.execution.plan.state import KnownExecutionState
-from dagster._core.execution.retries import RetryMode, RetryState
-from dagster._core.storage.tags import GLOBAL_CONCURRENCY_TAG, PRIORITY_TAG
-from dagster._utils.interrupts import pop_captured_interrupt
-from dagster._utils.tags import TagConcurrencyLimitsCounter
 
-from .instance_concurrency_context import InstanceConcurrencyContext
-from .outputs import StepOutputData, StepOutputHandle
 from .plan import ExecutionPlan
 from .step import ExecutionStep
+from .outputs import StepOutputData, StepOutputHandle
+from .instance_concurrency_context import InstanceConcurrencyContext
 
 
 def _default_sort_key(step: ExecutionStep) -> float:

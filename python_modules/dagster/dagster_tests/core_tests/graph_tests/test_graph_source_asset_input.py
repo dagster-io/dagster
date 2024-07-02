@@ -3,15 +3,15 @@ from typing import Union
 import pytest
 from dagster import (
     AssetKey,
-    AssetsDefinition,
-    DagsterInvalidDefinitionError,
     IOManager,
-    IOManagerDefinition,
     SourceAsset,
+    AssetsDefinition,
+    IOManagerDefinition,
     StaticPartitionsDefinition,
-    graph,
-    job,
+    DagsterInvalidDefinitionError,
     op,
+    job,
+    graph,
 )
 from dagster._core.definitions.external_asset import create_external_asset_from_source_asset
 

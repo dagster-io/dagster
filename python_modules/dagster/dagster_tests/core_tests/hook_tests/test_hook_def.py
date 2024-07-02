@@ -1,27 +1,27 @@
-from collections import defaultdict
 from unittest import mock
+from collections import defaultdict
 
 import pytest
 from dagster import (
-    DagsterEventType,
-    GraphDefinition,
     JobDefinition,
     NodeInvocation,
-    build_hook_context,
-    execute_job,
-    graph,
-    job,
+    GraphDefinition,
+    DagsterEventType,
     op,
-    reconstructable,
+    job,
+    graph,
     resource,
+    execute_job,
+    reconstructable,
+    build_hook_context,
 )
-from dagster._core.definitions import NodeHandle, failure_hook, success_hook
-from dagster._core.definitions.decorators.hook_decorator import event_list_hook
-from dagster._core.definitions.events import HookExecutionResult
-from dagster._core.definitions.policy import RetryPolicy
-from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterExecutionInterruptedError
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions import NodeHandle, failure_hook, success_hook
+from dagster._core.definitions.events import HookExecutionResult
+from dagster._core.definitions.policy import RetryPolicy
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 
 
 class SomeUserException(Exception):

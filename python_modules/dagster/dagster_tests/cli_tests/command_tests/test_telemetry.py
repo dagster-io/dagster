@@ -1,55 +1,55 @@
-import json
 import os
+import json
 import tempfile
-from difflib import SequenceMatcher
 from typing import Any
+from difflib import SequenceMatcher
 from unittest.mock import MagicMock
 
 import pytest
-from click.testing import CliRunner
 from dagster import (
-    ConfigurableIOManager,
-    ConfigurableResource,
-    DailyPartitionsDefinition,
     Definitions,
-    DynamicPartitionsDefinition,
-    FreshnessPolicy,
-    MultiPartitionsDefinition,
-    PipesSubprocessClient,
     SourceAsset,
+    FreshnessPolicy,
+    ConfigurableResource,
+    ConfigurableIOManager,
+    PipesSubprocessClient,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
+    resource,
+    io_manager,
+    repository,
     asset_check,
     define_asset_job,
-    io_manager,
     observable_source_asset,
-    repository,
-    resource,
 )
+from click.testing import CliRunner
+from dagster._utils import pushd, file_relative_path, script_relative_path
 from dagster._cli.job import job_execute_command
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.execution.context.input import InputContext
-from dagster._core.execution.context.output import OutputContext
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
-from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.telemetry import (
     TELEMETRY_STR,
     UPDATE_REPO_STATS,
-    cleanup_telemetry_logger,
-    get_or_create_dir_from_dagster_home,
-    get_or_set_instance_id,
-    get_stats_from_external_repo,
     hash_name,
     log_workspace_stats,
+    get_or_set_instance_id,
+    cleanup_telemetry_logger,
     write_telemetry_log_line,
+    get_stats_from_external_repo,
+    get_or_create_dir_from_dagster_home,
 )
 from dagster._core.test_utils import environ, instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster._utils import file_relative_path, pushd, script_relative_path
+from dagster._core.storage.io_manager import dagster_maintained_io_manager
+from dagster._core.definitions.reconstruct import get_ephemeral_repository_name
+from dagster._core.execution.context.input import InputContext
+from dagster._core.execution.context.output import OutputContext
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.remote_representation.external_data import external_repository_data_from_def
 
 EXPECTED_KEYS = set(
     [

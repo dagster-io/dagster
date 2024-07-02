@@ -1,17 +1,17 @@
 import sys
-from collections import defaultdict
 from datetime import datetime
 from functools import wraps
+from collections import defaultdict
 
 import pandas as pd
+from pandas import DataFrame
 from dagster import (
-    DagsterType,
     TypeCheck,
+    DagsterType,
     _check as check,
 )
-from dagster._annotations import experimental
-from pandas import DataFrame
 from typing_extensions import Final
+from dagster._annotations import experimental
 
 CONSTRAINT_METADATA_KEY: Final = "constraint_metadata"
 

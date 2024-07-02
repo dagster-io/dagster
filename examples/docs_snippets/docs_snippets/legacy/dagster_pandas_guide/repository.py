@@ -1,9 +1,9 @@
 from dagster import repository
 
 from .core_trip import core_trip
-from .custom_column_constraint import custom_column_constraint_trip
-from .shape_constrained_trip import shape_constrained_trip
 from .summary_stats import summary_stats_trip
+from .shape_constrained_trip import shape_constrained_trip
+from .custom_column_constraint import custom_column_constraint_trip
 
 
 @repository

@@ -1,9 +1,9 @@
 import re
-from typing import NamedTuple, Optional, Union, cast
+from typing import Union, Optional, NamedTuple, cast
 
 import dagster._check as check
-from dagster._core.definitions.dependency import NodeHandle
 from dagster._serdes import whitelist_for_serdes
+from dagster._core.definitions.dependency import NodeHandle
 
 
 # Serialize node_handle -> solid_handle for backcompat

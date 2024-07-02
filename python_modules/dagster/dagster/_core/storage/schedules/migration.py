@@ -1,15 +1,15 @@
-from typing import Callable, Mapping, Optional
+from typing import Mapping, Callable, Optional
 
 import sqlalchemy.exc as db_exc
 from tqdm import tqdm
 
+from dagster._utils import PrintFn
+from dagster._serdes import deserialize_value
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.storage.schedules.base import ScheduleStorage
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._serdes import deserialize_value
-from dagster._utils import PrintFn
 
-from ..schedules.schema import InstigatorsTable, JobTable, JobTickTable
+from ..schedules.schema import JobTable, JobTickTable, InstigatorsTable
 
 SCHEDULE_JOBS_SELECTOR_ID = "schedule_jobs_selector_id"
 SCHEDULE_TICKS_SELECTOR_ID = "schedule_ticks_selector_id"

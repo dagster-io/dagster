@@ -8,29 +8,29 @@ from dagster._annotations import public
 from dagster._utils.schedules import is_valid_cron_string
 
 if TYPE_CHECKING:
+    from dagster._core.definitions.auto_materialize_rule_impls import (
+        MaterializeOnCronRule,
+        SkipOnParentMissingRule,
+        SkipOnRunInProgressRule,
+        MaterializeOnMissingRule,
+        SkipOnParentOutdatedRule,
+        SkipOnBackfillInProgressRule,
+        MaterializeOnParentUpdatedRule,
+        SkipOnNotAllParentsUpdatedRule,
+        AutoMaterializeAssetPartitionsFilter,
+        MaterializeOnRequiredForFreshnessRule,
+        SkipOnNotAllParentsUpdatedSinceCronRule,
+        SkipOnRequiredButNonexistentParentsRule,
+    )
     from dagster._core.definitions.auto_materialize_rule_evaluation import (
         AutoMaterializeDecisionType,
         AutoMaterializeRuleSnapshot,
     )
-    from dagster._core.definitions.auto_materialize_rule_impls import (
-        AutoMaterializeAssetPartitionsFilter,
-        MaterializeOnCronRule,
-        MaterializeOnMissingRule,
-        MaterializeOnParentUpdatedRule,
-        MaterializeOnRequiredForFreshnessRule,
-        SkipOnBackfillInProgressRule,
-        SkipOnNotAllParentsUpdatedRule,
-        SkipOnNotAllParentsUpdatedSinceCronRule,
-        SkipOnParentMissingRule,
-        SkipOnParentOutdatedRule,
-        SkipOnRequiredButNonexistentParentsRule,
-        SkipOnRunInProgressRule,
+    from dagster._core.definitions.declarative_automation.automation_context import (
+        AutomationContext,
     )
     from dagster._core.definitions.declarative_automation.automation_condition import (
         AutomationResult,
-    )
-    from dagster._core.definitions.declarative_automation.automation_context import (
-        AutomationContext,
     )
     from dagster._core.definitions.declarative_automation.legacy.asset_condition import (
         AssetCondition,

@@ -1,50 +1,50 @@
 import copy
-import hashlib
 import json
+import hashlib
 from abc import ABC, abstractmethod
-from collections import defaultdict
-from datetime import datetime
 from enum import Enum
 from typing import (
-    AbstractSet,
     Any,
-    Callable,
     Dict,
-    Generic,
-    Iterable,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Type,
     Union,
+    Generic,
+    Mapping,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    NamedTuple,
+    AbstractSet,
     cast,
 )
+from datetime import datetime
+from collections import defaultdict
 
 from typing_extensions import TypeVar
 
 import dagster._check as check
-from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._utils import xor
+from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import PublicAttr, public, deprecated, deprecated_param
+from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
+from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.storage.tags import PARTITION_SET_TAG, PARTITION_NAME_TAG
+from dagster._utils.cached_method import cached_method
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
-from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
-from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster._serdes import whitelist_for_serdes
-from dagster._utils import xor
-from dagster._utils.cached_method import cached_method
-from dagster._utils.warnings import normalize_renamed_param
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 
-from ..errors import (
-    DagsterInvalidDefinitionError,
-    DagsterInvalidDeserializationVersionError,
-    DagsterInvalidInvocationError,
-    DagsterUnknownPartitionError,
-)
-from .config import ConfigMapping
 from .utils import normalize_tags
+from .config import ConfigMapping
+from ..errors import (
+    DagsterUnknownPartitionError,
+    DagsterInvalidDefinitionError,
+    DagsterInvalidInvocationError,
+    DagsterInvalidDeserializationVersionError,
+)
 
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"
 
@@ -1285,8 +1285,8 @@ class AllPartitionsSubset(
 
     def __sub__(self, other: "PartitionsSubset") -> "PartitionsSubset":
         from .time_window_partitions import (
-            BaseTimeWindowPartitionsSubset,
             TimeWindowPartitionsSubset,
+            BaseTimeWindowPartitionsSubset,
         )
 
         if self == other:

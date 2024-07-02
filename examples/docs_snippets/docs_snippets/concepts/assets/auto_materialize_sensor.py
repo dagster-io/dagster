@@ -1,4 +1,4 @@
-from dagster import AssetSelection, AutoMaterializeSensorDefinition, Definitions
+from dagster import Definitions, AssetSelection, AutoMaterializeSensorDefinition
 
 my_custom_auto_materialize_sensor = AutoMaterializeSensorDefinition(
     "my_custom_auto_materialize_sensor",

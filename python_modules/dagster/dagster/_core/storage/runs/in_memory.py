@@ -1,13 +1,13 @@
 import uuid
-from contextlib import contextmanager
 from typing import Iterator, Optional, Sequence
+from contextlib import contextmanager
 
 import sqlalchemy as db
-from sqlalchemy.engine import Connection
 from sqlalchemy.pool import NullPool
+from sqlalchemy.engine import Connection
 
 from dagster._core.debug import DebugRunPayload
-from dagster._core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
+from dagster._core.storage.sql import create_engine, stamp_alembic_rev, get_alembic_config
 from dagster._core.storage.sqlite import create_in_memory_conn_string
 
 from .schema import InstanceInfo, RunStorageSqlMetadata

@@ -1,7 +1,7 @@
 import pytest
 from dagster import AssetMaterialization
-from dagster._core.definitions.metadata.metadata_set import UriMetadataSet
 from dagster._core.test_utils import raise_exception_on_warnings
+from dagster._core.definitions.metadata.metadata_set import UriMetadataSet
 
 
 @pytest.fixture(autouse=True)

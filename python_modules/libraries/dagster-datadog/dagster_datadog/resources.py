@@ -1,7 +1,7 @@
 from dagster import ConfigurableResource, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from datadog import DogStatsd, api, initialize, statsd
+from datadog import DogStatsd, api, statsd, initialize
 from pydantic import Field
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 
 class DatadogClient:

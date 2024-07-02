@@ -1,49 +1,49 @@
+from queue import Queue
+from typing import TYPE_CHECKING, Any, Dict, Union, Mapping, Iterator, Optional, Sequence, cast
 from contextlib import contextmanager
 from dataclasses import dataclass
-from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 from dagster_pipes import (
+    PIPES_METADATA_TYPE_INFER,
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
-    PIPES_METADATA_TYPE_INFER,
     Method,
-    PipesContextData,
-    PipesDataProvenance,
-    PipesException,
     PipesExtras,
+    PipesParams,
     PipesMessage,
+    PipesException,
+    PipesOpenedData,
+    PipesTimeWindow,
+    PipesContextData,
     PipesMetadataType,
     PipesMetadataValue,
-    PipesOpenedData,
-    PipesParams,
-    PipesTimeWindow,
+    PipesDataProvenance,
     encode_env_var,
 )
 from typing_extensions import TypeAlias
 
 import dagster._check as check
 from dagster import DagsterEvent
-from dagster._annotations import experimental, public
-from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
-from dagster._core.definitions.data_version import DataProvenance, DataVersion
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.result import MaterializeResult
-from dagster._core.definitions.time_window_partitions import (
-    TimeWindow,
-    has_one_dimension_time_window_partitioning,
-)
+from dagster._annotations import public, experimental
 from dagster._core.errors import DagsterPipesExecutionError
 from dagster._core.events import EngineEventData
-from dagster._core.execution.context.compute import OpExecutionContext
-from dagster._core.execution.context.invocation import BaseDirectExecutionContext
 from dagster._utils.error import (
     ExceptionInfo,
     SerializableErrorInfo,
     serializable_error_info_from_exc_info,
+)
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.result import MaterializeResult
+from dagster._core.definitions.metadata import MetadataValue, normalize_metadata_value
+from dagster._core.definitions.data_version import DataVersion, DataProvenance
+from dagster._core.execution.context.compute import OpExecutionContext
+from dagster._core.definitions.asset_check_spec import AssetCheckSeverity
+from dagster._core.execution.context.invocation import BaseDirectExecutionContext
+from dagster._core.definitions.asset_check_result import AssetCheckResult
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import (
+    TimeWindow,
+    has_one_dimension_time_window_partitioning,
 )
 
 if TYPE_CHECKING:

@@ -2,8 +2,8 @@ import pytest
 
 from dagster import DagsterInvalidConfigError
 from docs_snippets.concepts.configuration.execute_with_config import (
-    execute_with_bad_config,
     execute_with_config,
+    execute_with_bad_config,
 )
 
 

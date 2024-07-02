@@ -1,7 +1,7 @@
-import dagster._check as check
 import graphene
-from dagster._core.storage.captured_log_manager import CapturedLogData
+import dagster._check as check
 from dagster._core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
+from dagster._core.storage.captured_log_manager import CapturedLogData
 
 from dagster_graphql.schema.util import ResolveInfo, non_null_list
 

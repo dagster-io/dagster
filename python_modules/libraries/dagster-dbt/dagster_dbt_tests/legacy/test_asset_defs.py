@@ -1,45 +1,45 @@
-import json
 import os
+import json
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from pandas import read_csv
 from dagster import (
     AssetIn,
     AssetKey,
-    AutoMaterializePolicy,
-    DailyPartitionsDefinition,
     FreshnessPolicy,
     ResourceDefinition,
+    AutoMaterializePolicy,
+    DailyPartitionsDefinition,
     asset,
+    repository,
     materialize,
     materialize_to_memory,
-    repository,
 )
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
-from dagster._core.execution.with_resources import with_resources
-from dagster._utils import file_relative_path
 from dagster_dbt import (
+    DbtCliResource,
     DagsterDbtError,
     DagsterDbtTranslator,
     DbtCliClientResource,
-    DbtCliResource,
     dbt_cli_resource,
     get_asset_key_for_model,
     group_from_dbt_resource_props_fallback_to_directory,
 )
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster._utils import file_relative_path
+from dagster_duckdb import build_duckdb_io_manager
+from dagster_dbt.types import DbtOutput
+from dagster_dbt.errors import DagsterDbtCliRuntimeError, DagsterDbtCliFatalRuntimeError
+from dagster_duckdb_pandas import DuckDBPandasTypeHandler
+from dagster_dbt.asset_defs import load_assets_from_dbt_project, load_assets_from_dbt_manifest
+from dagster_dbt.core.utils import parse_run_results
 from dagster_dbt.asset_utils import default_asset_key_fn
 from dagster_dbt.core.resources import DbtCliClient
-from dagster_dbt.core.utils import parse_run_results
+from dagster._core.definitions.metadata import MetadataValue
 from dagster_dbt.dagster_dbt_translator import DagsterDbtTranslatorSettings
-from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError, DagsterDbtCliRuntimeError
-from dagster_dbt.types import DbtOutput
-from dagster_duckdb import build_duckdb_io_manager
-from dagster_duckdb_pandas import DuckDBPandasTypeHandler
-from pandas import read_csv
+from dagster._core.execution.with_resources import with_resources
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 from .utils import assert_assets_match_project
 

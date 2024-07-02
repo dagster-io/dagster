@@ -3,35 +3,35 @@ from typing import Any, Iterable
 
 import pytest
 from dagster import (
-    AssetCheckResult,
-    AssetCheckSpec,
+    In,
+    Output,
     AssetKey,
     AssetOut,
-    DagsterInstance,
-    In,
     MetadataValue,
-    Output,
-    _check as check,
+    AssetCheckSpec,
+    DagsterInstance,
+    AssetCheckResult,
+    op,
     asset,
+    _check as check,
     graph_asset,
-    graph_multi_asset,
     materialize,
     multi_asset,
-    op,
+    graph_multi_asset,
 )
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
-from dagster._core.definitions.asset_selection import AssetCheckKeysSelection, AssetSelection
-from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterStepOutputNotFoundError,
 )
-from dagster._core.execution.context.compute import AssetExecutionContext
-from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
-from dagster._core.storage.io_manager import IOManager
 from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.io_manager import IOManager
 from dagster._core.types.dagster_type import Nothing
+from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.execution.context.compute import AssetExecutionContext
+from dagster._core.definitions.asset_selection import AssetSelection, AssetCheckKeysSelection
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.storage.asset_check_execution_record import AssetCheckExecutionRecordStatus
 
 
 def test_asset_check_same_op() -> None:

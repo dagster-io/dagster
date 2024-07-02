@@ -1,6 +1,6 @@
 import graphene
 
-from ..errors import GrapheneInvalidSubsetError, GraphenePipelineNotFoundError, GraphenePythonError
+from ..errors import GraphenePythonError, GrapheneInvalidSubsetError, GraphenePipelineNotFoundError
 from ..execution import GrapheneExecutionPlan
 from ..pipelines.config import GrapheneRunConfigValidationInvalid
 

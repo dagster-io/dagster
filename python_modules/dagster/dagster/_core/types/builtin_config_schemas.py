@@ -3,16 +3,16 @@ import pickle
 import dagster._check as check
 import dagster._seven as seven
 from dagster._config import (
+    Field,
+    Selector,
+    ConfigType,
+    ScalarUnion,
+    ConfigTypeKind,
     ConfigAnyInstance,
+    ConfigIntInstance,
     ConfigBoolInstance,
     ConfigFloatInstance,
-    ConfigIntInstance,
     ConfigStringInstance,
-    ConfigType,
-    ConfigTypeKind,
-    Field,
-    ScalarUnion,
-    Selector,
 )
 from dagster._utils.warnings import disable_dagster_warnings
 

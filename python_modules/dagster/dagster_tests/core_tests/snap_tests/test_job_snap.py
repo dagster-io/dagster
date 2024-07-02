@@ -1,23 +1,23 @@
 import itertools
 
 import pytest
-from dagster import Field, In, Map, Nothing, Out, Permissive, Selector, Shape, job, op
-from dagster._config import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
+from dagster import In, Map, Out, Field, Shape, Nothing, Selector, Permissive, op, job
+from dagster._config import Int, Bool, Enum, Array, Float, String, Noneable, EnumValue
+from dagster._serdes import serialize_pp, serialize_value
 from dagster._core.snap import (
-    DependencyStructureIndex,
     JobSnapshot,
     NodeInvocationSnap,
-    create_job_snapshot_id,
+    DependencyStructureIndex,
     snap_from_config_type,
+    create_job_snapshot_id,
 )
+from dagster._serdes.serdes import deserialize_value
 from dagster._core.snap.dep_snapshot import (
-    DependencyStructureSnapshot,
     InputHandle,
     OutputHandleSnap,
+    DependencyStructureSnapshot,
     build_dep_structure_snapshot_from_graph_def,
 )
-from dagster._serdes import serialize_pp, serialize_value
-from dagster._serdes.serdes import deserialize_value
 
 
 def serialize_rt(value: JobSnapshot) -> JobSnapshot:

@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Optional, NamedTuple
 
-from dagster._core.instance import MayHaveInstanceWeakref, T_DagsterInstance
+from dagster._serdes import whitelist_for_serdes
 from dagster._core.origin import JobPythonOrigin
+from dagster._core.instance import T_DagsterInstance, MayHaveInstanceWeakref
 from dagster._core.storage.dagster_run import DagsterRun
 from dagster._core.workspace.workspace import IWorkspace
-from dagster._serdes import whitelist_for_serdes
 
 
 class LaunchRunContext(NamedTuple):

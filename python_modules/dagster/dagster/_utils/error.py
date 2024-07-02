@@ -1,9 +1,9 @@
 import os
 import sys
-import traceback
 import uuid
+import traceback
 from types import TracebackType
-from typing import Any, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Type, Tuple, Union, Optional, Sequence, NamedTuple
 
 from typing_extensions import TypeAlias
 
@@ -110,7 +110,7 @@ def serializable_error_info_from_exc_info(
     e = check.not_none(e, additional_message=additional_message)
     tb = check.not_none(tb, additional_message=additional_message)
 
-    from dagster._core.errors import DagsterUserCodeExecutionError, DagsterUserCodeProcessError
+    from dagster._core.errors import DagsterUserCodeProcessError, DagsterUserCodeExecutionError
 
     if isinstance(e, DagsterUserCodeExecutionError) and _should_redact_user_code_error():
         error_id = str(uuid.uuid4())

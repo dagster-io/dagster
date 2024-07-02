@@ -3,13 +3,13 @@ from enum import Enum as PythonEnum
 from typing import TYPE_CHECKING, Dict, Iterator, Optional, Sequence, cast
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._builtins import BuiltinEnum
 from dagster._config import UserConfigSchema
 from dagster._serdes import whitelist_for_serdes
+from dagster._builtins import BuiltinEnum
+from dagster._annotations import public
 
 if TYPE_CHECKING:
-    from .snap import ConfigSchemaSnapshot, ConfigTypeSnap
+    from .snap import ConfigTypeSnap, ConfigSchemaSnapshot
 
 
 @whitelist_for_serdes

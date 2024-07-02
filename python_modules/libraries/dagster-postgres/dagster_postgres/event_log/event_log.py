@@ -1,44 +1,44 @@
+from typing import Any, Mapping, Iterator, Optional, Sequence, ContextManager, cast
 from contextlib import contextmanager
-from typing import Any, ContextManager, Iterator, Mapping, Optional, Sequence, cast
 
-import dagster._check as check
 import sqlalchemy as db
-import sqlalchemy.dialects as db_dialects
+import dagster._check as check
 import sqlalchemy.pool as db_pool
-from dagster._config.config_schema import UserConfigSchema
+import sqlalchemy.dialects as db_dialects
+from sqlalchemy import event
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
+from sqlalchemy.engine import Connection
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import ASSET_EVENTS, ASSET_CHECK_EVENTS, BATCH_WRITABLE_EVENTS
 from dagster._core.event_api import EventHandlerFn
-from dagster._core.events import ASSET_CHECK_EVENTS, ASSET_EVENTS, BATCH_WRITABLE_EVENTS
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.config import pg_config
-from dagster._core.storage.event_log import (
-    AssetKeyTable,
-    DynamicPartitionsTable,
-    SqlEventLogStorage,
-    SqlEventLogStorageMetadata,
-    SqlEventLogStorageTable,
-)
-from dagster._core.storage.event_log.base import EventLogCursor
-from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
 from dagster._core.storage.sql import (
     AlembicVersion,
-    check_alembic_revision,
     create_engine,
-    run_alembic_upgrade,
     stamp_alembic_rev,
+    run_alembic_upgrade,
+    check_alembic_revision,
 )
+from dagster._core.storage.config import pg_config
+from dagster._config.config_schema import UserConfigSchema
+from dagster._core.storage.event_log import (
+    AssetKeyTable,
+    SqlEventLogStorage,
+    DynamicPartitionsTable,
+    SqlEventLogStorageTable,
+    SqlEventLogStorageMetadata,
+)
+from dagster._core.storage.event_log.base import EventLogCursor
 from dagster._core.storage.sqlalchemy_compat import db_select
-from dagster._serdes import ConfigurableClass, ConfigurableClassData, deserialize_value
-from sqlalchemy import event
-from sqlalchemy.engine import Connection
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.polling_event_watcher import SqlPollingEventWatcher
 
 from ..utils import (
-    create_pg_connection,
     pg_alembic_config,
     pg_url_from_config,
-    retry_pg_connection_fn,
+    create_pg_connection,
     retry_pg_creation_fn,
+    retry_pg_connection_fn,
     set_pg_statement_timeout,
 )
 

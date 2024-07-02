@@ -1,23 +1,23 @@
-import contextlib
 import os
 import pickle
 import shutil
 import tempfile
 import threading
+import contextlib
 
-import dagstermill
 import pytest
-from dagster import AssetMaterialization, ResourceDefinition
+import dagstermill
+from dagster import ResourceDefinition, AssetMaterialization
+from dagstermill import DagstermillError
+from dagster._utils import safe_tempfile_path
+from dagster._serdes import pack_value
+from dagster._core.utils import make_new_run_id
+from dagstermill.manager import Manager
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.errors import DagsterInvariantViolationError
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus
-from dagster._core.test_utils import instance_for_test
-from dagster._core.utils import make_new_run_id
-from dagster._serdes import pack_value
-from dagster._utils import safe_tempfile_path
-from dagstermill import DagstermillError
-from dagstermill.manager import Manager
 
 
 @contextlib.contextmanager

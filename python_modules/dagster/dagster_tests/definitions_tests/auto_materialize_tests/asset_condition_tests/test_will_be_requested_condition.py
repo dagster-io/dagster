@@ -1,7 +1,7 @@
 from dagster import AssetKey, AutomationCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
-from ..scenario_specs import two_assets_in_sequence, two_partitions_def
+from ..scenario_specs import two_partitions_def, two_assets_in_sequence
 from .asset_condition_scenario import AutomationConditionScenarioState
 
 

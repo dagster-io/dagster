@@ -1,18 +1,18 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+from typing import TYPE_CHECKING, Tuple, Mapping, Optional, Sequence, NamedTuple
 from functools import cached_property
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Tuple
 
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
     from dagster._core.remote_representation import CodeLocation, CodeLocationOrigin
-    from dagster._core.remote_representation.external_data import (
-        ExternalAssetCheck,
-        ExternalAssetNode,
-    )
     from dagster._core.remote_representation.handle import RepositoryHandle
+    from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
+    from dagster._core.remote_representation.external_data import (
+        ExternalAssetNode,
+        ExternalAssetCheck,
+    )
 
 
 # For locations that are loaded asynchronously

@@ -1,12 +1,12 @@
 from typing import Any, Mapping, Optional
 
-from dagster._core.events import EngineEventData
-from dagster._core.storage.dagster_run import DagsterRun
-from dagster._serdes.config_class import ConfigurableClassData
 from typing_extensions import Self
+from dagster._core.events import EngineEventData
+from dagster._serdes.config_class import ConfigurableClassData
+from dagster._core.storage.dagster_run import DagsterRun
 
-from .container_context import EcsContainerContext
 from .launcher import EcsRunLauncher
+from .container_context import EcsContainerContext
 
 
 class CustomECSRunLauncher(EcsRunLauncher):

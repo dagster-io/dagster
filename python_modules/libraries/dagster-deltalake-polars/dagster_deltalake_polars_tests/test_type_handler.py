@@ -4,25 +4,25 @@ from datetime import datetime
 import polars as pl
 import pytest
 from dagster import (
-    AssetExecutionContext,
-    AssetIn,
-    DailyPartitionsDefinition,
-    DynamicPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
     Out,
+    AssetIn,
+    MultiPartitionKey,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
+    op,
     asset,
     graph,
-    instance_for_test,
     materialize,
-    op,
+    instance_for_test,
 )
+from deltalake import DeltaTable
 from dagster._check import CheckError
 from dagster_deltalake import DELTA_DATE_FORMAT, LocalConfig
-from dagster_deltalake.io_manager import WriteMode
 from dagster_deltalake_polars import DeltaLakePolarsIOManager
-from deltalake import DeltaTable
+from dagster_deltalake.io_manager import WriteMode
 
 
 @pytest.fixture

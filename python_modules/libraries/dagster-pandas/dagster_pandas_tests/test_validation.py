@@ -1,16 +1,16 @@
 import pytest
+from pandas import DataFrame, Timestamp
+from dagster_pandas.validation import PandasColumn, validate_constraints
 from dagster_pandas.constraints import (
-    CategoricalColumnConstraint,
-    ColumnDTypeFnConstraint,
-    ColumnDTypeInSetConstraint,
-    ConstraintViolationException,
-    InRangeColumnConstraint,
-    NonNullableColumnConstraint,
     RowCountConstraint,
     UniqueColumnConstraint,
+    ColumnDTypeFnConstraint,
+    InRangeColumnConstraint,
+    ColumnDTypeInSetConstraint,
+    CategoricalColumnConstraint,
+    NonNullableColumnConstraint,
+    ConstraintViolationException,
 )
-from dagster_pandas.validation import PandasColumn, validate_constraints
-from pandas import DataFrame, Timestamp
 
 
 def test_validate_constraints_ok():

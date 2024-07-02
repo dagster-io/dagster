@@ -1,32 +1,32 @@
 import os
-import random
 import re
-import string
 import uuid
+import random
+import string
 import warnings
-from collections import OrderedDict
-from concurrent.futures import Future, ThreadPoolExecutor
-from contextvars import copy_context
 from typing import (
-    AbstractSet,
     Any,
-    Iterable,
+    Tuple,
+    Union,
     Mapping,
+    TypeVar,
+    Iterable,
     Optional,
     Sequence,
-    Tuple,
     TypedDict,
-    TypeVar,
-    Union,
+    AbstractSet,
     cast,
 )
 from weakref import WeakSet
+from collections import OrderedDict
+from contextvars import copy_context
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import toposort as toposort_
 from typing_extensions import Final
 
 import dagster._check as check
-from dagster._utils import library_version_from_core_version, parse_package_version
+from dagster._utils import parse_package_version, library_version_from_core_version
 
 BACKFILL_TAG_LENGTH = 8
 

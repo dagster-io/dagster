@@ -1,30 +1,30 @@
 import os
+from typing import Any, Mapping, Iterator, Optional, Sequence
 from contextlib import contextmanager
-from typing import Any, Iterator, Mapping, Optional, Sequence
 
 import boto3
 import dagster._seven as seven
-from botocore.errorfactory import ClientError
 from dagster import (
     Field,
     Permissive,
     StringSource,
     _check as check,
 )
+from dagster._utils import ensure_dir, ensure_file
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
+from typing_extensions import Self
+from botocore.errorfactory import ClientError
 from dagster._config.config_type import Noneable
-from dagster._core.storage.captured_log_manager import CapturedLogContext
-from dagster._core.storage.cloud_storage_compute_log_manager import (
-    CloudStorageComputeLogManager,
-    PollingComputeLogSubscriptionManager,
-)
 from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.storage.captured_log_manager import CapturedLogContext
 from dagster._core.storage.local_compute_log_manager import (
     IO_TYPE_EXTENSION,
     LocalComputeLogManager,
 )
-from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster._utils import ensure_dir, ensure_file
-from typing_extensions import Self
+from dagster._core.storage.cloud_storage_compute_log_manager import (
+    CloudStorageComputeLogManager,
+    PollingComputeLogSubscriptionManager,
+)
 
 POLLING_INTERVAL = 5
 

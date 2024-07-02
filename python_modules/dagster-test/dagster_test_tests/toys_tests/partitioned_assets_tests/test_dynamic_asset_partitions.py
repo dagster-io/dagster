@@ -1,11 +1,11 @@
 from dagster import DagsterInstance, MultiPartitionKey, materialize_to_memory
+from dagster_test.toys.repo import partitioned_assets_repository
 from dagster_test.toys.partitioned_assets.dynamic_asset_partitions import (
+    customers_partitions_def,
     customers_dynamic_partitions_asset1,
     customers_dynamic_partitions_asset2,
-    customers_partitions_def,
     multipartitioned_with_dynamic_dimension,
 )
-from dagster_test.toys.repo import partitioned_assets_repository
 
 
 def test_assets():

@@ -1,15 +1,15 @@
 import logging
 import warnings
+from typing import Type, Tuple
 from datetime import date, datetime, timedelta
-from typing import Tuple, Type
 
-import dagster
 import polars as pl
 import pytest
+import dagster
 import pytest_cases
-from _pytest.tmpdir import TempPathFactory
 from dagster import DagsterInstance
-from dagster_polars import BasePolarsUPathIOManager, PolarsDeltaIOManager, PolarsParquetIOManager
+from _pytest.tmpdir import TempPathFactory
+from dagster_polars import PolarsDeltaIOManager, PolarsParquetIOManager, BasePolarsUPathIOManager
 
 logging.getLogger("alembic.runtime.migration").setLevel(logging.WARNING)
 warnings.filterwarnings("ignore", category=dagster.ExperimentalWarning)

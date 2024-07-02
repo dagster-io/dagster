@@ -1,39 +1,39 @@
-import contextlib
-import json
 import os
 import re
 import sys
-import tempfile
+import json
 import time
 import uuid
+import tempfile
+import contextlib
 from enum import Enum
+from typing import IO, Any, Dict, List, Union, AnyStr, Iterator, Optional, Generator
 from subprocess import PIPE, STDOUT, Popen
-from typing import IO, Any, AnyStr, Dict, Generator, Iterator, List, Optional, Union
 
 import sling
 from dagster import (
-    AssetExecutionContext,
-    AssetMaterialization,
-    ConfigurableResource,
     EnvVar,
+    PermissiveConfig,
     MaterializeResult,
     OpExecutionContext,
-    PermissiveConfig,
+    AssetMaterialization,
+    ConfigurableResource,
+    AssetExecutionContext,
     get_dagster_logger,
 )
-from dagster._annotations import deprecated, experimental, public
-from dagster._utils.env import environ
-from dagster._utils.warnings import deprecation_warning
 from pydantic import Field
+from dagster._utils.env import environ
+from dagster._annotations import public, deprecated, experimental
+from dagster._utils.warnings import deprecation_warning
 
 from dagster_embedded_elt.sling.asset_decorator import (
-    METADATA_KEY_REPLICATION_CONFIG,
     METADATA_KEY_TRANSLATOR,
+    METADATA_KEY_REPLICATION_CONFIG,
     get_streams_from_replication,
     streams_with_default_dagster_meta,
 )
-from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 from dagster_embedded_elt.sling.sling_replication import SlingReplicationParam, validate_replication
+from dagster_embedded_elt.sling.dagster_sling_translator import DagsterSlingTranslator
 
 logger = get_dagster_logger()
 

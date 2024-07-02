@@ -2,13 +2,13 @@ import datetime
 
 import pandas as pd
 from dagster import (
-    DependencyDefinition,
-    GraphDefinition,
     In,
     Out,
-    _check as check,
-    graph,
+    GraphDefinition,
+    DependencyDefinition,
     op,
+    graph,
+    _check as check,
 )
 from dagster_pandas import DataFrame
 

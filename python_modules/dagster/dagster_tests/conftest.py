@@ -1,6 +1,6 @@
 import os
-import subprocess
 import sys
+import subprocess
 
 import dagster._seven as seven
 

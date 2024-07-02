@@ -1,15 +1,15 @@
-import base64
 import os
+import base64
 from datetime import datetime
 
 import pytest
-from dagster import InputContext, OutputContext, TimeWindow, asset, materialize
-from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster import TimeWindow, InputContext, OutputContext, asset, materialize
 from dagster_gcp.bigquery.io_manager import (
     BigQueryClient,
     _get_cleanup_statement,
     build_bigquery_io_manager,
 )
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler, TablePartitionDimension
 
 from .conftest import IS_BUILDKITE, SHARED_BUILDKITE_BQ_CONFIG, temporary_bigquery_table
 

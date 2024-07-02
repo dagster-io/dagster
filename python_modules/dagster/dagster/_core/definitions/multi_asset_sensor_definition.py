@@ -1,59 +1,59 @@
-import inspect
 import json
-from collections import OrderedDict, defaultdict
+import inspect
 from typing import (
     TYPE_CHECKING,
-    Callable,
+    Set,
     Dict,
+    List,
+    Union,
+    Mapping,
+    Callable,
     Iterable,
     Iterator,
-    List,
-    Mapping,
-    NamedTuple,
     Optional,
     Sequence,
-    Set,
-    Union,
+    NamedTuple,
     cast,
 )
+from collections import OrderedDict, defaultdict
 
 import dagster._check as check
-from dagster._annotations import deprecated_param, experimental, public
-from dagster._core.definitions.asset_selection import AssetSelection
-from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.partition import PartitionsDefinition
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
+from dagster._utils import normalize_to_repository
+from dagster._annotations import public, experimental, deprecated_param
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.instance.ref import InstanceRef
-from dagster._utils import normalize_to_repository
 from dagster._utils.warnings import deprecation_warning, normalize_renamed_param
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.partition import PartitionsDefinition
+from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.resource_annotation import get_resource_args
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.scoped_resources_builder import ScopedResourcesBuilder
 
-from .events import AssetKey
-from .run_request import RunRequest, SensorResult, SkipReason
-from .sensor_definition import (
-    DefaultSensorStatus,
-    SensorDefinition,
-    SensorEvaluationContext,
-    SensorType,
-    get_context_param_name,
-    get_sensor_context_from_args_or_kwargs,
-    validate_and_get_resource_dict,
-)
-from .target import ExecutableDefinition
 from .utils import check_valid_name
+from .events import AssetKey
+from .target import ExecutableDefinition
+from .run_request import RunRequest, SkipReason, SensorResult
+from .sensor_definition import (
+    SensorType,
+    SensorDefinition,
+    DefaultSensorStatus,
+    SensorEvaluationContext,
+    get_context_param_name,
+    validate_and_get_resource_dict,
+    get_sensor_context_from_args_or_kwargs,
+)
 
 if TYPE_CHECKING:
+    from dagster._core.storage.event_log.base import EventLogRecord
+    from dagster._core.remote_representation.origin import CodeLocationOrigin
     from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.definitions.repository_definition import RepositoryDefinition
-    from dagster._core.remote_representation.origin import CodeLocationOrigin
-    from dagster._core.storage.event_log.base import EventLogRecord
 
 MAX_NUM_UNCONSUMED_EVENTS = 25
 FETCH_MATERIALIZATION_BATCH_SIZE = 1000
@@ -533,7 +533,7 @@ class MultiAssetSensorEvaluationContext(SensorEvaluationContext):
                 # returns {"2022-07-05": EventLogRecord(...)}
 
         """
-        from dagster._core.event_api import AssetRecordsFilter, EventLogRecord
+        from dagster._core.event_api import EventLogRecord, AssetRecordsFilter
 
         asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -1025,8 +1025,8 @@ def build_multi_asset_sensor_context(
 
     """
     from dagster._core.definitions import RepositoryDefinition
-    from dagster._core.definitions.definitions_class import Definitions
     from dagster._core.execution.build_resources import wrap_resources_for_execution
+    from dagster._core.definitions.definitions_class import Definitions
 
     check.opt_inst_param(instance, "instance", DagsterInstance)
     check.opt_str_param(cursor, "cursor")

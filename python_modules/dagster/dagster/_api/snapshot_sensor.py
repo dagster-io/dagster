@@ -1,17 +1,17 @@
 from typing import TYPE_CHECKING, Optional, Sequence
 
 import dagster._check as check
-from dagster._core.definitions.sensor_definition import SensorExecutionData
-from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
-from dagster._core.remote_representation.handle import RepositoryHandle
-from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
-from dagster._grpc.types import SensorExecutionArgs
 from dagster._serdes import deserialize_value
+from dagster._grpc.types import SensorExecutionArgs
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._grpc.client import DEFAULT_GRPC_TIMEOUT
+from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.definitions.sensor_definition import SensorExecutionData
+from dagster._core.remote_representation.external_data import ExternalSensorExecutionErrorData
 
 if TYPE_CHECKING:
-    from dagster._core.instance import DagsterInstance
     from dagster._grpc.client import DagsterGrpcClient
+    from dagster._core.instance import DagsterInstance
 
 
 def sync_get_external_sensor_execution_data_ephemeral_grpc(

@@ -1,12 +1,12 @@
 import os
+from typing import Any, Set, Dict, Optional
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
 
 import pytest
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.events import AssetKey
 from dagster_dbt import build_dbt_asset_selection
 from dagster_dbt.asset_decorator import dbt_assets
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.asset_graph import AssetGraph
 
 
 @pytest.mark.parametrize(

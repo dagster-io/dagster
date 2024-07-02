@@ -1,6 +1,6 @@
 from dagster_pipes import open_dagster_pipes
 
-from .util import compute_data_version, load_asset_value, store_asset_value
+from .util import load_asset_value, store_asset_value, compute_data_version
 
 with open_dagster_pipes() as context:
     storage_root = context.get_extra("storage_root")

@@ -3,21 +3,21 @@ import re
 import mock
 import pytest
 from dagster import (
-    DagsterInstance,
     HookContext,
-    build_hook_context,
-    failure_hook,
+    DagsterInstance,
     op,
     resource,
+    failure_hook,
     success_hook,
+    build_hook_context,
 )
-from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 
 
 def test_event_list_hook_invocation():

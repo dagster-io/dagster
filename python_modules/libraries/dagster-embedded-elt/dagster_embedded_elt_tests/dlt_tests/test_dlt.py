@@ -3,19 +3,19 @@ from typing import Any, Mapping, Optional
 
 import dlt
 import duckdb
+from dlt import Pipeline
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
-    AutoMaterializePolicy,
-    AutoMaterializeRule,
     Definitions,
+    AutoMaterializeRule,
+    AssetExecutionContext,
+    AutoMaterializePolicy,
     MonthlyPartitionsDefinition,
 )
-from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnCronRule
-from dagster._core.definitions.materialize import materialize
-from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
-from dlt import Pipeline
 from dlt.extract.resource import DltResource
+from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
+from dagster._core.definitions.materialize import materialize
+from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnCronRule
 
 from .dlt_test_sources.duckdb_with_transformer import pipeline
 

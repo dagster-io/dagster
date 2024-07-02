@@ -9,7 +9,7 @@ def upstream_asset() -> int:
 def old_config() -> None:
     # begin_old_config
 
-    from dagster import AssetExecutionContext, Definitions, asset
+    from dagster import Definitions, AssetExecutionContext, asset
 
     @asset(config_schema={"conn_string": str, "port": int})
     def an_asset(context: AssetExecutionContext, upstream_asset):
@@ -57,7 +57,7 @@ def new_config_schema() -> None:
 
 
 def new_config_schema_and_typed_run_config() -> None:
-    from dagster import Config, Definitions, RunConfig, asset
+    from dagster import Config, RunConfig, Definitions, asset
 
     class AnAssetConfig(Config):
         conn_string: str

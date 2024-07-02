@@ -1,19 +1,19 @@
 import gc
 import sys
-from contextlib import contextmanager
 from typing import Iterator
 from unittest import mock
+from contextlib import contextmanager
 
-import objgraph
 import pytest
-from dagster import job, op
-from dagster._core.test_utils import environ, instance_for_test
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import WorkspaceFileTarget
+import objgraph
+from dagster import op, job
 from dagster._utils import file_relative_path
+from starlette.testclient import TestClient
+from dagster._core.test_utils import environ, instance_for_test
 from dagster_webserver.graphql import GraphQLWS
 from dagster_webserver.webserver import DagsterWebserver
-from starlette.testclient import TestClient
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import WorkspaceFileTarget
 
 EVENT_LOG_SUBSCRIPTION = """
     subscription PipelineRunLogsSubscription($runId: ID!) {

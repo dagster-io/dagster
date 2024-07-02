@@ -1,7 +1,7 @@
 from dagster import Definitions, fs_io_manager
 from docs_snippets.concepts.io_management.source_asset import (
-    my_derived_asset,
     my_source_asset,
+    my_derived_asset,
 )
 
 

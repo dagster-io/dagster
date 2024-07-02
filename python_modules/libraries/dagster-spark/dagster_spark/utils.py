@@ -1,5 +1,5 @@
-import itertools
 import os
+import itertools
 
 import dagster._check as check
 

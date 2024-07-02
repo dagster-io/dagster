@@ -2,39 +2,39 @@ import hashlib
 
 import pytest
 from dagster import (
+    Out,
+    Output,
     AssetKey,
     AssetOut,
-    AssetsDefinition,
+    IOManager,
+    RetryPolicy,
+    SourceAsset,
     AssetSelection,
     BackfillPolicy,
+    AssetsDefinition,
     DagsterEventType,
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,
-    IOManager,
-    Out,
-    Output,
-    RetryPolicy,
-    SourceAsset,
-    define_asset_job,
-    graph,
-    in_process_executor,
-    io_manager,
     op,
+    graph,
+    io_manager,
     repository,
+    define_asset_job,
+    in_process_executor,
 )
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterInvalidDefinitionError
+from dagster._core.test_utils import instance_for_test, create_test_asset_job
 from dagster._core.definitions import asset, multi_asset
-from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.load_assets_from_modules import prefix_assets
+from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.definitions.partition import (
     StaticPartitionsDefinition,
     static_partitioned_config,
 )
-from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
 from dagster._core.execution.with_resources import with_resources
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import create_test_asset_job, instance_for_test
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.partitioned_schedule import build_schedule_from_partitioned_job
+from dagster._core.definitions.load_assets_from_modules import prefix_assets
+from dagster._core.definitions.decorators.hook_decorator import failure_hook, success_hook
 
 
 def _all_asset_keys(result):

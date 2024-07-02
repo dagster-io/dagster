@@ -7,23 +7,23 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module.
 """
 
-from dataclasses import dataclass
-from hashlib import sha256
 from typing import Dict, List, Optional, Sequence
+from hashlib import sha256
+from dataclasses import dataclass
 
 import dagster._check as check
+from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.data_version import (
     DATA_VERSION_TAG,
     SKIP_PARTITION_DATA_VERSION_DEPENDENCY_THRESHOLD,
     extract_data_version_from_entry,
 )
-from dagster._core.definitions.events import AssetKey
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.data_version import DataVersion
-    from dagster._core.event_api import EventLogRecord
     from dagster._core.events import DagsterEventType
+    from dagster._core.event_api import EventLogRecord
     from dagster._core.storage.event_log.base import AssetRecord
+    from dagster._core.definitions.data_version import DataVersion
 
 
 if TYPE_CHECKING:
@@ -186,8 +186,8 @@ class DataVersionCache:
     def _get_partitions_data_version_from_keys(
         self, key: AssetKey, partition_keys: Sequence[str]
     ) -> "DataVersion":
-        from dagster._core.definitions.data_version import DataVersion
         from dagster._core.events import DagsterEventType
+        from dagster._core.definitions.data_version import DataVersion
 
         # TODO: this needs to account for observations also
         event_type = DagsterEventType.ASSET_MATERIALIZATION

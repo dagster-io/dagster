@@ -3,22 +3,22 @@ from datetime import datetime
 import polars as pl
 import polars.testing as pl_testing
 from dagster import (
-    AssetExecutionContext,
-    AssetIn,
     Config,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    MultiPartitionKey,
-    MultiPartitionsDefinition,
-    OpExecutionContext,
+    AssetIn,
     RunConfig,
+    DagsterInstance,
+    MultiPartitionKey,
+    OpExecutionContext,
+    AssetExecutionContext,
+    DailyPartitionsDefinition,
+    MultiPartitionsDefinition,
     StaticPartitionsDefinition,
     asset,
     materialize,
 )
+from deltalake import DeltaTable
 from dagster_polars import PolarsDeltaIOManager
 from dagster_polars.io_managers.delta import DeltaWriteMode
-from deltalake import DeltaTable
 
 from dagster_polars_tests.utils import get_saved_path
 

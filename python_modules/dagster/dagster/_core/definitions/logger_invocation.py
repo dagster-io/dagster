@@ -1,6 +1,6 @@
-from ..execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 from .logger_definition import LoggerDefinition
 from .resource_invocation import resolve_bound_config
+from ..execution.context.logger import InitLoggerContext, UnboundInitLoggerContext
 
 
 def logger_invocation_result(logger_def: LoggerDefinition, init_context: UnboundInitLoggerContext):

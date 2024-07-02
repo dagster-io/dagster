@@ -1,4 +1,4 @@
-from dagster import Bool, Field, Noneable, Permissive, String
+from dagster import Bool, Field, String, Noneable, Permissive
 from dagster._core.types.dagster_type import Array
 
 

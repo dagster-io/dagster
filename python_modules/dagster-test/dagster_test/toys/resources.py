@@ -1,4 +1,4 @@
-from dagster import Definitions, Field, Int, asset, graph, op, resource
+from dagster import Int, Field, Definitions, op, asset, graph, resource
 
 
 def define_resource(num):

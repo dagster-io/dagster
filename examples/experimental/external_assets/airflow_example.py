@@ -1,6 +1,6 @@
 from airflow import DAG
-from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 from pendulum import datetime
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
 
 default_args = {
     "start_date": datetime(2023, 10, 1),

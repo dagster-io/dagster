@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional, TypedDict
 
-from dagster._utils.typed_dict import init_optional_typeddict
 from typing_extensions import NotRequired
+from dagster._utils.typed_dict import init_optional_typeddict
 
 
 class MyNestedTypedDict(TypedDict):

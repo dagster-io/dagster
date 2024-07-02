@@ -114,6 +114,7 @@ line-length = 100
 # Fail if Ruff is not running this version.
 required-version = "0.4.5"
 
+
 [tool.ruff.lint]
 
 ignore = [
@@ -250,7 +251,7 @@ builtins-ignorelist = ["id"]
 "__future__.annotations".msg = "Directly quote annotations instead."
 
 [tool.ruff.lint.isort]
-
+length-sort = true
 # Combine multiple `from foo import bar as baz` statements with the same source
 # (`foo`) into a single statement.
 combine-as-imports = true

@@ -1,23 +1,23 @@
 import io
 import pickle
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Union, Optional
 
+from upath import UPath
 from dagster import (
-    ConfigurableIOManager,
     InputContext,
     MetadataValue,
     OutputContext,
     ResourceDependency,
+    ConfigurableIOManager,
     _check as check,
     io_manager,
 )
+from pydantic import Field
+from dagster._utils import PICKLE_PROTOCOL
 from dagster._annotations import deprecated
+from dagster._utils.cached_method import cached_method
 from dagster._core.storage.io_manager import dagster_maintained_io_manager
 from dagster._core.storage.upath_io_manager import UPathIOManager
-from dagster._utils import PICKLE_PROTOCOL
-from dagster._utils.cached_method import cached_method
-from pydantic import Field
-from upath import UPath
 
 from .resources import S3Resource
 

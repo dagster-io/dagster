@@ -1,48 +1,48 @@
-import datetime
 import os
 import time
+import datetime
 from typing import Dict, List, Optional, Sequence
 
 import pytest
 from dagster import (
+    Output,
     AssetKey,
-    AssetMaterialization,
     AssetSelection,
     DagsterEventType,
+    AssetMaterialization,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
-    Output,
     StaticPartitionsDefinition,
     asset,
-    define_asset_job,
     repository,
+    define_asset_job,
 )
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster._utils import Counter, traced_counter, safe_tempfile_path
 from dagster._core.events.log import EventLogEntry
-from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run
-from dagster._core.workspace.context import WorkspaceRequestContext
-from dagster._utils import Counter, safe_tempfile_path, traced_counter
+from dagster_graphql.test.utils import (
+    GqlTag,
+    GqlAssetKey,
+    infer_job_selector,
+    execute_dagster_graphql,
+    infer_repository_selector,
+    define_out_of_process_context,
+)
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     LAUNCH_PIPELINE_REEXECUTION_MUTATION,
 )
-from dagster_graphql.implementation.execution.run_lifecycle import create_valid_pipeline_run
+from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.storage.dagster_run import DagsterRunStatus
 from dagster_graphql.implementation.utils import ExecutionParams, pipeline_selector_from_graphql
 from dagster_graphql.schema.roots.mutation import create_execution_metadata
-from dagster_graphql.test.utils import (
-    GqlAssetKey,
-    GqlTag,
-    define_out_of_process_context,
-    execute_dagster_graphql,
-    infer_job_selector,
-    infer_repository_selector,
-)
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionKey
+from dagster_graphql.implementation.execution.run_lifecycle import create_valid_pipeline_run
 
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
-    AllRepositoryGraphQLContextTestMatrix,
-    ExecutingGraphQLContextTestMatrix,
     ReadonlyGraphQLContextTestMatrix,
+    ExecutingGraphQLContextTestMatrix,
+    AllRepositoryGraphQLContextTestMatrix,
 )
 
 GET_ASSET_KEY_QUERY = """

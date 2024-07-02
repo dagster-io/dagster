@@ -3,20 +3,20 @@ from typing import cast
 
 import pytest
 from dagster import (
-    DagsterInstance,
-    DagsterInvariantViolationError,
-    DynamicPartitionsDefinition,
     RunRequest,
+    DagsterInstance,
     StaticPartitionsDefinition,
-    build_schedule_context,
+    DynamicPartitionsDefinition,
+    DagsterInvariantViolationError,
     job,
-    repository,
     schedule,
+    repository,
+    build_schedule_context,
 )
-from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
-from dagster._core.storage.tags import PARTITION_NAME_TAG
 from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._config.pythonic_config import ConfigurableResource
 
 
 def cron_test_schedule_factory_context():

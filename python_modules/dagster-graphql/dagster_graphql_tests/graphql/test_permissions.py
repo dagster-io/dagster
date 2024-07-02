@@ -1,7 +1,9 @@
 from unittest.mock import Mock
 
-import dagster._check as check
 import pytest
+import dagster._check as check
+from dagster_graphql.test.utils import execute_dagster_graphql
+from dagster_graphql.schema.util import ResolveInfo
 from dagster._core.workspace.permissions import (
     EDITOR_PERMISSIONS,
     VIEWER_PERMISSIONS,
@@ -10,13 +12,11 @@ from dagster._core.workspace.permissions import (
 )
 from dagster_graphql.implementation.utils import (
     UserFacingGraphQLError,
-    assert_permission,
-    assert_permission_for_location,
     check_permission,
+    assert_permission,
     require_permission_check,
+    assert_permission_for_location,
 )
-from dagster_graphql.schema.util import ResolveInfo
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 

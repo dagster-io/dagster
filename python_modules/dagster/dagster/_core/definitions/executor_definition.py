@@ -1,22 +1,22 @@
 from enum import Enum as PyEnum
+from typing import TYPE_CHECKING, Any, Dict, Union, Mapping, Callable, Optional, Sequence, overload
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, Mapping, Optional, Sequence, Union, overload
 
 from typing_extensions import Self, TypeAlias
 
 import dagster._check as check
-from dagster._annotations import public
-from dagster._builtins import Int
 from dagster._config import Field, Noneable, Selector, UserConfigSchema
-from dagster._core.definitions.configurable import (
-    ConfiguredDefinitionConfigSchema,
-    NamedConfigurableDefinition,
-)
+from dagster._builtins import Int
+from dagster._annotations import public
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.execution.tags import get_tag_concurrency_limits_config
+from dagster._core.execution.retries import RetryMode, get_retries_config
 from dagster._core.definitions.job_base import IJob
 from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.errors import DagsterUnmetExecutorRequirementsError
-from dagster._core.execution.retries import RetryMode, get_retries_config
-from dagster._core.execution.tags import get_tag_concurrency_limits_config
+from dagster._core.definitions.configurable import (
+    NamedConfigurableDefinition,
+    ConfiguredDefinitionConfigSchema,
+)
 
 from .definition_config_schema import (
     IDefinitionConfigSchema,
@@ -24,11 +24,11 @@ from .definition_config_schema import (
 )
 
 if TYPE_CHECKING:
-    from dagster._core.executor.base import Executor
-    from dagster._core.executor.in_process import InProcessExecutor
-    from dagster._core.executor.init import InitExecutorContext
-    from dagster._core.executor.multiprocess import MultiprocessExecutor
     from dagster._core.instance import DagsterInstance
+    from dagster._core.executor.base import Executor
+    from dagster._core.executor.init import InitExecutorContext
+    from dagster._core.executor.in_process import InProcessExecutor
+    from dagster._core.executor.multiprocess import MultiprocessExecutor
 
 
 class ExecutorRequirement(PyEnum):

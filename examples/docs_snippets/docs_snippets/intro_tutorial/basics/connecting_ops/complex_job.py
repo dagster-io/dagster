@@ -1,6 +1,6 @@
 import os
 
-from dagster import get_dagster_logger, job, op
+from dagster import op, job, get_dagster_logger
 
 
 @op

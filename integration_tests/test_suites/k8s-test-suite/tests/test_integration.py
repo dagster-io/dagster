@@ -1,28 +1,28 @@
-import datetime
 import os
 import time
+import datetime
 
-import kubernetes
 import pytest
+import kubernetes
 from dagster import (
     DagsterEventType,
     _check as check,
 )
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster._utils.merger import merge_dicts
-from dagster._utils.yaml_utils import load_yaml_from_path, merge_yamls
-from dagster_k8s.client import DagsterKubernetesClient
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
-from dagster_k8s_test_infra.integration_utils import (
-    can_terminate_run_over_graphql,
-    image_pull_policy,
-    launch_run_over_graphql,
-    terminate_run_over_graphql,
-)
+from dagster_k8s.client import DagsterKubernetesClient
+from dagster._utils.merger import merge_dicts
+from dagster._utils.yaml_utils import merge_yamls, load_yaml_from_path
 from dagster_test.test_project import (
     get_test_project_docker_image,
     get_test_project_environments_path,
+)
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster_k8s_test_infra.integration_utils import (
+    image_pull_policy,
+    launch_run_over_graphql,
+    terminate_run_over_graphql,
+    can_terminate_run_over_graphql,
 )
 
 from .utils import _wait_k8s_job_to_delete

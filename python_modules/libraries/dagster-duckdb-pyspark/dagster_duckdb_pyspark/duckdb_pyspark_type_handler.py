@@ -1,13 +1,13 @@
-from typing import Optional, Sequence, Type
+from typing import Type, Optional, Sequence
 
 import pyarrow as pa
 import pyspark
 import pyspark.sql
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
-from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType
+from dagster_duckdb.io_manager import DuckDbClient, DuckDBIOManager, build_duckdb_io_manager
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
 
 
 def pyspark_df_to_arrow_table(df: pyspark.sql.DataFrame) -> pa.Table:

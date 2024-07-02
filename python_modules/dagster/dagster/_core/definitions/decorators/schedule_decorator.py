@@ -1,30 +1,30 @@
 import copy
+from typing import Set, List, Union, Mapping, Callable, Optional, Sequence, cast
 from functools import update_wrapper
-from typing import Callable, List, Mapping, Optional, Sequence, Set, Union, cast
 
 import dagster._check as check
-from dagster._core.definitions.resource_annotation import get_resource_args
-from dagster._core.definitions.sensor_definition import get_context_param_name
+from dagster._utils import ensure_gen
 from dagster._core.errors import (
-    DagsterInvalidDefinitionError,
     ScheduleExecutionError,
+    DagsterInvalidDefinitionError,
     user_code_error_boundary,
 )
-from dagster._utils import ensure_gen
+from dagster._core.definitions.sensor_definition import get_context_param_name
+from dagster._core.definitions.resource_annotation import get_resource_args
 
+from ..utils import normalize_tags
+from ..target import ExecutableDefinition
 from ..run_request import RunRequest, SkipReason
 from ..schedule_definition import (
-    DecoratedScheduleFunction,
-    DefaultScheduleStatus,
-    RawScheduleEvaluationFunction,
     RunRequestIterator,
     ScheduleDefinition,
+    DefaultScheduleStatus,
+    DecoratedScheduleFunction,
     ScheduleEvaluationContext,
+    RawScheduleEvaluationFunction,
     has_at_least_one_parameter,
     validate_and_get_schedule_resource_dict,
 )
-from ..target import ExecutableDefinition
-from ..utils import normalize_tags
 
 
 def schedule(

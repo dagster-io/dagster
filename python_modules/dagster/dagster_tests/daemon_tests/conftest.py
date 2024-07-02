@@ -4,19 +4,19 @@ from typing import Iterator, Optional, cast
 
 import pytest
 from dagster import DagsterInstance
+from dagster._core.test_utils import (
+    InProcessTestWorkspaceLoadTarget,
+    instance_for_test,
+    create_test_daemon_workspace_context,
+)
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.remote_representation import (
     CodeLocation,
     ExternalRepository,
     InProcessCodeLocationOrigin,
 )
 from dagster._core.remote_representation.origin import ManagedGrpcPythonEnvCodeLocationOrigin
-from dagster._core.test_utils import (
-    InProcessTestWorkspaceLoadTarget,
-    create_test_daemon_workspace_context,
-    instance_for_test,
-)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.workspace.context import WorkspaceProcessContext
 
 
 @pytest.fixture(name="instance_module_scoped", scope="module")

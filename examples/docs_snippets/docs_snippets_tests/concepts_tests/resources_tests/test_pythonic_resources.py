@@ -3,8 +3,8 @@ from typing import Any
 import mock
 import pytest
 
-from dagster._core.definitions.run_config import RunConfig
 from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.definitions.run_config import RunConfig
 
 
 def test_new_resource_testing() -> None:

@@ -1,26 +1,26 @@
 import os
-import pickle
 import sys
-import tempfile
 import time
+import pickle
+import tempfile
 
 import boto3
-from botocore.exceptions import ClientError
 from dagster import (
     Field,
     StringSource,
     _check as check,
     resource,
 )
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._serdes import deserialize_value
+from botocore.exceptions import ClientError
 from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
+from dagster._core.definitions.step_launcher import StepLauncher
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
-from dagster._serdes import deserialize_value
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
 from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
 from dagster_aws.emr.configs_spark import spark_config as get_spark_config

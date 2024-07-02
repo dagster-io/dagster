@@ -1,11 +1,11 @@
 from .resources import (
-    FakeRedshiftClient as FakeRedshiftClient,
-    FakeRedshiftClientResource as FakeRedshiftClientResource,
-    FakeRedshiftResource as FakeRedshiftResource,
-    RedshiftClient as RedshiftClient,
-    RedshiftClientResource as RedshiftClientResource,
     RedshiftError as RedshiftError,
+    RedshiftClient as RedshiftClient,
     RedshiftResource as RedshiftResource,
-    fake_redshift_resource as fake_redshift_resource,
+    FakeRedshiftClient as FakeRedshiftClient,
+    FakeRedshiftResource as FakeRedshiftResource,
+    RedshiftClientResource as RedshiftClientResource,
+    FakeRedshiftClientResource as FakeRedshiftClientResource,
     redshift_resource as redshift_resource,
+    fake_redshift_resource as fake_redshift_resource,
 )

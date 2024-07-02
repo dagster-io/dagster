@@ -1,24 +1,24 @@
 import enum
-from typing import Any, Dict, List, Mapping, Optional, Type, Union
+from typing import Any, Dict, List, Type, Union, Mapping, Optional
 
 import pytest
 from dagster import (
-    Definitions,
-    Field as LegacyDagsterField,
-    IntSource,
     Map,
+    Field as LegacyDagsterField,
     Shape,
-    asset,
-    job,
+    IntSource,
+    Definitions,
     op,
+    job,
+    asset,
 )
-from dagster._config.config_type import ConfigTypeKind, Noneable
-from dagster._config.pythonic_config import Config, ConfigurableResource, PermissiveConfig
-from dagster._config.type_printer import print_config_type_to_string
-from dagster._core.errors import DagsterInvalidConfigError
-from dagster._utils.cached_method import cached_method
 from pydantic import Field
 from typing_extensions import Literal
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._config.config_type import Noneable, ConfigTypeKind
+from dagster._config.type_printer import print_config_type_to_string
+from dagster._utils.cached_method import cached_method
+from dagster._config.pythonic_config import Config, PermissiveConfig, ConfigurableResource
 
 
 def test_default_config_class_non_permissive() -> None:

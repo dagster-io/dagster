@@ -1,56 +1,56 @@
-import dataclasses
 import datetime
-from contextlib import contextmanager, nullcontext
-from typing import Any, Generator, Mapping, Optional, Sequence, cast
+import dataclasses
+from typing import Any, Mapping, Optional, Sequence, Generator, cast
+from contextlib import nullcontext, contextmanager
 
 import pytest
-from dagster import AssetSpec, AutoMaterializeRule, DagsterInstance, instance_for_test
-from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
+from dagster import AssetSpec, DagsterInstance, AutoMaterializeRule, instance_for_test
+from dagster._time import get_current_datetime
+from dagster._core.utils import InheritContextThreadPoolExecutor
+from dagster._serdes.serdes import serialize_value
+from dagster._core.storage.tags import (
+    TICK_ID_TAG,
+    SENSOR_NAME_TAG,
+    AUTO_MATERIALIZE_TAG,
+    ASSET_EVALUATION_ID_TAG,
+)
+from dagster._daemon.asset_daemon import (
+    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
+    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
+    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
+    get_has_migrated_to_sensors,
+    set_auto_materialize_paused,
+    asset_daemon_cursor_from_instigator_serialized_cursor,
+)
+from dagster._core.scheduler.instigation import (
+    TickData,
+    TickStatus,
+    InstigatorTick,
+    InstigatorType,
+    InstigatorStatus,
+    SensorInstigatorData,
+)
 from dagster._core.definitions.asset_selection import AssetSelection
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
-from dagster._core.scheduler.instigation import (
-    InstigatorStatus,
-    InstigatorTick,
-    InstigatorType,
-    SensorInstigatorData,
-    TickData,
-    TickStatus,
-)
-from dagster._core.storage.tags import (
-    ASSET_EVALUATION_ID_TAG,
-    AUTO_MATERIALIZE_TAG,
-    SENSOR_NAME_TAG,
-    TICK_ID_TAG,
-)
-from dagster._core.utils import InheritContextThreadPoolExecutor
-from dagster._daemon.asset_daemon import (
-    _PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY,
-    _PRE_SENSOR_AUTO_MATERIALIZE_INSTIGATOR_NAME,
-    _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
-    _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-    asset_daemon_cursor_from_instigator_serialized_cursor,
-    get_has_migrated_to_sensors,
-    set_auto_materialize_paused,
-)
-from dagster._serdes.serdes import serialize_value
-from dagster._time import get_current_datetime
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
 from .base_scenario import run_request
-from .scenario_specs import one_asset, two_assets_in_sequence, two_partitions_def
-from .updated_scenarios.asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
-from .updated_scenarios.basic_scenarios import basic_scenarios
+from .scenario_specs import one_asset, two_partitions_def, two_assets_in_sequence
 from .updated_scenarios.cron_scenarios import (
+    get_cron_policy,
     basic_hourly_cron_rule,
     basic_hourly_cron_schedule,
-    get_cron_policy,
 )
+from .updated_scenarios.basic_scenarios import basic_scenarios
 from .updated_scenarios.partition_scenarios import partition_scenarios
+from .updated_scenarios.asset_daemon_scenario import AssetDaemonScenario, AssetRuleEvaluationSpec
 
 
 @contextmanager

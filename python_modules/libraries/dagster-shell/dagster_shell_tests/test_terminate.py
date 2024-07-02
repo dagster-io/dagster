@@ -2,13 +2,13 @@ import time
 from contextlib import contextmanager
 
 import psutil
-from dagster import job, op, repository
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
-from dagster._core.workspace.context import WorkspaceProcessContext
-from dagster._core.workspace.load_target import PythonFileTarget
+from dagster import op, job, repository
 from dagster._utils import file_relative_path
 from dagster_shell.utils import execute
+from dagster._core.test_utils import instance_for_test, poll_for_step_start, poll_for_finished_run
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @op

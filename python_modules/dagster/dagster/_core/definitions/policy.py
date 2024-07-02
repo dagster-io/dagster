@@ -1,6 +1,6 @@
 from enum import Enum
 from random import random
-from typing import NamedTuple, Optional
+from typing import Optional, NamedTuple
 
 import dagster._check as check
 from dagster._annotations import PublicAttr

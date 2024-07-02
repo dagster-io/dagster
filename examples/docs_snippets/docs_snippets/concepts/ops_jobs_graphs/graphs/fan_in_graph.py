@@ -2,7 +2,7 @@
 
 from typing import List
 
-from dagster import graph, op
+from dagster import op, graph
 
 
 @op

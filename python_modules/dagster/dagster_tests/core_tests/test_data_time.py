@@ -1,32 +1,32 @@
-import datetime
 import random
+import datetime
+from typing import List, Optional, NamedTuple
 from collections import defaultdict
-from typing import List, NamedTuple, Optional
 
 import mock
 import pytest
 from dagster import (
+    Output,
     AssetKey,
     AssetOut,
     AssetSelection,
-    DagsterEventType,
     DagsterInstance,
-    Output,
+    DagsterEventType,
     asset,
-    multi_asset,
     repository,
+    multi_asset,
 )
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.data_time import CachingDataTimeResolver
-from dagster._core.definitions.data_version import DataVersion
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.events import AssetKeyPartitionKey
-from dagster._core.definitions.materialize import materialize_to_memory
-from dagster._core.definitions.observe import observe
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
-from dagster._core.test_utils import create_test_asset_job, freeze_time
 from dagster._time import create_datetime, get_current_datetime
+from dagster._core.test_utils import freeze_time, create_test_asset_job
+from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.observe import observe
+from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.materialize import materialize_to_memory
+from dagster._core.definitions.data_version import DataVersion
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 
 
 @pytest.mark.parametrize("ignore_asset_tags", [True, False])

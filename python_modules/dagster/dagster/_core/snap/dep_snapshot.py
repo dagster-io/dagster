@@ -1,10 +1,10 @@
+from typing import Dict, List, Mapping, Sequence, NamedTuple, DefaultDict
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Mapping, NamedTuple, Sequence
 
 import dagster._check as check
-from dagster._core.definitions import GraphDefinition
-from dagster._core.definitions.dependency import DependencyType, Node, NodeInput
 from dagster._serdes import whitelist_for_serdes
+from dagster._core.definitions import GraphDefinition
+from dagster._core.definitions.dependency import Node, NodeInput, DependencyType
 
 
 def build_node_invocation_snap(graph_def: GraphDefinition, node: Node) -> "NodeInvocationSnap":

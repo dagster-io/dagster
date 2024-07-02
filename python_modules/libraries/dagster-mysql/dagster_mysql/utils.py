@@ -1,24 +1,24 @@
-import logging
 import re
 import time
+import logging
+from typing import Tuple, Union, TypeVar, Callable, Iterator, Optional, cast
 from contextlib import contextmanager
-from typing import Callable, Iterator, Optional, Tuple, TypeVar, Union, cast
 from urllib.parse import (
-    quote_plus as urlquote,
     urlparse,
+    quote_plus as urlquote,
 )
 
-import mysql.connector as mysql
-import mysql.connector.errorcode as mysql_errorcode
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
-from alembic.config import Config
+import mysql.connector as mysql
+import mysql.connector.errorcode as mysql_errorcode
 from dagster import _check as check
-from dagster._core.storage.config import MySqlStorageConfig
-from dagster._core.storage.sql import get_alembic_config
-from mysql.connector.pooling import PooledMySQLConnection
+from alembic.config import Config
 from sqlalchemy.engine import Connection
 from typing_extensions import TypeAlias
+from mysql.connector.pooling import PooledMySQLConnection
+from dagster._core.storage.sql import get_alembic_config
+from dagster._core.storage.config import MySqlStorageConfig
 
 T = TypeVar("T")
 

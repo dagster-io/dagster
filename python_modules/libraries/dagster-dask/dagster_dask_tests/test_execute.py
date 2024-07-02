@@ -1,19 +1,19 @@
+import time
 import asyncio
 import tempfile
-import time
 from threading import Thread
 
-import dagster_pandas as dagster_pd
 import pytest
-from dagster import VersionStrategy, file_relative_path, job, op, reconstructable
+import dagster_pandas as dagster_pd
+from dagster import VersionStrategy, op, job, reconstructable, file_relative_path
+from dagster_dask import DataFrame, dask_executor
+from dagster._utils import send_interrupt
+from dask.distributed import Worker, Scheduler
+from dagster._core.events import DagsterEventType
+from dagster._core.test_utils import nesting_graph, instance_for_test
+from dagster._core.execution.api import execute_job, execute_run_iterator
 from dagster._core.definitions.input import In
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.events import DagsterEventType
-from dagster._core.execution.api import execute_job, execute_run_iterator
-from dagster._core.test_utils import instance_for_test, nesting_graph
-from dagster._utils import send_interrupt
-from dagster_dask import DataFrame, dask_executor
-from dask.distributed import Scheduler, Worker
 
 
 @op

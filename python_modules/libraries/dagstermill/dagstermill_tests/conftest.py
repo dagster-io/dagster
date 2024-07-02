@@ -1,5 +1,5 @@
-import subprocess
 import warnings
+import subprocess
 
 import pytest
 

@@ -1,23 +1,23 @@
-import inspect
 import os
+import inspect
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, List, Union, Callable, Optional, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Sequence, Union
+from dataclasses import dataclass
 
 import dagster._check as check
-from dagster._annotations import experimental
 from dagster._model import DagsterModel
 from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import experimental
 
 from .metadata_set import (
-    NamespacedMetadataSet as NamespacedMetadataSet,
     TableMetadataSet as TableMetadataSet,
+    NamespacedMetadataSet as NamespacedMetadataSet,
 )
 from .metadata_value import MetadataValue
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.assets import AssetsDefinition, SourceAsset
+    from dagster._core.definitions.assets import SourceAsset, AssetsDefinition
     from dagster._core.definitions.cacheable_assets import CacheableAssetsDefinition
 
 DEFAULT_SOURCE_FILE_KEY = "asset_definition"

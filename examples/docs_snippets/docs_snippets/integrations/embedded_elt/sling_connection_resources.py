@@ -1,5 +1,5 @@
 # pyright: reportCallIssue=none
-from dagster_embedded_elt.sling.resources import SlingConnectionResource, SlingResource
+from dagster_embedded_elt.sling.resources import SlingResource, SlingConnectionResource
 
 from dagster import EnvVar
 

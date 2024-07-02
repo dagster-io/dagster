@@ -1,8 +1,8 @@
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.remote_representation import ExternalExecutionPlan
-from dagster._core.snap import create_execution_plan_snapshot_id, create_job_snapshot_id
 from dagster._utils import file_relative_path
+from dagster._core.snap import create_job_snapshot_id, create_execution_plan_snapshot_id
 from dagster._utils.test import copy_directory
+from dagster._core.instance import InstanceRef, DagsterInstance
+from dagster._core.remote_representation import ExternalExecutionPlan
 
 
 # a change of schema in the snapshot hierarchy caused hashes to be different

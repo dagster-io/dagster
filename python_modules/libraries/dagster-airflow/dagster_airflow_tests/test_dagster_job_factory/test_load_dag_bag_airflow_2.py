@@ -5,12 +5,12 @@ import pytest
 from airflow import __version__ as airflow_version
 from airflow.models import DagBag
 from dagster_airflow import (
+    make_dagster_job_from_airflow_dag,
     make_dagster_definitions_from_airflow_dags_path,
     make_dagster_definitions_from_airflow_example_dags,
-    make_dagster_job_from_airflow_dag,
 )
 
-from dagster_airflow_tests.marks import requires_local_db, requires_no_db
+from dagster_airflow_tests.marks import requires_no_db, requires_local_db
 
 from ..airflow_utils import test_make_from_dagbag_inputs_airflow_2
 

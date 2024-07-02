@@ -1,18 +1,18 @@
 from typing import Optional
 
 import pytest
-from dagster._config.pythonic_config import ConfigurableResource
-from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
-from dagster._core.definitions.decorators.asset_decorator import asset
-from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import AssetKey
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.resource_definition import ResourceDefinition
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.instance import DagsterInstance
+from dagster._config.pythonic_config import ConfigurableResource
 from dagster._core.instance_for_test import instance_for_test
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition import StaticPartitionsDefinition
+from dagster._core.definitions.data_version import DataVersion, extract_data_version_from_entry
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.resource_definition import ResourceDefinition
+from dagster._core.definitions.decorators.asset_decorator import asset
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 
 
 def _get_current_data_version(key: AssetKey, instance: DagsterInstance) -> Optional[DataVersion]:

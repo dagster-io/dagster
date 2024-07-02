@@ -1,7 +1,7 @@
 from dagster import (
+    Definitions,
     AssetCheckResult,
     AssetCheckSeverity,
-    Definitions,
     asset,
     asset_check,
 )

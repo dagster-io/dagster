@@ -1,9 +1,9 @@
+from mock import patch
 from dagster import op
-from dagster._core.definitions.decorators.job_decorator import job
 from dagster_msteams import MSTeamsResource
 from dagster_msteams.hooks import teams_on_failure, teams_on_success
 from dagster_msteams.resources import msteams_resource
-from mock import patch
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 class SomeUserException(Exception):

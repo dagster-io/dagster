@@ -1,29 +1,29 @@
 import time
-from hashlib import sha256
 from typing import Any, Union
+from hashlib import sha256
 
 from dagster import DagsterInstance, asset, materialize
-from dagster._core.definitions.data_version import (
-    CODE_VERSION_TAG,
-    DATA_VERSION_TAG,
-    INPUT_DATA_VERSION_TAG_PREFIX,
-    INPUT_EVENT_POINTER_TAG_PREFIX,
-    UNKNOWN_DATA_VERSION,
-    UNKNOWN_VALUE,
-    DataProvenance,
-    DataVersion,
-    compute_logical_data_version,
-    extract_data_provenance_from_entry,
-    extract_data_version_from_entry,
-)
-from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.events import (
-    AssetObservationData,
     DagsterEvent,
     DagsterEventType,
+    AssetObservationData,
     StepMaterializationData,
 )
 from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions.events import AssetKey, AssetObservation, AssetMaterialization
+from dagster._core.definitions.data_version import (
+    UNKNOWN_VALUE,
+    CODE_VERSION_TAG,
+    DATA_VERSION_TAG,
+    UNKNOWN_DATA_VERSION,
+    INPUT_DATA_VERSION_TAG_PREFIX,
+    INPUT_EVENT_POINTER_TAG_PREFIX,
+    DataVersion,
+    DataProvenance,
+    compute_logical_data_version,
+    extract_data_version_from_entry,
+    extract_data_provenance_from_entry,
+)
 
 
 def create_test_event_log_entry(event_type: DagsterEventType, data: Any) -> EventLogEntry:

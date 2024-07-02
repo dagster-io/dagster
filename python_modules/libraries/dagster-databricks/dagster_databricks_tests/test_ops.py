@@ -2,11 +2,11 @@ from typing import Optional, Sequence
 
 import pytest
 from dagster import job
+from pytest_mock import MockerFixture
 from dagster._check import CheckError
 from dagster_databricks import DatabricksClientResource, databricks_client
 from dagster_databricks.ops import create_databricks_run_now_op, create_databricks_submit_run_op
 from databricks.sdk.service import jobs
-from pytest_mock import MockerFixture
 
 
 def _mock_get_run_response() -> Sequence[jobs.Run]:

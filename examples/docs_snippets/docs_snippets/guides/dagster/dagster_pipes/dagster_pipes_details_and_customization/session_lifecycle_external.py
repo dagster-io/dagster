@@ -1,14 +1,13 @@
 ### EXTERNAL PROCESS
 
+# `user_code` is a fictional package providing pre-existing business logic for assets.
+from user_code import get_metric, get_data_version  # type: ignore
 from dagster_pipes import (
+    PipesEnvVarParamsLoader,
     PipesDefaultContextLoader,
     PipesDefaultMessageWriter,
-    PipesEnvVarParamsLoader,
     open_dagster_pipes,
 )
-
-# `user_code` is a fictional package providing pre-existing business logic for assets.
-from user_code import get_data_version, get_metric  # type: ignore
 
 with open_dagster_pipes(
     params_loader=PipesEnvVarParamsLoader(),

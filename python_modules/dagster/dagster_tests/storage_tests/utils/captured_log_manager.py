@@ -1,10 +1,10 @@
-import random
-import string
 import sys
 import time
+import random
+import string
 
-import pendulum
 import pytest
+import pendulum
 from dagster._core.execution.compute_logs import should_disable_io_stream_redirect
 from dagster._core.storage.compute_log_manager import ComputeIOType
 

@@ -1,17 +1,17 @@
 import uuid
 from unittest import mock
 
-from dagster import ResourceDefinition, build_op_context, configured, op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.input import In
-from dagster._core.definitions.output import Out
+from dagster import ResourceDefinition, op, configured, build_op_context
 from dagster_azure.adls2 import (
+    ADLS2Key,
     ADLS2FileHandle,
     ADLS2FileManager,
-    ADLS2Key,
     FakeADLS2Resource,
     adls2_file_manager,
 )
+from dagster._core.definitions.input import In
+from dagster._core.definitions.output import Out
+from dagster._core.definitions.decorators.job_decorator import job
 
 # For deps
 

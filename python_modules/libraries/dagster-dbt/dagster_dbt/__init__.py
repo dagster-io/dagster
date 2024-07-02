@@ -1,27 +1,42 @@
-from .asset_decorator import dbt_assets as dbt_assets
+from .core import (
+    DbtCliResource as DbtCliResource,
+    DbtCliInvocation as DbtCliInvocation,
+    DbtCliEventMessage as DbtCliEventMessage,
+)
+from .cloud import (
+    DbtCloudOutput as DbtCloudOutput,
+    DbtCloudResource as DbtCloudResource,
+    DbtCloudClientResource as DbtCloudClientResource,
+    dbt_cloud_run_op as dbt_cloud_run_op,
+    dbt_cloud_resource as dbt_cloud_resource,
+    load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
+)
+from .errors import (
+    DagsterDbtError as DagsterDbtError,
+    DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
+    DagsterDbtCliUnexpectedOutputError as DagsterDbtCliUnexpectedOutputError,
+    DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
+)
+from .version import __version__ as __version__
 from .asset_specs import build_dbt_asset_specs as build_dbt_asset_specs
 from .asset_utils import (
+    get_asset_key_for_model as get_asset_key_for_model,
+    get_asset_key_for_source as get_asset_key_for_source,
     build_dbt_asset_selection as build_dbt_asset_selection,
     build_schedule_from_dbt_selection as build_schedule_from_dbt_selection,
     default_group_from_dbt_resource_props as default_group_from_dbt_resource_props,
     default_metadata_from_dbt_resource_props as default_metadata_from_dbt_resource_props,
-    get_asset_key_for_model as get_asset_key_for_model,
-    get_asset_key_for_source as get_asset_key_for_source,
     get_asset_keys_by_output_name_for_source as get_asset_keys_by_output_name_for_source,
     group_from_dbt_resource_props_fallback_to_directory as group_from_dbt_resource_props_fallback_to_directory,
 )
-from .cloud import (
-    DbtCloudClientResource as DbtCloudClientResource,
-    DbtCloudOutput as DbtCloudOutput,
-    DbtCloudResource as DbtCloudResource,
-    dbt_cloud_resource as dbt_cloud_resource,
-    dbt_cloud_run_op as dbt_cloud_run_op,
-    load_assets_from_dbt_cloud_job as load_assets_from_dbt_cloud_job,
+from .dbt_project import (
+    DbtProject as DbtProject,
+    DbtProjectPreparer as DbtProjectPreparer,
+    DagsterDbtProjectPreparer as DagsterDbtProjectPreparer,
 )
-from .core import (
-    DbtCliEventMessage as DbtCliEventMessage,
-    DbtCliInvocation as DbtCliInvocation,
-    DbtCliResource as DbtCliResource,
+from .asset_decorator import dbt_assets as dbt_assets
+from .freshness_builder import (
+    build_freshness_checks_from_dbt_assets as build_freshness_checks_from_dbt_assets,
 )
 from .dagster_dbt_translator import (
     DagsterDbtTranslator as DagsterDbtTranslator,
@@ -29,21 +44,6 @@ from .dagster_dbt_translator import (
     KeyPrefixDagsterDbtTranslator as KeyPrefixDagsterDbtTranslator,
 )
 from .dbt_manifest_asset_selection import DbtManifestAssetSelection as DbtManifestAssetSelection
-from .dbt_project import (
-    DagsterDbtProjectPreparer as DagsterDbtProjectPreparer,
-    DbtProject as DbtProject,
-    DbtProjectPreparer as DbtProjectPreparer,
-)
-from .errors import (
-    DagsterDbtCliRuntimeError as DagsterDbtCliRuntimeError,
-    DagsterDbtCliUnexpectedOutputError as DagsterDbtCliUnexpectedOutputError,
-    DagsterDbtCloudJobInvariantViolationError as DagsterDbtCloudJobInvariantViolationError,
-    DagsterDbtError as DagsterDbtError,
-)
-from .freshness_builder import (
-    build_freshness_checks_from_dbt_assets as build_freshness_checks_from_dbt_assets,
-)
-from .version import __version__ as __version__
 
 # isort: split
 
@@ -51,12 +51,12 @@ from .version import __version__ as __version__
 # ##### DYNAMIC IMPORTS
 # ########################
 import importlib
-from typing import TYPE_CHECKING, Any, Mapping, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Tuple, Mapping, Sequence
 
+from typing_extensions import Final
 from dagster._annotations import deprecated
 from dagster._core.libraries import DagsterLibraryRegistry
 from dagster._utils.warnings import deprecation_warning
-from typing_extensions import Final
 
 DagsterLibraryRegistry.register("dagster-dbt", __version__)
 
@@ -69,36 +69,36 @@ if TYPE_CHECKING:
     # isort: split
     ##### Deprecating DbtCliClientResource
     from .core import (
-        DbtCliClientResource as DbtCliClientResource,
         DbtCliOutput as DbtCliOutput,
+        DbtCliClientResource as DbtCliClientResource,
         dbt_cli_resource as dbt_cli_resource,
     )
-    from .dbt_resource import DbtResource as DbtResource
+    from .types import DbtOutput as DbtOutput
     from .errors import (
         DagsterDbtCliFatalRuntimeError as DagsterDbtCliFatalRuntimeError,
         DagsterDbtCliHandledRuntimeError as DagsterDbtCliHandledRuntimeError,
         DagsterDbtCliOutputsNotFoundError as DagsterDbtCliOutputsNotFoundError,
     )
-    from .types import DbtOutput as DbtOutput
+    from .dbt_resource import DbtResource as DbtResource
 
     ##### Deprecating dbt ops
     # isort: split
     from .ops import (
-        dbt_build_op as dbt_build_op,
-        dbt_compile_op as dbt_compile_op,
-        dbt_docs_generate_op as dbt_docs_generate_op,
         dbt_ls_op as dbt_ls_op,
         dbt_run_op as dbt_run_op,
         dbt_seed_op as dbt_seed_op,
-        dbt_snapshot_op as dbt_snapshot_op,
         dbt_test_op as dbt_test_op,
+        dbt_build_op as dbt_build_op,
+        dbt_compile_op as dbt_compile_op,
+        dbt_snapshot_op as dbt_snapshot_op,
+        dbt_docs_generate_op as dbt_docs_generate_op,
     )
 
     ##### Deprecating load_assets_from_XXX
     # isort: split
     from .asset_defs import (
-        load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
         load_assets_from_dbt_project as load_assets_from_dbt_project,
+        load_assets_from_dbt_manifest as load_assets_from_dbt_manifest,
     )
 
 _DEPRECATED: Final[Mapping[str, Tuple[str, str, str]]] = {

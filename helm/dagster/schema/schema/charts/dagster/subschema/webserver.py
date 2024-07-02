@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union, Optional
 
 from pydantic import Extra
 

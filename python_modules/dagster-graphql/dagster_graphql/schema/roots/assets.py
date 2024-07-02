@@ -1,8 +1,8 @@
 import graphene
 
-from ..errors import GrapheneAssetNotFoundError, GraphenePythonError
-from ..pipelines.pipeline import GrapheneAsset
 from ..util import non_null_list
+from ..errors import GraphenePythonError, GrapheneAssetNotFoundError
+from ..pipelines.pipeline import GrapheneAsset
 
 
 class GrapheneAssetConnection(graphene.ObjectType):

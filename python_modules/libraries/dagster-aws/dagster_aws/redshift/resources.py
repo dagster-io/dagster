@@ -1,19 +1,19 @@
 import abc
-from contextlib import contextmanager
-from logging import Logger
 from typing import Any, Dict, Optional, cast
+from logging import Logger
+from contextlib import contextmanager
 
 import psycopg2
 import psycopg2.extensions
 from dagster import (
     ConfigurableResource,
     _check as check,
-    get_dagster_logger,
     resource,
+    get_dagster_logger,
 )
+from pydantic import Field
 from dagster._annotations import deprecated
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
-from pydantic import Field
 
 
 class RedshiftError(Exception):

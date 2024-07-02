@@ -1,12 +1,12 @@
 from typing import Dict, cast
 from unittest.mock import MagicMock
 
-from dagster import AssetKey, AssetsDefinition, MaterializeResult, PipesClient, materialize
+from dagster import AssetKey, PipesClient, AssetsDefinition, MaterializeResult, materialize
+from databricks.sdk.service import jobs
 from dagster._core.pipes.client import PipesClientCompletedInvocation
 from dagster_blueprints.blueprint import BlueprintDefinitions
-from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
 from dagster_blueprints.databricks_blueprint import DatabricksTaskBlueprint
-from databricks.sdk.service import jobs
+from dagster_blueprints.blueprint_assets_definition import AssetSpecModel
 
 CLUSTER_DEFAULTS = {
     "spark_version": "12.2.x-scala2.12",

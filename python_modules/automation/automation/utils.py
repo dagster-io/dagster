@@ -1,6 +1,6 @@
 import subprocess
+from typing import List, Iterable, Optional
 from distutils import spawn
-from typing import Iterable, List, Optional
 
 import click
 

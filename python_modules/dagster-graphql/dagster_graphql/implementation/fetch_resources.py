@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
 import dagster._check as check
-from dagster._core.definitions.selector import RepositorySelector, ResourceSelector
 from graphene import ResolveInfo
+from dagster._core.definitions.selector import ResourceSelector, RepositorySelector
 
 from .utils import UserFacingGraphQLError
 

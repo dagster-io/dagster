@@ -1,16 +1,16 @@
 import gc
-import logging
 import os
+import logging
 import os.path
 import threading
 from sys import platform
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Tuple, Union, Optional
 
 import dagster._check as check
-from dagster._core.execution.telemetry import RunTelemetryData
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.dagster_run import DagsterRun
 from dagster._utils.container import retrieve_containerized_utilization_metrics
+from dagster._core.execution.telemetry import RunTelemetryData
+from dagster._core.storage.dagster_run import DagsterRun
 
 DEFAULT_RUN_METRICS_POLL_INTERVAL_SECONDS = 15.0
 DEFAULT_RUN_METRICS_SHUTDOWN_SECONDS = 30

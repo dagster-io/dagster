@@ -1,4 +1,4 @@
-from dagster import In, Nothing, job, op
+from dagster import In, Nothing, op, job
 
 
 @op

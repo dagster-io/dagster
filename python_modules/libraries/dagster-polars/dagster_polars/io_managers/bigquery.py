@@ -1,15 +1,15 @@
-from typing import List, Optional, Sequence, Type
+from typing import List, Type, Optional, Sequence
 
 import polars as pl
 from dagster import InputContext, MetadataValue, OutputContext
 from dagster._annotations import experimental
-from dagster._core.storage.db_io_manager import DbTypeHandler, TableSlice
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler
 
 from dagster_polars.io_managers.utils import get_polars_metadata
 
 try:
-    from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
     from google.cloud import bigquery as bigquery
+    from dagster_gcp.bigquery.io_manager import BigQueryClient, BigQueryIOManager
 except ImportError as e:
     raise ImportError("Install 'dagster-polars[gcp]' to use BigQuery functionality") from e
 

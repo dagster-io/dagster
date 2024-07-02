@@ -1,20 +1,20 @@
 from typing import Sequence
 
-import dagster._check as check
 import pytest
+import dagster._check as check
 from dagster import AutomationCondition
+from dagster._core.definitions.events import AssetKeyPartitionKey
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.asset_subset import AssetSubset
-from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
+from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.declarative_automation.automation_context import AutomationContext
-from dagster._core.definitions.events import AssetKeyPartitionKey
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 
 from dagster_tests.definitions_tests.auto_materialize_tests.scenario_state import ScenarioSpec
 
 from ..base_scenario import run_request
-from ..scenario_specs import one_asset_depends_on_two, two_partitions_def
+from ..scenario_specs import two_partitions_def, one_asset_depends_on_two
 from .asset_condition_scenario import AutomationConditionScenarioState
 
 

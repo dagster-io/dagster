@@ -1,28 +1,28 @@
-from dataclasses import dataclass
 from typing import Any, Mapping, Optional, Sequence
+from dataclasses import dataclass
 
 from dagster import (
     AssetKey,
-    AutoMaterializePolicy,
     FreshnessPolicy,
     PartitionMapping,
+    AutoMaterializePolicy,
     _check as check,
 )
-from dagster._annotations import experimental, public
+from dagster._annotations import public, experimental
+from dagster._core.definitions.utils import is_valid_definition_tag_key
 from dagster._core.definitions.asset_key import (
     CoercibleToAssetKeyPrefix,
     check_opt_coercible_to_asset_key_prefix_param,
 )
-from dagster._core.definitions.utils import is_valid_definition_tag_key
 
 from .asset_utils import (
     default_asset_key_fn,
-    default_auto_materialize_policy_fn,
     default_description_fn,
     default_freshness_policy_fn,
+    default_auto_materialize_policy_fn,
     default_group_from_dbt_resource_props,
-    default_metadata_from_dbt_resource_props,
     default_owners_from_dbt_resource_props,
+    default_metadata_from_dbt_resource_props,
 )
 
 

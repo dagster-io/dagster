@@ -1,15 +1,15 @@
 import logging
-from typing import Mapping, Optional, Sequence, Union
+from typing import Union, Mapping, Optional, Sequence
 
 import mock
 import pytest
-from dagster import get_dagster_logger, reconstructable, resource
-from dagster._core.definitions.decorators import op
-from dagster._core.definitions.decorators.job_decorator import job
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.reconstruct import ReconstructableJob
-from dagster._core.execution.api import execute_job
+from dagster import resource, reconstructable, get_dagster_logger
 from dagster._core.test_utils import instance_for_test
+from dagster._core.execution.api import execute_job
+from dagster._core.definitions.decorators import op
+from dagster._core.definitions.reconstruct import ReconstructableJob
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.decorators.job_decorator import job
 
 
 def _reset_logging() -> None:

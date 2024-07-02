@@ -1,14 +1,14 @@
 from typing import Any, Mapping, Optional, Sequence
 
 import docker
-from dagster import Field, In, Nothing, OpExecutionContext, StringSource, op
-from dagster._annotations import experimental
+from dagster import In, Field, Nothing, StringSource, OpExecutionContext, op
 from dagster._core.utils import parse_env_var
+from dagster._annotations import experimental
 from dagster._serdes.utils import hash_str
 
+from ..utils import DOCKER_CONFIG_SCHEMA, validate_docker_image
 from ..container_context import DockerContainerContext
 from ..docker_run_launcher import DockerRunLauncher
-from ..utils import DOCKER_CONFIG_SCHEMA, validate_docker_image
 
 DOCKER_CONTAINER_OP_CONFIG = {
     **DOCKER_CONFIG_SCHEMA,

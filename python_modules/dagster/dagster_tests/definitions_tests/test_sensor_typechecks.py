@@ -1,4 +1,4 @@
-from dagster import job, op, sensor
+from dagster import op, job, sensor
 
 
 @op

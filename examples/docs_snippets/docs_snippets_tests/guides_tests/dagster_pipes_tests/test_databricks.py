@@ -1,11 +1,11 @@
-import importlib.util
 import os
 import re
+import importlib.util
 
 import pytest
 from dagster_databricks._test_utils import (
-    databricks_client,
     temp_dbfs_script,
+    databricks_client,
     upload_dagster_pipes_whl,
 )
 
@@ -16,8 +16,8 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 if not IS_BUILDKITE:
     from dagster._core.definitions.events import AssetKey
     from docs_snippets.guides.dagster.dagster_pipes.databricks.databricks_asset_client import (
-        databricks_asset,
         defs as databricks_asset_defs,
+        databricks_asset,
     )
 
     def _get_databricks_script_path():

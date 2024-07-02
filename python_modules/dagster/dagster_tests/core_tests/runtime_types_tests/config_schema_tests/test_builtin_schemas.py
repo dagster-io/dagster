@@ -2,17 +2,17 @@ import pickle
 
 import pytest
 from dagster import (
-    Any,
-    Bool,
-    DagsterInvalidConfigError,
-    Float,
-    GraphDefinition,
     In,
+    Any,
     Int,
-    List,
-    Optional,
     Out,
+    Bool,
+    List,
+    Float,
     String,
+    Optional,
+    GraphDefinition,
+    DagsterInvalidConfigError,
     op,
 )
 from dagster._utils.test import get_temp_file_name

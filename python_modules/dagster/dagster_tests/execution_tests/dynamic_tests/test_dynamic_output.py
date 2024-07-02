@@ -1,23 +1,23 @@
 import gc
 from typing import NamedTuple
 
-import objgraph
 import pytest
+import objgraph
 from dagster import (
+    Out,
     DynamicOut,
     DynamicOutput,
-    Out,
-    build_op_context,
-    execute_job,
-    graph,
-    job,
     op,
+    job,
+    graph,
+    execute_job,
     reconstructable,
+    build_op_context,
 )
-from dagster._core.definitions.events import Output
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.events import DagsterEventType
 from dagster._core.test_utils import instance_for_test
+from dagster._core.definitions.events import Output
 
 
 def test_basic():

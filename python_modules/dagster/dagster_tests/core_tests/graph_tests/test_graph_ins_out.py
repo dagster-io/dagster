@@ -1,6 +1,6 @@
-from dagster import graph, op
+from dagster import op, graph
 from dagster._core.definitions.input import In
-from dagster._core.definitions.output import GraphOut, Out
+from dagster._core.definitions.output import Out, GraphOut
 
 
 @op(out=Out(int))

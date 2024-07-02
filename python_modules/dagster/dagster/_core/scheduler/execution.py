@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Sequence
+from typing import Optional, Sequence, NamedTuple
 
 import dagster._check as check
 from dagster._serdes import whitelist_for_serdes

@@ -1,57 +1,57 @@
-import dataclasses
-import datetime
-import json
-import logging
 import os
 import sys
-from collections import namedtuple
+import json
+import logging
+import datetime
+import dataclasses
+from typing import Union, Iterable, Optional, Sequence, NamedTuple, AbstractSet, cast
 from contextlib import contextmanager
-from dataclasses import dataclass, field
-from typing import AbstractSet, Iterable, NamedTuple, Optional, Sequence, Union, cast
+from collections import namedtuple
+from dataclasses import field, dataclass
 
 import mock
 import pendulum
 from dagster import (
-    AssetExecutionContext,
     AssetKey,
-    AssetsDefinition,
     AssetSpec,
-    AutoMaterializePolicy,
-    DagsterRunStatus,
-    Definitions,
-    PartitionsDefinition,
     RunRequest,
     RunsFilter,
+    Definitions,
+    AssetsDefinition,
+    DagsterRunStatus,
     SensorDefinition,
+    PartitionsDefinition,
+    AssetExecutionContext,
+    AutoMaterializePolicy,
     asset,
     multi_asset,
 )
-from dagster._core.definitions import materialize
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
-from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKey
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.repository_definition.repository_definition import (
-    RepositoryDefinition,
+from dagster._time import parse_time_string
+from typing_extensions import Self
+from dagster._core.utils import make_new_run_id
+from dagster._serdes.utils import create_snapshot_id
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import (
+    InProcessTestWorkspaceLoadTarget,
+    freeze_time,
+    create_test_daemon_workspace_context,
 )
+from dagster._core.definitions import materialize
+from dagster._core.storage.tags import PARTITION_NAME_TAG
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.definitions.events import CoercibleToAssetKey, AssetMaterialization
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.remote_representation.external_data import external_repository_data_from_def
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.execution.api import create_execution_plan
-from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.external_data import external_repository_data_from_def
-from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
-from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import (
-    InProcessTestWorkspaceLoadTarget,
-    create_test_daemon_workspace_context,
-    freeze_time,
+from dagster._core.definitions.repository_definition.repository_definition import (
+    RepositoryDefinition,
 )
-from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._core.utils import make_new_run_id
-from dagster._serdes.utils import create_snapshot_id
-from dagster._time import parse_time_string
-from typing_extensions import Self
 
 from .base_scenario import run_request
 

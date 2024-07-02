@@ -1,6 +1,6 @@
 from dagster import job, make_values_resource
-from dagster_wandb.launch.ops import run_launch_agent
 from dagster_wandb.resources import wandb_resource
+from dagster_wandb.launch.ops import run_launch_agent
 
 
 @job(

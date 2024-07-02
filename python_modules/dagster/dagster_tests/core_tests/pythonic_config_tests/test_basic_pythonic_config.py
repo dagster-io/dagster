@@ -1,41 +1,41 @@
 import sys
 from typing import List, Optional
 
+import pytest
 import dagster
 import pydantic
-import pytest
 from dagster import (
-    AssetOut,
     EnvVar,
-    _check as check,
-    asset,
+    AssetOut,
+    op,
     job,
+    asset,
+    _check as check,
     materialize,
     multi_asset,
-    op,
     validate_run_config,
 )
-from dagster._config.config_type import ConfigTypeKind, Noneable
-from dagster._config.field_utils import convert_potential_field
-from dagster._config.pythonic_config import Config, infer_schema_from_config_class
-from dagster._config.source import BoolSource, IntSource, StringSource
-from dagster._config.type_printer import print_config_type_to_string
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.op_definition import OpDefinition
-from dagster._core.definitions.run_config import RunConfig
-from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
+from pydantic import (
+    Field as PyField,
+    BaseModel,
+)
 from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidInvocationError,
     DagsterInvalidPythonicConfigDefinitionError,
 )
-from dagster._core.execution.context.invocation import build_op_context
+from dagster._config.source import IntSource, BoolSource, StringSource
 from dagster._core.test_utils import environ
+from dagster._config.config_type import Noneable, ConfigTypeKind
+from dagster._config.field_utils import convert_potential_field
+from dagster._config.type_printer import print_config_type_to_string
 from dagster._utils.cached_method import cached_method
-from pydantic import (
-    BaseModel,
-    Field as PyField,
-)
+from dagster._config.pythonic_config import Config, infer_schema_from_config_class
+from dagster._core.definitions.run_config import RunConfig
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.execution.context.invocation import build_op_context
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.unresolved_asset_job_definition import define_asset_job
 
 
 def test_disallow_config_schema_conflict():
@@ -1024,7 +1024,7 @@ def test_truthy_and_falsey_defaults() -> None:
 
 
 def execution_run_config() -> None:
-    from dagster import RunConfig, job, op
+    from dagster import RunConfig, op, job
 
     @op
     def foo_op():

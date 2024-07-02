@@ -1,21 +1,21 @@
-from collections import defaultdict
-from contextlib import contextmanager
 from enum import Enum
-from functools import wraps
-from typing import Generator, Optional, Union
+from typing import Union, Optional, Generator
 from weakref import WeakKeyDictionary
+from functools import wraps
+from contextlib import contextmanager
+from collections import defaultdict
 
-from dagster import (
-    AssetExecutionContext,
-    AssetKey,
-    ConfigurableResource,
-    InitResourceContext,
-    OpExecutionContext,
-)
-from dagster._annotations import experimental, public
-from dagster._core.errors import DagsterInvariantViolationError
 from openai import Client
+from dagster import (
+    AssetKey,
+    OpExecutionContext,
+    InitResourceContext,
+    ConfigurableResource,
+    AssetExecutionContext,
+)
 from pydantic import Field, PrivateAttr
+from dagster._annotations import public, experimental
+from dagster._core.errors import DagsterInvariantViolationError
 
 
 class ApiEndpointClassesEnum(Enum):

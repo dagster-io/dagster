@@ -3,25 +3,25 @@ import multiprocessing
 
 import pytest
 from dagster import AssetKey
+from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import freeze_time, cleanup_test_instance
 from dagster._core.instance.ref import InstanceRef
-from dagster._core.instance_for_test import instance_for_test
-from dagster._core.scheduler.instigation import TickStatus
 from dagster._core.storage.tags import PARTITION_NAME_TAG
-from dagster._core.test_utils import cleanup_test_instance, freeze_time
 from dagster._daemon.asset_daemon import (
+    MAX_TIME_TO_RESUME_TICK_SECONDS,
     _PRE_SENSOR_AUTO_MATERIALIZE_ORIGIN_ID,
     _PRE_SENSOR_AUTO_MATERIALIZE_SELECTOR_ID,
-    MAX_TIME_TO_RESUME_TICK_SECONDS,
-    _get_pre_sensor_auto_materialize_cursor,
     set_auto_materialize_paused,
+    _get_pre_sensor_auto_materialize_cursor,
 )
-from dagster._utils import SingleInstigatorDebugCrashFlags, get_terminate_signal
+from dagster._core.instance_for_test import instance_for_test
+from dagster._core.scheduler.instigation import TickStatus
 
-from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 from .scenarios.auto_observe_scenarios import auto_observe_scenarios
 from .scenarios.multi_code_location_scenarios import multi_code_location_scenarios
+from .scenarios.auto_materialize_policy_scenarios import auto_materialize_policy_scenarios
 
 daemon_scenarios = {
     **auto_materialize_policy_scenarios,

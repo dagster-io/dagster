@@ -2,19 +2,19 @@ from unittest.mock import MagicMock
 
 import pytest
 from dagster import AssetKey, InputContext, OutputContext, asset, build_output_context
+from dagster._time import create_datetime
 from dagster._check import CheckError
-from dagster._core.definitions.partition import StaticPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition, TimeWindow
 from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.definitions.partition import StaticPartitionsDefinition
 from dagster._core.storage.db_io_manager import (
     DbClient,
+    TableSlice,
     DbIOManager,
     DbTypeHandler,
     TablePartitionDimension,
-    TableSlice,
 )
-from dagster._core.types.dagster_type import resolve_dagster_type
-from dagster._time import create_datetime
+from dagster._core.definitions.time_window_partitions import TimeWindow, DailyPartitionsDefinition
 
 resource_config = {
     "database": "database_abc",

@@ -1,16 +1,16 @@
 import inspect
+from typing import Any, Union, Mapping, TypeVar, Callable, Optional, overload
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
 
-from typing_extensions import Annotated, Final, TypeAlias
+from typing_extensions import Final, Annotated, TypeAlias
 
 from dagster import _check as check
-from dagster._core.decorator_utils import (
-    apply_pre_call_decorator,
-    get_decorator_target,
-    is_resource_def,
-)
 from dagster._utils.warnings import deprecation_warning, experimental_warning
+from dagster._core.decorator_utils import (
+    is_resource_def,
+    get_decorator_target,
+    apply_pre_call_decorator,
+)
 
 # For the time being, `Annotatable` is set to `Any` even though it should be set to `Decoratable` to
 # avoid choking the type checker. Choking happens because of a niche scenario where

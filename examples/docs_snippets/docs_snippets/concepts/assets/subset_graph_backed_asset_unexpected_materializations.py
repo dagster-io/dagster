@@ -1,4 +1,4 @@
-from dagster import AssetKey, Out, op
+from dagster import Out, AssetKey, op
 
 from .subset_graph_backed_asset import defs
 

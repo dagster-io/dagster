@@ -1,4 +1,4 @@
-from dagster import Config, config_mapping, graph, op
+from dagster import Config, op, graph, config_mapping
 
 
 class AddNConfig(Config):

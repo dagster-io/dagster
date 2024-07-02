@@ -1,10 +1,10 @@
 # start_database_example
 from dagster import (
-    InitResourceContext,
-    OpExecutionContext,
     StringSource,
-    job,
+    OpExecutionContext,
+    InitResourceContext,
     op,
+    job,
     resource,
 )
 

@@ -1,20 +1,20 @@
 from unittest import mock
 
-from dagster import Definitions, OpExecutionContext, build_sensor_context, job, op
-from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
-    email_on_run_failure,
-    my_slack_on_run_failure,
-    my_slack_on_run_success,
-    slack_on_run_failure,
-)
+from dagster import Definitions, OpExecutionContext, op, job, build_sensor_context
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
-    log_file_job,
-    my_directory_sensor,
-    my_s3_sensor,
     sensor_A,
     sensor_B,
-    test_my_directory_sensor_cursor,
     test_sensor,
+    log_file_job,
+    my_s3_sensor,
+    my_directory_sensor,
+    test_my_directory_sensor_cursor,
+)
+from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
+    email_on_run_failure,
+    slack_on_run_failure,
+    my_slack_on_run_failure,
+    my_slack_on_run_success,
 )
 
 

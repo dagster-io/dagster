@@ -1,11 +1,11 @@
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar, Optional
 
 from dagster import ConfigurableResource, IAttachDifferentObjectToOpContext, resource
-from dagster._core.definitions.resource_definition import dagster_maintained_resource
 from pydantic import Field
+from dagster._core.definitions.resource_definition import dagster_maintained_resource
 
-from .file_manager import S3FileManager
 from .utils import construct_s3_client
+from .file_manager import S3FileManager
 
 T = TypeVar("T")
 

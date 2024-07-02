@@ -1,20 +1,20 @@
 import re
 
-import click
 import mock
+import click
 import pytest
 from click.testing import CliRunner
 from dagster._cli.sensor import (
-    check_repo_and_scheduler,
-    sensor_cursor_command,
     sensor_list_command,
-    sensor_preview_command,
-    sensor_start_command,
     sensor_stop_command,
+    sensor_start_command,
+    sensor_cursor_command,
+    sensor_preview_command,
+    check_repo_and_scheduler,
 )
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation import ExternalRepository
 from dagster._core.test_utils import environ
+from dagster._core.remote_representation import ExternalRepository
 
 from .test_cli_commands import sensor_command_contexts
 

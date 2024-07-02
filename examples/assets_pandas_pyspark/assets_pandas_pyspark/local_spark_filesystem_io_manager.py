@@ -6,17 +6,17 @@
 # The processing options are Pandas and Spark. A table can be created from a Pandas DataFrame
 # and then consumed in a downstream computation as a Spark DataFrame, and vice versa.
 
-import glob
 import os
+import glob
 from typing import Union
 
 import pandas as pd
+from pandas import DataFrame as PandasDF
 from dagster import (
     AssetKey,
     ConfigurableIOManager,
     _check as check,
 )
-from pandas import DataFrame as PandasDF
 from pyspark.sql import (
     DataFrame as SparkDF,
     SparkSession,

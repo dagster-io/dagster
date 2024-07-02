@@ -1,11 +1,11 @@
 import pytest
-from dagster import AssetKey, AssetMaterialization, Output, job, op
-from dagster._core.definitions.events import parse_asset_key_string
-from dagster._core.events.log import EventLogEntry
-from dagster._core.instance import DagsterInstance, InstanceRef
-from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster import Output, AssetKey, AssetMaterialization, op, job
 from dagster._utils import file_relative_path
 from dagster._utils.test import copy_directory
+from dagster._core.instance import InstanceRef, DagsterInstance
+from dagster._core.events.log import EventLogEntry
+from dagster._core.definitions.events import parse_asset_key_string
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 
 
 def test_structured_asset_key():

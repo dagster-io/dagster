@@ -1,6 +1,6 @@
-import dagster._check as check
 import graphene
-from dagster._core.snap import ConfigSchemaSnapshot, ModeDefSnap
+import dagster._check as check
+from dagster._core.snap import ModeDefSnap, ConfigSchemaSnapshot
 
 from ..util import ResolveInfo, non_null_list
 from .logger import GrapheneLogger

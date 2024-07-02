@@ -1,4 +1,4 @@
-from dagster import graph_asset, op
+from dagster import op, graph_asset
 
 
 @op

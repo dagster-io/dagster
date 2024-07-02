@@ -1,17 +1,17 @@
-import csv
 import os
+import csv
 import typing
 
 from dagster import (
-    DagsterType,
-    Failure,
     Field,
-    OpExecutionContext,
     String,
+    Failure,
+    DagsterType,
+    OpExecutionContext,
+    op,
+    job,
     check_dagster_type,
     dagster_type_loader,
-    job,
-    op,
 )
 
 

@@ -1,61 +1,61 @@
-import logging
 import sys
+import logging
 import threading
-from collections import defaultdict
-from concurrent.futures import Future, ThreadPoolExecutor
-from contextlib import AbstractContextManager
 from types import TracebackType
 from typing import (
     TYPE_CHECKING,
     Dict,
     List,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
     Type,
     Union,
+    Mapping,
+    Optional,
+    Sequence,
+    NamedTuple,
     cast,
 )
+from contextlib import AbstractContextManager
+from collections import defaultdict
+from concurrent.futures import Future, ThreadPoolExecutor
 
 import pendulum
 from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.definitions.run_request import (
-    AddDynamicPartitionsRequest,
-    DagsterRunReaction,
-    DeleteDynamicPartitionsRequest,
-    InstigatorType,
-    RunRequest,
-)
-from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.definitions.sensor_definition import DefaultSensorStatus
-from dagster._core.definitions.utils import normalize_tags
+from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
 from dagster._core.errors import DagsterError
+from dagster._utils.error import SerializableErrorInfo
+from dagster._daemon.utils import DaemonErrorCapture
+from dagster._utils.merger import merge_dicts
 from dagster._core.instance import DagsterInstance
-from dagster._core.remote_representation.code_location import CodeLocation
-from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
-from dagster._core.remote_representation.external_data import ExternalTargetData
+from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._scheduler.stale import resolve_stale_or_missing_assets
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
+from dagster._core.definitions.utils import normalize_tags
+from dagster._core.workspace.context import IWorkspaceProcessContext
+from dagster._core.storage.dagster_run import DagsterRun, RunsFilter, DagsterRunStatus
+from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.scheduler.instigation import (
-    DynamicPartitionsRequestResult,
-    InstigatorState,
-    InstigatorStatus,
-    InstigatorTick,
-    SensorInstigatorData,
     TickData,
     TickStatus,
+    InstigatorTick,
+    InstigatorState,
+    InstigatorStatus,
+    SensorInstigatorData,
+    DynamicPartitionsRequestResult,
 )
-from dagster._core.storage.dagster_run import DagsterRun, DagsterRunStatus, RunsFilter
-from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
-from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
-from dagster._core.workspace.context import IWorkspaceProcessContext
-from dagster._daemon.utils import DaemonErrorCapture
-from dagster._scheduler.stale import resolve_stale_or_missing_assets
-from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
-from dagster._utils.error import SerializableErrorInfo
-from dagster._utils.merger import merge_dicts
+from dagster._core.definitions.run_request import (
+    RunRequest,
+    InstigatorType,
+    DagsterRunReaction,
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.remote_representation.external import ExternalJob, ExternalSensor
+from dagster._core.remote_representation.code_location import CodeLocation
+from dagster._core.remote_representation.external_data import ExternalTargetData
 
 if TYPE_CHECKING:
     from pendulum.datetime import DateTime

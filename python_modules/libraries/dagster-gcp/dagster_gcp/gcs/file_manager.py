@@ -1,16 +1,16 @@
 import io
 import uuid
-from contextlib import contextmanager
 from typing import Optional
+from contextlib import contextmanager
 
 import dagster._check as check
+from google.cloud import storage
 from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,
     TempfileManager,
     check_file_like_obj,
 )
-from google.cloud import storage
 
 
 class GCSFileHandle(FileHandle):

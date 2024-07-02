@@ -1,39 +1,39 @@
-from typing import List, Optional, Tuple, Type, TypeVar
+from typing import List, Type, Tuple, TypeVar, Optional
 
 import docutils.nodes as nodes
-from dagster._annotations import (
-    get_deprecated_info,
-    get_deprecated_params,
-    get_experimental_info,
-    get_experimental_params,
-    has_deprecated_params,
-    has_experimental_params,
-    is_deprecated,
-    is_experimental,
-    is_public,
-)
+from sphinx.util import logging
+from typing_extensions import Literal, TypeAlias
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.ext.autodoc import (
-    ClassDocumenter,
-    ObjectMembers,  # type: ignore  # (bad stubs)
     Options as AutodocOptions,
+    ObjectMembers,  # type: ignore  # (bad stubs)
+    ClassDocumenter,
 )
-from sphinx.util import logging
-from typing_extensions import Literal, TypeAlias
+from dagster._annotations import (
+    is_public,
+    is_deprecated,
+    is_experimental,
+    get_deprecated_info,
+    get_deprecated_params,
+    get_experimental_info,
+    has_deprecated_params,
+    get_experimental_params,
+    has_experimental_params,
+)
 
 from dagster_sphinx.configurable import ConfigurableDocumenter
 from dagster_sphinx.docstring_flags import (
     FlagDirective,
-    depart_flag,
     flag,
+    visit_flag,
+    depart_flag,
     inline_flag,
     inline_flag_role,
-    visit_flag,
     visit_inline_flag,
 )
 
-from .docstring_flags import inject_object_flag, inject_param_flag
+from .docstring_flags import inject_param_flag, inject_object_flag
 
 logger = logging.getLogger(__name__)
 

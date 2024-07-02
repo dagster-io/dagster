@@ -2,28 +2,28 @@ from datetime import datetime
 
 import pytest
 from dagster import (
-    AssetExecutionContext,
     AssetIn,
-    DailyPartitionsDefinition,
-    DimensionPartitionMapping,
-    DynamicPartitionsDefinition,
-    IdentityPartitionMapping,
     IOManager,
     MultiPartitionKey,
+    AssetExecutionContext,
+    IdentityPartitionMapping,
+    DailyPartitionsDefinition,
+    DimensionPartitionMapping,
     StaticPartitionsDefinition,
+    DynamicPartitionsDefinition,
     asset,
-    define_asset_job,
-    materialize,
     repository,
+    materialize,
+    define_asset_job,
 )
-from dagster._check import CheckError
-from dagster._core.definitions.asset_graph import AssetGraph
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
-from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster._core.storage.tags import get_multidimensional_partition_tag
-from dagster._core.test_utils import instance_for_test
 from dagster._time import create_datetime
+from dagster._check import CheckError
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.test_utils import instance_for_test
+from dagster._core.storage.tags import get_multidimensional_partition_tag
+from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.time_window_partitions import TimeWindow, get_time_partitions_def
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
 
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -522,7 +522,7 @@ def test_context_invalid_partition_time_window():
 
 
 def test_multipartitions_self_dependency():
-    from dagster import MultiPartitionMapping, PartitionKeyRange, TimeWindowPartitionMapping
+    from dagster import PartitionKeyRange, MultiPartitionMapping, TimeWindowPartitionMapping
 
     @asset(
         partitions_def=MultiPartitionsDefinition(

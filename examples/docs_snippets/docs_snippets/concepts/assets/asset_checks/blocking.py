@@ -1,4 +1,4 @@
-from dagster import AssetCheckResult, Definitions, asset, asset_check
+from dagster import Definitions, AssetCheckResult, asset, asset_check
 
 
 @asset

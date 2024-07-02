@@ -2,31 +2,31 @@ from abc import abstractmethod
 from typing import (
     Any,
     Dict,
-    Generic,
-    Iterable,
     List,
+    Type,
+    Tuple,
+    Union,
+    Generic,
+    TypeVar,
+    Iterable,
     Optional,
     Sequence,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
     cast,
 )
 
 import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.dataset as ds
-from dagster import InputContext, MetadataValue, OutputContext, TableColumn, TableSchema
-from dagster._core.definitions.time_window_partitions import TimeWindow
-from dagster._core.storage.db_io_manager import DbTypeHandler, TablePartitionDimension, TableSlice
+from dagster import TableColumn, TableSchema, InputContext, MetadataValue, OutputContext
 from deltalake import DeltaTable, WriterProperties, write_deltalake
+from deltalake.table import FilterLiteralType, _filters_to_expression
 from deltalake.schema import (
     Field as DeltaField,
-    PrimitiveType,
     Schema,
+    PrimitiveType,
 )
-from deltalake.table import FilterLiteralType, _filters_to_expression
+from dagster._core.storage.db_io_manager import TableSlice, DbTypeHandler, TablePartitionDimension
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 from .io_manager import DELTA_DATE_FORMAT, DELTA_DATETIME_FORMAT, TableConnection
 

@@ -4,11 +4,11 @@ import time
 from typing import Any
 
 import pytest
-from dagster import Config, RunConfig, config_mapping, job, op
-from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster import Config, RunConfig, op, job, config_mapping
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.test_utils import environ, instance_for_test
 from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._core.test_utils import environ, instance_for_test
+from dagster._core.definitions.timestamp import TimestampWithTimezone
 
 from ..api_tests.utils import get_bar_repo_handle
 

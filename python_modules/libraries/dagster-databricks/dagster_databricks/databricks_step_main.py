@@ -8,27 +8,27 @@ parameters:
 - paths to any other zipped packages which have been uploaded to DBFS.
 """
 
-import gzip
 import os
-import pickle
-import site
 import sys
-import tempfile
+import gzip
+import site
 import time
-import traceback
+import pickle
 import zipfile
-from contextlib import redirect_stderr, redirect_stdout
+import tempfile
+import traceback
 from io import StringIO
 from queue import Empty, Queue
+from typing import Any, List, Callable, Optional
 from threading import Thread
-from typing import Any, Callable, List, Optional
+from contextlib import redirect_stderr, redirect_stdout
 
+from dagster._serdes import serialize_value
 from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
-    external_instance_from_step_run_ref,
     run_step_from_ref,
+    external_instance_from_step_run_ref,
 )
-from dagster._serdes import serialize_value
 
 # This won't be set in Databricks but is needed to be non-None for the
 # Dagster step to run.

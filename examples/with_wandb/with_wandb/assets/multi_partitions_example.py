@@ -1,7 +1,7 @@
 import wandb
 from dagster import (
-    AssetExecutionContext,
     AssetIn,
+    AssetExecutionContext,
     DailyPartitionsDefinition,
     MultiPartitionsDefinition,
     StaticPartitionsDefinition,

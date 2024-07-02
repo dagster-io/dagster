@@ -1,7 +1,7 @@
 import tempfile
 
 import pytest
-from dagster import ConfigurableResource, build_schedule_context, schedule
+from dagster import ConfigurableResource, schedule, build_schedule_context
 from dagster._core.instance.ref import InstanceRef
 
 

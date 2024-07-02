@@ -1,5 +1,5 @@
 import hashlib
-from typing import NamedTuple, Optional
+from typing import Optional, NamedTuple
 
 from .serdes import WhitelistMap, serialize_value
 

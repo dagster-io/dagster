@@ -2,10 +2,10 @@ import os
 import sys
 
 import pytest
-from dagster import job, op, reconstructable
+from dagster import op, job, reconstructable
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.definitions import ReconstructableJob, build_reconstructable_job
 from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.errors import DagsterInvariantViolationError
 
 
 @op

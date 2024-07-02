@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 import pytest
-from dagster import Config, RunConfig, configured, job, op
+from dagster import Config, RunConfig, op, job, configured
 from dagster._check import CheckError
 
 

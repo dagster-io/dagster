@@ -1,11 +1,11 @@
 ### EXTERNAL PROCESS
 
 import json
-from contextlib import contextmanager
 from typing import Iterator
+from contextlib import contextmanager
 
 import cloud_service  # type: ignore
-from dagster_pipes import PipesContextData, PipesContextLoader, PipesParams
+from dagster_pipes import PipesParams, PipesContextData, PipesContextLoader
 
 
 class MyCustomCloudServiceContextLoader(PipesContextLoader):

@@ -1,8 +1,8 @@
 from typing import cast
 
 import graphene
-from dagster._core.storage.captured_log_manager import CapturedLogManager
 from dagster._core.workspace.context import WorkspaceRequestContext
+from dagster._core.storage.captured_log_manager import CapturedLogManager
 
 
 class ResolveInfo(graphene.ResolveInfo):

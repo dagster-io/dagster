@@ -1,13 +1,13 @@
 from abc import abstractmethod
-from typing import AbstractSet, Optional
+from typing import Optional, AbstractSet
 
+from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
-from dagster._serdes.serdes import whitelist_for_serdes
 
-from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
+from ..automation_condition import AutomationResult, AutomationCondition
 
 
 class DepConditionWrapperCondition(AutomationCondition):

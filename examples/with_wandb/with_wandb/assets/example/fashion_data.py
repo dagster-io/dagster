@@ -1,8 +1,8 @@
 from __future__ import print_function
 
-import codecs
-import errno
 import os
+import errno
+import codecs
 import os.path
 
 import torch

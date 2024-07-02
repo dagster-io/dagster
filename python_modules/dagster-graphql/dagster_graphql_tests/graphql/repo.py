@@ -1,122 +1,122 @@
-import csv
-import datetime
 import gc
-import logging
 import os
-import string
+import csv
 import time
-from collections import OrderedDict
-from contextlib import contextmanager
+import string
+import logging
+import datetime
 from copy import deepcopy
-from typing import Iterator, List, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+from typing import List, Tuple, Union, Mapping, TypeVar, Iterator, Optional, Sequence
+from contextlib import contextmanager
+from collections import OrderedDict
 
 from dagster import (
-    Any,
-    AssetCheckKey,
-    AssetCheckResult,
-    AssetCheckSpec,
-    AssetExecutionContext,
-    AssetIn,
-    AssetKey,
-    AssetMaterialization,
-    AssetObservation,
-    AssetOut,
-    AssetsDefinition,
-    AssetSelection,
-    AutoMaterializePolicy,
-    BackfillPolicy,
-    Bool,
-    DagsterInstance,
-    DailyPartitionsDefinition,
-    DefaultScheduleStatus,
-    DefaultSensorStatus,
-    DynamicOut,
-    DynamicOutput,
-    DynamicPartitionsDefinition,
-    Enum,
-    EnumValue,
-    ExpectationResult,
-    Field,
-    HourlyPartitionsDefinition,
     In,
+    Any,
     Int,
-    IOManager,
-    IOManagerDefinition,
     Map,
-    Noneable,
-    Nothing,
-    OpExecutionContext,
     Out,
+    Bool,
+    Enum,
+    Field,
     Output,
-    PythonObjectDagsterType,
-    ScheduleDefinition,
-    SensorResult,
-    SourceAsset,
-    SourceHashVersionStrategy,
-    StaticPartitionsDefinition,
     String,
+    AssetIn,
+    Nothing,
+    AssetKey,
+    AssetOut,
+    Noneable,
+    EnumValue,
+    IOManager,
+    DynamicOut,
+    SourceAsset,
     TableColumn,
-    TableColumnConstraints,
-    TableConstraints,
     TableRecord,
     TableSchema,
+    SensorResult,
+    AssetCheckKey,
+    DynamicOutput,
+    AssetCheckSpec,
+    AssetSelection,
+    BackfillPolicy,
+    DagsterInstance,
+    AssetCheckResult,
+    AssetObservation,
+    AssetsDefinition,
+    TableConstraints,
+    ExpectationResult,
+    OpExecutionContext,
+    ScheduleDefinition,
+    DefaultSensorStatus,
+    IOManagerDefinition,
+    AssetMaterialization,
+    AssetExecutionContext,
+    AutoMaterializePolicy,
+    DefaultScheduleStatus,
+    TableColumnConstraints,
+    PythonObjectDagsterType,
+    DailyPartitionsDefinition,
+    SourceHashVersionStrategy,
+    HourlyPartitionsDefinition,
+    StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
     WeeklyPartitionsDefinition,
-    _check as check,
-    asset,
-    asset_check,
-    asset_sensor,
-    dagster_type_loader,
-    daily_partitioned_config,
-    define_asset_job,
-    freshness_policy_sensor,
-    graph,
-    job,
-    logger,
-    multi_asset,
-    multi_asset_sensor,
+    DynamicPartitionsDefinition,
     op,
-    repository,
+    job,
+    asset,
+    graph,
+    _check as check,
+    logger,
     resource,
-    run_failure_sensor,
-    run_status_sensor,
     schedule,
-    static_partitioned_config,
+    repository,
+    asset_check,
+    multi_asset,
+    asset_sensor,
+    define_asset_job,
+    run_status_sensor,
+    multi_asset_sensor,
+    run_failure_sensor,
+    dagster_type_loader,
     usable_as_dagster_type,
+    freshness_policy_sensor,
+    daily_partitioned_config,
+    static_partitioned_config,
 )
+from dagster._seven import get_system_temp_directory
+from dagster._utils import segfault, file_relative_path
+from typing_extensions import Never, Literal
+from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster_graphql.test.utils import (
+    main_repo_name,
+    infer_job_selector,
+    main_repo_location_name,
+    define_out_of_process_context,
+)
+from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
+from dagster._core.definitions.events import Failure
+from dagster._core.storage.dagster_run import DagsterRunStatus
+from dagster._core.definitions.metadata import MetadataValue
+from dagster._core.definitions.partition import PartitionedConfig
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._core.definitions.asset_spec import AssetSpec
+from dagster._core.definitions.reconstruct import ReconstructableRepository
+from dagster._core.definitions.external_asset import external_asset_from_spec
+from dagster._core.definitions.job_definition import JobDefinition
+from dagster._core.definitions.freshness_policy import FreshnessPolicy
+from dagster._core.definitions.definitions_class import Definitions
+from dagster._core.definitions.sensor_definition import RunRequest, SkipReason, SensorDefinition
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.decorators.sensor_decorator import sensor
+from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
 )
-from dagster._core.definitions.decorators.sensor_decorator import sensor
-from dagster._core.definitions.definitions_class import Definitions
-from dagster._core.definitions.events import Failure
-from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.external_asset import external_asset_from_spec
-from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.job_definition import JobDefinition
-from dagster._core.definitions.metadata import MetadataValue
-from dagster._core.definitions.multi_dimensional_partitions import MultiPartitionsDefinition
-from dagster._core.definitions.partition import PartitionedConfig
-from dagster._core.definitions.reconstruct import ReconstructableRepository
-from dagster._core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
-from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
-from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster._core.log_manager import coerce_valid_log_level
-from dagster._core.remote_representation.external import ExternalRepository
-from dagster._core.storage.dagster_run import DagsterRunStatus
-from dagster._core.storage.tags import RESUME_RETRY_TAG
-from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster._core.workspace.load_target import PythonFileTarget
-from dagster._seven import get_system_temp_directory
-from dagster._utils import file_relative_path, segfault
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    infer_job_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
-from typing_extensions import Literal, Never
 
 T = TypeVar("T")
 

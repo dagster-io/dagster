@@ -1,10 +1,10 @@
 import re
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Union, Mapping, Optional, Sequence, NamedTuple
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._annotations import PublicAttr
 from dagster._serdes import whitelist_for_serdes
+from dagster._annotations import PublicAttr
 
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
 ASSET_KEY_DELIMITER = "/"

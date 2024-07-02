@@ -1,44 +1,44 @@
-import itertools
 import warnings
-from collections import defaultdict
-from functools import cached_property
+import itertools
 from typing import (
     TYPE_CHECKING,
-    AbstractSet,
-    DefaultDict,
+    Set,
     Dict,
-    Iterable,
     List,
+    Tuple,
     Mapping,
+    Iterable,
     Optional,
     Sequence,
-    Set,
-    Tuple,
+    AbstractSet,
+    DefaultDict,
 )
+from functools import cached_property
+from collections import defaultdict
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
+from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.asset_job import ASSET_BASE_JOB_PREFIX
 from dagster._core.definitions.asset_spec import AssetExecutionType
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-from dagster._core.definitions.metadata import ArbitraryMetadataMapping
-from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.remote_representation.handle import RepositoryHandle
+from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 
-from .backfill_policy import BackfillPolicy
-from .base_asset_graph import AssetKeyOrCheckKey, BaseAssetGraph, BaseAssetNode
 from .events import AssetKey
-from .freshness_policy import FreshnessPolicy
 from .partition import PartitionsDefinition
+from .backfill_policy import BackfillPolicy
+from .base_asset_graph import BaseAssetNode, BaseAssetGraph, AssetKeyOrCheckKey
+from .freshness_policy import FreshnessPolicy
 from .partition_mapping import PartitionMapping
 
 if TYPE_CHECKING:
-    from dagster._core.remote_representation.external_data import (
-        ExternalAssetCheck,
-        ExternalAssetNode,
-    )
     from dagster._core.selector.subset_selector import DependencyGraph
+    from dagster._core.remote_representation.external_data import (
+        ExternalAssetNode,
+        ExternalAssetCheck,
+    )
 
 
 class RemoteAssetNode(BaseAssetNode):

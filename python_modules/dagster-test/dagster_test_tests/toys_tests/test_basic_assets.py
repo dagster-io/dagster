@@ -1,4 +1,4 @@
-from dagster import Definitions, load_assets_from_modules, mem_io_manager
+from dagster import Definitions, mem_io_manager, load_assets_from_modules
 from dagster_test.toys import basic_assets
 
 

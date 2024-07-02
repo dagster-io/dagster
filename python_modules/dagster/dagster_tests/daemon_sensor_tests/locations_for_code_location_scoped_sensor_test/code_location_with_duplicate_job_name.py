@@ -1,4 +1,4 @@
-from dagster import Definitions, job, op
+from dagster import Definitions, op, job
 
 
 # this code location also contains a job named success_job. But it should not trigger the sensor in code_location_with_sensor
