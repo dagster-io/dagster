@@ -109,7 +109,8 @@ def _with_code_source_single_definition(
             else assets_def.node_def.compute_fn
         )
     elif isinstance(assets_def.node_def, GraphDefinition):
-        # todo - properly handle graph-backed asset code source
+        # For graph-backed assets, point to the composition fn, e.g. the
+        # function decorated by @graph_asset
         base_fn = assets_def.node_def.composition_fn
         if not base_fn:
             return assets_def
