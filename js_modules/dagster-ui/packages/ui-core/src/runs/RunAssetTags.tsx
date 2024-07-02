@@ -12,6 +12,7 @@ export const RunAssetTags = (props: {run: RunFragment}) => {
   const queryResult = useQuery<RunAssetsQuery, RunAssetsQueryVariables>(RUN_ASSETS_QUERY, {
     variables: {runId: run.id},
     skip,
+    fetchPolicy: 'no-cache',
   });
   const {data, loading} = queryResult;
   useBlockTraceOnQueryResult(queryResult, 'RunAssetsQuery', {skip});

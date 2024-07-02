@@ -98,100 +98,96 @@ const TICKS_ROW_HEIGHT = 32;
 const TICK_LABEL_WIDTH = 56;
 const MIN_PX_BETWEEN_TICKS = 80;
 
-export const GanttChartTimescale = ({
-  scale,
-  viewport,
-  nowMs,
-  startMs,
-  highlightedMs,
-  layoutSize,
-}: GanttChartTimescaleProps) => {
-  const transform = `translate(${LEFT_INSET - viewport.left}px)`;
-  const ticks: React.ReactNode[] = [];
-  const lines: React.ReactNode[] = [];
+export const GanttChartTimescale = React.memo(
+  ({scale, viewport, nowMs, startMs, highlightedMs, layoutSize}: GanttChartTimescaleProps) => {
+    const transform = `translate(${LEFT_INSET - viewport.left}px)`;
+    const ticks: React.ReactNode[] = [];
+    const lines: React.ReactNode[] = [];
 
-  const pxPerMs = scale;
-  const tickConfig = TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > MIN_PX_BETWEEN_TICKS);
-  if (tickConfig) {
-    const {tickIntervalMs, tickLabels} = tickConfig;
-    const pxPerTick = tickIntervalMs * pxPerMs;
+    const pxPerMs = scale;
+    const tickConfig = TICK_CONFIG.find((t) => t.tickIntervalMs * pxPerMs > MIN_PX_BETWEEN_TICKS);
+    if (tickConfig) {
+      const {tickIntervalMs, tickLabels} = tickConfig;
+      const pxPerTick = tickIntervalMs * pxPerMs;
 
-    let tickMs = Math.floor(viewport.left / pxPerTick) * tickIntervalMs;
-    let tickX = tickMs * pxPerMs;
+      let tickMs = Math.floor(viewport.left / pxPerTick) * tickIntervalMs;
+      let tickX = tickMs * pxPerMs;
 
-    while (tickX < viewport.left + viewport.width) {
-      tickMs += tickIntervalMs;
-      tickX += pxPerTick;
-      if (tickX - viewport.left < 10) {
-        continue;
+      while (tickX < viewport.left + viewport.width) {
+        tickMs += tickIntervalMs;
+        tickX += pxPerTick;
+        if (tickX - viewport.left < 10) {
+          continue;
+        }
+        const key = `${tickMs.toFixed(2)}`;
+        const label = tickLabels(tickMs);
+        lines.push(<div className="line" key={key} style={{left: tickX, transform}} />);
+        ticks.push(
+          <div className="tick" key={key} style={{left: tickX - TICK_LABEL_WIDTH / 2, transform}}>
+            {label}
+          </div>,
+        );
       }
-      const key = `${tickMs.toFixed(2)}`;
-      const label = tickLabels(tickMs);
-      lines.push(<div className="line" key={key} style={{left: tickX, transform}} />);
-      ticks.push(
-        <div className="tick" key={key} style={{left: tickX - TICK_LABEL_WIDTH / 2, transform}}>
-          {label}
-        </div>,
-      );
     }
-  }
 
-  return (
-    <TimescaleContainer>
-      <TimescaleTicksContainer>
-        {ticks}
-        {highlightedMs.length === 2 && (
-          <div
-            key="highlight-duration"
-            className="tick duration"
-            style={{
-              left: (highlightedMs[0]! - startMs) * pxPerMs + 2,
-              width: (highlightedMs[1]! - highlightedMs[0]!) * pxPerMs - 2,
-              transform,
-            }}
-          >
-            {formatElapsedTimeWithoutMsec(highlightedMs[1]! - highlightedMs[0]!)}
-          </div>
-        )}
-        {highlightedMs.map((ms, idx) => {
-          const timeX = (ms - startMs) * pxPerMs;
-          const labelOffset =
-            idx === 0 && timeX > TICK_LABEL_WIDTH + viewport.left ? -(TICK_LABEL_WIDTH - 1) : 0;
-
-          return (
+    return (
+      <TimescaleContainer>
+        <TimescaleTicksContainer>
+          {ticks}
+          {highlightedMs.length === 2 && (
             <div
-              key={`highlight-${idx}`}
-              className="tick highlight"
-              style={{left: timeX + labelOffset, transform}}
+              key="highlight-duration"
+              className="tick duration"
+              style={{
+                left: (highlightedMs[0]! - startMs) * pxPerMs + 2,
+                width: (highlightedMs[1]! - highlightedMs[0]!) * pxPerMs - 2,
+                transform,
+              }}
             >
-              {subsecondResolutionLabel(ms - startMs)}
+              {formatElapsedTimeWithoutMsec(highlightedMs[1]! - highlightedMs[0]!)}
             </div>
-          );
-        })}
-      </TimescaleTicksContainer>
-      <TimescaleLinesContainer style={{width: viewport.width, height: viewport.height}}>
-        {lines}
-        {highlightedMs.map((ms, idx) => (
-          <div
-            className="line highlight"
-            key={`highlight-${idx}`}
-            style={{left: (ms - startMs) * pxPerMs + (idx === 0 ? -1 : 0), transform}}
-          />
-        ))}
-        {nowMs > startMs && (
-          <div
-            className="fog-of-war"
-            style={{
-              left: (nowMs - startMs) * pxPerMs,
-              width: Math.max(layoutSize.width, viewport.width) - (nowMs - startMs) * pxPerMs + 100,
-              transform,
-            }}
-          ></div>
-        )}
-      </TimescaleLinesContainer>
-    </TimescaleContainer>
-  );
-};
+          )}
+          {highlightedMs.map((ms, idx) => {
+            const timeX = (ms - startMs) * pxPerMs;
+            const labelOffset =
+              idx === 0 && timeX > TICK_LABEL_WIDTH + viewport.left ? -(TICK_LABEL_WIDTH - 1) : 0;
+
+            return (
+              <div
+                key={`highlight-${idx}`}
+                className="tick highlight"
+                style={{left: timeX + labelOffset, transform}}
+              >
+                {subsecondResolutionLabel(ms - startMs)}
+              </div>
+            );
+          })}
+        </TimescaleTicksContainer>
+        <TimescaleLinesContainer style={{width: viewport.width, height: viewport.height}}>
+          {lines}
+          {highlightedMs.map((ms, idx) => (
+            <div
+              className="line highlight"
+              key={`highlight-${idx}`}
+              style={{left: (ms - startMs) * pxPerMs + (idx === 0 ? -1 : 0), transform}}
+            />
+          ))}
+          {nowMs > startMs && (
+            <div
+              className="fog-of-war"
+              style={{
+                left: (nowMs - startMs) * pxPerMs,
+                width:
+                  Math.max(layoutSize.width, viewport.width) - (nowMs - startMs) * pxPerMs + 100,
+                transform,
+              }}
+            ></div>
+          )}
+        </TimescaleLinesContainer>
+      </TimescaleContainer>
+    );
+  },
+);
 
 const TimescaleContainer = styled.div`
   width: 100%;
