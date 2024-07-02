@@ -403,7 +403,14 @@ EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
             marks=pytest.mark.snowflake,
             id="snowflake",
         ),
-        # TODO: test on bigquery
+        pytest.param(
+            "bigquery",
+            "test_metadata_manifest_bigquery",
+            # BigQuery does not support incremental_strategy='append'
+            ["count_star_implicit_alias_customers", "incremental_orders"],
+            marks=pytest.mark.bigquery,
+            id="bigquery",
+        ),
     ],
 )
 @pytest.mark.parametrize("fetch_row_counts", [True, False])
@@ -426,13 +433,26 @@ def test_column_lineage_real_warehouse(
     assert manifest["metadata"]["adapter_type"] == sql_dialect
 
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path), target=target)
+    dbt.cli(["--quiet", "seed", "--exclude", "resource_type:test", *(excluded_models or [])]).wait()
     dbt.cli(
-        ["--quiet", "build", "--exclude", "resource_type:test", *(excluded_models or [])]
+        [
+            "--quiet",
+            "build",
+            # Exclude seeds to ensure they are built first
+            "--exclude",
+            "seeds/",
+            "--exclude",
+            "resource_type:test",
+            *(excluded_models or []),
+        ]
     ).wait()
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        cli_invocation = dbt.cli(["build"], context=context).stream()
+        cli_invocation = dbt.cli(
+            ["build", "--exclude", "seeds/"],
+            context=context,
+        ).stream()
         # test chaining fetch_row_counts and fetch_column_metadata
         if fetch_row_counts:
             cli_invocation = cli_invocation.fetch_row_counts()
@@ -459,6 +479,7 @@ def test_column_lineage_real_warehouse(
         k: v
         for k, v in EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT.items()
         if k.path[-1] not in (excluded_models or [])
+        and k.path[-1] not in ("raw_customers", "raw_payments", "raw_orders")
     }
     assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
         str(column_lineage_by_asset_key)
