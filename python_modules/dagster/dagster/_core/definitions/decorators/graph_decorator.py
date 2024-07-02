@@ -97,7 +97,7 @@ class _Graph:
             positional_inputs=positional_inputs,
             tags=self.tags,
             input_assets=input_assets,
-            underlying_fn=fn,
+            composition_fn=fn,
         )
         update_wrapper(graph_def, fn)
         return graph_def
