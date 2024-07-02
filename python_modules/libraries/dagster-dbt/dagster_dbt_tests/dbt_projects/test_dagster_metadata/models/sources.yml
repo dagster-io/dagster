@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: jaffle_shop
-    schema: main
+    schema: "{% if target.name == 'dev' %}main{% else %}{{ target.schema }}{% endif %}"
     tables:
       - name: raw_customers
         meta:
