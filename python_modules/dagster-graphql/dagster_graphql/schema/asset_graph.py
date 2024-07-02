@@ -34,6 +34,7 @@ from dagster._core.remote_representation.external_data import (
 from dagster._core.snap.node import GraphDefSnap, OpDefSnap
 from dagster._core.storage.batch_asset_record_loader import BatchAssetRecordLoader
 from dagster._core.utils import is_valid_email
+from dagster._core.workspace.context import WorkspaceRequestContext
 from dagster._core.workspace.permissions import Permissions
 from dagster._utils.caching_instance_queryer import CachingInstanceQueryer
 
@@ -549,6 +550,23 @@ class GrapheneAssetNode(graphene.ObjectType):
     def is_source_asset(self) -> bool:
         return self._external_asset_node.is_source
 
+    def _get_data_time_resolver(self, context: WorkspaceRequestContext) -> CachingDataTimeResolver:
+        # scheme depends on @cached_property of asset_graph
+        asset_graph = self._external_repository.asset_graph
+
+        data_time_resolver = context.get_cached_object(CachingDataTimeResolver, key=asset_graph)
+        if data_time_resolver is None:
+            instance_queryer = CachingInstanceQueryer(
+                instance=context.instance,
+                asset_graph=asset_graph,
+            )
+            data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
+            context.cache_object(
+                data_time_resolver,
+                key=asset_graph,
+            )
+        return data_time_resolver
+
     def resolve_hasMaterializePermission(
         self,
         graphene_info: ResolveInfo,
@@ -569,12 +587,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         asset_graph = self._external_repository.asset_graph
         asset_key = self._external_asset_node.asset_key
 
-        # in the future, we can share this same CachingInstanceQueryer across all
-        # GrapheneMaterializationEvent which share an external repository for improved performance
-        instance_queryer = CachingInstanceQueryer(
-            instance=graphene_info.context.instance, asset_graph=asset_graph
-        )
-        data_time_resolver = CachingDataTimeResolver(instance_queryer=instance_queryer)
         event_records = instance.fetch_materializations(
             AssetRecordsFilter(
                 asset_key=asset_key,
@@ -590,6 +602,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         if not asset_graph.has_materializable_parents(asset_key):
             return []
 
+        data_time_resolver = self._get_data_time_resolver(graphene_info.context)
         used_data_times = data_time_resolver.get_data_time_by_key_for_record(
             record=next(iter(event_records)),
         )
@@ -896,20 +909,13 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_freshnessInfo(
         self, graphene_info: ResolveInfo
     ) -> Optional[GrapheneAssetFreshnessInfo]:
-        if self._external_asset_node.freshness_policy:
-            asset_graph = self._external_repository.asset_graph
-            return get_freshness_info(
-                asset_key=self._external_asset_node.asset_key,
-                # in the future, we can share this same CachingInstanceQueryer across all
-                # GrapheneAssetNodes which share an external repository for improved performance
-                data_time_resolver=CachingDataTimeResolver(
-                    instance_queryer=CachingInstanceQueryer(
-                        instance=graphene_info.context.instance,
-                        asset_graph=asset_graph,
-                    ),
-                ),
-            )
-        return None
+        if not self._external_asset_node.freshness_policy:
+            return None
+
+        return get_freshness_info(
+            asset_key=self._external_asset_node.asset_key,
+            data_time_resolver=self._get_data_time_resolver(graphene_info.context),
+        )
 
     def resolve_freshnessPolicy(
         self, _graphene_info: ResolveInfo

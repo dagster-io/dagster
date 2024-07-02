@@ -345,6 +345,8 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         self._asset_record_loader = BatchAssetRecordLoader(self._instance, {})
         self._loaders = {}
 
+        self._cache = {}
+
     @property
     def asset_record_loader(self) -> BatchAssetRecordLoader:
         return self._asset_record_loader
@@ -411,6 +413,14 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     @property
     def loaders(self) -> Dict[Type, DataLoader]:
         return self._loaders
+
+    def get_cached_object(self, ttype: Type[T], *, key: Any) -> Optional[T]:
+        cache_key = (ttype.__name__, key)
+        return self._cache[cache_key]
+
+    def cache_object(self, obj: Any, *, key: Any) -> None:
+        cache_key = (type(obj).__name__, key)
+        self._cache[cache_key] = obj
 
 
 class IWorkspaceProcessContext(ABC):

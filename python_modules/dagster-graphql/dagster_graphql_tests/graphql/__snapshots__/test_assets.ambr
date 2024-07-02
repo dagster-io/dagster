@@ -510,7 +510,7 @@
         'id': 'test.test_repo.["bar"]',
       }),
       dict({
-        'freshnessInfo': None,
+        '': None,
         'freshnessPolicy': None,
         'id': 'test.test_repo.["baz"]',
       }),
