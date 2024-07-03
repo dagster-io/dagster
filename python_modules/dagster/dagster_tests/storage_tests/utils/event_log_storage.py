@@ -6169,7 +6169,7 @@ class TestEventLogStorage:
             )
 
             # materialize without data version
-            _synthesize_and_store_events(storage, lambda: materialize_bar(), run_id_3)
+            _synthesize_and_store_events(storage, lambda: materialize_none(), run_id_3)
             after_three = _get_last_storage_id(storage)
             assert storage.get_updated_data_version_partitions(
                 asset_key, partitions=partitions, since_storage_id=after_one

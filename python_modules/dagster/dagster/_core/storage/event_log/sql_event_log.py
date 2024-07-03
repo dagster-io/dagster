@@ -2993,70 +2993,63 @@ class SqlEventLogStorage(EventLogStorage):
     def get_updated_data_version_partitions(
         self, asset_key: AssetKey, partitions: Iterable[str], since_storage_id: int
     ) -> Set[str]:
-        latest_data_version_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key=asset_key,
-            event_types=[
-                DagsterEventType.ASSET_MATERIALIZATION,
-                DagsterEventType.ASSET_OBSERVATION,
-            ],
-            asset_partitions=list(partitions),
-            after_cursor=since_storage_id,
-        )
-        latest_data_version_by_partition_query = (
-            db_select(
-                [
-                    latest_data_version_event_ids_subquery.c.partition,
-                    AssetEventTagsTable.c.value,
-                ]
+        def _get_partition_data_versions(**kwargs):
+            tags_by_partition = self.get_latest_tags_by_partition(
+                **kwargs,
+                tag_keys=[DATA_VERSION_TAG],
             )
-            .select_from(
-                latest_data_version_event_ids_subquery.join(
-                    AssetEventTagsTable,
-                    AssetEventTagsTable.c.event_id == latest_data_version_event_ids_subquery.c.id,
-                )
-            )
-            .where(AssetEventTagsTable.c.key == DATA_VERSION_TAG)
-        )
-        penultimate_data_version_event_ids_subquery = self._latest_event_ids_by_partition_subquery(
-            asset_key=asset_key,
-            event_types=[
-                DagsterEventType.ASSET_MATERIALIZATION,
-                DagsterEventType.ASSET_OBSERVATION,
-            ],
-            asset_partitions=list(partitions),
-            before_cursor=since_storage_id + 1,
-        )
-        penultimate_data_version_by_partition_query = (
-            db_select(
-                [
-                    penultimate_data_version_event_ids_subquery.c.partition,
-                    AssetEventTagsTable.c.value,
-                ]
-            )
-            .select_from(
-                penultimate_data_version_event_ids_subquery.join(
-                    AssetEventTagsTable,
-                    AssetEventTagsTable.c.event_id
-                    == penultimate_data_version_event_ids_subquery.c.id,
-                )
-            )
-            .where(AssetEventTagsTable.c.key == DATA_VERSION_TAG)
-        )
-        with self.index_connection() as conn:
-            latest_rows = conn.execute(latest_data_version_by_partition_query).fetchall()
-            penultimate_rows = conn.execute(penultimate_data_version_by_partition_query).fetchall()
+            return {
+                partition: tags.get(DATA_VERSION_TAG)
+                for partition, tags in tags_by_partition.items()
+            }
 
-        latest_data_version_by_partition: Dict[str, str] = {
-            cast(str, row[0]): cast(str, row[1]) for row in latest_rows
-        }
-        penultimate_data_version_by_partition: Dict[str, str] = {
-            cast(str, row[0]): cast(str, row[1]) for row in penultimate_rows
-        }
-        return {
-            partition
-            for partition, version in latest_data_version_by_partition.items()
-            if version != penultimate_data_version_by_partition.get(partition)
-        }
+        previous_observation_data_versions = _get_partition_data_versions(
+            asset_key=asset_key,
+            event_type=DagsterEventType.ASSET_OBSERVATION,
+            before_cursor=since_storage_id + 1,
+            asset_partitions=list(partitions),
+        )
+        previous_materialization_data_versions = _get_partition_data_versions(
+            asset_key=asset_key,
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            before_cursor=since_storage_id + 1,
+            asset_partitions=list(partitions),
+        )
+        observation_data_versions = _get_partition_data_versions(
+            asset_key=asset_key,
+            event_type=DagsterEventType.ASSET_OBSERVATION,
+            after_cursor=since_storage_id,
+            asset_partitions=list(partitions),
+        )
+        materialization_data_versions = _get_partition_data_versions(
+            asset_key=asset_key,
+            event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            after_cursor=since_storage_id,
+            asset_partitions=list(partitions),
+        )
+
+        updated_partitions = set()
+        for partition, data_version in materialization_data_versions.items():
+            prev_mat_dv = previous_materialization_data_versions.get(partition)
+            prev_obs_dv = previous_observation_data_versions.get(partition)
+            if prev_mat_dv is None and prev_obs_dv is None:
+                updated_partitions.add(partition)
+            elif prev_mat_dv and data_version != prev_mat_dv:
+                updated_partitions.add(partition)
+            elif prev_obs_dv and data_version != prev_obs_dv:
+                updated_partitions.add(partition)
+
+        for partition, data_version in observation_data_versions.items():
+            prev_mat_dv = previous_materialization_data_versions.get(partition)
+            prev_obs_dv = previous_observation_data_versions.get(partition)
+            if prev_mat_dv is None and prev_obs_dv is None:
+                updated_partitions.add(partition)
+            elif prev_mat_dv and data_version != prev_mat_dv:
+                updated_partitions.add(partition)
+            elif prev_obs_dv and data_version != prev_obs_dv:
+                updated_partitions.add(partition)
+
+        return updated_partitions
 
 
 def _get_from_row(row: SqlAlchemyRow, column: str) -> object:
