@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Callable, Optional, Sequence
 
 import dagster._check as check
 from dagster import AssetKey
+from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.scheduler.instigation import AutoMaterializeAssetEvaluationRecord
 
 from dagster_graphql.implementation.fetch_assets import get_asset_nodes_by_asset_key
@@ -37,27 +38,32 @@ def _get_migration_error(
     return None
 
 
-def _get_graphene_records_from_evaluations(
+def _get_partitions_defs_fn(
     graphene_info: "ResolveInfo",
-    evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord],
-) -> GrapheneAssetConditionEvaluationRecords:
-    asset_keys = {record.asset_key for record in evaluation_records}
-
-    partitions_defs = {}
-
+) -> Callable[[AssetKey], Optional[PartitionsDefinition]]:
+    """Returns a function which will provide the PartitionsDefinition of a given AssetKey."""
     nodes = get_asset_nodes_by_asset_key(graphene_info)
-    for asset_key in asset_keys:
+
+    def inner(asset_key: AssetKey) -> Optional[PartitionsDefinition]:
         asset_node = nodes.get(asset_key)
-        partitions_defs[asset_key] = (
+        return (
             asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
             if asset_node and asset_node.external_asset_node.partitions_def_data
             else None
         )
 
+    return inner
+
+
+def _get_graphene_records_from_evaluations(
+    graphene_info: "ResolveInfo",
+    evaluation_records: Sequence[AutoMaterializeAssetEvaluationRecord],
+) -> GrapheneAssetConditionEvaluationRecords:
+    partitions_def_fn = _get_partitions_defs_fn(graphene_info)
     return GrapheneAssetConditionEvaluationRecords(
         records=[
             GrapheneAssetConditionEvaluationRecord(
-                evaluation, partitions_defs[evaluation.asset_key]
+                evaluation, partitions_def_fn(evaluation.asset_key)
             )
             for evaluation in evaluation_records
         ]
@@ -79,15 +85,9 @@ def fetch_asset_condition_evaluation_record_for_partition(
             )
         )
     )
-    asset_node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key)
-    partitions_def = (
-        asset_node.external_asset_node.partitions_def_data.get_partitions_definition()
-        if asset_node and asset_node.external_asset_node.partitions_def_data
-        else None
-    )
+    partitions_def_fn = _get_partitions_defs_fn(graphene_info)
     return GrapheneAssetConditionEvaluation(
-        record.get_evaluation_with_run_ids(partitions_def).evaluation,
-        partitions_def,
+        record.get_evaluation_with_run_ids(partitions_def_fn(asset_key)).evaluation,
         partition_key,
     )
 

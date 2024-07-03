@@ -145,12 +145,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
     class Meta:
         name = "PartitionedAssetConditionEvaluationNode"
 
-    def __init__(
-        self,
-        evaluation: AssetConditionEvaluation,
-        partitions_def: Optional[PartitionsDefinition],
-    ):
-        self._partitions_def = partitions_def
+    def __init__(self, evaluation: AssetConditionEvaluation):
         self._true_subset = evaluation.true_subset
 
         super().__init__(
@@ -238,35 +233,33 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
     class Meta:
         name = "AssetConditionEvaluation"
 
-    def __init__(
-        self,
-        evaluation: AssetConditionEvaluation,
-        partitions_def: Optional[PartitionsDefinition],
-        partition_key: Optional[str] = None,
-    ):
+    def __init__(self, evaluation: AssetConditionEvaluation, partition_key: Optional[str] = None):
         # flatten the evaluation tree into a list of nodes
         def _flatten(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
             return list(itertools.chain([e], *(_flatten(ce) for ce in e.child_evaluations)))
 
         all_nodes = _flatten(evaluation)
 
-        if evaluation.true_subset.is_partitioned:
-            if partition_key is None:
-                evaluationNodes = [
-                    GraphenePartitionedAssetConditionEvaluationNode(evaluation, partitions_def)
-                    for evaluation in all_nodes
-                ]
-            else:
-                evaluationNodes = [
-                    GrapheneSpecificPartitionAssetConditionEvaluationNode(evaluation, partition_key)
-                    for evaluation in all_nodes
-                ]
+        if partition_key is None:
+            evaluationNodes = []
+            for evaluation in all_nodes:
+                if evaluation.true_subset.is_partitioned:
+                    evaluationNodes.append(
+                        GraphenePartitionedAssetConditionEvaluationNode(evaluation)
+                    )
+                else:
+                    evaluationNodes.append(
+                        GrapheneUnpartitionedAssetConditionEvaluationNode(evaluation)
+                    )
         else:
             evaluationNodes = [
-                GrapheneUnpartitionedAssetConditionEvaluationNode(evaluation)
+                GrapheneSpecificPartitionAssetConditionEvaluationNode(evaluation, partition_key)
                 for evaluation in all_nodes
             ]
 
+        print(len(evaluationNodes), {type(e) for e in evaluationNodes})
+        for e in evaluationNodes:
+            print(e.uniqueId, e.childUniqueIds)
         super().__init__(
             rootUniqueId=evaluation.condition_snapshot.unique_id,
             evaluationNodes=evaluationNodes,
@@ -306,9 +299,7 @@ class GrapheneAssetConditionEvaluationRecord(graphene.ObjectType):
             numRequested=evaluation_with_run_ids.evaluation.true_subset.size,
             startTimestamp=evaluation_with_run_ids.evaluation.start_timestamp,
             endTimestamp=evaluation_with_run_ids.evaluation.end_timestamp,
-            evaluation=GrapheneAssetConditionEvaluation(
-                evaluation_with_run_ids.evaluation, partitions_def
-            ),
+            evaluation=GrapheneAssetConditionEvaluation(evaluation_with_run_ids.evaluation),
         )
 
 
