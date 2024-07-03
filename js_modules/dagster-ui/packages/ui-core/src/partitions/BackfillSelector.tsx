@@ -21,6 +21,7 @@ import {
   DaemonNotRunningAlert,
   USING_DEFAULT_LAUNCHER_ALERT_INSTANCE_FRAGMENT,
   UsingDefaultLauncherAlert,
+  isBackfillDaemonHealthy,
   showBackfillErrorToast,
   showBackfillSuccessToast,
 } from './BackfillMessaging';
@@ -312,7 +313,7 @@ export const BackfillPartitionSelector = ({
           </Section>
 
           <Box flex={{direction: 'column', gap: 16}}>
-            <DaemonNotRunningAlert instance={instance} />
+            {!isBackfillDaemonHealthy(instance) ? <DaemonNotRunningAlert /> : null}
 
             <UsingDefaultLauncherAlert instance={instance} />
           </Box>
