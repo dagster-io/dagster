@@ -281,7 +281,7 @@ def dlt_example_assets(context: AssetExecutionContext, dlt: DagsterDltResource):
     yield from dlt.run(context=context)
 ```
 
-In this example we customized the translator to change how the dlt assets name is defined, and we also hard-coded the asset dependency that is upstream of our assets to provide a fan-out model from a single dependency to our dlt assets.
+In this example, we customized the translator to change how the dlt assets' names are defined. We also hard-coded the asset dependency upstream of our assets to provide a fan-out model from a single dependency to our dlt assets.
 
 ### Assigning metadata to upstream source assets
 
