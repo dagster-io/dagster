@@ -50,6 +50,7 @@ export const List = () => {
       id: string;
       status: RunStatus;
       startTime: number;
+      creationTime: number;
       endTime: number;
     }[],
   ): RunTimeFragment[] =>
@@ -57,7 +58,6 @@ export const List = () => {
 
   const fakeRepo = 'a_repo.py';
   const fakeId = useCallback(() => faker.datatype.uuid(), []);
-
   return (
     <StorybookProvider apolloProps={{mocks}}>
       <Box flex={{direction: 'column', gap: 8}}>
@@ -87,6 +87,7 @@ export const List = () => {
                   id,
                   runId: id,
                   status: RunStatus.STARTING,
+                  creationTime: Date.now() - (idx + 1) * 60 * 60 * 1000,
                   startTime: Date.now() - (idx + 1) * 60 * 60 * 1000,
                   endTime: Date.now() - idx * 60 * 60 * 1000,
                   updateTime: null,

@@ -1415,6 +1415,7 @@ type Run implements PipelineRun {
   assetCheckSelection: [AssetCheckhandle!]
   resolvedOpSelection: [String!]
   assetMaterializations: [MaterializationEvent!]!
+  creationTime: Float!
   startTime: Float
   endTime: Float
   updateTime: Float

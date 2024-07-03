@@ -29,6 +29,7 @@ export type RunGroupPanelQuery = {
           status: Types.RunStatus;
           stepKeysToExecute: Array<string> | null;
           pipelineName: string;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -45,6 +46,7 @@ export type RunGroupPanelRunFragment = {
   status: Types.RunStatus;
   stepKeysToExecute: Array<string> | null;
   pipelineName: string;
+  creationTime: number;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;

@@ -364,6 +364,7 @@ class GrapheneRun(graphene.ObjectType):
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
     )
+    creationTime = graphene.NonNull(graphene.Float)
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
@@ -584,6 +585,10 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_updateTime(self, graphene_info: ResolveInfo):
         run_record = self._get_run_record(graphene_info.context.instance)
         return run_record.update_timestamp.timestamp()
+
+    def resolve_creationTime(self, graphene_info: ResolveInfo):
+        run_record = self._get_run_record(graphene_info.context.instance)
+        return datetime_as_float(run_record.create_timestamp)
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance

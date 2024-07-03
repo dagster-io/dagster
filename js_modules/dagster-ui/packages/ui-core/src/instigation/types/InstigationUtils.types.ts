@@ -24,6 +24,7 @@ export type InstigationStateFragment = {
     __typename: 'Run';
     id: string;
     status: Types.RunStatus;
+    creationTime: number;
     startTime: number | null;
     endTime: number | null;
     updateTime: number | null;
