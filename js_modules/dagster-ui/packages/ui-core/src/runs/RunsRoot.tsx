@@ -1,4 +1,4 @@
-import {ApolloError, gql} from '@apollo/client';
+import {ApolloError} from '@apollo/client';
 import {
   Box,
   ButtonLink,
@@ -15,7 +15,7 @@ import {useCallback, useLayoutEffect, useMemo} from 'react';
 import {QueuedRunsBanners} from './QueuedRunsBanners';
 import {useRunListTabs, useSelectedRunsTab} from './RunListTabs';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
-import {RUN_TABLE_RUN_FRAGMENT, RunTable} from './RunTable';
+import {RunTable} from './RunTable';
 import {RunsQueryRefetchContext} from './RunUtils';
 import {
   RunFilterToken,
@@ -25,9 +25,7 @@ import {
   useRunsFilterInput,
 } from './RunsFilterInput';
 import {TerminateAllRunsButton} from './TerminateAllRunsButton';
-import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRoot.types';
-import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
+import {usePaginatedRunsTableRuns} from './usePaginatedRunsTableRuns';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -35,7 +33,6 @@ import {
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
 import {useTrackPageView} from '../app/analytics';
-import {RunsFilter} from '../graphql/types';
 import {usePortalSlot} from '../hooks/usePortalSlot';
 import {usePageLoadTrace} from '../performance';
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
@@ -43,32 +40,6 @@ import {Loading} from '../ui/Loading';
 import {StickyTableContainer} from '../ui/StickyTableContainer';
 
 const PAGE_SIZE = 25;
-
-export function usePaginatedRunsTableRuns(filter: RunsFilter) {
-  const {queryResult, paginationProps} = useCursorPaginatedQuery<
-    RunsRootQuery,
-    RunsRootQueryVariables
-  >({
-    nextCursorForResult: (runs) => {
-      if (runs.pipelineRunsOrError.__typename !== 'Runs') {
-        return undefined;
-      }
-      return runs.pipelineRunsOrError.results[PAGE_SIZE - 1]?.id;
-    },
-    getResultArray: (data) => {
-      if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
-        return [];
-      }
-      return data.pipelineRunsOrError.results;
-    },
-    variables: {
-      filter,
-    },
-    query: RUNS_ROOT_QUERY,
-    pageSize: PAGE_SIZE,
-  });
-  return {queryResult, paginationProps};
-}
 
 export const RunsRoot = () => {
   useTrackPageView();
@@ -280,23 +251,3 @@ const RunsRootPerformanceEmitter = ({trace}: {trace: ReturnType<typeof usePageLo
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
 export default RunsRoot;
-
-export const RUNS_ROOT_QUERY = gql`
-  query RunsRootQuery($limit: Int, $cursor: String, $filter: RunsFilter!) {
-    pipelineRunsOrError(limit: $limit, cursor: $cursor, filter: $filter) {
-      ... on Runs {
-        results {
-          id
-          ...RunTableRunFragment
-        }
-      }
-      ... on InvalidPipelineRunsFilterError {
-        message
-      }
-      ...PythonErrorFragment
-    }
-  }
-
-  ${RUN_TABLE_RUN_FRAGMENT}
-  ${PYTHON_ERROR_FRAGMENT}
-`;

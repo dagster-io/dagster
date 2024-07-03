@@ -22,8 +22,8 @@ import {useQueryPersistedState} from '../../hooks/useQueryPersistedState';
 import {useTimelineRange} from '../../overview/OverviewTimelineRoot';
 import {RunTable} from '../../runs/RunTable';
 import {DagsterTag} from '../../runs/RunTag';
-import {usePaginatedRunsTableRuns} from '../../runs/RunsRoot';
 import {HourWindow} from '../../runs/useHourWindow';
+import {usePaginatedRunsTableRuns} from '../../runs/usePaginatedRunsTableRuns';
 import {useRunsForTimeline} from '../../runs/useRunsForTimeline';
 import {StickyTableContainer} from '../../ui/StickyTableContainer';
 

@@ -1,26 +1,17 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  Checkbox,
-  Colors,
-  Icon,
-  NonIdealState,
-  ProductTour,
-  ProductTourPosition,
-  Table,
-} from '@dagster-io/ui-components';
+import {Box, Checkbox, Table} from '@dagster-io/ui-components';
 import * as React from 'react';
 
 import {RunBulkActionsMenu} from './RunActionsMenu';
 import {RunRow} from './RunRow';
+import {RunTableActionBar} from './RunTableActionBar';
+import {RunTableEmptyState} from './RunTableEmptyState';
+import {RunTableTargetHeader} from './RunTableTargetHeader';
 import {RUN_TIME_FRAGMENT} from './RunUtils';
 import {RunFilterToken} from './RunsFilterInput';
-import ShowAndHideTagsMP4 from './ShowAndHideRunTags.mp4';
 import {RunTableRunFragment} from './types/RunTable.types';
 import {RunsFilter} from '../graphql/types';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
-import {useStateWithStorage} from '../hooks/useStateWithStorage';
-import {AnchorButton} from '../ui/AnchorButton';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
@@ -64,38 +55,7 @@ export const RunTable = (props: RunTableProps) => {
         return <>{emptyState()}</>;
       }
 
-      return (
-        <div>
-          <Box margin={{vertical: 32}}>
-            {anyFilter ? (
-              <NonIdealState
-                icon="run"
-                title="No matching runs"
-                description="No runs were found for this filter."
-              />
-            ) : (
-              <NonIdealState
-                icon="run"
-                title="No runs found"
-                description={
-                  <Box flex={{direction: 'column', gap: 12}}>
-                    <div>You have not launched any runs yet.</div>
-                    <Box flex={{direction: 'row', gap: 12, alignItems: 'center'}}>
-                      <AnchorButton icon={<Icon name="add_circle" />} to="/overview/jobs">
-                        Launch a run
-                      </AnchorButton>
-                      <span>or</span>
-                      <AnchorButton icon={<Icon name="materialization" />} to="/asset-groups">
-                        Materialize an asset
-                      </AnchorButton>
-                    </Box>
-                  </Box>
-                }
-              />
-            )}
-          </Box>
-        </div>
-      );
+      return <RunTableEmptyState anyFilter={anyFilter} />;
     } else {
       return (
         <Table>
@@ -117,7 +77,7 @@ export const RunTable = (props: RunTableProps) => {
               <th style={{width: 90}}>Run ID</th>
               <th style={{width: 180}}>Created date</th>
               <th>
-                <TargetHeader />
+                <RunTableTargetHeader />
               </th>
               {hideCreatedBy ? null : <th style={{width: 160}}>Launched by</th>}
               <th style={{width: 120}}>Status</th>
@@ -152,7 +112,7 @@ export const RunTable = (props: RunTableProps) => {
 
   return (
     <>
-      <ActionBar
+      <RunTableActionBar
         sticky={actionBarSticky}
         top={
           <Box
@@ -225,70 +185,3 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
   ${RUN_TIME_FRAGMENT}
   ${RUN_TAGS_FRAGMENT}
 `;
-
-function ActionBar({
-  top,
-  bottom,
-  sticky,
-}: {
-  top: React.ReactNode;
-  bottom?: React.ReactNode;
-  sticky?: boolean;
-}) {
-  return (
-    <Box
-      flex={{direction: 'column'}}
-      padding={{vertical: 12}}
-      style={
-        sticky
-          ? {position: 'sticky', top: 0, background: Colors.backgroundDefault(), zIndex: 2}
-          : {}
-      }
-    >
-      <Box flex={{alignItems: 'center', gap: 12}} padding={{left: 24, right: 12}}>
-        {top}
-      </Box>
-      {bottom ? (
-        <Box
-          margin={{top: 12}}
-          padding={{left: 24, right: 12, top: 8}}
-          border="top"
-          flex={{gap: 8, wrap: 'wrap'}}
-        >
-          {bottom}
-        </Box>
-      ) : null}
-    </Box>
-  );
-}
-
-function TargetHeader() {
-  const [hideTabPinningNux, setHideTabPinningNux] = useStateWithStorage<any>(
-    'RunTableTabPinningNux',
-    (value) => value,
-  );
-  if (hideTabPinningNux) {
-    return <div>Target</div>;
-  }
-  return (
-    <ProductTour
-      title="Hide and show run tags"
-      description={
-        <>
-          You can show tags that you prefer quick access to and hide tags you don&apos;t by hovering
-          over the tag and selecting the show/hide tag option.
-        </>
-      }
-      position={ProductTourPosition.BOTTOM_RIGHT}
-      video={ShowAndHideTagsMP4}
-      width="616px"
-      actions={{
-        dismiss: () => {
-          setHideTabPinningNux('1');
-        },
-      }}
-    >
-      <div>Target</div>
-    </ProductTour>
-  );
-}
