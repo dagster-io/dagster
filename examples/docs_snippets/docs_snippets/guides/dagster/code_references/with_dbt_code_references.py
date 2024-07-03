@@ -27,5 +27,4 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
-# optionally, add references to the Python source with with_source_code_references
 defs = Definitions(assets=with_source_code_references([my_dbt_assets]))

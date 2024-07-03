@@ -522,7 +522,7 @@ Dagster also supports fetching additional metadata at dbt execution time to atta
 
 #### Attaching code reference metadata
 
-Dagster's dbt integration can automatically attach [Code reference](/guides/dagster/code-references) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />:
+Dagster's dbt integration can automatically attach [code reference](/guides/dagster/code-references) metadata to the SQL files backing your dbt assets. To enable this feature, set the `enable_code_references` parameter to `True` in the <PyObject module="dagster_dbt" object="DagsterDbtTranslatorSettings" /> passed to your <PyObject module="dagster_dbt" object="DagsterDbtTranslator" />:
 
 ```python file=/guides/dagster/code_references/with_dbt_code_references.py
 from pathlib import Path
@@ -535,8 +535,7 @@ from dagster_dbt import (
     dbt_assets,
 )
 
-from dagster import AssetExecutionContext, Definitions
-from dagster._core.definitions.metadata import with_source_code_references
+from dagster import AssetExecutionContext, Definitions, with_source_code_references
 
 my_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -555,7 +554,6 @@ def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
     yield from dbt.cli(["build"], context=context).stream()
 
 
-# optionally, add references to the Python source with with_source_code_references
 defs = Definitions(assets=with_source_code_references([my_dbt_assets]))
 ```
 
