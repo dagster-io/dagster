@@ -1,4 +1,4 @@
-from dagster import AssetKey, SourceAsset, asset
+from dagster import AssetKey, SourceAsset, asset, graph_asset, op
 from dagster._core.definitions.metadata import (
     CodeReferencesMetadataSet,
     CodeReferencesMetadataValue,
@@ -24,3 +24,18 @@ elvis_presley = SourceAsset(key=AssetKey("elvis_presley"))
 )
 def chuck_berry(elvis_presley, miles_davis):
     pass
+
+
+@op
+def one():
+    return 1
+
+
+@op
+def multiply_by_two(input_num):
+    return input_num * 2
+
+
+@graph_asset
+def graph_backed_asset():
+    return multiply_by_two(one())

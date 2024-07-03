@@ -99,12 +99,21 @@ def _with_code_source_single_definition(
     metadata_by_key = dict(assets_def.metadata_by_key) or {}
 
     from dagster._core.definitions.decorators.op_decorator import DecoratedOpFunction
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.op_definition import OpDefinition
 
-    base_fn = (
-        assets_def.op.compute_fn.decorated_fn
-        if isinstance(assets_def.op.compute_fn, DecoratedOpFunction)
-        else assets_def.op.compute_fn
-    )
+    if isinstance(assets_def.node_def, OpDefinition):
+        base_fn = (
+            assets_def.node_def.compute_fn.decorated_fn
+            if isinstance(assets_def.node_def.compute_fn, DecoratedOpFunction)
+            else assets_def.node_def.compute_fn
+        )
+    elif isinstance(assets_def.node_def, GraphDefinition):
+        # todo - properly handle graph-backed asset code source
+        return assets_def
+    else:
+        return assets_def
+
     source_path = local_source_path_from_fn(base_fn)
 
     if source_path:
