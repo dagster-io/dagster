@@ -669,7 +669,8 @@ def _evaluate_sensor(
         for run_request in sensor_runtime_data.run_requests:
             if isinstance(run_request, BackfillDaemonRequest):
                 _handle_backfill_run_request(run_request, instance, context)
-            else:
+            else:  # RunRequest
+                # handle RunRequests at once in _handle_run_requests so just collect them here
                 single_runs_to_handle.append(run_request)
         if single_runs_to_handle:
             yield from _handle_run_requests(

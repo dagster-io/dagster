@@ -895,7 +895,8 @@ class SensorDefinition(IHasInternalInit):
                         f" {unexpected_asset_keys}"
                     )
                 resolved_run_requests.append(run_request)
-            else:
+            else:  # RunRequest
+                # we resolve all of the RunRequests at once in resolve_run_requests, so just collect them here
                 run_requests_to_resolve.append(run_request)
 
         resolved_run_requests.extend(
@@ -1084,7 +1085,9 @@ class SensorExecutionData(
             "asset_events",
             (AssetMaterialization, AssetObservation, AssetCheckEvaluation),
         )
-
+        check.invariant(
+            not (run_requests and skip_message), "Found both skip data and run request data"
+        )
         return super(SensorExecutionData, cls).__new__(
             cls,
             run_requests=run_requests,
