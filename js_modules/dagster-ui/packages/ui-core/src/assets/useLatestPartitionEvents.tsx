@@ -30,21 +30,21 @@ export function useLatestPartitionEvents(
   const {data, refetch} = queryResult;
 
   const refreshHint = usePredicateChangeSignal(
-    (prevHints, [lastMaterializationTimestamp, assetNodeLoadTimestamp], signalChanged) => {
+    (prevHints, [lastMaterializationTimestamp, assetNodeLoadTimestamp]) => {
       const [prevLastMaterializationTimestamp, prevAssetNodeLoadTimestamp] =
         prevHints || ([undefined, undefined] as const);
 
-      if (
+      return !!(
         /**
          * Trigger a refetch only if a previous a timestamp hint existed and has changed.
          * This avoids redundant queries since these timestamps are fetched in parallel.
          */
-        (prevLastMaterializationTimestamp &&
-          lastMaterializationTimestamp !== prevLastMaterializationTimestamp) ||
-        (prevAssetNodeLoadTimestamp && prevAssetNodeLoadTimestamp !== assetNodeLoadTimestamp)
-      ) {
-        signalChanged();
-      }
+        (
+          (prevLastMaterializationTimestamp &&
+            lastMaterializationTimestamp !== prevLastMaterializationTimestamp) ||
+          (prevAssetNodeLoadTimestamp && prevAssetNodeLoadTimestamp !== assetNodeLoadTimestamp)
+        )
+      );
     },
     [lastMaterializationTimestamp, assetNodeLoadTimestamp],
   );

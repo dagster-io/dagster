@@ -66,13 +66,17 @@ export class LiveDataThread<T> {
     if (this.activeFetches === this.parallelFetches) {
       return;
     }
-    const fetch = () => {
-      this._batchedQueryKeys();
-    };
-    setTimeout(fetch, BATCHING_INTERVAL);
-    if (this.intervals.length !== this.parallelFetches) {
-      this.intervals.push(setInterval(fetch, 5000));
+    setTimeout(this._batchedQueryKeys, BATCHING_INTERVAL);
+    if (this.intervals.length === this.parallelFetches) {
+      return;
     }
+    console.log('pushed interval');
+    this.intervals.push(
+      setInterval(() => {
+        console.log('interval');
+        this._batchedQueryKeys();
+      }, 5000),
+    );
   }
 
   public stopFetchLoop() {
@@ -82,14 +86,17 @@ export class LiveDataThread<T> {
     this.intervals = [];
   }
 
-  private async _batchedQueryKeys() {
+  private _batchedQueryKeys = async () => {
+    console.log(this.activeFetches, this.parallelFetches);
     if (this.activeFetches >= this.parallelFetches) {
+      console.log('return');
       return;
     }
     const keys = this.manager.determineKeysToFetch(this.getObservedKeys(), this.batchSize);
     if (!keys.length) {
       return;
     }
+    console.log('query', keys);
     this.activeFetches += 1;
     this.manager._markKeysRequested(keys);
 
@@ -122,5 +129,5 @@ export class LiveDataThread<T> {
         Math.min(this.pollRate, 5000),
       );
     }
-  }
+  };
 }

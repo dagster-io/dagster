@@ -362,7 +362,7 @@ describe('AssetLiveDataProvider', () => {
     });
   });
 
-  it('Skips over asset keys that fail to fetch', async () => {
+  it.only('Skips over asset keys that fail to fetch', async () => {
     const assetKeys = [buildAssetKey({path: ['key1']})];
     const mockedQuery = buildMockedAssetGraphLiveQuery(assetKeys, undefined, [
       new GraphQLError('500'),

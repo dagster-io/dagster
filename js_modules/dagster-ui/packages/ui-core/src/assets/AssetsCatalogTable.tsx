@@ -39,7 +39,11 @@ const groupTableCache = new Map();
 export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
 const DEFAULT_BATCH_LIMIT = 10000;
 
-export function useCachedAssets({onAssets}: {onAssets: (data: AssetTableFragment[]) => void}) {
+export function useCachedAssets({
+  onAssetsLoaded,
+}: {
+  onAssetsLoaded: (data: AssetTableFragment[]) => void;
+}) {
   const {localCacheIdPrefix} = useContext(AppContext);
   const cacheManager = useMemo(
     () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
@@ -49,10 +53,10 @@ export function useCachedAssets({onAssets}: {onAssets: (data: AssetTableFragment
   useLayoutEffect(() => {
     cacheManager.get(ASSET_CATALOG_TABLE_QUERY_VERSION).then((data) => {
       if (data) {
-        onAssets(data);
+        onAssetsLoaded(data);
       }
     });
-  }, [cacheManager, onAssets]);
+  }, [cacheManager, onAssetsLoaded]);
 
   return {cacheManager};
 }
@@ -70,7 +74,7 @@ export function useAllAssets({
   const assetsRef = useUpdatingRef(assets);
 
   const {cacheManager} = useCachedAssets({
-    onAssets: useCallback(
+    onAssetsLoaded: useCallback(
       (data) => {
         if (!assetsRef.current) {
           setErrorAndAssets({

@@ -100,7 +100,7 @@ export const AssetNodeOverview = ({
 }) => {
   const repoAddress = assetNode
     ? buildRepoAddress(assetNode.repository.name, assetNode.repository.location.name)
-    : buildRepoAddress('', '');
+    : null;
   const location = useRepositoryLocationForAddress(repoAddress);
 
   const {assetType, assetMetadata} = metadataForAssetNode(assetNode);
@@ -114,11 +114,12 @@ export const AssetNodeOverview = ({
 
   const [cachedAsset, setCachedAsset] = useState<AssetTableFragment | undefined>();
   useCachedAssets({
-    onAssets: useCallback(
+    onAssetsLoaded: useCallback(
       (data) => {
         for (const asset of data) {
           if (JSON.stringify(asset.key.path) === JSON.stringify(assetKey.path)) {
             setCachedAsset(asset);
+            return;
           }
         }
       },
@@ -279,7 +280,7 @@ export const AssetNodeOverview = ({
     <Box flex={{direction: 'column', gap: 12}}>
       <AttributeAndValue label="Group">
         <Tag icon="asset_group">
-          <Link to={workspacePathFromAddress(repoAddress, `/asset-groups/${assetNode.groupName}`)}>
+          <Link to={workspacePathFromAddress(repoAddress!, `/asset-groups/${assetNode.groupName}`)}>
             {assetNode.groupName}
           </Link>
         </Tag>
@@ -289,9 +290,9 @@ export const AssetNodeOverview = ({
         <Box flex={{direction: 'column'}}>
           <AssetDefinedInMultipleReposNotice
             assetKey={assetNode.assetKey}
-            loadedFromRepo={repoAddress}
+            loadedFromRepo={repoAddress!}
           />
-          <RepositoryLink repoAddress={repoAddress} />
+          <RepositoryLink repoAddress={repoAddress!} />
           {location && (
             <Caption color={Colors.textLighter()}>
               Loaded {dayjs.unix(location.updatedTimestamp).fromNow()}
@@ -387,20 +388,24 @@ export const AssetNodeOverview = ({
             isJob
             showIcon
             pipelineName={jobName}
-            pipelineHrefContext={repoAddress}
+            pipelineHrefContext={repoAddress!}
           />
         )),
       },
       {
         label: 'Sensors',
         children: sensors.length > 0 && (
-          <ScheduleOrSensorTag repoAddress={repoAddress} sensors={sensors} showSwitch={false} />
+          <ScheduleOrSensorTag repoAddress={repoAddress!} sensors={sensors} showSwitch={false} />
         ),
       },
       {
         label: 'Schedules',
         children: schedules.length > 0 && (
-          <ScheduleOrSensorTag repoAddress={repoAddress} schedules={schedules} showSwitch={false} />
+          <ScheduleOrSensorTag
+            repoAddress={repoAddress!}
+            schedules={schedules}
+            showSwitch={false}
+          />
         ),
       },
       {
@@ -439,7 +444,7 @@ export const AssetNodeOverview = ({
         <Tag>
           <UnderlyingOpsOrGraph
             assetNode={assetNode}
-            repoAddress={repoAddress}
+            repoAddress={repoAddress!}
             hideIfRedundant={false}
           />
         </Tag>
