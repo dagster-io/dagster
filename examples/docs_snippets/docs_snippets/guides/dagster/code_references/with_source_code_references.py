@@ -1,5 +1,4 @@
-from dagster import Definitions, asset
-from dagster._core.definitions.metadata import with_source_code_references
+from dagster import Definitions, asset, with_source_code_references
 
 
 @asset

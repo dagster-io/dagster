@@ -1,9 +1,10 @@
 import os
 
-from dagster import Definitions, asset
-from dagster._core.definitions.metadata import (
+from dagster import (
     CodeReferencesMetadataValue,
+    Definitions,
     LocalFileCodeReference,
+    asset,
     with_source_code_references,
 )
 

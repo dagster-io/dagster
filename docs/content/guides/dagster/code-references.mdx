@@ -1,8 +1,8 @@
 ---
-title: Linking to assets' code with code references | Dagster Docs
+title: Linking to asset definition code with code references | Dagster Docs
 ---
 
-# Linking to assets' code with code references
+# Linking to asset definition code with code references
 
 <Note>
   This feature is considered <strong>experimental</strong> and is under active
@@ -32,8 +32,7 @@ To complete the steps in this guide, you'll need:
 To automatically attach code references to the asset's function definition, you can use the `dagster._core.definitions.metadata.with_source_code_references` utility. Any asset definitions passed to the utility will have their source file attached as metadata.
 
 ```python file=/guides/dagster/code_references/with_source_code_references.py
-from dagster import Definitions, asset
-from dagster._core.definitions.metadata import with_source_code_references
+from dagster import Definitions, asset, with_source_code_references
 
 
 @asset
@@ -53,8 +52,8 @@ A link to the asset's source in `with_source_code_references.py` will then be vi
   <Image
     alt="Asset catalog view showing link to with_source_code_references.py"
     src="/images/guides/code-references/with_source_code_references.png"
-    width={1590}
-    height={326}
+    width={820}
+    height={554}
   />
 </center>
 
@@ -69,10 +68,11 @@ To manually attach code references to an asset definition, use `CodeReferencesMe
 ```python file=/guides/dagster/code_references/manual_references.py
 import os
 
-from dagster import Definitions, asset
-from dagster._core.definitions.metadata import (
+from dagster import (
     CodeReferencesMetadataValue,
+    Definitions,
     LocalFileCodeReference,
+    asset,
     with_source_code_references,
 )
 
@@ -103,7 +103,7 @@ Each of the code references to `manual_references.py` will be visible in the **A
   <Image
     alt="Asset details view showing link to multiple files"
     src="/images/guides/code-references/manual_references.png"
-    width={1592}
-    height={389}
+    width={680}
+    height={604}
   />
 </center>

@@ -272,7 +272,7 @@ from dagster._core.definitions.materialize import (
 from dagster._core.definitions.metadata import (
     AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     BoolMetadataValue as BoolMetadataValue,
-    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
+    CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
