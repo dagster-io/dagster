@@ -55,10 +55,10 @@ from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, KeysAssetSelection
 from .run_request import (
     AddDynamicPartitionsRequest,
+    BackfillDaemonRequest,
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     IRunRequest,
-    MultiRunRequest,
     RunRequest,
     SensorResult,
     SkipReason,
@@ -811,7 +811,7 @@ class SensorDefinition(IHasInternalInit):
         elif len(result) == 1:
             item = check.inst(
                 result[0],
-                (SkipReason, RunRequest, MultiRunRequest, DagsterRunReaction, SensorResult),
+                (SkipReason, IRunRequest, DagsterRunReaction, SensorResult),
             )
 
             if isinstance(item, SensorResult):
@@ -879,15 +879,15 @@ class SensorDefinition(IHasInternalInit):
         run_requests_to_resolve = []
         resolved_run_requests = []
         for run_request in run_requests:
-            if run_request.requires_backfill_daemon:
-                asset_selection = check.not_none(
+            if isinstance(run_request, BackfillDaemonRequest):
+                sensor_asset_selection = check.not_none(
                     self._asset_selection,
                     "Can only yield RunRequests with asset_graph_subset for sensors with an asset_selection",
                 )
-                asset_keys = run_request.asset_graph_subset.asset_keys
+                run_request_asset_keys = run_request.asset_selection
 
                 unexpected_asset_keys = (
-                    AssetSelection.keys(*asset_keys) - asset_selection
+                    AssetSelection.keys(*run_request_asset_keys) - sensor_asset_selection
                 ).resolve(check.not_none(context.repository_def).asset_graph)
                 if unexpected_asset_keys:
                     raise DagsterInvalidSubsetError(
@@ -1115,13 +1115,13 @@ def wrap_sensor_evaluation(
         raw_evaluation_result = fn(**context_param, **resource_args_populated)
 
         def check_returned_scalar(scalar):
-            if isinstance(scalar, (SkipReason, RunRequest, SensorResult, MultiRunRequest)):
+            if isinstance(scalar, (SkipReason, IRunRequest, SensorResult)):
                 return scalar
             elif scalar is not None:
                 raise Exception(
                     f"Error in sensor {sensor_name}: Sensor unexpectedly returned output "
-                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason, "
-                    "RunRequest, or MultiRunRequest objects."
+                    f"{scalar} of type {type(scalar)}.  Should only return SkipReason or "
+                    "RunRequest objects."
                 )
 
         if inspect.isgenerator(raw_evaluation_result):

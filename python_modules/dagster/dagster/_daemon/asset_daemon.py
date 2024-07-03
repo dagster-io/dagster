@@ -27,7 +27,7 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.repository_definition.valid_definitions import (
     SINGLETON_REPOSITORY_NAME,
 )
-from dagster._core.definitions.run_request import InstigatorType, RunRequest
+from dagster._core.definitions.run_request import InstigatorType, IRunRequest, RunRequest
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorType
 from dagster._core.errors import DagsterCodeLocationLoadError, DagsterUserCodeUnreachableError
 from dagster._core.execution.submit_asset_runs import submit_asset_run
@@ -1033,7 +1033,7 @@ def invoke_sensor_for_evaluation(
     stored_cursor: AssetDaemonCursor,
     tick: InstigatorTick,
     asset_graph: RemoteAssetGraph,
-) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
+) -> Tuple[Sequence[IRunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
     sensor_origin = sensor.get_external_origin()
     request_ctx = workspace_process_context.create_request_context()
     code_loc = request_ctx.get_code_location(sensor_origin.location_name)

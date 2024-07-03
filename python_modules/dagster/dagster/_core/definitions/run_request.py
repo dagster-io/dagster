@@ -116,27 +116,15 @@ class DeleteDynamicPartitionsRequest(
 
 class IRunRequest(ABC):
     @property
-    def requires_backfill_daemon(self) -> bool:
-        return False
-
-
-(
-    "_RunRequest",
-    [
-        ("asset_graph_subset", "AssetGraphSubset"),
-        ("tags", Mapping[str, str]),
-        ("title", Optional[str]),
-        ("dscription", PublicAttr[Optional[str]]),
-        ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
-    ],
-)
+    def asset_selection(self) -> AbstractSet[AssetKey]:
+        raise NotImplementedError
 
 
 @whitelist_for_serdes
-class MultiRunRequest(
+class BackfillDaemonRequest(
     IRunRequest,
     NamedTuple(
-        "_RunRequest",
+        "_BackfillDaemonRequest",
         [
             ("asset_graph_subset", "AssetGraphSubset"),
             ("tags", Mapping[str, str]),
@@ -154,7 +142,7 @@ class MultiRunRequest(
     ):
         from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 
-        return super(MultiRunRequest, cls).__new__(
+        return super(BackfillDaemonRequest, cls).__new__(
             cls,
             asset_graph_subset=check.inst_param(
                 asset_graph_subset, "asset_graph_subset", AssetGraphSubset
@@ -167,10 +155,6 @@ class MultiRunRequest(
     @property
     def asset_selection(self) -> AbstractSet[AssetKey]:
         return self.asset_graph_subset.asset_keys
-
-    @property
-    def requires_backfill_daemon(self) -> bool:
-        return True
 
 
 @whitelist_for_serdes
@@ -346,10 +330,10 @@ class RunRequest(
         tags: Optional[Mapping[str, str]],
         title: Optional[str],
         description: Optional[str],
-    ) -> MultiRunRequest:
+    ) -> BackfillDaemonRequest:
         """Not the final version of this method. will choose a better user api."""
         # This is where we could introspect on the asset_graph_subset and determine if it should be a backfill or a single run
-        return MultiRunRequest(
+        return BackfillDaemonRequest(
             asset_graph_subset=asset_graph_subset, tags=tags, title=title, description=description
         )
 

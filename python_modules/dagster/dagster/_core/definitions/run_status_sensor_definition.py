@@ -49,6 +49,7 @@ from .job_definition import JobDefinition
 from .sensor_definition import (
     DagsterRunReaction,
     DefaultSensorStatus,
+    IRunRequest,
     RawSensorEvaluationFunctionReturn,
     RunRequest,
     SensorDefinition,
@@ -918,7 +919,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                                 yield sensor_return
                             elif isinstance(
                                 sensor_return,
-                                (RunRequest, SkipReason, DagsterRunReaction),
+                                (IRunRequest, SkipReason, DagsterRunReaction),
                             ):
                                 yield sensor_return
                             else:

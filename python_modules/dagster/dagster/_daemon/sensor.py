@@ -25,6 +25,7 @@ import dagster._check as check
 import dagster._seven as seven
 from dagster._core.definitions.run_request import (
     AddDynamicPartitionsRequest,
+    BackfillDaemonRequest,
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     InstigatorType,
@@ -667,8 +668,8 @@ def _evaluate_sensor(
     else:
         single_runs_to_handle = []
         for run_request in sensor_runtime_data.run_requests:
-            if run_request.requires_backfill_daemon:
-                _handle_multi_run_request(run_request, instance, context)
+            if isinstance(run_request, BackfillDaemonRequest):
+                _handle_backfill_run_request(run_request, instance, context)
             else:
                 single_runs_to_handle.append(run_request)
         if single_runs_to_handle:
@@ -759,7 +760,7 @@ def _handle_dynamic_partitions_requests(
             check.failed(f"Unexpected action {request.action} for dynamic partition request")
 
 
-def _handle_multi_run_request(
+def _handle_backfill_run_request(
     multi_run_request: MultiRunRequest,
     instance: DagsterInstance,
     context: SensorLaunchContext,
@@ -769,7 +770,7 @@ def _handle_multi_run_request(
         PartitionBackfill.from_asset_graph_subset(
             backfill_id=backfill_id,
             dynamic_partitions_store=instance,
-            backfill_timestamp=pendulum.now("UTC").timestamp(),
+            backfill_timestamp=get_current_timestamp(),
             asset_graph_subset=multi_run_request.asset_graph_subset,
             tags=multi_run_request.tags or {},
             title=multi_run_request.title,
