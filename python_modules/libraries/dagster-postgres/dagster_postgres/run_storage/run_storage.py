@@ -24,7 +24,7 @@ from dagster._core.storage.sql import (
 )
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
 from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
@@ -180,7 +180,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             conn.execute(
                 db_dialects.postgresql.insert(DaemonHeartbeatsTable)
                 .values(
-                    timestamp=utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                    timestamp=datetime_from_timestamp(daemon_heartbeat.timestamp),
                     daemon_type=daemon_heartbeat.daemon_type,
                     daemon_id=daemon_heartbeat.daemon_id,
                     body=serialize_value(daemon_heartbeat),
@@ -188,7 +188,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
                 .on_conflict_do_update(
                     index_elements=[DaemonHeartbeatsTable.c.daemon_type],
                     set_={
-                        "timestamp": utc_datetime_from_timestamp(daemon_heartbeat.timestamp),
+                        "timestamp": datetime_from_timestamp(daemon_heartbeat.timestamp),
                         "daemon_id": daemon_heartbeat.daemon_id,
                         "body": serialize_value(daemon_heartbeat),
                     },

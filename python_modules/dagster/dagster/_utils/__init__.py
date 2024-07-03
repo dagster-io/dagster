@@ -536,16 +536,6 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
             yield from self.generator
 
 
-def utc_datetime_from_timestamp(timestamp: float) -> datetime.datetime:
-    tz = timezone.utc
-    return datetime.datetime.fromtimestamp(timestamp, tz=tz)
-
-
-def utc_datetime_from_naive(dt: datetime.datetime) -> datetime.datetime:
-    tz = timezone.utc
-    return dt.replace(tzinfo=tz)
-
-
 def is_enum_value(value: object) -> bool:
     return False if value is None else issubclass(value.__class__, Enum)
 
