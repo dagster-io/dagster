@@ -59,10 +59,15 @@ class WriterEngine(str, Enum):
     rust = "rust"
 
 
+class SchemaMode(str, Enum):
+    overwrite = "overwrite"
+    merge = "merge"
+
+
 class _DeltaTableIOManagerResourceConfig(TypedDict):
     root_uri: str
     mode: WriteMode
-    overwrite_schema: bool
+    schema_mode: SchemaMode
     writer_engine: WriterEngine
     storage_options: _StorageOptionsConfig
     client_options: NotRequired[Dict[str, str]]
@@ -127,7 +132,9 @@ class DeltaLakeIOManager(ConfigurableIOManagerFactory):
     mode: WriteMode = Field(
         default=WriteMode.overwrite.value, description="The write mode passed to save the output."
     )
-    overwrite_schema: bool = Field(default=False)
+    schema_mode: Optional[SchemaMode] = Field(
+        default=None, description="The schema mode passed to save the output."
+    )
     writer_engine: WriterEngine = Field(
         default=WriterEngine.pyarrow.value, description="Engine passed to write_deltalake."
     )
