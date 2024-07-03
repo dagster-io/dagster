@@ -3276,6 +3276,7 @@ export type PartitionedAssetConditionEvaluationNode = {
   numSkipped: Maybe<Scalars['Int']['output']>;
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
+  status: AssetConditionEvaluationStatus;
   trueSubset: AssetSubset;
   uniqueId: Scalars['String']['output'];
 };
@@ -11052,6 +11053,10 @@ export const buildPartitionedAssetConditionEvaluationNode = (
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 3015,
     startTimestamp:
       overrides && overrides.hasOwnProperty('startTimestamp') ? overrides.startTimestamp! : 5.96,
+    status:
+      overrides && overrides.hasOwnProperty('status')
+        ? overrides.status!
+        : AssetConditionEvaluationStatus.FALSE,
     trueSubset:
       overrides && overrides.hasOwnProperty('trueSubset')
         ? overrides.trueSubset!

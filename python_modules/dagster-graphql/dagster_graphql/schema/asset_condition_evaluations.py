@@ -142,11 +142,26 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
 
     childUniqueIds = non_null_list(graphene.String)
 
+    # placeholder to allow the unpartitioned table to be populated with partitioned rows
+    status = graphene.NonNull(GrapheneAssetConditionEvaluationStatus)
+
     class Meta:
         name = "PartitionedAssetConditionEvaluationNode"
 
     def __init__(self, evaluation: AssetConditionEvaluation):
         self._true_subset = evaluation.true_subset
+
+        candidate_subset = (
+            evaluation.candidate_subset
+            if isinstance(evaluation.candidate_subset, AssetSubset)
+            else None
+        )
+        if candidate_subset and candidate_subset.size == 0:
+            status = AssetConditionEvaluationStatus.SKIPPED
+        elif self._true_subset.size > 0:
+            status = AssetConditionEvaluationStatus.TRUE
+        else:
+            status = AssetConditionEvaluationStatus.FALSE
 
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
@@ -154,12 +169,11 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             trueSubset=GrapheneAssetSubset(evaluation.true_subset),
-            candidateSubset=GrapheneAssetSubset(evaluation.candidate_subset)
-            if isinstance(evaluation.candidate_subset, AssetSubset)
-            else None,
+            candidateSubset=GrapheneAssetSubset(candidate_subset) if candidate_subset else None,
             childUniqueIds=[
                 child.condition_snapshot.unique_id for child in evaluation.child_evaluations
             ],
+            status=status,
         )
 
     def resolve_numTrue(self, graphene_info: ResolveInfo) -> int:
@@ -233,16 +247,18 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
     class Meta:
         name = "AssetConditionEvaluation"
 
-    def __init__(self, evaluation: AssetConditionEvaluation, partition_key: Optional[str] = None):
+    def __init__(
+        self, root_evaluation: AssetConditionEvaluation, partition_key: Optional[str] = None
+    ):
         # flatten the evaluation tree into a list of nodes
         def _flatten(e: AssetConditionEvaluation) -> Sequence[AssetConditionEvaluation]:
             return list(itertools.chain([e], *(_flatten(ce) for ce in e.child_evaluations)))
 
-        all_nodes = _flatten(evaluation)
+        all_evaluations = _flatten(root_evaluation)
 
         if partition_key is None:
             evaluationNodes = []
-            for evaluation in all_nodes:
+            for evaluation in all_evaluations:
                 if evaluation.true_subset.is_partitioned:
                     evaluationNodes.append(
                         GraphenePartitionedAssetConditionEvaluationNode(evaluation)
@@ -254,14 +270,11 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
         else:
             evaluationNodes = [
                 GrapheneSpecificPartitionAssetConditionEvaluationNode(evaluation, partition_key)
-                for evaluation in all_nodes
+                for evaluation in all_evaluations
             ]
 
-        print(len(evaluationNodes), {type(e) for e in evaluationNodes})
-        for e in evaluationNodes:
-            print(e.uniqueId, e.childUniqueIds)
         super().__init__(
-            rootUniqueId=evaluation.condition_snapshot.unique_id,
+            rootUniqueId=root_evaluation.condition_snapshot.unique_id,
             evaluationNodes=evaluationNodes,
         )
 

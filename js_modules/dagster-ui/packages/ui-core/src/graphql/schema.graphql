@@ -3553,6 +3553,7 @@ type PartitionedAssetConditionEvaluationNode {
   numFalse: Int
   numSkipped: Int
   childUniqueIds: [String!]!
+  status: AssetConditionEvaluationStatus!
 }
 
 type AssetSubset {

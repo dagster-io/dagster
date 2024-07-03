@@ -236,6 +236,7 @@ fragment evaluationFields on AssetConditionEvaluation {
             }
             uniqueId
             childUniqueIds
+            status
         }
         ... on SpecificPartitionAssetConditionEvaluationNode {
             description
