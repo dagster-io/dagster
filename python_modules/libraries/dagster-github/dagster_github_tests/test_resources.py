@@ -12,8 +12,8 @@ from dagster_github.resources import GithubClient, GithubResource
 FAKE_PRIVATE_RSA_KEY = (
     rsa.generate_private_key(public_exponent=65537, key_size=1024, backend=default_backend())
     .private_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encoding=serialization.Encoding.PEM,  # type: ignore  # (bad stubs)
+        format=serialization.PrivateFormat.TraditionalOpenSSL,  # type: ignore  # (bad stubs)
         encryption_algorithm=serialization.NoEncryption(),
     )
     .decode("utf-8")

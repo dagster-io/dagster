@@ -526,7 +526,7 @@ class BaseMultiPartitionMapping(ABC):
                         }
                     )
                     if len(b_key_values) > 1
-                    else b_key_values[0]
+                    else b_key_values[0]  # type: ignore
                 )
 
         mapped_subset = b_partitions_def.empty_subset().with_partition_keys(b_partition_keys)

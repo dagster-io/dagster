@@ -101,7 +101,7 @@ class DbIOManager(IOManager):
         io_manager_name: Optional[str] = None,
         default_load_type: Optional[Type] = None,
     ):
-        self._handlers_by_type: Dict[Optional[Type], DbTypeHandler] = {}
+        self._handlers_by_type: Dict[Optional[Type[Any]], DbTypeHandler] = {}
         self._io_manager_name = io_manager_name or self.__class__.__name__
         for type_handler in type_handlers:
             for handled_type in type_handler.supported_types:
@@ -167,7 +167,7 @@ class DbIOManager(IOManager):
         table_slice = self._get_table_slice(context, cast(OutputContext, context.upstream_output))
 
         with self._db_client.connect(context, table_slice) as conn:
-            return self._handlers_by_type[load_type].load_input(context, table_slice, conn)
+            return self._handlers_by_type[load_type].load_input(context, table_slice, conn)  # type: ignore  # (pyright bug)
 
     def _get_table_slice(
         self, context: Union[OutputContext, InputContext], output_context: OutputContext
