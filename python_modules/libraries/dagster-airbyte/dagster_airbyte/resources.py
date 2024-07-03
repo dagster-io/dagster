@@ -4,25 +4,33 @@ import logging
 import sys
 import time
 from abc import abstractmethod
-from contextlib import contextmanager
-from typing import Any, Dict, List, Mapping, Optional, cast
+from contextlib import contextmanager, suppress
+from typing import Any, Dict, List, Mapping, Optional, Union, cast, Sequence
 
 import requests
 from dagster import (
+    AssetExecutionContext,
+    AssetsDefinition,
     ConfigurableResource,
     Failure,
+    OpExecutionContext,
+    Output,
     _check as check,
     get_dagster_logger,
     resource,
 )
 from dagster._config.pythonic_config import infer_schema_from_config_class
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._core.errors import DagsterInvalidPropertyError
 from dagster._utils.cached_method import cached_method
 from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
 
+#TODO that function should be called from util, move it
+from dagster_airbyte.asset_defs import _table_to_output_name_fn
 from dagster_airbyte.types import AirbyteOutput
+from dagster_airbyte.utils import generate_materializations
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -241,6 +249,59 @@ class BaseAirbyteResource(ConfigurableResource):
                 self.cancel_job(job_id)
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
+
+    def materialize_from_sync(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    ):
+        assets_def: Optional[AssetsDefinition] = None
+        with suppress(DagsterInvalidPropertyError):
+            assets_def = context.assets_def if context else None
+
+        if context and assets_def is not None:
+            # TODO: move in another function
+            airbyte_assets_def = assets_def[0]
+            metadata_by_key = airbyte_assets_def.metadata_by_key or {}
+            first_asset_key = next(iter(airbyte_assets_def.metadata_by_key.keys()))
+            first_metadata = metadata_by_key.get(first_asset_key, {})
+            connection_id = first_metadata.get("connection_id")
+            destination_tables: Sequence[str] = first_metadata.get("destination_tables")
+            normalization_tables = first_metadata.get("normalization_tables")
+
+            ab_output = self.sync_and_poll(connection_id=connection_id)
+
+            # No connection details (e.g. using Airbyte Cloud) means we just assume
+            # that the outputs were produced
+            if len(ab_output.connection_details) == 0:
+                for table_name in destination_tables:
+                    yield Output(
+                        value=None,
+                        output_name=_table_to_output_name_fn(table_name),
+                    )
+                    if normalization_tables:
+                        for dependent_table in normalization_tables.get(table_name, set()):
+                            yield Output(
+                                value=None,
+                                output_name=_table_to_output_name_fn(dependent_table),
+                            )
+            else:
+                for materialization in generate_materializations(ab_output):
+                    table_name = materialization.asset_key.path[-1]
+                    if table_name in destination_tables:
+                        yield Output(
+                            value=None,
+                            output_name=_table_to_output_name_fn(table_name),
+                            metadata=materialization.metadata,
+                        )
+                        # Also materialize any normalization tables affiliated with this destination
+                        # e.g. nested objects, lists etc
+                        if normalization_tables:
+                            for dependent_table in normalization_tables.get(table_name, set()):
+                                yield Output(
+                                    value=None,
+                                    output_name=_table_to_output_name_fn(dependent_table),
+                                )
+                    else:
+                        yield materialization
 
 
 class AirbyteCloudResource(BaseAirbyteResource):
@@ -563,7 +624,7 @@ class AirbyteResource(BaseAirbyteResource):
         return any([norm_dest_def_spec, norm_dest_def])
 
     def get_job_status(self, connection_id: str, job_id: int) -> Mapping[str, object]:
-        if self.forward_logs:
+        if self._should_forward_logs:
             return check.not_none(self.make_request(endpoint="/jobs/get", data={"id": job_id}))
         else:
             # the "list all jobs" endpoint doesn't return logs, which actually makes it much more
@@ -592,86 +653,6 @@ class AirbyteResource(BaseAirbyteResource):
         return check.not_none(
             self.make_request(endpoint="/connections/get", data={"connectionId": connection_id})
         )
-
-    def sync_and_poll(
-        self,
-        connection_id: str,
-        poll_interval: Optional[float] = None,
-        poll_timeout: Optional[float] = None,
-    ) -> AirbyteOutput:
-        """Initializes a sync operation for the given connector, and polls until it completes.
-
-        Args:
-            connection_id (str): The Airbyte Connector ID. You can retrieve this value from the
-                "Connection" tab of a given connection in the Arbyte UI.
-            poll_interval (float): The time (in seconds) that will be waited between successive polls.
-            poll_timeout (float): The maximum time that will waited before this operation is timed
-                out. By default, this will never time out.
-
-        Returns:
-            :py:class:`~AirbyteOutput`:
-                Details of the sync job.
-        """
-        connection_details = self.get_connection_details(connection_id)
-        job_details = self.start_sync(connection_id)
-        job_info = cast(Dict[str, object], job_details.get("job", {}))
-        job_id = cast(int, job_info.get("id"))
-
-        self._log.info(f"Job {job_id} initialized for connection_id={connection_id}.")
-        start = time.monotonic()
-        logged_attempts = 0
-        logged_lines = 0
-        state = None
-
-        try:
-            while True:
-                if poll_timeout and start + poll_timeout < time.monotonic():
-                    raise Failure(
-                        f"Timeout: Airbyte job {job_id} is not ready after the timeout"
-                        f" {poll_timeout} seconds"
-                    )
-                time.sleep(poll_interval or self.poll_interval)
-                job_details = self.get_job_status(connection_id, job_id)
-                attempts = cast(List, job_details.get("attempts", []))
-                cur_attempt = len(attempts)
-                # spit out the available Airbyte log info
-                if cur_attempt:
-                    if self.forward_logs:
-                        log_lines = attempts[logged_attempts].get("logs", {}).get("logLines", [])
-
-                        for line in log_lines[logged_lines:]:
-                            sys.stdout.write(line + "\n")
-                            sys.stdout.flush()
-                        logged_lines = len(log_lines)
-
-                    # if there's a next attempt, this one will have no more log messages
-                    if logged_attempts < cur_attempt - 1:
-                        logged_lines = 0
-                        logged_attempts += 1
-
-                job_info = cast(Dict[str, object], job_details.get("job", {}))
-                state = job_info.get("status")
-
-                if state in (AirbyteState.RUNNING, AirbyteState.PENDING, AirbyteState.INCOMPLETE):
-                    continue
-                elif state == AirbyteState.SUCCEEDED:
-                    break
-                elif state == AirbyteState.ERROR:
-                    raise Failure(f"Job failed: {job_id}")
-                elif state == AirbyteState.CANCELLED:
-                    raise Failure(f"Job was cancelled: {job_id}")
-                else:
-                    raise Failure(f"Encountered unexpected state `{state}` for job_id {job_id}")
-        finally:
-            # if Airbyte sync has not completed, make sure to cancel it so that it doesn't outlive
-            # the python process
-            if (
-                state not in (AirbyteState.SUCCEEDED, AirbyteState.ERROR, AirbyteState.CANCELLED)
-                and self.cancel_sync_on_run_termination
-            ):
-                self.cancel_job(job_id)
-
-        return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
 
 @dagster_maintained_resource
