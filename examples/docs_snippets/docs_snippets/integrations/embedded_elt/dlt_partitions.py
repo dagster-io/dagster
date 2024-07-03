@@ -2,7 +2,6 @@ from typing import Optional
 
 import dlt
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
-from dlt import pipeline
 
 from dagster import AssetExecutionContext, StaticPartitionsDefinition
 
@@ -23,7 +22,7 @@ def example_dlt_source(color: Optional[str] = None):
 @dlt_assets(
     dlt_source=example_dlt_source(),
     name="example_dlt_assets",
-    dlt_pipeline=pipeline(
+    dlt_pipeline=dlt.pipeline(
         pipeline_name="example_pipeline_name",
         dataset_name="example_dataset_name",
         destination="snowflake",

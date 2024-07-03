@@ -236,19 +236,32 @@ The <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" />
 
 For example, to change how the name of the asset is derived, you can override the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_asset_key" /> method, or if you would like to change the key of the upstream source asset, you can override the <PyObject module="dagster_embedded_elt.dlt" object="DagsterDltTranslator" method="get_deps_assets_keys" /> method.
 
-```python
-from dagster import AssetExecutionContext, Definitions
-from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
-from dlt import pipeline
-from dlt_sources.github import github_reactions
+```python file=/integrations/embedded_elt/dlt_dagster_translator.py
+from collections.abc import Iterable
+
+import dlt
+from dagster_embedded_elt.dlt import (
+    DagsterDltResource,
+    DagsterDltTranslator,
+    dlt_assets,
+)
+
+from dagster import AssetExecutionContext, AssetKey
+
+
+@dlt.source
+def example_dlt_source():
+    def example_resource(): ...
+
+    return example_resource
 
 
 class CustomDagsterDltTranslator(DagsterDltTranslator):
-    def get_asset_key(self, resource: DltResource) -> AssetKey:
+    def get_asset_key(self, resource: DagsterDltResource) -> AssetKey:
         """Overrides asset key to be the dlt resource name."""
         return f"{resource.name}"
 
-    def get_deps_asset_keys(self, resource: DltResource) -> Iterable[AssetKey]:
+    def get_deps_asset_keys(self, resource: DagsterDltResource) -> Iterable[AssetKey]:
         """Overrides upstream asset key to be a single source asset."""
         return [AssetKey("common_upstream_dlt_dependency")]
 
@@ -256,7 +269,7 @@ class CustomDagsterDltTranslator(DagsterDltTranslator):
 @dlt_assets(
     name="example_dlt_assets",
     dlt_source=example_dlt_source(),
-    dlt_pipeline=pipeline(
+    dlt_pipeline=dlt.pipeline(
         pipeline_name="example_pipeline_name",
         dataset_name="example_dataset_name",
         destination="snowflake",
@@ -322,7 +335,6 @@ from typing import Optional
 
 import dlt
 from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
-from dlt import pipeline
 
 from dagster import AssetExecutionContext, StaticPartitionsDefinition
 
@@ -343,7 +355,7 @@ def example_dlt_source(color: Optional[str] = None):
 @dlt_assets(
     dlt_source=example_dlt_source(),
     name="example_dlt_assets",
-    dlt_pipeline=pipeline(
+    dlt_pipeline=dlt.pipeline(
         pipeline_name="example_pipeline_name",
         dataset_name="example_dataset_name",
         destination="snowflake",
