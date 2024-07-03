@@ -322,15 +322,19 @@ class RunRequest(
             return None
 
     @classmethod
-    def from_asset_graph_subset(
+    def for_asset_graph_subset(
         cls,
         asset_graph_subset: "AssetGraphSubset",
         tags: Optional[Mapping[str, str]],
         title: Optional[str],
         description: Optional[str],
     ) -> BackfillDaemonRequest:
-        """Not the final version of this method. will choose a better user api."""
-        # This is where we could introspect on the asset_graph_subset and determine if it should be a backfill or a single run
+        """Constructs a BackfillDaemonRequest from an AssetGraphSubset. When processed by the sensor
+        daemon, this will launch a backfill instead of a run.
+
+        Note: This constructor is intentionally left private since AssetGraphSubset is not part of the
+        public API. Other constructor methods will be public
+        """
         return BackfillDaemonRequest(
             asset_graph_subset=asset_graph_subset, tags=tags, title=title, description=description
         )

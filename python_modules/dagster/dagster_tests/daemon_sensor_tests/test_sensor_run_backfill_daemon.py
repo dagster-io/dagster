@@ -40,7 +40,7 @@ def make_run_request_uses_backfill_daemon(context) -> RunRequest:
         },
         asset_graph=context.repository_def.asset_graph,
     )
-    return RunRequest.from_asset_graph_subset(
+    return RunRequest.for_asset_graph_subset(
         asset_graph_subset=ags,
         tags={"tagkey": "tagvalue"},
         title="run_request_uses_backfill_daemon",
