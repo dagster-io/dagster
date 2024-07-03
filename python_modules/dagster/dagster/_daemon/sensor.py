@@ -29,7 +29,6 @@ from dagster._core.definitions.run_request import (
     DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
     InstigatorType,
-    MultiRunRequest,
     RunRequest,
 )
 from dagster._core.definitions.selector import JobSubsetSelector
@@ -761,7 +760,7 @@ def _handle_dynamic_partitions_requests(
 
 
 def _handle_backfill_run_request(
-    multi_run_request: MultiRunRequest,
+    run_request: BackfillDaemonRequest,
     instance: DagsterInstance,
     context: SensorLaunchContext,
 ) -> None:
@@ -771,10 +770,10 @@ def _handle_backfill_run_request(
             backfill_id=backfill_id,
             dynamic_partitions_store=instance,
             backfill_timestamp=get_current_timestamp(),
-            asset_graph_subset=multi_run_request.asset_graph_subset,
-            tags=multi_run_request.tags or {},
-            title=multi_run_request.title,
-            description=multi_run_request.description,
+            asset_graph_subset=run_request.asset_graph_subset,
+            tags=run_request.tags or {},
+            title=run_request.title,
+            description=run_request.description,
         )
     )
     context.add_run_info(run_id=backfill_id)
