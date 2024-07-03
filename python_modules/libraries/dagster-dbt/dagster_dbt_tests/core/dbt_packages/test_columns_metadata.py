@@ -461,7 +461,7 @@ def test_column_lineage_real_warehouse(
         yield from seed_cli_invocation
 
         cli_invocation = dbt.cli(
-            ["build", "--exclude", "resource_type:seed"],
+            ["build", "--exclude", "resource_type:seed", *excluded_models],
             context=context,
         ).stream()
         if fetch_row_counts:
@@ -469,13 +469,7 @@ def test_column_lineage_real_warehouse(
         cli_invocation = cli_invocation.fetch_column_metadata()
         yield from cli_invocation
 
-    result = materialize(
-        [my_dbt_assets],
-        resources={"dbt": dbt},
-        selection=(AssetSelection.all() - AssetSelection.assets(*excluded_models))
-        if excluded_models
-        else AssetSelection.all(),
-    )
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
     assert result.success
 
     column_lineage_by_asset_key = {
