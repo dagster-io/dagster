@@ -1,7 +1,7 @@
 default_stages: [pre-commit] # don't run on push by default
 repos:
 - repo: https://github.com/charliermarsh/ruff-pre-commit
-  rev: v0.4.5
+  rev: v0.5.1
   hooks:
     - id: ruff
       args: [--fix, --exit-non-zero-on-fix]

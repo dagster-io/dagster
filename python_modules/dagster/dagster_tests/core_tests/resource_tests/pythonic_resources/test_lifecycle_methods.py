@@ -656,7 +656,7 @@ def test_direct_invocation_from_context_cm() -> None:
 
     # need to use a context manager to ensure teardown is called
     with pytest.raises(CheckError):
-        res = AWSCredentialsResource.from_resource_context(
+        AWSCredentialsResource.from_resource_context(
             build_init_resource_context(config={"access_key": "my_key", "secret_key": "my_secret"})
         )
 
