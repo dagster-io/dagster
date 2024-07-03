@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -164,6 +165,8 @@ class GraphDefinition(NodeDefinition):
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        composition_fn (Optional[Callable]): The function that defines this graph. Used to generate
+            code references for this graph.
 
     Examples:
         .. code-block:: python
@@ -216,6 +219,7 @@ class GraphDefinition(NodeDefinition):
         input_assets: Optional[
             Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
         ] = None,
+        composition_fn: Optional[Callable] = None,
         **kwargs: Any,
     ):
         from .external_asset import create_external_asset_from_source_asset
@@ -249,6 +253,8 @@ class GraphDefinition(NodeDefinition):
         )
 
         self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
+
+        self._composition_fn = check.opt_callable_param(composition_fn, "composition_fn")
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -353,6 +359,10 @@ class GraphDefinition(NodeDefinition):
     @property
     def input_assets(self) -> Mapping[str, Mapping[str, "AssetsDefinition"]]:
         return self._input_assets
+
+    @property
+    def composition_fn(self) -> Optional[Callable]:
+        return self._composition_fn
 
     def has_node_named(self, name: str) -> bool:
         check.str_param(name, "name")
