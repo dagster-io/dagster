@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
     from .automation_context import AutomationContext
     from .operands import (
+        CodeVersionChangedCondition,
         CronTickPassedCondition,
         FailedAutomationCondition,
         InLatestTimeWindowCondition,
@@ -209,13 +210,13 @@ class AutomationCondition(ABC, DagsterModel):
         return NewlyRequestedCondition()
 
     @staticmethod
-    def code_version_newly_updated() -> "NewlyRequestedCondition":
+    def code_version_changed() -> "CodeVersionChangedCondition":
         """Returns a AutomationCondition that is true for an asset partition if its asset's code
-        version has been updated since the previous tick.
+        version has been changed since the previous tick.
         """
-        from .operands import NewlyRequestedCondition
+        from .operands import CodeVersionChangedCondition
 
-        return NewlyRequestedCondition()
+        return CodeVersionChangedCondition()
 
     @staticmethod
     def cron_tick_passed(

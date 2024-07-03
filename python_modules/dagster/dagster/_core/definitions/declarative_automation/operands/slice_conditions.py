@@ -180,27 +180,3 @@ class InLatestTimeWindowCondition(SliceAutomationCondition):
         return context.asset_graph_view.compute_latest_time_window_slice(
             context.asset_key, lookback_delta=self.lookback_timedelta
         )
-
-
-@whitelist_for_serdes
-class CodeVersionNewlyUpdated(SliceAutomationCondition):
-    @property
-    def description(self) -> str:
-        return "Asset code version updated since previous tick"
-
-    @property
-    def requires_cursor(self) -> bool:
-        return True
-
-    def _get_previous_code_version(self, context: AutomationContext) -> Optional[str]:
-        if context.node_cursor is None:
-            return None
-        return context.node_cursor.get_extra_state(as_type=str)
-
-    def compute_slice(self, context: AutomationContext) -> AssetSlice:
-        previous_code_version = self._get_previous_code_version(context)
-        current_code_version = context.asset_graph.get(context.asset_key).code_version
-        if previous_code_version is None or previous_code_version == current_code_version:
-            return context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
-        else:
-            return context.candidate_slice

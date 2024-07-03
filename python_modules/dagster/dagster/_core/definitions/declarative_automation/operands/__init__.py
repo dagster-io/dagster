@@ -1,5 +1,7 @@
+from .code_version_changed_condition import (
+    CodeVersionChangedCondition as CodeVersionChangedCondition,
+)
 from .slice_conditions import (
-    CodeVersionNewlyUpdated as CodeVersionNewlyUpdated,
     CronTickPassedCondition as CronTickPassedCondition,
     FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,
