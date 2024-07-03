@@ -1,6 +1,7 @@
 import {render, screen, waitFor} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+import {mockViewportClientRect, restoreViewportClientRect} from '../../../testing/mocking';
 import {FilterDropdown, FilterDropdownButton} from '../FilterDropdown';
 import {FilterObject} from '../useFilter';
 
@@ -36,17 +37,12 @@ beforeEach(() => {
   ] as any;
 });
 
-let nativeGBRC: any;
-
 beforeAll(() => {
-  nativeGBRC = window.Element.prototype.getBoundingClientRect;
-  window.Element.prototype.getBoundingClientRect = jest
-    .fn()
-    .mockReturnValue({height: 400, width: 400});
+  mockViewportClientRect();
 });
 
 afterAll(() => {
-  window.Element.prototype.getBoundingClientRect = nativeGBRC;
+  restoreViewportClientRect();
 });
 
 describe('FilterDropdown', () => {
