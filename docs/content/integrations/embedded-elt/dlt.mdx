@@ -305,14 +305,14 @@ While still an experimental feature, it is possible to use partitions within you
 
 That being said, here is an example of using statically named partitions from a dlt source.
 
-```python
-import dlt
-
-from dagster import AssetExecutionContext, StaticPartitionsDefinition
-from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
-from dlt import pipeline
+```python file=/integrations/embedded_elt/dlt_partitions.py
 from typing import Optional
 
+import dlt
+from dagster_embedded_elt.dlt import DagsterDltResource, dlt_assets
+from dlt import pipeline
+
+from dagster import AssetExecutionContext, StaticPartitionsDefinition
 
 color_partitions = StaticPartitionsDefinition(["red", "green", "blue"])
 
