@@ -26,7 +26,8 @@ from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
-from dagster._utils import datetime_as_float, xor
+from dagster._time import utc_datetime_from_naive
+from dagster._utils import xor
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -743,7 +744,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
             id=row["id"],
             serialized_evaluation_body=row["asset_evaluation_body"],
             evaluation_id=row["evaluation_id"],
-            timestamp=datetime_as_float(row["create_timestamp"]),
+            timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
             asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
         )
 

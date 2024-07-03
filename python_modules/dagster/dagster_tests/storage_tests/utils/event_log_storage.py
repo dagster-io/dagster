@@ -113,7 +113,6 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import datetime_as_float
 from dagster._utils.concurrency import ConcurrencySlotStatus
 
 # py36 & 37 list.append not hashable
@@ -2083,14 +2082,13 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             update_timestamp = run_records[-1].update_timestamp
-            tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
 
             # use tz-aware cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.RUN_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=tzaware_dt
+                        id=0, run_updated_after=update_timestamp
                     ),  # events after first run
                 ),
                 ascending=True,
@@ -2107,7 +2105,7 @@ class TestEventLogStorage:
                 EventRecordsFilter(
                     event_type=DagsterEventType.RUN_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=tzaware_dt.naive()
+                        id=0, run_updated_after=update_timestamp.replace(tzinfo=None)
                     ),  # events after first run
                 ),
                 ascending=True,

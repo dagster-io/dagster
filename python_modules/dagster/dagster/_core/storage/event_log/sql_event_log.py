@@ -71,7 +71,7 @@ from dagster._core.storage.sqlalchemy_compat import (
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.errors import DeserializationError
 from dagster._time import datetime_from_timestamp, utc_datetime_from_naive
-from dagster._utils import PrintFn, datetime_as_float
+from dagster._utils import PrintFn
 from dagster._utils.concurrency import (
     ClaimedSlotInfo,
     ConcurrencyClaimStatus,
@@ -603,10 +603,16 @@ class SqlEventLogStorage(EventLogStorage):
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.ASSET_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                enqueued_time=datetime_as_float(enqueued_time) if enqueued_time else None,
-                launch_time=datetime_as_float(launch_time) if launch_time else None,
-                start_time=datetime_as_float(start_time) if start_time else None,
-                end_time=datetime_as_float(end_time) if end_time else None,
+                enqueued_time=(
+                    utc_datetime_from_naive(enqueued_time).timestamp() if enqueued_time else None
+                ),
+                launch_time=(
+                    utc_datetime_from_naive(launch_time).timestamp() if launch_time else None
+                ),
+                start_time=(
+                    utc_datetime_from_naive(start_time).timestamp() if start_time else None
+                ),
+                end_time=(utc_datetime_from_naive(end_time).timestamp() if end_time else None),
             )
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err

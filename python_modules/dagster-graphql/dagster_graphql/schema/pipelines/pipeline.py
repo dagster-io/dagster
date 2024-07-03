@@ -15,7 +15,6 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
-from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -584,7 +583,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_updateTime(self, graphene_info: ResolveInfo):
         run_record = self._get_run_record(graphene_info.context.instance)
-        return datetime_as_float(run_record.update_timestamp)
+        return run_record.update_timestamp.timestamp()
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
