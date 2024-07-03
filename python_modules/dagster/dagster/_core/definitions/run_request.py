@@ -115,9 +115,7 @@ class DeleteDynamicPartitionsRequest(
 
 
 class IRunRequest(ABC):
-    @property
-    def asset_selection(self) -> AbstractSet[AssetKey]:
-        raise NotImplementedError
+    pass
 
 
 @whitelist_for_serdes
