@@ -14,7 +14,6 @@ from typing import (
     TypeVar,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -38,7 +37,7 @@ from dagster._core.storage.sql import SqlAlchemyQuery, SqlAlchemyRow
 from dagster._core.storage.sqlalchemy_compat import db_fetch_mappings, db_select, db_subquery
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
-from dagster._time import datetime_from_timestamp
+from dagster._time import datetime_from_timestamp, get_current_datetime
 from dagster._utils import PrintFn
 
 from .base import ScheduleStorage
@@ -166,7 +165,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     status=state.status.value,
                     instigator_type=state.instigator_type.value,
                     instigator_body=serialize_value(state),
-                    update_timestamp=pendulum.now("UTC"),
+                    update_timestamp=get_current_datetime(),
                 )
             )
 
@@ -204,7 +203,7 @@ class SqlScheduleStorage(ScheduleStorage):
         values = {
             "status": state.status.value,
             "job_body": serialize_value(state),
-            "update_timestamp": pendulum.now("UTC"),
+            "update_timestamp": get_current_datetime(),
         }
         if self.has_instigators_table():
             values["selector_id"] = state.selector_id

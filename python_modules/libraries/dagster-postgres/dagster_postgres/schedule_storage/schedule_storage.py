@@ -1,7 +1,6 @@
 from typing import ContextManager, Optional, Sequence
 
 import dagster._check as check
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.dialects as db_dialects
 import sqlalchemy.pool as db_pool
@@ -24,6 +23,7 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_value
+from dagster._time import get_current_datetime
 from sqlalchemy import event
 from sqlalchemy.engine import Connection
 
@@ -175,7 +175,7 @@ class PostgresScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                     "status": state.status.value,
                     "instigator_type": state.instigator_type.value,
                     "instigator_body": serialize_value(state),
-                    "update_timestamp": pendulum.now("UTC"),
+                    "update_timestamp": get_current_datetime(),
                 },
             )
         )
