@@ -56,8 +56,7 @@ export const SensorSwitch = (props: Props) => {
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
-  const {jobOriginId, name, sensorState} = sensor;
-  const {selectorId} = sensorState;
+  const {id, name, sensorState} = sensor;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
@@ -100,7 +99,7 @@ export const SensorSwitch = (props: Props) => {
 
   const onChangeSwitch = () => {
     if (status === InstigationStatus.RUNNING) {
-      stopSensor({variables: {jobOriginId, jobSelectorId: selectorId}});
+      stopSensor({variables: {id}});
     } else {
       startSensor({variables: {sensorSelector}});
     }
@@ -252,7 +251,6 @@ const parseRunStatusSensorCursor = (cursor: string | null) => {
 export const SENSOR_SWITCH_FRAGMENT = gql`
   fragment SensorSwitchFragment on Sensor {
     id
-    jobOriginId
     name
     sensorState {
       id

@@ -16114,7 +16114,6 @@ export type AssetNodeDefinitionFragment = {
     | {
         __typename: 'Sensor';
         id: string;
-        jobOriginId: string;
         name: string;
         sensorType: Types.SensorType;
         sensorState: {

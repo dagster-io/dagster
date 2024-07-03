@@ -98,7 +98,6 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     pipelineName
     scheduleState {
       id
-      selectorId
       status
       ...BasicInstigationStateFragment
     }
@@ -106,7 +105,6 @@ export const LOCATION_WORKSPACE_QUERY = gql`
 
   fragment WorkspaceSensor on Sensor {
     id
-    jobOriginId
     name
     targets {
       mode
@@ -114,7 +112,6 @@ export const LOCATION_WORKSPACE_QUERY = gql`
     }
     sensorState {
       id
-      selectorId
       status
       ...BasicInstigationStateFragment
     }
