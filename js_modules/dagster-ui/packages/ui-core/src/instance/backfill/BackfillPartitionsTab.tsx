@@ -21,6 +21,7 @@ import {AssetKey, RunStatus} from '../../graphql/types';
 import {RunFilterToken, runsPathWithFilters} from '../../runs/RunsFilterInput';
 import {testId} from '../../testing/testId';
 import {Container, HeaderCell, HeaderRow, Inner, Row, RowCell} from '../../ui/VirtualizedTable';
+import {numberFormatter} from '../../ui/formatters';
 import {
   BackfillPartitionsForAssetKeyQuery,
   BackfillPartitionsForAssetKeyQueryVariables,
@@ -235,10 +236,10 @@ export const VirtualizedBackfillPartitionsRow = ({
         </RowCell>
         {asset.__typename === 'AssetPartitionsStatusCounts' ? (
           <>
-            <RowCell>{targeted}</RowCell>
-            <RowCell>{inProgress}</RowCell>
-            <RowCell>{completed}</RowCell>
-            <RowCell>{failed}</RowCell>
+            <RowCell>{numberFormatter.format(targeted)}</RowCell>
+            <RowCell>{numberFormatter.format(inProgress)}</RowCell>
+            <RowCell>{numberFormatter.format(completed)}</RowCell>
+            <RowCell>{numberFormatter.format(failed)}</RowCell>
           </>
         ) : (
           <>
