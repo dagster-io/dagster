@@ -2754,13 +2754,15 @@ export type MutationStartSensorArgs = {
 };
 
 export type MutationStopRunningScheduleArgs = {
-  scheduleOriginId: Scalars['String']['input'];
-  scheduleSelectorId: Scalars['String']['input'];
+  id?: InputMaybe<Scalars['String']['input']>;
+  scheduleOriginId?: InputMaybe<Scalars['String']['input']>;
+  scheduleSelectorId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationStopSensorArgs = {
-  jobOriginId: Scalars['String']['input'];
-  jobSelectorId: Scalars['String']['input'];
+  id?: InputMaybe<Scalars['String']['input']>;
+  jobOriginId?: InputMaybe<Scalars['String']['input']>;
+  jobSelectorId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationTerminatePipelineExecutionArgs = {

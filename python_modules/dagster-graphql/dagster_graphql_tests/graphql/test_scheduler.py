@@ -5,6 +5,7 @@ import time
 
 import pytest
 from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -833,7 +834,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             == InstigatorStatus.RUNNING.value
         )
 
-        schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
+        schedule_id = start_result.data["startSchedule"]["scheduleState"]["id"]
         schedule_selector_id = start_result.data["startSchedule"]["scheduleState"]["selectorId"]
 
         # Stop a single schedule
@@ -841,7 +842,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             STOP_SCHEDULES_QUERY,
             variables={
-                "scheduleOriginId": schedule_origin_id,
+                "scheduleOriginId": schedule_id,  # compat code handles using compound id as origin id
                 "scheduleSelectorId": schedule_selector_id,
             },
         )
@@ -871,10 +872,10 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             variables={"scheduleSelector": schedule_selector},
         )
 
-        schedule_origin_id = start_result.data["startSchedule"]["scheduleState"]["id"]
-        schedule_selector_id = start_result.data["startSchedule"]["scheduleState"]["selectorId"]
+        schedule_id = start_result.data["startSchedule"]["scheduleState"]["id"]
+        cid = CompoundID.from_string(schedule_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            schedule_origin_id, schedule_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -899,7 +900,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             variables={"scheduleSelector": schedule_selector},
         )
         reset_instigator_state = graphql_context.instance.get_instigator_state(
-            schedule_origin_id, schedule_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert reset_instigator_state
@@ -926,7 +927,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             variables={"scheduleSelector": schedule_selector},
         )
 
-        schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
+        schedule_id = result.data["scheduleOrError"]["scheduleState"]["id"]
         schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
 
         assert result.data["scheduleOrError"]["defaultStatus"] == "RUNNING"
@@ -953,7 +954,7 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             graphql_context,
             STOP_SCHEDULES_QUERY,
             variables={
-                "scheduleOriginId": schedule_origin_id,
+                "scheduleOriginId": schedule_id,  # compat code handles compound id passed as origin id
                 "scheduleSelectorId": schedule_selector_id,
             },
         )
@@ -988,8 +989,9 @@ class TestScheduleMutations(ExecutingGraphQLContextTestMatrix):
             RESET_SCHEDULES_QUERY,
             variables={"scheduleSelector": schedule_selector},
         )
+        cid = CompoundID.from_string(schedule_id)
         reset_instigator_state = graphql_context.instance.get_instigator_state(
-            schedule_origin_id, schedule_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert reset_instigator_state
@@ -1040,14 +1042,14 @@ class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
         assert result.data["scheduleOrError"]["scheduleState"]["hasStartPermission"] is False
         assert result.data["scheduleOrError"]["scheduleState"]["hasStopPermission"] is False
 
-        schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
+        schedule_id = result.data["scheduleOrError"]["scheduleState"]["id"]
         schedule_selector_id = result.data["scheduleOrError"]["scheduleState"]["selectorId"]
 
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SCHEDULES_QUERY,
             variables={
-                "scheduleOriginId": schedule_origin_id,
+                "scheduleOriginId": schedule_id,  # compat code handles compound id passed as origin id
                 "scheduleSelectorId": schedule_selector_id,
             },
         )
