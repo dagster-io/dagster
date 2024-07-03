@@ -107,7 +107,7 @@ defs = Definitions(
   for more information.
 </Note>
 
-This approach creates a new Dagster project and wraps a dbt project by using the `dagster-dbt` command line interface. Two options must be provided to run the command:
+This approach uses the `dagster-dbt` CLI to create a new Dagster project and wrap it around a dbt project. Running this command requires two arguments:
 
 - `--project-name` - The name of the Dagster project to be created. In our example, this will be `my_dagster_project`.
 - `--dbt-project-dir` - The path to the dbt project. In our example, this will be `./my_dbt_project`, which means our current location is in the directory where `my_dbt_project` is located.
