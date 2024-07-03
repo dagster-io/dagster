@@ -14,7 +14,11 @@ import {
   buildPythonError,
   buildUnpartitionedAssetStatus,
 } from '../../../graphql/types';
-import {buildQueryMock} from '../../../testing/mocking';
+import {
+  buildQueryMock,
+  mockViewportClientRect,
+  restoreViewportClientRect,
+} from '../../../testing/mocking';
 import {BACKFILL_DETAILS_QUERY, BackfillPage} from '../BackfillPage';
 
 // This file must be mocked because Jest can't handle `import.meta.url`.
@@ -76,18 +80,13 @@ const mocks = [
   }),
 ];
 
-let nativeGBRC: any;
-
 describe('BackfillPage', () => {
   beforeAll(() => {
-    nativeGBRC = window.Element.prototype.getBoundingClientRect;
-    window.Element.prototype.getBoundingClientRect = jest
-      .fn()
-      .mockReturnValue({height: 400, width: 400});
+    mockViewportClientRect();
   });
 
   afterAll(() => {
-    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+    restoreViewportClientRect();
   });
 
   it('renders the loading state', async () => {
