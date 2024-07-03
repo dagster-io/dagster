@@ -74,3 +74,7 @@ def generate_materializations(
             all_stream_stats.get(stream_name, {}),
             asset_key_prefix=asset_key_prefix,
         )
+
+
+def table_to_output_name_fn(table: str) -> str:
+    return table.replace("-", "_")

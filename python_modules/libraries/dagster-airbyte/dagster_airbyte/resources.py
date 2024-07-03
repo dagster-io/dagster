@@ -5,7 +5,7 @@ import sys
 import time
 from abc import abstractmethod
 from contextlib import contextmanager, suppress
-from typing import Any, Dict, List, Mapping, Optional, Union, cast, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Union, cast
 
 import requests
 from dagster import (
@@ -27,10 +27,8 @@ from dagster._utils.merger import deep_merge_dicts
 from pydantic import Field
 from requests.exceptions import RequestException
 
-#TODO that function should be called from util, move it
-from dagster_airbyte.asset_defs import _table_to_output_name_fn
 from dagster_airbyte.types import AirbyteOutput
-from dagster_airbyte.utils import generate_materializations
+from dagster_airbyte.utils import generate_materializations, table_to_output_name_fn
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -275,13 +273,13 @@ class BaseAirbyteResource(ConfigurableResource):
                 for table_name in destination_tables:
                     yield Output(
                         value=None,
-                        output_name=_table_to_output_name_fn(table_name),
+                        output_name=table_to_output_name_fn(table_name),
                     )
                     if normalization_tables:
                         for dependent_table in normalization_tables.get(table_name, set()):
                             yield Output(
                                 value=None,
-                                output_name=_table_to_output_name_fn(dependent_table),
+                                output_name=table_to_output_name_fn(dependent_table),
                             )
             else:
                 for materialization in generate_materializations(ab_output):
@@ -289,7 +287,7 @@ class BaseAirbyteResource(ConfigurableResource):
                     if table_name in destination_tables:
                         yield Output(
                             value=None,
-                            output_name=_table_to_output_name_fn(table_name),
+                            output_name=table_to_output_name_fn(table_name),
                             metadata=materialization.metadata,
                         )
                         # Also materialize any normalization tables affiliated with this destination
@@ -298,7 +296,7 @@ class BaseAirbyteResource(ConfigurableResource):
                             for dependent_table in normalization_tables.get(table_name, set()):
                                 yield Output(
                                     value=None,
-                                    output_name=_table_to_output_name_fn(dependent_table),
+                                    output_name=table_to_output_name_fn(dependent_table),
                                 )
                     else:
                         yield materialization

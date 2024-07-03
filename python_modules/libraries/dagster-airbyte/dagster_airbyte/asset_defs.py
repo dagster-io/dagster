@@ -52,11 +52,10 @@ from dagster_airbyte.utils import (
     generate_materializations,
     generate_table_schema,
     is_basic_normalization_operation,
+    table_to_output_name_fn,
 )
 
-
-def _table_to_output_name_fn(table: str) -> str:
-    return table.replace("-", "_")
+_table_to_output_name_fn = table_to_output_name_fn
 
 
 def _build_airbyte_asset_defn_metadata(
