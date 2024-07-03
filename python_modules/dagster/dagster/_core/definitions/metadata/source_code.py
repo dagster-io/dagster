@@ -102,6 +102,7 @@ def _with_code_source_single_definition(
     from dagster._core.definitions.graph_definition import GraphDefinition
     from dagster._core.definitions.op_definition import OpDefinition
 
+    base_fn = None
     if isinstance(assets_def.node_def, OpDefinition):
         base_fn = (
             assets_def.node_def.compute_fn.decorated_fn
@@ -112,9 +113,8 @@ def _with_code_source_single_definition(
         # For graph-backed assets, point to the composition fn, e.g. the
         # function decorated by @graph_asset
         base_fn = assets_def.node_def.composition_fn
-        if not base_fn:
-            return assets_def
-    else:
+
+    if not base_fn:
         return assets_def
 
     source_path = local_source_path_from_fn(base_fn)
