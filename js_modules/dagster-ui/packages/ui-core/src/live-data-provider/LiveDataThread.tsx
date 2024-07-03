@@ -63,14 +63,16 @@ export class LiveDataThread<T> {
   }
 
   public startFetchLoop() {
-    if (this.intervals.length === this.parallelFetches) {
+    if (this.activeFetches === this.parallelFetches) {
       return;
     }
     const fetch = () => {
       this._batchedQueryKeys();
     };
     setTimeout(fetch, BATCHING_INTERVAL);
-    this.intervals.push(setInterval(fetch, 5000));
+    if (this.intervals.length !== this.parallelFetches) {
+      this.intervals.push(setInterval(fetch, 5000));
+    }
   }
 
   public stopFetchLoop() {

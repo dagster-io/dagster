@@ -11,11 +11,7 @@ import {AssetFeatureContext} from './AssetFeatureContext';
 import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDefinition';
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
-import {
-  AssetNodeOverview,
-  AssetNodeOverviewLoading,
-  AssetNodeOverviewNonSDA,
-} from './AssetNodeOverview';
+import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './AssetNodeOverview';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlotsPage} from './AssetPlotsPage';
@@ -80,9 +76,9 @@ export const AssetView = ({
       definitionQueryResult.data?.assetOrError.__typename === 'Asset' &&
       writeAssetVisit
     ) {
-      writeAssetVisit({path: currentPath});
+      writeAssetVisit({path: assetKey.path});
     }
-  }, [definitionQueryResult, writeAssetVisit, currentPath]);
+  }, [definitionQueryResult, writeAssetVisit, assetKey.path]);
 
   const tabList = useTabBuilder({definition, params});
 
@@ -119,17 +115,20 @@ export const AssetView = ({
     }
   }, [definitionQueryResult, liveData, trace]);
 
+  const isLoading =
+    definitionQueryResult.loading &&
+    !definitionQueryResult.previousData &&
+    !definitionQueryResult.data;
+
   const renderOverviewTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
-      return <AssetNodeOverviewLoading />;
-    }
-    if (!definition) {
+    if (!definition && !isLoading) {
       return (
         <AssetNodeOverviewNonSDA assetKey={assetKey} lastMaterialization={lastMaterialization} />
       );
     }
     return (
       <AssetNodeOverview
+        assetKey={assetKey}
         assetNode={definition}
         upstream={upstream}
         downstream={downstream}
@@ -140,7 +139,7 @@ export const AssetView = ({
   };
 
   const renderDefinitionTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+    if (isLoading) {
       return <AssetLoadingDefinitionState />;
     }
     if (!definition) {
@@ -195,7 +194,7 @@ export const AssetView = ({
   };
 
   const renderEventsTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+    if (isLoading) {
       return <AssetLoadingDefinitionState />;
     }
     return (
@@ -212,7 +211,7 @@ export const AssetView = ({
   };
 
   const renderPlotsTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+    if (isLoading) {
       return <AssetLoadingDefinitionState />;
     }
     return (
@@ -226,14 +225,14 @@ export const AssetView = ({
   };
 
   const renderAutomaterializeHistoryTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+    if (isLoading) {
       return <AssetLoadingDefinitionState />;
     }
     return <AssetAutomaterializePolicyPage assetKey={assetKey} definition={definition} />;
   };
 
   const renderChecksTab = () => {
-    if (definitionQueryResult.loading && !definitionQueryResult.previousData) {
+    if (isLoading) {
       return <AssetLoadingDefinitionState />;
     }
     return (

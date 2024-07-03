@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from '@dagster-io/ui-components';
 import dayjs from 'dayjs';
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components';
 
@@ -25,6 +25,7 @@ import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNo
 import {AssetEventMetadataEntriesTable} from './AssetEventMetadataEntriesTable';
 import {metadataForAssetNode} from './AssetMetadata';
 import {insitigatorsByType} from './AssetNodeInstigatorTag';
+import {useCachedAssets} from './AssetsCatalogTable';
 import {DependsOnSelfBanner} from './DependsOnSelfBanner';
 import {LargeCollapsibleSection} from './LargeCollapsibleSection';
 import {MaterializationTag} from './MaterializationTag';
@@ -38,12 +39,14 @@ import {buildConsolidatedColumnSchema} from './buildConsolidatedColumnSchema';
 import {globalAssetGraphPathForAssetsAndDescendants} from './globalAssetGraphPathToString';
 import {AssetKey} from './types';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinition.types';
+import {AssetTableFragment} from './types/AssetTableFragment.types';
 import {useLatestPartitionEvents} from './useLatestPartitionEvents';
 import {useRecentAssetEvents} from './useRecentAssetEvents';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {showSharedToaster} from '../app/DomUtils';
 import {COMMON_COLLATOR} from '../app/Util';
 import {useCopyToClipboard} from '../app/browser';
+import {useAssetsLiveData} from '../asset-data/AssetLiveDataProvider';
 import {
   LiveDataForNode,
   displayNameForAssetKey,
@@ -81,34 +84,50 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 export const AssetNodeOverview = ({
+  assetKey,
   assetNode,
   upstream,
   downstream,
   liveData,
   dependsOnSelf,
 }: {
-  assetNode: AssetNodeDefinitionFragment;
+  assetKey: AssetKey;
+  assetNode: AssetNodeDefinitionFragment | undefined | null;
   upstream: AssetNodeForGraphQueryFragment[] | null;
   downstream: AssetNodeForGraphQueryFragment[] | null;
   liveData: LiveDataForNode | undefined;
   dependsOnSelf: boolean;
 }) => {
-  const repoAddress = buildRepoAddress(
-    assetNode.repository.name,
-    assetNode.repository.location.name,
-  );
+  const repoAddress = assetNode
+    ? buildRepoAddress(assetNode.repository.name, assetNode.repository.location.name)
+    : buildRepoAddress('', '');
   const location = useRepositoryLocationForAddress(repoAddress);
 
   const {assetType, assetMetadata} = metadataForAssetNode(assetNode);
   const {schedules, sensors} = useMemo(() => insitigatorsByType(assetNode), [assetNode]);
-  const configType = assetNode.configField?.configType;
+  const configType = assetNode?.configField?.configType;
   const assetConfigSchema = configType && configType.key !== 'Any' ? configType : null;
-  const visibleJobNames = assetNode.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName));
+  const visibleJobNames =
+    assetNode?.jobNames.filter((jobName) => !isHiddenAssetGroupJob(jobName)) || [];
 
   const assetNodeLoadTimestamp = location ? location.updatedTimestamp * 1000 : undefined;
 
+  const [cachedAsset, setCachedAsset] = useState<AssetTableFragment | undefined>();
+  useCachedAssets({
+    onAssets: useCallback(
+      (data) => {
+        for (const asset of data) {
+          if (JSON.stringify(asset.key.path) === JSON.stringify(assetKey.path)) {
+            setCachedAsset(asset);
+          }
+        }
+      },
+      [assetKey.path],
+    ),
+  });
+
   const {materialization, observation, loading} = useLatestPartitionEvents(
-    assetNode,
+    assetKey,
     assetNodeLoadTimestamp,
     liveData,
   );
@@ -119,12 +138,27 @@ export const AssetNodeOverview = ({
     observations,
     loading: materializationsLoading,
   } = useRecentAssetEvents(
-    assetNode.isPartitioned ? undefined : assetNode.assetKey,
+    (!cachedAsset && !assetNode) ||
+      cachedAsset?.definition?.partitionDefinition ||
+      assetNode?.isPartitioned
+      ? undefined
+      : assetNode?.assetKey,
     {},
     {assetHasDefinedPartitions: false},
   );
 
-  if (loading) {
+  // Start loading neighboring assets data immediately to avoid waterfall.
+  useAssetsLiveData(
+    useMemo(
+      () => [
+        ...(downstream || []).map((node) => node.assetKey),
+        ...(upstream || []).map((node) => node.assetKey),
+      ],
+      [downstream, upstream],
+    ),
+  );
+
+  if (loading || !assetNode) {
     return <AssetNodeOverviewLoading />;
   }
 

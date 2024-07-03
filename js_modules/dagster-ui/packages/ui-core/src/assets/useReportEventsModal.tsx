@@ -59,7 +59,7 @@ export function useReportEventsModal(asset: Asset | null, onEventReported?: () =
   );
 
   const element = asset ? (
-    <ReportEventDialogBody
+    <ReportEventsDialog
       asset={asset}
       isOpen={isOpen}
       setIsOpen={setIsOpen}
@@ -74,7 +74,7 @@ export function useReportEventsModal(asset: Asset | null, onEventReported?: () =
   };
 }
 
-const ReportEventDialogBody = ({
+const ReportEventsDialog = ({
   asset,
   repoAddress,
   isOpen,
@@ -84,6 +84,35 @@ const ReportEventDialogBody = ({
   asset: Asset;
   repoAddress: RepoAddress;
   isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  onEventReported?: () => void;
+}) => {
+  return (
+    <Dialog
+      style={{width: 700}}
+      isOpen={isOpen}
+      canEscapeKeyClose
+      canOutsideClickClose
+      onClose={() => setIsOpen(false)}
+    >
+      <ReportEventDialogBody
+        asset={asset}
+        setIsOpen={setIsOpen}
+        repoAddress={repoAddress}
+        onEventReported={onEventReported}
+      />
+    </Dialog>
+  );
+};
+
+const ReportEventDialogBody = ({
+  asset,
+  repoAddress,
+  setIsOpen,
+  onEventReported,
+}: {
+  asset: Asset;
+  repoAddress: RepoAddress;
   setIsOpen: (open: boolean) => void;
   onEventReported?: () => void;
 }) => {
@@ -165,13 +194,7 @@ const ReportEventDialogBody = ({
   };
 
   return (
-    <Dialog
-      style={{width: 700}}
-      isOpen={isOpen}
-      canEscapeKeyClose
-      canOutsideClickClose
-      onClose={() => setIsOpen(false)}
-    >
+    <>
       <DialogHeader
         icon="info"
         label={
@@ -268,7 +291,7 @@ const ReportEventDialogBody = ({
           </Button>
         </Tooltip>
       </DialogFooter>
-    </Dialog>
+    </>
   );
 };
 
