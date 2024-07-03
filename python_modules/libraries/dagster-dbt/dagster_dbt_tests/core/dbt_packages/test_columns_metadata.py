@@ -432,28 +432,38 @@ def test_column_lineage_real_warehouse(
     manifest = test_metadata_manifest.copy()
     assert manifest["metadata"]["adapter_type"] == sql_dialect
 
+    excluded_models = excluded_models or []
+
     dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path), target=target)
-    dbt.cli(["--quiet", "seed", "--exclude", "resource_type:test", *(excluded_models or [])]).wait()
+    dbt.cli(["--quiet", "seed", "--exclude", "resource_type:test", *excluded_models]).wait()
     dbt.cli(
         [
             "--quiet",
             "build",
             # Exclude seeds to ensure they are built first
             "--exclude",
-            "seeds/",
+            "resource_type:seed",
             "--exclude",
             "resource_type:test",
-            *(excluded_models or []),
+            *excluded_models,
         ]
     ).wait()
 
     @dbt_assets(manifest=manifest)
     def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
-        cli_invocation = dbt.cli(
-            ["build", "--exclude", "seeds/"],
+        seed_cli_invocation = dbt.cli(
+            ["seed"],
             context=context,
         ).stream()
-        # test chaining fetch_row_counts and fetch_column_metadata
+        if fetch_row_counts:
+            seed_cli_invocation = seed_cli_invocation.fetch_row_counts()
+        seed_cli_invocation = seed_cli_invocation.fetch_column_metadata()
+        yield from seed_cli_invocation
+
+        cli_invocation = dbt.cli(
+            ["build", "--exclude", "resource_type:seed"],
+            context=context,
+        ).stream()
         if fetch_row_counts:
             cli_invocation = cli_invocation.fetch_row_counts()
         cli_invocation = cli_invocation.fetch_column_metadata()
@@ -478,8 +488,7 @@ def test_column_lineage_real_warehouse(
     expected_column_lineage_by_asset_key = {
         k: v
         for k, v in EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT.items()
-        if k.path[-1] not in (excluded_models or [])
-        and k.path[-1] not in ("raw_customers", "raw_payments", "raw_orders")
+        if k.path[-1] not in excluded_models
     }
     assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
         str(column_lineage_by_asset_key)
