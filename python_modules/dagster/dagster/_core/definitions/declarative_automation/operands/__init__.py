@@ -1,4 +1,5 @@
 from .slice_conditions import (
+    CodeVersionNewlyUpdated as CodeVersionNewlyUpdated,
     CronTickPassedCondition as CronTickPassedCondition,
     FailedAutomationCondition as FailedAutomationCondition,
     InLatestTimeWindowCondition as InLatestTimeWindowCondition,

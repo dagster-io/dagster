@@ -209,6 +209,15 @@ class AutomationCondition(ABC, DagsterModel):
         return NewlyRequestedCondition()
 
     @staticmethod
+    def code_version_newly_updated() -> "NewlyRequestedCondition":
+        """Returns a AutomationCondition that is true for an asset partition if its asset's code
+        version has been updated since the previous tick.
+        """
+        from .operands import NewlyRequestedCondition
+
+        return NewlyRequestedCondition()
+
+    @staticmethod
     def cron_tick_passed(
         cron_schedule: str, cron_timezone: str = "UTC"
     ) -> "CronTickPassedCondition":
