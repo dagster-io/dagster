@@ -14,6 +14,7 @@ import pytest
 from dagster import op
 from dagster._core.definitions.decorators.job_decorator import job
 from dagster_mlflow.resources import MlFlow, mlflow_tracking
+from mlflow import MlflowException
 
 
 @pytest.fixture
@@ -249,6 +250,32 @@ def test_get_current_run_id(context, experiment, run_df):
         assert run_id == run_df.run_id.values[0]
     else:
         assert run_id is None
+
+
+def test_get_current_run_id_with_one_mlflow_error(context):
+    experiment = MagicMock(experiment_id="1")
+    run_df = pd.DataFrame(data={"run_id": ["100"]})
+
+    with patch.object(MlFlow, "_setup"):
+        # Given: an initialization of the mlflow object
+        mlf = MlFlow(context)
+
+    # Simulate MlflowException being raised once, then return the run_df
+    with patch(
+        "mlflow.search_runs",
+        side_effect=[
+            MlflowException(
+                "Max retries exceeded with url: /api/2.0/mlflow/runs/search (Caused by ResponseError('too many 429 error "
+                "responses')"
+            ),
+            run_df,
+        ],
+    ):
+        # when: _get_current_run_id is called
+        run_id = mlf._get_current_run_id(experiment=experiment)  # noqa: SLF001
+
+    # Then: the run_id id provided is the same as what was provided
+    assert run_id == run_df.run_id.values[0]
 
 
 @patch("atexit.unregister")
