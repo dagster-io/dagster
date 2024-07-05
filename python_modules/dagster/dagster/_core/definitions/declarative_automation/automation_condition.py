@@ -39,6 +39,7 @@ if TYPE_CHECKING:
         AllDepsCondition,
         AndAssetCondition,
         AnyDepsCondition,
+        AnyDownstreamConditionsCondition,
         NewlyTrueCondition,
         NotAssetCondition,
         OrAssetCondition,
@@ -73,6 +74,19 @@ class AutomationCondition(ABC, DagsterModel):
         """Returns a unique identifier for this condition within the broader condition tree."""
         parts = [str(parent_unique_id), str(index), self.__class__.__name__, self.description]
         return non_secure_md5_hash_str("".join(parts).encode())
+
+    def get_hash(
+        self, *, parent_unique_id: Optional[str] = None, index: Optional[int] = None
+    ) -> int:
+        """Generates a hash based off of the unique ids of all children."""
+        unique_id = self.get_unique_id(parent_unique_id=parent_unique_id, index=index)
+        hashes = [hash(unique_id)]
+        for i, child in enumerate(self.children):
+            hashes.append(child.get_hash(parent_unique_id=unique_id, index=i))
+        return hash(tuple(hashes))
+
+    def __hash__(self) -> int:
+        return self.get_hash()
 
     def as_auto_materialize_policy(self) -> "AutoMaterializePolicy":
         """Returns an AutoMaterializePolicy which contains this condition."""
@@ -289,6 +303,13 @@ class AutomationCondition(ABC, DagsterModel):
             & cron_tick_passed.since(AutomationCondition.newly_requested())
             & all_deps_updated_since_cron
         )
+
+    @staticmethod
+    def any_downstream_conditions() -> "AnyDownstreamConditionsCondition":
+        """Returns a condition which will represent the union of all distinct downstream conditions."""
+        from .operators import AnyDownstreamConditionsCondition
+
+        return AnyDownstreamConditionsCondition()
 
 
 class AutomationResult(NamedTuple):

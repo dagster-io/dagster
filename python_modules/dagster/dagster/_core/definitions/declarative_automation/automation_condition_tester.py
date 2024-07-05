@@ -10,6 +10,7 @@ from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.data_time import CachingDataTimeResolver
+from dagster._core.definitions.declarative_automation.automation_condition import AutomationResult
 from dagster._core.definitions.declarative_automation.automation_condition_evaluator import (
     AutomationConditionEvaluator,
 )
@@ -24,9 +25,11 @@ class EvaluateAutomationConditionsResult:
         self,
         requested_asset_partitions: AbstractSet[AssetKeyPartitionKey],
         cursor: AssetDaemonCursor,
+        results: Sequence[AutomationResult],
     ):
         self._requested_asset_partitions = requested_asset_partitions
         self.cursor = cursor
+        self.results = results
 
     @cached_property
     def _requested_partitions_by_asset_key(self) -> Mapping[AssetKey, AbstractSet[Optional[str]]]:
@@ -134,4 +137,5 @@ def evaluate_automation_conditions(
     return EvaluateAutomationConditionsResult(
         cursor=cursor,
         requested_asset_partitions=requested_asset_partitions,
+        results=results,
     )
