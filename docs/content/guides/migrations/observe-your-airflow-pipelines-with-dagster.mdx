@@ -9,7 +9,7 @@ Dagster can act as a single entry point to all orchestration platforms in use at
 
 ### Emitting materialization events from Airflow to Dagster
 
-Imagine you have a large number of pipelines written in Apache Airflow, and you wish to introduce Dagster into your stack. You can continue to run your existing pipelines, while building new pipelines in Dagster that are tightly integrated to your legacy systems by using custom Airflow operators.
+Imagine you have a large number of pipelines written in Apache Airflow and wish to introduce Dagster into your stack. By using custom Airflow operators, you can continue to run your existing pipelines while you work toward migrating them off Airflow, or while building new pipelines in Dagster that are tightly integrated with your legacy systems.
 
 To do this, we will define a `DagsterAssetOperator` operator that can be appended to the end of your Airflow DAG to indicate the processing of the pipeline has concluded. The HTTP endpoint of Dagster server, the `asset_key` and additional metadata and descriptions are to be specified to inform Dagster of the materialization.
 
