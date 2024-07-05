@@ -69,7 +69,7 @@ dagster_op = DagsterAssetOperator(
 )
 ```
 
-Once the events are being emit from Airflow, there are two options for scheduling Dagster processing from the external Airflow materialization event: asset sensors, and auto materialization policies.
+Once the events are emitted from Airflow, there are two options for scheduling Dagster materializations following the external Airflow materialization event: asset sensors and auto materialization policies.
 
 An external asset is created in Dagster, and an `asset_sensor` is used to identify the materialization events that are being sent from Airflow.
 
