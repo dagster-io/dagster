@@ -65,6 +65,7 @@ import {RunStatusDot} from '../runs/RunStatusDots';
 import {failedStatuses} from '../runs/RunStatuses';
 import {titleForRun} from '../runs/RunUtils';
 import {TimeElapsed} from '../runs/TimeElapsed';
+import {AnchorButton} from '../ui/AnchorButton';
 
 const DEFAULT_MIN_VALUE = 1;
 const DEFAULT_MAX_VALUE = 1000;
@@ -151,13 +152,11 @@ type DialogAction =
 export const RunConcurrencyContent = ({
   hasRunQueue,
   runQueueConfig,
-  onEdit,
   refreshState,
 }: {
   hasRunQueue: boolean;
   runQueueConfig: RunQueueConfigFragment | null | undefined;
   refreshState?: QueryRefreshState;
-  onEdit?: () => void;
 }) => {
   if (!hasRunQueue) {
     return (
@@ -227,20 +226,14 @@ export const RunConcurrencyContent = ({
 
   return (
     <>
-      <RunConcurrencyLimitHeader onEdit={onEdit} refreshState={refreshState} />
+      <RunConcurrencyLimitHeader refreshState={refreshState} />
       {infoContent}
       {settings_content}
     </>
   );
 };
 
-const RunConcurrencyLimitHeader = ({
-  onEdit,
-  refreshState,
-}: {
-  onEdit?: () => void;
-  refreshState?: QueryRefreshState;
-}) => (
+const RunConcurrencyLimitHeader = ({refreshState}: {refreshState?: QueryRefreshState}) => (
   <Box
     flex={{justifyContent: 'space-between', alignItems: 'center'}}
     padding={{vertical: 16, horizontal: 24}}
@@ -249,11 +242,9 @@ const RunConcurrencyLimitHeader = ({
     <Subheading>Run concurrency</Subheading>
     <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
       {refreshState ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
-      {onEdit ? (
-        <Button icon={<Icon name="edit" />} onClick={() => onEdit()}>
-          Edit configuration
-        </Button>
-      ) : null}
+      <AnchorButton icon={<Icon name="edit" />} to="/config">
+        Edit configuration
+      </AnchorButton>
     </Box>
   </Box>
 );
