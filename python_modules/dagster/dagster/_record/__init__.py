@@ -23,10 +23,11 @@ TType = TypeVar("TType", bound=Type)
 TVal = TypeVar("TVal")
 
 
-_MODEL_MARKER_VALUE = object()
-_MODEL_MARKER_FIELD = (
+_RECORD_MARKER_VALUE = object()
+_RECORD_MARKER_FIELD = (
     "__checkrepublic__"  # "I do want to release this as checkrepublic one day" - schrockn
 )
+_RECORD_ANNOTATIONS_FIELD = "__record_annotations__"
 _CHECKED_NEW = "__checked_new__"
 _DEFAULTS_NEW = "__defaults_new__"
 _INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
@@ -93,8 +94,8 @@ def _namedtuple_model_transform(
             "__iter__": _banned_iter,
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
-            _MODEL_MARKER_FIELD: _MODEL_MARKER_VALUE,
-            "__annotations__": field_set,
+            _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
+            _RECORD_ANNOTATIONS_FIELD: field_set,
             "__nt_new__": nt_new,
             "__bool__": _true,
         },
@@ -216,11 +217,15 @@ class IHaveNew:
 
 def is_record(obj) -> bool:
     """Whether or not this object was produced by a record decorator."""
-    return getattr(obj, _MODEL_MARKER_FIELD, None) == _MODEL_MARKER_VALUE
+    return getattr(obj, _RECORD_MARKER_FIELD, None) == _RECORD_MARKER_VALUE
 
 
 def has_generated_new(obj) -> bool:
     return obj.__new__.__name__ in (_DEFAULTS_NEW, _CHECKED_NEW)
+
+
+def get_record_annotations(obj) -> Mapping[str, Type]:
+    return getattr(obj, _RECORD_ANNOTATIONS_FIELD)
 
 
 def as_dict(obj) -> Mapping[str, Any]:

@@ -977,3 +977,18 @@ def test_record_fwd_ref():
         )
 
     assert _out_of_scope()
+
+
+def test_record_subclass() -> None:
+    test_env = WhitelistMap.create()
+
+    @record
+    class MyRecord:
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    class Child(MyRecord): ...
+
+    c = Child(name="kiddo")
+    r_str = serialize_value(c, whitelist_map=test_env)
+    assert deserialize_value(r_str, whitelist_map=test_env) == c

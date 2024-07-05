@@ -48,7 +48,7 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
-from dagster._record import as_dict, has_generated_new, is_record
+from dagster._record import as_dict, get_record_annotations, has_generated_new, is_record
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -648,9 +648,8 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
 
     @cached_property
     def constructor_param_names(self) -> Sequence[str]:
-        # if its an @record generated new, just use annotations
         if has_generated_new(self.klass):
-            return list(self.klass.__annotations__.keys())
+            return list(get_record_annotations(self.klass).keys())
 
         return list(signature(self.klass.__new__).parameters.keys())
 
