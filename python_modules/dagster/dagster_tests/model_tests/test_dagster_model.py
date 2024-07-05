@@ -1,3 +1,4 @@
+import pickle
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -405,3 +406,33 @@ def test_build_args_and_assign(fields, defaults, expected):
     # tests / documents shared utility fn
     # don't hesitate to delete this upon refactor
     assert build_args_and_assignment_strs(fields, defaults) == expected
+
+
+@record
+class Person:
+    name: str
+    age: int
+
+
+@record_custom
+class Agent(IHaveNew):
+    name: str
+    secrets: List[str]
+
+    def __new__(cls, name: str, **kwargs):
+        return super().__new__(
+            cls,
+            name=name,
+            secrets=kwargs.get("secrets", []),
+        )
+
+
+def test_pickle():
+    p = Person(name="Lyra", age=2)
+    assert p == pickle.loads(pickle.dumps(p))
+
+    a = Agent(name="smith", secrets=["many"])
+    assert a == pickle.loads(pickle.dumps(a))
+
+    a2 = Agent(name="mr. clean")
+    assert a2 == pickle.loads(pickle.dumps(a2))
