@@ -1,4 +1,5 @@
 import pickle
+from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 import pytest
@@ -436,3 +437,42 @@ def test_pickle():
 
     a2 = Agent(name="mr. clean")
     assert a2 == pickle.loads(pickle.dumps(a2))
+
+
+def test_default_collision() -> None:
+    class BadBase(ABC):
+        @property
+        @abstractmethod
+        def abstract_prop(self): ...
+
+        def some_method(self): ...
+
+    with pytest.raises(check.CheckError, match="Conflicting @property"):
+
+        @record
+        class _(BadBase):
+            abstract_prop: Any
+
+    with pytest.raises(check.CheckError, match="Conflicting function"):
+
+        @record
+        class _(BadBase):
+            some_method: Any
+
+    class Base(ABC):
+        thing: Any
+
+    @record
+    class Impl(Base):
+        thing: Any
+
+    assert Impl(thing=3).thing == 3
+
+    with pytest.raises(check.CheckError, match="will have to override __new__"):
+
+        def _some_func():
+            return 4
+
+        @record
+        class _(Base):
+            thing: Any = _some_func
