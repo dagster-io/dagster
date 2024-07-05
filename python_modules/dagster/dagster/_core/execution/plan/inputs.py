@@ -1,12 +1,11 @@
 import hashlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Iterator,
     List,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -28,6 +27,7 @@ from dagster._core.errors import (
 )
 from dagster._core.storage.io_manager import IOManager
 from dagster._core.system_config.objects import ResolvedRunConfig
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes import whitelist_for_serdes
 
 from .objects import TypeCheckData
@@ -45,34 +45,21 @@ StepInputUnion: TypeAlias = Union[
 
 
 @whitelist_for_serdes
-class StepInputData(
-    NamedTuple("_StepInputData", [("input_name", str), ("type_check_data", TypeCheckData)])
-):
+@record
+class StepInputData:
     """Serializable payload of information for the result of processing a step input."""
 
-    def __new__(cls, input_name: str, type_check_data: TypeCheckData):
-        return super(StepInputData, cls).__new__(
-            cls,
-            input_name=check.str_param(input_name, "input_name"),
-            type_check_data=check.inst_param(type_check_data, "type_check_data", TypeCheckData),
-        )
+    input_name: str
+    type_check_data: TypeCheckData
 
 
-class StepInput(
-    NamedTuple(
-        "_StepInput",
-        [("name", str), ("dagster_type_key", str), ("source", "StepInputSource")],
-    )
-):
+@record
+class StepInput:
     """Holds information for how to prepare an input for an ExecutionStep."""
 
-    def __new__(cls, name: str, dagster_type_key: str, source: "StepInputSource"):
-        return super(StepInput, cls).__new__(
-            cls,
-            name=check.str_param(name, "name"),
-            dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
-            source=check.inst_param(source, "source", StepInputSource),
-        )
+    name: str
+    dagster_type_key: str
+    source: "StepInputSource"
 
     @property
     def dependency_keys(self) -> AbstractSet[str]:
@@ -125,17 +112,12 @@ class StepInputSource(ABC):
 @whitelist_for_serdes(
     storage_name="FromSourceAsset", storage_field_names={"node_handle": "solid_handle"}
 )
-class FromLoadableAsset(
-    NamedTuple(
-        "_FromLoadableAsset",
-        [
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromLoadableAsset(StepInputSource):
     """Load input value from an asset."""
+
+    node_handle: NodeHandle
+    input_name: str
 
     def load_input_object(
         self,
@@ -267,17 +249,12 @@ class FromLoadableAsset(
 @whitelist_for_serdes(
     storage_name="FromRootInputManager", storage_field_names={"node_handle": "solid_handle"}
 )
-class FromInputManager(
-    NamedTuple(
-        "_FromInputManager",
-        [
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromInputManager(StepInputSource):
     """Load input value via a InputManager."""
+
+    node_handle: NodeHandle
+    input_name: str
 
     def load_input_object(
         self,
@@ -380,22 +357,18 @@ class FromInputManager(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromStepOutput(
-    NamedTuple(
-        "_FromStepOutput",
-        [
-            ("step_output_handle", StepOutputHandle),
-            ("fan_in", bool),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record_custom
+class FromStepOutput(StepInputSource, IHaveNew):
     """This step input source is the output of a previous step.
     Source handle may refer to graph in case of input mapping.
     """
+
+    step_output_handle: StepOutputHandle
+    fan_in: bool
+
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -407,15 +380,11 @@ class FromStepOutput(
     ):
         return super().__new__(
             cls,
-            step_output_handle=check.inst_param(
-                step_output_handle, "step_output_handle", StepOutputHandle
-            ),
-            fan_in=check.bool_param(fan_in, "fan_in"),
+            step_output_handle=step_output_handle,
+            fan_in=fan_in,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -529,27 +498,15 @@ class FromStepOutput(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromConfig(
-    NamedTuple(
-        "_FromConfig",
-        [
-            ("node_handle", Optional[NodeHandle]),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromConfig(StepInputSource):
     """This step input source is configuration to be passed to a type loader.
 
     A None node_handle implies the inputs were provided at the root graph level.
     """
 
-    def __new__(cls, node_handle: Optional[NodeHandle], input_name: str):
-        return super(FromConfig, cls).__new__(
-            cls,
-            node_handle=node_handle,
-            input_name=input_name,
-        )
+    node_handle: Optional[NodeHandle]
+    input_name: str
 
     def get_associated_input_def(self, job_def: JobDefinition) -> InputDefinition:
         """Returns the InputDefinition along the potential composition InputMapping chain
@@ -607,20 +564,13 @@ class FromConfig(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
+@record
 class FromDirectInputValue(
-    NamedTuple(
-        "_FromDirectInputValue",
-        [("input_name", str)],
-    ),
     StepInputSource,
 ):
     """This input source is for direct python values to be passed as inputs to ops."""
 
-    def __new__(cls, input_name: str):
-        return super(FromDirectInputValue, cls).__new__(
-            cls,
-            input_name=input_name,
-        )
+    input_name: str
 
     def load_input_object(
         self, step_context: "StepExecutionContext", input_def: InputDefinition
@@ -641,20 +591,12 @@ class FromDirectInputValue(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromDefaultValue(
-    NamedTuple(
-        "_FromDefaultValue",
-        [
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    StepInputSource,
-):
+@record
+class FromDefaultValue(StepInputSource):
     """This step input source is the default value declared on an InputDefinition."""
 
-    def __new__(cls, node_handle: NodeHandle, input_name: str):
-        return super(FromDefaultValue, cls).__new__(cls, node_handle, input_name)
+    node_handle: NodeHandle
+    input_name: str
 
     def _load_value(self, pipeline_def: JobDefinition):
         return pipeline_def.get_node(self.node_handle).definition.default_value_for_input(
@@ -677,10 +619,8 @@ class FromDefaultValue(
         return join_and_hash(repr(self._load_value(job_def)))
 
 
-class MultiStepInputSource(StepInputSource):
-    @abstractproperty
-    def sources(self) -> Sequence[StepInputSource]:
-        raise NotImplementedError
+class MultiStepInputSource(StepInputSource, ABC):
+    sources: Sequence[StepInputSource]
 
     @property
     def step_key_dependencies(self) -> AbstractSet[str]:
@@ -719,19 +659,14 @@ class MultiStepInputSource(StepInputSource):
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromMultipleSources(
-    NamedTuple(
-        "_FromMultipleSources",
-        [
-            ("sources", Sequence[StepInputSource]),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-    MultiStepInputSource,
-):
+@record_custom
+class FromMultipleSources(MultiStepInputSource, IHaveNew):
     """This step input is fans-in multiple sources in to a single input. The input will receive a list."""
+
+    sources: Sequence[StepInputSource]
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -750,10 +685,8 @@ class FromMultipleSources(
             cls,
             sources=sources,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     def load_input_object(
@@ -790,19 +723,14 @@ class FromMultipleSources(
 
 
 @whitelist_for_serdes
-class FromMultipleSourcesLoadSingleSource(
-    NamedTuple(
-        "_FromMultipleSourcesLoadSingleSource",
-        [
-            ("sources", Sequence[StepInputSource]),
-            ("source_to_load_from", StepInputSource),
-        ],
-    ),
-    MultiStepInputSource,
-):
+@record_custom
+class FromMultipleSourcesLoadSingleSource(MultiStepInputSource, IHaveNew):
     """This step input fans-in multiple sources in to a single input. The input will receive just
     the value from loading source_to_load_from.
     """
+
+    sources: Sequence[StepInputSource]
+    source_to_load_from: StepInputSource
 
     def __new__(cls, sources: Sequence[StepInputSource], source_to_load_from: StepInputSource):
         check.sequence_param(sources, "sources", StepInputSource)
@@ -814,9 +742,7 @@ class FromMultipleSourcesLoadSingleSource(
         return super().__new__(
             cls,
             sources=sources,
-            source_to_load_from=check.inst_param(
-                source_to_load_from, "source_to_load_from", StepInputSource
-            ),
+            source_to_load_from=source_to_load_from,
         )
 
     def load_input_object(
@@ -849,20 +775,16 @@ def _load_input_with_input_manager(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromPendingDynamicStepOutput(
-    NamedTuple(
-        "_FromPendingDynamicStepOutput",
-        [
-            ("step_output_handle", StepOutputHandle),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-):
+@record_custom
+class FromPendingDynamicStepOutput(IHaveNew):
     """This step input source models being directly downstream of a step with dynamic output.
     Once that step completes successfully, this will resolve once per DynamicOutput.
     """
+
+    step_output_handle: StepOutputHandle
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -880,10 +802,8 @@ class FromPendingDynamicStepOutput(
             cls,
             step_output_handle=step_output_handle,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -914,20 +834,16 @@ class FromPendingDynamicStepOutput(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromUnresolvedStepOutput(
-    NamedTuple(
-        "_FromUnresolvedStepOutput",
-        [
-            ("unresolved_step_output_handle", UnresolvedStepOutputHandle),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-):
+@record_custom
+class FromUnresolvedStepOutput(IHaveNew):
     """This step input source models being downstream of another unresolved step,
     for example indirectly downstream from a step with dynamic output.
     """
+
+    unresolved_step_output_handle: UnresolvedStepOutputHandle
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
 
     def __new__(
         cls,
@@ -938,16 +854,10 @@ class FromUnresolvedStepOutput(
     ):
         return super().__new__(
             cls,
-            unresolved_step_output_handle=check.inst_param(
-                unresolved_step_output_handle,
-                "unresolved_step_output_handle",
-                UnresolvedStepOutputHandle,
-            ),
+            unresolved_step_output_handle=unresolved_step_output_handle,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -973,17 +883,13 @@ class FromUnresolvedStepOutput(
 
 
 @whitelist_for_serdes(storage_field_names={"node_handle": "solid_handle"})
-class FromDynamicCollect(
-    NamedTuple(
-        "_FromDynamicCollect",
-        [
-            ("source", Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]),
-            # deprecated, preserved for back-compat
-            ("node_handle", NodeHandle),
-            ("input_name", str),
-        ],
-    ),
-):
+@record_custom
+class FromDynamicCollect(IHaveNew):
+    source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput]
+    # deprecated, preserved for back-compat
+    node_handle: NodeHandle
+    input_name: str
+
     def __new__(
         cls,
         source: Union[FromPendingDynamicStepOutput, FromUnresolvedStepOutput],
@@ -995,10 +901,8 @@ class FromDynamicCollect(
             cls,
             source=source,
             # add placeholder values for back-compat
-            node_handle=check.opt_inst_param(
-                node_handle, "node_handle", NodeHandle, default=NodeHandle("", None)
-            ),
-            input_name=check.opt_str_param(input_name, "input_handle", default=""),
+            node_handle=node_handle or NodeHandle("", None),
+            input_name=input_name or "",
         )
 
     @property
@@ -1031,7 +935,8 @@ class FromDynamicCollect(
         )
 
 
-class UnresolvedMappedStepInput(NamedTuple):
+@record
+class UnresolvedMappedStepInput:
     """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
@@ -1058,7 +963,8 @@ class UnresolvedMappedStepInput(NamedTuple):
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
-class UnresolvedCollectStepInput(NamedTuple):
+@record
+class UnresolvedCollectStepInput:
     """Holds information for how to resolve a StepInput once the upstream mapping is done."""
 
     name: str
