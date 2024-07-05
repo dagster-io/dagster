@@ -248,8 +248,10 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
         if (
             before_cursor is None
             and asset_partition.partition_key is None
-            and self.asset_graph.has(asset_partition.asset_key)
-            and self.asset_graph.get(asset_partition.asset_key).is_materializable
+            and not (
+                self.asset_graph.has(asset_partition.asset_key)
+                and self.asset_graph.get(asset_partition.asset_key).is_observable
+            )
         ):
             asset_record = self.get_asset_record(asset_partition.asset_key)
             if asset_record is None:
@@ -264,13 +266,13 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
             before_storage_id=before_cursor,
         )
 
-        # For materializable assets, we fetch the most recent observation and materialization and
-        # return whichever is more recent. For non-materializable assets, we just fetch the most
-        # recent materialization.
+        # For observable assets, we fetch the most recent observation and materialization and return
+        # whichever is more recent. For non-observable assets, we just fetch the most recent
+        # materialization.
         materialization_records = self.instance.fetch_materializations(
             records_filter, ascending=False, limit=1
         ).records
-        if not self.asset_graph.get(asset_partition.asset_key).is_materializable:
+        if self.asset_graph.get(asset_partition.asset_key).is_observable:
             observation_records = self.instance.fetch_observations(
                 records_filter, ascending=False, limit=1
             ).records
