@@ -122,7 +122,7 @@ export const PartitionGraph = React.memo(
         onClick: onGraphClick,
         maintainAspectRatio: false,
       };
-    }, [onGraphClick, showLargeGraphMessage, title, yLabel]);
+    }, [onGraphClick, rgbColors, showLargeGraphMessage, title, yLabel]);
 
     const {jobData, stepData} = useMemo(() => {
       if (showLargeGraphMessage) {

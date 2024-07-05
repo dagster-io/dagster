@@ -56,7 +56,7 @@ export const SensorSwitch = (props: Props) => {
     disabledReasons,
   } = usePermissionsForLocation(repoAddress.location);
 
-  const {id, name, sensorState} = sensor;
+  const {id, name} = sensor;
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName: name,
@@ -105,21 +105,24 @@ export const SensorSwitch = (props: Props) => {
     }
   };
 
-  if (shouldFetchLatestState && !data && loading) {
-    return <Spinner purpose="body-text" />;
-  }
-  if (shouldFetchLatestState && data?.sensorOrError.__typename !== 'Sensor') {
-    return (
-      <Tooltip content="Error loading sensor state">
-        <Icon name="error" color={Colors.accentRed()} />;
-      </Tooltip>
-    );
+  let status = sensor.sensorState.status;
+
+  if (shouldFetchLatestState) {
+    if (!data && loading) {
+      return <Spinner purpose="body-text" />;
+    }
+
+    if (data?.sensorOrError.__typename !== 'Sensor') {
+      return (
+        <Tooltip content="Error loading sensor state">
+          <Icon name="error" color={Colors.accentRed()} />;
+        </Tooltip>
+      );
+    }
+
+    status = data.sensorOrError.sensorState.status;
   }
 
-  const status = shouldFetchLatestState
-    ? // @ts-expect-error - we refined the type based on shouldFetchLatestState above
-      data.sensorOrError.sensorState.status
-    : sensor.sensorState.status;
   const running = status === InstigationStatus.RUNNING;
   const lastProcessedTimestamp = parseRunStatusSensorCursor(cursor);
 
