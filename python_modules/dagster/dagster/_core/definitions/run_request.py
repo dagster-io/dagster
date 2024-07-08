@@ -156,7 +156,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             stale_assets_only=stale_assets_only,
             partition_key=partition_key,
             asset_check_keys=asset_check_keys,
-            asset_graph_subset=asset_graph_subset,
+            asset_graph_subset=None,
         )
 
     @classmethod
