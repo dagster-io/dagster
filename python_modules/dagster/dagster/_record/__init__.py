@@ -98,8 +98,13 @@ def _namedtuple_model_transform(
             _RECORD_ANNOTATIONS_FIELD: field_set,
             "__nt_new__": nt_new,
             "__bool__": _true,
+            "__reduce__": _reduce,
         },
     )
+
+    # functools doesn't work, so manually update_wrapper
+    new_type.__module__ = cls.__module__
+    new_type.__qualname__ = cls.__qualname__
 
     return new_type  # type: ignore
 
@@ -388,3 +393,12 @@ def _banned_idx(*args, **kwargs):
 
 def _true(_):
     return True
+
+
+def _from_reduce(cls, kwargs):
+    return cls(**kwargs)
+
+
+def _reduce(self):
+    # pickle support
+    return _from_reduce, (self.__class__, as_dict(self))
