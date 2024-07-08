@@ -199,7 +199,7 @@ class AssetDaemonContext:
         if self._request_backfills:
             run_requests = (
                 [
-                    RunRequest(
+                    RunRequest.for_asset_graph_subset(
                         asset_graph_subset=AssetGraphSubset.from_asset_partition_set(
                             to_request, asset_graph=self.asset_graph
                         ),
@@ -211,10 +211,10 @@ class AssetDaemonContext:
             )
         else:
             run_requests = build_run_requests(
-                    asset_partitions=to_request,
-                    asset_graph=self.asset_graph,
-                    run_tags=self.auto_materialize_run_tags,
-                )
+                asset_partitions=to_request,
+                asset_graph=self.asset_graph,
+                run_tags=self.auto_materialize_run_tags,
+            )
 
         run_requests = [*run_requests, *auto_observe_run_requests]
 
@@ -238,7 +238,8 @@ class AssetDaemonContext:
                     asset_key
                     for run_request in auto_observe_run_requests
                     for asset_key in cast(
-                        Sequence[AssetKey], run_request.asset_selection # auto-observe run requests always have asset_selection
+                        Sequence[AssetKey],
+                        run_request.asset_selection,  # auto-observe run requests always have asset_selection
                     )
                 ],
                 evaluation_timestamp=self.instance_queryer.evaluation_time.timestamp(),

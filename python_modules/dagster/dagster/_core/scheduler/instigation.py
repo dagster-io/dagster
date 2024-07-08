@@ -439,12 +439,20 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         if self.tick_data.status != TickStatus.SUCCESS:
             return 0
 
-        asset_partitions = set()
+        asset_partitions_from_single_runs = set()
+        num_assets_requested_from_backfill_runs = 0
         for run_request in self.tick_data.run_requests or []:
-            # TODO - need to figure out what the number is for backfills
-            for asset_key in run_request.asset_selection or []:
-                asset_partitions.add(AssetKeyPartitionKey(asset_key, run_request.partition_key))
-        return len(asset_partitions)
+            if run_request.requires_backfill_daemon:
+                for asset_subset in run_request.asset_graph_subset.iterate_asset_subsets():
+                    # getting the size of the asset subset is significantly faster than iterating
+                    # through the partitions being materialized for the asset
+                    num_assets_requested_from_backfill_runs += asset_subset.size()
+            else:
+                for asset_key in run_request.asset_selection or []:
+                    asset_partitions_from_single_runs.add(
+                        AssetKeyPartitionKey(asset_key, run_request.partition_key)
+                    )
+        return len(asset_partitions_from_single_runs) + num_assets_requested_from_backfill_runs
 
     @property
     def requested_assets_and_partitions(self) -> Mapping[AssetKey, AbstractSet[str]]:
