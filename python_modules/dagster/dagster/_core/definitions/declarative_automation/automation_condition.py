@@ -46,7 +46,6 @@ if TYPE_CHECKING:
     )
 
 
-@experimental
 class AutomationCondition(ABC, DagsterModel):
     @property
     def requires_cursor(self) -> bool:
@@ -121,6 +120,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return NewlyTrueCondition(operand=self)
 
+    @experimental
     @staticmethod
     def any_deps_match(condition: "AutomationCondition") -> "AnyDepsCondition":
         """Returns a AutomationCondition that is true for an asset partition if at least one partition
@@ -134,6 +134,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return AnyDepsCondition(operand=condition)
 
+    @experimental
     @staticmethod
     def all_deps_match(condition: "AutomationCondition") -> "AllDepsCondition":
         """Returns a AutomationCondition that is true for an asset partition if at least one partition
@@ -147,6 +148,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return AllDepsCondition(operand=condition)
 
+    @experimental
     @staticmethod
     def missing() -> "MissingAutomationCondition":
         """Returns a AutomationCondition that is true for an asset partition if it has never been
@@ -156,6 +158,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return MissingAutomationCondition()
 
+    @experimental
     @staticmethod
     def in_progress() -> "InProgressAutomationCondition":
         """Returns a AutomationCondition that is true for an asset partition if it is part of an in-progress run."""
@@ -163,6 +166,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return InProgressAutomationCondition()
 
+    @experimental
     @staticmethod
     def failed() -> "FailedAutomationCondition":
         """Returns a AutomationCondition that is true for an asset partition if its latest run failed."""
@@ -170,6 +174,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return FailedAutomationCondition()
 
+    @experimental
     @staticmethod
     def in_latest_time_window(
         lookback_delta: Optional[datetime.timedelta] = None,
@@ -187,6 +192,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return InLatestTimeWindowCondition.from_lookback_delta(lookback_delta)
 
+    @experimental
     @staticmethod
     def will_be_requested() -> "WillBeRequestedCondition":
         """Returns a AutomationCondition that is true for an asset partition if it will be requested this tick."""
@@ -194,6 +200,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return WillBeRequestedCondition()
 
+    @experimental
     @staticmethod
     def newly_updated() -> "NewlyUpdatedCondition":
         """Returns a AutomationCondition that is true for an asset partition if it has been updated since the previous tick."""
@@ -201,6 +208,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return NewlyUpdatedCondition()
 
+    @experimental
     @staticmethod
     def newly_requested() -> "NewlyRequestedCondition":
         """Returns a AutomationCondition that is true for an asset partition if it was requested on the previous tick."""
@@ -208,6 +216,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return NewlyRequestedCondition()
 
+    @experimental
     @staticmethod
     def code_version_changed() -> "CodeVersionChangedCondition":
         """Returns a AutomationCondition that is true for an asset partition if its asset's code
@@ -217,6 +226,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return CodeVersionChangedCondition()
 
+    @experimental
     @staticmethod
     def cron_tick_passed(
         cron_schedule: str, cron_timezone: str = "UTC"
@@ -226,6 +236,7 @@ class AutomationCondition(ABC, DagsterModel):
 
         return CronTickPassedCondition(cron_schedule=cron_schedule, cron_timezone=cron_timezone)
 
+    @experimental
     @staticmethod
     def eager() -> "AutomationCondition":
         """Returns a condition which will "eagerly" fill in missing partitions as they are created,
@@ -264,6 +275,7 @@ class AutomationCondition(ABC, DagsterModel):
             & ~AutomationCondition.in_progress()
         )
 
+    @experimental
     @staticmethod
     def cron(cron_schedule: str, cron_timezone: str = "UTC") -> "AutomationCondition":
         """Returns a condition which will materialize asset partitions within the latest time window
