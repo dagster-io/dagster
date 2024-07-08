@@ -27,7 +27,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import get_base_asset_jobs, is_base_asset_job_name
 from dagster._core.definitions.assets import AssetsDefinition
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
 from dagster._core.definitions.executor_definition import ExecutorDefinition
@@ -520,7 +520,7 @@ def _validate_auto_materialize_sensors(
     """Raises an error if two or more automation policy sensors target the same asset."""
     sensor_names_by_asset_key: Dict["AssetKey", str] = {}
     for sensor in sensors:
-        if isinstance(sensor, AutoMaterializeSensorDefinition):
+        if isinstance(sensor, AutomationConditionSensorDefinition):
             asset_keys = sensor.asset_selection.resolve(asset_graph)
             for asset_key in asset_keys:
                 if asset_key in sensor_names_by_asset_key:
