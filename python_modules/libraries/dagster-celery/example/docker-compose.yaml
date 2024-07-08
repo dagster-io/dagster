@@ -1,0 +1,161 @@
+services:
+  postgresql:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    env_file: docker/docker.env
+    volumes:
+      - dagster-postgres:/var/lib/postgresql/data
+    networks:
+      - dagster-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U username -d dagster"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2
+    command: /bin/sh -c 'redis-server --appendonly yes --requirepass $${REDIS_PASSWORD}'
+    ports:
+      - "6379:6379"
+    env_file: docker/docker.env
+    environment:
+      REDIS_DATABASES: 1
+    volumes:
+      - dagster-redis:/data
+    networks:
+      - dagster-network
+
+  codelocation:
+    profiles:
+      - dagster
+    build:
+      context: ..
+      dockerfile: ./example/Dockerfile
+    image: dagster-example:latest
+    env_file: docker/docker.env
+    volumes:
+      - ./docker/dagster.yaml:/app/dagster.yaml
+    networks:
+      - dagster-network
+    depends_on:
+      - postgresql
+      - daemon
+
+  worker-short:
+    profiles:
+      - dagster
+    image: dagster-example:latest
+    command: dagster-celery worker start -y /app/celery.yaml -A dagster_celery.app -q short-queue
+    restart: on-failure
+    env_file: docker/docker.env
+    cap_add:
+      - SYS_PTRACE
+    environment:
+      DAGSTER_HOME: /app
+    volumes:
+      - ./docker/dagster.yaml:/app/dagster.yaml
+      - ./docker/celery.yaml:/app/celery.yaml
+    networks:
+      - dagster-network
+    depends_on:
+      - postgresql
+      - redis
+      - daemon
+
+  worker-long:
+    profiles:
+      - dagster
+    image: dagster-example:latest
+    command: dagster-celery worker start -y /app/celery.yaml -A dagster_celery.app -q long-queue
+    restart: on-failure
+    env_file: docker/docker.env
+    cap_add:
+      - SYS_PTRACE
+    environment:
+      DAGSTER_HOME: /app
+    volumes:
+      - ./docker/dagster.yaml:/app/dagster.yaml
+      - ./docker/celery.yaml:/app/celery.yaml
+    networks:
+      - dagster-network
+    depends_on:
+      - postgresql
+      - redis
+      - daemon
+
+  webserver:
+    profiles:
+      - dagster
+    image: dagster-example:latest
+    restart: on-failure
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - "0.0.0.0"
+      - -p
+      - "3000"
+      - -w
+      - workspace.yaml
+    expose:
+      - "3000"
+    ports:
+      - "3000:3000"
+    env_file: docker/docker.env
+    environment:
+      DAGSTER_HOME: /app
+    volumes:
+      - ./docker/dagster.yaml:/app/dagster.yaml
+      - ./docker/workspace.yaml:/app/workspace.yaml
+    networks:
+      - dagster-network
+    depends_on:
+      - postgresql
+
+  daemon:
+    profiles:
+      - dagster
+    image: dagster-example:latest
+    restart: on-failure
+    entrypoint:
+      - dagster-daemon
+      - run
+    env_file: docker/docker.env
+    environment:
+      DAGSTER_HOME: /app
+    volumes:
+      - ./docker/dagster.yaml:/app/dagster.yaml
+      - ./docker/workspace.yaml:/app/workspace.yaml
+    networks:
+      - dagster-network
+    depends_on:
+      - postgresql
+
+  flower:
+    image: mher/flower:latest
+    command:
+      [
+        "celery",
+        "--broker=redis://:password@redis:6379/0",
+        "flower",
+        "--port=5555",
+      ]
+    expose:
+      - 5555
+    ports:
+      - "5555:5555"
+    environment:
+      FLOWER_UNAUTHENTICATED_API: true
+    networks:
+      - dagster-network
+    depends_on:
+      - redis
+
+volumes:
+  dagster-postgres:
+  dagster-redis:
+
+networks:
+  dagster-network:
+    driver: bridge
