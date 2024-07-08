@@ -159,7 +159,9 @@ class ScenarioSpec:
                 execution_type = (
                     AssetExecutionType[execution_type_str] if execution_type_str else None
                 )
+                # create an observable_source_asset or regular asset depending on the execution type
                 if execution_type == AssetExecutionType.OBSERVATION:
+                    # strip out the relevant paramters from the spec
                     params = {"key", "group_name", "partitions_def", "metadata"}
 
                     @observable_source_asset(
@@ -169,6 +171,7 @@ class ScenarioSpec:
 
                     assets.append(osa)
                 else:
+                    # strip out the relevant paramters from the spec
                     params = {
                         "key",
                         "deps",
