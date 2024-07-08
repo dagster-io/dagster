@@ -6,12 +6,12 @@ import {
   AssetStaleStatusData,
   __resetForJest as __resetStaleData,
 } from './AssetStaleStatusDataProvider';
-import {SUBSCRIPTION_MAX_POLL_RATE} from './util';
 import {observeAssetEventsInRuns} from '../asset-graph/AssetRunLogObserver';
 import {LiveDataForNodeWithStaleData, tokenForAssetKey} from '../asset-graph/Utils';
 import {AssetKeyInput} from '../graphql/types';
 import {LiveDataPollRateContext} from '../live-data-provider/LiveDataProvider';
 import {LiveDataThreadID} from '../live-data-provider/LiveDataThread';
+import {SUBSCRIPTION_MAX_POLL_RATE} from '../live-data-provider/util';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 
 export function useAssetLiveData(assetKey: AssetKeyInput, thread: LiveDataThreadID = 'default') {
