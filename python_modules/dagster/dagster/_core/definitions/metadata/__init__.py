@@ -50,7 +50,7 @@ from .source_code import (
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
     LocalFileCodeReference as LocalFileCodeReference,
     UrlCodeReference as UrlCodeReference,
-    link_to_git as link_to_git,
+    link_code_references_to_git as link_code_references_to_git,
     with_source_code_references as with_source_code_references,
 )
 from .table import (  # re-exported

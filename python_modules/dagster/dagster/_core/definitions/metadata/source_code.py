@@ -274,7 +274,7 @@ def _build_gitlab_url(url: str, branch: str) -> str:
 
 
 @experimental
-def link_to_git(
+def link_code_references_to_git(
     assets_defs: Sequence[Union["AssetsDefinition", "SourceAsset", "CacheableAssetsDefinition"]],
     git_url: str,
     git_branch: str,
