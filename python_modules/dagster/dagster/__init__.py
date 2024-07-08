@@ -152,7 +152,7 @@ from dagster._core.definitions.auto_materialize_rule_impls import (
     AutoMaterializeAssetPartitionsFilter as AutoMaterializeAssetPartitionsFilter,
 )
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition as AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition as AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.backfill_policy import BackfillPolicy as BackfillPolicy
 from dagster._core.definitions.composition import PendingNodeInvocation as PendingNodeInvocation

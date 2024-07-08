@@ -86,7 +86,7 @@ from dagster import (
 )
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.definitions_class import Definitions
@@ -1226,7 +1226,7 @@ def define_sensors():
     def the_failure_sensor():
         pass
 
-    auto_materialize_sensor = AutoMaterializeSensorDefinition(
+    auto_materialize_sensor = AutomationConditionSensorDefinition(
         "my_auto_materialize_sensor",
         asset_selection=AssetSelection.assets("fresh_diamond_bottom"),
     )

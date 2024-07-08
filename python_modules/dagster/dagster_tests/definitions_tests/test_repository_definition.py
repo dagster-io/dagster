@@ -31,7 +31,7 @@ from dagster import (
 )
 from dagster._check import CheckError
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.decorators.asset_check_decorator import asset_check
 from dagster._core.definitions.executor_definition import multi_or_in_process_executor
@@ -1478,8 +1478,8 @@ def test_auto_materialize_sensors_do_not_conflict():
         return [
             asset1,
             asset2,
-            AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
-            AutoMaterializeSensorDefinition("b", asset_selection=[asset2]),
+            AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
+            AutomationConditionSensorDefinition("b", asset_selection=[asset2]),
         ]
 
 
@@ -1495,7 +1495,7 @@ def test_auto_materialize_sensors_incomplete_cover():
         return [
             asset1,
             asset2,
-            AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
+            AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
         ]
 
 
@@ -1517,6 +1517,6 @@ def test_auto_materialize_sensors_conflict():
             return [
                 asset1,
                 asset2,
-                AutoMaterializeSensorDefinition("a", asset_selection=[asset1]),
-                AutoMaterializeSensorDefinition("b", asset_selection=[asset1, asset2]),
+                AutomationConditionSensorDefinition("a", asset_selection=[asset1]),
+                AutomationConditionSensorDefinition("b", asset_selection=[asset1, asset2]),
             ]

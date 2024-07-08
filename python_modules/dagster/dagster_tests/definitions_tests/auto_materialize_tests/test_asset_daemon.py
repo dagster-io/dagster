@@ -9,7 +9,7 @@ from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
-    AutoMaterializeSensorDefinition,
+    AutomationConditionSensorDefinition,
 )
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.scheduler.instigation import (
@@ -304,7 +304,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
     id="simple_daemon_scenario",
     initial_spec=three_assets.with_sensors(
         [
-            AutoMaterializeSensorDefinition(
+            AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_a",
                 asset_selection=AssetSelection.assets("A"),
                 default_status=DefaultSensorStatus.RUNNING,
@@ -312,7 +312,7 @@ daemon_sensor_scenario = AssetDaemonScenario(
                     "foo_tag": "bar_val",
                 },
             ),
-            AutoMaterializeSensorDefinition(
+            AutomationConditionSensorDefinition(
                 name="auto_materialize_sensor_b",
                 asset_selection=AssetSelection.assets("B"),
                 default_status=DefaultSensorStatus.STOPPED,

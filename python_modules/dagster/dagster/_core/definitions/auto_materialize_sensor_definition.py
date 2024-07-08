@@ -24,7 +24,7 @@ from .sensor_definition import (
 from .utils import check_valid_name, normalize_tags
 
 
-def evaluate_scheduling_conditions(context: SensorEvaluationContext):
+def evaluate_automation_conditions(context: SensorEvaluationContext):
     from dagster._core.definitions.asset_daemon_context import build_run_requests
     from dagster._daemon.asset_daemon import (
         asset_daemon_cursor_from_instigator_serialized_cursor,
@@ -97,14 +97,14 @@ def not_supported(context):
 
 
 @experimental
-class AutoMaterializeSensorDefinition(SensorDefinition):
-    """Targets a set of assets and repeatedly evaluates all the AutoMaterializePolicys on all of
+class AutomationConditionSensorDefinition(SensorDefinition):
+    """Targets a set of assets and repeatedly evaluates all the AutomationConditions on all of
     those assets to determine which to request runs for.
 
     Args:
         name: The name of the sensor.
         asset_selection (Union[str, Sequence[str], Sequence[AssetKey], Sequence[Union[AssetsDefinition, SourceAsset]], AssetSelection]):
-            The assets to evaluate AutoMaterializePolicys of and request runs for.
+            The assets to evaluate AutomationConditions of and request runs for.
         run_tags: Optional[Mapping[str, Any]] = None,
         default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
             status can be overridden from the Dagster UI or via the GraphQL API.
@@ -153,7 +153,7 @@ class AutoMaterializeSensorDefinition(SensorDefinition):
 
 
 @experimental
-class AutomationSensorDefinition(SensorDefinition):
+class UserCodeAutomationConditionSensorDefinition(SensorDefinition):
     def __init__(
         self,
         name: str,
@@ -163,7 +163,7 @@ class AutomationSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
         minimum_interval_seconds: Optional[int] = None,
     ):
-        """Variant of AutoMaterializeSensorDefinition that evaluates automation conditions in
+        """Variant of AutomationConditionSensorDefinition that evaluates automation conditions in
         user code.
         """
         self._run_tags = normalize_tags(run_tags).tags
@@ -171,7 +171,7 @@ class AutomationSensorDefinition(SensorDefinition):
         super().__init__(
             name=check_valid_name(name),
             job_name=None,
-            evaluation_fn=evaluate_scheduling_conditions,
+            evaluation_fn=evaluate_automation_conditions,
             minimum_interval_seconds=minimum_interval_seconds,
             default_status=default_status,
             asset_selection=asset_selection,
