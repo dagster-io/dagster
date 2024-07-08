@@ -80,6 +80,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     stale_assets_only: bool
     partition_key: Optional[str]
     asset_check_keys: Optional[Sequence[AssetCheckKey]]
+    asset_graph_subset: Optional["AssetGraphSubset"]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
@@ -124,10 +125,26 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
         asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
-        asset_graph_subset: Optional["AssetGraphSubset"] = None,
+        **kwargs,
     ):
         from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
         from dagster._core.definitions.run_config import convert_config_input
+
+        if kwargs.get("asset_graph_subset") is not None:
+            return super().__new__(
+                cls,
+                run_key=None,
+                run_config=None,
+                tags=normalize_tags(tags).tags,
+                job_name=None,
+                asset_selection=None,
+                stale_assets_only=False,
+                partition_key=None,
+                asset_check_keys=None,
+                asset_graph_subset=check.inst_param(
+                    kwargs["asset_graph_subset"], "asset_graph_subset", AssetGraphSubset
+                ),
+            )
 
         return super().__new__(
             cls,
