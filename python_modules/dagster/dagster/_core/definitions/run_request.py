@@ -172,21 +172,14 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
 
         return super().__new__(
             cls,
-            run_key=check.opt_str_param(run_key, "run_key"),
-            run_config=check.opt_mapping_param(
-                convert_config_input(run_config), "run_config", key_type=str
-            )
-            or {},
+            run_key=run_key,
+            run_config=convert_config_input(run_config) or {},
             tags=normalize_tags(tags).tags,
-            job_name=check.opt_str_param(job_name, "job_name"),
-            asset_selection=check.opt_nullable_sequence_param(
-                asset_selection, "asset_selection", of_type=AssetKey
-            ),
-            stale_assets_only=check.bool_param(stale_assets_only, "stale_assets_only"),
-            partition_key=check.opt_str_param(partition_key, "partition_key"),
-            asset_check_keys=check.opt_nullable_sequence_param(
-                asset_check_keys, "asset_check_keys", of_type=AssetCheckKey
-            ),
+            job_name=job_name,
+            asset_selection=asset_selection,
+            stale_assets_only=stale_assets_only,
+            partition_key=partition_key,
+            asset_check_keys=asset_check_keys,
         )
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
