@@ -5,6 +5,15 @@ description: Get started quickly with this simple dbt & Dagster example.
 
 # Dagster & dbt quickstart
 
+<Note>
+  <strong>Heads up!</strong>: This approach uses the <code>DbtProject</code>{" "}
+  class, which is an experimental feature. Refer to the{" "}
+  <a href="/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject">
+    dagster-dbt API reference
+  </a>{" "}
+  for more information.
+</Note>
+
 This quickstart will get your dbt project up and running quickly with Dagster. By the end of this guide, you'll have an integrated Dagster and dbt project and be able to view it in the Dagster UI.
 
 ---
@@ -97,15 +106,6 @@ defs = Definitions(
 <TabItem name="Option 2: Create a new Dagster project">
 
 ### Option 2: Create a new Dagster project
-
-<Note>
-  <strong>Heads up!</strong>: This approach uses the <code>DbtProject</code>{" "}
-  class, which is an experimental feature. Refer to the{" "}
-  <a href="/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject">
-    dagster-dbt API reference
-  </a>{" "}
-  for more information.
-</Note>
 
 This approach uses the `dagster-dbt` CLI to create a new Dagster project and wrap it around a dbt project. Running this command requires two arguments:
 
