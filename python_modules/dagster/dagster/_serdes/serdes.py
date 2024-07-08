@@ -160,6 +160,7 @@ class WhitelistMap(NamedTuple):
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+        kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
         """Register a model class in the whitelist map.
 
@@ -180,6 +181,7 @@ class WhitelistMap(NamedTuple):
                 if field_serializers
                 else None
             ),
+            kwargs_fields=kwargs_fields,
         )
         self.object_serializers[name] = serializer
         deserializer_name = storage_name or name
@@ -343,6 +345,7 @@ def _whitelist_for_serdes(
     old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
     skip_when_empty_fields: Optional[AbstractSet[str]] = None,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
     is_pickleable: bool = True,
 ) -> Callable[[T_Type], T_Type]:
     def __whitelist_for_serdes(klass: T_Type) -> T_Type:
@@ -360,7 +363,11 @@ def _whitelist_for_serdes(
         elif is_named_tuple_subclass(klass) and (
             serializer is None or issubclass(serializer, NamedTupleSerializer)
         ):
-            _check_serdes_tuple_class_invariants(klass, is_pickleable=is_pickleable)
+            _check_serdes_tuple_class_invariants(
+                klass,
+                is_pickleable=is_pickleable,
+                kwargs_fields=kwargs_fields,
+            )
 
             whitelist_map.register_object(
                 klass.__name__,
@@ -372,6 +379,7 @@ def _whitelist_for_serdes(
                 old_fields=old_fields,
                 skip_when_empty_fields=skip_when_empty_fields,
                 field_serializers=field_serializers,
+                kwargs_fields=kwargs_fields,
             )
             return klass  # type: ignore  # (NamedTuple quirk)
 
@@ -519,6 +527,7 @@ class ObjectSerializer(Serializer, Generic[T]):
         old_fields: Optional[Mapping[str, JsonSerializableValue]] = None,
         skip_when_empty_fields: Optional[AbstractSet[str]] = None,
         field_serializers: Optional[Mapping[str, "FieldSerializer"]] = None,
+        kwargs_fields: Optional[AbstractSet[str]] = None,
     ):
         self.klass = klass
         self.storage_name = storage_name
@@ -527,6 +536,7 @@ class ObjectSerializer(Serializer, Generic[T]):
         self.old_fields = old_fields or {}
         self.skip_when_empty_fields = skip_when_empty_fields or set()
         self.field_serializers = field_serializers or {}
+        self.kwargs_fields = kwargs_fields
 
     @abstractmethod
     def object_as_mapping(self, value: T) -> Mapping[str, PackableValue]: ...
@@ -651,7 +661,21 @@ class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
         if has_generated_new(self.klass):
             return list(get_record_annotations(self.klass).keys())
 
-        return list(signature(self.klass.__new__).parameters.keys())
+        names = []
+        for name, parameter in signature(self.klass.__new__).parameters.items():
+            if parameter.kind is Parameter.VAR_POSITIONAL:
+                check.failed("Can not use positional args capture on serdes object.")
+            elif parameter.kind is Parameter.VAR_KEYWORD:
+                names.extend(
+                    check.not_none(
+                        self.kwargs_fields,
+                        "Must specify kwargs_fields when using kwarg capture in __new__.",
+                    )
+                )
+            else:
+                names.append(name)
+
+        return names
 
 
 T_Dataclass = TypeVar("T_Dataclass", bound="DataclassInstance", default="DataclassInstance")
@@ -1205,7 +1229,9 @@ def _unpack_value(
 
 
 def _check_serdes_tuple_class_invariants(
-    klass: Type[NamedTuple], is_pickleable: bool = True
+    klass: Type[NamedTuple],
+    is_pickleable: bool,
+    kwargs_fields: Optional[AbstractSet[str]],
 ) -> None:
     # can skip validation on @record generated new
     if has_generated_new(klass):
@@ -1217,7 +1243,7 @@ def _check_serdes_tuple_class_invariants(
     cls_param = dunder_new_params[0]
 
     def _with_header(msg: str) -> str:
-        return f"For namedtuple {klass.__name__}: {msg}"
+        return f"For {klass.__name__}: {msg}"
 
     if cls_param.name not in {"cls", "_cls"}:
         raise SerdesUsageError(
@@ -1228,21 +1254,41 @@ def _check_serdes_tuple_class_invariants(
 
     for index, field in enumerate(klass._fields):
         if index >= len(value_params):
-            error_msg = (
-                "Missing parameters to __new__. You have declared fields "
-                "in the named tuple that are not present as parameters to the "
-                "to the __new__ method. In order for "
-                "both serdes serialization and pickling to work, "
-                f"these must match. Missing: {list(klass._fields[index:])!r}"
-            )
+            if value_params[-1].kind is Parameter.VAR_KEYWORD:
+                if kwargs_fields is None:
+                    raise SerdesUsageError(
+                        _with_header(
+                            "kwargs capture used in __new__ but kwargs_fields was not specified. "
+                            "Declare the set of fields processed via kwargs as kwargs_fields "
+                            f"Expecting: {list(klass._fields[index:])!r}"
+                        )
+                    )
+                elif field not in kwargs_fields:
+                    raise SerdesUsageError(
+                        _with_header(
+                            f'Expected field "{field}" in kwargs_fields but it was not specified.'
+                        )
+                    )
 
-            raise SerdesUsageError(_with_header(error_msg))
+            else:
+                error_msg = (
+                    "Missing parameters to __new__. You have declared fields "
+                    "that are not present as parameters to the "
+                    "to the __new__ method. In order for "
+                    "both serdes serialization and pickling to work, "
+                    "these must match or kwargs and kwargs_fields must be used. "
+                    f"Missing: {list(klass._fields[index:])!r}"
+                )
 
-        if is_pickleable:
+                raise SerdesUsageError(_with_header(error_msg))
+
+        if is_pickleable and not is_record(klass):
+            # non @record NamedTuples get pickled via ordinal args, so ensure ordering
             value_param = value_params[index]
             if value_param.name != field:
                 error_msg = (
-                    "Params to __new__ must match the order of field declaration in the namedtuple. "
+                    "Params to __new__ must match the order of field declaration for "
+                    "NamedTuples that are not @record based. "
                     f'Declared field number {index + 1} in the namedtuple is "{field}". '
                     f'Parameter {index + 1} in __new__ method is "{value_param.name}".'
                 )
