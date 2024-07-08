@@ -23,11 +23,13 @@ const bgcolorForLevel = (level: LogLevel) =>
     [LogLevel.CRITICAL]: Colors.backgroundRed(),
   })[level];
 
+export const MAX_ROW_HEIGHT_PX = 200;
+
 export const Row = styled.div<{level: LogLevel; highlighted: boolean}>`
   font-size: 12px;
   width: 100%;
   height: 100%;
-  max-height: 17em;
+  max-height: ${MAX_ROW_HEIGHT_PX}px;
   word-break: break-word;
   white-space: pre-wrap;
   color: ${Colors.textDefault()};
