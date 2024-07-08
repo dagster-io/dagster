@@ -27,7 +27,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
-from dagster._record import IHaveNew, record_custom
+from dagster._record import IHaveNew, LegacyNamedTupleMixin, record_custom
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -114,7 +114,7 @@ class DeleteDynamicPartitionsRequest(
 
 @whitelist_for_serdes
 @record_custom
-class RunRequest(IHaveNew):
+class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     run_key: Optional[str]
     run_config: Optional[Mapping[str, Any]]
     tags: Mapping[str, str]
