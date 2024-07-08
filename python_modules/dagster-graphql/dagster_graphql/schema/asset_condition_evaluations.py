@@ -155,7 +155,7 @@ class GraphenePartitionedAssetConditionEvaluationNode(graphene.ObjectType):
             elif maybe_subset.is_partitioned:
                 return GrapheneAssetSubset(maybe_subset)
 
-            # TODO: Remove on redesign
+            # TODO: Remove on redesign (FOU-242)
             # We create a fake partitioned asset subset out of an unpartitioned asset subset in
             # order to allow unpartitioned rows to not error when used in the partition-focused UI.
             if maybe_subset.size == 0:
@@ -198,7 +198,7 @@ class GrapheneSpecificPartitionAssetConditionEvaluationNode(graphene.ObjectType)
         self._partition_key = partition_key
 
         if not evaluation.true_subset.is_partitioned:
-            # TODO: Remove on redesign
+            # TODO: Remove on redesign (FOU-242)
             # This code allows the page to not error when displaying a specific partition's results
             # where a sub-condition is not partitioned. In these cases, we can treat the expression
             # as SKIPPED
