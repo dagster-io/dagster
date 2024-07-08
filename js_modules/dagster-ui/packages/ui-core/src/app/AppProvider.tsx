@@ -48,7 +48,7 @@ const idempotencyLink = new ApolloLink((operation, forward) => {
   operation.setContext(({headers = {}}) => ({
     headers: {
       ...headers,
-      'idempotency-key': uuidv4(),
+      'Idempotency-Key': uuidv4(),
     },
   }));
   return forward(operation);
@@ -109,7 +109,7 @@ export const AppProvider = (props: AppProviderProps) => {
     return new RetryLink({
       attempts: {
         max: 2,
-        retryIf: (error, operation) => {
+        retryIf: (error, _operation) => {
           return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
         },
       },
