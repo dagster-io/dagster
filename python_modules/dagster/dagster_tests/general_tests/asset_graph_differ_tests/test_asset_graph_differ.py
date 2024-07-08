@@ -116,6 +116,20 @@ def test_new_asset(instance):
     assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
 
 
+def test_removed_asset(instance) -> None:
+    differ = get_asset_graph_differ(
+        instance=instance,
+        code_location_to_diff="basic_asset_graph",
+        base_code_locations=["basic_asset_graph"],
+        branch_code_location_to_definitions={
+            "basic_asset_graph": "branch_deployment_removed_asset"
+        },
+    )
+
+    assert differ.get_changes_for_asset(AssetKey("downstream")) == [ChangeReason.REMOVED]
+    assert len(differ.get_changes_for_asset(AssetKey("upstream"))) == 0
+
+
 def test_new_asset_connected(instance):
     differ = get_asset_graph_differ(
         instance=instance,
