@@ -175,7 +175,8 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             run_key=check.opt_str_param(run_key, "run_key"),
             run_config=check.opt_mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
-            ),
+            )
+            or {},
             tags=normalize_tags(tags).tags,
             job_name=check.opt_str_param(job_name, "job_name"),
             asset_selection=check.opt_nullable_sequence_param(
