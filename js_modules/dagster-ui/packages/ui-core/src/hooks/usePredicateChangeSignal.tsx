@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 
-// Alternates between 0 / 1, switching whenever the predicate calls `signalChanged`.
+// Alternates between 0 / 1, switching whenever the predicate evaluates to true.
 export const usePredicateChangeSignal = <T extends ReadonlyArray<unknown>>(
   predicate: (previousDeps: T | null, currentDeps: T) => true | false | void,
   currentDeps: T,
