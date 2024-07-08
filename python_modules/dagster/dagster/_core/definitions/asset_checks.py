@@ -133,7 +133,7 @@ def build_asset_with_blocking_check(
         tags=None,
         owners=None,
         freshness_policy=spec.freshness_policy,
-        auto_materialize_policy=spec.auto_materialize_policy,
+        automation_condition=spec.automation_condition,
         backfill_policy=asset_def.backfill_policy,
         config=None,  # gets config from asset_def.op
     )

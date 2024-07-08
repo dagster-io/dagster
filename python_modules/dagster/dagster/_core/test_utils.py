@@ -9,6 +9,7 @@ import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
@@ -696,6 +697,7 @@ def ignore_warning(message_substr: str):
             warnings.filterwarnings("ignore", message=message_substr)
             return func(*args, **kwargs)
 
+        update_wrapper(wrapper, func)
         return wrapper
 
     return decorator

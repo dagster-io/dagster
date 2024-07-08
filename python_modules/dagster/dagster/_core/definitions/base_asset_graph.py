@@ -47,7 +47,9 @@ from .time_window_partitions import get_time_partition_key, get_time_partitions_
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-    from dagster._core.definitions.declarative_automation import AutomationCondition
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
 
 
 class ParentsPartitionsResult(NamedTuple):
