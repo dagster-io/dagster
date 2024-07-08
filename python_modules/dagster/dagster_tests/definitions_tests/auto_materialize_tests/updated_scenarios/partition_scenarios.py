@@ -13,6 +13,7 @@ from dagster._core.definitions.auto_materialize_rule_impls import (
     DiscardOnMaxMaterializationsExceededRule,
 )
 from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._record import copy
 
 from ..base_scenario import run_request
 from ..scenario_specs import (
@@ -244,7 +245,7 @@ partition_scenarios = [
     AssetDaemonScenario(
         id="hourly_to_daily_nonexistent_partitions",
         initial_spec=hourly_to_daily.with_asset_properties(
-            keys=["B"], partitions_def=daily_partitions_def._replace(end_offset=1)
+            keys=["B"], partitions_def=copy(daily_partitions_def, end_offset=1)
         )
         # allow nonexistent upstream partitions
         .with_asset_properties(
@@ -292,7 +293,7 @@ partition_scenarios = [
     AssetDaemonScenario(
         id="hourly_to_daily_nonexistent_partitions_become_existent",
         initial_spec=hourly_to_daily.with_asset_properties(
-            keys=["B"], partitions_def=daily_partitions_def._replace(end_offset=1)
+            keys=["B"], partitions_def=copy(daily_partitions_def, end_offset=1)
         )
         .with_current_time(time_partitions_start_str)
         .with_current_time_advanced(hours=10)
@@ -393,11 +394,12 @@ partition_scenarios = [
         )
         .with_asset_properties(
             keys=["B"],
-            partitions_def=hourly_partitions_def._replace(
-                start=TimestampWithTimezone(
+            partitions_def=copy(
+                hourly_partitions_def,
+                start_date=TimestampWithTimezone(
                     (time_partitions_start_datetime + datetime.timedelta(hours=1)).timestamp(),
                     hourly_partitions_def.timezone,
-                )
+                ),
             ),
         )
         # allow nonexistent partitions
@@ -516,11 +518,12 @@ partition_scenarios = [
         # now the start date is updated, request the new first partition key
         .with_current_time_advanced(days=5)
         .with_asset_properties(
-            partitions_def=hourly_partitions_def._replace(
-                start=TimestampWithTimezone(
+            partitions_def=copy(
+                hourly_partitions_def,
+                start_date=TimestampWithTimezone(
                     (time_partitions_start_datetime + datetime.timedelta(days=5)).timestamp(),
                     hourly_partitions_def.timezone,
-                )
+                ),
             )
         )
         .evaluate_tick("BAR")
@@ -687,11 +690,12 @@ partition_scenarios = [
         id="unpartitioned_downstream_of_asymmetric_time_assets_in_series",
         initial_spec=three_assets_in_sequence.with_asset_properties(
             keys=["A"],
-            partitions_def=daily_partitions_def._replace(
-                start=TimestampWithTimezone(
+            partitions_def=copy(
+                daily_partitions_def,
+                start_date=TimestampWithTimezone(
                     (time_partitions_start_datetime + datetime.timedelta(days=4)).timestamp(),
                     daily_partitions_def.timezone,
-                )
+                ),
             ),
         )
         .with_asset_properties(keys=["B"], partitions_def=daily_partitions_def)
@@ -720,7 +724,7 @@ partition_scenarios = [
         initial_spec=two_assets_depend_on_one.with_asset_properties(
             "A",
             # new partitions come into being one day early
-            partitions_def=daily_partitions_def._replace(end_offset=1),
+            partitions_def=copy(daily_partitions_def, end_offset=1),
         )
         .with_asset_properties("B", partitions_def=daily_partitions_def)
         .with_asset_properties("C", partitions_def=hourly_partitions_def)
