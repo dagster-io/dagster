@@ -2173,8 +2173,6 @@ enum NestedResourceType {
 }
 
 type JobWithOps {
-  job: Job!
-  opsUsing: [SolidHandle!]!
   jobName: String!
   opHandleIDs: [String!]!
 }
