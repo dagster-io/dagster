@@ -11,7 +11,7 @@ from dagster._core.definitions.metadata import (
 from dagster._core.definitions.metadata.source_code import (
     AnchorBasedFilePathMapping,
     FilePathMapping,
-    link_to_git,
+    link_code_references_to_git,
 )
 from dagster._utils import file_relative_path
 
@@ -124,7 +124,7 @@ def test_asset_code_origins_source_control() -> None:
 
     collection_with_source_metadata = with_source_code_references(collection)
 
-    collection_with_source_control_metadata = link_to_git(
+    collection_with_source_control_metadata = link_code_references_to_git(
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
@@ -189,7 +189,7 @@ def test_asset_code_origins_source_control_custom_mapping() -> None:
                 else os.path.normpath(os.path.relpath(local_path, GIT_ROOT_PATH))
             )
 
-    collection_with_source_control_metadata = link_to_git(
+    collection_with_source_control_metadata = link_code_references_to_git(
         collection_with_source_metadata,
         git_url="https://github.com/dagster-io/dagster",
         git_branch="master",
