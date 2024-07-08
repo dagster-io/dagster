@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Optional
 
-from dagster._annotations import experimental
 from dagster._core.definitions.auto_materialize_rule import AutoMaterializeRule
 from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
@@ -13,7 +12,6 @@ if TYPE_CHECKING:
     from ..automation_context import AutomationContext
 
 
-@experimental
 @whitelist_for_serdes
 @record
 class RuleCondition(AssetCondition):

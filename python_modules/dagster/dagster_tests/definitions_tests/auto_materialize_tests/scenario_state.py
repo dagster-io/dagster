@@ -182,10 +182,16 @@ class ScenarioSpec:
                         "partitions_def",
                         "metadata",
                     }
+                    spec_dict = spec._asdict()
+                    if spec_dict.get("automation_condition") is not None:
+                        spec_dict["auto_materialize_policy"] = spec_dict[
+                            "automation_condition"
+                        ].as_auto_materialize_policy()
+
                     assets.append(
                         asset(
                             compute_fn=compute_fn,
-                            **{k: v for k, v in spec._asdict().items() if k in params},
+                            **{k: v for k, v in spec_dict.items() if k in params},
                         )
                     )
 
@@ -225,6 +231,9 @@ class ScenarioSpec:
     ) -> "ScenarioSpec":
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
+        if "auto_materialize_policy" in kwargs:
+            policy = kwargs.pop("auto_materialize_policy")
+            kwargs["automation_condition"] = policy.to_automation_condition() if policy else None
         for spec in self.asset_specs:
             if isinstance(spec, MultiAssetSpec):
                 partitions_def = kwargs.get("partitions_def", spec.partitions_def)
