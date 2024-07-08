@@ -270,13 +270,17 @@ from dagster._core.definitions.materialize import (
     materialize_to_memory as materialize_to_memory,
 )
 from dagster._core.definitions.metadata import (
+    AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     BoolMetadataValue as BoolMetadataValue,
+    CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     DagsterAssetMetadataValue as DagsterAssetMetadataValue,
     DagsterJobMetadataValue as DagsterJobMetadataValue,
     DagsterRunMetadataValue as DagsterRunMetadataValue,
+    FilePathMapping as FilePathMapping,
     FloatMetadataValue as FloatMetadataValue,
     IntMetadataValue as IntMetadataValue,
     JsonMetadataValue as JsonMetadataValue,
+    LocalFileCodeReference as LocalFileCodeReference,
     MarkdownMetadataValue as MarkdownMetadataValue,
     MetadataEntry as MetadataEntry,
     MetadataValue as MetadataValue,
@@ -289,7 +293,10 @@ from dagster._core.definitions.metadata import (
     TableSchemaMetadataValue as TableSchemaMetadataValue,
     TextMetadataValue as TextMetadataValue,
     TimestampMetadataValue as TimestampMetadataValue,
+    UrlCodeReference as UrlCodeReference,
     UrlMetadataValue as UrlMetadataValue,
+    link_code_references_to_git as link_code_references_to_git,
+    with_source_code_references as with_source_code_references,
 )
 from dagster._core.definitions.metadata.table import (
     TableColumn as TableColumn,
