@@ -6,11 +6,13 @@ from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalRepository
 from dagster._core.workspace.context import BaseWorkspaceRequestContext
+from dagster._serdes import whitelist_for_serdes
 
 if TYPE_CHECKING:
     from dagster._core.definitions.events import AssetKey
 
 
+@whitelist_for_serdes
 class ChangeReason(Enum):
     NEW = "NEW"
     CODE_VERSION = "CODE_VERSION"
