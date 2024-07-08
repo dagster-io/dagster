@@ -45,12 +45,14 @@ import './blueprint.css';
 patchCopyToRemoveZeroWidthUnderscores();
 
 const idempotencyLink = new ApolloLink((operation, forward) => {
-  operation.setContext(({headers = {}}) => ({
-    headers: {
-      ...headers,
-      'Idempotency-Key': uuidv4(),
-    },
-  }));
+  if (/^\s*mutation/.test(operation.query.loc?.source.body ?? '')) {
+    operation.setContext(({headers = {}}) => ({
+      headers: {
+        ...headers,
+        'Idempotency-Key': uuidv4(),
+      },
+    }));
+  }
   return forward(operation);
 });
 
