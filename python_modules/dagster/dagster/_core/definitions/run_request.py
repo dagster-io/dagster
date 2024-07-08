@@ -116,7 +116,7 @@ class DeleteDynamicPartitionsRequest(
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     run_key: Optional[str]
-    run_config: Optional[Mapping[str, Any]]
+    run_config: Mapping[str, Any]
     tags: Mapping[str, str]
     job_name: Optional[str]
     asset_selection: Optional[Sequence[AssetKey]]
@@ -173,7 +173,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         return super().__new__(
             cls,
             run_key=check.opt_str_param(run_key, "run_key"),
-            run_config=check.opt_mapping_param(
+            run_config=check.mapping_param(
                 convert_config_input(run_config), "run_config", key_type=str
             ),
             tags=normalize_tags(tags).tags,
