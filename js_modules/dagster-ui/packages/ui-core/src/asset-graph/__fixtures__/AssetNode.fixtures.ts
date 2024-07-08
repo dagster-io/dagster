@@ -72,6 +72,7 @@ export const AssetNodeFragmentBasic: AssetNodeFragment = buildAssetNode({
     ChangeReason.PARTITIONS_DEFINITION,
     ChangeReason.TAGS,
     ChangeReason.METADATA,
+    ChangeReason.REMOVED,
   ],
 });
 

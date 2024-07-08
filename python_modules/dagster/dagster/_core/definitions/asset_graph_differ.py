@@ -18,6 +18,7 @@ class ChangeReason(Enum):
     PARTITIONS_DEFINITION = "PARTITIONS_DEFINITION"
     TAGS = "TAGS"
     METADATA = "METADATA"
+    REMOVED = "REMOVED"
 
 
 def _get_external_repo_from_context(
@@ -118,6 +119,9 @@ class AssetGraphDiffer:
 
         if asset_key not in self.base_asset_graph.all_asset_keys:
             return [ChangeReason.NEW]
+
+        if asset_key not in self.branch_asset_graph.all_asset_keys:
+            return [ChangeReason.REMOVED]
 
         branch_asset = self.branch_asset_graph.get(asset_key)
         base_asset = self.base_asset_graph.get(asset_key)
