@@ -477,8 +477,6 @@ class GraphDefinition(NodeDefinition):
                 return mapping
         check.failed(f"Could not find output mapping {output_name}")
 
-    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
-
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
     ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
