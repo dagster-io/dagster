@@ -885,6 +885,7 @@ class AssetDaemon(DagsterDaemon):
 
             # experimental code path for evaluating scheduling in user space
             if sensor and sensor.sensor_type == SensorType.AUTOMATION:
+                print("SENSOR PATH")
                 run_requests, new_cursor, evaluations = invoke_sensor_for_evaluation(
                     sensor=sensor,
                     workspace_process_context=workspace_process_context,
@@ -897,6 +898,7 @@ class AssetDaemon(DagsterDaemon):
                     asset_graph=asset_graph,
                 )
             else:
+                print("NOT THE SENSOR PATH")
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
                     evaluation_id=evaluation_id,
                     asset_graph=asset_graph,
