@@ -295,7 +295,7 @@ from dagster._core.definitions.metadata import (
     TimestampMetadataValue as TimestampMetadataValue,
     UrlCodeReference as UrlCodeReference,
     UrlMetadataValue as UrlMetadataValue,
-    link_to_git as link_to_git,
+    link_code_references_to_git as link_code_references_to_git,
     with_source_code_references as with_source_code_references,
 )
 from dagster._core.definitions.metadata.table import (
