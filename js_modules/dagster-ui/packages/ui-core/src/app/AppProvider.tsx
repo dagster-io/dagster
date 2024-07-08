@@ -98,7 +98,12 @@ export const AppProvider = (props: AppProviderProps) => {
     return new RetryLink({
       attempts: {
         max: 2,
-        retryIf: (error, _operation) => {
+        retryIf: (error, operation) => {
+          debugger;
+          if (/^\s*mutation/.test(operation.query.loc?.source.body ?? '')) {
+            // Don't retry mutations
+            return false;
+          }
           return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
         },
       },
