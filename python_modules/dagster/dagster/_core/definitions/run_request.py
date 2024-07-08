@@ -27,6 +27,7 @@ from dagster._core.storage.tags import (
     ASSET_PARTITION_RANGE_START_TAG,
     PARTITION_NAME_TAG,
 )
+from dagster._record import IHaveNew, record_custom
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
@@ -112,21 +113,16 @@ class DeleteDynamicPartitionsRequest(
 
 
 @whitelist_for_serdes
-class RunRequest(
-    NamedTuple(
-        "_RunRequest",
-        [
-            ("run_key", PublicAttr[Optional[str]]),
-            ("run_config", PublicAttr[Mapping[str, Any]]),
-            ("tags", PublicAttr[Mapping[str, str]]),
-            ("job_name", PublicAttr[Optional[str]]),
-            ("asset_selection", PublicAttr[Optional[Sequence[AssetKey]]]),
-            ("stale_assets_only", PublicAttr[bool]),
-            ("partition_key", PublicAttr[Optional[str]]),
-            ("asset_check_keys", PublicAttr[Optional[Sequence[AssetCheckKey]]]),
-        ],
-    )
-):
+@record_custom
+class RunRequest(IHaveNew):
+    run_key: Optional[str]
+    run_config: Optional[Mapping[str, Any]]
+    tags: Mapping[str, str]
+    job_name: Optional[str]
+    asset_selection: Optional[Sequence[AssetKey]]
+    stale_assets_only: bool
+    partition_key: Optional[str]
+    asset_check_keys: Optional[Sequence[AssetCheckKey]]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
