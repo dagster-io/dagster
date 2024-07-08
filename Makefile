@@ -31,7 +31,7 @@ ruff:
 	ruff format .
 
 check_ruff:
-	ruff .
+	ruff check .
 	ruff format --check .
 
 check_prettier:

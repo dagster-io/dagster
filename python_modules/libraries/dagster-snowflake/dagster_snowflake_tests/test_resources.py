@@ -297,7 +297,6 @@ def test_fetch_last_updated_timestamps_empty():
 @pytest.mark.parametrize("db_str", [None, "TESTDB"], ids=["db_from_resource", "db_from_param"])
 def test_fetch_last_updated_timestamps(db_str: str):
     start_time = get_current_timestamp()
-    table_name = "the_table"
     with temporary_snowflake_table() as table_name:
 
         @observable_source_asset
