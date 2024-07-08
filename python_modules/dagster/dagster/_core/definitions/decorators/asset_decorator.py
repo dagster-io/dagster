@@ -746,7 +746,7 @@ def graph_asset(
     """
     if compose_fn is None:
         return lambda fn: graph_asset(
-            fn,
+            fn,  # type: ignore
             name=name,
             description=description,
             ins=ins,

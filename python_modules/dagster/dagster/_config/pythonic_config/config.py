@@ -229,7 +229,7 @@ class Config(MakeConfigCacheable, metaclass=BaseConfigMeta):
                 field
                 and safe_is_subclass(field.annotation, Enum)
                 and value in field.annotation.__members__
-                and value not in [member.value for member in field.annotation]
+                and value not in [member.value for member in field.annotation]  # type: ignore
             ):
                 modified_data[key] = field.annotation.__members__[value].value
             elif field and safe_is_subclass(field.annotation, Config) and isinstance(value, dict):

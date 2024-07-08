@@ -3,6 +3,7 @@ import tempfile
 from typing import Iterator
 
 import docker
+import docker.errors
 import pytest
 
 # fixtures: redundant alias marks them as used imports
