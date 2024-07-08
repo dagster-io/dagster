@@ -1,6 +1,6 @@
 from dagster._core.libraries import DagsterLibraryRegistry
 
-from .asset_decorator import looker_assets as looker_assets
+from .asset_specs import build_looker_asset_specs as build_looker_asset_specs
 from .dagster_looker_translator import (
     DagsterLookerTranslator as DagsterLookerTranslator,
     LookMLStructureType as LookMLStructureType,
