@@ -167,7 +167,9 @@ class ExternalRepositoryData(
                 external_job_refs, "external_job_refs", of_type=ExternalJobRef
             ),
             external_resource_data=check.opt_nullable_sequence_param(
-                external_resource_data, "external_resource_data", of_type=ExternalResourceData
+                external_resource_data,
+                "external_resource_data",
+                of_type=ExternalResourceData,
             ),
             external_asset_checks=check.opt_nullable_sequence_param(
                 external_asset_checks,
@@ -413,7 +415,10 @@ class ExternalPresetData(
 
 @whitelist_for_serdes(
     storage_name="ExternalScheduleData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
     skip_when_empty_fields={"default_status"},
 )
 class ScheduleSnap(
@@ -487,7 +492,10 @@ class ScheduleSnap(
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionErrorData(
-    NamedTuple("_ExternalScheduleExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalScheduleExecutionErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalScheduleExecutionErrorData, cls).__new__(
@@ -531,7 +539,10 @@ class ExternalSensorMetadata(
 
 @whitelist_for_serdes(
     storage_name="ExternalSensorData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
     skip_when_empty_fields={"default_status", "sensor_type"},
 )
 class SensorSnap(
@@ -624,7 +635,9 @@ class SensorSnap(
         if sensor_def.asset_selection is not None:
             target_dict = {
                 base_asset_job_name: ExternalTargetData(
-                    job_name=base_asset_job_name, mode=DEFAULT_MODE_NAME, op_selection=None
+                    job_name=base_asset_job_name,
+                    mode=DEFAULT_MODE_NAME,
+                    op_selection=None,
                 )
                 for base_asset_job_name in repository_def.get_implicit_asset_job_names()
             }
@@ -679,7 +692,10 @@ class ExternalRepositoryErrorData(
 
 @whitelist_for_serdes
 class ExternalSensorExecutionErrorData(
-    NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalSensorExecutionErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalSensorExecutionErrorData, cls).__new__(
@@ -709,7 +725,10 @@ class ExternalExecutionParamsData(
 
 @whitelist_for_serdes
 class ExternalExecutionParamsErrorData(
-    NamedTuple("_ExternalExecutionParamsErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalExecutionParamsErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalExecutionParamsErrorData, cls).__new__(
@@ -817,7 +836,8 @@ class ExternalStaticPartitionsDefinitionData(
 ):
     def __new__(cls, partition_keys: Sequence[str]):
         return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
-            cls, partition_keys=check.sequence_param(partition_keys, "partition_keys", str)
+            cls,
+            partition_keys=check.sequence_param(partition_keys, "partition_keys", str),
         )
 
     def get_partitions_definition(self):
@@ -889,7 +909,10 @@ class ExternalDynamicPartitionsDefinitionData(
 
 @whitelist_for_serdes(
     storage_name="ExternalPartitionSetData",
-    storage_field_names={"job_name": "pipeline_name", "op_selection": "solid_selection"},
+    storage_field_names={
+        "job_name": "pipeline_name",
+        "op_selection": "solid_selection",
+    },
 )
 class PartitionSetSnap(
     NamedTuple(
@@ -975,7 +998,8 @@ class ExternalPartitionNamesData(
 @whitelist_for_serdes
 class ExternalPartitionConfigData(
     NamedTuple(
-        "_ExternalPartitionConfigData", [("name", str), ("run_config", Mapping[str, object])]
+        "_ExternalPartitionConfigData",
+        [("name", str), ("run_config", Mapping[str, object])],
     )
 ):
     def __new__(cls, name: str, run_config: Optional[Mapping[str, object]] = None):
@@ -1002,7 +1026,11 @@ class ExternalPartitionTagsData(
 class ExternalPartitionExecutionParamData(
     NamedTuple(
         "_ExternalPartitionExecutionParamData",
-        [("name", str), ("tags", Mapping[str, str]), ("run_config", Mapping[str, object])],
+        [
+            ("name", str),
+            ("tags", Mapping[str, str]),
+            ("run_config", Mapping[str, object]),
+        ],
     )
 ):
     def __new__(cls, name: str, tags: Mapping[str, str], run_config: Mapping[str, object]):
@@ -1025,14 +1053,19 @@ class ExternalPartitionSetExecutionParamData(
         return super(ExternalPartitionSetExecutionParamData, cls).__new__(
             cls,
             partition_data=check.sequence_param(
-                partition_data, "partition_data", of_type=ExternalPartitionExecutionParamData
+                partition_data,
+                "partition_data",
+                of_type=ExternalPartitionExecutionParamData,
             ),
         )
 
 
 @whitelist_for_serdes
 class ExternalPartitionExecutionErrorData(
-    NamedTuple("_ExternalPartitionExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+    NamedTuple(
+        "_ExternalPartitionExecutionErrorData",
+        [("error", Optional[SerializableErrorInfo])],
+    )
 ):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
@@ -1191,7 +1224,10 @@ class ExternalResourceData(
             ),
             nested_resources=dict(
                 check.opt_mapping_param(
-                    nested_resources, "nested_resources", key_type=str, value_type=NestedResource
+                    nested_resources,
+                    "nested_resources",
+                    key_type=str,
+                    value_type=NestedResource,
                 )
                 or {}
             ),
@@ -1374,7 +1410,8 @@ class ExternalAssetNode(
         owners: Optional[Sequence[str]] = None,
     ):
         metadata = normalize_metadata(
-            check.opt_mapping_param(metadata, "metadata", key_type=str), allow_invalid=True
+            check.opt_mapping_param(metadata, "metadata", key_type=str),
+            allow_invalid=True,
         )
 
         # backcompat logic for execution type specified via metadata
@@ -1438,7 +1475,9 @@ class ExternalAssetNode(
             ),
             job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
             partitions_def_data=check.opt_inst_param(
-                partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
+                partitions_def_data,
+                "partitions_def_data",
+                ExternalPartitionsDefinitionData,
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
@@ -1456,7 +1495,9 @@ class ExternalAssetNode(
                 execution_set_identifier, "execution_set_identifier"
             ),
             required_top_level_resources=check.opt_sequence_param(
-                required_top_level_resources, "required_top_level_resources", of_type=str
+                required_top_level_resources,
+                "required_top_level_resources",
+                of_type=str,
             ),
             auto_materialize_policy=check.opt_inst_param(
                 auto_materialize_policy,
@@ -1546,7 +1587,10 @@ def external_repository_data_from_def(
     else:
         job_datas = sorted(
             list(
-                map(lambda job: external_job_data_from_def(job, include_parent_snapshot=True), jobs)
+                map(
+                    lambda job: external_job_data_from_def(job, include_parent_snapshot=True),
+                    jobs,
+                )
             ),
             key=lambda pd: pd.name,
         )
@@ -1688,7 +1732,10 @@ def external_asset_nodes_from_defs(
             if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
                 continue
             if asset_key not in primary_node_pairs_by_asset_key:
-                primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
+                primary_node_pairs_by_asset_key[asset_key] = (
+                    node_output_handle,
+                    job_def,
+                )
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
     external_asset_nodes: List[ExternalAssetNode] = []
@@ -1752,7 +1799,8 @@ def external_asset_nodes_from_defs(
                 asset_key=key,
                 dependencies=[
                     ExternalAssetDependency(
-                        upstream_asset_key=pk, partition_mapping=partition_mappings.get(pk)
+                        upstream_asset_key=pk,
+                        partition_mapping=partition_mappings.get(pk),
                     )
                     for pk in sorted(asset_node.parent_keys)
                 ],
@@ -1820,7 +1868,8 @@ def external_resource_value_from_raw(v: Any) -> ExternalResourceValue:
 
 
 def _get_nested_resources_map(
-    resource_datas: Mapping[str, ResourceDefinition], resource_key_mapping: Mapping[int, str]
+    resource_datas: Mapping[str, ResourceDefinition],
+    resource_key_mapping: Mapping[int, str],
 ) -> Mapping[str, Mapping[str, NestedResource]]:
     out_map: Mapping[str, Mapping[str, NestedResource]] = {}
     for resource_name, resource_def in resource_datas.items():
@@ -1846,7 +1895,8 @@ def _get_nested_resources(
         return {
             k: (
                 NestedResource(
-                    NestedResourceType.TOP_LEVEL, resource_key_mapping[id(nested_resource)]
+                    NestedResourceType.TOP_LEVEL,
+                    resource_key_mapping[id(nested_resource)],
                 )
                 if id(nested_resource) in resource_key_mapping
                 else NestedResource(

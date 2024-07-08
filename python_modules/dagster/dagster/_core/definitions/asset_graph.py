@@ -9,7 +9,6 @@ from dagster._core.definitions.asset_spec import (
     AssetSpec,
 )
 from dagster._core.definitions.assets import AssetsDefinition
-from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy
 from dagster._core.definitions.base_asset_graph import (
     AssetKeyOrCheckKey,
@@ -25,6 +24,9 @@ from dagster._core.definitions.resolved_asset_deps import ResolvedAssetDependenc
 from dagster._core.definitions.source_asset import SourceAsset
 from dagster._core.definitions.utils import DEFAULT_GROUP_NAME
 from dagster._core.selector.subset_selector import generate_asset_dep_graph
+from python_modules.dagster.dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 
 
 class AssetNode(BaseAssetNode):
@@ -96,8 +98,8 @@ class AssetNode(BaseAssetNode):
         return self._spec.freshness_policy
 
     @property
-    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
-        return self._spec.auto_materialize_policy
+    def automation_condition(self) -> Optional[AutomationCondition]:
+        return self._spec.automation_condition
 
     @property
     def auto_observe_interval_minutes(self) -> Optional[float]:
@@ -211,7 +213,10 @@ class AssetGraph(BaseAssetGraph[AssetNode]):
         for key in all_referenced_asset_keys.difference(all_keys):
             assets_defs.append(
                 external_asset_from_spec(
-                    AssetSpec(key=key, metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True})
+                    AssetSpec(
+                        key=key,
+                        metadata={SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET: True},
+                    )
                 )
             )
         return assets_defs

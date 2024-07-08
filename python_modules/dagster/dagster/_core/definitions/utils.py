@@ -21,6 +21,10 @@ import yaml
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.storage.tags import check_reserved_tags
 from dagster._core.utils import is_valid_email
@@ -239,7 +243,9 @@ def is_valid_definition_tag_value(key: str) -> bool:
     return bool(VALID_DEFINITION_TAG_VALUE_REGEX.match(key))
 
 
-def validate_tags_strict(tags: Optional[Mapping[str, str]]) -> Optional[Mapping[str, str]]:
+def validate_tags_strict(
+    tags: Optional[Mapping[str, str]],
+) -> Optional[Mapping[str, str]]:
     if tags is None:
         return tags
 
@@ -274,6 +280,21 @@ def validate_asset_owner(owner: str, key: "AssetKey") -> None:
             f"Invalid owner '{owner}' for asset '{key}'. Owner must be an email address or a team "
             "name prefixed with 'team:'."
         )
+
+
+def normalize_automation_condition(
+    automation_condition: Optional[AutomationCondition],
+    auto_materialize_policy: Optional[AutoMaterializePolicy],
+) -> Optional[AutomationCondition]:
+    if auto_materialize_policy is not None:
+        if automation_condition is not None:
+            raise DagsterInvalidDefinitionError(
+                "Cannot supply both an automation_condition and an auto_materialize_policy."
+            )
+        else:
+            return auto_materialize_policy.to_automation_condition()
+    else:
+        return automation_condition
 
 
 def normalize_group_name(group_name: Optional[str]) -> str:
@@ -352,7 +373,9 @@ def config_from_yaml_strings(yaml_strings: Sequence[str]) -> Mapping[str, Any]:
     return check.is_dict(cast(Dict[str, object], run_config), key_type=str)
 
 
-def config_from_pkg_resources(pkg_resource_defs: Sequence[Tuple[str, str]]) -> Mapping[str, Any]:
+def config_from_pkg_resources(
+    pkg_resource_defs: Sequence[Tuple[str, str]],
+) -> Mapping[str, Any]:
     """Load a run config from a package resource, using :py:func:`pkg_resources.resource_string`.
 
     Example:

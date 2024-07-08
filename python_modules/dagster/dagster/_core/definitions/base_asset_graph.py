@@ -46,8 +46,10 @@ from .time_window_partitions import get_time_partition_key, get_time_partitions_
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
-    from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
     from dagster._core.definitions.declarative_automation import AutomationCondition
+    from python_modules.dagster.dagster._core.definitions.auto_materialize_policy import (
+        AutoMaterializePolicy,
+    )
 
 AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
 
@@ -128,7 +130,7 @@ class BaseAssetNode(ABC):
 
     @property
     @abstractmethod
-    def auto_materialize_policy(self) -> Optional["AutoMaterializePolicy"]: ...
+    def automation_condition(self) -> Optional["AutomationCondition"]: ...
 
     @property
     @abstractmethod
@@ -155,6 +157,13 @@ class BaseAssetNode(ABC):
     def execution_set_asset_and_check_keys(
         self,
     ) -> AbstractSet[Union[AssetKey, AssetCheckKey]]: ...
+
+    @property
+    def auto_materialize_policy(self) -> Optional["AutoMaterializePolicy"]:
+        if self.automation_condition:
+            return self.automation_condition.as_auto_materialize_policy()
+        else:
+            return None
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}<{self.key.to_user_string()}>"
@@ -627,8 +636,7 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         asset = self.get(asset_key)
         downstream_conditions = defaultdict(set)
         for child_key in asset.child_keys:
-            child_policy = self.get(child_key).auto_materialize_policy
-            child_condition = child_policy.asset_condition if child_policy else None
+            child_condition = self.get(child_key).automation_condition
             if child_condition:
                 downstream_conditions[child_condition].add(child_key)
             for c, aks in self.get_downstream_automation_conditions(asset_key=child_key).items():

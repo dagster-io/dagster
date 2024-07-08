@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.utils import validate_asset_owner
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
@@ -12,7 +15,7 @@ from .auto_materialize_policy import AutoMaterializePolicy
 from .events import AssetKey, CoercibleToAssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition_mapping import PartitionMapping
-from .utils import validate_tags_strict
+from .utils import normalize_automation_condition, validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -63,6 +66,7 @@ class AssetExecutionType(Enum):
 
 @experimental_param(param="owners")
 @experimental_param(param="tags")
+@experimental_param(param="automation_condition")
 class AssetSpec(
     NamedTuple(
         "_AssetSpec",
@@ -75,7 +79,7 @@ class AssetSpec(
             ("skippable", PublicAttr[bool]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
@@ -101,7 +105,7 @@ class AssetSpec(
             overriding the code version of the materialization function
         freshness_policy (Optional[FreshnessPolicy]): (Deprecated) A policy which indicates how up
             to date this asset is intended to be.
-        auto_materialize_policy (Optional[AutoMaterializePolicy]): AutoMaterializePolicy to apply to
+        automation_condition (Optional[AutomationCondition]): AutomationCondition to apply to
             the specified asset.
         backfill_policy (Optional[BackfillPolicy]): BackfillPolicy to apply to the specified asset.
         owners (Optional[Sequence[str]]): A list of strings representing owners of the asset. Each
@@ -121,10 +125,12 @@ class AssetSpec(
         skippable: bool = False,
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
-        freshness_policy: Optional[FreshnessPolicy] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        automation_condition: Optional[AutomationCondition] = None,
+        # TODO: hide params
+        freshness_policy: Optional[FreshnessPolicy] = None,
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -134,6 +140,10 @@ class AssetSpec(
         owners = check.opt_sequence_param(owners, "owners", of_type=str)
         for owner in owners:
             validate_asset_owner(owner, key)
+
+        automation_condition = normalize_automation_condition(
+            automation_condition, auto_materialize_policy
+        )
 
         return super().__new__(
             cls,
@@ -149,9 +159,9 @@ class AssetSpec(
                 "freshness_policy",
                 FreshnessPolicy,
             ),
-            auto_materialize_policy=check.opt_inst_param(
-                auto_materialize_policy,
-                "auto_materialize_policy",
+            automation_condition=check.opt_inst_param(
+                automation_condition,
+                "automation_condition",
                 AutoMaterializePolicy,
             ),
             owners=owners,
@@ -169,7 +179,7 @@ class AssetSpec(
         group_name: Optional[str],
         code_version: Optional[str],
         freshness_policy: Optional[FreshnessPolicy],
-        auto_materialize_policy: Optional[AutoMaterializePolicy],
+        automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
     ) -> "AssetSpec":
@@ -182,7 +192,7 @@ class AssetSpec(
             group_name=group_name,
             code_version=code_version,
             freshness_policy=freshness_policy,
-            auto_materialize_policy=auto_materialize_policy,
+            automation_condition=automation_condition,
             owners=owners,
             tags=tags,
         )
