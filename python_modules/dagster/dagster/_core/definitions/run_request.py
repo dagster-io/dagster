@@ -170,7 +170,7 @@ class RunRequest(IHaveNew):
     ):
         from dagster._core.definitions.run_config import convert_config_input
 
-        return super(RunRequest, cls).__new__(
+        return super().__new__(
             cls,
             run_key=check.opt_str_param(run_key, "run_key"),
             run_config=check.opt_mapping_param(
