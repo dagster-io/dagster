@@ -15,6 +15,7 @@ import {useContext} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
+import {v4 as uuidv4} from 'uuid';
 
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
@@ -42,6 +43,18 @@ import './blueprint.css';
 // break on underscores rather than arbitrary characters, but we need to remove these
 // when you copy-paste so they don't get pasted into editors, etc.
 patchCopyToRemoveZeroWidthUnderscores();
+
+const idempotencyLink = new ApolloLink((operation, forward) => {
+  if (/^\s*mutation/.test(operation.query.loc?.source.body ?? '')) {
+    operation.setContext(({headers = {}}) => ({
+      headers: {
+        ...headers,
+        'Idempotency-Key': uuidv4(),
+      },
+    }));
+  }
+  return forward(operation);
+});
 
 export interface AppProviderProps {
   children: React.ReactNode;
@@ -121,7 +134,7 @@ export const AppProvider = (props: AppProviderProps) => {
 
     return new ApolloClient({
       cache: appCache,
-      link: ApolloLink.from([...apolloLinks, splitLink]),
+      link: ApolloLink.from([...apolloLinks, idempotencyLink, splitLink]),
       defaultOptions: {
         watchQuery: {
           fetchPolicy: 'cache-and-network',
