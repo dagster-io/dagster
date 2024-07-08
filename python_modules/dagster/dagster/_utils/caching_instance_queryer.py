@@ -900,22 +900,20 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
     ) -> ValidAssetSubset:
         """Returns the AssetSubset of the given asset that has been updated after the given cursor."""
         partitions_def = self.asset_graph.get(asset_key).partitions_def
+        updated_asset_partitions = self.get_asset_partitions_updated_after_cursor(
+            asset_key,
+            asset_partitions=None,
+            after_cursor=after_cursor,
+            respect_materialization_data_versions=False,
+        )
         if partitions_def is None:
-            return ValidAssetSubset(
-                asset_key=asset_key,
-                value=self.asset_partition_has_materialization_or_observation(
-                    AssetKeyPartitionKey(asset_key), after_cursor=after_cursor
-                ),
-            )
+            validated_asset_partitions = {
+                ap for ap in updated_asset_partitions if ap.partition_key is None
+            }
         else:
-            new_asset_partitions = {
+            validated_asset_partitions = {
                 ap
-                for ap in self.get_asset_partitions_updated_after_cursor(
-                    asset_key,
-                    asset_partitions=None,
-                    after_cursor=after_cursor,
-                    respect_materialization_data_versions=False,
-                )
+                for ap in updated_asset_partitions
                 if ap.partition_key is not None
                 and partitions_def.has_partition_key(
                     partition_key=ap.partition_key,
@@ -923,9 +921,9 @@ class CachingInstanceQueryer(DynamicPartitionsStore):
                     current_time=self.evaluation_time,
                 )
             }
-            return AssetSubset.from_asset_partitions_set(
-                asset_key, partitions_def, new_asset_partitions
-            )
+        return AssetSubset.from_asset_partitions_set(
+            asset_key, partitions_def, validated_asset_partitions
+        )
 
     @cached_method
     def get_asset_subset_updated_after_time(
