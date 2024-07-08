@@ -951,7 +951,7 @@ def execute_asset_backfill_iteration(
         return
 
     logger.info(
-        f"Targets for asset backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
+        f"Assets targeted by backfill {backfill.backfill_id} are valid. Continuing execution with current status: {backfill.status}."
     )
 
     if backfill.status == BulkActionStatus.REQUESTED:
@@ -1259,6 +1259,20 @@ def _get_next_latest_storage_id(instance_queryer: CachingInstanceQueryer) -> int
     return max(next_latest_storage_id - cursor_offset, 0)
 
 
+def _asset_key_partition_key_iter_to_str(
+    asset_key_partition_keys: Iterable[AssetKeyPartitionKey],
+) -> str:
+    partition_keys_by_asset_key = {}
+    for asset_key_partition_key in asset_key_partition_keys:
+        partition_keys_by_asset_key.setdefault(asset_key_partition_key.asset_key, []).append(
+            asset_key_partition_key.partition_key
+        )
+    return "\n".join(
+        f"{asset_key}: {{{', '.join(partition_keys)}}}"
+        for asset_key, partition_keys in partition_keys_by_asset_key.items()
+    )
+
+
 def execute_asset_backfill_iteration_inner(
     backfill_id: str,
     asset_backfill_data: AssetBackfillData,
@@ -1278,10 +1292,14 @@ def execute_asset_backfill_iteration_inner(
     initial_candidates: Set[AssetKeyPartitionKey] = set()
     request_roots = not asset_backfill_data.requested_runs_for_target_roots
     if request_roots:
-        logger.info("Not all root assets have been requested, finding root assets.")
+        logger.info(
+            "Not all root assets (assets in backfill that do not have parents in the backill) have been requested, finding root assets."
+        )
         target_roots = asset_backfill_data.get_target_root_asset_partitions(instance_queryer)
         initial_candidates.update(target_roots)
-        logger.info(f"Root assets that have not yet been requested: {initial_candidates}")
+        logger.info(
+            f"Root assets that have not yet been requested:\n {_asset_key_partition_key_iter_to_str(initial_candidates)}"
+        )
 
         yield None
 
@@ -1309,8 +1327,13 @@ def execute_asset_backfill_iteration_inner(
                 " AssetGraphSubset"
             )
 
+        materialized_since_last_tick = (
+            updated_materialized_subset - asset_backfill_data.materialized_subset
+        )
         logger.info(
-            f"Assets materialized since last tick {updated_materialized_subset - asset_backfill_data.materialized_subset}"
+            f"Assets materialized since last tick:\n {_asset_key_partition_key_iter_to_str(materialized_since_last_tick.iterate_asset_partitions())}"
+            if materialized_since_last_tick
+            else "No relevant assets materialized since last tick."
         )
 
         parent_materialized_asset_partitions = set().union(
@@ -1358,17 +1381,22 @@ def execute_asset_backfill_iteration_inner(
     )
 
     logger.info(
-        f"After BFS-should-backfill filter, asset partitions to request: {asset_partitions_to_request}"
+        f"Asset partitions to request:\n {_asset_key_partition_key_iter_to_str(asset_partitions_to_request)}"
+        if asset_partitions_to_request
+        else "No asset partitions to request."
     )
-    not_requested_str = (
-        "\n"
-        + "\n".join([f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons])
-        if len(not_requested_and_reasons) > 0
-        else "None"
-    )
-    logger.info(
-        f"The following assets were considered for materialization but not requested:  {not_requested_str}"
-    )
+    if len(not_requested_and_reasons) > 0:
+        not_requested_str = (
+            "\n"
+            + "\n".join(
+                [f"{keys} - Reason: {reason}." for keys, reason in not_requested_and_reasons]
+            )
+            if len(not_requested_and_reasons) > 0
+            else "None"
+        )
+        logger.info(
+            f"The following assets were considered for materialization but not requested:\n  {not_requested_str}"
+        )
 
     # check if all assets have backfill policies if any of them do, otherwise, raise error
     asset_backfill_policies = [
@@ -1462,17 +1490,17 @@ def can_run_with_parent(
     if parent_node.backfill_policy != candidate_node.backfill_policy:
         return (
             False,
-            f"parent {parent_node.key} and {candidate_node.key} have different backfill policies",
+            f"parent {parent_node.key} and {candidate_node.key} have different backfill policies so they cannot be materialized in the same run. {candidate_node.key} can be materialized once {parent_node.key} is materialized.",
         )
     if parent_node.priority_repository_handle is not candidate_node.priority_repository_handle:
         return (
             False,
-            f"parent {parent_node.key} and {candidate_node.key} are in different code locations",
+            f"parent {parent_node.key} and {candidate_node.key} are in different code locations so they cannot be materialized in the same run. {candidate_node.key} can be materialized once {parent_node.key} is materialized.",
         )
     if parent_node.partitions_def != candidate_node.partitions_def:
         return (
             False,
-            f"parent {parent_node.key} and {candidate_node.key} have different partitions definitions",
+            f"parent {parent_node.key} and {candidate_node.key} have different partitions definitions so they cannot be materialized in the same run. {candidate_node.key} can be materialized once {parent_node.key} is materialized.",
         )
     if (
         parent.partition_key not in asset_partitions_to_request_map[parent.asset_key]
@@ -1511,7 +1539,7 @@ def can_run_with_parent(
             f"{parent_node.key} does not meet requirements of: targeting the same partitions as "
             f"{candidate_node.key}, have all of its partitions requested in this iteration, having "
             "a backfill policy, and that backfill policy size limit is not exceeded by adding "
-            f"{candidate_node.key} to the run."
+            f"{candidate_node.key} to the run. {candidate_node.key} can be materialized once {parent_node.key} is materialized."
         )
         return False, failed_reason
 
