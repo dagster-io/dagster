@@ -27,10 +27,9 @@ class ResolvedAssetDependencies:
         self, assets_def: AssetsDefinition, asset_key: AssetKey
     ) -> AbstractSet[AssetKey]:
         resolved_keys_by_unresolved_key = self._deps_by_assets_def_id.get(id(assets_def), {})
-        unresolved_upstream_keys = assets_def.asset_deps[asset_key]
         return {
-            resolved_keys_by_unresolved_key.get(unresolved_key, unresolved_key)
-            for unresolved_key in unresolved_upstream_keys
+            resolved_keys_by_unresolved_key.get(unresolved_dep.asset_key, unresolved_dep.asset_key)
+            for unresolved_dep in assets_def.specs_by_key[asset_key].deps
         }
 
     def get_resolved_asset_key_for_input(

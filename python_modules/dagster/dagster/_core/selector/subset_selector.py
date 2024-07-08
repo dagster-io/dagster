@@ -122,9 +122,9 @@ def generate_asset_dep_graph(
             upstream[asset_key] = set()
             downstream[asset_key] = downstream.get(asset_key, set())
             # for each asset upstream of this one, set that as upstream, and this downstream of it
-            for upstream_key in assets_def.asset_deps[asset_key]:
-                upstream[asset_key].add(upstream_key)
-                downstream[upstream_key] = downstream.get(upstream_key, set()) | {asset_key}
+            for dep in assets_def.specs_by_key[asset_key].deps:
+                upstream[asset_key].add(dep.asset_key)
+                downstream[dep.asset_key] = downstream.get(dep.asset_key, set()) | {asset_key}
     return {"upstream": upstream, "downstream": downstream}
 
 
