@@ -5,15 +5,6 @@ description: Get started quickly with this simple dbt & Dagster example.
 
 # Dagster & dbt quickstart
 
-<Note>
-  <strong>Heads up!</strong>: This approach uses the <code>DbtProject</code>{" "}
-  class, which is an experimental feature. Refer to the{" "}
-  <a href="/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject">
-    dagster-dbt API reference
-  </a>{" "}
-  for more information.
-</Note>
-
 This quickstart will get your dbt project up and running quickly with Dagster. By the end of this guide, you'll have an integrated Dagster and dbt project and be able to view it in the Dagster UI.
 
 ---
@@ -38,6 +29,16 @@ The `dagster-dbt` library installs both `dbt-core` and `dagster` as dependencies
 ---
 
 ## Step 2: Load your dbt project into Dagster
+
+<Note>
+  <strong>Heads up!</strong> Some of the methods described in this section may
+  use the <code>DbtProject</code> class, which is an experimental feature. Refer
+  to the{" "}
+  <a href="/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject">
+    dagster-dbt API reference
+  </a>{" "}
+  for more information.
+</Note>
 
 Next, you'll load your dbt project into Dagster. Use the tabs to view instructions for how to accomplish this.
 
