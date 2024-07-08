@@ -749,6 +749,7 @@ export enum ChangeReason {
   METADATA = 'METADATA',
   NEW = 'NEW',
   PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
+  REMOVED = 'REMOVED',
   TAGS = 'TAGS',
 }
 
