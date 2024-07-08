@@ -9,10 +9,10 @@ import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntryFragment';
 import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment.types';
 
 export const metadataForAssetNode = (
-  assetNode: AssetNodeOpMetadataFragment,
+  assetNode: AssetNodeOpMetadataFragment | null | undefined,
 ): {assetType?: DagsterTypeFragment; assetMetadata: MetadataEntryFragment[]} => {
-  const assetType = assetNode.type ? assetNode.type : undefined;
-  const assetMetadata = assetNode.metadataEntries || [];
+  const assetType = assetNode?.type ? assetNode.type : undefined;
+  const assetMetadata = assetNode?.metadataEntries || [];
   return {assetType, assetMetadata};
 };
 

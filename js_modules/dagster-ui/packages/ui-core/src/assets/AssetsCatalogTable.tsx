@@ -1,6 +1,5 @@
 import {gql, useApolloClient} from '@apollo/client';
 import {Box, ButtonGroup} from '@dagster-io/ui-components';
-import {indexedDB} from 'fake-indexeddb';
 import * as React from 'react';
 import {useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {useRouteMatch} from 'react-router-dom';
@@ -40,6 +39,28 @@ const groupTableCache = new Map();
 export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
 const DEFAULT_BATCH_LIMIT = 10000;
 
+export function useCachedAssets({
+  onAssetsLoaded,
+}: {
+  onAssetsLoaded: (data: AssetTableFragment[]) => void;
+}) {
+  const {localCacheIdPrefix} = useContext(AppContext);
+  const cacheManager = useMemo(
+    () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
+    [localCacheIdPrefix],
+  );
+
+  useLayoutEffect(() => {
+    cacheManager.get(ASSET_CATALOG_TABLE_QUERY_VERSION).then((data) => {
+      if (data) {
+        onAssetsLoaded(data);
+      }
+    });
+  }, [cacheManager, onAssetsLoaded]);
+
+  return {cacheManager};
+}
+
 export function useAllAssets({
   batchLimit = DEFAULT_BATCH_LIMIT,
   groupSelector,
@@ -52,23 +73,19 @@ export function useAllAssets({
 
   const assetsRef = useUpdatingRef(assets);
 
-  const {localCacheIdPrefix} = useContext(AppContext);
-
-  const cacheManager = useMemo(
-    () => new CacheManager<AssetTableFragment[]>(`${localCacheIdPrefix}/allAssetNodes`),
-    [localCacheIdPrefix],
-  );
-
-  useLayoutEffect(() => {
-    cacheManager.get(ASSET_CATALOG_TABLE_QUERY_VERSION).then((data) => {
-      if (data && !assetsRef.current) {
-        setErrorAndAssets({
-          error: undefined,
-          assets: data,
-        });
-      }
-    });
-  }, [cacheManager, assetsRef]);
+  const {cacheManager} = useCachedAssets({
+    onAssetsLoaded: useCallback(
+      (data) => {
+        if (!assetsRef.current) {
+          setErrorAndAssets({
+            error: undefined,
+            assets: data,
+          });
+        }
+      },
+      [assetsRef],
+    ),
+  });
 
   const fetchAssets = useCallback(async () => {
     try {
@@ -120,9 +137,6 @@ export function useAllAssets({
   useEffect(() => {
     fetchAssets();
   }, [fetchAssets]);
-
-  // Delete old database
-  indexedDB.deleteDatabase(`${localCacheIdPrefix}/allAssets`);
 
   const groupQuery = useCallback(async () => {
     if (!groupSelector) {
