@@ -744,7 +744,7 @@ class GrapheneCompositeSolidDefinition(graphene.ObjectType, ISolidDefinitionMixi
             handles = {
                 key: handle
                 for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+                if handle.parent and str(handle.parent.handleID) == parentHandleID
             }
 
         return [handles[key] for key in sorted(handles)]

@@ -1,7 +1,7 @@
 import logging
 import os
 import time
-from typing import List, Optional, Tuple, Union, cast
+from typing import List, Optional, Tuple, Union
 
 from dagster import (
     AssetKey,
@@ -227,15 +227,15 @@ def _execute_asset_backfill_iteration_no_side_effects(
     backfill = graphql_context.instance.get_backfill(backfill_id)
     asset_backfill_data = backfill.asset_backfill_data
     result = None
+    instance_queryer = CachingInstanceQueryer(
+        graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_datetime
+    )
     with environ({"ASSET_BACKFILL_CURSOR_DELAY_TIME": "0"}):
         for result in execute_asset_backfill_iteration_inner(
             backfill_id=backfill_id,
             asset_backfill_data=asset_backfill_data,
-            instance_queryer=CachingInstanceQueryer(
-                graphql_context.instance, asset_graph, asset_backfill_data.backfill_start_datetime
-            ),
+            instance_queryer=instance_queryer,
             asset_graph=asset_graph,
-            run_tags=backfill.tags,
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
@@ -248,7 +248,9 @@ def _execute_asset_backfill_iteration_no_side_effects(
         )
 
     updated_backfill = backfill.with_asset_backfill_data(
-        cast(AssetBackfillIterationResult, result).backfill_data,
+        result.backfill_data.with_run_requests_submitted(
+            result.run_requests, asset_graph=asset_graph, instance_queryer=instance_queryer
+        ),
         dynamic_partitions_store=graphql_context.instance,
         asset_graph=asset_graph,
     )

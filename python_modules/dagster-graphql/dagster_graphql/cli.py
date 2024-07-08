@@ -1,3 +1,4 @@
+import asyncio
 from typing import Mapping, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -39,10 +40,12 @@ def execute_query(
 
     context = workspace_process_context.create_request_context()
 
-    result = create_schema().execute(
-        query,
-        context_value=context,
-        variable_values=variables,
+    result = asyncio.run(
+        create_schema().execute_async(
+            query,
+            context_value=context,
+            variable_values=variables,
+        )
     )
 
     result_dict = result.formatted

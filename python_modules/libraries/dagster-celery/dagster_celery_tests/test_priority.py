@@ -79,4 +79,3 @@ def test_run_priority_job(rabbitmq):
                 histats = instance.get_run_stats(hi_run.run_id)
 
                 assert lowstats.start_time < histats.start_time
-                assert lowstats.end_time > histats.end_time

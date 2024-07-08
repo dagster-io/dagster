@@ -7,6 +7,7 @@ from typing import (
     Any,
     DefaultDict,
     Dict,
+    Generic,
     Iterable,
     Iterator,
     List,
@@ -27,6 +28,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, public
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils import hash_collection
 
@@ -344,10 +346,14 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         )
 
     def __str__(self):
-        return self.to_string()
+        """Return a unique string representation of the handle.
+
+        Inverse of NodeHandle.from_string.
+        """
+        return str(self.parent) + "." + self.name if self.parent else self.name
 
     @property
-    def root(self):
+    def root(self) -> "NodeHandle":
         if self.parent:
             return self.parent.root
         else:
@@ -370,13 +376,6 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         path.reverse()
         return path
 
-    def to_string(self) -> str:
-        """Return a unique string representation of the handle.
-
-        Inverse of NodeHandle.from_string.
-        """
-        return self.parent.to_string() + "." + self.name if self.parent else self.name
-
     def is_or_descends_from(self, handle: "NodeHandle") -> bool:
         """Check if the handle is or descends from another handle.
 
@@ -395,7 +394,14 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
                 return False
         return True
 
-    def pop(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
+    def pop(self) -> Optional["NodeHandle"]:
+        """Return a copy of the handle with some its root pruned."""
+        if self.parent is None:
+            return None
+        else:
+            return NodeHandle.from_path(self.path[1:])
+
+    def pop_ancestor(self, ancestor: "NodeHandle") -> Optional["NodeHandle"]:
         """Return a copy of the handle with some of its ancestors pruned.
 
         Args:
@@ -409,21 +415,21 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
 
             handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
             ancestor = NodeHandle('bar', NodeHandle('foo', None))
-            assert handle.pop(ancestor) == NodeHandle('baz', None)
+            assert handle.pop_ancestor(ancestor) == NodeHandle('baz', None)
         """
         check.inst_param(ancestor, "ancestor", NodeHandle)
         check.invariant(
             self.is_or_descends_from(ancestor),
-            f"Handle {self.to_string()} does not descend from {ancestor.to_string()}",
+            f"Handle {self} does not descend from {ancestor}",
         )
 
         return NodeHandle.from_path(self.path[len(ancestor.path) :])
 
-    def with_ancestor(self, ancestor: Optional["NodeHandle"]) -> "NodeHandle":
-        """Returns a copy of the handle with an ancestor grafted on.
+    def with_child(self, child: Optional["NodeHandle"]) -> "NodeHandle":
+        """Returns a copy of the handle with a child grafted on.
 
         Args:
-            ancestor (NodeHandle): Handle to the new ancestor.
+            child (NodeHandle): Handle to the new ancestor.
 
         Returns:
             NodeHandle:
@@ -431,15 +437,18 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         Example:
         .. code-block:: python
 
-            handle = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
-            ancestor = NodeHandle('quux' None)
-            assert handle.with_ancestor(ancestor) == NodeHandle(
+            handle = NodeHandle('quux' None)
+            child = NodeHandle('baz', NodeHandle('bar', NodeHandle('foo', None)))
+            assert str(child) == "foo.baz.bar"
+            assert handle.with_child(child) == NodeHandle(
                 'baz', NodeHandle('bar', NodeHandle('foo', NodeHandle('quux', None)))
             )
+            assert str(handle.with_child(child)) == "quux.foo.baz.bar""
         """
-        check.opt_inst_param(ancestor, "ancestor", NodeHandle)
-
-        return NodeHandle.from_path([*(ancestor.path if ancestor else []), *self.path])
+        if child is None:
+            return self
+        else:
+            return NodeHandle.from_path([*self.path, *child.path])
 
     @staticmethod
     def from_path(path: Sequence[str]) -> "NodeHandle":
@@ -488,16 +497,35 @@ class NodeHandle(NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["
         return NodeHandle(name=dict_repr["name"], parent=parent)
 
 
-class NodeInputHandle(
-    NamedTuple("_NodeInputHandle", [("node_handle", NodeHandle), ("input_name", str)])
-):
+# The advantage of using this TypeVar instead of just Optional[NodeHandle] is that the type checker
+# can know the value not None if it knew it was not None at construction. E.g. this passes
+# type-checking:
+#     node_handle = NodeHandle("foo", parent=None)
+#     node_output_handle = NodeOutputHandle(node_handle=node_handle, output_name="bar")
+#     node_output_handle.node_handle.path  # type checker knows node_output_handle.node_handle is not None
+T_OptionalNodeHandle = TypeVar("T_OptionalNodeHandle", bound=Optional[NodeHandle])
+
+
+@record(checked=False)
+class NodeInputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify inputs in the potentially recursive graph structure."""
 
+    node_handle: T_OptionalNodeHandle
+    input_name: str
 
-class NodeOutputHandle(
-    NamedTuple("_NodeOutputHandle", [("node_handle", NodeHandle), ("output_name", str)])
-):
+    def __str__(self) -> str:
+        return f"{self.node_handle}:{self.input_name}"
+
+
+@record(checked=False)
+class NodeOutputHandle(Generic[T_OptionalNodeHandle]):
     """A structured object to uniquely identify outputs in the potentially recursive graph structure."""
+
+    node_handle: T_OptionalNodeHandle
+    output_name: str
+
+    def __str__(self) -> str:
+        return f"{self.node_handle}:{self.output_name}"
 
 
 class NodeInput(NamedTuple("_NodeInput", [("node", Node), ("input_def", InputDefinition)])):

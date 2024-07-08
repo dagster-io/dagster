@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
     from .asset_layer import AssetLayer
     from .composition import PendingNodeInvocation
-    from .dependency import NodeHandle, NodeInputHandle
+    from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
     from .input import InputDefinition
     from .op_definition import OpDefinition
     from .output import OutputDefinition
@@ -237,3 +237,8 @@ class NodeDefinition(NamedConfigurableDefinition):
 
     @abstractmethod
     def get_op_handles(self, parent: "NodeHandle") -> AbstractSet["NodeHandle"]: ...
+
+    @abstractmethod
+    def get_op_output_handles(
+        self, parent: Optional["NodeHandle"]
+    ) -> AbstractSet["NodeOutputHandle"]: ...

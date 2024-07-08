@@ -140,11 +140,11 @@ class _PlanBuilder:
             keys = list(self._steps.keys())
             check.failed(f"Duplicated key {step.key}. Full list seen so far: {keys}.")
         self._seen_handles.add(step.handle)
-        self._steps[step.node_handle.to_string()] = step
+        self._steps[str(step.node_handle)] = step
 
     def get_step_by_node_handle(self, handle: NodeHandle) -> IExecutionStep:
         check.inst_param(handle, "handle", NodeHandle)
-        return self._steps[handle.to_string()]
+        return self._steps[str(handle)]
 
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan."""

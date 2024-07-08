@@ -1,6 +1,7 @@
 from typing import Any, Mapping, Optional, Sequence
 
 import docker
+import docker.errors
 from dagster import Field, In, Nothing, OpExecutionContext, StringSource, op
 from dagster._annotations import experimental
 from dagster._core.utils import parse_env_var

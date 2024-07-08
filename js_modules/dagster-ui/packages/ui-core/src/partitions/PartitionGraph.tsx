@@ -1,9 +1,10 @@
-import {Box, Button, Colors, NonIdealState} from '@dagster-io/ui-components';
+import {Box, Button, Colors, FontFamily, NonIdealState} from '@dagster-io/ui-components';
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import {Line} from 'react-chartjs-2';
 import styled from 'styled-components';
 
 import {colorHash} from '../app/Util';
+import {useRGBColorsForTheme} from '../app/useRGBColorsForTheme';
 import {numberFormatter} from '../ui/formatters';
 
 type PointValue = number | null | undefined;
@@ -31,6 +32,8 @@ export const PartitionGraph = React.memo(
   }: PartitionGraphProps) => {
     const [hiddenPartitions, setHiddenPartitions] = useState<{[name: string]: boolean}>(() => ({}));
     const chart = useRef<any>(null);
+
+    const rgbColors = useRGBColorsForTheme();
 
     const [_showLargeGraphMessage, setShowLargeGraphMessage] = useState(
       partitionNames.length > 1000,
@@ -77,11 +80,31 @@ export const PartitionGraph = React.memo(
         ? {
             y: {
               id: 'y',
-              title: {display: true, text: yLabel},
+              title: {display: true, text: yLabel, color: rgbColors[Colors.textLighter()]},
+              grid: {
+                color: rgbColors[Colors.keylineDefault()],
+              },
+              ticks: {
+                color: rgbColors[Colors.textLighter()],
+                font: {
+                  size: 12,
+                  family: FontFamily.monospace,
+                },
+              },
             },
             x: {
               id: 'x',
-              title: {display: true, text: title},
+              title: {display: true, text: title, color: rgbColors[Colors.textLighter()]},
+              grid: {
+                color: rgbColors[Colors.keylineDefault()],
+              },
+              ticks: {
+                color: rgbColors[Colors.textLighter()],
+                font: {
+                  size: 12,
+                  family: FontFamily.monospace,
+                },
+              },
             },
           }
         : undefined;
@@ -99,7 +122,7 @@ export const PartitionGraph = React.memo(
         onClick: onGraphClick,
         maintainAspectRatio: false,
       };
-    }, [onGraphClick, showLargeGraphMessage, title, yLabel]);
+    }, [onGraphClick, rgbColors, showLargeGraphMessage, title, yLabel]);
 
     const {jobData, stepData} = useMemo(() => {
       if (showLargeGraphMessage) {
@@ -164,15 +187,15 @@ export const PartitionGraph = React.memo(
                       {
                         label: allLabel,
                         data: jobData,
-                        borderColor: Colors.borderDefault(),
-                        backgroundColor: Colors.accentPrimary(),
+                        borderColor: rgbColors[Colors.borderDefault()],
+                        backgroundColor: rgbColors[Colors.dataVizBlurple()],
                       },
                     ]),
                 ...Object.keys(stepData).map((stepKey) => ({
                   label: stepKey,
                   data: stepData[stepKey as keyof typeof stepData],
                   borderColor: colorHash(stepKey),
-                  backgroundColor: Colors.accentPrimary(),
+                  backgroundColor: rgbColors[Colors.dataVizBlurple()],
                 })),
               ],
             },
@@ -182,6 +205,7 @@ export const PartitionGraph = React.memo(
         jobData,
         jobDataByPartition,
         partitionNames,
+        rgbColors,
         showLargeGraphMessage,
         stepData,
       ],
@@ -212,7 +236,7 @@ export const PartitionGraph = React.memo(
                   setShowLargeGraphMessage(false);
                 }}
               >
-                Show anyways
+                Show anyway
               </Button>
             </div>
           </Box>

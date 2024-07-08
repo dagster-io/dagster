@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Mapping, Optional
 
 import dagster._check as check
-from dateutil.parser import isoparse
+from dagster._vendored.dateutil.parser import isoparse
 
 from ..types import DbtOutput
 

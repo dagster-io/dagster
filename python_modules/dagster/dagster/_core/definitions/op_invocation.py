@@ -310,8 +310,7 @@ def _resolve_inputs(
     unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
     # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
     if unassigned_kwargs and cast("DecoratedOpFunction", op_def.compute_fn).has_var_kwargs():
-        for k, v in unassigned_kwargs.items():
-            input_dict[k] = v
+        input_dict.update(unassigned_kwargs)
 
     # Type check inputs
     op_label = context.per_invocation_properties.step_description

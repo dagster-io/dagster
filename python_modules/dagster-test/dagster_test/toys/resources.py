@@ -1,4 +1,4 @@
-from dagster import Field, Int, asset, graph, op, repository, resource, with_resources
+from dagster import Definitions, Field, Int, asset, graph, op, resource
 
 
 def define_resource(num):
@@ -48,15 +48,11 @@ def resource_asset(context):
     return context.resources.R1
 
 
-@repository
-def resource_repo():
-    return [
-        resource_job,
-        *with_resources(
-            [resource_asset],
-            resource_defs=lots_of_resources,
-        ),
-    ]
+defs = Definitions(
+    jobs=[resource_job],
+    assets=[resource_asset],
+    resources=lots_of_resources,
+)
 
 
 if __name__ == "__main__":

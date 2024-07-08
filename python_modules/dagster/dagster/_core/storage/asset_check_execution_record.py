@@ -4,7 +4,7 @@ from typing import NamedTuple, Optional
 import dagster._check as check
 from dagster._core.events.log import DagsterEventType, EventLogEntry
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import datetime_as_float
+from dagster._time import utc_datetime_from_naive
 
 
 class AssetCheckInstanceSupport(enum.Enum):
@@ -99,5 +99,5 @@ class AssetCheckExecutionRecord(
                 if row["evaluation_event"]
                 else None
             ),
-            create_timestamp=datetime_as_float(row["create_timestamp"]),
+            create_timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
         )

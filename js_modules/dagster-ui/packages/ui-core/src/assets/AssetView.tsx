@@ -290,7 +290,7 @@ export const AssetView = ({
 
   if (definitionQueryResult.data?.assetOrError.__typename === 'AssetNotFoundError') {
     // Redirect to the asset catalog
-    return <Redirect to="/assets" />;
+    return <Redirect to={`/assets/${currentPath.join('/')}?view=folder`} />;
   }
 
   return (

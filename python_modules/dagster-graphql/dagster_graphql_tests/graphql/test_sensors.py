@@ -6,6 +6,7 @@ import pytest
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
 from dagster._core.remote_representation import InProcessCodeLocationOrigin, RemoteRepositoryOrigin
+from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
@@ -21,6 +22,7 @@ from dagster._daemon.sensor import execute_sensor_iteration
 from dagster._time import get_timezone
 from dagster._utils import Counter, traced_counter
 from dagster._utils.error import SerializableErrorInfo
+from dagster._vendored.dateutil.relativedelta import relativedelta
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
 from dagster_graphql.schema.instigation import GrapheneDynamicPartitionsRequestType
 from dagster_graphql.test.utils import (
@@ -30,7 +32,6 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
-from dateutil.relativedelta import relativedelta
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -265,7 +266,6 @@ mutation($sensorSelector: SensorSelector!) {
     }
     ... on Sensor {
       id
-      jobOriginId
       canReset
       sensorState {
         selectorId
@@ -277,8 +277,16 @@ mutation($sensorSelector: SensorSelector!) {
 """
 
 STOP_SENSORS_QUERY = """
-mutation($jobOriginId: String!, $jobSelectorId: String!) {
-  stopSensor(jobOriginId: $jobOriginId, jobSelectorId: $jobSelectorId) {
+mutation(
+  $id: String
+  $jobOriginId: String
+  $jobSelectorId: String
+) {
+  stopSensor(
+    id: $id
+    jobOriginId: $jobOriginId
+    jobSelectorId: $jobSelectorId
+  ) {
     __typename
     ... on PythonError {
       message
@@ -305,7 +313,6 @@ mutation($sensorSelector: SensorSelector!) {
     }
     ... on Sensor {
       id
-      jobOriginId
       canReset
       sensorState {
         selectorId
@@ -755,13 +762,14 @@ class TestReadonlySensorPermissions(ReadonlyGraphQLContextTestMatrix):
         assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is False
         assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is False
 
-        sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
-        sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
+        sensor_id = result.data["sensorOrError"]["sensorState"]["id"]
 
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SENSORS_QUERY,
-            variables={"jobOriginId": sensor_origin_id, "jobSelectorId": sensor_selector_id},
+            variables={
+                "id": sensor_id,
+            },
         )
 
         assert stop_result.data["stopSensor"]["__typename"] == "UnauthorizedError"
@@ -804,12 +812,12 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             == InstigatorStatus.RUNNING.value
         )
 
-        job_origin_id = start_result.data["startSensor"]["jobOriginId"]
-        job_selector_id = start_result.data["startSensor"]["sensorState"]["selectorId"]
+        sensor_id = start_result.data["startSensor"]["id"]
+
         result = execute_dagster_graphql(
             graphql_context,
             STOP_SENSORS_QUERY,
-            variables={"jobOriginId": job_origin_id, "jobSelectorId": job_selector_id},
+            variables={"id": sensor_id},
         )
         assert result.data
         assert (
@@ -865,8 +873,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
 
         assert result.data["sensorOrError"]["defaultStatus"] == "RUNNING"
         assert result.data["sensorOrError"]["sensorState"]["status"] == "RUNNING"
-        sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
-        sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
+        sensor_id = result.data["sensorOrError"]["sensorState"]["id"]
 
         assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is True
         assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is True
@@ -882,7 +889,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SENSORS_QUERY,
-            variables={"jobOriginId": sensor_origin_id, "jobSelectorId": sensor_selector_id},
+            variables={
+                "id": sensor_id,
+            },
         )
 
         assert stop_result.data["stopSensor"]["instigationState"]["status"] == "STOPPED"
@@ -894,8 +903,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
+        cid = CompoundID.from_string(sensor_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            sensor_origin_id, sensor_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -914,8 +924,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data["sensorOrError"]["canReset"] is False
         assert result.data["sensorOrError"]["sensorState"]["status"] == "STOPPED"
 
-        sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
-        sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
+        sensor_id = result.data["sensorOrError"]["sensorState"]["id"]
 
         start_result = execute_dagster_graphql(
             graphql_context,
@@ -932,9 +941,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             RESET_SENSORS_QUERY,
             variables={"sensorSelector": sensor_selector},
         )
-
+        cid = CompoundID.from_string(sensor_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            sensor_origin_id, sensor_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -950,7 +959,7 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         )
 
         instigator_state = graphql_context.instance.get_instigator_state(
-            sensor_origin_id, sensor_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert instigator_state
@@ -972,13 +981,12 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
         assert result.data["sensorOrError"]["sensorState"]["hasStartPermission"] is True
         assert result.data["sensorOrError"]["sensorState"]["hasStopPermission"] is True
 
-        sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
-        sensor_selector_id = result.data["sensorOrError"]["sensorState"]["selectorId"]
+        sensor_id = result.data["sensorOrError"]["sensorState"]["id"]
 
         stop_result = execute_dagster_graphql(
             graphql_context,
             STOP_SENSORS_QUERY,
-            variables={"jobOriginId": sensor_origin_id, "jobSelectorId": sensor_selector_id},
+            variables={"id": sensor_id},
         )
 
         assert stop_result.data["stopSensor"]["instigationState"]["status"] == "STOPPED"
@@ -998,8 +1006,9 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             variables={"sensorSelector": sensor_selector},
         )
 
+        cid = CompoundID.from_string(sensor_id)
         instigator_state = graphql_context.instance.get_instigator_state(
-            sensor_origin_id, sensor_selector_id
+            cid.external_origin_id, cid.selector_id
         )
 
         assert instigator_state

@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import AbstractSet, Any, List, Mapping, NamedTuple, Optional, Sequence, Union
 
-import pendulum
 from typing_extensions import TypeAlias
 
 import dagster._check as check
@@ -26,7 +25,8 @@ from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._serdes import create_snapshot_id
 from dagster._serdes.errors import DeserializationError
 from dagster._serdes.serdes import EnumSerializer, deserialize_value, whitelist_for_serdes
-from dagster._utils import datetime_as_float, xor
+from dagster._time import get_current_timestamp, utc_datetime_from_naive
+from dagster._utils import xor
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
@@ -317,7 +317,7 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
     def with_status(self, status: TickStatus, **kwargs: Any):
         check.inst_param(status, "status", TickStatus)
-        end_timestamp = pendulum.now("UTC").timestamp() if status != TickStatus.STARTED else None
+        end_timestamp = get_current_timestamp() if status != TickStatus.STARTED else None
         kwargs["end_timestamp"] = end_timestamp
         return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 
@@ -743,7 +743,7 @@ class AutoMaterializeAssetEvaluationRecord(NamedTuple):
             id=row["id"],
             serialized_evaluation_body=row["asset_evaluation_body"],
             evaluation_id=row["evaluation_id"],
-            timestamp=datetime_as_float(row["create_timestamp"]),
+            timestamp=utc_datetime_from_naive(row["create_timestamp"]).timestamp(),
             asset_key=check.not_none(AssetKey.from_db_string(row["asset_key"])),
         )
 

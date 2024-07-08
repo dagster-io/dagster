@@ -4,6 +4,7 @@ import {useContext, useState} from 'react';
 import {useHistory} from 'react-router-dom';
 
 import {DeletionDialog} from './DeletionDialog';
+import {QueuedRunCriteriaDialog} from './QueuedRunCriteriaDialog';
 import {RunConfigDialog} from './RunConfigDialog';
 import {doneStatuses} from './RunStatuses';
 import {DagsterTag} from './RunTag';
@@ -14,6 +15,7 @@ import {AppContext} from '../app/AppContext';
 import {showSharedToaster} from '../app/DomUtils';
 import {InjectedComponentContext} from '../app/InjectedComponentContext';
 import {useCopyToClipboard} from '../app/browser';
+import {RunStatus} from '../graphql/types';
 import {FREE_CONCURRENCY_SLOTS_MUTATION} from '../instance/InstanceConcurrency';
 import {
   FreeConcurrencySlotsMutation,
@@ -22,7 +24,14 @@ import {
 import {AnchorButton} from '../ui/AnchorButton';
 import {workspacePipelineLinkForRun, workspacePipelinePath} from '../workspace/workspacePath';
 
-type VisibleDialog = 'config' | 'delete' | 'terminate' | 'free_slots' | 'metrics' | null;
+type VisibleDialog =
+  | 'config'
+  | 'delete'
+  | 'terminate'
+  | 'queue-criteria'
+  | 'free_slots'
+  | 'metrics'
+  | null;
 
 export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean}) => {
   const {runConfigYaml} = run;
@@ -101,6 +110,15 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
                   onClick={() => window.open(`${rootServerURI}/download_debug/${run.id}`)}
                 />
               </Tooltip>
+              {run.status === RunStatus.QUEUED ? (
+                <MenuItem
+                  tagName="button"
+                  icon="history_toggle_off"
+                  text="View queue criteria"
+                  intent="none"
+                  onClick={() => setVisibleDialog('queue-criteria')}
+                />
+              ) : null}
               {runMetricsEnabled && RunMetricsDialog ? (
                 <MenuItem
                   tagName="button"
@@ -140,6 +158,13 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
         tags={run.tags}
         isJob={isJob}
       />
+      {run.status === RunStatus.QUEUED ? (
+        <QueuedRunCriteriaDialog
+          run={run}
+          isOpen={visibleDialog === 'queue-criteria'}
+          onClose={() => setVisibleDialog(null)}
+        />
+      ) : null}
       {runMetricsEnabled && RunMetricsDialog ? (
         <RunMetricsDialog
           runId={run.id}

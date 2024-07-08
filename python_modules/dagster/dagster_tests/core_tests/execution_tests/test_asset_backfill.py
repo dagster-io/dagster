@@ -257,10 +257,18 @@ def _single_backfill_iteration(
             partition_key=run_request.partition_key,
             instance=instance,
             failed_asset_keys=[],
-            tags=run_request.tags,
+            tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
         )
 
-    return backfill_data
+    return backfill_data.with_run_requests_submitted(
+        result.run_requests,
+        asset_graph,
+        instance_queryer=CachingInstanceQueryer(
+            instance=instance,
+            asset_graph=asset_graph,
+            evaluation_time=backfill_data.backfill_start_datetime,
+        ),
+    )
 
 
 def _single_backfill_iteration_create_but_do_not_submit_runs(
@@ -552,7 +560,6 @@ def execute_asset_backfill_iteration_consume_generator(
                 instance, asset_graph, asset_backfill_data.backfill_start_datetime
             ),
             asset_graph=asset_graph,
-            run_tags={},
             backfill_start_timestamp=asset_backfill_data.backfill_start_timestamp,
             logger=logging.getLogger("fake_logger"),
         ):
@@ -586,26 +593,40 @@ def run_backfill_to_completion(
 
     while not backfill_data.is_complete():
         iteration_count += 1
+
         result1 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
             asset_backfill_data=backfill_data,
             asset_graph=asset_graph,
             instance=instance,
         )
+
         # iteration_count += 1
         assert result1.backfill_data != backfill_data
 
-        # if nothing changes, nothing should happen in the iteration
+        instance_queryer = CachingInstanceQueryer(
+            instance=instance,
+            asset_graph=asset_graph,
+            evaluation_time=backfill_data.backfill_start_datetime,
+        )
+
+        backfill_data_with_submitted_runs = result1.backfill_data.with_run_requests_submitted(
+            result1.run_requests,
+            asset_graph,
+            instance_queryer,
+        )
+
+        # once everything that was requested is added to the requested subset, nothing should change if the iteration repeats
         result2 = execute_asset_backfill_iteration_consume_generator(
             backfill_id=backfill_id,
-            asset_backfill_data=result1.backfill_data,
+            asset_backfill_data=backfill_data_with_submitted_runs,
             asset_graph=asset_graph,
             instance=instance,
         )
-        assert result2.backfill_data == result1.backfill_data
+        assert result2.backfill_data == backfill_data_with_submitted_runs
         assert result2.run_requests == []
 
-        backfill_data = result2.backfill_data
+        backfill_data = result1.backfill_data
 
         for asset_partition in backfill_data.materialized_subset.iterate_asset_partitions():
             assert asset_partition not in fail_and_downstream_asset_partitions
@@ -653,7 +674,7 @@ def run_backfill_to_completion(
                     if AssetKeyPartitionKey(asset_key, run_request.partition_key)
                     in fail_asset_partitions
                 ],
-                tags=run_request.tags,
+                tags={**run_request.tags, BACKFILL_ID_TAG: backfill_id},
             )
 
         assert iteration_count <= len(requested_asset_partitions) + 1

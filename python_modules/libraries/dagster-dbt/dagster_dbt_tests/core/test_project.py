@@ -28,19 +28,13 @@ def test_local_dev(project_dir) -> None:
     assert not my_project.manifest_path.exists()
     with environ({"DAGSTER_IS_DEV_CLI": "1"}):
         my_project = DbtProject(project_dir)
-        assert my_project.manifest_path.exists()
-
-
-def test_opt_in_env_var(project_dir) -> None:
-    my_project = DbtProject(project_dir)
-    assert not my_project.manifest_path.exists()
-    with environ({"DAGSTER_DBT_PARSE_PROJECT_ON_LOAD": "1"}):
-        my_project = DbtProject(project_dir)
+        my_project.prepare_if_dev()
         assert my_project.manifest_path.exists()
 
 
 def _init(project_dir):
     my_project = DbtProject(project_dir)
+    my_project.prepare_if_dev()
     assert my_project.manifest_path.exists()
     assert validate_manifest(my_project.manifest_path)
     return

@@ -286,8 +286,8 @@ class GrapheneRepository(graphene.ObjectType):
             )
         super().__init__(name=repository.name)
 
-    def resolve_id(self, _graphene_info: ResolveInfo):
-        return self._repository.get_external_origin_id()
+    def resolve_id(self, _graphene_info: ResolveInfo) -> str:
+        return self._repository.get_compound_id().to_string()
 
     def resolve_origin(self, _graphene_info: ResolveInfo):
         origin = self._repository.get_external_origin()

@@ -440,5 +440,5 @@ def make_values_resource(**kwargs: Any) -> ResourceDefinition:
     """
     return ResourceDefinition(
         resource_fn=lambda init_context: init_context.resource_config,
-        config_schema=kwargs or Any,
+        config_schema=kwargs or None,
     )

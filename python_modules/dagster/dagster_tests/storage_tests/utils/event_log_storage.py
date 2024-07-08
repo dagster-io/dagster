@@ -10,7 +10,6 @@ from contextlib import ExitStack, contextmanager
 from typing import List, Optional, Sequence, Tuple, cast
 
 import mock
-import pendulum
 import pytest
 import sqlalchemy as db
 from dagster import (
@@ -113,7 +112,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
 from dagster._serdes.serdes import deserialize_value
-from dagster._utils import datetime_as_float
+from dagster._time import get_current_datetime
 from dagster._utils.concurrency import ConcurrencySlotStatus
 
 # py36 & 37 list.append not hashable
@@ -388,7 +387,7 @@ def cursor_datetime_args():
     # parametrization function to test constructing run-sharded event log cursors, with both
     # timezone-aware and timezone-naive datetimes
     yield None
-    yield pendulum.now()
+    yield get_current_datetime()
     yield datetime.datetime.now()
 
 
@@ -2083,14 +2082,13 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             update_timestamp = run_records[-1].update_timestamp
-            tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
 
             # use tz-aware cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.RUN_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=tzaware_dt
+                        id=0, run_updated_after=update_timestamp
                     ),  # events after first run
                 ),
                 ascending=True,
@@ -2107,7 +2105,7 @@ class TestEventLogStorage:
                 EventRecordsFilter(
                     event_type=DagsterEventType.RUN_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=tzaware_dt.naive()
+                        id=0, run_updated_after=update_timestamp.replace(tzinfo=None)
                     ),  # events after first run
                 ),
                 ascending=True,

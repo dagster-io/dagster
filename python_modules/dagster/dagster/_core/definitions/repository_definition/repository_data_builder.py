@@ -274,27 +274,24 @@ def build_caching_repository_data_from_list(
         key: checks_def for checks_def in asset_checks_defs for key in checks_def.check_keys
     }
     if assets_defs or asset_checks_defs or source_assets:
-        for job_name, job_def in get_base_asset_jobs(
-            asset_graph=asset_graph,
-            executor_def=default_executor_def,
-            resource_defs=top_level_resources,
-            logger_defs=default_logger_defs,
-        ).items():
-            jobs[job_name] = job_def
+        jobs.update(
+            get_base_asset_jobs(
+                asset_graph=asset_graph,
+                executor_def=default_executor_def,
+                resource_defs=top_level_resources,
+                logger_defs=default_logger_defs,
+            )
+        )
 
     for name, sensor_def in sensors.items():
-        if sensor_def.has_loadable_targets():
-            targets = sensor_def.load_targets()
-            for target in targets:
-                _process_and_validate_target(
-                    sensor_def, coerced_graphs, unresolved_jobs, jobs, target
-                )
+        for target in sensor_def.targets:
+            if target.has_job_def:
+                _process_and_validate_target(sensor_def, unresolved_jobs, jobs, target.job_def)
 
     for name, schedule_def in schedules.items():
-        if schedule_def.has_loadable_target():
-            target = schedule_def.load_target()
+        if schedule_def.target.has_job_def:
             _process_and_validate_target(
-                schedule_def, coerced_graphs, unresolved_jobs, jobs, target
+                schedule_def, unresolved_jobs, jobs, schedule_def.target.job_def
             )
 
     _validate_auto_materialize_sensors(sensors.values(), asset_graph)
@@ -306,7 +303,6 @@ def build_caching_repository_data_from_list(
         ) in unresolved_partitioned_asset_schedules.items():
             _process_and_validate_target(
                 unresolved_partitioned_asset_schedule,
-                coerced_graphs,
                 unresolved_jobs,
                 jobs,
                 unresolved_partitioned_asset_schedule.job,
@@ -426,62 +422,40 @@ def _process_and_validate_target(
     schedule_or_sensor_def: Union[
         SensorDefinition, ScheduleDefinition, UnresolvedPartitionedAssetScheduleDefinition
     ],
-    coerced_graphs: Dict[str, JobDefinition],
     unresolved_jobs: Dict[str, UnresolvedAssetJobDefinition],
     jobs: Dict[str, Union[JobDefinition, Callable[[], JobDefinition]]],
-    target: Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition],
+    job_def: Union[JobDefinition, UnresolvedAssetJobDefinition],
 ):
-    """This function modifies the state of coerced_graphs, unresolved_jobs, and jobs."""
+    """This function modifies the state of unresolved_jobs, and jobs."""
     targeter = (
         f"schedule '{schedule_or_sensor_def.name}'"
         if isinstance(schedule_or_sensor_def, ScheduleDefinition)
         else f"sensor '{schedule_or_sensor_def.name}'"
     )
-    if isinstance(target, GraphDefinition):
-        if target.name not in coerced_graphs:
-            # Since this is a graph we have to coerce, it is not possible to be
-            # the same definition by reference equality
-            if target.name in jobs:
-                raise DagsterInvalidDefinitionError(
-                    _get_error_msg_for_target_conflict(targeter, "graph", target.name, "job")
-                )
-        elif coerced_graphs[target.name].graph != target:
-            raise DagsterInvalidDefinitionError(
-                _get_error_msg_for_target_conflict(targeter, "graph", target.name, "graph")
-            )
-        coerced_job = target.coerce_to_job()
-        coerced_graphs[target.name] = coerced_job
-        jobs[target.name] = coerced_job
-    elif isinstance(target, UnresolvedAssetJobDefinition):
-        if target.name not in unresolved_jobs:
+    if isinstance(job_def, UnresolvedAssetJobDefinition):
+        if job_def.name not in unresolved_jobs:
             # Since this is an unresolved job we have to resolve, it is not possible to
             # be the same definition by reference equality
-            if target.name in jobs:
+            if job_def.name in jobs:
                 raise DagsterInvalidDefinitionError(
                     _get_error_msg_for_target_conflict(
-                        targeter, "unresolved asset job", target.name, "job"
+                        targeter, "unresolved asset job", job_def.name, "job"
                     )
                 )
-        elif unresolved_jobs[target.name].selection != target.selection:
+        elif unresolved_jobs[job_def.name].selection != job_def.selection:
             raise DagsterInvalidDefinitionError(
                 _get_error_msg_for_target_conflict(
-                    targeter, "unresolved asset job", target.name, "unresolved asset job"
+                    targeter, "unresolved asset job", job_def.name, "unresolved asset job"
                 )
             )
-        unresolved_jobs[target.name] = target
+        unresolved_jobs[job_def.name] = job_def
     else:
-        if target.name in jobs and jobs[target.name] != target:
-            dupe_target_type = (
-                "graph"
-                if target.name in coerced_graphs
-                else "unresolved asset job"
-                if target.name in unresolved_jobs
-                else "job"
-            )
+        if job_def.name in jobs and jobs[job_def.name].graph != job_def.graph:
+            dupe_target_type = "unresolved asset job" if job_def.name in unresolved_jobs else "job"
             raise DagsterInvalidDefinitionError(
-                _get_error_msg_for_target_conflict(targeter, "job", target.name, dupe_target_type)
+                _get_error_msg_for_target_conflict(targeter, "job", job_def.name, dupe_target_type)
             )
-        jobs[target.name] = target
+        jobs[job_def.name] = job_def
 
 
 def _validate_auto_materialize_sensors(

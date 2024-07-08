@@ -6,6 +6,7 @@ import {
   InMemoryCache,
   split,
 } from '@apollo/client';
+import {RetryLink} from '@apollo/client/link/retry';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
 import {CustomTooltipProvider} from '@dagster-io/ui-components';
@@ -14,6 +15,7 @@ import {useContext} from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {CompatRouter} from 'react-router-dom-v5-compat';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
+import {v4 as uuidv4} from 'uuid';
 
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
@@ -41,6 +43,18 @@ import './blueprint.css';
 // break on underscores rather than arbitrary characters, but we need to remove these
 // when you copy-paste so they don't get pasted into editors, etc.
 patchCopyToRemoveZeroWidthUnderscores();
+
+const idempotencyLink = new ApolloLink((operation, forward) => {
+  if (/^\s*mutation/.test(operation.query.loc?.source.body ?? '')) {
+    operation.setContext(({headers = {}}) => ({
+      headers: {
+        ...headers,
+        'Idempotency-Key': uuidv4(),
+      },
+    }));
+  }
+  return forward(operation);
+});
 
 export interface AppProviderProps {
   children: React.ReactNode;
@@ -93,6 +107,20 @@ export const AppProvider = (props: AppProviderProps) => {
     [headerObject, websocketURI],
   );
 
+  const retryLink = React.useMemo(() => {
+    return new RetryLink({
+      attempts: {
+        max: 2,
+        retryIf: (error, _operation) => {
+          return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
+        },
+      },
+      delay: {
+        initial: 300,
+      },
+    });
+  }, []);
+
   const apolloClient = React.useMemo(() => {
     // Subscriptions use WebSocketLink, queries & mutations use HttpLink.
     const splitLink = split(
@@ -101,19 +129,19 @@ export const AppProvider = (props: AppProviderProps) => {
         return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
       new WebSocketLink(websocketClient),
-      new HttpLink({uri: graphqlPath, headers: headerObject}),
+      ApolloLink.from([retryLink, new HttpLink({uri: graphqlPath, headers: headerObject})]),
     );
 
     return new ApolloClient({
       cache: appCache,
-      link: ApolloLink.from([...apolloLinks, splitLink]),
+      link: ApolloLink.from([...apolloLinks, idempotencyLink, splitLink]),
       defaultOptions: {
         watchQuery: {
           fetchPolicy: 'cache-and-network',
         },
       },
     });
-  }, [apolloLinks, appCache, graphqlPath, headerObject, websocketClient]);
+  }, [apolloLinks, appCache, graphqlPath, headerObject, retryLink, websocketClient]);
 
   const appContextValue = React.useMemo(
     () => ({

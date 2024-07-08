@@ -3,6 +3,8 @@ from datetime import datetime
 
 import pytest
 from dagster import DagsterInvalidDefinitionError, ScheduleDefinition, build_schedule_context, graph
+from dagster._core.definitions.decorators.op_decorator import op
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.run_config import RunConfig
 
 
@@ -118,3 +120,18 @@ def test_schedule_run_config_obj_fn() -> None:
         "baz": "qux",
         "time": execution_time,
     }
+
+
+def test_coerce_graph_def_to_job():
+    @op
+    def foo(): ...
+
+    @graph
+    def bar():
+        foo()
+
+    with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
+        my_schedule = ScheduleDefinition(cron_schedule="* * * * *", job=bar)
+
+    assert isinstance(my_schedule.job, JobDefinition)
+    assert my_schedule.job.name == "bar"

@@ -5,8 +5,9 @@ import graphene
 from dagster import DefaultSensorStatus
 from dagster._core.definitions.selector import SensorSelector
 from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.remote_representation import ExternalSensor, ExternalTargetData
-from dagster._core.remote_representation.external import ExternalRepository
+from dagster._core.remote_representation.external import CompoundID, ExternalRepository
 from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus
 from dagster._core.workspace.permissions import Permissions
 
@@ -125,8 +126,8 @@ class GrapheneSensor(graphene.ObjectType):
             else None,
         )
 
-    def resolve_id(self, _):
-        return self._external_sensor.get_external_origin_id()
+    def resolve_id(self, _) -> str:
+        return self._external_sensor.get_compound_id().to_string()
 
     def resolve_defaultStatus(self, _graphene_info: ResolveInfo):
         default_sensor_status = self._external_sensor.default_status
@@ -222,16 +223,40 @@ class GrapheneStopSensorMutation(graphene.Mutation):
     Output = graphene.NonNull(GrapheneStopSensorMutationResultOrError)
 
     class Arguments:
-        job_origin_id = graphene.NonNull(graphene.String)
-        job_selector_id = graphene.NonNull(graphene.String)
+        id = graphene.Argument(graphene.String)  # Sensor / InstigationState id
+
+        # "job" legacy name for instigators, predates current Job
+        job_origin_id = graphene.Argument(graphene.String)
+        job_selector_id = graphene.Argument(graphene.String)
 
     class Meta:
         name = "StopSensorMutation"
 
     @capture_error
     @require_permission_check(Permissions.EDIT_SENSOR)
-    def mutate(self, graphene_info: ResolveInfo, job_origin_id, job_selector_id):
-        return stop_sensor(graphene_info, job_origin_id, job_selector_id)
+    def mutate(
+        self,
+        graphene_info: ResolveInfo,
+        id: Optional[str] = None,
+        job_origin_id: Optional[str] = None,
+        job_selector_id: Optional[str] = None,
+    ):
+        if id:
+            cid = CompoundID.from_string(id)
+            sensor_origin_id = cid.external_origin_id
+            sensor_selector_id = cid.selector_id
+        elif job_origin_id and CompoundID.is_valid_string(job_origin_id):
+            # cross-push handle if InstigationState.id being passed through as origin id
+            cid = CompoundID.from_string(job_origin_id)
+            sensor_origin_id = cid.external_origin_id
+            sensor_selector_id = cid.selector_id
+        elif job_origin_id is None or job_selector_id is None:
+            raise DagsterInvariantViolationError("Must specify id or jobOriginId and jobSelectorId")
+        else:
+            sensor_origin_id = job_origin_id
+            sensor_selector_id = job_selector_id
+
+        return stop_sensor(graphene_info, sensor_origin_id, sensor_selector_id)
 
 
 class GrapheneResetSensorMutation(graphene.Mutation):

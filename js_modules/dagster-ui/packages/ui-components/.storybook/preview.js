@@ -15,7 +15,7 @@ import {withThemeByClassName} from '@storybook/addon-themes';
 
 import {MemoryRouter} from 'react-router-dom';
 
-import {createGlobalStyle} from 'styled-components/macro';
+import {createGlobalStyle} from 'styled-components';
 
 import './blueprint.css';
 
@@ -90,8 +90,4 @@ export const decorators = [
   }),
 ];
 
-export const parameters = {
-  parameters: {
-    actions: {argTypesRegex: '^on[A-Z].*'},
-  },
-};
+export const parameters = {};

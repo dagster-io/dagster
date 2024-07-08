@@ -93,7 +93,6 @@ setup(
         "pendulum>=0.7.0,<3; python_version<'3.9'",  # https://github.com/dagster-io/dagster/issues/19500
         "protobuf>=3.20.0,<5; python_version<'3.11'",  # min protobuf version to be compatible with both protobuf 3 and 4
         "protobuf>=4,<5; python_version>='3.11'",
-        "python-dateutil",
         "python-dotenv",
         "pytz",
         "requests",
@@ -127,11 +126,11 @@ setup(
             "mock==3.0.5",
             "mypy-protobuf",
             "objgraph",
-            "pytest-cov==2.10.1",
-            "pytest-mock==3.3.1",
-            "pytest-rerunfailures==10.0",
-            "pytest-xdist==3.5.0",
-            "pytest>=7.0.1",
+            "pytest-cov==5.0.0",
+            "pytest-mock==3.14.0",
+            "pytest-rerunfailures==14.0",
+            "pytest-xdist==3.6.1",
+            "pytest>=8",
             "responses<=0.23.1",  # https://github.com/getsentry/responses/issues/654
             "syrupy>=4.0.0",
             "tox==3.25.0",
@@ -141,7 +140,7 @@ setup(
         ],
         "mypy": ["mypy==1.8.0"],
         "pyright": [
-            "pyright==1.1.356",
+            "pyright==1.1.370",
             ### Stub packages
             "pandas-stubs",  # version will be resolved against pandas
             "types-backports",  # version will be resolved against backports
@@ -153,7 +152,7 @@ setup(
             "types-paramiko",  # version will be resolved against paramiko
             "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
             "types-pyOpenSSL",  # version will be resolved against pyOpenSSL
-            "types-python-dateutil",  # version will be resolved against python-dateutil
+            "types-python-dateutil~=2.9.0.20240316",  # vendored python-dateutil version is 2.9.0
             "types-PyYAML",  # version will be resolved against PyYAML
             "types-pytz",  # version will be resolved against pytz
             "types-requests",  # version will be resolved against requests
@@ -165,7 +164,7 @@ setup(
             "types-toml",  # version will be resolved against toml
         ],
         "ruff": [
-            "ruff==0.4.5",
+            "ruff==0.5.1",
         ],
     },
     entry_points={

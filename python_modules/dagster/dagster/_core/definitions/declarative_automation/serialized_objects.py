@@ -18,9 +18,9 @@ from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataMapping, MetadataValue
 from dagster._core.definitions.partition import AllPartitionsSubset
-from dagster._model.decorator import dagster_model
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
-from dagster._utils import utc_datetime_from_timestamp
+from dagster._time import datetime_from_timestamp
 
 if TYPE_CHECKING:
     from dagster._core.definitions.declarative_automation.automation_condition import (
@@ -34,7 +34,7 @@ T = TypeVar("T")
 
 
 @whitelist_for_serdes
-@dagster_model(checked=False)
+@record(checked=False)
 class HistoricalAllPartitionsSubsetSentinel:
     """Serializable indicator that this value was an AllPartitionsSubset at serialization time, but
     the partitions may have changed since that time.
@@ -270,6 +270,6 @@ class AutomationConditionCursor(NamedTuple):
     @property
     def temporal_context(self) -> TemporalContext:
         return TemporalContext(
-            effective_dt=utc_datetime_from_timestamp(self.effective_timestamp),
+            effective_dt=datetime_from_timestamp(self.effective_timestamp),
             last_event_id=self.last_event_id,
         )

@@ -17,8 +17,6 @@ from typing import (
     cast,
 )
 
-import pendulum
-
 import dagster._check as check
 from dagster._core.asset_graph_view.asset_graph_view import AssetGraphView, TemporalContext
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -29,6 +27,7 @@ from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.time_window_partitions import get_time_partitions_def
 from dagster._core.instance import DynamicPartitionsStore
+from dagster._time import get_current_timestamp
 
 from ... import PartitionKeyRange
 from ..storage.tags import ASSET_PARTITION_RANGE_END_TAG, ASSET_PARTITION_RANGE_START_TAG
@@ -178,7 +177,7 @@ class AssetDaemonContext:
     def evaluate(
         self,
     ) -> Tuple[Sequence[RunRequest], AssetDaemonCursor, Sequence[AssetConditionEvaluation]]:
-        observe_request_timestamp = pendulum.now().timestamp()
+        observe_request_timestamp = get_current_timestamp()
         auto_observe_run_requests = (
             get_auto_observe_run_requests(
                 asset_graph=self.asset_graph,
@@ -279,7 +278,6 @@ def build_run_requests(
 def build_run_requests_with_backfill_policies(
     asset_partitions: Iterable[AssetKeyPartitionKey],
     asset_graph: BaseAssetGraph,
-    run_tags: Optional[Mapping[str, str]],
     dynamic_partitions_store: DynamicPartitionsStore,
 ) -> Sequence[RunRequest]:
     """If all assets have backfill policies, we should respect them and materialize them according
@@ -312,14 +310,13 @@ def build_run_requests_with_backfill_policies(
         partition_keys,
         backfill_policy,
     ), asset_keys in assets_to_reconcile_by_partitions_def_partition_keys_backfill_policy.items():
-        tags = {**(run_tags or {})}
         if partitions_def is None and partition_keys is not None:
             check.failed("Partition key provided for unpartitioned asset")
         if partitions_def is not None and partition_keys is None:
             check.failed("Partition key missing for partitioned asset")
         if partitions_def is None and partition_keys is None:
             # non partitioned assets will be backfilled in a single run
-            run_requests.append(RunRequest(asset_selection=list(asset_keys), tags=tags))
+            run_requests.append(RunRequest(asset_selection=list(asset_keys), tags={}))
         else:
             run_requests.extend(
                 _build_run_requests_with_backfill_policy(
@@ -327,7 +324,7 @@ def build_run_requests_with_backfill_policies(
                     check.not_none(backfill_policy),
                     check.not_none(partition_keys),
                     check.not_none(partitions_def),
-                    tags,
+                    tags={},
                     dynamic_partitions_store=dynamic_partitions_store,
                 )
             )

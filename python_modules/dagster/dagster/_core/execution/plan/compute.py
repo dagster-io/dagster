@@ -63,7 +63,7 @@ def create_step_outputs(
     config_output_names: Set[str] = set()
     current_handle = handle
     while current_handle:
-        op_config = resolved_run_config.ops[current_handle.to_string()]
+        op_config = resolved_run_config.ops[str(current_handle)]
         current_handle = current_handle.parent
         config_output_names = config_output_names.union(op_config.outputs.output_names)
 

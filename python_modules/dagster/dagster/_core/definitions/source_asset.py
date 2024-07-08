@@ -49,6 +49,7 @@ from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,
     DagsterInvalidObservationError,
+    DagsterInvariantViolationError,
 )
 
 from .utils import validate_tags_strict
@@ -106,16 +107,29 @@ def wrap_source_asset_observe_fn_in_op_compute_fn(
             if isinstance(observe_fn_return_value, ObserveResult):
                 data_version = observe_fn_return_value.data_version
                 metadata = observe_fn_return_value.metadata
+                extra_tags = observe_fn_return_value.tags or {}
+
+                if (
+                    observe_fn_return_value.asset_key is not None
+                    and observe_fn_return_value.asset_key != source_asset.key
+                ):
+                    raise DagsterInvariantViolationError(
+                        f"Asset key {observe_fn_return_value.asset_key.to_user_string()} not found in AssetsDefinition"
+                    )
             else:  # DataVersion
                 data_version = observe_fn_return_value
                 metadata = {}
+                extra_tags = {}
+
+            tags = {
+                **({DATA_VERSION_TAG: data_version.value} if data_version is not None else {}),
+                **extra_tags,
+            }
 
             context.log_event(
                 AssetObservation(
                     asset_key=source_asset.key,
-                    tags={DATA_VERSION_TAG: data_version.value}
-                    if data_version is not None
-                    else None,
+                    tags=tags,
                     metadata=metadata,
                 )
             )

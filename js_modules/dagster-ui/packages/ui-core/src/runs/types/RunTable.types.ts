@@ -19,8 +19,7 @@ export type RunTableRunFragment = {
   pipelineSnapshotId: string | null;
   pipelineName: string;
   solidSelection: Array<string> | null;
-  rootConcurrencyKeys: Array<string> | null;
-  hasUnconstrainedRootNodes: boolean;
+  creationTime: number;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;

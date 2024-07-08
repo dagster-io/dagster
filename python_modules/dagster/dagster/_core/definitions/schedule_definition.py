@@ -26,11 +26,13 @@ from typing_extensions import TypeAlias
 import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._core.definitions.instigation_logger import InstigationLogger
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.resource_annotation import get_resource_args
 from dagster._core.definitions.run_config import CoercibleToRunConfig
 from dagster._core.definitions.scoped_resources_builder import Resources, ScopedResourcesBuilder
+from dagster._core.definitions.unresolved_asset_job_definition import UnresolvedAssetJobDefinition
 from dagster._serdes import whitelist_for_serdes
-from dagster._seven.compat.pendulum import pendulum_create_timezone
+from dagster._time import get_timezone
 from dagster._utils import IHasInternalInit, ensure_gen
 from dagster._utils.merger import merge_dicts
 from dagster._utils.schedules import has_out_of_range_cron_interval, is_valid_cron_schedule
@@ -46,11 +48,8 @@ from ..errors import (
 from ..instance import DagsterInstance
 from ..instance.ref import InstanceRef
 from ..storage.dagster_run import DagsterRun
-from .graph_definition import GraphDefinition
-from .job_definition import JobDefinition
 from .run_request import RunRequest, SkipReason
-from .target import DirectTarget, ExecutableDefinition, RepoRelativeTarget
-from .unresolved_asset_job_definition import UnresolvedAssetJobDefinition
+from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
 from .utils import NormalizedTags, check_valid_name, normalize_tags
 
 if TYPE_CHECKING:
@@ -585,13 +584,16 @@ class ScheduleDefinition(IHasInternalInit):
                 " https://github.com/dagster-io/dagster/issues/15294 for more information."
             )
 
-        if job is not None:
-            self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
-        else:
-            self._target = RepoRelativeTarget(
-                job_name=check.str_param(job_name, "job_name"),
+        if job:
+            job_def = normalize_automation_target_def(job)
+            self._target = AutomationTarget(job_def)
+        elif job_name:
+            self._target = AutomationTarget(
+                resolvable_to_job=check.str_param(job_name, "job_name"),
                 op_selection=None,
             )
+        else:
+            check.failed("Must provide job or job_name")
 
         if name:
             self._name = check_valid_name(name)
@@ -702,7 +704,7 @@ class ScheduleDefinition(IHasInternalInit):
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum_create_timezone(self._execution_timezone)
+                get_timezone(self._execution_timezone)
             except Exception as e:
                 raise DagsterInvalidDefinitionError(
                     f"Invalid execution timezone {self._execution_timezone} for {name}"
@@ -839,12 +841,12 @@ class ScheduleDefinition(IHasInternalInit):
 
     @public
     @property
-    def job(self) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        """Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]: The job that is
+    def job(self) -> Union[JobDefinition, UnresolvedAssetJobDefinition]:
+        """Union[JobDefinition, UnresolvedAssetJobDefinition]: The job that is
         targeted by this schedule.
         """
-        if isinstance(self._target, DirectTarget):
-            return self._target.target
+        if self._target.has_job_def:
+            return self._target.job_def
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
@@ -933,22 +935,9 @@ class ScheduleDefinition(IHasInternalInit):
             log_key=context.log_key if context.has_captured_logs() else None,
         )
 
-    def has_loadable_target(self):
-        return isinstance(self._target, DirectTarget)
-
     @property
-    def targets_unresolved_asset_job(self) -> bool:
-        return self.has_loadable_target() and isinstance(
-            self.load_target(), UnresolvedAssetJobDefinition
-        )
-
-    def load_target(
-        self,
-    ) -> Union[GraphDefinition, JobDefinition, UnresolvedAssetJobDefinition]:
-        if isinstance(self._target, DirectTarget):
-            return self._target.load()
-
-        check.failed("Target is not loadable")
+    def target(self) -> AutomationTarget:
+        return self._target
 
     @public
     @property

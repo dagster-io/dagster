@@ -23,7 +23,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import sqlalchemy as db
 import sqlalchemy.exc as db_exc
 from sqlalchemy.engine import Connection
@@ -70,12 +69,8 @@ from dagster._core.storage.sqlalchemy_compat import (
 )
 from dagster._serdes import deserialize_value, serialize_value
 from dagster._serdes.errors import DeserializationError
-from dagster._utils import (
-    PrintFn,
-    datetime_as_float,
-    utc_datetime_from_naive,
-    utc_datetime_from_timestamp,
-)
+from dagster._time import datetime_from_timestamp, get_current_timestamp, utc_datetime_from_naive
+from dagster._utils import PrintFn
 from dagster._utils.concurrency import (
     ClaimedSlotInfo,
     ConcurrencyClaimStatus,
@@ -300,9 +295,7 @@ class SqlEventLogStorage(EventLogStorage):
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
         elif dagster_event.is_asset_materialization_planned:
@@ -315,18 +308,14 @@ class SqlEventLogStorage(EventLogStorage):
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
         elif dagster_event.is_asset_observation:
             if has_asset_key_index_cols:
                 entry_values.update(
                     {
-                        "last_materialization_timestamp": utc_datetime_from_timestamp(
-                            event.timestamp
-                        ),
+                        "last_materialization_timestamp": datetime_from_timestamp(event.timestamp),
                     }
                 )
 
@@ -613,10 +602,16 @@ class SqlEventLogStorage(EventLogStorage):
                 steps_failed=counts.get(DagsterEventType.STEP_FAILURE.value, 0),
                 materializations=counts.get(DagsterEventType.ASSET_MATERIALIZATION.value, 0),
                 expectations=counts.get(DagsterEventType.STEP_EXPECTATION_RESULT.value, 0),
-                enqueued_time=datetime_as_float(enqueued_time) if enqueued_time else None,
-                launch_time=datetime_as_float(launch_time) if launch_time else None,
-                start_time=datetime_as_float(start_time) if start_time else None,
-                end_time=datetime_as_float(end_time) if end_time else None,
+                enqueued_time=(
+                    utc_datetime_from_naive(enqueued_time).timestamp() if enqueued_time else None
+                ),
+                launch_time=(
+                    utc_datetime_from_naive(launch_time).timestamp() if launch_time else None
+                ),
+                start_time=(
+                    utc_datetime_from_naive(start_time).timestamp() if start_time else None
+                ),
+                end_time=(utc_datetime_from_naive(end_time).timestamp() if end_time else None),
             )
         except (seven.JSONDecodeError, DeserializationError) as err:
             raise DagsterEventLogInvalidForRun(run_id=run_id) from err
@@ -1502,7 +1497,7 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_time = materialization_times.get(asset_key)
                 if not materialization_time or utc_datetime_from_naive(
                     materialization_time
-                ) < utc_datetime_from_timestamp(wiped_timestamp):
+                ) < datetime_from_timestamp(wiped_timestamp):
                     # remove rows that have not been materialized since being wiped
                     row_by_asset_key.pop(asset_key)
 
@@ -1760,7 +1755,7 @@ class SqlEventLogStorage(EventLogStorage):
         return event_or_materialization.dagster_event.step_materialization_data.materialization  # type: ignore
 
     def _get_asset_key_values_on_wipe(self) -> Mapping[str, Any]:
-        wipe_timestamp = pendulum.now("UTC").timestamp()
+        wipe_timestamp = get_current_timestamp()
         values = {
             "asset_details": serialize_value(AssetDetails(last_wipe_timestamp=wipe_timestamp)),
             "last_run_id": None,
@@ -1768,7 +1763,7 @@ class SqlEventLogStorage(EventLogStorage):
         if self.has_asset_key_index_cols():
             values.update(
                 dict(
-                    wipe_timestamp=utc_datetime_from_timestamp(wipe_timestamp),
+                    wipe_timestamp=datetime_from_timestamp(wipe_timestamp),
                 )
             )
         if self.can_read_asset_status_cache():

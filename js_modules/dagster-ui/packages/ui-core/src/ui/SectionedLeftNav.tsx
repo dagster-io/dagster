@@ -49,7 +49,7 @@ type RowType =
     };
 
 export const SectionedLeftNav = () => {
-  const {loading, visibleRepos} = React.useContext(WorkspaceContext);
+  const {visibleRepos} = React.useContext(WorkspaceContext);
   const {basePath} = React.useContext(AppContext);
   const parentRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -229,10 +229,6 @@ export const SectionedLeftNav = () => {
   const items = rowVirtualizer.getVirtualItems();
 
   const collapsible = sortedRepos.length > 1;
-
-  if (loading) {
-    return <div style={{flex: 1}} />;
-  }
 
   return (
     <Container ref={parentRef}>
@@ -508,7 +504,7 @@ const SectionHeader = styled.button<{
 
   width: 100%;
   margin: 0;
-  
+
   box-shadow: inset 0px 1px 0 ${Colors.keylineDefault()}, inset 0px -1px 0 ${Colors.keylineDefault()};
 
   :disabled {

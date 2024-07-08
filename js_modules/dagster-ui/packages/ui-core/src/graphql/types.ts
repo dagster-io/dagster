@@ -749,6 +749,7 @@ export enum ChangeReason {
   METADATA = 'METADATA',
   NEW = 'NEW',
   PARTITIONS_DEFINITION = 'PARTITIONS_DEFINITION',
+  REMOVED = 'REMOVED',
   TAGS = 'TAGS',
 }
 
@@ -2142,6 +2143,8 @@ export type JobOrPipelineSelector = {
 export type JobWithOps = {
   __typename: 'JobWithOps';
   job: Job;
+  jobName: Scalars['String']['output'];
+  opHandleIDs: Array<Scalars['String']['output']>;
   opsUsing: Array<SolidHandle>;
 };
 
@@ -2752,13 +2755,15 @@ export type MutationStartSensorArgs = {
 };
 
 export type MutationStopRunningScheduleArgs = {
-  scheduleOriginId: Scalars['String']['input'];
-  scheduleSelectorId: Scalars['String']['input'];
+  id?: InputMaybe<Scalars['String']['input']>;
+  scheduleOriginId?: InputMaybe<Scalars['String']['input']>;
+  scheduleSelectorId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationStopSensorArgs = {
-  jobOriginId: Scalars['String']['input'];
-  jobSelectorId: Scalars['String']['input'];
+  id?: InputMaybe<Scalars['String']['input']>;
+  jobOriginId?: InputMaybe<Scalars['String']['input']>;
+  jobSelectorId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type MutationTerminatePipelineExecutionArgs = {
@@ -3677,6 +3682,7 @@ export type Query = {
   graphOrError: GraphOrError;
   instance: Instance;
   instigationStateOrError: InstigationStateOrError;
+  instigationStatesOrError: InstigationStatesOrError;
   isPipelineConfigValid: PipelineConfigValidationResult;
   locationStatusesOrError: WorkspaceLocationStatusEntriesOrError;
   logsForRun: EventConnectionOrError;
@@ -3817,7 +3823,12 @@ export type QueryGraphOrErrorArgs = {
 };
 
 export type QueryInstigationStateOrErrorArgs = {
-  instigationSelector: InstigationSelector;
+  id?: InputMaybe<Scalars['String']['input']>;
+  instigationSelector?: InputMaybe<InstigationSelector>;
+};
+
+export type QueryInstigationStatesOrErrorArgs = {
+  repositoryID: Scalars['String']['input'];
 };
 
 export type QueryIsPipelineConfigValidArgs = {
@@ -4347,6 +4358,7 @@ export type Run = PipelineRun & {
   canTerminate: Scalars['Boolean']['output'];
   capturedLogs: CapturedLogs;
   computeLogs: ComputeLogs;
+  creationTime: Scalars['Float']['output'];
   endTime: Maybe<Scalars['Float']['output']>;
   eventConnection: EventConnection;
   executionPlan: Maybe<ExecutionPlan>;
@@ -9141,6 +9153,8 @@ export const buildJobWithOps = (
         : relationshipsToOmit.has('Job')
         ? ({} as Job)
         : buildJob({}, relationshipsToOmit),
+    jobName: overrides && overrides.hasOwnProperty('jobName') ? overrides.jobName! : 'nihil',
+    opHandleIDs: overrides && overrides.hasOwnProperty('opHandleIDs') ? overrides.opHandleIDs! : [],
     opsUsing: overrides && overrides.hasOwnProperty('opsUsing') ? overrides.opsUsing! : [],
   };
 };
@@ -11844,6 +11858,12 @@ export const buildQuery = (
         : relationshipsToOmit.has('InstigationState')
         ? ({} as InstigationState)
         : buildInstigationState({}, relationshipsToOmit),
+    instigationStatesOrError:
+      overrides && overrides.hasOwnProperty('instigationStatesOrError')
+        ? overrides.instigationStatesOrError!
+        : relationshipsToOmit.has('InstigationStates')
+        ? ({} as InstigationStates)
+        : buildInstigationStates({}, relationshipsToOmit),
     isPipelineConfigValid:
       overrides && overrides.hasOwnProperty('isPipelineConfigValid')
         ? overrides.isPipelineConfigValid!
@@ -12714,6 +12734,8 @@ export const buildRun = (
         : relationshipsToOmit.has('ComputeLogs')
         ? ({} as ComputeLogs)
         : buildComputeLogs({}, relationshipsToOmit),
+    creationTime:
+      overrides && overrides.hasOwnProperty('creationTime') ? overrides.creationTime! : 5.95,
     endTime: overrides && overrides.hasOwnProperty('endTime') ? overrides.endTime! : 7.08,
     eventConnection:
       overrides && overrides.hasOwnProperty('eventConnection')

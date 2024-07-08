@@ -3,7 +3,20 @@ import re
 import sys
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import AbstractSet, Any, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import dagster._check as check
 import pytest
@@ -1575,46 +1588,54 @@ class Bar: ...
 
 
 BUILD_CASES = [
-    (int, 4, "4"),
-    (float, 4.2, "4.1"),
-    (str, "hi", Foo()),
-    (Bar, Bar(), Foo()),
-    (Optional[Bar], Bar(), Foo()),
-    (List[str], ["a", "b"], [1, 2]),
-    (Sequence[str], ["a", "b"], [1, 2]),
-    (Iterable[str], ["a", "b"], [1, 2]),
-    (Set[str], {"a", "b"}, {1, 2}),
-    (AbstractSet[str], {"a", "b"}, {1, 2}),
-    (Dict[str, int], {"a": 1}, {1: "a"}),
-    (Mapping[str, int], {"a": 1}, {1: "a"}),
-    (Optional[int], None, "4"),
-    (Optional[Bar], None, Foo()),
-    (Optional[List[str]], ["a", "b"], [1, 2]),
-    (Optional[Sequence[str]], ["a", "b"], [1, 2]),
-    (Optional[Iterable[str]], ["a", "b"], [1, 2]),
-    (Optional[Set[str]], {"a", "b"}, {1, 2}),
-    (Optional[Dict[str, int]], {"a": 1}, {1: "a"}),
-    (Optional[Mapping[str, int]], {"a": 1}, {1: "a"}),
-    (PublicAttr[Optional[Mapping[str, int]]], {"a": 1}, {1: "a"}),
-    (PublicAttr[Bar], Bar(), Foo()),
-    (Union[bool, Foo], True, None),
-    (Union[Foo, "Bar"], Bar(), None),
+    (int, [4], ["4"]),
+    (float, [4.2], ["4.1"]),
+    (str, ["hi"], [Foo()]),
+    (Bar, [Bar()], [Foo()]),
+    (Optional[Bar], [Bar()], [Foo()]),
+    (List[str], [["a", "b"]], [[1, 2]]),
+    (Sequence[str], [["a", "b"]], [[1, 2]]),
+    (Iterable[str], [["a", "b"]], [[1, 2]]),
+    (Set[str], [{"a", "b"}], [{1, 2}]),
+    (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
+    (Dict[str, int], [{"a": 1}], [{1: "a"}]),
+    (Mapping[str, int], [{"a": 1}], [{1: "a"}]),
+    (Optional[int], [None], ["4"]),
+    (Optional[Bar], [None], [Foo()]),
+    (Optional[List[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Sequence[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Iterable[str]], [["a", "b"]], [[1, 2]]),
+    (Optional[Set[str]], [{"a", "b"}], [{1, 2}]),
+    (Optional[Dict[str, int]], [{"a": 1}], [{1: "a"}]),
+    (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
+    (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),
+    (PublicAttr[Bar], [Bar()], [Foo()]),
+    (Union[bool, Foo], [True], [None]),
+    (Union[Foo, "Bar"], [Bar()], [None]),
+    (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
+    (TypeVar("T", bound=Optional[Foo]), [None], [Bar()]),
+    (TypeVar("T"), [Foo(), None], []),
     # fwd refs
-    ("Foo", Foo(), Bar()),
-    (Optional["Foo"], Foo(), Bar()),
-    (PublicAttr[Optional["Foo"]], None, Bar()),
-    (Mapping[str, Optional["Foo"]], {"foo": Foo()}, {"bar": Bar()}),
+    ("Foo", [Foo()], [Bar()]),
+    (Optional["Foo"], [Foo()], [Bar()]),
+    (PublicAttr[Optional["Foo"]], [None], [Bar()]),
+    (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
 ]
 
 
 @pytest.mark.parametrize("ttype, should_succeed, should_fail", BUILD_CASES)
-def test_build_check_call(ttype, should_succeed, should_fail) -> None:
+def test_build_check_call(
+    ttype: Type, should_succeed: Sequence[object], should_fail: Sequence[object]
+) -> None:
     eval_ctx = EvalContext(globals(), locals())
     check_call = build_check_call(ttype, "test_param", eval_ctx)
 
-    check_call(should_succeed)
-    with pytest.raises(CheckError):
-        check_call(should_fail)
+    for obj in should_succeed:
+        check_call(obj)
+
+    for obj in should_fail:
+        with pytest.raises(CheckError):
+            check_call(obj)
 
 
 def test_build_check_errors() -> None:

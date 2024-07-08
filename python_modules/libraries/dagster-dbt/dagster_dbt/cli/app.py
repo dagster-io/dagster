@@ -108,7 +108,7 @@ def copy_scaffold(
     dagster_project_dir: Path,
     dbt_project_dir: Path,
     use_experimental_dbt_state: bool,
-    use_experimental_dbt_project: bool,
+    use_dbt_project: bool,
 ) -> None:
     dbt_project_yaml_path = dbt_project_dir.joinpath(DBT_PROJECT_YML_NAME)
     dbt_project_yaml: Dict[str, Any] = yaml.safe_load(dbt_project_yaml_path.read_bytes())
@@ -161,14 +161,14 @@ def copy_scaffold(
                 dbt_core_version_upper_bound=DBT_CORE_VERSION_UPPER_BOUND,
                 project_name=project_name,
                 use_experimental_dbt_state=use_experimental_dbt_state,
-                use_experimental_dbt_project=use_experimental_dbt_project,
+                use_dbt_project=use_dbt_project,
             ).dump(destination_path)
 
             path.unlink()
 
     dagster_project_dir.joinpath("scaffold").rename(dagster_project_dir.joinpath(project_name))
 
-    if use_experimental_dbt_project:
+    if use_dbt_project:
         dagster_project_dir.joinpath(project_name, "constants.py").unlink()
     else:
         dagster_project_dir.joinpath(project_name, "project.py").unlink()
@@ -246,10 +246,11 @@ def project_scaffold_command(
             hidden=True,
         ),
     ] = False,
-    use_experimental_dbt_project: Annotated[
+    use_dbt_project: Annotated[
         bool,
         typer.Option(
             ...,
+            "--use-dbt-project",
             "--use-experimental-dbt-project",
             "--use-dbt-project-package-data-dir",
             help="Controls whether `DbtProject` is used.",
@@ -273,18 +274,18 @@ def project_scaffold_command(
     )
 
     dagster_project_dir = Path.cwd().joinpath(project_name)
-    use_experimental_dbt_project = use_experimental_dbt_project or use_experimental_dbt_state
+    use_dbt_project = use_dbt_project or use_experimental_dbt_state
 
     copy_scaffold(
         project_name=project_name,
         dagster_project_dir=dagster_project_dir,
         dbt_project_dir=dbt_project_dir,
         use_experimental_dbt_state=use_experimental_dbt_state,
-        use_experimental_dbt_project=use_experimental_dbt_project,
+        use_dbt_project=use_dbt_project,
     )
 
     dagster_dev_command = "DAGSTER_DBT_PARSE_PROJECT_ON_LOAD=1 dagster dev"
-    if use_experimental_dbt_project:
+    if use_dbt_project:
         dagster_dev_command = "dagster dev"
 
     console.print(
@@ -303,13 +304,13 @@ def project_scaffold_command(
     )
 
 
-def prepare_for_deployment(project: DbtProject) -> None:
+def prepare_and_package(project: DbtProject) -> None:
     """A method that can be called as part of the deployment process."""
-    if project.manifest_preparer:
+    if project.preparer:
         console.print(
-            f"Preparing project [bold green]{project.project_dir}[/bold green] for deployment with [bold green]{project.manifest_preparer.prepare.__qualname__}[/bold green]."
+            f"Preparing project [bold green]{project.project_dir}[/bold green] for deployment with [bold green]{project.preparer.prepare.__qualname__}[/bold green]."
         )
-        project.manifest_preparer.prepare(project)
+        project.preparer.prepare(project)
         console.print("Project preparation complete.")
 
     if project.packaged_project_dir:
@@ -358,8 +359,8 @@ def sync_project_to_packaged_dir(
     console.print("Sync complete.")
 
 
-@project_app.command(name="prepare-for-deployment")
-def project_prepare_for_deployment_command(
+@project_app.command(name="prepare-and-package")
+def project_prepare_and_package_command(
     file: Annotated[
         str,
         typer.Option(
@@ -367,7 +368,7 @@ def project_prepare_for_deployment_command(
         ),
     ],
 ) -> None:
-    """This command will invoke ``prepare_for_deployment`` on :py:class:`DbtProject` found in the target module or file."""
+    """This command will invoke ``prepare_and_package`` on :py:class:`DbtProject` found in the target module or file."""
     console.print(
         f"Running with dagster-dbt version: [bold green]{dagster_dbt_version}[/bold green]."
     )
@@ -375,7 +376,7 @@ def project_prepare_for_deployment_command(
     contents = load_python_file(file, working_directory=None)
     dbt_projects: Iterator[DbtProject] = find_objects_in_module_of_types(contents, types=DbtProject)
     for project in dbt_projects:
-        prepare_for_deployment(project)
+        prepare_and_package(project)
 
 
 project_app_typer_click_object = typer.main.get_command(project_app)

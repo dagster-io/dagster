@@ -3,13 +3,11 @@ import sys
 import time
 from typing import Iterator, Optional
 
-import pendulum
-
 from dagster import (
     DagsterInstance,
     _check as check,
 )
-from dagster._core.events import DagsterEventType, EngineEventData
+from dagster._core.events import DagsterEventType, EngineEventData, JobFailureData, RunFailureReason
 from dagster._core.launcher import WorkerStatus
 from dagster._core.storage.dagster_run import (
     IN_PROGRESS_RUN_STATUSES,
@@ -20,6 +18,7 @@ from dagster._core.storage.dagster_run import (
 from dagster._core.storage.tags import MAX_RUNTIME_SECONDS_TAG
 from dagster._core.workspace.context import IWorkspace, IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
+from dagster._time import get_current_timestamp
 from dagster._utils import DebugCrashFlags
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -53,7 +52,9 @@ def monitor_starting_run(
 
         logger.info(msg)
 
-        instance.report_run_failed(run, msg)
+        instance.report_run_failed(
+            run, msg, JobFailureData(error=None, failure_reason=RunFailureReason.START_TIMEOUT)
+        )
 
 
 def monitor_canceling_run(
@@ -216,7 +217,7 @@ def check_run_timeout(
 
     if (
         run_record.start_time is not None
-        and pendulum.now("UTC").timestamp() - run_record.start_time > max_time
+        and get_current_timestamp() - run_record.start_time > max_time
     ):
         logger.info(
             f"Run {run_record.dagster_run.run_id} has exceeded maximum runtime of"

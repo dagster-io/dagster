@@ -49,11 +49,7 @@ from dagster._core.definitions.asset_check_spec import AssetCheckKey
 from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.asset_job import is_base_asset_job_name
 from dagster._core.definitions.asset_sensor_definition import AssetSensorDefinition
-from dagster._core.definitions.asset_spec import (
-    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
-    AssetExecutionType,
-)
-from dagster._core.definitions.assets import AssetsDefinition
+from dagster._core.definitions.asset_spec import AssetExecutionType
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.auto_materialize_sensor_definition import (
     AutoMaterializeSensorDefinition,
@@ -69,7 +65,6 @@ from dagster._core.definitions.dependency import (
 )
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
-from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.metadata import (
     MetadataFieldSerializer,
     MetadataMapping,
@@ -105,6 +100,10 @@ from dagster._utils.error import SerializableErrorInfo
 
 DEFAULT_MODE_NAME = "default"
 DEFAULT_PRESET_NAME = "default"
+
+# Historically, SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE could on the metadata of an asset
+# to encode the execution type of the asset.
+SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE = "dagster/asset_execution_type"
 
 
 @whitelist_for_serdes(storage_field_names={"external_job_datas": "external_pipeline_datas"})
@@ -476,7 +475,7 @@ class ScheduleSnap(
             name=schedule_def.name,
             cron_schedule=schedule_def.cron_schedule,
             job_name=schedule_def.job_name,
-            op_selection=schedule_def._target.op_selection,  # noqa: SLF001
+            op_selection=schedule_def.target.op_selection,
             mode=DEFAULT_MODE_NAME,
             environment_vars=schedule_def.environment_vars,
             partition_set_name=None,
@@ -1632,7 +1631,7 @@ def external_repository_data_from_def(
             ],
             key=lambda rd: rd.name,
         ),
-        external_asset_checks=external_asset_checks_from_defs(jobs),
+        external_asset_checks=external_asset_checks_from_defs(jobs, repository_def.asset_graph),
         metadata=repository_def.metadata,
         utilized_env_vars={
             env_var: [
@@ -1646,42 +1645,25 @@ def external_repository_data_from_def(
 
 def external_asset_checks_from_defs(
     job_defs: Sequence[JobDefinition],
+    asset_graph: AssetGraph,
 ) -> Sequence[ExternalAssetCheck]:
-    nodes_by_check_key: Dict[AssetCheckKey, List[AssetsDefinition]] = {}
-    job_names_by_check_key: Dict[AssetCheckKey, List[str]] = {}
+    job_names_by_check_key: Dict[AssetCheckKey, List[str]] = defaultdict(list)
 
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
-        for asset_def in asset_layer.assets_defs_by_node_handle.values():
-            for spec in asset_def.check_specs:
-                nodes_by_check_key.setdefault(spec.key, []).append(asset_def)
-                job_names_by_check_key.setdefault(spec.key, []).append(job_def.name)
+        for check_key in asset_layer.asset_graph.asset_check_keys:
+            job_names_by_check_key[check_key].append(job_def.name)
 
     external_checks = []
-    for check_key, nodes in nodes_by_check_key.items():
-        first_node = nodes[0]
-        # The same check may appear multiple times in different jobs, but it should come from the
-        # same definition.
-        check.is_list(
-            nodes,
-            of_type=AssetsDefinition,
-            additional_message=f"Check {check_key} is redefined in an AssetsDefinition and an AssetChecksDefinition",
-        )
-
-        # Executing individual checks isn't supported in graph assets
-        if isinstance(first_node.node_def, GraphDefinition):
-            execution_set_identifier = first_node.unique_id
-        else:
-            execution_set_identifier = first_node.unique_id if not first_node.can_subset else None
-
-        spec = first_node.get_spec_for_check_key(check_key)
+    for check_key, job_names in job_names_by_check_key.items():
+        spec = asset_graph.get_check_spec(check_key)
         external_checks.append(
             ExternalAssetCheck(
                 name=check_key.name,
                 asset_key=check_key.asset_key,
                 description=spec.description,
-                execution_set_identifier=execution_set_identifier,
-                job_names=job_names_by_check_key[check_key],
+                execution_set_identifier=asset_graph.get_execution_set_identifier(check_key),
+                job_names=job_names,
                 blocking=spec.blocking,
                 additional_asset_keys=[dep.asset_key for dep in spec.additional_deps],
             )
@@ -1709,15 +1691,6 @@ def external_asset_nodes_from_defs(
                 primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
-    # Build index of execution set identifiers. Only assets that are part of non-subsettable assets
-    # have a defined execution set identifier.
-    execution_set_identifiers_by_asset_key: Dict[AssetKey, str] = {}
-    for assets_def in asset_graph.assets_defs:
-        if (len(assets_def.keys) > 1 or assets_def.check_keys) and not assets_def.can_subset:
-            execution_set_identifiers_by_asset_key.update(
-                {k: assets_def.unique_id for k in assets_def.keys}
-            )
-
     external_asset_nodes: List[ExternalAssetNode] = []
     for key in sorted(asset_graph.all_asset_keys):
         asset_node = asset_graph.get(key)
@@ -1728,11 +1701,7 @@ def external_asset_nodes_from_defs(
         if key in primary_node_pairs_by_asset_key:
             output_handle, job_def = primary_node_pairs_by_asset_key[key]
 
-            root_node_handle = output_handle.node_handle
-            while True:
-                if root_node_handle.parent is None:
-                    break
-                root_node_handle = root_node_handle.parent
+            root_node_handle = output_handle.node_handle.root
             node_def = job_def.graph.get_node(output_handle.node_handle).definition
             node_handles = job_def.asset_layer.upstream_dep_op_handles(key)
 
@@ -1809,7 +1778,7 @@ def external_asset_nodes_from_defs(
                 freshness_policy=asset_node.freshness_policy,
                 is_source=asset_node.is_external,
                 is_observable=asset_node.is_observable,
-                execution_set_identifier=execution_set_identifiers_by_asset_key.get(key),
+                execution_set_identifier=asset_graph.get_execution_set_identifier(key),
                 required_top_level_resources=required_top_level_resources,
                 auto_materialize_policy=asset_node.auto_materialize_policy,
                 backfill_policy=asset_node.backfill_policy,
@@ -2001,7 +1970,7 @@ def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> Schedul
         name=schedule_def.name,
         cron_schedule=schedule_def.cron_schedule,
         job_name=schedule_def.job_name,
-        op_selection=schedule_def._target.op_selection,  # noqa: SLF001
+        op_selection=schedule_def.target.op_selection,
         mode=DEFAULT_MODE_NAME,
         environment_vars=schedule_def.environment_vars,
         partition_set_name=None,

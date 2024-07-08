@@ -3,8 +3,7 @@ from typing import Mapping, Sequence, Union
 
 import dagster._check as check
 from dagster._config.field_utils import EnvVar, IntEnvVar
-from dagster._model import dagster_model
-from dagster._model.decorator import IHaveNew, dagster_model_custom
+from dagster._record import IHaveNew, record, record_custom
 from dagster._utils.error import SerializableErrorInfo
 
 from .config_type import ConfigTypeKind
@@ -25,41 +24,41 @@ class DagsterEvaluationErrorReason(Enum):
     FIELD_ALIAS_COLLISION = "FIELD_ALIAS_COLLISION"
 
 
-@dagster_model
+@record
 class FieldsNotDefinedErrorData:
     field_names: Sequence[str]
 
 
-@dagster_model
+@record
 class FieldAliasCollisionErrorData:
     field_name: str
     aliased_field_name: str
 
 
-@dagster_model
+@record
 class FieldNotDefinedErrorData:
     field_name: str
 
 
-@dagster_model
+@record
 class MissingFieldErrorData:
     field_name: str
     field_snap: ConfigFieldSnap
 
 
-@dagster_model
+@record
 class MissingFieldsErrorData:
     field_names: Sequence[str]
     field_snaps: Sequence[ConfigFieldSnap]
 
 
-@dagster_model
+@record
 class RuntimeMismatchErrorData:
     config_type_snap: ConfigTypeSnap
     value_rep: str
 
 
-@dagster_model_custom
+@record_custom
 class SelectorTypeErrorData(IHaveNew):
     config_type_snap: ConfigTypeSnap
     incoming_fields: Sequence[str]
@@ -93,7 +92,7 @@ ERROR_DATA_UNION = Union[
 ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__  # type: ignore
 
 
-@dagster_model
+@record
 class EvaluationError:
     stack: EvaluationStack
     reason: DagsterEvaluationErrorReason

@@ -16,7 +16,6 @@ export type SingleSensorQuery = {
         description: string | null;
         name: string;
         minIntervalSeconds: number;
-        jobOriginId: string;
         sensorType: Types.SensorType;
         targets: Array<{__typename: 'Target'; pipelineName: string}> | null;
         metadata: {
@@ -52,6 +51,7 @@ export type SingleSensorQuery = {
             __typename: 'Run';
             id: string;
             status: Types.RunStatus;
+            creationTime: number;
             startTime: number | null;
             endTime: number | null;
             updateTime: number | null;

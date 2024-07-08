@@ -472,11 +472,6 @@ def iterate_with_context(
         yield next_output
 
 
-def datetime_as_float(dt: datetime.datetime) -> float:
-    check.inst_param(dt, "dt", datetime.datetime)
-    return float((dt - EPOCH).total_seconds())
-
-
 T_GeneratedContext = TypeVar("T_GeneratedContext")
 
 
@@ -534,16 +529,6 @@ class EventGenerationManager(Generic[T_GeneratedContext]):
         self.did_teardown = True
         if self.object:
             yield from self.generator
-
-
-def utc_datetime_from_timestamp(timestamp: float) -> datetime.datetime:
-    tz = timezone.utc
-    return datetime.datetime.fromtimestamp(timestamp, tz=tz)
-
-
-def utc_datetime_from_naive(dt: datetime.datetime) -> datetime.datetime:
-    tz = timezone.utc
-    return dt.replace(tzinfo=tz)
 
 
 def is_enum_value(value: object) -> bool:

@@ -94,6 +94,10 @@
           'job': dict({
             'name': 'my_asset_job',
           }),
+          'jobName': 'my_asset_job',
+          'opHandleIDs': list([
+            'my_asset',
+          ]),
           'opsUsing': list([
             dict({
               'solid': dict({

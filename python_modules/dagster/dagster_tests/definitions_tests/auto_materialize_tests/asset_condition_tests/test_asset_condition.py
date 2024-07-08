@@ -69,8 +69,8 @@ def test_missing_time_partitioned() -> None:
 def test_serialize_definitions_with_asset_condition() -> None:
     amp = AutoMaterializePolicy.from_asset_condition(
         AutomationCondition.eager()
-        & ~AutomationCondition.newly_updated().since_last_cron_tick(
-            cron_schedule="0 * * * *", cron_timezone="UTC"
+        & ~AutomationCondition.newly_updated().since(
+            AutomationCondition.cron_tick_passed(cron_schedule="0 * * * *", cron_timezone="UTC")
         )
     )
 

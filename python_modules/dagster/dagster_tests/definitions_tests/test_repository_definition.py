@@ -954,7 +954,7 @@ def test_duplicate_graph_target_invalid():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "sensor '_the_sensor' targets graph 'foo', but a different graph with the same name was"
+            "sensor '_the_sensor' targets job 'foo', but a different job with the same name was"
             " provided."
         ),
     ):
@@ -966,7 +966,7 @@ def test_duplicate_graph_target_invalid():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=(
-            "schedule '_the_schedule' targets graph 'foo', but a different graph with the same name"
+            "schedule '_the_schedule' targets job 'foo', but a different job with the same name"
             " was provided."
         ),
     ):

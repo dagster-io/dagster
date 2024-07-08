@@ -28,7 +28,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 import yaml
 from typing_extensions import Protocol, Self, TypeAlias, TypeVar, runtime_checkable
 
@@ -119,6 +118,7 @@ if TYPE_CHECKING:
         DagsterEventBatchMetadata,
         DagsterEventType,
         EngineEventData,
+        JobFailureData,
     )
     from dagster._core.events.log import EventLogEntry
     from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -2541,7 +2541,10 @@ class DagsterInstance(DynamicPartitionsStore):
         return dagster_event
 
     def report_run_failed(
-        self, dagster_run: DagsterRun, message: Optional[str] = None
+        self,
+        dagster_run: DagsterRun,
+        message: Optional[str] = None,
+        job_failure_data: Optional["JobFailureData"] = None,
     ) -> "DagsterEvent":
         from dagster._core.events import DagsterEvent, DagsterEventType
 
@@ -2557,6 +2560,7 @@ class DagsterInstance(DynamicPartitionsStore):
             event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
             job_name=dagster_run.job_name,
             message=message,
+            event_specific_data=job_failure_data,
         )
         self.report_dagster_event(dagster_event, run_id=dagster_run.run_id, log_level=logging.ERROR)
         return dagster_event
@@ -2798,7 +2802,7 @@ class DagsterInstance(DynamicPartitionsStore):
                     InstigatorStatus.RUNNING,
                     SensorInstigatorData(
                         min_interval=external_sensor.min_interval_seconds,
-                        last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                        last_sensor_start_timestamp=get_current_timestamp(),
                         sensor_type=external_sensor.sensor_type,
                     ),
                 )
@@ -2807,7 +2811,7 @@ class DagsterInstance(DynamicPartitionsStore):
             data = cast(SensorInstigatorData, stored_state.instigator_data)
             return self.update_instigator_state(
                 stored_state.with_status(InstigatorStatus.RUNNING).with_data(
-                    data.with_sensor_start_timestamp(pendulum.now("UTC").timestamp())
+                    data.with_sensor_start_timestamp(get_current_timestamp())
                 )
             )
 

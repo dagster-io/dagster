@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING, List
+from typing import List
 
 import dagster._check as check
 import graphene
 from dagster._core.definitions.selector import ResourceSelector
-from dagster._core.remote_representation.external import ExternalRepository, ExternalResource
+from dagster._core.remote_representation.external import ExternalResource
 from dagster._core.remote_representation.external_data import (
     ExternalResourceConfigEnvVar,
     ExternalResourceValue,
@@ -19,12 +19,9 @@ from dagster_graphql.schema.errors import (
 )
 from dagster_graphql.schema.pipelines.pipeline import GrapheneJob
 from dagster_graphql.schema.solids import GrapheneSolidHandle, build_solid_handles
-from dagster_graphql.schema.util import non_null_list
+from dagster_graphql.schema.util import ResolveInfo, non_null_list
 
 from .config_types import GrapheneConfigTypeField
-
-if TYPE_CHECKING:
-    from dagster._core.workspace.workspace import IWorkspace
 
 
 class GrapheneConfiguredValueType(graphene.Enum):
@@ -68,11 +65,61 @@ class GrapheneNestedResourceEntry(graphene.ObjectType):
 
 
 class GrapheneJobAndSpecificOps(graphene.ObjectType):
+    # deprecated expensive fields
     job = graphene.NonNull(GrapheneJob)
     opsUsing = graphene.Field(non_null_list(GrapheneSolidHandle))
 
+    jobName = graphene.NonNull(graphene.String)
+    opHandleIDs = graphene.Field(non_null_list(graphene.String))
+
     class Meta:
         name = "JobWithOps"
+
+    def __init__(
+        self,
+        entry: ResourceJobUsageEntry,
+        location_name: str,
+        repository_name: str,
+    ):
+        self._entry = entry
+        self._location_name = location_name
+        self._repository_name = repository_name
+
+        self._cached = None
+
+    def resolve_jobName(self, _) -> str:
+        return self._entry.job_name
+
+    def resolve_opHandleIDs(self, _) -> List[str]:
+        return [str(handle) for handle in self._entry.node_handles]
+
+    def resolve_job(self, graphene_info: ResolveInfo):
+        if self._cached is None:
+            self._cached = self._construct_job_and_specific_ops(graphene_info)
+
+        return self._cached[0]
+
+    def resolve_opsUsing(self, graphene_info: ResolveInfo):
+        if self._cached is None:
+            self._cached = self._construct_job_and_specific_ops(graphene_info)
+
+        return self._cached[1]
+
+    def _construct_job_and_specific_ops(
+        self,
+        graphene_info: ResolveInfo,
+    ):
+        repo = graphene_info.context.get_code_location(self._location_name).get_repository(
+            self._repository_name
+        )
+        job = repo.get_full_external_job(self._entry.job_name)
+        handle_strs = {str(handle) for handle in self._entry.node_handles}
+        node_handles = [
+            handle
+            for handle_str, handle in build_solid_handles(job).items()
+            if handle_str in handle_strs
+        ]
+        return GrapheneJob(job), node_handles
 
 
 class GrapheneResourceDetails(graphene.ObjectType):
@@ -196,23 +243,15 @@ class GrapheneResourceDetails(graphene.ObjectType):
     def resolve_assetKeysUsing(self, _graphene_info) -> List[GrapheneAssetKey]:
         return [GrapheneAssetKey(path=asset_key.path) for asset_key in self._asset_keys_using]
 
-    def _construct_job_and_specific_ops(
-        self, repo: ExternalRepository, entry: ResourceJobUsageEntry
-    ) -> GrapheneJobAndSpecificOps:
-        job = repo.get_full_external_job(entry.job_name)
-        handle_strs = {handle.to_string() for handle in entry.node_handles}
-        node_handles = [
-            handle
-            for handle_str, handle in build_solid_handles(job).items()
-            if handle_str in handle_strs
+    def resolve_jobsOpsUsing(self, graphene_info: ResolveInfo) -> List[GrapheneJobAndSpecificOps]:
+        return [
+            GrapheneJobAndSpecificOps(
+                entry=entry,
+                location_name=self._location_name,
+                repository_name=self._repository_name,
+            )
+            for entry in self._job_ops_using
         ]
-        return GrapheneJobAndSpecificOps(job=GrapheneJob(job), opsUsing=node_handles)
-
-    def resolve_jobsOpsUsing(self, graphene_info) -> List[GrapheneJobAndSpecificOps]:
-        context: IWorkspace = graphene_info.context
-        repo = context.get_code_location(self._location_name).get_repository(self._repository_name)
-
-        return [self._construct_job_and_specific_ops(repo, entry) for entry in self._job_ops_using]
 
     def resolve_schedulesUsing(self, _graphene_info) -> List[str]:
         return self._schedules_using

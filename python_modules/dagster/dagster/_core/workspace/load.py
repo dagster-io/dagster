@@ -44,8 +44,9 @@ def location_origins_from_yaml_paths(
             ),
         )
 
-        for k, v in location_origins_from_config(cast(Dict, workspace_config), yaml_path).items():
-            origins_by_name[k] = v
+        origins_by_name.update(
+            location_origins_from_config(cast(Dict, workspace_config), yaml_path)
+        )
 
     return list(origins_by_name.values())
 

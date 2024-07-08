@@ -32,8 +32,7 @@ export type StartThisScheduleMutation = {
 };
 
 export type StopScheduleMutationVariables = Types.Exact<{
-  scheduleOriginId: Types.Scalars['String']['input'];
-  scheduleSelectorId: Types.Scalars['String']['input'];
+  id: Types.Scalars['String']['input'];
 }>;
 
 export type StopScheduleMutation = {

@@ -33,7 +33,7 @@ from dagster._utils.warnings import disable_dagster_warnings
 from ..asset_check_spec import AssetCheckSpec
 from ..asset_in import AssetIn
 from ..asset_out import AssetOut
-from ..asset_spec import AssetSpec
+from ..asset_spec import AssetExecutionType, AssetSpec
 from ..assets import AssetsDefinition
 from ..backfill_policy import BackfillPolicy, BackfillPolicyType
 from ..decorators.graph_decorator import graph
@@ -446,6 +446,7 @@ def create_assets_def_from_fn_and_decorator_args(
             asset_deps={},
             can_subset=False,
             decorator_name="@asset",
+            execution_type=AssetExecutionType.MATERIALIZATION,
         )
 
         builder = DecoratorAssetsDefinitionBuilder.from_asset_outs_in_asset_centric_decorator(
@@ -612,6 +613,7 @@ def multi_asset(
         ),
         backfill_policy=backfill_policy,
         decorator_name="@multi_asset",
+        execution_type=AssetExecutionType.MATERIALIZATION,
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -646,6 +648,7 @@ def graph_asset(
     partitions_def: Optional[PartitionsDefinition] = None,
     metadata: Optional[RawMetadataMapping] = ...,
     tags: Optional[Mapping[str, str]] = ...,
+    owners: Optional[Sequence[str]] = None,
     freshness_policy: Optional[FreshnessPolicy] = ...,
     auto_materialize_policy: Optional[AutoMaterializePolicy] = ...,
     backfill_policy: Optional[BackfillPolicy] = ...,
@@ -743,7 +746,7 @@ def graph_asset(
     """
     if compose_fn is None:
         return lambda fn: graph_asset(
-            fn,
+            fn,  # type: ignore
             name=name,
             description=description,
             ins=ins,

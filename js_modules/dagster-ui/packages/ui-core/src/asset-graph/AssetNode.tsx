@@ -222,7 +222,7 @@ export const AssetNodeMinimal = ({
 
   return (
     <AssetInsetForHoverEffect>
-      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 50}}>
+      <MinimalAssetNodeContainer $selected={selected} style={{paddingTop: height / 2 - 52}}>
         <TooltipStyled
           content={displayName}
           canShow={displayName.length > 14}

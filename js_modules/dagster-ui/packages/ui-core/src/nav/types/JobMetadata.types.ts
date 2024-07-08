@@ -33,7 +33,6 @@ export type JobMetadataQuery = {
         sensors: Array<{
           __typename: 'Sensor';
           id: string;
-          jobOriginId: string;
           name: string;
           sensorType: Types.SensorType;
           targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
@@ -66,6 +65,7 @@ export type JobMetadataQuery = {
           __typename: 'Run';
           id: string;
           status: Types.RunStatus;
+          creationTime: number;
           startTime: number | null;
           endTime: number | null;
           updateTime: number | null;
@@ -107,7 +107,6 @@ export type JobMetadataFragment = {
   sensors: Array<{
     __typename: 'Sensor';
     id: string;
-    jobOriginId: string;
     name: string;
     sensorType: Types.SensorType;
     targets: Array<{__typename: 'Target'; pipelineName: string; mode: string}> | null;
@@ -128,6 +127,7 @@ export type RunMetadataFragment = {
   __typename: 'Run';
   id: string;
   status: Types.RunStatus;
+  creationTime: number;
   startTime: number | null;
   endTime: number | null;
   updateTime: number | null;

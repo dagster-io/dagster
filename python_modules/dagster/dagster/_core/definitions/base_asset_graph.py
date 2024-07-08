@@ -342,7 +342,9 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
         parent_partitions_def = self.get(parent_asset_key).partitions_def
 
         if parent_partitions_def is None:
-            return ValidAssetSubset(asset_key=parent_asset_key, value=child_asset_subset.size > 0)
+            return ValidAssetSubset(
+                asset_key=parent_asset_key, value=not child_asset_subset.is_empty
+            )
 
         partition_mapping = self.get_partition_mapping(child_asset_key, parent_asset_key)
         parent_partitions_subset = (

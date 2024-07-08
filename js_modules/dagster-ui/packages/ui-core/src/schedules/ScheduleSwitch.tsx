@@ -32,7 +32,7 @@ interface Props {
 export const ScheduleSwitch = (props: Props) => {
   const {repoAddress, schedule, size = 'large', shouldFetchLatestState} = props;
   const {name, scheduleState} = schedule;
-  const {id, selectorId} = scheduleState;
+  const {id} = scheduleState;
 
   const {
     permissions: {canStartSchedule, canStopRunningSchedule},
@@ -68,7 +68,7 @@ export const ScheduleSwitch = (props: Props) => {
   const onStatusChange = () => {
     if (status === InstigationStatus.RUNNING) {
       stopSchedule({
-        variables: {scheduleOriginId: id, scheduleSelectorId: selectorId},
+        variables: {id},
       });
     } else {
       startSchedule({
@@ -77,22 +77,24 @@ export const ScheduleSwitch = (props: Props) => {
     }
   };
 
-  if (shouldFetchLatestState && !data && loading) {
-    return <Spinner purpose="body-text" />;
+  let status = schedule.scheduleState.status;
+
+  if (shouldFetchLatestState) {
+    if (!data && loading) {
+      return <Spinner purpose="body-text" />;
+    }
+
+    if (data?.scheduleOrError.__typename !== 'Schedule') {
+      return (
+        <Tooltip content="Error loading schedule state">
+          <Icon name="error" color={Colors.accentRed()} />;
+        </Tooltip>
+      );
+    }
+
+    status = data.scheduleOrError.scheduleState.status;
   }
 
-  if (shouldFetchLatestState && data?.scheduleOrError.__typename !== 'Schedule') {
-    return (
-      <Tooltip content="Error loading schedule state">
-        <Icon name="error" color={Colors.accentRed()} />;
-      </Tooltip>
-    );
-  }
-
-  const status = shouldFetchLatestState
-    ? // @ts-expect-error - we refined the type based on shouldFetchLatestState above
-      data.scheduleOrError.scheduleState.status
-    : schedule.scheduleState.status;
   const running = status === InstigationStatus.RUNNING;
 
   if (canStartSchedule && canStopRunningSchedule) {

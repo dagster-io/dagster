@@ -91,8 +91,7 @@ export const SensorStateChangeDialog = (props: Props) => {
   const stop = async (sensor: SensorInfo) => {
     const {sensorName, sensorState} = sensor;
     const variables = {
-      jobOriginId: sensorState.id,
-      jobSelectorId: sensorState.selectorId,
+      id: sensorState.id,
     };
 
     const {data} = await stopSensor({variables});

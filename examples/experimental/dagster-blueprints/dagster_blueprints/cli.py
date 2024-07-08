@@ -191,6 +191,7 @@ def recommend_yaml_extension() -> None:
         )
         return
 
+    click.echo("Checking whether redhat.vscode-yaml extension is installed.")
     extensions = run_vscode_cli_command(["--list-extensions"]).decode("utf-8").split("\n")
     if "redhat.vscode-yaml" in extensions:
         click.echo("redhat.vscode-yaml extension is already installed.")

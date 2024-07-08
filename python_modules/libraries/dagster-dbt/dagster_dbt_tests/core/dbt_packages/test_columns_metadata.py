@@ -1,7 +1,7 @@
 import json
 import os
 import subprocess
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, cast
 
 import pytest
 from dagster import (
@@ -19,6 +19,8 @@ from dagster_dbt.asset_decorator import dbt_assets
 from dagster_dbt.core.resources_v2 import DbtCliResource
 from pytest_mock import MockFixture
 from sqlglot import Dialect
+
+from dagster_dbt_tests.conftest import _create_dbt_invocation
 
 from ...dbt_projects import test_jaffle_shop_path, test_metadata_path
 
@@ -223,6 +225,272 @@ def test_exception_column_lineage(
     )
 
 
+@pytest.fixture(name="test_metadata_manifest_snowflake")
+def test_metadata_manifest_snowflake_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_metadata_path, target="snowflake").get_artifact(
+        "manifest.json"
+    )
+
+
+@pytest.fixture(name="test_metadata_manifest_bigquery")
+def test_metadata_manifest_bigquery_fixture() -> Dict[str, Any]:
+    return _create_dbt_invocation(test_metadata_path, target="bigquery").get_artifact(
+        "manifest.json"
+    )
+
+
+EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT = {
+    AssetKey(["raw_customers"]): None,
+    AssetKey(["raw_payments"]): None,
+    AssetKey(["raw_orders"]): None,
+    AssetKey(["stg_payments"]): TableColumnLineage(
+        deps_by_column={
+            "payment_id": [TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="id")],
+            "order_id": [
+                TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="order_id")
+            ],
+            "payment_method": [
+                TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="payment_method")
+            ],
+            "amount": [TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="amount")],
+        }
+    ),
+    AssetKey(["stg_customers"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["raw_source_customers"]), column_name="id")
+            ],
+            "first_name": [
+                TableColumnDep(
+                    asset_key=AssetKey(["raw_source_customers"]), column_name="first_name"
+                )
+            ],
+            "last_name": [
+                TableColumnDep(
+                    asset_key=AssetKey(["raw_source_customers"]), column_name="last_name"
+                )
+            ],
+        }
+    ),
+    AssetKey(["stg_orders"]): TableColumnLineage(
+        deps_by_column={
+            "order_id": [TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="id")],
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="user_id")
+            ],
+            "order_date": [
+                TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="order_date")
+            ],
+            "status": [TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="status")],
+        }
+    ),
+    AssetKey(["orders"]): TableColumnLineage(
+        deps_by_column={
+            "order_id": [
+                TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_id")
+            ],
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="customer_id")
+            ],
+            "order_date": [
+                TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
+            ],
+            "status": [TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="status")],
+            "credit_card_amount": [
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="payment_method"),
+            ],
+            "coupon_amount": [
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="payment_method"),
+            ],
+            "bank_transfer_amount": [
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="payment_method"),
+            ],
+            "gift_card_amount": [
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="payment_method"),
+            ],
+            "amount": [
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
+            ],
+        }
+    ),
+    AssetKey(["duplicate_column_dep_orders"]): TableColumnLineage(
+        deps_by_column={
+            "amount_2x": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="amount")],
+        }
+    ),
+    AssetKey(["incremental_orders"]): TableColumnLineage(
+        deps_by_column={
+            "order_id": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")],
+        }
+    ),
+    AssetKey(["customers"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="customer_id")
+            ],
+            "first_name": [
+                TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="first_name")
+            ],
+            "last_name": [
+                TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="last_name")
+            ],
+            "first_order": [
+                TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
+            ],
+            "most_recent_order": [
+                TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
+            ],
+            "number_of_orders": [
+                TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_id")
+            ],
+            "customer_lifetime_value": [
+                TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
+            ],
+        }
+    ),
+    AssetKey(["select_star_customers"]): TableColumnLineage(
+        deps_by_column={
+            "customer_id": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="customer_id")
+            ],
+            "first_name": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_name")
+            ],
+            "last_name": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="last_name")
+            ],
+            "first_order": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_order")
+            ],
+            "most_recent_order": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="most_recent_order")
+            ],
+            "number_of_orders": [
+                TableColumnDep(asset_key=AssetKey(["customers"]), column_name="number_of_orders")
+            ],
+            "customer_lifetime_value": [
+                TableColumnDep(
+                    asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
+                )
+            ],
+        }
+    ),
+    AssetKey(["count_star_customers"]): TableColumnLineage(
+        deps_by_column={
+            "count_star": [],
+        }
+    ),
+    AssetKey(["count_star_implicit_alias_customers"]): TableColumnLineage(
+        deps_by_column={
+            "count_star()": [],
+        }
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "target, manifest_fixture_name, excluded_models",
+    [
+        pytest.param(
+            "snowflake",
+            "test_metadata_manifest_snowflake",
+            # No implicit alias allowed in Snowflake
+            ["count_star_implicit_alias_customers"],
+            marks=pytest.mark.snowflake,
+            id="snowflake",
+        ),
+        pytest.param(
+            "bigquery",
+            "test_metadata_manifest_bigquery",
+            # BigQuery does not support incremental_strategy='append'
+            ["count_star_implicit_alias_customers", "incremental_orders"],
+            marks=pytest.mark.bigquery,
+            id="bigquery",
+        ),
+    ],
+)
+@pytest.mark.parametrize("fetch_row_counts", [True, False])
+def test_column_lineage_real_warehouse(
+    request: pytest.FixtureRequest,
+    target: str,
+    excluded_models: Optional[List[str]],
+    fetch_row_counts: bool,
+    manifest_fixture_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    test_metadata_manifest: Dict[str, Any] = cast(
+        Dict[str, Any], request.getfixturevalue(manifest_fixture_name)
+    )
+    sql_dialect = target
+
+    monkeypatch.setenv("DBT_LOG_COLUMN_METADATA", str(False).lower())
+
+    manifest = test_metadata_manifest.copy()
+    assert manifest["metadata"]["adapter_type"] == sql_dialect
+
+    excluded_models = excluded_models or []
+
+    dbt = DbtCliResource(project_dir=os.fspath(test_metadata_path), target=target)
+    dbt.cli(["--quiet", "seed", "--exclude", "resource_type:test", *excluded_models]).wait()
+    dbt.cli(
+        [
+            "--quiet",
+            "build",
+            # Exclude seeds to ensure they are built first
+            "--exclude",
+            "resource_type:seed",
+            "--exclude",
+            "resource_type:test",
+            *excluded_models,
+        ]
+    ).wait()
+
+    @dbt_assets(manifest=manifest)
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        seed_cli_invocation = dbt.cli(
+            ["seed"],
+            context=context,
+        ).stream()
+        if fetch_row_counts:
+            seed_cli_invocation = seed_cli_invocation.fetch_row_counts()
+        seed_cli_invocation = seed_cli_invocation.fetch_column_metadata()
+        yield from seed_cli_invocation
+
+        cli_invocation = dbt.cli(
+            ["build", "--exclude", "resource_type:seed", *excluded_models],
+            context=context,
+        ).stream()
+        if fetch_row_counts:
+            cli_invocation = cli_invocation.fetch_row_counts()
+        cli_invocation = cli_invocation.fetch_column_metadata()
+        yield from cli_invocation
+
+    result = materialize([my_dbt_assets], resources={"dbt": dbt})
+    assert result.success
+
+    column_lineage_by_asset_key = {
+        event.materialization.asset_key: TableMetadataSet.extract(
+            event.materialization.metadata
+        ).column_lineage
+        for event in result.get_asset_materialization_events()
+    }
+
+    expected_column_lineage_by_asset_key = {
+        k: v
+        for k, v in EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT.items()
+        if k.path[-1] not in excluded_models
+    }
+    assert column_lineage_by_asset_key == expected_column_lineage_by_asset_key, (
+        str(column_lineage_by_asset_key)
+        + "\n\n"
+        + str(EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT)
+    )
+
+
 @pytest.mark.parametrize(
     "asset_key_selection",
     [
@@ -296,181 +564,7 @@ def test_column_lineage(
         for event in result.get_asset_materialization_events()
     }
 
-    expected_column_lineage_by_asset_key = {
-        AssetKey(["raw_customers"]): None,
-        AssetKey(["raw_payments"]): None,
-        AssetKey(["raw_orders"]): None,
-        AssetKey(["stg_payments"]): TableColumnLineage(
-            deps_by_column={
-                "payment_id": [
-                    TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="id")
-                ],
-                "order_id": [
-                    TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="order_id")
-                ],
-                "payment_method": [
-                    TableColumnDep(
-                        asset_key=AssetKey(["raw_payments"]), column_name="payment_method"
-                    )
-                ],
-                "amount": [
-                    TableColumnDep(asset_key=AssetKey(["raw_payments"]), column_name="amount")
-                ],
-            }
-        ),
-        AssetKey(["stg_customers"]): TableColumnLineage(
-            deps_by_column={
-                "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["raw_source_customers"]), column_name="id")
-                ],
-                "first_name": [
-                    TableColumnDep(
-                        asset_key=AssetKey(["raw_source_customers"]), column_name="first_name"
-                    )
-                ],
-                "last_name": [
-                    TableColumnDep(
-                        asset_key=AssetKey(["raw_source_customers"]), column_name="last_name"
-                    )
-                ],
-            }
-        ),
-        AssetKey(["stg_orders"]): TableColumnLineage(
-            deps_by_column={
-                "order_id": [TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="id")],
-                "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="user_id")
-                ],
-                "order_date": [
-                    TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="order_date")
-                ],
-                "status": [
-                    TableColumnDep(asset_key=AssetKey(["raw_orders"]), column_name="status")
-                ],
-            }
-        ),
-        AssetKey(["orders"]): TableColumnLineage(
-            deps_by_column={
-                "order_id": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_id")
-                ],
-                "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="customer_id")
-                ],
-                "order_date": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
-                ],
-                "status": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="status")
-                ],
-                "credit_card_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
-                    TableColumnDep(
-                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
-                    ),
-                ],
-                "coupon_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
-                    TableColumnDep(
-                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
-                    ),
-                ],
-                "bank_transfer_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
-                    TableColumnDep(
-                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
-                    ),
-                ],
-                "gift_card_amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
-                    TableColumnDep(
-                        asset_key=AssetKey(["stg_payments"]), column_name="payment_method"
-                    ),
-                ],
-                "amount": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount"),
-                ],
-            }
-        ),
-        AssetKey(["duplicate_column_dep_orders"]): TableColumnLineage(
-            deps_by_column={
-                "amount_2x": [TableColumnDep(asset_key=AssetKey(["orders"]), column_name="amount")],
-            }
-        ),
-        AssetKey(["incremental_orders"]): TableColumnLineage(
-            deps_by_column={
-                "order_id": [
-                    TableColumnDep(asset_key=AssetKey(["orders"]), column_name="order_id")
-                ],
-            }
-        ),
-        AssetKey(["customers"]): TableColumnLineage(
-            deps_by_column={
-                "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="customer_id")
-                ],
-                "first_name": [
-                    TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="first_name")
-                ],
-                "last_name": [
-                    TableColumnDep(asset_key=AssetKey(["stg_customers"]), column_name="last_name")
-                ],
-                "first_order": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
-                ],
-                "most_recent_order": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_date")
-                ],
-                "number_of_orders": [
-                    TableColumnDep(asset_key=AssetKey(["stg_orders"]), column_name="order_id")
-                ],
-                "customer_lifetime_value": [
-                    TableColumnDep(asset_key=AssetKey(["stg_payments"]), column_name="amount")
-                ],
-            }
-        ),
-        AssetKey(["select_star_customers"]): TableColumnLineage(
-            deps_by_column={
-                "customer_id": [
-                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="customer_id")
-                ],
-                "first_name": [
-                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_name")
-                ],
-                "last_name": [
-                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="last_name")
-                ],
-                "first_order": [
-                    TableColumnDep(asset_key=AssetKey(["customers"]), column_name="first_order")
-                ],
-                "most_recent_order": [
-                    TableColumnDep(
-                        asset_key=AssetKey(["customers"]), column_name="most_recent_order"
-                    )
-                ],
-                "number_of_orders": [
-                    TableColumnDep(
-                        asset_key=AssetKey(["customers"]), column_name="number_of_orders"
-                    )
-                ],
-                "customer_lifetime_value": [
-                    TableColumnDep(
-                        asset_key=AssetKey(["customers"]), column_name="customer_lifetime_value"
-                    )
-                ],
-            }
-        ),
-        AssetKey(["count_star_customers"]): TableColumnLineage(
-            deps_by_column={
-                "count_star": [],
-            }
-        ),
-        AssetKey(["count_star_implicit_alias_customers"]): TableColumnLineage(
-            deps_by_column={
-                "count_star()": [],
-            }
-        ),
-    }
+    expected_column_lineage_by_asset_key = EXPECTED_COLUMN_LINEAGE_FOR_METADATA_PROJECT
     if asset_key_selection:
         expected_column_lineage_by_asset_key = {
             asset_key: deps_by_column

@@ -29,6 +29,7 @@ exclude = [
   "**/__pycache__",
   "**/__generated__",
   "**/vendor",
+  "**/_vendored",
   "**/.tox",
   ".git",
   "**/.venv*",
@@ -102,6 +103,7 @@ target-version = "py38"
 extend-exclude = [
   "*/__generated__/*",
   "*/dagster_airflow/vendor/*",
+  "*/_vendored/*",
   "*/snapshots/*",
 ]
 
@@ -110,7 +112,7 @@ extend-exclude = [
 line-length = 100
 
 # Fail if Ruff is not running this version.
-required-version = "0.4.5"
+required-version = "0.5.1"
 
 [tool.ruff.lint]
 

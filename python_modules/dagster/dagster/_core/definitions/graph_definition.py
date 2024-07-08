@@ -3,6 +3,7 @@ from typing import (
     TYPE_CHECKING,
     AbstractSet,
     Any,
+    Callable,
     Dict,
     Iterable,
     Iterator,
@@ -45,6 +46,7 @@ from .dependency import (
     NodeInputHandle,
     NodeInvocation,
     NodeOutput,
+    NodeOutputHandle,
 )
 from .hook_definition import HookDefinition
 from .input import FanInInputPointer, InputDefinition, InputMapping, InputPointer
@@ -163,6 +165,8 @@ class GraphDefinition(NodeDefinition):
             Values that are not strings will be json encoded and must meet the criteria that
             `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
             values provided at invocation time.
+        composition_fn (Optional[Callable]): The function that defines this graph. Used to generate
+            code references for this graph.
 
     Examples:
         .. code-block:: python
@@ -215,6 +219,7 @@ class GraphDefinition(NodeDefinition):
         input_assets: Optional[
             Mapping[str, Mapping[str, Union["AssetsDefinition", "SourceAsset"]]]
         ] = None,
+        composition_fn: Optional[Callable] = None,
         **kwargs: Any,
     ):
         from .external_asset import create_external_asset_from_source_asset
@@ -248,6 +253,8 @@ class GraphDefinition(NodeDefinition):
         )
 
         self._config_mapping = check.opt_inst_param(config, "config", ConfigMapping)
+
+        self._composition_fn = check.opt_callable_param(composition_fn, "composition_fn")
 
         super(GraphDefinition, self).__init__(
             name=name,
@@ -352,6 +359,10 @@ class GraphDefinition(NodeDefinition):
     @property
     def input_assets(self) -> Mapping[str, Mapping[str, "AssetsDefinition"]]:
         return self._input_assets
+
+    @property
+    def composition_fn(self) -> Optional[Callable]:
+        return self._composition_fn
 
     def has_node_named(self, name: str) -> bool:
         check.str_param(name, "name")
@@ -465,8 +476,6 @@ class GraphDefinition(NodeDefinition):
             if mapping.graph_output_name == output_name:
                 return mapping
         check.failed(f"Could not find output mapping {output_name}")
-
-    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
 
     def resolve_output_to_origin(
         self, output_name: str, handle: Optional[NodeHandle]
@@ -875,8 +884,10 @@ class GraphDefinition(NodeDefinition):
                 mapping.maps_to.node_name
             ).definition.resolve_input_to_destinations(
                 NodeInputHandle(
-                    NodeHandle(mapping.maps_to.node_name, parent=input_handle.node_handle),
-                    mapping.maps_to.input_name,
+                    node_handle=NodeHandle(
+                        mapping.maps_to.node_name, parent=input_handle.node_handle
+                    ),
+                    input_name=mapping.maps_to.input_name,
                 ),
             )
 
@@ -908,7 +919,8 @@ class GraphDefinition(NodeDefinition):
             for input_handle in downstream_input_handles:
                 all_destinations.append(
                     NodeInputHandle(
-                        NodeHandle(input_handle.node_name, parent=handle), input_handle.input_name
+                        node_handle=NodeHandle(input_handle.node_name, parent=handle),
+                        input_name=input_handle.input_name,
                     )
                 )
 
@@ -920,6 +932,49 @@ class GraphDefinition(NodeDefinition):
             for node in self.nodes
             for op_handle in node.definition.get_op_handles(NodeHandle(node.name, parent=parent))
         }
+
+    def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
+        return {
+            op_output_handle
+            for node in self.nodes
+            for op_output_handle in node.definition.get_op_output_handles(
+                NodeHandle(node.name, parent=parent)
+            )
+        }
+
+    def get_op_input_output_handle_pairs(
+        self, outer_handle: Optional[NodeHandle]
+    ) -> AbstractSet[Tuple[NodeOutputHandle, NodeInputHandle]]:
+        """Get all pairs of op output handles and their downstream op input handles within the graph."""
+        result: Set[Tuple[NodeOutputHandle, NodeInputHandle]] = set()
+
+        for node in self.nodes:
+            node_handle = NodeHandle(node.name, parent=outer_handle)
+            if isinstance(node.definition, GraphDefinition):
+                result.update(node.definition.get_op_input_output_handle_pairs(node_handle))
+
+            for (
+                node_input,
+                upstream_outputs,
+            ) in self.dependency_structure.input_to_upstream_outputs_for_node(node.name).items():
+                op_input_handles = node_input.node.definition.resolve_input_to_destinations(
+                    NodeInputHandle(node_handle=node_handle, input_name=node_input.input_def.name)
+                )
+                for op_input_handle in op_input_handles:
+                    for upstream_node_output in upstream_outputs:
+                        origin_output_def, origin_node_handle = (
+                            upstream_node_output.node.definition.resolve_output_to_origin(
+                                upstream_node_output.output_def.name,
+                                NodeHandle(upstream_node_output.node.name, parent=outer_handle),
+                            )
+                        )
+                        origin_output_handle = NodeOutputHandle(
+                            node_handle=origin_node_handle, output_name=origin_output_def.name
+                        )
+
+                        result.add((origin_output_handle, op_input_handle))
+
+        return result
 
 
 class SubselectedGraphDefinition(GraphDefinition):

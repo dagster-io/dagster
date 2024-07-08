@@ -1,5 +1,7 @@
 import pytest
 from dagster import AssetKey, SensorDefinition, asset, graph
+from dagster._core.definitions.decorators.op_decorator import op
+from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 
@@ -66,3 +68,18 @@ def test_coerce_to_asset_selection():
         "a", asset_selection=[asset1, asset2], evaluation_fn=evaluation_fn
     )
     assert sensor_def.asset_selection.resolve(assets) == {AssetKey("asset1"), AssetKey("asset2")}
+
+
+def test_coerce_graph_def_to_job():
+    @op
+    def foo(): ...
+
+    @graph
+    def bar():
+        foo()
+
+    with pytest.warns(DeprecationWarning, match="Passing GraphDefinition"):
+        my_sensor = SensorDefinition(job=bar, evaluation_fn=lambda _: ...)
+
+    assert isinstance(my_sensor.job, JobDefinition)
+    assert my_sensor.job.name == "bar"

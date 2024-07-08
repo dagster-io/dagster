@@ -1,7 +1,7 @@
 import logging
 import sys
 import time
-from typing import AbstractSet, Dict, Iterator, List, NamedTuple, Optional, Sequence, Tuple, cast
+from typing import AbstractSet, Dict, NamedTuple, Optional, Sequence, cast
 
 import dagster._check as check
 from dagster._core.definitions.asset_job import is_base_asset_job_name
@@ -10,12 +10,7 @@ from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.remote_asset_graph import RemoteAssetGraph
 from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
-from dagster._core.errors import (
-    DagsterCodeLocationLoadError,
-    DagsterInvalidSubsetError,
-    DagsterUserCodeProcessError,
-    DagsterUserCodeUnreachableError,
-)
+from dagster._core.errors import DagsterInvalidSubsetError, DagsterUserCodeProcessError
 from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation import ExternalExecutionPlan, ExternalJob
 from dagster._core.snap import ExecutionPlanSnapshot
@@ -294,66 +289,3 @@ def submit_asset_run(
     )
 
     return run_to_submit
-
-
-class SubmitRunRequestChunkResult(NamedTuple):
-    chunk_submitted_runs: Sequence[Tuple[RunRequest, DagsterRun]]
-    retryable_error_raised: bool
-
-
-def submit_asset_runs_in_chunks(
-    run_requests: Sequence[RunRequest],
-    reserved_run_ids: Optional[Sequence[str]],
-    chunk_size: int,
-    instance: DagsterInstance,
-    workspace_process_context: IWorkspaceProcessContext,
-    asset_graph: RemoteAssetGraph,
-    debug_crash_flags: SingleInstigatorDebugCrashFlags,
-    logger: logging.Logger,
-    backfill_id: Optional[str] = None,
-) -> Iterator[Optional[SubmitRunRequestChunkResult]]:
-    """Submits runs for a sequence of run requests that target asset selections in chunks. Yields
-    None after each run is submitted to allow the daemon to heartbeat, and yields a list of tuples
-    of the run request and the submitted run after each chunk is submitted to allow the caller to
-    interrupt this process if needed.
-    """
-    if reserved_run_ids is not None:
-        check.invariant(len(run_requests) == len(reserved_run_ids))
-
-    run_request_execution_data_cache = {}
-    for chunk_start in range(0, len(run_requests), chunk_size):
-        run_request_chunk = run_requests[chunk_start : chunk_start + chunk_size]
-        chunk_submitted_runs: List[Tuple[RunRequest, DagsterRun]] = []
-        retryable_error_raised = False
-
-        # submit each run in the chunk
-        for chunk_idx, run_request in enumerate(run_request_chunk):
-            run_request_idx = chunk_start + chunk_idx
-            run_id = reserved_run_ids[run_request_idx] if reserved_run_ids else None
-            try:
-                submitted_run = submit_asset_run(
-                    run_id,
-                    run_request,
-                    run_request_idx,
-                    instance,
-                    workspace_process_context,
-                    asset_graph,
-                    run_request_execution_data_cache,
-                    debug_crash_flags,
-                    logger,
-                )
-                chunk_submitted_runs.append((run_request, submitted_run))
-                # allow the daemon to heartbeat while runs are submitted
-                yield None
-            except (DagsterUserCodeUnreachableError, DagsterCodeLocationLoadError) as e:
-                logger.warning(
-                    f"Unable to reach the user code server for assets {run_request.asset_selection}."
-                    f" Backfill {backfill_id} will resume execution once the server is available."
-                    f"User code server error: {e}"
-                )
-                retryable_error_raised = True
-                # Stop submitting runs if the user code server is unreachable for any
-                # given run request
-                break
-
-        yield SubmitRunRequestChunkResult(chunk_submitted_runs, retryable_error_raised)

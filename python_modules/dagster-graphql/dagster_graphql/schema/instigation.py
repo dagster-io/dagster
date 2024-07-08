@@ -12,6 +12,7 @@ from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData
 from dagster._core.definitions.timestamp import TimestampWithTimezone
+from dagster._core.remote_representation.external import CompoundID
 from dagster._core.scheduler.instigation import (
     DynamicPartitionsRequestResult,
     InstigatorState,
@@ -564,7 +565,7 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def __init__(
         self,
-        instigator_state,
+        instigator_state: InstigatorState,
         batch_loader=None,
     ):
         self._instigator_state = check.inst_param(
@@ -576,8 +577,12 @@ class GrapheneInstigationState(graphene.ObjectType):
         self._batch_loader = check.opt_inst_param(
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
+        cid = CompoundID(
+            external_origin_id=instigator_state.instigator_origin_id,
+            selector_id=instigator_state.selector_id,
+        )
         super().__init__(
-            id=instigator_state.instigator_origin_id,
+            id=cid.to_string(),
             selectorId=instigator_state.selector_id,
             name=instigator_state.name,
             instigationType=instigator_state.instigator_type.value,
@@ -727,10 +732,10 @@ class GrapheneInstigationStateNotFoundError(graphene.ObjectType):
 
     name = graphene.NonNull(graphene.String)
 
-    def __init__(self, name):
+    def __init__(self, target):
         super().__init__()
-        self.name = check.str_param(name, "name")
-        self.message = f"Could not find `{name}` in the currently loaded repository."
+        self.name = check.str_param(target, "target")
+        self.message = f"Could not find instigation state for `{target}`"
 
 
 class GrapheneInstigationStateOrError(graphene.Union):

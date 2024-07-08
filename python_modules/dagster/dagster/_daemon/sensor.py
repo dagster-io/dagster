@@ -1,3 +1,4 @@
+import datetime
 import logging
 import sys
 import threading
@@ -18,7 +19,6 @@ from typing import (
     cast,
 )
 
-import pendulum
 from typing_extensions import Self
 
 import dagster._check as check
@@ -53,13 +53,12 @@ from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace.context import IWorkspaceProcessContext
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._scheduler.stale import resolve_stale_or_missing_assets
+from dagster._time import get_current_datetime, get_current_timestamp
 from dagster._utils import DebugCrashFlags, SingleInstigatorDebugCrashFlags, check_for_debug_crash
 from dagster._utils.error import SerializableErrorInfo
 from dagster._utils.merger import merge_dicts
 
 if TYPE_CHECKING:
-    from pendulum.datetime import DateTime
-
     from dagster._daemon.daemon import DaemonIterator
 
 
@@ -234,7 +233,7 @@ class SensorLaunchContext(AbstractContextManager):
             self._instance.purge_ticks(
                 self._external_sensor.get_external_origin_id(),
                 selector_id=self._external_sensor.selector_id,
-                before=pendulum.now("UTC").subtract(days=day_offset).timestamp(),
+                before=(get_current_datetime() - datetime.timedelta(days=day_offset)).timestamp(),
                 tick_statuses=list(statuses),
             )
 
@@ -256,7 +255,7 @@ def execute_sensor_iteration_loop(
 
     sensor_tick_futures: Dict[str, Future] = {}
     while True:
-        start_time = pendulum.now("UTC").timestamp()
+        start_time = get_current_timestamp()
         if until and start_time >= until:
             # provide a way of organically ending the loop to support test environment
             break
@@ -282,7 +281,7 @@ def execute_sensor_iteration_loop(
         # execute_sensor_iteration
         yield SpanMarker.END_SPAN
 
-        end_time = pendulum.now("UTC").timestamp()
+        end_time = get_current_timestamp()
 
         loop_duration = end_time - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
@@ -351,7 +350,7 @@ def execute_sensor_iteration(
                 InstigatorStatus.DECLARED_IN_CODE,
                 SensorInstigatorData(
                     min_interval=external_sensor.min_interval_seconds,
-                    last_sensor_start_timestamp=pendulum.now("UTC").timestamp(),
+                    last_sensor_start_timestamp=get_current_timestamp(),
                     sensor_type=external_sensor.sensor_type,
                 ),
             )
@@ -432,7 +431,7 @@ def _process_tick_generator(
 ):
     instance = workspace_process_context.instance
     error_info = None
-    now = pendulum.now("UTC")
+    now = get_current_datetime()
     sensor_state = check.not_none(
         instance.get_instigator_state(
             external_sensor.get_external_origin_id(), external_sensor.selector_id
@@ -499,7 +498,7 @@ def mark_sensor_state_for_tick(
     instance: DagsterInstance,
     external_sensor: ExternalSensor,
     sensor_state: InstigatorState,
-    now: "DateTime",
+    now: datetime.datetime,
 ) -> None:
     instigator_data = _sensor_instigator_data(sensor_state)
     instance.update_instigator_state(
@@ -886,7 +885,7 @@ def is_under_min_interval(state: InstigatorState, external_sensor: ExternalSenso
     if not external_sensor.min_interval_seconds:
         return False
 
-    elapsed = pendulum.now("UTC").timestamp() - max(
+    elapsed = get_current_timestamp() - max(
         instigator_data.last_tick_timestamp or 0,
         instigator_data.last_tick_start_timestamp or 0,
     )

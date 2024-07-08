@@ -15,7 +15,6 @@ from dagster._core.storage.dagster_run import (
 )
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG, TagType, get_tag_type
 from dagster._core.workspace.permissions import Permissions
-from dagster._utils import datetime_as_float
 from dagster._utils.yaml_utils import dump_run_config_yaml
 
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -365,6 +364,7 @@ class GrapheneRun(graphene.ObjectType):
         graphene.NonNull(GrapheneEventConnection),
         afterCursor=graphene.Argument(graphene.String),
     )
+    creationTime = graphene.NonNull(graphene.Float)
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
@@ -552,18 +552,12 @@ class GrapheneRun(graphene.ObjectType):
             hasMore=conn.has_more,
         )
 
-    def _get_run_record(self, instance):
-        if not self._run_record:
-            self._run_record = instance.get_run_records(RunsFilter(run_ids=[self.run_id]))[0]
-        return self._run_record
-
     def resolve_startTime(self, graphene_info: ResolveInfo):
-        run_record = self._get_run_record(graphene_info.context.instance)
         # If a user has not migrated in 0.13.15, then run_record will not have start_time and end_time. So it will be necessary to fill this data using the run_stats. Since we potentially make this call multiple times, we cache the result.
-        if run_record.start_time is None and self.dagster_run.status in STARTED_STATUSES:
+        if self._run_record.start_time is None and self.dagster_run.status in STARTED_STATUSES:
             # Short-circuit if pipeline failed to start, so it has an end time but no start time
-            if run_record.end_time is not None:
-                return run_record.end_time
+            if self._run_record.end_time is not None:
+                return self._run_record.end_time
 
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
@@ -572,19 +566,20 @@ class GrapheneRun(graphene.ObjectType):
                 return self._run_stats.end_time
 
             return self._run_stats.start_time
-        return run_record.start_time
+        return self._run_record.start_time
 
     def resolve_endTime(self, graphene_info: ResolveInfo):
-        run_record = self._get_run_record(graphene_info.context.instance)
-        if run_record.end_time is None and self.dagster_run.status in COMPLETED_STATUSES:
+        if self._run_record.end_time is None and self.dagster_run.status in COMPLETED_STATUSES:
             if self._run_stats is None or self._run_stats.end_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.end_time
-        return run_record.end_time
+        return self._run_record.end_time
 
     def resolve_updateTime(self, graphene_info: ResolveInfo):
-        run_record = self._get_run_record(graphene_info.context.instance)
-        return datetime_as_float(run_record.update_timestamp)
+        return self._run_record.update_timestamp.timestamp()
+
+    def resolve_creationTime(self, graphene_info: ResolveInfo):
+        return self._run_record.create_timestamp.timestamp()
 
     def resolve_hasConcurrencyKeySlots(self, graphene_info: ResolveInfo):
         instance = graphene_info.context.instance
@@ -733,7 +728,7 @@ class GrapheneIPipelineSnapshotMixin:
             handles = {
                 key: handle
                 for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+                if handle.parent and str(handle.parent.handleID) == parentHandleID
             }
 
         return [handles[key] for key in sorted(handles)]
@@ -985,7 +980,7 @@ class GrapheneGraph(graphene.ObjectType):
             handles = {
                 key: handle
                 for key, handle in handles.items()
-                if handle.parent and handle.parent.handleID.to_string() == parentHandleID
+                if handle.parent and str(handle.parent.handleID) == parentHandleID
             }
 
         return [handles[key] for key in sorted(handles)]

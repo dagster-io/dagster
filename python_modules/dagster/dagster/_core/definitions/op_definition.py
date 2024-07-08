@@ -9,7 +9,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
     Union,
     cast,
 )
@@ -20,7 +19,7 @@ import dagster._check as check
 from dagster._annotations import deprecated, deprecated_param, public
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.definitions.asset_check_result import AssetCheckResult
-from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle
+from dagster._core.definitions.dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_invocation import direct_invocation_result
 from dagster._core.definitions.policy import RetryPolicy
@@ -323,11 +322,9 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
     def iterate_op_defs(self) -> Iterator["OpDefinition"]:
         yield self
 
-    T_Handle = TypeVar("T_Handle", bound=Optional[NodeHandle])
-
     def resolve_output_to_origin(
-        self, output_name: str, handle: T_Handle
-    ) -> Tuple[OutputDefinition, T_Handle]:
+        self, output_name: str, handle: Optional[NodeHandle]
+    ) -> Tuple[OutputDefinition, Optional[NodeHandle]]:
         return self.output_def_named(output_name), handle
 
     def resolve_output_to_origin_op_def(self, output_name: str) -> "OpDefinition":
@@ -468,6 +465,12 @@ class OpDefinition(NodeDefinition, IHasInternalInit):
 
     def get_op_handles(self, parent: NodeHandle) -> AbstractSet[NodeHandle]:
         return {parent}
+
+    def get_op_output_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeOutputHandle]:
+        return {
+            NodeOutputHandle(node_handle=parent, output_name=output_def.name)
+            for output_def in self.output_defs
+        }
 
 
 def _resolve_output_defs_from_outs(

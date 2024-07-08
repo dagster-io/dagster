@@ -74,27 +74,27 @@ _df_for_parquet = pl.DataFrame(parquet_data)
 _lazy_df_for_parquet = pl.LazyFrame(parquet_data)
 
 
-@pytest_cases.fixture(scope="session")
+@pytest_cases.fixture(scope="session")  # type: ignore  # (bad stubs)
 def df_for_parquet() -> pl.DataFrame:
     return _df_for_parquet
 
 
-@pytest_cases.fixture(scope="session")
+@pytest_cases.fixture(scope="session")  # type: ignore  # (bad stubs)
 def df_for_delta() -> pl.DataFrame:
     return _df_for_delta
 
 
-@pytest_cases.fixture(scope="session")
+@pytest_cases.fixture(scope="session")  # type: ignore  # (bad stubs)
 def lazy_df_for_parquet() -> pl.LazyFrame:
     return _lazy_df_for_parquet
 
 
-@pytest_cases.fixture(scope="session")
+@pytest_cases.fixture(scope="session")  # type: ignore  # (bad stubs)
 def lazy_df_for_delta() -> pl.LazyFrame:
     return _lazy_df_for_delta
 
 
-@pytest_cases.fixture
+@pytest_cases.fixture  # type: ignore  # (bad stubs)
 @pytest_cases.parametrize(
     "io_manager,frame",
     [(PolarsParquetIOManager, _df_for_parquet), (PolarsDeltaIOManager, _df_for_delta)],
@@ -107,7 +107,7 @@ def io_manager_and_df(  # to use without hypothesis
     return io_manager(base_dir=dagster_instance.storage_directory()), frame
 
 
-@pytest_cases.fixture
+@pytest_cases.fixture  # type: ignore  # (bad stubs)
 @pytest_cases.parametrize(
     "io_manager,frame",
     [(PolarsParquetIOManager, _lazy_df_for_parquet), (PolarsDeltaIOManager, _lazy_df_for_delta)],

@@ -5,10 +5,11 @@ from collections import namedtuple
 from enum import Enum
 from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
 
+import dagster._check as check
 import pydantic
 import pytest
-from dagster._check import ParameterCheckError, inst_param, set_param
-from dagster._model import DagsterModel, IHaveNew, dagster_model, dagster_model_custom
+from dagster._model import DagsterModel
+from dagster._record import IHaveNew, record, record_custom
 from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster._serdes.serdes import (
     EnumSerializer,
@@ -41,7 +42,7 @@ def test_deserialize_json_non_namedtuple():
 
 @pytest.mark.parametrize("bad_obj", [1, None, False])
 def test_deserialize_json_invalid_types(bad_obj):
-    with pytest.raises(ParameterCheckError):
+    with pytest.raises(check.ParameterCheckError):
         deserialize_value(bad_obj)
 
 
@@ -407,8 +408,8 @@ def test_set():
     @_whitelist_for_serdes(whitelist_map=test_map)
     class HasSets(namedtuple("_HasSets", "reg_set frozen_set")):
         def __new__(cls, reg_set, frozen_set):
-            set_param(reg_set, "reg_set")
-            inst_param(frozen_set, "frozen_set", frozenset)
+            check.set_param(reg_set, "reg_set")
+            check.inst_param(frozen_set, "frozen_set", frozenset)
             return super(HasSets, cls).__new__(cls, reg_set, frozen_set)
 
     foo = HasSets({1, 2, 3, "3"}, frozenset([4, 5, 6, "6"]))
@@ -895,11 +896,11 @@ def test_object_migration():
     assert py_dc_ent
 
 
-def test_dagster_model() -> None:
+def test_record() -> None:
     test_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model
+    @record
     class MyModel:
         nums: List[int]
 
@@ -908,7 +909,7 @@ def test_dagster_model() -> None:
     assert m == deserialize_value(m_str, whitelist_map=test_env)
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model(checked=False)
+    @record(checked=False)
     class UncheckedModel:
         nums: List[int]
         optional: int = 130
@@ -918,7 +919,7 @@ def test_dagster_model() -> None:
     assert m == deserialize_value(m_str, whitelist_map=test_env)
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model
+    @record
     class CachedModel:
         nums: List[int]
         optional: int = 42
@@ -936,7 +937,7 @@ def test_dagster_model() -> None:
     assert m == m_2
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model_custom
+    @record_custom
     class LegacyModel(IHaveNew):
         nums: List[int]
 
@@ -953,16 +954,16 @@ def test_dagster_model() -> None:
     assert m == deserialize_value(m2_str, whitelist_map=test_env)
 
 
-def test_dagster_model_fwd_ref():
+def test_record_fwd_ref():
     test_env = WhitelistMap.create()
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model
+    @record
     class MyModel:
         foos: List["Foo"]
 
     @_whitelist_for_serdes(test_env)
-    @dagster_model
+    @record
     class Foo:
         age: int
 
@@ -976,3 +977,18 @@ def test_dagster_model_fwd_ref():
         )
 
     assert _out_of_scope()
+
+
+def test_record_subclass() -> None:
+    test_env = WhitelistMap.create()
+
+    @record
+    class MyRecord:
+        name: str
+
+    @_whitelist_for_serdes(test_env)
+    class Child(MyRecord): ...
+
+    c = Child(name="kiddo")
+    r_str = serialize_value(c, whitelist_map=test_env)
+    assert deserialize_value(r_str, whitelist_map=test_env) == c

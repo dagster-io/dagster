@@ -103,12 +103,7 @@ export const WorkspaceResourcesRoot = ({repoAddress}: {repoAddress: RepoAddress}
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="resources"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="resources" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"
@@ -141,9 +136,7 @@ export const RESOURCE_ENTRY_FRAGMENT = gql`
       path
     }
     jobsOpsUsing {
-      job {
-        id
-      }
+      jobName
     }
     schedulesUsing
     sensorsUsing

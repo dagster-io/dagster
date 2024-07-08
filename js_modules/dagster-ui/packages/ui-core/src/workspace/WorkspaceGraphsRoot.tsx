@@ -130,12 +130,7 @@ export const WorkspaceGraphsRoot = ({repoAddress}: {repoAddress: RepoAddress}) =
 
   return (
     <Box flex={{direction: 'column'}} style={{height: '100%', overflow: 'hidden'}}>
-      <WorkspaceHeader
-        repoAddress={repoAddress}
-        tab="graphs"
-        refreshState={refreshState}
-        queryData={queryResultOverview}
-      />
+      <WorkspaceHeader repoAddress={repoAddress} tab="graphs" refreshState={refreshState} />
       <Box padding={{horizontal: 24, vertical: 16}}>
         <TextInput
           icon="search"

@@ -29,8 +29,7 @@ export type StartSensorMutation = {
 };
 
 export type StopRunningSensorMutationVariables = Types.Exact<{
-  jobOriginId: Types.Scalars['String']['input'];
-  jobSelectorId: Types.Scalars['String']['input'];
+  id: Types.Scalars['String']['input'];
 }>;
 
 export type StopRunningSensorMutation = {

@@ -62,7 +62,6 @@ export const OverviewSensors = () => {
     data: cachedData,
   } = useContext(WorkspaceContext);
 
-  const repoCount = allRepos.length;
   const [searchValue, setSearchValue] = useQueryPersistedState<string>({
     queryKey: 'search',
     defaults: {search: ''},

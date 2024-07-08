@@ -34,7 +34,7 @@ import {
 
 export const CODE_LOCATION_STATUS_QUERY_KEY = '/CodeLocationStatusQuery';
 export const CODE_LOCATION_STATUS_QUERY_VERSION = 1;
-export const LOCATION_WORKSPACE_QUERY_VERSION = 2;
+export const LOCATION_WORKSPACE_QUERY_VERSION = 3;
 type Repository = WorkspaceRepositoryFragment;
 type RepositoryLocation = WorkspaceLocationFragment;
 
@@ -101,15 +101,18 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     leading: true,
   });
 
-  const {data, loading: loadingCodeLocationStatus} = codeLocationStatusQueryResult;
+  const {data: codeLocationStatusData} = codeLocationStatusQueryResult;
 
-  const locations = useMemo(() => getLocations(data), [data]);
-  const prevLocations = useRef<typeof locations>({});
+  const locationStatuses = useMemo(
+    () => getLocations(codeLocationStatusData),
+    [codeLocationStatusData],
+  );
+  const prevLocationStatuses = useRef<typeof locationStatuses>({});
 
   const didInitiateFetchFromCache = useRef(false);
-  const [didLoadCachedData, setDidLoadCachedData] = useState(false);
+  const [didLoadStatusData, setDidLoadStatusData] = useState(false);
 
-  const [locationsData, setLocationsData] = React.useState<
+  const [locationEntriesData, setLocationEntriesData] = React.useState<
     Record<string, WorkspaceLocationNodeFragment | PythonErrorFragment>
   >({});
 
@@ -123,7 +126,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
       return;
     }
     didInitiateFetchFromCache.current = true;
-    const allData: typeof locationsData = {};
+    const allData: typeof locationEntriesData = {};
     new Promise(async (res) => {
       /**
        * 1. Load the cached code location status query
@@ -139,7 +142,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         version: CODE_LOCATION_STATUS_QUERY_VERSION,
       });
       const cachedLocations = getLocations(data);
-      const prevCachedLocations: typeof locations = {};
+      const prevCachedLocations: typeof locationStatuses = {};
 
       await Promise.all([
         ...Object.values(cachedLocations).map(async (location) => {
@@ -148,7 +151,6 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
             version: LOCATION_WORKSPACE_QUERY_VERSION,
           });
           const entry = locationData?.workspaceLocationEntryOrError;
-
           if (!entry) {
             return;
           }
@@ -159,13 +161,13 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
           }
         }),
       ]);
-      prevLocations.current = prevCachedLocations;
+      prevLocationStatuses.current = prevCachedLocations;
       res(void 0);
     }).then(() => {
-      setDidLoadCachedData(true);
-      setLocationsData(allData);
+      setDidLoadStatusData(true);
+      setLocationEntriesData(allData);
     });
-  }, [getCachedData, localCacheIdPrefix, locations]);
+  }, [getCachedData, localCacheIdPrefix, locationStatuses]);
 
   const client = useApolloClient();
 
@@ -182,7 +184,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         bypassCache: true,
       });
       const entry = locationData.data?.workspaceLocationEntryOrError;
-      setLocationsData((locationsData) =>
+      setLocationEntriesData((locationsData) =>
         Object.assign({}, locationsData, {
           [name]: entry,
         }),
@@ -195,15 +197,15 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   const [isRefetching, setIsRefetching] = useState(false);
 
   const locationsToFetch = useMemo(() => {
-    if (!didLoadCachedData) {
+    if (!didLoadStatusData) {
       return [];
     }
     if (isRefetching) {
       return [];
     }
-    const toFetch = Object.values(locations).filter((loc) => {
-      const prev = prevLocations.current?.[loc.name];
-      const d = locationsData[loc.name];
+    const toFetch = Object.values(locationStatuses).filter((loc) => {
+      const prev = prevLocationStatuses.current?.[loc.name];
+      const d = locationEntriesData[loc.name];
       const entry = d?.__typename === 'WorkspaceLocationEntry' ? d : null;
       return (
         prev?.updateTimestamp !== loc.updateTimestamp ||
@@ -211,9 +213,9 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         entry?.loadStatus !== loc.loadStatus
       );
     });
-    prevLocations.current = locations;
+    prevLocationStatuses.current = locationStatuses;
     return toFetch;
-  }, [didLoadCachedData, isRefetching, locations, locationsData]);
+  }, [didLoadStatusData, isRefetching, locationStatuses, locationEntriesData]);
 
   useLayoutEffect(() => {
     if (!locationsToFetch.length) {
@@ -233,37 +235,39 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
     () =>
       Array.from(
         new Set([
-          ...Object.values(prevLocations.current).filter((loc) => !locations[loc.name]),
-          ...Object.values(locationsData).filter(
+          ...Object.values(prevLocationStatuses.current).filter(
+            (loc) => !locationStatuses[loc.name],
+          ),
+          ...Object.values(locationEntriesData).filter(
             (loc): loc is WorkspaceLocationNodeFragment =>
-              loc?.__typename === 'WorkspaceLocationEntry' && !locations[loc.name],
+              loc?.__typename === 'WorkspaceLocationEntry' && !locationStatuses[loc.name],
           ),
         ]),
       ),
-    [locations, locationsData],
+    [locationStatuses, locationEntriesData],
   );
 
   useLayoutEffect(() => {
     if (!locationsRemoved.length) {
       return;
     }
-    const copy = {...locationsData};
+    const copy = {...locationEntriesData};
     locationsRemoved.forEach((loc) => {
       delete copy[loc.name];
       clearCachedData({key: `${localCacheIdPrefix}${locationWorkspaceKey(loc.name)}`});
     });
-    if (Object.keys(copy).length !== Object.keys(locationsData).length) {
-      setLocationsData(copy);
+    if (Object.keys(copy).length !== Object.keys(locationEntriesData).length) {
+      setLocationEntriesData(copy);
     }
-  }, [clearCachedData, localCacheIdPrefix, locationsData, locationsRemoved]);
+  }, [clearCachedData, localCacheIdPrefix, locationEntriesData, locationsRemoved]);
 
   const locationEntries = useMemo(
     () =>
-      Object.values(locationsData).filter(
+      Object.values(locationEntriesData).filter(
         (entry): entry is WorkspaceLocationNodeFragment =>
           entry.__typename === 'WorkspaceLocationEntry',
       ),
-    [locationsData],
+    [locationEntriesData],
   );
 
   const allRepos = React.useMemo(() => {
@@ -289,7 +293,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
 
   const {visibleRepos, toggleVisible, setVisible, setHidden} = useVisibleRepos(allRepos);
 
-  const locationsRef = useUpdatingRef(locations);
+  const locationsRef = useUpdatingRef(locationStatuses);
 
   const refetch = useCallback(async () => {
     return await Promise.all(
@@ -303,9 +307,10 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
   return (
     <WorkspaceContext.Provider
       value={{
-        loading:
-          !didLoadCachedData ||
-          (!Object.values(locationsData).length && (isRefetching || loadingCodeLocationStatus)), // Only "loading" on initial load.
+        loading: !(
+          didLoadStatusData &&
+          Object.keys(locationStatuses).every((locationName) => locationEntriesData[locationName])
+        ),
         locationEntries,
         allRepos,
         visibleRepos,
@@ -313,7 +318,7 @@ export const WorkspaceProvider = ({children}: {children: React.ReactNode}) => {
         setVisible,
         setHidden,
 
-        data: locationsData,
+        data: locationEntriesData,
         refetch,
       }}
     >

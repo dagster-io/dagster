@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import {MemoryRouter} from 'react-router';
 import {RecoilRoot} from 'recoil';
 
+import {mockViewportClientRect, restoreViewportClientRect} from '../../testing/mocking';
 import {WorkspaceProvider} from '../../workspace/WorkspaceContext';
 import {buildWorkspaceMocks} from '../../workspace/__fixtures__/Workspace.fixtures';
 import {AssetsCatalogTable} from '../AssetsCatalogTable';
@@ -32,17 +33,12 @@ const MOCKS = [
 jest.mock('../../graph/asyncGraphLayout', () => ({}));
 
 describe('AssetTable', () => {
-  let nativeGBRC: any;
-
   beforeAll(() => {
-    nativeGBRC = window.Element.prototype.getBoundingClientRect;
-    window.Element.prototype.getBoundingClientRect = jest
-      .fn()
-      .mockReturnValue({height: 400, width: 400});
+    mockViewportClientRect();
   });
 
   afterAll(() => {
-    window.Element.prototype.getBoundingClientRect = nativeGBRC;
+    restoreViewportClientRect();
   });
 
   describe('Materialize button', () => {

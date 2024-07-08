@@ -271,6 +271,7 @@ class RunFailureReason(Enum):
     RUN_EXCEPTION = "RUN_EXCEPTION"
     STEP_FAILURE = "STEP_FAILURE"
     JOB_INITIALIZATION_FAILURE = "JOB_INITIALIZATION_FAILURE"
+    START_TIMEOUT = "START_TIMEOUT"
     UNKNOWN = "UNKNOWN"
 
 
@@ -1135,7 +1136,7 @@ class DagsterEvent(
     def step_worker_starting(
         step_context: IStepContext,
         message: str,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Mapping[str, RawMetadataValue],
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             DagsterEventType.STEP_WORKER_STARTING,
@@ -1151,7 +1152,7 @@ class DagsterEvent(
         log_manager: DagsterLogManager,
         job_name: str,
         message: str,
-        metadata: Mapping[str, MetadataValue],
+        metadata: Mapping[str, RawMetadataValue],
         step_key: Optional[str],
     ) -> "DagsterEvent":
         event = DagsterEvent(
