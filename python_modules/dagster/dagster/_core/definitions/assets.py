@@ -982,7 +982,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         AssetsDefinition.
         """
         # the input asset keys that are directly upstream of a selected asset key
-        return {dep_key for key in self.keys for dep_key in self.asset_deps[key]}
+        return {dep.asset_key for key in self.keys for dep in self._specs_by_key[key].deps}
 
     @property
     def node_keys_by_output_name(self) -> Mapping[str, AssetKey]:
@@ -1033,7 +1033,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @property
     def keys_by_input_name(self) -> Mapping[str, AssetKey]:
         upstream_keys = {
-            *(dep_key for key in self.keys for dep_key in self.asset_deps[key]),
+            *(dep.asset_key for key in self.keys for dep in self._specs_by_key[key].deps),
             *(spec.asset_key for spec in self.check_specs if spec.asset_key not in self.keys),
         }
 
