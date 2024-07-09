@@ -20,6 +20,7 @@ from typing_extensions import dataclass_transform
 import dagster._check as check
 from dagster._check import EvalContext, build_check_call_str
 
+ImportFrom = check.ImportFrom  # re-expose for convenience
 TType = TypeVar("TType", bound=Type)
 TVal = TypeVar("TVal")
 
@@ -89,6 +90,7 @@ def _namedtuple_model_transform(
             global_ns={},
             # inject default values in to the local namespace for reference in generated __new__
             local_ns={_INJECTED_DEFAULT_VALS_LOCAL_VAR: defaults},
+            lazy_imports={},
         )
         defaults_new = eval_ctx.compile_fn(
             _build_defaults_new(field_set, defaults),
@@ -327,7 +329,6 @@ class JitCheckedNew:
 
     def _build_checked_new_str(self) -> str:
         kw_args_str, set_calls_str = build_args_and_assignment_strs(self._field_set, self._defaults)
-
         check_calls = []
         for name, ttype in self._field_set.items():
             call_str = build_check_call_str(
@@ -338,8 +339,14 @@ class JitCheckedNew:
             check_calls.append(f"{name}={call_str}")
 
         check_call_block = ",\n        ".join(check_calls)
+
+        lazy_imports_str = "\n    ".join(
+            f"from {module} import {t}" for t, module in self._eval_ctx.lazy_imports.items()
+        )
+
         return f"""
 def __checked_new__(cls{kw_args_str}):
+    {lazy_imports_str}
     {set_calls_str}
     return cls.__nt_new__(
         cls,
@@ -348,7 +355,10 @@ def __checked_new__(cls{kw_args_str}):
 """
 
 
-def _build_defaults_new(field_set: Mapping[str, Type], defaults: Mapping[str, Any]) -> str:
+def _build_defaults_new(
+    field_set: Mapping[str, Type],
+    defaults: Mapping[str, Any],
+) -> str:
     """Build a __new__ implementation that handles default values."""
     kw_args_str, set_calls_str = build_args_and_assignment_strs(field_set, defaults)
     assign_str = ",\n        ".join([f"{name}={name}" for name in field_set.keys()])

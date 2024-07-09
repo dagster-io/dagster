@@ -1,11 +1,12 @@
 import pickle
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import pytest
 from dagster._record import (
     _INJECTED_DEFAULT_VALS_LOCAL_VAR,
     IHaveNew,
+    ImportFrom,
     build_args_and_assignment_strs,
     check,
     copy,
@@ -13,6 +14,10 @@ from dagster._record import (
     record_custom,
 )
 from dagster._utils.cached_method import cached_method
+from typing_extensions import Annotated
+
+if TYPE_CHECKING:
+    from dagster._core.test_utils import TestType
 
 
 def test_runtime_typecheck() -> None:
@@ -402,3 +407,30 @@ def test_default_collision() -> None:
         @record
         class _(Base):
             thing: Any = _some_func
+
+
+def test_lazy_import():
+    @record
+    class BadModel:
+        foos: List["TestType"]
+
+    with pytest.raises(check.CheckError, match="Unable to resolve"):
+        BadModel(foos=[])
+
+    @record
+    class AnnotatedModel:
+        foos: List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]]
+
+    assert AnnotatedModel(foos=[])
+
+    with pytest.raises(
+        check.CheckError, match="Expected <class 'dagster._core.test_utils.TestType'>"
+    ):
+        AnnotatedModel(foos=[1, 2, 3])
+
+    def _out_of_scope():
+        from dagster._core.test_utils import TestType
+
+        return AnnotatedModel(foos=[TestType()])
+
+    assert _out_of_scope()
