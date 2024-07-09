@@ -896,7 +896,7 @@ class SensorDefinition(IHasInternalInit):
                     self._asset_selection,
                     dynamic_partitions_requests,
                 ),
-                *self.resolve_backfill_requests(
+                *self.validate_backfill_requests(
                     run_requests_for_backfill_daemon,
                     context,
                 ),
@@ -987,7 +987,7 @@ class SensorDefinition(IHasInternalInit):
 
         return resolved_run_requests
 
-    def resolve_backfill_requests(
+    def validate_backfill_requests(
         self,
         run_requests: Sequence[RunRequest],
         context: SensorEvaluationContext,
@@ -997,7 +997,14 @@ class SensorDefinition(IHasInternalInit):
                 self._asset_selection,
                 "Can only yield RunRequests with asset_graph_subset for sensors with an asset_selection",
             )
-            asset_keys = run_request.asset_graph_subset.asset_keys
+
+            if run_request.asset_graph_subset:
+                asset_keys = run_request.asset_graph_subset.asset_keys
+            else:
+                check.invariant(
+                    False,
+                    "RunRequest must have an asset_graph_subset to launch a backfill.",
+                )
 
             unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
                 check.not_none(context.repository_def).asset_graph

@@ -23,6 +23,7 @@ from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -891,7 +892,7 @@ def _handle_backfill_requests(
                 backfill_id=backfill_id,
                 dynamic_partitions_store=instance,
                 backfill_timestamp=get_current_timestamp(),
-                asset_graph_subset=run_request.asset_graph_subset,
+                asset_graph_subset=check.inst(run_request.asset_graph_subset, AssetGraphSubset),
                 tags=run_request.tags or {},
                 # would need to add these as params to RunRequest
                 title=None,
