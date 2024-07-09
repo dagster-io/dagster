@@ -814,7 +814,7 @@ DAGSTER_PIPES_CLI_PARSER.add_argument(
 
 
 class PipesCliArgsParamsLoader(PipesParamsLoader):
-    """Params loader that extracts params from a given CLI argument value."""
+    """Params loader that extracts params from known CLI arguments."""
 
     def __init__(self):
         self.parser = DAGSTER_PIPES_CLI_PARSER
