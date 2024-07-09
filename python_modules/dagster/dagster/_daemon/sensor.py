@@ -885,9 +885,6 @@ def _handle_backfill_requests(
     context: SensorLaunchContext,
 ) -> None:
     for run_request in run_requests:
-        # TODO handling of duplicate run_keys so the same backfill isn't submitted twice
-        # issue with this is that we determine run_key duplicates based on tags
-        # and we dont have an efficient way to query backfills by tags
         backfill_id = make_new_backfill_id()
         instance.add_backfill(
             PartitionBackfill.from_asset_graph_subset(

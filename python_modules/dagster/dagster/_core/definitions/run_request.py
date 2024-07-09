@@ -17,6 +17,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -36,7 +37,6 @@ from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
-    from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.job_definition import JobDefinition
     from dagster._core.definitions.partition import PartitionsDefinition
     from dagster._core.definitions.run_config import RunConfig
@@ -69,7 +69,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     run_key: Optional[str]
@@ -80,7 +80,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     stale_assets_only: bool
     partition_key: Optional[str]
     asset_check_keys: Optional[Sequence[AssetCheckKey]]
-    asset_graph_subset: Optional["AssetGraphSubset"]
+    asset_graph_subset: Optional[AssetGraphSubset]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
@@ -127,7 +127,6 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
         **kwargs,
     ):
-        from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
         from dagster._core.definitions.run_config import convert_config_input
 
         if kwargs.get("asset_graph_subset") is not None:
@@ -162,7 +161,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     @classmethod
     def for_asset_graph_subset(
         cls,
-        asset_graph_subset: "AssetGraphSubset",
+        asset_graph_subset: AssetGraphSubset,
         tags: Optional[Mapping[str, str]],
     ) -> "RunRequest":
         """Constructs a RunRequest from an AssetGraphSubset. When processed by the sensor
@@ -170,10 +169,6 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         Note: This constructor is intentionally left private since AssetGraphSubset is not part of the
         public API. Other constructor methods will be public.
         """
-        from dagster._core.definitions.asset_graph_subset import (
-            AssetGraphSubset,  # noqa: F401 need to import this here to avoid a ForwardRef exception
-        )
-
         return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
