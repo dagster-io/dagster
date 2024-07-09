@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.utils import validate_asset_owner
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
@@ -16,9 +19,6 @@ from .utils import resolve_automation_condition, validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
-    from dagster._core.definitions.declarative_automation.automation_condition import (
-        AutomationCondition,
-    )
 
 # SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE lives on the metadata of an asset
 # (which currently ends up on the Output associated with the asset key)
@@ -78,7 +78,7 @@ class AssetSpec(
             ("skippable", PublicAttr[bool]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("automation_condition", PublicAttr[Optional["AutomationCondition"]]),
+            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
@@ -125,14 +125,13 @@ class AssetSpec(
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
-        automation_condition: Optional["AutomationCondition"] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
         # TODO: FOU-243
         auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
-        from dagster._core.definitions.declarative_automation import AutomationCondition
 
         key = AssetKey.from_coercible(key)
         asset_deps = coerce_to_deps_and_check_duplicates(deps, key)
@@ -175,7 +174,7 @@ class AssetSpec(
         group_name: Optional[str],
         code_version: Optional[str],
         freshness_policy: Optional[FreshnessPolicy],
-        automation_condition: Optional["AutomationCondition"],
+        automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
         auto_materialize_policy: Optional[AutoMaterializePolicy],

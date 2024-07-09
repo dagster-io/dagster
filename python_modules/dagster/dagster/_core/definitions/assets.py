@@ -33,6 +33,9 @@ from dagster._core.definitions.asset_spec import (
 )
 from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
 from dagster._core.definitions.backfill_policy import BackfillPolicy, BackfillPolicyType
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.dependency import NodeHandle, NodeOutputHandle
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.graph_definition import SubselectedGraphDefinition
@@ -83,7 +86,6 @@ from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_tags_strict
 
 if TYPE_CHECKING:
-    from .declarative_automation import AutomationCondition
     from .graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
@@ -526,7 +528,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         automation_conditions_by_output_name: Optional[
-            Mapping[str, Optional["AutomationCondition"]]
+            Mapping[str, Optional[AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
@@ -588,8 +590,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
-            automation_conditions_by_output_name (Optional[Mapping[str, Optional["AutomationCondition"]]]): Defines an
-                "AutomationCondition" to be associated with some or all of the output assets for this node.
+            automation_conditions_by_output_name (Optional[Mapping[str, Optional[AutomationCondition]]]): Defines an
+                AutomationCondition to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
@@ -641,7 +643,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         tags_by_output_name: Optional[Mapping[str, Optional[Mapping[str, str]]]] = None,
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         automation_conditions_by_output_name: Optional[
-            Mapping[str, Optional["AutomationCondition"]]
+            Mapping[str, Optional[AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
@@ -696,8 +698,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 FreshnessPolicy to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the FreshnessPolicies to be attached
                 to the associated asset.
-            automation_conditions_by_output_name (Optional[Mapping[str, Optional["AutomationCondition"]]]): Defines an
-                "AutomationCondition" to be associated with some or all of the output assets for this node.
+            automation_conditions_by_output_name (Optional[Mapping[str, Optional[AutomationCondition]]]): Defines an
+                AutomationCondition to be associated with some or all of the output assets for this node.
                 Keys are the names of the outputs, and values are the AutoMaterializePolicies to be attached
                 to the associated asset.
             backfill_policy (Optional[BackfillPolicy]): Defines this asset's BackfillPolicy
@@ -743,7 +745,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         freshness_policies_by_output_name: Optional[Mapping[str, Optional[FreshnessPolicy]]] = None,
         code_versions_by_output_name: Optional[Mapping[str, Optional[str]]] = None,
         automation_conditions_by_output_name: Optional[
-            Mapping[str, Optional["AutomationCondition"]]
+            Mapping[str, Optional[AutomationCondition]]
         ] = None,
         backfill_policy: Optional[BackfillPolicy] = None,
         can_subset: bool = False,
@@ -1081,7 +1083,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         }
 
     @property
-    def automation_conditions_by_key(self) -> Mapping[AssetKey, "AutomationCondition"]:
+    def automation_conditions_by_key(self) -> Mapping[AssetKey, AutomationCondition]:
         return {
             key: spec.automation_condition
             for key, spec in self._specs_by_key.items()
@@ -1798,11 +1800,11 @@ def _validate_graph_def(graph_def: "GraphDefinition", prefix: Optional[Sequence[
 
 
 def _resolve_automation_conditions_by_output_name(
-    automation_conditions_by_output_name: Optional[Mapping[str, Optional["AutomationCondition"]]],
+    automation_conditions_by_output_name: Optional[Mapping[str, Optional[AutomationCondition]]],
     auto_materialize_policies_by_output_name: Optional[
         Mapping[str, Optional[AutoMaterializePolicy]]
     ],
-) -> Optional[Mapping[str, Optional["AutomationCondition"]]]:
+) -> Optional[Mapping[str, Optional[AutomationCondition]]]:
     if auto_materialize_policies_by_output_name is not None:
         check.param_invariant(
             automation_conditions_by_output_name is None,
@@ -1868,13 +1870,11 @@ def _asset_specs_from_attr_key_params(
     metadata_by_key: Optional[Mapping[AssetKey, ArbitraryMetadataMapping]],
     tags_by_key: Optional[Mapping[AssetKey, Mapping[str, str]]],
     freshness_policies_by_key: Optional[Mapping[AssetKey, FreshnessPolicy]],
-    automation_conditions_by_key: Optional[Mapping[AssetKey, "AutomationCondition"]],
+    automation_conditions_by_key: Optional[Mapping[AssetKey, AutomationCondition]],
     code_versions_by_key: Optional[Mapping[AssetKey, str]],
     descriptions_by_key: Optional[Mapping[AssetKey, str]],
     owners_by_key: Optional[Mapping[AssetKey, Sequence[str]]],
 ) -> Sequence[AssetSpec]:
-    from dagster._core.definitions.declarative_automation import AutomationCondition
-
     validated_group_names_by_key = check.opt_mapping_param(
         group_names_by_key, "group_names_by_key", key_type=AssetKey, value_type=str
     )

@@ -300,7 +300,11 @@ class AutoMaterializePolicy(
     def to_automation_condition(self) -> "AutomationCondition":
         """Converts a set of materialize / skip rules into a single binary expression."""
         from .auto_materialize_rule_impls import DiscardOnMaxMaterializationsExceededRule
-        from .declarative_automation import AndAssetCondition, NotAssetCondition, OrAssetCondition
+        from .declarative_automation.operators import (
+            AndAssetCondition,
+            NotAssetCondition,
+            OrAssetCondition,
+        )
 
         if self.asset_condition is not None:
             return self.asset_condition

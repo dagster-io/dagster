@@ -177,21 +177,16 @@ class ScenarioSpec:
                         "deps",
                         "group_name",
                         "code_version",
-                        "auto_materialize_policy",
+                        "automation_condition",
                         "freshness_policy",
                         "partitions_def",
                         "metadata",
                     }
-                    spec_dict = spec._asdict()
-                    if spec_dict.get("automation_condition") is not None:
-                        spec_dict["auto_materialize_policy"] = spec_dict[
-                            "automation_condition"
-                        ].as_auto_materialize_policy()
 
                     assets.append(
                         asset(
                             compute_fn=compute_fn,
-                            **{k: v for k, v in spec_dict.items() if k in params},
+                            **{k: v for k, v in spec._asdict().items() if k in params},
                         )
                     )
 

@@ -105,7 +105,7 @@ Refer to the `Auto-materialize policies </concepts/assets/asset-auto-execution>`
 
 .. autoclass:: AutoMaterializeSensorDefinition
 
-.. autoclass:: AssetCondition
+.. autoclass:: AutomationCondition
 
 .. autoclass:: FreshnessPolicy
 
