@@ -124,13 +124,11 @@ In a local context, it is useful to specify local code references in order to na
 
 If using Dagster Plus, you can use the `link_code_references_to_git_if_cloud` utility to conditionally convert local file code references to source control links. This utility will automatically detect if your code is running in a Dagster Cloud environment and convert local file code references to source control links, pointing at the commit hash of the code running in the current deployment.
 
-```python file=/guides/dagster/code_references/link_to_source_control_plus.py
+```python
 import os
 from pathlib import Path
 
-from dagster_cloud.metadata.source_code import (
-    link_code_references_to_git_if_cloud,
-)
+from dagster_cloud.metadata.source_code import link_code_references_to_git_if_cloud
 
 from dagster import (
     AnchorBasedFilePathMapping,
