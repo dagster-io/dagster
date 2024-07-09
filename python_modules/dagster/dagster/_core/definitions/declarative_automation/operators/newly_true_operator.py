@@ -13,6 +13,7 @@ from ..automation_context import AutomationContext
 @record
 class NewlyTrueCondition(AutomationCondition):
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def requires_cursor(self) -> bool:
