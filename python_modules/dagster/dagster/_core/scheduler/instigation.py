@@ -442,11 +442,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         asset_partitions_from_single_runs = set()
         num_assets_requested_from_backfill_runs = 0
         for run_request in self.tick_data.run_requests or []:
-            if run_request.requires_backfill_daemon:
-                for asset_subset in run_request.asset_graph_subset.iterate_asset_subsets():
-                    # getting the size of the asset subset is significantly faster than iterating
-                    # through the partitions being materialized for the asset
-                    num_assets_requested_from_backfill_runs += asset_subset.size()
+            if run_request.requires_backfill_daemon():
+                num_assets_requested_from_backfill_runs += (
+                    run_request.asset_graph_subset.num_partitions_and_non_partitioned_assets
+                )
             else:
                 for asset_key in run_request.asset_selection or []:
                     asset_partitions_from_single_runs.add(
@@ -461,12 +460,23 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
 
         partitions_by_asset_key = {}
         for run_request in self.tick_data.run_requests or []:
-            for asset_key in run_request.asset_selection or []:
-                if asset_key not in partitions_by_asset_key:
-                    partitions_by_asset_key[asset_key] = set()
+            if run_request.requires_backfill_daemon():
+                for (
+                    asset_key_partition_key
+                ) in run_request.asset_graph_subset.iterate_asset_partitions():
+                    if asset_key_partition_key.asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key_partition_key.asset_key] = set()
+                    if asset_key_partition_key.partition_key:
+                        partitions_by_asset_key[asset_key_partition_key.asset_key].add(
+                            asset_key_partition_key.partition_key
+                        )
+            else:
+                for asset_key in run_request.asset_selection or []:
+                    if asset_key not in partitions_by_asset_key:
+                        partitions_by_asset_key[asset_key] = set()
 
-                if run_request.partition_key:
-                    partitions_by_asset_key[asset_key].add(run_request.partition_key)
+                    if run_request.partition_key:
+                        partitions_by_asset_key[asset_key].add(run_request.partition_key)
 
         return partitions_by_asset_key
 
