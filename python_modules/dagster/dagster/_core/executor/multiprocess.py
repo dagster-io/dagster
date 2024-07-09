@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import sys
+import threading
 from contextlib import ExitStack
 from multiprocessing.context import BaseContext as MultiprocessingBaseContext
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence
@@ -72,34 +73,39 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
     def execute(self) -> Iterator[DagsterEvent]:
         recon_job = self.recon_pipeline
         with DagsterInstance.from_ref(self.instance_ref) as instance:
-            start_termination_thread(self.term_event)
+            done_event = threading.Event()
+            start_termination_thread(self.term_event, done_event)
+            try:
+                log_manager = create_context_free_log_manager(instance, self.dagster_run)
 
-            log_manager = create_context_free_log_manager(instance, self.dagster_run)
-
-            yield DagsterEvent.step_worker_started(
-                log_manager,
-                self.dagster_run.job_name,
-                message=f'Executing step "{self.step_key}" in subprocess.',
-                metadata={
-                    "pid": MetadataValue.text(str(os.getpid())),
-                },
-                step_key=self.step_key,
-            )
-            execution_plan = create_execution_plan(
-                job=recon_job,
-                run_config=self.run_config,
-                step_keys_to_execute=[self.step_key],
-                known_state=self.known_state,
-                repository_load_data=self.repository_load_data,
-            )
-            yield from execute_plan_iterator(
-                execution_plan,
-                recon_job,
-                self.dagster_run,
-                run_config=self.run_config,
-                retry_mode=self.retry_mode.for_inner_plan(),
-                instance=instance,
-            )
+                yield DagsterEvent.step_worker_started(
+                    log_manager,
+                    self.dagster_run.job_name,
+                    message=f'Executing step "{self.step_key}" in subprocess.',
+                    metadata={
+                        "pid": MetadataValue.text(str(os.getpid())),
+                    },
+                    step_key=self.step_key,
+                )
+                execution_plan = create_execution_plan(
+                    job=recon_job,
+                    run_config=self.run_config,
+                    step_keys_to_execute=[self.step_key],
+                    known_state=self.known_state,
+                    repository_load_data=self.repository_load_data,
+                )
+                yield from execute_plan_iterator(
+                    execution_plan,
+                    recon_job,
+                    self.dagster_run,
+                    run_config=self.run_config,
+                    retry_mode=self.retry_mode.for_inner_plan(),
+                    instance=instance,
+                )
+            finally:
+                # set events to stop the termination thread on exit
+                done_event.set()  # waiting on term_event so set done first
+                self.term_event.set()
 
 
 class MultiprocessExecutor(Executor):
