@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, NamedTuple, Optional, Set
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 from ..errors import DagsterInvariantViolationError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
@@ -172,12 +172,6 @@ class AssetLayer(NamedTuple):
                 " Multiple asset keys defined."
             )
         return next(iter(asset_keys))
-
-    def get_spec_for_asset_check(
-        self, node_handle: NodeHandle, asset_check_key: AssetCheckKey
-    ) -> Optional[AssetCheckSpec]:
-        assets_def = self.assets_defs_by_node_handle.get(node_handle)
-        return assets_def.get_spec_for_check_key(asset_check_key) if assets_def else None
 
     def get_output_name_for_asset_check(self, asset_check_key: AssetCheckKey) -> str:
         """Output name in the leaf op."""
