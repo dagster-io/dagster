@@ -16,7 +16,6 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import DagsterModel
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 
@@ -47,7 +46,7 @@ if TYPE_CHECKING:
     )
 
 
-class AutomationCondition(ABC, DagsterModel):
+class AutomationCondition(ABC):
     @property
     def requires_cursor(self) -> bool:
         return False
@@ -316,6 +315,7 @@ class AutomationCondition(ABC, DagsterModel):
             & all_deps_updated_since_cron
         )
 
+    @experimental
     @staticmethod
     def any_downstream_conditions() -> "AnyDownstreamConditionsCondition":
         """Returns a condition which will represent the union of all distinct downstream conditions."""
