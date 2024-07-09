@@ -31,7 +31,7 @@ To complete the steps in this guide, you'll need:
 
 ### Assets defined in Python
 
-To automatically attach code references to Python assets' function definitions, you can use the `dagster._core.definitions.metadata.with_source_code_references` utility. Any asset definitions passed to the utility will have their source file attached as metadata.
+To automatically attach code references to Python assets' function definitions, you can use the <PyObject module="dagster" object="with_source_code_references"/> utility. Any asset definitions passed to the utility will have their source file attached as metadata.
 
 ```python file=/guides/dagster/code_references/with_source_code_references.py
 from dagster import Definitions, asset, with_source_code_references
@@ -163,7 +163,7 @@ defs = Definitions(
 
 ### In any Dagster environment
 
-The <PyObject module="dagster" object="dagster._core.definitions.metadata.link_code_references_to_git"/> utility allows you to convert local file code references to source control links. You'll need to provide the base URL of your git repository, the branch or commit hash, and a path to the repository root locally.
+The <PyObject module="dagster" object="link_code_references_to_git"/> utility allows you to convert local file code references to source control links. You'll need to provide the base URL of your git repository, the branch or commit hash, and a path to the repository root locally.
 
 ```python file=/guides/dagster/code_references/link_to_source_control.py
 from pathlib import Path
