@@ -22,7 +22,6 @@ setup(
         "dagster-airflow",
         "dagster-aws",
         "dagster-celery",
-        "dagster-cloud",
         "dagster-dbt",
         "dagster-dask",
         "dagster-databricks",

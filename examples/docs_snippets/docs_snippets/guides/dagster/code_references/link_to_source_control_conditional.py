@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
 
-from dagster import Definitions, asset
-from dagster._core.definitions.metadata import (
+from dagster import (
     AnchorBasedFilePathMapping,
+    Definitions,
+    asset,
     link_code_references_to_git,
     with_source_code_references,
 )
