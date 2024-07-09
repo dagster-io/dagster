@@ -880,16 +880,15 @@ class GraphDefinition(NodeDefinition):
             if mapping.graph_input_name != input_handle.input_name:
                 continue
             # recurse into graph structure
+            sub_input_handle = NodeInputHandle(
+                node_handle=NodeHandle(mapping.maps_to.node_name, parent=input_handle.node_handle),
+                input_name=mapping.maps_to.input_name,
+            )
+
+            all_destinations.append(sub_input_handle)
             all_destinations += self.node_named(
                 mapping.maps_to.node_name
-            ).definition.resolve_input_to_destinations(
-                NodeInputHandle(
-                    node_handle=NodeHandle(
-                        mapping.maps_to.node_name, parent=input_handle.node_handle
-                    ),
-                    input_name=mapping.maps_to.input_name,
-                ),
-            )
+            ).definition.resolve_input_to_destinations(sub_input_handle)
 
         return all_destinations
 
@@ -926,7 +925,7 @@ class GraphDefinition(NodeDefinition):
 
         return all_destinations
 
-    def get_op_handles(self, parent: NodeHandle) -> AbstractSet[NodeHandle]:
+    def get_op_handles(self, parent: Optional[NodeHandle]) -> AbstractSet[NodeHandle]:
         return {
             op_handle
             for node in self.nodes

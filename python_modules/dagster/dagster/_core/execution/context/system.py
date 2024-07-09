@@ -929,8 +929,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         """
         return (
             self.is_op_in_graph
-            and self.job_def.asset_layer.assets_defs_by_node_handle.get(self.node_handle)
-            is not None
+            and self.job_def.asset_layer.assets_def_for_node(self.node_handle) is not None
         )
 
     @property
@@ -1213,10 +1212,8 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     def selected_output_names(self) -> AbstractSet[str]:
         """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
         # map selected asset keys to the output names they correspond to
-        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
-        if assets_def is not None:
-            computation = check.not_none(assets_def.computation)
-
+        computation = self.job_def.asset_layer.computation
+        if computation.selected_asset_keys or computation.selected_asset_check_keys:
             selected_outputs: Set[str] = set()
             for output_name in self.op.output_dict.keys():
                 if any(

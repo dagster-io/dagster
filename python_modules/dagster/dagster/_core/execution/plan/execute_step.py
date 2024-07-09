@@ -859,10 +859,8 @@ def _log_materialization_or_observation_events_for_asset(
     partitions = output_context.asset_partition_keys if output_context.has_asset_partitions else []
 
     if asset_key:
-        asset_layer = step_context.job_def.asset_layer
-        assets_def = asset_layer.assets_def_for_node(step_context.node_handle)
-        execution_type = check.not_none(assets_def).execution_type
-
+        computation = step_context.job_def.asset_layer.computation
+        execution_type = computation.execution_types_by_key[asset_key]
         check.invariant(
             execution_type != AssetExecutionType.UNEXECUTABLE,
             "There should never be unexecutable assets here",

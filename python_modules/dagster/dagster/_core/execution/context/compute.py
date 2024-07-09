@@ -1,6 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import cached_property
 from inspect import _empty as EmptyAnnotation
 from typing import AbstractSet, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Union, cast
 
@@ -593,14 +594,21 @@ class OpExecutionContext(AbstractComputeExecutionContext, metaclass=OpExecutionC
             return set()
         return self.assets_def.keys
 
-    @property
+    @cached_property
     def is_subset(self):
         """Whether the current AssetsDefinition is subsetted. Note that this can be True inside a
         a graph asset for an op that's not subsetted, if the graph asset is subsetted elsewhere.
         """
         if not self.has_assets_def:
             return False
-        return self.assets_def.is_subset
+
+        return any(
+            key not in self.job_def.asset_layer.computation.selected_asset_keys
+            for key in self.assets_def.node_keys_by_output_name.values()
+        ) or any(
+            spec.key not in self.job_def.asset_layer.computation.selected_asset_check_keys
+            for spec in self.assets_def.node_check_specs_by_output_name.values()
+        )
 
     @public
     @property

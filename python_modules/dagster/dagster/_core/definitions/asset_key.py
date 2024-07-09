@@ -196,5 +196,11 @@ class AssetCheckKey(NamedTuple):
         asset_key_str, name = user_string.split(":")
         return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
 
+    def to_python_identifier(self, suffix: Optional[str] = None) -> str:
+        """Build a valid Python identifier based on the asset check key that can be used for
+        operation names or I/O manager keys.
+        """
+        return f"{self.asset_key.to_python_identifier()}___{self.name}"
+
 
 AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]

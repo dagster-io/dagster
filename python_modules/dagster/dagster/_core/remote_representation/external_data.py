@@ -1683,12 +1683,12 @@ def external_asset_nodes_from_defs(
     job_defs_by_asset_key: Dict[AssetKey, List[JobDefinition]] = {}
     for job_def in job_defs:
         asset_layer = job_def.asset_layer
-        asset_keys_by_node_output = asset_layer.asset_keys_by_node_output_handle
-        for node_output_handle, asset_key in asset_keys_by_node_output.items():
-            if asset_key not in asset_layer.asset_keys_for_node(node_output_handle.node_handle):
-                continue
+        for asset_key in asset_layer.computation.selected_asset_keys:
             if asset_key not in primary_node_pairs_by_asset_key:
-                primary_node_pairs_by_asset_key[asset_key] = (node_output_handle, job_def)
+                primary_node_pairs_by_asset_key[asset_key] = (
+                    asset_layer.computation.op_output_handles_by_asset_or_check_key[asset_key],
+                    job_def,
+                )
             job_defs_by_asset_key.setdefault(asset_key, []).append(job_def)
 
     external_asset_nodes: List[ExternalAssetNode] = []

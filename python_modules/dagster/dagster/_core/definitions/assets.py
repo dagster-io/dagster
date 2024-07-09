@@ -62,7 +62,7 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
-from .asset_graph_computation import AssetGraphComputation
+from .asset_graph_computation import AssetGraphComputation, AtomicExecutionSet
 from .asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
 from .asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
 from .events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
@@ -190,15 +190,28 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )
             self._computation = None
         else:
-            selected_asset_keys, selected_asset_check_keys = _resolve_selections(
-                all_asset_keys={spec.key for spec in specs}
+            all_asset_keys = (
+                {spec.key for spec in specs}
                 if specs
-                else set(check.not_none(keys_by_output_name).values()),
+                else set(check.not_none(keys_by_output_name).values())
+            )
+            selected_asset_keys, selected_asset_check_keys = _resolve_selections(
+                all_asset_keys=all_asset_keys,
                 all_check_keys={spec.key for spec in (check_specs_by_output_name or {}).values()},
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
             )
+            check.opt_inst_param(backfill_policy, "backfill_policy", BackfillPolicy)
+            if backfill_policy is not None:
+                backfill_policies_by_op_handle = {
+                    op_handle: backfill_policy for op_handle in node_def.get_op_handles(None)
+                }
+            else:
+                backfill_policies_by_op_handle = {}
 
+            resolved_execution_type = execution_type or AssetExecutionType.MATERIALIZATION
+
+            selected_asset_or_check_keys = selected_asset_keys | selected_asset_check_keys
             self._computation = AssetGraphComputation(
                 node_def=node_def,
                 keys_by_input_name=check.opt_mapping_param(
@@ -217,14 +230,14 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                     output_name: spec.key
                     for output_name, spec in self._check_specs_by_output_name.items()
                 },
-                can_subset=can_subset,
-                backfill_policy=check.opt_inst_param(
-                    backfill_policy, "backfill_policy", BackfillPolicy
-                ),
+                atomic_execution_sets=[]
+                if can_subset or len(selected_asset_or_check_keys) < 2
+                else [AtomicExecutionSet(keys=selected_asset_or_check_keys)],
+                backfill_policies_by_op_handle=backfill_policies_by_op_handle,
                 is_subset=check.bool_param(is_subset, "is_subset"),
                 selected_asset_keys=selected_asset_keys,
                 selected_asset_check_keys=selected_asset_check_keys,
-                execution_type=execution_type or AssetExecutionType.MATERIALIZATION,
+                execution_types_by_key={key: resolved_execution_type for key in all_asset_keys},
             )
 
         self._partitions_def = partitions_def
@@ -799,7 +812,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         asset keys in a given computation (as opposed to being required to materialize all asset
         keys).
         """
-        return self._computation.can_subset if self._computation else False
+        return (not self._computation.atomic_execution_sets) if self._computation else False
 
     @property
     def computation(self) -> Optional[AssetGraphComputation]:
@@ -1034,7 +1047,19 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @property
     def backfill_policy(self) -> Optional[BackfillPolicy]:
-        return self._computation.backfill_policy if self._computation else None
+        if self._computation is None:
+            return None
+        else:
+            backfill_policies = set(self._computation.backfill_policies_by_op_handle.values())
+            if len(backfill_policies) == 1:
+                return next(iter(backfill_policies))
+            elif len(backfill_policies) > 1:
+                raise DagsterInvariantViolationError(
+                    "Can't return backfill_policy for an AssetsDefinition with multiple backfill "
+                    f"policies: {backfill_policies}"
+                )
+            else:
+                return None
 
     @public
     @property
@@ -1104,12 +1129,23 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
         return next(iter(self.check_keys))
 
-    @property
+    @cached_property
     def execution_type(self) -> AssetExecutionType:
         if self._computation is None:
             return AssetExecutionType.UNEXECUTABLE
         else:
-            return self._computation.execution_type
+            execution_types = set(self._computation.execution_types_by_key.values())
+            if len(execution_types) == 1:
+                return next(iter(execution_types))
+            elif len(execution_types) > 1:
+                raise DagsterInvariantViolationError(
+                    "Can't return execution_type for an AssetsDefinition with multiple execution "
+                    f"types: {execution_types}"
+                )
+            else:
+                raise DagsterInvariantViolationError(
+                    "Can't return execution_type for an AssetsDefinition with no assets"
+                )
 
     @property
     def is_external(self) -> bool:
@@ -1416,8 +1452,8 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             )[0].io_manager_key
 
     def get_resource_requirements(self) -> Iterator[ResourceRequirement]:
-        if self.is_executable:
-            yield from self.node_def.get_resource_requirements()  # type: ignore[attr-defined]
+        if self.computation:
+            yield from self.computation.node_def.get_resource_requirements()  # type: ignore[attr-defined]
         else:
             for key in self.keys:
                 # This matches how SourceAsset emit requirements except we emit
@@ -1470,7 +1506,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             selected_asset_check_keys=self.check_keys,
             specs=self.specs,
             is_subset=self.is_subset,
-            execution_type=self._computation.execution_type if self._computation else None,
+            execution_type=self.execution_type if self.node_keys_by_output_name else None,
         )
 
 

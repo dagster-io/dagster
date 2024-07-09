@@ -25,9 +25,10 @@ from dagster._config import Field, Shape, StringSource
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph_computation import AssetGraphComputation
 from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.backfill_policy import BackfillPolicy, resolve_backfill_policy
-from dagster._core.definitions.dependency import Node, NodeHandle, NodeInputHandle, NodeInvocation
+from dagster._core.definitions.dependency import Node, NodeHandle, NodeInvocation
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.node_definition import NodeDefinition
 from dagster._core.definitions.op_definition import OpDefinition
@@ -1180,7 +1181,6 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
     """
     from dagster._core.definitions.asset_graph import AssetGraph
 
-    asset_keys_by_node_input_handle: Dict[NodeInputHandle, AssetKey] = {}
     all_input_assets: List[AssetsDefinition] = []
     input_asset_keys: Set[AssetKey] = set()
 
@@ -1191,18 +1191,10 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
         graph_def, parent_node_handle = stack.pop()
 
         for node_name, input_assets in graph_def.input_assets.items():
-            node_handle = NodeHandle(node_name, parent_node_handle)
-            for input_name, assets_def in input_assets.items():
+            for assets_def in input_assets.values():
                 if assets_def.key not in input_asset_keys:
                     input_asset_keys.add(assets_def.key)
                     all_input_assets.append(assets_def)
-
-                input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
-                asset_keys_by_node_input_handle[input_handle] = assets_def.key
-                for resolved_input_handle in graph_def.node_dict[
-                    node_name
-                ].definition.resolve_input_to_destinations(input_handle):
-                    asset_keys_by_node_input_handle[resolved_input_handle] = assets_def.key
 
         for node_name, node in graph_def.node_dict.items():
             if isinstance(node.definition, GraphDefinition):
@@ -1210,13 +1202,19 @@ def _infer_asset_layer_from_source_asset_deps(job_graph_def: GraphDefinition) ->
 
     return AssetLayer(
         asset_graph=AssetGraph.from_assets(all_input_assets),
-        assets_defs_by_node_handle={},
-        asset_keys_by_node_input_handle=asset_keys_by_node_input_handle,
-        asset_keys_by_node_output_handle={},
-        node_output_handles_by_asset_check_key={},
-        check_names_by_asset_key_by_node_handle={},
-        check_key_by_node_output_handle={},
-        outer_node_names_by_asset_key={},
+        computation=AssetGraphComputation(
+            node_def=job_graph_def,
+            keys_by_input_name={},
+            keys_by_output_name={},
+            check_keys_by_output_name={},
+            backfill_policies_by_op_handle={},
+            atomic_execution_sets=[],
+            execution_types_by_key={},
+            is_subset=False,
+            selected_asset_keys=set(),
+            selected_asset_check_keys=set(),
+        ),
+        original_assets_defs_by_op_handle={},
     )
 
 
