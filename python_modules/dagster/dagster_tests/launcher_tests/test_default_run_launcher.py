@@ -113,9 +113,8 @@ def add(_, num1, num2):
 
 @op
 def op_that_emits_duplicate_step_success_event(context):
-    # emits a duplicate step success event which will mess up the exeuction
+    # emits a duplicate step success event which will mess up the execution
     # machinery and fail the run worker
-    time.sleep(5)
     yield DagsterEvent.step_success_event(
         context._step_execution_context,  # noqa
         StepSuccessData(duration_ms=50.0),
