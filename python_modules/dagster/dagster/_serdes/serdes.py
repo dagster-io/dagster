@@ -247,6 +247,7 @@ def whitelist_for_serdes(
     skip_when_empty_fields: Optional[AbstractSet[str]] = ...,
     field_serializers: Optional[Mapping[str, Type["FieldSerializer"]]] = None,
     is_pickleable: bool = True,
+    kwargs_fields: Optional[AbstractSet[str]] = None,
 ) -> Callable[[T_Type], T_Type]: ...
 
 
