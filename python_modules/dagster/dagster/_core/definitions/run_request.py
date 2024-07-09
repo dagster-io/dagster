@@ -17,6 +17,10 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.dynamic_partitions_request import (
+    AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest,
+)
 from dagster._core.definitions.events import AssetKey, AssetMaterialization, AssetObservation
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.utils import NormalizedTags, normalize_tags
@@ -61,54 +65,6 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         return super(SkipReason, cls).__new__(
             cls,
             skip_message=check.opt_str_param(skip_message, "skip_message"),
-        )
-
-
-@whitelist_for_serdes
-class AddDynamicPartitionsRequest(
-    NamedTuple(
-        "_AddDynamicPartitionsRequest",
-        [
-            ("partitions_def_name", str),
-            ("partition_keys", Sequence[str]),
-        ],
-    )
-):
-    """A request to add partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
-
-    def __new__(
-        cls,
-        partitions_def_name: str,
-        partition_keys: Sequence[str],
-    ):
-        return super(AddDynamicPartitionsRequest, cls).__new__(
-            cls,
-            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
-            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
-        )
-
-
-@whitelist_for_serdes
-class DeleteDynamicPartitionsRequest(
-    NamedTuple(
-        "_AddDynamicPartitionsRequest",
-        [
-            ("partitions_def_name", str),
-            ("partition_keys", Sequence[str]),
-        ],
-    )
-):
-    """A request to delete partitions to a dynamic partitions definition, to be evaluated by a sensor or schedule."""
-
-    def __new__(
-        cls,
-        partitions_def_name: str,
-        partition_keys: Sequence[str],
-    ):
-        return super(DeleteDynamicPartitionsRequest, cls).__new__(
-            cls,
-            partitions_def_name=check.str_param(partitions_def_name, "partitions_def_name"),
-            partition_keys=check.list_param(partition_keys, "partition_keys", of_type=str),
         )
 
 

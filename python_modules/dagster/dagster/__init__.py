@@ -209,6 +209,10 @@ from dagster._core.definitions.dependency import (
     MultiDependencyDefinition as MultiDependencyDefinition,
     NodeInvocation as NodeInvocation,
 )
+from dagster._core.definitions.dynamic_partitions_request import (
+    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
+)
 from dagster._core.definitions.events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
@@ -373,8 +377,6 @@ from dagster._core.definitions.result import (
 )
 from dagster._core.definitions.run_config import RunConfig as RunConfig
 from dagster._core.definitions.run_request import (
-    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
-    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     RunRequest as RunRequest,
     SensorResult as SensorResult,
     SkipReason as SkipReason,

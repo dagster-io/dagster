@@ -53,14 +53,8 @@ from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, KeysAssetSelection
-from .run_request import (
-    AddDynamicPartitionsRequest,
-    DagsterRunReaction,
-    DeleteDynamicPartitionsRequest,
-    RunRequest,
-    SensorResult,
-    SkipReason,
-)
+from .dynamic_partitions_request import AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
+from .run_request import DagsterRunReaction, RunRequest, SensorResult, SkipReason
 from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
 from .utils import check_valid_name
 
