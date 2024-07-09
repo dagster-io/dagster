@@ -48,7 +48,7 @@ from typing_extensions import Final, Self, TypeAlias, TypeVar
 import dagster._check as check
 import dagster._seven as seven
 from dagster._model.pydantic_compat_layer import ModelFieldCompat, model_fields
-from dagster._record import as_dict, get_record_annotations, has_generated_new, is_record
+from dagster._record import as_dict_for_new, get_record_annotations, has_generated_new, is_record
 from dagster._utils import is_named_tuple_instance, is_named_tuple_subclass
 from dagster._utils.warnings import disable_dagster_warnings
 
@@ -656,7 +656,7 @@ T_NamedTuple = TypeVar("T_NamedTuple", bound=NamedTuple, default=NamedTuple)
 class NamedTupleSerializer(ObjectSerializer[T_NamedTuple]):
     def object_as_mapping(self, value: T_NamedTuple) -> Mapping[str, Any]:
         if is_record(value):
-            return as_dict(value)
+            return as_dict_for_new(value)
 
         return value._asdict()
 

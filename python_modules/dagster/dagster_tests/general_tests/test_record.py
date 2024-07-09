@@ -1,6 +1,7 @@
 import pickle
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import pytest
 from dagster._record import (
@@ -434,3 +435,35 @@ def test_lazy_import():
         return AnnotatedModel(foos=[TestType()])
 
     assert _out_of_scope()
+
+
+class Complex:
+    def __init__(self, s: str):
+        self.s = s
+
+
+@record_custom(field_to_new_mapping={"foo_str": "foo"})
+class Remapped(IHaveNew):
+    foo_str: str
+
+    def __new__(cls, foo: Union[str, Complex]):
+        if isinstance(foo, Complex):
+            foo = foo.s
+
+        return super().__new__(
+            cls,
+            foo_str=foo,
+        )
+
+    @cached_property
+    def foo(self) -> Complex:
+        return Complex(self.foo_str)
+
+
+def test_new_remaps_fields() -> None:
+    r = Remapped(foo="test")
+    assert r.foo.s == "test"
+    r2 = copy(r)
+    assert r2.foo.s == "test"
+
+    assert pickle.loads(pickle.dumps(r)) == r
