@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-from dagster_cloud.metadata.source_code import link_code_references_to_git_if_cloud
+from dagster_cloud.metadata.source_code import (  # type: ignore
+    link_code_references_to_git_if_cloud,
+)
 
 from dagster import (
     AnchorBasedFilePathMapping,
