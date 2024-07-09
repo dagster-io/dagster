@@ -1973,7 +1973,7 @@ class DagsterInstance(DynamicPartitionsStore):
             asset_key (AssetKey): Asset key to return materialization for.
 
         Returns:
-            Optional[AssetMaterialization]: The latest materialization event for the given asset
+            Optional[EventLogEntry]: The latest materialization event for the given asset
                 key, or `None` if the asset has not been materialized.
         """
         return self._event_storage.get_latest_materialization_events([asset_key]).get(asset_key)
