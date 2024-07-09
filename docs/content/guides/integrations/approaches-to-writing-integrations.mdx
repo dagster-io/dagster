@@ -1,0 +1,83 @@
+---
+title: "Approaches to writing integrations"
+---
+
+# Approaches to writing integrations
+
+There are many approaches to writing integrations in Dagster. The choice of approach depends on the specific requirements of the integration, the level of control needed, and the complexity of the external system being integrated. By reviewing the pros and cons of each approach, it is possible to make an informed decision on the best method for a specific use case. The following are typical approaches that align with Dagster's best practices.
+
+- Resource providers
+- Builder methods
+- Multi-Asset decorators
+- Pipes protocol
+
+## Resource providers
+
+One of the most fundamental features that can be implemented in an integration is a resource object to interface with an external service. For example, the `dagster-snowflake` integration provides a custom `SnowflakeResource` that is a wrapper around the Snowflake `connector` object.
+
+### Pros
+
+- **Simple** Implementing a resource wrapper is often the first step in flushing out a fully-featured integration.
+- **Reusable** Resources are a core building block in the Dagster ecosystem, and allow one to re-use code across assets.
+
+### Cons
+
+- **Limited abstraction** While the resource can be re-used throughout the codebase, it does not provide any higher level abstraction to assets or jobs.
+
+### Tutorial
+
+<Note>A tutorial for writing a resource-based integration is coming soon!</Note>
+
+## Builder methods
+
+### Pros
+
+- **Flexibility:** Allows for fine-grained control over the integration logic.
+- **Modularity:** Easy to reuse components across different assets and jobs.
+- **Explicit configuration:** Resources can be explicitly configured, making it clear what dependencies are required.
+
+### Cons
+
+- **Complexity:** Can be more complex to set up compared to other methods.
+- **Boilerplate code:** May require more boilerplate code to define assets, resources, and jobs.
+
+### Tutorial
+
+<Note>A tutorial for writing a builder method integration is coming soon!</Note>
+
+## Multi-asset decorators
+
+### Pros
+
+- **Efficiency:** Allows defining multiple assets in a single function, reducing boilerplate code.
+- **Simplicity:** Easier to manage related assets together.
+- **Consistency:** Ensures that related assets are always defined and updated together.
+
+### Cons
+
+- **Less granular control:** May not provide as much fine-grained control as defining individual assets.
+- **Complexity in debugging:** Debugging issues can be more challenging when multiple assets are defined in a single function.
+
+### Tutorial
+
+<Note>
+  A tutorial for writing a multi-asset decorator based integration is coming
+  soon!
+</Note>
+
+## Pipes protocol
+
+### Pros
+
+- **Separation of Environments:** Allows running code in external environments, which can be useful for integrating with systems that have their own execution environments.
+- **Flexibility:** Can integrate with a wide range of external systems and languages.
+- **Streaming logs and metadata:** Provides support for streaming logs and structured metadata back into Dagster.
+
+### Cons
+
+- **Complexity:** Can be complex to set up and configure.
+- **Overhead:** May introduce additional overhead for managing external environments.
+
+### Tutorial
+
+<Note>A tutorial for writing a pipes based integration is coming soon!</Note>
