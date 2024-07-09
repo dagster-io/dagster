@@ -134,7 +134,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             return super().__new__(
                 cls,
                 run_key=None,
-                run_config=None,
+                run_config={},
                 tags=normalize_tags(tags).tags,
                 job_name=None,
                 asset_selection=None,
@@ -170,6 +170,10 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         Note: This constructor is intentionally left private since AssetGraphSubset is not part of the
         public API. Other constructor methods will be public.
         """
+        from dagster._core.definitions.asset_graph_subset import (
+            AssetGraphSubset,  # noqa: F401 need to import this here to avoid a ForwardRef exception
+        )
+
         return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
