@@ -4,7 +4,9 @@ from queue import Queue
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
 
 from dagster_pipes import (
+    DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT,
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
+    DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
     Method,
@@ -18,6 +20,7 @@ from dagster_pipes import (
     PipesOpenedData,
     PipesParams,
     PipesTimeWindow,
+    encode_cli_argument,
     encode_env_var,
 )
 from typing_extensions import TypeAlias
@@ -290,6 +293,22 @@ class PipesSession:
         return {
             param_name: encode_env_var(param_value)
             for param_name, param_value in self.get_bootstrap_params().items()
+        }
+
+    @public
+    def get_bootstrap_cli_arguments(self) -> Dict[str, str]:
+        """Encode context injector and message reader params as CLI arguments.
+
+        Passing CLI arguments is an alternative way to expose the pipes I/O parameters to a pipes process.
+        Using environment variables should be preferred when possible.
+
+        Returns:
+            Mapping[str, str]: CLI arguments pass to the external process. The values are
+            serialized as json, compressed with gzip, and then base-64-encoded.
+        """
+        return {
+            DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT: encode_cli_argument(self.context_injector_params),
+            DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT: encode_cli_argument(self.message_reader_params),
         }
 
     @public

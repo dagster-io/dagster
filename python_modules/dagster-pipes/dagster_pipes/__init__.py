@@ -1,3 +1,4 @@
+import argparse
 import base64
 import datetime
 import json
@@ -394,6 +395,12 @@ def decode_env_var(value: str) -> Any:
     return json.loads(decompressed.decode("utf-8"))
 
 
+# make new names for the encode/decode functions that are more descriptive of their purpose
+# and for future-proofing
+encode_cli_argument = encode_env_var
+decode_cli_argument = decode_env_var
+
+
 def _emit_orchestration_inactive_warning() -> None:
     warnings.warn(
         "This process was not launched by a Dagster orchestration process. All calls to the"
@@ -788,6 +795,41 @@ class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
 
     def __init__(self):
         super().__init__(mapping=os.environ)
+
+
+DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT = "--dagster-pipes-context"
+DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT = "--dagster-pipes-messages"
+
+DAGSTER_PIPES_CLI_PARSER = argparse.ArgumentParser(description="Dagster Pipes CLI interface")
+DAGSTER_PIPES_CLI_PARSER.add_argument(
+    DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT,
+    type=str,
+    help="Argument with base64 encoded JSON string containing the Pipes context",
+)
+DAGSTER_PIPES_CLI_PARSER.add_argument(
+    DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT,
+    type=str,
+    help="Argument with base64 encoded JSON string containing the Pipes messages",
+)
+
+
+class PipesCliArgsParamsLoader(PipesParamsLoader):
+    """Params loader that extracts params from a given CLI argument value."""
+
+    def __init__(self):
+        self.parser = DAGSTER_PIPES_CLI_PARSER
+
+    def is_dagster_pipes_process(self) -> bool:
+        # use the presence of --dagster-pipes-context to discern if we are in a pipes process
+        return DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT in sys.argv
+
+    def load_context_params(self) -> PipesParams:
+        args, _ = self.parser.parse_known_args()
+        return decode_cli_argument(args.dagster_pipes_context)
+
+    def load_messages_params(self) -> PipesParams:
+        args, _ = self.parser.parse_known_args()
+        return decode_cli_argument(args.dagster_pipes_messages)
 
 
 # ########################

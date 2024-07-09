@@ -4,7 +4,7 @@ import os
 import random
 import string
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Optional, Sequence
 
 import boto3
 import dagster._check as check
@@ -241,3 +241,162 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
         # should probably have a way to return the lambda result payload
         return PipesClientCompletedInvocation(session)
+
+
+@experimental
+class PipesGlueLogsMessageReader(PipesMessageReader):
+    # AWS Glue logs are wrriten to CloudWatch group: /aws-glue/jobs/logs-v2/
+    # we can use boto3 to read the logs
+
+    ...
+
+
+@experimental
+class PipesGlueContextInjector(PipesS3ContextInjector):
+    def no_messages_debug_text(self) -> str:
+        return "Attempted to inject context via the Glue job input."
+
+
+@experimental
+class PipesGlueClient(PipesClient, TreatAsResourceParam):
+    """A pipes client for invoking AWS Glue jobs.
+
+    Args:
+        client (boto3.client): The boto Glue client used to call invoke.
+        context_injector (Optional[PipesContextInjector]): A context injector to use to inject
+            context into the Glue job. Defaults to :py:class:`PipesGlueContextInjector`.
+        message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
+            from the lambda function. Defaults to :py:class:`PipesGlueLogsMessageReader`.
+    """
+
+    def __init__(
+        self,
+        client: boto3.client,
+        context_injector: Optional[PipesContextInjector] = None,
+        message_reader: Optional[PipesMessageReader] = None,
+    ):
+        self._client = client
+        self._message_reader = message_reader or PipesGlueLogsMessageReader()
+        self._context_injector = context_injector or PipesGlueContextInjector()
+
+    @classmethod
+    def _is_dagster_maintained(cls) -> bool:
+        return True
+
+    def run(
+        self,
+        *,
+        job_name: str,
+        context: OpExecutionContext,
+        arguments: Optional[Mapping[str, Any]] = None,
+        job_type: Literal["spark", "ray"] = "spark",
+        job_run_id: Optional[str] = None,
+        allocated_capacity: Optional[int] = None,
+        timeout: Optional[int] = None,
+        max_capacity: Optional[float] = None,
+        security_configuration: Optional[str] = None,
+        notification_property: Optional[Mapping[str, Any]] = None,
+        worker_type: Optional[
+            Literal["Standard", "G.1X", "G.2X", "G.025X", "G.4X", "G.8X", "Z.2X"]
+        ] = None,
+        number_of_workers: Optional[int] = None,
+        execution_class: Optional[Literal["FLEX", "STANDARD"]] = None,
+    ):
+        """Start a Glue job, enriched with the pipes protocol.
+
+        See also: `AWS API Documentation <https://docs.aws.amazon.com/goto/WebAPI/glue-2017-03-31/StartJobRun>`_
+
+        Args:
+            job_name (str): The name of the job to use.
+            context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            arguments (Optional[Dict[str, Any]]): A JSON-serializable arguments to pass to the Glue job Command
+            job_type (Literal["spark", "ray"]): The type of job to run.
+                Note: this affects the mechanism of passing Dagster's bootstrapping environment variables to the job.
+            job_run_id (Optional[str]): The ID of the previous job run to retry.
+            allocated_capacity (Optional[int]): The number of Glue data processing units (DPUs) to allocate to this job.
+            timeout (Optional[int]): The job run timeout in minutes.
+            max_capacity (Optional[float]): The maximum capacity for the Glue job.
+            security_configuration (Optional[str]): The name of the Security Configuration to be used with this job run.
+            notification_property (Optional[Mapping[str, Any]]): Specifies configuration properties of a job run notification.
+            worker_type (Optional[Literal["Standard", "G.1X", "G.2X", "G.025X", "G.4X", "G.8X", "Z.2X"]]): The type of predefined worker that is allocated when a job runs.
+            number_of_workers (Optional[int]): The number of workers that are allocated when a job runs.
+            execution_class (Optional[Literal["FLEX", "STANDARD"]]): The execution property of a job run.
+        """
+        with open_pipes_session(
+            context=context,
+            message_reader=self._message_reader,
+            context_injector=self._context_injector,
+        ) as session:
+            arguments = arguments or {}
+            assert arguments is not None
+
+            pipes_args = session.get_bootstrap_cli_arguments()
+
+            if isinstance(self._context_injector, PipesS3ContextInjector):
+                arguments.update(pipes_args)
+
+            try:
+                response = self._client.start_job_run(
+                    JobName=job_name,
+                    Arguments=arguments,
+                    JobRunId=job_run_id,
+                    AllocatedCapacity=allocated_capacity,
+                    Timeout=timeout,
+                    MaxCapacity=max_capacity,
+                    SecurityConfiguration=security_configuration,
+                    NotificationProperty=notification_property,
+                    WorkerType=worker_type,
+                    NumberOfWorkers=number_of_workers,
+                    ExecutionClass=execution_class,
+                )
+                context.log.info(f"Started AWS Glue job {job_name} run: {response['JobRunId']}")
+            except ClientError as err:
+                context.log.error(
+                    "Couldn't create job %s. Here's why: %s: %s",
+                    job_name,
+                    err.response["Error"]["Code"],
+                    err.response["Error"]["Message"],
+                )
+                raise
+
+        # TODO: get logs from CloudWatch
+
+        # should probably have a way to return the lambda result payload
+        return PipesClientCompletedInvocation(session)
+
+    def _inject_pipes_env_vars(
+        self,
+        arguments: Mapping[str, Any],
+        env_vars: Mapping[str, str],
+        job_type: Literal["spark", "ray"],
+    ) -> Mapping[str, Any]:
+        # this function is not used, it demonstrates how to inject environment variables into Glue job arguments
+        # and how complex this process is
+        if job_type == "spark":
+            # https://docs.aws.amazon.com/glue/latest/dg/aws-glue-programming-etl-glue-arguments.html#job-parameter-reference
+
+            # string like CUSTOMER_KEY1=value1,CUSTOMER_KEY2=value2
+            formatted_env_string = self._format_environment_variables_for_spark(env_vars)
+
+            # these might already be set by the user, so we need to append to them
+            customer_driver_env_vars = arguments.get("--customer-driver-env-vars") or ""
+            if customer_driver_env_vars:
+                customer_driver_env_vars += ","
+            arguments["--customer-driver-env-vars"] = (
+                customer_driver_env_vars + formatted_env_string
+            )
+
+            # repeat with --customer-executor-env-vars
+            customer_executor_env_vars = arguments.get("--customer-executor-env-vars") or ""
+            if customer_executor_env_vars:
+                customer_executor_env_vars += ","
+            arguments["--customer-executor-env-vars"] = (
+                customer_executor_env_vars + formatted_env_string
+            )
+
+        elif job_type == "ray":
+            # https://docs.aws.amazon.com/glue/latest/dg/author-job-ray-job-parameters.html
+            arguments.update({f"--{k}": v for k, v in env_vars.items()})
+
+    def _format_environment_variables_for_spark(self, env_vars: Mapping[str, str]) -> str:
+        return ",".join([f'CUSTOMER_{k}="{v}"' for k, v in env_vars.items()])
