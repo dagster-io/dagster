@@ -24,7 +24,7 @@ from typing import (
 
 import dagster._check as check
 from dagster._annotations import experimental_param, public
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckSpec
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_spec import (
     SYSTEM_METADATA_KEY_AUTO_CREATED_STUB_ASSET,
@@ -67,8 +67,9 @@ from dagster._utils.merger import merge_dicts
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import ExperimentalWarning, disable_dagster_warnings
 
+from .asset_key import AssetCheckKey, AssetKey, AssetKeyOrCheckKey
 from .asset_spec import SYSTEM_METADATA_KEY_IO_MANAGER_KEY, AssetSpec
-from .events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
+from .events import CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from .node_definition import NodeDefinition
 from .op_definition import OpDefinition
 from .partition import PartitionsDefinition
@@ -82,7 +83,6 @@ from .source_asset import SourceAsset
 from .utils import DEFAULT_GROUP_NAME, validate_tags_strict
 
 if TYPE_CHECKING:
-    from .base_asset_graph import AssetKeyOrCheckKey
     from .graph_definition import GraphDefinition
 
 ASSET_SUBSET_INPUT_PREFIX = "__subset_input__"
@@ -148,7 +148,7 @@ class AssetGraphComputation(IHaveNew):
     @cached_property
     def asset_or_check_keys_by_op_output_handle(
         self,
-    ) -> Mapping[NodeOutputHandle, "AssetKeyOrCheckKey"]:
+    ) -> Mapping[NodeOutputHandle, AssetKeyOrCheckKey]:
         result = {}
         for output_name, key in itertools.chain(
             self.keys_by_output_name.items(), self.check_keys_by_output_name.items()
@@ -1017,7 +1017,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         }
 
     @property
-    def asset_and_check_keys_by_output_name(self) -> Mapping[str, "AssetKeyOrCheckKey"]:
+    def asset_and_check_keys_by_output_name(self) -> Mapping[str, AssetKeyOrCheckKey]:
         return merge_dicts(
             self.keys_by_output_name,
             {
@@ -1027,7 +1027,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         )
 
     @property
-    def asset_and_check_keys(self) -> AbstractSet["AssetKeyOrCheckKey"]:
+    def asset_and_check_keys(self) -> AbstractSet[AssetKeyOrCheckKey]:
         return set(self.keys).union(self.check_keys)
 
     @property
@@ -1371,7 +1371,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
         dep_op_handles_by_asset_or_check_key = cast(
             # because self.node_def is a graph, these NodeHandles that reference ops inside it will
             # not be None
-            Mapping["AssetKeyOrCheckKey", AbstractSet[NodeHandle]],
+            Mapping[AssetKeyOrCheckKey, AbstractSet[NodeHandle]],
             self.dep_op_handles_by_asset_or_check_key,
         )
         op_selection: List[str] = []
@@ -1575,7 +1575,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @cached_property
     def dep_op_handles_by_asset_or_check_key(
         self,
-    ) -> Mapping["AssetKeyOrCheckKey", AbstractSet[Optional[NodeHandle]]]:
+    ) -> Mapping[AssetKeyOrCheckKey, AbstractSet[Optional[NodeHandle]]]:
         result = defaultdict(set)
         for op_output_handle, keys in self.asset_or_check_keys_by_dep_op_output_handle.items():
             for key in keys:
@@ -1586,7 +1586,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
     @cached_property
     def asset_or_check_keys_by_dep_op_output_handle(
         self,
-    ) -> Mapping[NodeOutputHandle, AbstractSet["AssetKeyOrCheckKey"]]:
+    ) -> Mapping[NodeOutputHandle, AbstractSet[AssetKeyOrCheckKey]]:
         """Returns a mapping between op outputs and the assets and asset checks that, when selected,
         those op outputs need to be produced for.
 
@@ -1618,7 +1618,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
             *(op_output_graph.op_output_handles - op_output_graph.upstream.keys()),
         ]
 
-        result: Dict[NodeOutputHandle, Set["AssetKeyOrCheckKey"]] = defaultdict(set)
+        result: Dict[NodeOutputHandle, Set[AssetKeyOrCheckKey]] = defaultdict(set)
 
         for op_output_handle in reverse_toposorted_op_outputs_handles:
             asset_key_or_check_key = asset_or_check_keys_by_op_output_handle.get(op_output_handle)
