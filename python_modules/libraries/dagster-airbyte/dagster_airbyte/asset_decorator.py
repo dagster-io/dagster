@@ -18,6 +18,9 @@ from dagster._core.definitions.events import CoercibleToAssetKey
 from dagster._utils.warnings import suppress_dagster_warnings
 
 
+# TODO: pass all connections, then add connection filter or selection
+# TODO: add bool to materialize normalization table
+# TODO: add DagsterAirbyteTranslator
 @suppress_dagster_warnings
 def airbyte_assets(
     *,
@@ -25,6 +28,7 @@ def airbyte_assets(
     destination_tables: Sequence[str],
     asset_key_prefix: Optional[Sequence[str]] = None,
     group_name: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
     normalization_tables: Optional[Mapping[str, Set[str]]] = None,
     deps: Optional[Iterable[Union[CoercibleToAssetKey, AssetsDefinition, SourceAsset]]] = None,
     upstream_assets: Optional[Set[AssetKey]] = None,
@@ -94,4 +98,5 @@ def airbyte_assets(
         internal_asset_deps=internal_deps,
         compute_kind="airbyte",
         group_name=group_name,
+        io_manager_key=io_manager_key,
     )
