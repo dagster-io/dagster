@@ -457,6 +457,9 @@ def test_terminated_run(
 
     run_logs = instance.all_logs(run_id)
 
+    for log in run_logs:
+        print(str(log.message))  # noqa
+
     if run_config is None:  # multiprocess
         _check_event_log_contains(
             run_logs,
@@ -473,7 +476,10 @@ def test_terminated_run(
                     "ENGINE_EVENT",
                     "Multiprocess executor: interrupted all active child processes",
                 ),
-                ("STEP_FAILURE", 'Execution of step "sleepy_op" failed.'),
+                (
+                    "STEP_FAILURE",
+                    'Execution of step "sleepy_op" failed.',
+                ),
                 (
                     "PIPELINE_CANCELED",
                     'Execution of run for "sleepy_job" canceled.',
@@ -481,6 +487,14 @@ def test_terminated_run(
                 ("ENGINE_EVENT", "Process for run exited"),
             ],
         )
+
+        assert any(
+            log.dagster_event
+            and log.dagster_event.event_type_value == "STEP_FAILURE"
+            and "DagsterExecutionInterruptedError" in str(log)
+            for log in run_logs
+        )
+
     else:
         _check_event_log_contains(
             run_logs,
