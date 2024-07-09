@@ -3,6 +3,7 @@ import json
 import os
 import random
 import string
+import time
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Iterator, Literal, Mapping, Optional, Sequence
 
@@ -244,17 +245,39 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
 
 
 @experimental
-class PipesGlueLogsMessageReader(PipesMessageReader):
-    # AWS Glue logs are wrriten to CloudWatch group: /aws-glue/jobs/logs-v2/
-    # we can use boto3 to read the logs
+class PipesCloudWatchMessageReader(PipesMessageReader):
+    """Message reader that consumes buffered pipes messages that were flushed on exit from the
+    final 4k of logs that are returned from issuing a sync lambda invocation. This means messages
+    emitted during the computation will only be processed once the lambda completes.
 
-    ...
+    Limitations: If the volume of pipes messages exceeds 4k, messages will be lost and it is
+    recommended to switch to PipesS3MessageWriter & PipesS3MessageReader.
+    """
 
+    @contextmanager
+    def read_messages(
+        self,
+        handler: PipesMessageHandler,
+    ) -> Iterator[PipesParams]:
+        self._handler = handler
+        try:
+            # use buffered stdio to shift the pipes messages to the tail of logs
+            yield {PipesDefaultMessageWriter.BUFFERED_STDIO_KEY: PipesDefaultMessageWriter.STDERR}
+        finally:
+            self._handler = None
 
-@experimental
-class PipesGlueContextInjector(PipesS3ContextInjector):
+    def consume_cloudwatch_logs(self, response) -> None:
+        handler = check.not_none(
+            self._handler, "Can only consume logs within context manager scope."
+        )
+
+        log_events = response["events"]
+
+        for log_event in log_events:
+            extract_message_or_forward_to_stdout(handler, log_event["message"])
+
     def no_messages_debug_text(self) -> str:
-        return "Attempted to inject context via the Glue job input."
+        return "Attempted to read messages by extracting them from the tail of CloudWatch logs directly."
 
 
 @experimental
@@ -266,18 +289,18 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
             context into the Glue job. Defaults to :py:class:`PipesGlueContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
-            from the lambda function. Defaults to :py:class:`PipesGlueLogsMessageReader`.
+            from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
     """
 
     def __init__(
         self,
         client: boto3.client,
-        context_injector: Optional[PipesContextInjector] = None,
+        context_injector: PipesS3ContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
     ):
         self._client = client
-        self._message_reader = message_reader or PipesGlueLogsMessageReader()
-        self._context_injector = context_injector or PipesGlueContextInjector()
+        self._context_injector = context_injector
+        self._message_reader = message_reader or PipesCloudWatchMessageReader()
 
     @classmethod
     def _is_dagster_maintained(cls) -> bool:
@@ -289,18 +312,17 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         job_name: str,
         context: OpExecutionContext,
         arguments: Optional[Mapping[str, Any]] = None,
-        job_type: Literal["spark", "ray"] = "spark",
-        job_run_id: Optional[str] = None,
-        allocated_capacity: Optional[int] = None,
-        timeout: Optional[int] = None,
-        max_capacity: Optional[float] = None,
-        security_configuration: Optional[str] = None,
-        notification_property: Optional[Mapping[str, Any]] = None,
-        worker_type: Optional[
-            Literal["Standard", "G.1X", "G.2X", "G.025X", "G.4X", "G.8X", "Z.2X"]
-        ] = None,
-        number_of_workers: Optional[int] = None,
-        execution_class: Optional[Literal["FLEX", "STANDARD"]] = None,
+        # job_run_id: Optional[str] = None,
+        # allocated_capacity: Optional[int] = None,
+        # timeout: Optional[int] = None,
+        # max_capacity: Optional[float] = None,
+        # security_configuration: Optional[str] = None,
+        # notification_property: Optional[Mapping[str, Any]] = None,
+        # worker_type: Optional[
+        #     Literal["Standard", "G.1X", "G.2X", "G.025X", "G.4X", "G.8X", "Z.2X"]
+        # ] = None,
+        # number_of_workers: Optional[int] = None,
+        # execution_class: Optional[Literal["FLEX", "STANDARD"]] = None,
     ):
         """Start a Glue job, enriched with the pipes protocol.
 
@@ -310,8 +332,6 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             job_name (str): The name of the job to use.
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
             arguments (Optional[Dict[str, Any]]): A JSON-serializable arguments to pass to the Glue job Command
-            job_type (Literal["spark", "ray"]): The type of job to run.
-                Note: this affects the mechanism of passing Dagster's bootstrapping environment variables to the job.
             job_run_id (Optional[str]): The ID of the previous job run to retry.
             allocated_capacity (Optional[int]): The number of Glue data processing units (DPUs) to allocate to this job.
             timeout (Optional[int]): The job run timeout in minutes.
@@ -339,17 +359,25 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
                 response = self._client.start_job_run(
                     JobName=job_name,
                     Arguments=arguments,
-                    JobRunId=job_run_id,
-                    AllocatedCapacity=allocated_capacity,
-                    Timeout=timeout,
-                    MaxCapacity=max_capacity,
-                    SecurityConfiguration=security_configuration,
-                    NotificationProperty=notification_property,
-                    WorkerType=worker_type,
-                    NumberOfWorkers=number_of_workers,
-                    ExecutionClass=execution_class,
+                    # JobRunId=job_run_id,
+                    # AllocatedCapacity=allocated_capacity,
+                    # Timeout=timeout,
+                    # MaxCapacity=max_capacity,
+                    # SecurityConfiguration=security_configuration,
+                    # NotificationProperty=notification_property,
+                    # WorkerType=worker_type,
+                    # NumberOfWorkers=number_of_workers,
+                    # ExecutionClass=execution_class,
                 )
-                context.log.info(f"Started AWS Glue job {job_name} run: {response['JobRunId']}")
+                run_id = response["JobRunId"]
+                context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")
+                status = self._wait_for_job_run_completion(job_name, run_id)
+
+                if status == "FAILED":
+                    raise RuntimeError(f"Glue job {job_name} run {run_id} failed")
+                else:
+                    context.log.info(f"Glue job {job_name} run {run_id} completed successfully")
+
             except ClientError as err:
                 context.log.error(
                     "Couldn't create job %s. Here's why: %s: %s",
@@ -400,3 +428,15 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
 
     def _format_environment_variables_for_spark(self, env_vars: Mapping[str, str]) -> str:
         return ",".join([f'CUSTOMER_{k}="{v}"' for k, v in env_vars.items()])
+
+    def _wait_for_job_run_completion(
+        self, job_name: str, run_id: str
+    ) -> Literal["FAILED", "SUCCEEDED"]:
+        # this function is not used, it demonstrates how to poll the status of a Glue job run
+        # until it reaches a desired status
+        while True:
+            response = self._client.get_job_run(JobName=job_name, RunId=run_id)
+            status = response["JobRun"]["JobRunState"]
+            if status in ["FAILED", "SUCCEEDED"]:
+                return status
+            time.sleep(5)
