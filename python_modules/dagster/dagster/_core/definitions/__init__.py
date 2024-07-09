@@ -14,6 +14,10 @@ from .dependency import (
     NodeInvocation as NodeInvocation,
     NodeOutput as NodeOutput,
 )
+from .dynamic_partitions_request import (
+    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
+    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
+)
 from .events import (
     AssetKey as AssetKey,
     AssetMaterialization as AssetMaterialization,
@@ -102,8 +106,6 @@ from .run_config_schema import (
     create_run_config_schema as create_run_config_schema,
 )
 from .run_request import (
-    AddDynamicPartitionsRequest as AddDynamicPartitionsRequest,
-    DeleteDynamicPartitionsRequest as DeleteDynamicPartitionsRequest,
     InstigatorType as InstigatorType,
     RunRequest as RunRequest,
     SensorResult as SensorResult,

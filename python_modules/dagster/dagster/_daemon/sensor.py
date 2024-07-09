@@ -23,13 +23,11 @@ from typing_extensions import Self
 
 import dagster._check as check
 import dagster._seven as seven
-from dagster._core.definitions.run_request import (
+from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
-    DagsterRunReaction,
     DeleteDynamicPartitionsRequest,
-    InstigatorType,
-    RunRequest,
 )
+from dagster._core.definitions.run_request import DagsterRunReaction, InstigatorType, RunRequest
 from dagster._core.definitions.selector import JobSubsetSelector
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus
 from dagster._core.definitions.utils import normalize_tags

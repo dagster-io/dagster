@@ -3,11 +3,11 @@ from typing import Optional, Union
 
 import dagster._check as check
 import graphene
-from dagster._core.definitions.run_request import (
+from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
-    RunRequest,
 )
+from dagster._core.definitions.run_request import RunRequest
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.selector import ScheduleSelector, SensorSelector
 from dagster._core.definitions.sensor_definition import SensorExecutionData

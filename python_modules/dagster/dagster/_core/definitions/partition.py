@@ -25,11 +25,11 @@ from typing_extensions import TypeVar
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, deprecated, deprecated_param, public
-from dagster._core.definitions.partition_key_range import PartitionKeyRange
-from dagster._core.definitions.run_request import (
+from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
 )
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.instance import DagsterInstance, DynamicPartitionsStore
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._serdes import whitelist_for_serdes
