@@ -1256,8 +1256,16 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
                 if old_value and old_value != default_value and attr_name in replace_dict:
                     conflicts_by_attr_name[attr_name].add(key)
 
+            if isinstance(auto_materialize_policy, dict):
+                automation_condition = {
+                    k: v.to_automation_condition() for k, v in auto_materialize_policy.items()
+                }
+            elif isinstance(auto_materialize_policy, AutoMaterializePolicy):
+                automation_condition = auto_materialize_policy.to_automation_condition()
+            else:
+                automation_condition = None
             update_replace_dict_and_conflicts(
-                new_value=auto_materialize_policy, attr_name="auto_materialize_policy"
+                new_value=automation_condition, attr_name="automation_condition"
             )
             update_replace_dict_and_conflicts(
                 new_value=freshness_policy, attr_name="freshness_policy"
@@ -1841,12 +1849,15 @@ def _asset_specs_from_attr_key_params(
         value_type=FreshnessPolicy,
     )
 
-    validated_auto_materialize_policies_by_key = check.opt_mapping_param(
-        auto_materialize_policies_by_key,
-        "auto_materialize_policies_by_key",
-        key_type=AssetKey,
-        value_type=AutoMaterializePolicy,
-    )
+    validated_automation_conditions_by_key = {
+        k: v.to_automation_condition()
+        for k, v in check.opt_mapping_param(
+            auto_materialize_policies_by_key,
+            "auto_materialize_policies_by_key",
+            key_type=AssetKey,
+            value_type=AutoMaterializePolicy,
+        ).items()
+    }
 
     validated_owners_by_key = check.opt_mapping_param(
         owners_by_key, "owners_by_key", key_type=AssetKey, value_type=list
@@ -1876,7 +1887,7 @@ def _asset_specs_from_attr_key_params(
                     metadata=validated_metadata_by_key.get(key),
                     tags=validated_tags_by_key.get(key),
                     freshness_policy=validated_freshness_policies_by_key.get(key),
-                    auto_materialize_policy=validated_auto_materialize_policies_by_key.get(key),
+                    automation_condition=validated_automation_conditions_by_key.get(key),
                     owners=validated_owners_by_key.get(key),
                     group_name=validated_group_names_by_key.get(key),
                     code_version=validated_code_versions_by_key.get(key),
@@ -1884,6 +1895,7 @@ def _asset_specs_from_attr_key_params(
                     # Value here is irrelevant, because it will be replaced by value from
                     # NodeDefinition
                     skippable=False,
+                    auto_materialize_policy=None,
                 )
             )
 

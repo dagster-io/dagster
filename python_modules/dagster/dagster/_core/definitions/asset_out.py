@@ -149,8 +149,11 @@ class AssetOut(
                 group_name=self.group_name,
                 code_version=self.code_version,
                 freshness_policy=self.freshness_policy,
-                auto_materialize_policy=self.auto_materialize_policy,
+                automation_condition=self.auto_materialize_policy.to_automation_condition()
+                if self.auto_materialize_policy
+                else None,
                 owners=self.owners,
                 tags=self.tags,
                 deps=deps,
+                auto_materialize_policy=None,
             )

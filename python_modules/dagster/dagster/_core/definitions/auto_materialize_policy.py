@@ -329,3 +329,9 @@ class AutoMaterializePolicy(
 
         # results in an expression of the form (m1 | m2 | ... | mn) & ~(s1 | s2 | ... | sn) & ~d
         return AndAssetCondition(operands=children)
+
+    def __eq__(self, other) -> bool:
+        return (
+            super().__eq__(other)
+            or self.to_automation_condition() == other.to_automation_condition()
+        )
