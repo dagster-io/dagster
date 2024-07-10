@@ -218,7 +218,13 @@ def _name(target: Optional[TypeOrTupleOfTypes]) -> str:
     if isinstance(target, tuple):
         return f"({', '.join(tup_type.__name__ if tup_type is not NoneType else 'check.NoneType' for tup_type in target)})"
 
-    return target.__name__
+    if hasattr(target, "__name__"):
+        return target.__name__
+
+    if hasattr(target, "_name"):
+        return getattr(target, "_name")
+
+    failed(f"Could not calculate string name for {target}")
 
 
 def _is_annotated(origin, args):
@@ -336,6 +342,11 @@ def build_check_call_str(
                         return f'check.opt_nullable_iterable_param({name}, "{name}", {_name(inner_single)})'
                     elif inner_origin is collections.abc.Mapping:
                         return f'check.opt_nullable_mapping_param({name}, "{name}", {_name(inner_pair_left)}, {_name(inner_pair_right)})'
+                    elif inner_origin is collections.abc.Set:
+                        return (
+                            f'check.opt_nullable_set_param({name}, "{name}", {_name(inner_single)})'
+                        )
+
             # union
             else:
                 tuple_types = _coerce_type(ttype, eval_ctx)

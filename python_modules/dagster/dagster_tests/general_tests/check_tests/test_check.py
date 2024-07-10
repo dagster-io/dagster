@@ -1609,6 +1609,19 @@ BUILD_CASES = [
     (Iterable[str], [["a", "b"]], [[1, 2]]),
     (Set[str], [{"a", "b"}], [{1, 2}]),
     (AbstractSet[str], [{"a", "b"}], [{1, 2}]),
+    (Optional[AbstractSet[str]], [{"a", "b"}, None], [{1, 2}]),
+    (
+        Mapping[str, AbstractSet[str]],
+        [
+            {"letters": {"a", "b"}},
+            # should fail, but we do not yet handle inner collection types,
+            # check.mapping_param(..., key_type=str, value_type=AbstractSet)
+            {"numbers": {1, 2}},
+        ],
+        [
+            {"letters": ["a", "b"]},
+        ],
+    ),
     (Dict[str, int], [{"a": 1}], [{1: "a"}]),
     (Mapping[str, int], [{"a": 1}], [{1: "a"}]),
     (Optional[int], [None], ["4"]),
