@@ -51,7 +51,6 @@ def _namedtuple_record_transform(
         * creates a run time checked __new__  (optional).
     """
     field_set = getattr(cls, "__annotations__", {})
-    shift_to_front = set()
     defaults = {}
     for name in field_set.keys():
         if hasattr(cls, name):
@@ -62,10 +61,6 @@ def _namedtuple_record_transform(
                     f"Conflicting non-abstract @property for field {name} on record {cls.__name__}."
                     "Add the the @abstractmethod decorator to make it abstract.",
                 )
-                # Because the generated type inherits the defined class ahead of the named tuple base
-                # we need to shift the NT fields up to the front on the generated class __dict__
-                # to ensure they take precedence over the defined classes bases.
-                shift_to_front.add(name)
             else:
                 check.invariant(
                     not inspect.isfunction(attr_val),
@@ -110,15 +105,11 @@ def _namedtuple_record_transform(
         # verify the alignment since it impacts frame capture
         check.failed(f"Expected __new__ on {cls}, add it or switch from the _with_new decorator.")
 
-    # clear default values
-    for name in defaults.keys():
-        delattr(cls, name)
-
     new_type = type(
         cls.__name__,
         (cls, base),
         {  # these will override an implementation on the class if it exists
-            **{n: getattr(base, n) for n in shift_to_front},
+            **{n: getattr(base, n) for n in field_set.keys()},
             "__iter__": _banned_iter,
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
