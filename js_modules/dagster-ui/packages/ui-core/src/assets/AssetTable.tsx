@@ -13,7 +13,7 @@ import {
 } from '@dagster-io/ui-components';
 import groupBy from 'lodash/groupBy';
 import * as React from 'react';
-import {useContext} from 'react';
+import {useContext, useMemo} from 'react';
 
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
@@ -61,18 +61,26 @@ export const AssetTable = ({
 }: Props) => {
   const [toWipe, setToWipe] = React.useState<AssetKeyInput[] | undefined>();
 
-  const groupedByDisplayKey = groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a)));
-  const displayKeys = Object.keys(groupedByDisplayKey).sort();
+  const groupedByDisplayKey = useMemo(
+    () => groupBy(assets, (a) => JSON.stringify(displayPathForAsset(a))),
+    [assets, displayPathForAsset],
+  );
+  const displayKeys = useMemo(() => Object.keys(groupedByDisplayKey).sort(), [groupedByDisplayKey]);
 
   const [{checkedIds: checkedDisplayKeys}, {onToggleFactory, onToggleAll}] =
     useSelectionReducer(displayKeys);
 
-  const checkedAssets: Asset[] = [];
-  displayKeys.forEach((displayKey) => {
-    if (checkedDisplayKeys.has(displayKey)) {
-      checkedAssets.push(...(groupedByDisplayKey[displayKey] || []));
-    }
-  });
+  const checkedAssets = useMemo(() => {
+    const assets: Asset[] = [];
+    displayKeys.forEach((displayKey) => {
+      if (checkedDisplayKeys.has(displayKey)) {
+        groupedByDisplayKey[displayKey]?.forEach((asset) => {
+          assets.push(asset);
+        });
+      }
+    });
+    return assets;
+  }, [checkedDisplayKeys, displayKeys, groupedByDisplayKey]);
 
   const content = () => {
     if (!assets.length) {
