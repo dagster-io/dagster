@@ -346,7 +346,7 @@ function buildFlatProps(assets: Asset[], _: string[]) {
 }
 
 function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
-  // Return all assets from the next PAGE_SIZE namespaces - the AssetTable component will later
+  // Return all assets matching prefixPath - the AssetTable component will later
   // group them by namespace
 
   const namespaceForAsset = (asset: Asset) => {
@@ -355,7 +355,7 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
 
   // Only consider assets that start with the prefix path
   const assetsWithPathPrefix = assets.filter((asset) =>
-    asset.key.path.join(',').startsWith(prefixPath.join(',')),
+    prefixPath.every((part, index) => part === asset.key.path[index]),
   );
 
   return {
