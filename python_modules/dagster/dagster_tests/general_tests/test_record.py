@@ -371,34 +371,44 @@ def test_pickle():
     assert a2 == pickle.loads(pickle.dumps(a2))
 
 
-def test_default_collision() -> None:
-    class BadBase(ABC):
+def test_base_class_conflicts() -> None:
+    class ConflictPropBase(ABC):
+        @property
+        def prop(self): ...
+
+    with pytest.raises(check.CheckError, match="Conflicting non-abstract @property"):
+
+        @record
+        class X(ConflictPropBase):
+            prop: Any
+
+    class AbsPropBase(ABC):
         @property
         @abstractmethod
         def abstract_prop(self): ...
 
+    class DidntImpl(AbsPropBase): ...
+
+    with pytest.raises(
+        TypeError,
+        match="Can't instantiate abstract class DidntImpl with abstract method abstract_prop",
+    ):
+        DidntImpl()  # type: ignore # good job type checker
+
+    @record
+    class A(AbsPropBase):
+        abstract_prop: Any
+
+    assert A(abstract_prop=4).abstract_prop == 4
+
+    class ConflictFnBase:
         def some_method(self): ...
-
-    with pytest.raises(check.CheckError, match="Conflicting @property"):
-
-        @record
-        class _(BadBase):
-            abstract_prop: Any
 
     with pytest.raises(check.CheckError, match="Conflicting function"):
 
         @record
-        class _(BadBase):
+        class _(ConflictFnBase):
             some_method: Any
-
-    class Base(ABC):
-        thing: Any
-
-    @record
-    class Impl(Base):
-        thing: Any
-
-    assert Impl(thing=3).thing == 3
 
     with pytest.raises(check.CheckError, match="will have to override __new__"):
 
@@ -406,7 +416,7 @@ def test_default_collision() -> None:
             return 4
 
         @record
-        class _(Base):
+        class _:
             thing: Any = _some_func
 
 
