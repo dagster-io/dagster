@@ -130,6 +130,8 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         from dagster._core.definitions.run_config import convert_config_input
 
         if kwargs.get("asset_graph_subset") is not None:
+            # asset_graph_subset is only passed if you use the RunRequest.for_asset_graph_subset helper
+            # constructor, so we assume that no other parameters were passed.
             return super().__new__(
                 cls,
                 run_key=None,
