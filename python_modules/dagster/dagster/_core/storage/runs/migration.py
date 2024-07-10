@@ -22,6 +22,7 @@ RUN_START_END = (  # was run_start_end, but renamed to overwrite bad timestamps 
     "run_start_end_overwritten"
 )
 RUN_REPO_LABEL_TAGS = "run_repo_label_tags"
+RUN_TAGS_JOIN_KEY = "run_tags_join_key"
 BULK_ACTION_TYPES = "bulk_action_types"
 
 PrintFn: TypeAlias = Callable[[Any], None]
@@ -36,6 +37,7 @@ REQUIRED_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS: Final[Mapping[str, Callable[[], MigrationFn]]] = {
     RUN_START_END: lambda: migrate_run_start_end,
+    RUN_TAGS_JOIN_KEY: lambda: migrate_run_id_pk,
 }
 
 CHUNK_SIZE = 100
@@ -260,3 +262,21 @@ def migrate_bulk_actions(run_storage: RunStorage, print_fn: Optional[PrintFn] = 
                     .where(BulkActionsTable.c.id == storage_id)
                 )
                 cursor = storage_id
+
+
+def migrate_run_id_pk(run_storage: RunStorage, print_fn: Optional[PrintFn] = None) -> None:
+    from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
+
+    if not isinstance(run_storage, SqlRunStorage):
+        return
+
+    if print_fn:
+        print_fn("Querying run storage.")
+
+    for run_record in chunked_run_records_iterator(run_storage, print_fn):
+        with run_storage.connect() as conn:
+            conn.execute(
+                RunTagsTable.update()
+                .values(run_id_pk=run_record.storage_id)
+                .where(RunTagsTable.c.run_id == run_record.dagster_run.run_id)
+            )
