@@ -4,6 +4,16 @@ import * as Types from '../../graphql/types';
 
 export type RunStatusFragment = {__typename: 'Run'; id: string; status: Types.RunStatus};
 
+export type InstigationStateBaseFragment = {
+  __typename: 'InstigationState';
+  id: string;
+  selectorId: string;
+  name: string;
+  instigationType: Types.InstigationType;
+  status: Types.InstigationStatus;
+  runningCount: number;
+};
+
 export type InstigationStateFragment = {
   __typename: 'InstigationState';
   id: string;

@@ -36,6 +36,7 @@ import {
 } from './types/SensorSwitch.types';
 import {usePermissionsForLocation} from '../app/Permissions';
 import {InstigationStatus, SensorType} from '../graphql/types';
+import {INSTIGATION_STATE_BASE_FRAGMENT} from '../instigation/InstigationUtils';
 import {TimeFromNow} from '../ui/TimeFromNow';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -46,11 +47,10 @@ interface Props {
   repoAddress: RepoAddress;
   sensor: SensorSwitchFragment;
   size?: 'small' | 'large';
-  shouldFetchLatestState?: boolean;
 }
 
 export const SensorSwitch = (props: Props) => {
-  const {repoAddress, sensor, size = 'large', shouldFetchLatestState} = props;
+  const {repoAddress, sensor, size = 'large'} = props;
   const {
     permissions: {canStartSensor, canStopSensor},
     disabledReasons,
@@ -62,11 +62,10 @@ export const SensorSwitch = (props: Props) => {
     sensorName: name,
   };
 
-  const {data, loading} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
+  const {data, loading, refetch} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
     SENSOR_STATE_QUERY,
     {
-      variables: {sensorSelector},
-      skip: !shouldFetchLatestState,
+      variables: {id: sensor.id},
     },
   );
 
@@ -75,12 +74,16 @@ export const SensorSwitch = (props: Props) => {
     StartSensorMutationVariables
   >(START_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
+    refetchQueries: [{variables: {id: sensor.id}, query: SENSOR_STATE_QUERY}],
+    awaitRefetchQueries: true,
   });
   const [stopSensor, {loading: toggleOffInFlight}] = useMutation<
     StopRunningSensorMutation,
     StopRunningSensorMutationVariables
   >(STOP_SENSOR_MUTATION, {
     onCompleted: displaySensorMutationErrors,
+    refetchQueries: [{variables: {id: sensor.id}, query: SENSOR_STATE_QUERY}],
+    awaitRefetchQueries: true,
   });
   const [setSensorCursor, {loading: cursorMutationInFlight}] = useMutation<
     SetSensorCursorMutation,
@@ -105,22 +108,27 @@ export const SensorSwitch = (props: Props) => {
     }
   };
 
+  if (!data && loading) {
+    return <Spinner purpose="body-text" />;
+  }
+
+  // Status according to sensor object passed in (may be outdated if its from the workspace snapshot)
   let status = sensor.sensorState.status;
-
-  if (shouldFetchLatestState) {
-    if (!data && loading) {
-      return <Spinner purpose="body-text" />;
-    }
-
-    if (data?.sensorOrError.__typename !== 'Sensor') {
-      return (
-        <Tooltip content="Error loading sensor state">
-          <Icon name="error" color={Colors.accentRed()} />;
-        </Tooltip>
-      );
-    }
-
-    status = data.sensorOrError.sensorState.status;
+  if (
+    // If the sensor was never toggled before then InstigationStateNotFoundError is returned
+    // in this case we should rely on the data from the WorkspaceSnapshot.
+    !['InstigationState', 'InstigationStateNotFoundError'].includes(
+      data?.instigationStateOrError.__typename as any,
+    )
+  ) {
+    return (
+      <Tooltip content="Error loading sensor state">
+        <Icon name="error" color={Colors.accentRed()} />;
+      </Tooltip>
+    );
+  } else if (data?.instigationStateOrError.__typename === 'InstigationState') {
+    // status according to latest data
+    status = data?.instigationStateOrError.status;
   }
 
   const running = status === InstigationStatus.RUNNING;
@@ -270,15 +278,13 @@ export const SENSOR_SWITCH_FRAGMENT = gql`
 `;
 
 const SENSOR_STATE_QUERY = gql`
-  query SensorStateQuery($sensorSelector: SensorSelector!) {
-    sensorOrError(sensorSelector: $sensorSelector) {
-      ... on Sensor {
+  query SensorStateQuery($id: String!) {
+    instigationStateOrError(id: $id) {
+      ... on InstigationState {
         id
-        sensorState {
-          id
-          status
-        }
+        ...InstigationStateBaseFragment
       }
     }
   }
+  ${INSTIGATION_STATE_BASE_FRAGMENT}
 `;

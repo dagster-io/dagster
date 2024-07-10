@@ -38,6 +38,17 @@ export const RUN_STATUS_FRAGMENT = gql`
   }
 `;
 
+export const INSTIGATION_STATE_BASE_FRAGMENT = gql`
+  fragment InstigationStateBaseFragment on InstigationState {
+    id
+    selectorId
+    name
+    instigationType
+    status
+    runningCount
+  }
+`;
+
 export const INSTIGATION_STATE_FRAGMENT = gql`
   fragment InstigationStateFragment on InstigationState {
     id
@@ -136,3 +147,4 @@ export const HISTORY_TICK_FRAGMENT = gql`
   ${TICK_TAG_FRAGMENT}
   ${DYNAMIC_PARTITIONS_REQUEST_RESULT_FRAGMENT}
 `;
+

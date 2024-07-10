@@ -20,18 +20,21 @@ export type SensorSwitchFragment = {
 };
 
 export type SensorStateQueryVariables = Types.Exact<{
-  sensorSelector: Types.SensorSelector;
+  id: Types.Scalars['String']['input'];
 }>;
 
 export type SensorStateQuery = {
   __typename: 'Query';
-  sensorOrError:
-    | {__typename: 'PythonError'}
+  instigationStateOrError:
     | {
-        __typename: 'Sensor';
+        __typename: 'InstigationState';
         id: string;
-        sensorState: {__typename: 'InstigationState'; id: string; status: Types.InstigationStatus};
+        selectorId: string;
+        name: string;
+        instigationType: Types.InstigationType;
+        status: Types.InstigationStatus;
+        runningCount: number;
       }
-    | {__typename: 'SensorNotFoundError'}
-    | {__typename: 'UnauthorizedError'};
+    | {__typename: 'InstigationStateNotFoundError'}
+    | {__typename: 'PythonError'};
 };
