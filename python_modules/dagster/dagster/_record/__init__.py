@@ -51,24 +51,29 @@ def _namedtuple_record_transform(
         * creates a run time checked __new__  (optional).
     """
     field_set = getattr(cls, "__annotations__", {})
-
+    shift_to_front = set()
     defaults = {}
     for name in field_set.keys():
         if hasattr(cls, name):
             attr_val = getattr(cls, name)
-            check.invariant(
-                not isinstance(attr_val, property),
-                f"Conflicting @property for field {name} on record {cls.__name__}. "
-                "If you are trying to declare an abstract property "
-                "you will have to use a class attribute instead.",
-            )
-            check.invariant(
-                not inspect.isfunction(attr_val),
-                f"Conflicting function for field {name} on record {cls.__name__}. "
-                "If you are trying to set a function as a default value "
-                "you will have to override __new__.",
-            )
-            defaults[name] = attr_val
+            if isinstance(attr_val, property):
+                check.invariant(
+                    attr_val.__isabstractmethod__,
+                    f"Conflicting non-abstract @property for field {name} on record {cls.__name__}."
+                    "Add the the @abstractmethod decorator to make it abstract.",
+                )
+                # Because the generated type inherits the defined class ahead of the named tuple base
+                # we need to shift the NT fields up to the front on the generated class __dict__
+                # to ensure they take precedence over the defined classes bases.
+                shift_to_front.add(name)
+            else:
+                check.invariant(
+                    not inspect.isfunction(attr_val),
+                    f"Conflicting function for field {name} on record {cls.__name__}. "
+                    "If you are trying to set a function as a default value "
+                    "you will have to override __new__.",
+                )
+                defaults[name] = attr_val
 
     base = NamedTuple(f"_{cls.__name__}", field_set.items())
     nt_new = base.__new__
@@ -113,6 +118,7 @@ def _namedtuple_record_transform(
         cls.__name__,
         (cls, base),
         {  # these will override an implementation on the class if it exists
+            **{n: getattr(base, n) for n in shift_to_front},
             "__iter__": _banned_iter,
             "__getitem__": _banned_idx,
             "__hidden_iter__": base.__iter__,
