@@ -662,7 +662,7 @@ class Definitions(IHaveNew):
             jobs.extend(def_set.jobs or [])
 
             for resource_key, resource_value in (def_set.resources or {}).items():
-                if resource_key in resources:
+                if resource_key in resources and resources[resource_key] != resource_value:
                     raise DagsterInvariantViolationError(
                         f"Definitions objects {resource_key_indexes[resource_key]} and {i} both have a "
                         f"resource with key '{resource_key}'"
@@ -671,7 +671,7 @@ class Definitions(IHaveNew):
                 resource_key_indexes[resource_key] = i
 
             for logger_key, logger_value in (def_set.loggers or {}).items():
-                if logger_key in loggers:
+                if logger_key in loggers and loggers[logger_key] != logger_value:
                     raise DagsterInvariantViolationError(
                         f"Definitions objects {logger_key_indexes[logger_key]} and {i} both have a "
                         f"logger with key '{logger_key}'"
