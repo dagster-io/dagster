@@ -351,13 +351,16 @@ def validate_and_coerce_op_result_to_iterator(
                 _check_output_object_name(element, output_def, position)
 
                 with disable_dagster_warnings():
-                    yield Output(
+                    output = Output(
                         output_name=output_def.name,
                         value=element.value,
                         metadata=element.metadata,
                         data_version=element.data_version,
                         tags=element.tags,
                     )
+
+                yield output
+
             else:
                 # If annotation indicates a generic output annotation, and an
                 # output object was not received, throw an error.
