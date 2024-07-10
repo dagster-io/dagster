@@ -78,6 +78,14 @@ def test_dagster_dev_command_loads_toys():
                 )
                 try:
                     _wait_for_dagit_running(dagit_port)
+
+                    client = DagsterGraphQLClient(hostname="localhost", port_number=dagit_port)
+                    locations_and_names = client._get_repo_locations_and_names_with_pipeline(  # noqa
+                        "hammer"
+                    )
+                    assert (
+                        len(locations_and_names) > 0
+                    ), "toys repo failed to load or was missing a job called 'hammer'"
                 finally:
                     dev_process.send_signal(signal.SIGINT)
                     dev_process.communicate()
