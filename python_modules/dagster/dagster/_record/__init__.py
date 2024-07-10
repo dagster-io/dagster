@@ -33,18 +33,21 @@ _RECORD_ANNOTATIONS_FIELD = "__record_annotations__"
 _CHECKED_NEW = "__checked_new__"
 _DEFAULTS_NEW = "__defaults_new__"
 _INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
+_NAMED_TUPLE_BASE_NEW_FIELD = "__nt_new__"
+_REMAPPING_FIELD = "__field_remap__"
 
 
-def _namedtuple_model_transform(
+def _namedtuple_record_transform(
     cls: TType,
     *,
     checked: bool,
     with_new: bool,
     decorator_frames: int,
+    field_to_new_mapping: Optional[Mapping[str, str]],
 ) -> TType:
     """Transforms the input class in to one that inherits a generated NamedTuple base class
     and:
-        * bans tuple methods that don't make sense for a model object
+        * bans tuple methods that don't make sense for a record object
         * creates a run time checked __new__  (optional).
     """
     field_set = getattr(cls, "__annotations__", {})
@@ -55,7 +58,7 @@ def _namedtuple_model_transform(
             attr_val = getattr(cls, name)
             check.invariant(
                 not isinstance(attr_val, property),
-                f"Conflicting @property for field {name} on record {cls.__name__}."
+                f"Conflicting @property for field {name} on record {cls.__name__}. "
                 "If you are trying to declare an abstract property "
                 "you will have to use a class attribute instead.",
             )
@@ -115,7 +118,8 @@ def _namedtuple_model_transform(
             "__hidden_iter__": base.__iter__,
             _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
             _RECORD_ANNOTATIONS_FIELD: field_set,
-            "__nt_new__": nt_new,
+            _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
+            _REMAPPING_FIELD: field_to_new_mapping or {},
             "__bool__": _true,
             "__reduce__": _reduce,
         },
@@ -150,26 +154,26 @@ def record(
     *,
     checked: bool = True,
 ) -> Union[TType, Callable[[TType], TType]]:
-    """A class decorator that will create an immutable model class based on the defined fields.
+    """A class decorator that will create an immutable record class based on the defined fields.
 
     Args:
         checked: Whether or not to generate runtime type checked construction.
-        enable_cached_method: Whether or not to support object instance level caching using @cached_method.
-        serdes: whitelist this class for serdes, with the defined options if SerdesOptions used.
     """
     if cls:
-        return _namedtuple_model_transform(
+        return _namedtuple_record_transform(
             cls,
             checked=checked,
             with_new=False,
             decorator_frames=1,
+            field_to_new_mapping=None,
         )
     else:
         return partial(
-            _namedtuple_model_transform,
+            _namedtuple_record_transform,
             checked=checked,
             with_new=False,
             decorator_frames=0,
+            field_to_new_mapping=None,
         )
 
 
@@ -183,6 +187,7 @@ def record_custom(
 def record_custom(
     *,
     checked: bool = True,
+    field_to_new_mapping: Optional[Mapping[str, str]] = None,
 ) -> Callable[[TType], TType]: ...  # Overload for using decorator used with args.
 
 
@@ -190,6 +195,7 @@ def record_custom(
     cls: Optional[TType] = None,
     *,
     checked: bool = True,
+    field_to_new_mapping: Optional[Mapping[str, str]] = None,
 ) -> Union[TType, Callable[[TType], TType]]:
     """Variant of the record decorator to use to opt out of the dataclass_transform decorator behavior.
     This is often doesn't to be able to override __new__, so the type checker respects your constructor.
@@ -214,18 +220,20 @@ def record_custom(
     the dataclass_transform decorator still impacts all usage of the function."
     """
     if cls:
-        return _namedtuple_model_transform(
+        return _namedtuple_record_transform(
             cls,
             checked=checked,
             with_new=True,
             decorator_frames=1,
+            field_to_new_mapping=field_to_new_mapping,
         )
     else:
         return partial(
-            _namedtuple_model_transform,
+            _namedtuple_record_transform,
             checked=checked,
             with_new=True,
             decorator_frames=0,
+            field_to_new_mapping=field_to_new_mapping,
         )
 
 
@@ -253,18 +261,34 @@ def get_record_annotations(obj) -> Mapping[str, Type]:
 
 
 def as_dict(obj) -> Mapping[str, Any]:
-    """Creates a dict representation of a model."""
+    """Creates a dict representation of the record based on the fields."""
     if not is_record(obj):
         raise Exception("Only works for @record decorated classes")
 
     return {key: value for key, value in zip(obj._fields, obj.__hidden_iter__())}
 
 
+def as_dict_for_new(obj) -> Mapping[str, Any]:
+    """Creates a dict representation of the record with field_to_new_mapping applied."""
+    if not is_record(obj):
+        raise Exception("Only works for @record decorated classes")
+
+    remap = getattr(obj, _REMAPPING_FIELD)
+    from_obj = {}
+    for k, v in as_dict(obj).items():
+        if k in remap:
+            from_obj[remap[k]] = v
+        else:
+            from_obj[k] = v
+
+    return from_obj
+
+
 def copy(obj: TVal, **kwargs) -> TVal:
     """Create a copy of this record instance, with new values specified as key word args."""
     return obj.__class__(
         **{
-            **as_dict(obj),
+            **as_dict_for_new(obj),
             **kwargs,
         }
     )
@@ -348,7 +372,7 @@ class JitCheckedNew:
 def __checked_new__(cls{kw_args_str}):
     {lazy_imports_str}
     {set_calls_str}
-    return cls.__nt_new__(
+    return cls.{_NAMED_TUPLE_BASE_NEW_FIELD}(
         cls,
         {check_call_block}
     )
@@ -365,7 +389,7 @@ def _build_defaults_new(
     return f"""
 def __defaults_new__(cls{kw_args_str}):
     {set_calls_str}
-    return cls.__nt_new__(
+    return cls.{_NAMED_TUPLE_BASE_NEW_FIELD}(
         cls,
         {assign_str}
     )
@@ -428,4 +452,4 @@ def _from_reduce(cls, kwargs):
 
 def _reduce(self):
     # pickle support
-    return _from_reduce, (self.__class__, as_dict(self))
+    return _from_reduce, (self.__class__, as_dict_for_new(self))
