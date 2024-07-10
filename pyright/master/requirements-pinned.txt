@@ -558,6 +558,8 @@ tomli==2.0.1
 tomlkit==0.12.5
 toolz==0.12.1
 toposort==1.10
+torch==2.3.0
+torchvision==0.18.0
 tornado==6.4
 tox==3.25.0
 tqdm==4.66.4
