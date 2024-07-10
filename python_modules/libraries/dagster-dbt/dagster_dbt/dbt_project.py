@@ -137,10 +137,10 @@ class DbtProject(IHaveNew):
 
     Using this helps achieve a setup where the dbt manifest file
     and dbt dependencies are available and up-to-date:
-    * during development, pull the dependencies and reload the manifest at run time to pick up any changes.
-    * when deployed, expect a manifest that was created at build time to reduce start-up time.
+        * during development, pull the dependencies and reload the manifest at run time to pick up any changes.
+        * when deployed, expect a manifest that was created at build time to reduce start-up time.
 
-    The cli ``dagster-dbt project prepare-for-deployment`` can be used as part of the deployment process to
+    The cli ``dagster-dbt project prepare-and-package`` can be used as part of the deployment process to
     handle the project preparation.
 
     This object can be passed directly to :py:class:`~dagster_dbt.DbtCliResource`.
