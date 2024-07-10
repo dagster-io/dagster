@@ -235,9 +235,8 @@ def scope_custom_asset_key_dagster_dbt_translator():
 def scope_fetch_row_count() -> None:
     # start_fetch_row_count
     from pathlib import Path
-    from dagster import AssetKey, AssetExecutionContext
-    from dagster_dbt import DagsterDbtTranslator, DbtCliResource, DbtProject, dbt_assets
-    from typing import Any, Mapping
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtProject, DbtCliResource, dbt_assets
 
     my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
 
@@ -248,6 +247,47 @@ def scope_fetch_row_count() -> None:
         yield from dbt.cli(["build"], context=context).stream().fetch_row_counts()
 
     # end_fetch_row_count
+
+
+def scope_fetch_column_metadata() -> None:
+    # start_fetch_column_metadata
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtProject, DbtCliResource, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(["build"], context=context).stream().fetch_column_metadata()
+        )
+
+    # end_fetch_column_metadata
+
+
+def scope_fetch_column_metadata_chain() -> None:
+    # start_fetch_column_metadata_chain
+    from pathlib import Path
+    from dagster import AssetExecutionContext
+    from dagster_dbt import DbtProject, DbtCliResource, dbt_assets
+
+    my_dbt_project = DbtProject(project_dir=Path("path/to/dbt_project"))
+
+    @dbt_assets(
+        manifest=my_dbt_project.manifest_path,
+    )
+    def my_dbt_assets(context: AssetExecutionContext, dbt: DbtCliResource):
+        yield from (
+            dbt.cli(["build"], context=context)
+            .stream()
+            .fetch_row_counts()
+            .fetch_column_metadata()
+        )
+
+    # end_fetch_column_metadata_chain
 
 
 def scope_custom_group_name_dagster_dbt_translator():
