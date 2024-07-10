@@ -186,7 +186,6 @@ export const AssetTable = ({
         assetKeys={toWipe || []}
         isOpen={!!toWipe}
         onClose={() => setToWipe(undefined)}
-        onComplete={() => setToWipe(undefined)}
         requery={requery}
       />
     </>
@@ -241,7 +240,6 @@ const MoreActionsDropdown = React.memo((props: MoreActionsDropdownProps) => {
         isOpen={showBulkWipeDialog}
         onClose={() => setShowBulkWipeDialog(false)}
         onComplete={() => {
-          setShowBulkWipeDialog(false);
           clearSelection();
         }}
         requery={requery}

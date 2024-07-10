@@ -2,6 +2,7 @@ import {RefetchQueriesFunction, gql, useMutation} from '@apollo/client';
 // eslint-disable-next-line no-restricted-imports
 import {ProgressBar} from '@blueprintjs/core';
 import {
+  Body1,
   Box,
   Button,
   Dialog,
@@ -17,7 +18,6 @@ import {asAssetKeyInput} from './asInput';
 import {AssetWipeMutation, AssetWipeMutationVariables} from './types/AssetWipeDialog.types';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../asset-graph/Utils';
 import {NavigationBlock} from '../runs/NavigationBlock';
 import {Inner, Row} from '../ui/VirtualizedTable';
@@ -34,7 +34,7 @@ export const AssetWipeDialog = memo(
     assetKeys: AssetKey[];
     isOpen: boolean;
     onClose: () => void;
-    onComplete: (assetKeys: AssetKey[]) => void;
+    onComplete?: () => void;
     requery?: RefetchQueriesFunction;
   }) => {
     return (
@@ -50,139 +50,146 @@ export const AssetWipeDialog = memo(
   },
 );
 
-export const AssetWipeDialogInner = ({
-  assetKeys,
-  onClose,
-  onComplete,
-  requery,
-}: {
-  assetKeys: AssetKey[];
-  onClose: () => void;
-  onComplete: (assetKeys: AssetKey[]) => void;
-  requery?: RefetchQueriesFunction;
-}) => {
-  const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
-    ASSET_WIPE_MUTATION,
-    {
-      refetchQueries: requery,
-    },
-  );
+export const AssetWipeDialogInner = memo(
+  ({
+    assetKeys,
+    onClose,
+    onComplete,
+    requery,
+  }: {
+    assetKeys: AssetKey[];
+    onClose: () => void;
+    onComplete?: () => void;
+    requery?: RefetchQueriesFunction;
+  }) => {
+    const [requestWipe] = useMutation<AssetWipeMutation, AssetWipeMutationVariables>(
+      ASSET_WIPE_MUTATION,
+      {
+        refetchQueries: requery,
+      },
+    );
 
-  const [isWiping, setIsWiping] = useState(false);
-  const [wiped, setWiped] = useState(0);
+    const [isWiping, setIsWiping] = useState(false);
+    const [wipedCount, setWipedCount] = useState(0);
+    const [failedCount, setFailedCount] = useState(0);
 
-  const didCancel = useRef(false);
-  const wipe = async () => {
-    if (!assetKeys.length) {
-      return;
-    }
-    setIsWiping(true);
-    for (let i = 0, l = assetKeys.length; i < l; i += CHUNK_SIZE) {
-      if (didCancel.current) {
+    const isDone = !isWiping && (wipedCount || failedCount);
+
+    const didCancel = useRef(false);
+    const wipe = async () => {
+      if (!assetKeys.length) {
         return;
       }
-      const nextChunk = assetKeys.slice(i, i + CHUNK_SIZE);
-      const result = await requestWipe({variables: {assetKeys: nextChunk.map(asAssetKeyInput)}});
-      const data = result.data?.wipeAssets;
-      switch (data?.__typename) {
-        case 'AssetNotFoundError':
-          showCustomAlert({
-            title: 'Could not wipe asset materializations',
-            body: 'Asset not found.',
-          });
-          break;
-        case 'AssetWipeSuccess':
-          setWiped((wiped) => wiped + nextChunk.length);
-          break;
-        case 'PythonError':
-          showCustomAlert({
-            title: 'Could not wipe asset materializations',
-            body: <PythonErrorInfo error={data} />,
-          });
-          break;
-        case 'UnauthorizedError':
-          showCustomAlert({
-            title: 'Could not wipe asset materializations',
-            body: 'You do not have permission to do this.',
-          });
-          break;
+      setIsWiping(true);
+      for (let i = 0, l = assetKeys.length; i < l; i += CHUNK_SIZE) {
+        if (didCancel.current) {
+          return;
+        }
+        const nextChunk = assetKeys.slice(i, i + CHUNK_SIZE);
+        const result = await requestWipe({variables: {assetKeys: nextChunk.map(asAssetKeyInput)}});
+        const data = result.data?.wipeAssets;
+        switch (data?.__typename) {
+          case 'AssetNotFoundError':
+          case 'PythonError':
+            setFailedCount((failed) => failed + nextChunk.length);
+            break;
+          case 'AssetWipeSuccess':
+            setWipedCount((wiped) => wiped + nextChunk.length);
+            break;
+          case 'UnauthorizedError':
+            showCustomAlert({
+              title: 'Could not wipe asset materializations',
+              body: 'You do not have permission to do this.',
+            });
+            onClose();
+            return;
+        }
       }
-    }
-    onComplete(assetKeys);
-    setIsWiping(false);
-  };
-
-  useLayoutEffect(() => {
-    return () => {
-      didCancel.current = true;
+      onComplete?.();
+      setIsWiping(false);
     };
-  }, []);
 
-  const parentRef = useRef<HTMLDivElement>(null);
+    useLayoutEffect(() => {
+      return () => {
+        didCancel.current = true;
+      };
+    }, []);
 
-  const rowVirtualizer = useVirtualizer({
-    count: assetKeys.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 24,
-    overscan: 10,
-  });
+    const parentRef = useRef<HTMLDivElement>(null);
 
-  const totalHeight = rowVirtualizer.getTotalSize();
-  const items = rowVirtualizer.getVirtualItems();
+    const rowVirtualizer = useVirtualizer({
+      count: assetKeys.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 24,
+      overscan: 10,
+    });
 
-  const content = useMemo(() => {
-    if (!isWiping) {
+    const totalHeight = rowVirtualizer.getTotalSize();
+    const items = rowVirtualizer.getVirtualItems();
+
+    const content = useMemo(() => {
+      if (isDone) {
+        return (
+          <Box flex={{direction: 'column'}}>
+            {wipedCount ? <Body1>Wiped {numberFormatter.format(wipedCount)}</Body1> : null}
+            {failedCount ? <Body1>Failed {numberFormatter.format(failedCount)}</Body1> : null}
+          </Box>
+        );
+      } else if (!isWiping) {
+        return (
+          <Group direction="column" spacing={16}>
+            <div>
+              Are you sure you want to wipe materializations for{' '}
+              {numberFormatter.format(assetKeys.length)}{' '}
+              {ifPlural(assetKeys.length, 'asset', 'assets')}?
+            </div>
+            <div style={{maxHeight: '50vh', overflowY: 'scroll'}} ref={parentRef}>
+              <Inner $totalHeight={totalHeight}>
+                {items.map(({index, key, size, start}) => {
+                  const assetKey = assetKeys[index]!;
+                  return (
+                    <Row key={key} $height={size} $start={start}>
+                      {displayNameForAssetKey(assetKey)}
+                    </Row>
+                  );
+                })}
+              </Inner>
+            </div>
+            <div>
+              Assets defined only by their historical materializations will disappear from the Asset
+              Catalog. Software-defined assets will remain unless their definition is also deleted.
+            </div>
+            <strong>This action cannot be undone.</strong>
+          </Group>
+        );
+      }
+      const value = assetKeys.length > 0 ? (wipedCount + failedCount) / assetKeys.length : 1;
       return (
-        <Group direction="column" spacing={16}>
-          <div>
-            Are you sure you want to wipe materializations for{' '}
-            {numberFormatter.format(assetKeys.length)}{' '}
-            {ifPlural(assetKeys.length, 'asset', 'assets')}?
-          </div>
-          <div style={{maxHeight: '50vh', overflowY: 'scroll'}} ref={parentRef}>
-            <Inner $totalHeight={totalHeight}>
-              {items.map(({index, key, size, start}) => {
-                const assetKey = assetKeys[index]!;
-                return (
-                  <Row key={key} $height={size} $start={start}>
-                    {displayNameForAssetKey(assetKey)}
-                  </Row>
-                );
-              })}
-            </Inner>
-          </div>
-          <div>
-            Assets defined only by their historical materializations will disappear from the Asset
-            Catalog. Software-defined assets will remain unless their definition is also deleted.
-          </div>
-          <strong>This action cannot be undone.</strong>
-        </Group>
+        <Box flex={{gap: 8, direction: 'column'}}>
+          <div>Wiping...</div>
+          <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
+          <NavigationBlock message="Wiping in progress, please do not navigate away yet." />
+        </Box>
       );
-    }
-    const value = assetKeys.length > 0 ? wiped / assetKeys.length : 1;
-    return (
-      <Box flex={{gap: 8, direction: 'column'}}>
-        <div>Wiping...</div>
-        <ProgressBar intent="primary" value={Math.max(0.1, value)} animate={value < 1} />
-        <NavigationBlock message="Termination in progress, please do not navigate away yet." />
-      </Box>
-    );
-  }, [assetKeys, isWiping, items, totalHeight, wiped]);
+    }, [isDone, isWiping, assetKeys, wipedCount, failedCount, totalHeight, items]);
 
-  return (
-    <>
-      <DialogBody>{content}</DialogBody>
-      <DialogFooter topBorder>
-        <Button intent="none" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button intent="danger" onClick={wipe} disabled={isWiping} loading={isWiping}>
-          Wipe
-        </Button>
-      </DialogFooter>
-    </>
-  );
-};
+    return (
+      <>
+        <DialogBody>{content}</DialogBody>
+        <DialogFooter topBorder>
+          <Button intent={isDone ? 'primary' : 'none'} onClick={onClose}>
+            {isDone ? 'Done' : 'Cancel'}
+          </Button>
+          {isDone ? null : (
+            <Button intent="danger" onClick={wipe} disabled={isWiping} loading={isWiping}>
+              Wipe
+            </Button>
+          )}
+        </DialogFooter>
+      </>
+    );
+  },
+);
 
 const ASSET_WIPE_MUTATION = gql`
   mutation AssetWipeMutation($assetKeys: [AssetKeyInput!]!) {
