@@ -140,9 +140,9 @@ class AutomationConditionScenarioState(ScenarioState):
 
         return new_state, result
 
-    def evaluate_daemon_tick(self, assets_to_apply_conditions_to: Sequence[CoercibleToAssetKey]):
+    def evaluate_daemon_tick(self, assets: Sequence[CoercibleToAssetKey]):
         asset_graph = self.scenario_spec.with_asset_properties(
-            keys=assets_to_apply_conditions_to,
+            keys=assets,
             auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(
                 check.not_none(self.automation_condition)
             ),

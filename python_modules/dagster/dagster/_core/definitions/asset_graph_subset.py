@@ -116,11 +116,6 @@ class AssetGraphSubset(NamedTuple):
         for asset_key in self.non_partitioned_asset_keys:
             yield AssetKeyPartitionKey(asset_key, None)
 
-    def iterate_asset_subsets(self, asset_graph: BaseAssetGraph) -> Iterable[AssetSubset]:
-        """Returns an iterator of AssetSubsets for all of the assets in the AssetGraphSubset."""
-        for asset_key in self.asset_keys:
-            yield self.get_asset_subset(asset_key, asset_graph)
-
     def __contains__(self, asset: Union[AssetKey, AssetKeyPartitionKey]) -> bool:
         """If asset is an AssetKeyPartitionKey, check if the given AssetKeyPartitionKey is in the
         subset. If asset is an AssetKey, check if any of partitions of the given AssetKey are in

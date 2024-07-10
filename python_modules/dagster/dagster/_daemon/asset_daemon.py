@@ -62,6 +62,7 @@ from dagster._daemon.sensor import is_under_min_interval, mark_sensor_state_for_
 from dagster._daemon.utils import DaemonErrorCapture
 from dagster._serdes import serialize_value
 from dagster._serdes.serdes import deserialize_value
+from dagster._time import get_current_timestamp
 from dagster._utils import SingleInstigatorDebugCrashFlags, check_for_debug_crash
 
 _LEGACY_PRE_SENSOR_AUTO_MATERIALIZE_CURSOR_KEY = "ASSET_DAEMON_CURSOR"
@@ -849,18 +850,15 @@ class AssetDaemon(DagsterDaemon):
         is_retry: bool,
         instigator_state: Optional[InstigatorState],
     ):
-        print("IN ASSET DAEMON")
         evaluation_id = check.not_none(tick.tick_data.auto_materialize_evaluation_id)
 
         instance = workspace_process_context.instance
 
         schedule_storage = check.not_none(instance.schedule_storage)
 
-        request_backfills = (
-            instance.da_emit_backfills()
-        )  # TODO - what if the setting changes between when run request was made and now?
+        request_backfills = instance.da_emit_backfills()
 
-        if is_retry:  # TODO - if something fails after the backfill gets submitted, reusing the backfill ids will cause errors because of uniqueness. Maybe we just check if that backfill id has already been submitted?
+        if is_retry:
             # Unfinished or retried tick already generated evaluations and run requests and cursor, now
             # need to finish it
             run_requests = tick.tick_data.run_requests or []
@@ -885,7 +883,6 @@ class AssetDaemon(DagsterDaemon):
 
             # experimental code path for evaluating scheduling in user space
             if sensor and sensor.sensor_type == SensorType.AUTOMATION:
-                print("SENSOR PATH")
                 run_requests, new_cursor, evaluations = invoke_sensor_for_evaluation(
                     sensor=sensor,
                     workspace_process_context=workspace_process_context,
@@ -898,7 +895,6 @@ class AssetDaemon(DagsterDaemon):
                     asset_graph=asset_graph,
                 )
             else:
-                print("NOT THE SENSOR PATH")
                 run_requests, new_cursor, evaluations = AssetDaemonContext(
                     evaluation_id=evaluation_id,
                     asset_graph=asset_graph,
@@ -941,7 +937,6 @@ class AssetDaemon(DagsterDaemon):
                 reserved_run_ids = [make_new_run_id() for _ in range(len(run_requests))]
 
             # Write out the in-progress tick data, which ensures that if the tick crashes or raises an exception, it will retry
-            # TODO - how will the retry work if the requested run is a backfill?
             tick = tick_context.set_run_requests(
                 run_requests=run_requests,
                 reserved_run_ids=reserved_run_ids,
@@ -987,22 +982,29 @@ class AssetDaemon(DagsterDaemon):
 
         run_request_execution_data_cache = {}
         for i, (run_request, reserved_run_id) in enumerate(zip(run_requests, reserved_run_ids)):
-            if request_backfills:
-                instance.add_backfill(
-                    PartitionBackfill.from_asset_graph_subset(
-                        backfill_id=reserved_run_id,
-                        dynamic_partitions_store=instance,
-                        backfill_timestamp=pendulum.now("UTC").timestamp(),  # replace pendulum
-                        asset_graph_subset=run_request.asset_graph_subset,
-                        tags={
-                            **run_request.tags,
-                            AUTO_MATERIALIZE_TAG: "true",
-                            ASSET_EVALUATION_ID_TAG: str(evaluation_id),
-                        },
-                        title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
-                        description=None,
+            # check that the run_request requires the backfill daemon rather than if the setting is enabled to
+            # account for the setting changing between tick retries
+            if run_request.requires_backfill_daemon():
+                if instance.get_backfill(reserved_run_id):
+                    self._logger.warn(
+                        f"Run {reserved_run_id} already submitted on a previously interrupted tick, skipping"
                     )
-                )
+                else:
+                    instance.add_backfill(
+                        PartitionBackfill.from_asset_graph_subset(
+                            backfill_id=reserved_run_id,
+                            dynamic_partitions_store=instance,
+                            backfill_timestamp=get_current_timestamp(),
+                            asset_graph_subset=run_request.asset_graph_subset,
+                            tags={
+                                **run_request.tags,
+                                AUTO_MATERIALIZE_TAG: "true",
+                                ASSET_EVALUATION_ID_TAG: str(evaluation_id),
+                            },
+                            title=f"Run for Declarative Automation evaluation ID {evaluation_id}",
+                            description=None,
+                        )
+                    )
                 submitted_run_id = reserved_run_id
                 asset_keys = check.not_none(run_request.asset_graph_subset.asset_keys)
             else:
