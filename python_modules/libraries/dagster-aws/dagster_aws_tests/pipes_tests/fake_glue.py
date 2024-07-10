@@ -44,6 +44,8 @@ class LocalGlueMockClient:
             result = subprocess.run(
                 [sys.executable, f.name, *args],
                 check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
             )
 
         # mock the job run with moto
