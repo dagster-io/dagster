@@ -358,23 +358,8 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
     asset.key.path.join(',').startsWith(prefixPath.join(',')),
   );
 
-  const namespaces = Array.from(
-    new Set(assetsWithPathPrefix.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
-  )
-    .map((x) => JSON.parse(x))
-    .sort();
-
   return {
     displayPathForAsset: namespaceForAsset,
-    displayed: filterAssetsByNamespace(
-      assetsWithPathPrefix,
-      namespaces.map((ns) => [...prefixPath, ...ns]),
-    ),
+    displayed: assetsWithPathPrefix,
   };
 }
-
-const filterAssetsByNamespace = (assets: Asset[], paths: string[][]) => {
-  return assets.filter((asset) =>
-    paths.some((path) => path.every((part, i) => part === asset.key.path[i])),
-  );
-};
