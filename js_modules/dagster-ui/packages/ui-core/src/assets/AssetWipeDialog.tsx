@@ -131,8 +131,8 @@ export const AssetWipeDialogInner = memo(
       if (isDone) {
         return (
           <Box flex={{direction: 'column'}}>
-            {wipedCount ? <Body1>Wiped {numberFormatter.format(wipedCount)}</Body1> : null}
-            {failedCount ? <Body1>Failed {numberFormatter.format(failedCount)}</Body1> : null}
+            {wipedCount ? <Body1>{numberFormatter.format(wipedCount)} Wiped</Body1> : null}
+            {failedCount ? <Body1>{numberFormatter.format(failedCount)} Failed</Body1> : null}
           </Box>
         );
       } else if (!isWiping) {
