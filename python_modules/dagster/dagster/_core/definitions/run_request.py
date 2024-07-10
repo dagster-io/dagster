@@ -17,6 +17,7 @@ import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
 from dagster._core.definitions.asset_check_evaluation import AssetCheckEvaluation
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
 from dagster._core.definitions.dynamic_partitions_request import (
     AddDynamicPartitionsRequest,
     DeleteDynamicPartitionsRequest,
@@ -68,7 +69,7 @@ class SkipReason(NamedTuple("_SkipReason", [("skip_message", PublicAttr[Optional
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(kwargs_fields={"asset_graph_subset"})
 @record_custom
 class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     run_key: Optional[str]
@@ -79,6 +80,7 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
     stale_assets_only: bool
     partition_key: Optional[str]
     asset_check_keys: Optional[Sequence[AssetCheckKey]]
+    asset_graph_subset: Optional[AssetGraphSubset]
     """Represents all the information required to launch a single run.  Must be returned by a
     SensorDefinition or ScheduleDefinition's evaluation function for a run to be launched.
 
@@ -123,8 +125,27 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
         stale_assets_only: bool = False,
         partition_key: Optional[str] = None,
         asset_check_keys: Optional[Sequence[AssetCheckKey]] = None,
+        **kwargs,
     ):
         from dagster._core.definitions.run_config import convert_config_input
+
+        if kwargs.get("asset_graph_subset") is not None:
+            # asset_graph_subset is only passed if you use the RunRequest.for_asset_graph_subset helper
+            # constructor, so we assume that no other parameters were passed.
+            return super().__new__(
+                cls,
+                run_key=None,
+                run_config={},
+                tags=normalize_tags(tags).tags,
+                job_name=None,
+                asset_selection=None,
+                stale_assets_only=False,
+                partition_key=None,
+                asset_check_keys=None,
+                asset_graph_subset=check.inst_param(
+                    kwargs["asset_graph_subset"], "asset_graph_subset", AssetGraphSubset
+                ),
+            )
 
         return super().__new__(
             cls,
@@ -136,7 +157,21 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             stale_assets_only=stale_assets_only,
             partition_key=partition_key,
             asset_check_keys=asset_check_keys,
+            asset_graph_subset=None,
         )
+
+    @classmethod
+    def for_asset_graph_subset(
+        cls,
+        asset_graph_subset: AssetGraphSubset,
+        tags: Optional[Mapping[str, str]],
+    ) -> "RunRequest":
+        """Constructs a RunRequest from an AssetGraphSubset. When processed by the sensor
+        daemon, this will launch a backfill instead of a run.
+        Note: This constructor is intentionally left private since AssetGraphSubset is not part of the
+        public API. Other constructor methods will be public.
+        """
+        return RunRequest(tags=tags, asset_graph_subset=asset_graph_subset)
 
     def with_replaced_attrs(self, **kwargs: Any) -> "RunRequest":
         fields = self._asdict()
@@ -221,6 +256,13 @@ class RunRequest(IHaveNew, LegacyNamedTupleMixin):
             )
         else:
             return None
+
+    def requires_backfill_daemon(self) -> bool:
+        """For now we always send RunRequests with an asset_graph_subset to the backfill daemon, but
+        eventaully we will want to introspect on the asset_graph_subset to determine if we can
+        execute it as a single run instead.
+        """
+        return self.asset_graph_subset is not None
 
 
 def _check_valid_partition_key_after_dynamic_partitions_requests(
