@@ -1,5 +1,4 @@
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from celery import Celery
 from dagster import (
