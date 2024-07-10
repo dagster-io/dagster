@@ -55,6 +55,10 @@ def _namedtuple_record_transform(
     defaults = {}
     for name in field_set.keys():
         if hasattr(cls, name):
+            # Because the generated type inherits the defined class ahead of the named tuple base
+            # we need to shift the NT fields up to the front on the generated class __dict__
+            # to ensure they take precedence over the defined classes bases.
+            shift_to_front.add(name)
             attr_val = getattr(cls, name)
             if isinstance(attr_val, property):
                 check.invariant(
@@ -62,10 +66,6 @@ def _namedtuple_record_transform(
                     f"Conflicting non-abstract @property for field {name} on record {cls.__name__}."
                     "Add the the @abstractmethod decorator to make it abstract.",
                 )
-                # Because the generated type inherits the defined class ahead of the named tuple base
-                # we need to shift the NT fields up to the front on the generated class __dict__
-                # to ensure they take precedence over the defined classes bases.
-                shift_to_front.add(name)
             else:
                 check.invariant(
                     not inspect.isfunction(attr_val),

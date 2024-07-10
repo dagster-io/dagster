@@ -387,19 +387,25 @@ def test_base_class_conflicts() -> None:
         @abstractmethod
         def abstract_prop(self): ...
 
+        @property
+        @abstractmethod
+        def abstract_prop_with_default(self) -> int: ...
+
     class DidntImpl(AbsPropBase): ...
 
     with pytest.raises(
         TypeError,
-        match="Can't instantiate abstract class DidntImpl with abstract method abstract_prop",
+        match="Can't instantiate abstract class DidntImpl with abstract methods abstract_prop, abstract_prop_with_default",
     ):
         DidntImpl()  # type: ignore # good job type checker
 
     @record
     class A(AbsPropBase):
         abstract_prop: Any
+        abstract_prop_with_default: int = 0
 
     assert A(abstract_prop=4).abstract_prop == 4
+    assert A(abstract_prop=4).abstract_prop_with_default == 0
 
     class ConflictFnBase:
         def some_method(self): ...
