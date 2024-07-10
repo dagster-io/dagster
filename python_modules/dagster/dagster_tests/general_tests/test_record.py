@@ -483,3 +483,11 @@ def test_new_remaps_fields() -> None:
     assert r2.foo.s == "test"
 
     assert pickle.loads(pickle.dumps(r)) == r
+
+
+def test_docs():
+    @record
+    class Documented:
+        """So much to know about this class."""
+
+    assert Documented.__doc__
