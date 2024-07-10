@@ -402,3 +402,11 @@ def test_default_collision() -> None:
         @record
         class _(Base):
             thing: Any = _some_func
+
+
+def test_docs():
+    @record
+    class Documented:
+        """So much to know about this class."""
+
+    assert Documented.__doc__

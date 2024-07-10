@@ -32,6 +32,7 @@ _RECORD_ANNOTATIONS_FIELD = "__record_annotations__"
 _CHECKED_NEW = "__checked_new__"
 _DEFAULTS_NEW = "__defaults_new__"
 _INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
+_ORIGINAL_CLASS_FIELD = "__original_class__"
 
 
 def _namedtuple_model_transform(
@@ -114,14 +115,16 @@ def _namedtuple_model_transform(
             _RECORD_MARKER_FIELD: _RECORD_MARKER_VALUE,
             _RECORD_ANNOTATIONS_FIELD: field_set,
             "__nt_new__": nt_new,
+            _ORIGINAL_CLASS_FIELD: cls,
             "__bool__": _true,
             "__reduce__": _reduce,
+            # functools doesn't work, so manually update_wrapper
+            "__module__": cls.__module__,
+            "__qualname__": cls.__qualname__,
+            "__annotations__": field_set,
+            "__doc__": cls.__doc__,
         },
     )
-
-    # functools doesn't work, so manually update_wrapper
-    new_type.__module__ = cls.__module__
-    new_type.__qualname__ = cls.__qualname__
 
     return new_type  # type: ignore
 
@@ -247,7 +250,13 @@ def has_generated_new(obj) -> bool:
 
 
 def get_record_annotations(obj) -> Mapping[str, Type]:
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
     return getattr(obj, _RECORD_ANNOTATIONS_FIELD)
+
+
+def get_original_class(obj):
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
+    return getattr(obj, _ORIGINAL_CLASS_FIELD)
 
 
 def as_dict(obj) -> Mapping[str, Any]:
