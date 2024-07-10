@@ -434,3 +434,40 @@ def test_lazy_import():
         return AnnotatedModel(foos=[TestType()])
 
     assert _out_of_scope()
+
+
+def test_composition() -> None:
+    @record
+    class Person:
+        name: str
+        gender: str
+
+    @record
+    class Man(Person):
+        gender: str = "male"
+
+    p = Man(name="Adam")
+    assert p.name == "Adam"
+    assert p.gender == "male"
+
+    @record
+    class Bear:
+        claw_sharpness: float
+
+    @record
+    class Pig:
+        tail_curliness: float
+
+    @record
+    class ManBearPig(Man, Bear, Pig): ...
+
+    r = ManBearPig(
+        name="Al Gore",
+        tail_curliness=0.5,
+        claw_sharpness=0.1,
+    )
+
+    assert r.name == "Al Gore"
+    assert r.gender == "male"
+    assert r.tail_curliness == 0.5
+    assert r.claw_sharpness == 0.1
