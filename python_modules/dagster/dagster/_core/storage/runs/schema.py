@@ -74,6 +74,7 @@ RunTagsTable = db.Table(
     db.Column("run_id", None, db.ForeignKey("runs.run_id", ondelete="CASCADE")),
     db.Column("key", db.Text),
     db.Column("value", db.Text),
+    db.Column("run_id_pk", db.BigInteger().with_variant(sqlite.INTEGER(), "sqlite")),
 )
 
 SnapshotsTable = db.Table(
