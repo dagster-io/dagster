@@ -81,6 +81,7 @@ from .migration import (
     OPTIONAL_DATA_MIGRATIONS,
     REQUIRED_DATA_MIGRATIONS,
     RUN_PARTITIONS,
+    RUN_TAGS_JOIN_KEY,
     MigrationFn,
 )
 from .schema import (
@@ -146,20 +147,36 @@ class SqlRunStorage(RunStorage):
             partition_set=partition_set,
         )
         with self.connect() as conn:
-            try:
-                conn.execute(runs_insert)
-            except db_exc.IntegrityError as exc:
-                raise DagsterRunAlreadyExists from exc
-
             tags_to_insert = dagster_run.tags_for_storage()
-            if tags_to_insert:
-                conn.execute(
-                    RunTagsTable.insert(),
-                    [
-                        dict(run_id=dagster_run.run_id, key=k, value=v)
-                        for k, v in tags_to_insert.items()
-                    ],
-                )
+            if tags_to_insert and self.has_built_index(RUN_TAGS_JOIN_KEY):
+                # the data has been migrated and the storage supports returning clauses
+                try:
+                    row = conn.execute(runs_insert.returning(RunsTable.c.id)).fetchone()
+                except db_exc.IntegrityError as exc:
+                    raise DagsterRunAlreadyExists from exc
+
+                if row:
+                    conn.execute(
+                        RunTagsTable.insert(),
+                        [
+                            dict(run_id=dagster_run.run_id, key=k, value=v, run_id_pk=row[0])
+                            for k, v in tags_to_insert.items()
+                        ],
+                    )
+            else:
+                try:
+                    conn.execute(runs_insert)
+                except db_exc.IntegrityError as exc:
+                    raise DagsterRunAlreadyExists from exc
+
+                if tags_to_insert:
+                    conn.execute(
+                        RunTagsTable.insert(),
+                        [
+                            dict(run_id=dagster_run.run_id, key=k, value=v)
+                            for k, v in tags_to_insert.items()
+                        ],
+                    )
 
         return dagster_run
 
@@ -315,17 +332,53 @@ class SqlRunStorage(RunStorage):
         if columns is None:
             columns = ["run_body", "status"]
 
-        table = RunsTable
+        if filters.tags and self.has_built_index(RUN_TAGS_JOIN_KEY):
+            table = self._apply_tags_table_joins(RunsTable, filters.tags)
+        else:
+            table = RunsTable
+
         base_query = db_select([getattr(RunsTable.c, column) for column in columns]).select_from(
             table
         )
         base_query = self._add_filters_to_query(base_query, filters)
         return self._add_cursor_limit_to_query(base_query, cursor, limit, order_by, ascending)
 
+    def _apply_tags_table_joins(
+        self,
+        table: db.Table,
+        tags: Mapping[str, Union[str, Sequence[str]]],
+    ) -> db.Table:
+        multi_join = len(tags) > 1
+        i = 0
+        for key, value in tags.items():
+            i += 1
+            tags_table = (
+                db_subquery(db_select([RunTagsTable]), f"run_tags_subquery_{i}")
+                if multi_join
+                else RunTagsTable
+            )
+            table = table.join(
+                tags_table,
+                db.and_(
+                    RunsTable.c.id == tags_table.c.run_id_pk,
+                    tags_table.c.key == key,
+                    (
+                        tags_table.c.value == value
+                        if isinstance(value, str)
+                        else tags_table.c.value.in_(value)
+                    ),
+                ),
+            )
+        return table
+
     def _apply_tags_table_filters(
         self, query: SqlAlchemyQuery, tags: Mapping[str, Union[str, Sequence[str]]]
     ) -> SqlAlchemyQuery:
         """Efficient query pattern for filtering by multiple tags."""
+        if self.has_built_index(RUN_TAGS_JOIN_KEY):
+            # the filter has already been applied to the query
+            return query
+
         expected_count = len(tags)
         if expected_count == 1:
             key, value = next(iter(tags.items()))
@@ -389,6 +442,14 @@ class SqlRunStorage(RunStorage):
         row = self.fetchone(query)
         count = row["count"] if row else 0
         return count
+
+    def _get_record_by_id(self, run_id: str) -> Optional[RunRecord]:
+        check.str_param(run_id, "run_id")
+
+        records = self.get_run_records(filters=RunsFilter(run_ids=[run_id]), limit=1)
+        if records:
+            return records[0]
+        return None
 
     def _get_run_by_id(self, run_id: str) -> Optional[DagsterRun]:
         check.str_param(run_id, "run_id")
@@ -476,11 +537,12 @@ class SqlRunStorage(RunStorage):
         check.str_param(run_id, "run_id")
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
-        run = self._get_run_by_id(run_id)
-        if not run:
+        record = self._get_record_by_id(run_id)
+        if not record:
             raise DagsterRunNotFoundError(
                 f"Run {run_id} was not found in instance.", invalid_run_id=run_id
             )
+        run = record.dagster_run
         current_tags = run.tags if run.tags else {}
 
         all_tags = merge_dicts(current_tags, new_tags)
@@ -513,10 +575,24 @@ class SqlRunStorage(RunStorage):
                 )
 
             if added_tags:
-                conn.execute(
-                    RunTagsTable.insert(),
-                    [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
-                )
+                if self.has_built_index(RUN_TAGS_JOIN_KEY):
+                    conn.execute(
+                        RunTagsTable.insert(),
+                        [
+                            dict(
+                                run_id=run_id,
+                                key=tag,
+                                value=new_tags[tag],
+                                run_id_pk=record.storage_id,
+                            )
+                            for tag in added_tags
+                        ],
+                    )
+                else:
+                    conn.execute(
+                        RunTagsTable.insert(),
+                        [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
+                    )
 
     def get_run_group(self, run_id: str) -> Tuple[str, Sequence[DagsterRun]]:
         check.str_param(run_id, "run_id")
