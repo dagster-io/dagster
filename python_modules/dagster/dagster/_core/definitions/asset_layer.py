@@ -247,15 +247,16 @@ class AssetLayer(NamedTuple):
         assets_def = self.assets_defs_by_node_handle[node_handle]
         return {
             key
-            for key in assets_def.asset_or_check_keys_by_dep_op_output_handle[
+            for key in check.not_none(
+                assets_def.computation
+            ).asset_or_check_keys_by_dep_op_output_handle[
                 NodeOutputHandle(node_handle=node_handle.pop(), output_name=output_name)
             ]
             if isinstance(key, AssetKey)
         }
 
     def upstream_dep_op_handles(self, asset_key: AssetKey) -> AbstractSet[NodeHandle]:
-        op_handles_in_assets_def = self.asset_graph.get(
-            asset_key
-        ).assets_def.dep_op_handles_by_asset_or_check_key[asset_key]
+        computation = check.not_none(self.asset_graph.get(asset_key).assets_def.computation)
+        op_handles_in_assets_def = computation.dep_op_handles_by_asset_or_check_key[asset_key]
         outer_node_handle = NodeHandle(self.outer_node_names_by_asset_key[asset_key], parent=None)
         return {outer_node_handle.with_child(op_handle) for op_handle in op_handles_in_assets_def}
