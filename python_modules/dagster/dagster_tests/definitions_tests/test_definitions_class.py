@@ -854,7 +854,7 @@ def test_resource_conflict_on_merge():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a resource with key 'resource1'",
+        match="Definitions objects 0 and 1 have different resources with same key 'resource1'",
     ):
         Definitions.merge(defs1, defs2)
 
@@ -881,7 +881,7 @@ def test_logger_conflict_on_merge():
 
     with pytest.raises(
         DagsterInvariantViolationError,
-        match="Definitions objects 0 and 1 both have a logger with key 'logger1'",
+        match="Definitions objects 0 and 1 have different loggers with same key 'logger1'",
     ):
         Definitions.merge(defs1, defs2)
 
