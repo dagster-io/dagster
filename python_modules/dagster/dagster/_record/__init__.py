@@ -35,6 +35,7 @@ _DEFAULTS_NEW = "__defaults_new__"
 _INJECTED_DEFAULT_VALS_LOCAL_VAR = "__dm_defaults__"
 _NAMED_TUPLE_BASE_NEW_FIELD = "__nt_new__"
 _REMAPPING_FIELD = "__field_remap__"
+_ORIGINAL_CLASS_FIELD = "__original_class__"
 
 
 def _namedtuple_record_transform(
@@ -51,6 +52,7 @@ def _namedtuple_record_transform(
         * creates a run time checked __new__  (optional).
     """
     field_set = getattr(cls, "__annotations__", {})
+
     defaults = {}
     for name in field_set.keys():
         if hasattr(cls, name):
@@ -117,14 +119,16 @@ def _namedtuple_record_transform(
             _RECORD_ANNOTATIONS_FIELD: field_set,
             _NAMED_TUPLE_BASE_NEW_FIELD: nt_new,
             _REMAPPING_FIELD: field_to_new_mapping or {},
+            _ORIGINAL_CLASS_FIELD: cls,
             "__bool__": _true,
             "__reduce__": _reduce,
+            # functools doesn't work, so manually update_wrapper
+            "__module__": cls.__module__,
+            "__qualname__": cls.__qualname__,
+            "__annotations__": field_set,
+            "__doc__": cls.__doc__,
         },
     )
-
-    # functools doesn't work, so manually update_wrapper
-    new_type.__module__ = cls.__module__
-    new_type.__qualname__ = cls.__qualname__
 
     return new_type  # type: ignore
 
@@ -254,21 +258,25 @@ def has_generated_new(obj) -> bool:
 
 
 def get_record_annotations(obj) -> Mapping[str, Type]:
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
     return getattr(obj, _RECORD_ANNOTATIONS_FIELD)
+
+
+def get_original_class(obj):
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
+    return getattr(obj, _ORIGINAL_CLASS_FIELD)
 
 
 def as_dict(obj) -> Mapping[str, Any]:
     """Creates a dict representation of the record based on the fields."""
-    if not is_record(obj):
-        raise Exception("Only works for @record decorated classes")
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
 
     return {key: value for key, value in zip(obj._fields, obj.__hidden_iter__())}
 
 
 def as_dict_for_new(obj) -> Mapping[str, Any]:
     """Creates a dict representation of the record with field_to_new_mapping applied."""
-    if not is_record(obj):
-        raise Exception("Only works for @record decorated classes")
+    check.invariant(is_record(obj), "Only works for @record decorated classes")
 
     remap = getattr(obj, _REMAPPING_FIELD)
     from_obj = {}
