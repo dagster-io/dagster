@@ -1,15 +1,31 @@
-import {Box, NonIdealState} from '@dagster-io/ui-components';
+import {Box, Colors, NonIdealState} from '@dagster-io/ui-components';
 import {useVirtualizer} from '@tanstack/react-virtual';
 import {useEffect, useRef} from 'react';
+import styled from 'styled-components';
 
+import {LogFilter, LogsProviderLogs} from './LogsProvider';
 import {Structured, Unstructured} from './LogsRow';
-import {ILogsScrollingTableProps, ListEmptyState, filterLogs} from './LogsScrollingTable';
 import {ColumnWidthsProvider, Headers} from './LogsScrollingTableHeader';
+import {IRunMetadataDict} from './RunMetadataProvider';
+import {filterLogs} from './filterLogs';
 import {Container, DynamicRowContainer, Inner} from '../ui/VirtualizedTable';
 
 const BOTTOM_SCROLL_THRESHOLD_PX = 60;
 
-export const LogsScrollingTableNew = (props: ILogsScrollingTableProps) => {
+interface Props {
+  logs: LogsProviderLogs;
+  filter: LogFilter;
+  filterStepKeys: string[];
+
+  // We use this string to know whether the changes to `nodes` require us to
+  // re-layout the entire table. Appending new rows can be done very fast, but
+  // removing some rows requires the whole list be "reflowed" again. Checking
+  // `nodes` for equality doesn't let us optimize for the append- case.
+  filterKey: string;
+  metadata: IRunMetadataDict;
+}
+
+export const LogsScrollingTableNew = (props: Props) => {
   const {filterStepKeys, metadata, filter, logs} = props;
 
   const parentRef = useRef<HTMLDivElement>(null);
@@ -110,3 +126,11 @@ export const LogsScrollingTableNew = (props: ILogsScrollingTableProps) => {
     </ColumnWidthsProvider>
   );
 };
+
+export const ListEmptyState = styled.div`
+  background-color: ${Colors.backgroundDefault()};
+  z-index: 100;
+  position: absolute;
+  width: 100%;
+  height: calc(100% - 50px);
+`;
