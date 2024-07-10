@@ -12,10 +12,9 @@ from typing import Any, Optional
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._utils.backoff import backoff
 from mlflow import MlflowException
 from mlflow.entities.run_status import RunStatus
-
-from dagster._utils.backoff import backoff
 
 CONFIG_SCHEMA = {
     "experiment_name": Field(StringSource, is_required=True, description="MlFlow experiment name."),
@@ -139,9 +138,9 @@ class MlFlow(metaclass=MlflowMeta):
                 retry_on=(MlflowException,),
                 kwargs={
                     "experiment_ids": [experiment.experiment_id],
-                    "filter_string": f"tags.dagster_run_id='{dagster_run_id}'"
+                    "filter_string": f"tags.dagster_run_id='{dagster_run_id}'",
                 },
-                max_retries=3
+                max_retries=3,
             )
             if not current_run_df.empty:
                 return current_run_df.run_id.values[0]
