@@ -194,6 +194,10 @@ class GraphQLServer(ABC):
                 elif message_type == GraphQLWS.CONNECTION_TERMINATE:
                     await websocket.close()
                 elif message_type == GraphQLWS.START:
+                    # Ignore if same operation id attempts to get restarted
+                    if operation_id in tasks:
+                        continue
+
                     data = message["payload"]
 
                     task, error_payload = await self.execute_graphql_subscription(
@@ -213,7 +217,7 @@ class GraphQLServer(ABC):
 
                 elif message_type == GraphQLWS.STOP:
                     if operation_id not in tasks:
-                        return
+                        continue
 
                     tasks[operation_id].cancel()
                     del tasks[operation_id]
