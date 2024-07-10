@@ -32,7 +32,7 @@ from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.output import Out
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.execution.plan.objects import StepSuccessData
-from dagster._core.test_utils import nesting_graph
+from dagster._core.test_utils import nesting_graph, poll_for_step_start
 from dagster._utils import segfault
 from dagster._utils.merger import merge_dicts
 from dagster._utils.yaml_utils import merge_yamls
@@ -517,6 +517,9 @@ def volume_mount_graph():
 
 @op
 def op_that_emits_duplicate_step_success_event(context):
+    # Wait for the other op to start so that it will be terminated mid-execution
+    poll_for_step_start(context.instance, context.dagster_run.run_id, message="hanging_op")
+
     # emits a duplicate step success event which will mess up the execution
     # machinery and fail the run worker
     yield DagsterEvent.step_success_event(
