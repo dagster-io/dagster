@@ -30,7 +30,7 @@ const LOGS_PADDING_BOTTOM = 50;
 const List: any = _List;
 const CellMeasurer: any = _CellMeasurer;
 
-interface ILogsScrollingTableProps {
+export interface ILogsScrollingTableProps {
   logs: LogsProviderLogs;
   filter: LogFilter;
   filterStepKeys: string[];
@@ -56,7 +56,7 @@ interface ILogsScrollingTableSizedProps {
   metadata: IRunMetadataDict;
 }
 
-function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
+export function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
   const filteredNodes = logs.allNodes.filter((node) => {
     // These events are used to determine which assets a run will materialize and are not intended
     // to be displayed in the Dagster UI. Pagination is offset based, so we remove these logs client-side.
@@ -409,7 +409,7 @@ class AutoSizer extends React.Component<{
   }
 }
 
-const ListEmptyState = styled.div`
+export const ListEmptyState = styled.div`
   background-color: ${Colors.backgroundDefault()};
   z-index: 100;
   position: absolute;
