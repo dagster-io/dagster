@@ -17,7 +17,7 @@ import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {DefaultLogLevels} from './LogLevel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
-import {LogsScrollingTableNew} from './LogsScrollingTableNew';
+import {LogsScrollingTable} from './LogsScrollingTable';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {IRunMetadataDict, RunMetadataProvider} from './RunMetadataProvider';
 import {titleForRun} from './RunUtils';
@@ -182,7 +182,7 @@ export const StepLogsModalContent = ({
           />
         )
       ) : (
-        <LogsScrollingTableNew
+        <LogsScrollingTable
           logs={logs}
           filter={filter}
           filterStepKeys={stepKeys}
