@@ -62,7 +62,7 @@ export const SensorSwitch = (props: Props) => {
     sensorName: name,
   };
 
-  const {data, loading, refetch} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
+  const {data, loading} = useQuery<SensorStateQuery, SensorStateQueryVariables>(
     SENSOR_STATE_QUERY,
     {
       variables: {id: sensor.id},
