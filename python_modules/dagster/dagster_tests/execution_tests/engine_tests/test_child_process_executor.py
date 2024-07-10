@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import time
+from multiprocessing.process import BaseProcess
 
 import pytest
 from dagster._core.executor.child_process_executor import (
@@ -53,7 +54,7 @@ class LongRunningCommand(ChildProcessCommand):
 def test_basic_child_process_command():
     events = list(
         filter(
-            lambda x: x and not isinstance(x, ChildProcessEvent),
+            lambda x: x and not isinstance(x, (ChildProcessEvent, BaseProcess)),
             execute_child_process_command(multiprocessing, DoubleAStringChildProcessCommand("aa")),
         )
     )
@@ -67,14 +68,17 @@ def test_basic_child_process_command_with_process_events():
             execute_child_process_command(multiprocessing, DoubleAStringChildProcessCommand("aa")),
         )
     )
-    assert len(events) == 3
+    assert len(events) == 4
 
-    assert isinstance(events[0], ChildProcessStartEvent)
-    child_pid = events[0].pid
+    assert isinstance(events[0], BaseProcess)
+
+    assert isinstance(events[1], ChildProcessStartEvent)
+    child_pid = events[1].pid
     assert child_pid != os.getpid()
-    assert events[1] == "aaaa"
-    assert isinstance(events[2], ChildProcessDoneEvent)
-    assert events[2].pid == child_pid
+    assert child_pid == events[0].pid
+    assert events[2] == "aaaa"
+    assert isinstance(events[3], ChildProcessDoneEvent)
+    assert events[3].pid == child_pid
 
 
 def test_child_process_uncaught_exception():
