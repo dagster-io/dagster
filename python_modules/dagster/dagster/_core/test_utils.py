@@ -764,3 +764,6 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
     ), pendulum_freeze_time(new_pendulum_dt):
         yield
+
+
+class TestType: ...

@@ -4,6 +4,7 @@ import sys
 from collections import defaultdict
 from contextlib import contextmanager
 from typing import (
+    TYPE_CHECKING,
     AbstractSet,
     Any,
     Dict,
@@ -25,10 +26,15 @@ from dagster._check import (
     CheckError,
     ElementCheckError,
     EvalContext,
+    ImportFrom,
     NotImplementedCheckError,
     ParameterCheckError,
     build_check_call_str,
 )
+from typing_extensions import Annotated
+
+if TYPE_CHECKING:
+    from dagster._core.test_utils import TestType  # used in lazy import ForwardRef test case
 
 
 @contextmanager
@@ -1570,8 +1576,13 @@ def test_is_iterable_typing() -> None:
 
 def build_check_call(ttype, name, eval_ctx: EvalContext):
     body = build_check_call_str(ttype, name, eval_ctx)
+    lazy_import_str = "\n    ".join(
+        f"from {module} import {t}" for t, module in eval_ctx.lazy_imports.items()
+    )
+
     fn = f"""
 def _check({name}):
+    {lazy_import_str}
     return {body}
 """
     # print(fn) # debug output
@@ -1610,6 +1621,14 @@ BUILD_CASES = [
     (Optional[Mapping[str, int]], [{"a": 1}], [{1: "a"}]),
     (PublicAttr[Optional[Mapping[str, int]]], [{"a": 1}], [{1: "a"}]),
     (PublicAttr[Bar], [Bar()], [Foo()]),
+    (Annotated[Bar, None], [Bar()], [Foo()]),
+    (Annotated["Bar", None], [Bar()], [Foo()]),
+    (List[Annotated[Bar, None]], [[Bar()], []], [[Foo()]]),
+    (
+        List[Annotated["TestType", ImportFrom("dagster._core.test_utils")]],
+        [[]],  # avoid importing TestType
+        [[Foo()]],
+    ),
     (Union[bool, Foo], [True], [None]),
     (Union[Foo, "Bar"], [Bar()], [None]),
     (TypeVar("T", bound=Foo), [Foo(), SubFoo()], [Bar()]),
@@ -1620,6 +1639,7 @@ BUILD_CASES = [
     (Optional["Foo"], [Foo()], [Bar()]),
     (PublicAttr[Optional["Foo"]], [None], [Bar()]),
     (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
+    (Mapping[str, Optional["Foo"]], [{"foo": Foo()}], [{"bar": Bar()}]),
 ]
 
 
@@ -1627,7 +1647,7 @@ BUILD_CASES = [
 def test_build_check_call(
     ttype: Type, should_succeed: Sequence[object], should_fail: Sequence[object]
 ) -> None:
-    eval_ctx = EvalContext(globals(), locals())
+    eval_ctx = EvalContext(globals(), locals(), {})
     check_call = build_check_call(ttype, "test_param", eval_ctx)
 
     for obj in should_succeed:
@@ -1643,13 +1663,13 @@ def test_build_check_errors() -> None:
         build_check_call(
             List["NoExist"],  # type: ignore # noqa
             "bad",
-            EvalContext(globals(), locals()),
+            EvalContext(globals(), locals(), {}),
         )
 
 
 def test_forward_ref_flow() -> None:
     # original context captured at decl
-    eval_ctx = EvalContext(globals(), locals())
+    eval_ctx = EvalContext(globals(), locals(), {})
     ttype = List["Late"]  # class not yet defined
 
     class Late: ...
