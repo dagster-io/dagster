@@ -286,7 +286,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     Args:
         client (boto3.client): The boto Glue client used to call invoke.
         context_injector (Optional[PipesContextInjector]): A context injector to use to inject
-            context into the Glue job. Defaults to :py:class:`PipesGlueContextInjector`.
+            context into the Glue job, for example, :py:class:`PipesGlueContextInjector`.
         message_reader (Optional[PipesMessageReader]): A message reader to use to read messages
             from the glue job run. Defaults to :py:class:`PipesGlueLogsMessageReader`.
     """
@@ -294,7 +294,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
     def __init__(
         self,
         client: boto3.client,
-        context_injector: PipesS3ContextInjector,
+        context_injector: PipesContextInjector,
         message_reader: Optional[PipesMessageReader] = None,
     ):
         self._client = client
@@ -310,6 +310,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         *,
         job_name: str,
         context: OpExecutionContext,
+        extras: Optional[Dict[str, Any]] = None,
         arguments: Optional[Mapping[str, Any]] = None,
         job_run_id: Optional[str] = None,
         allocated_capacity: Optional[int] = None,
@@ -328,6 +329,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         Args:
             job_name (str): The name of the job to use.
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+            extras (Optional[Dict[str, Any]]): Additional Dagster metadata to pass to the Glue job.
             arguments (Optional[Dict[str, str]]): Arguments to pass to the Glue job Command
             job_run_id (Optional[str]): The ID of the previous job run to retry.
             allocated_capacity (Optional[int]): The amount of DPUs (Glue data processing units) to allocate to this job.
@@ -343,6 +345,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             context=context,
             message_reader=self._message_reader,
             context_injector=self._context_injector,
+            extras=extras,
         ) as session:
             arguments = arguments or {}
             assert arguments is not None
