@@ -1601,7 +1601,7 @@ class AssetsDefinition(ResourceAddable, RequiresResources, IHasInternalInit):
 
     @cached_property
     def unique_id(self) -> str:
-        return unique_id_from_asset_and_check_keys(self.keys, self.check_keys)
+        return unique_id_from_asset_and_check_keys(itertools.chain(self.keys, self.check_keys))
 
     def with_resources(self, resource_defs: Mapping[str, ResourceDefinition]) -> "AssetsDefinition":
         attributes_dict = self.get_attributes_dict()
@@ -2028,18 +2028,13 @@ def get_partition_mappings_from_deps(
     return partition_mappings
 
 
-def unique_id_from_asset_and_check_keys(
-    asset_keys: Iterable[AssetKey], check_keys: Iterable[AssetCheckKey]
-) -> str:
+def unique_id_from_asset_and_check_keys(asset_or_check_keys: Iterable["AssetKeyOrCheckKey"]) -> str:
     """Generate a unique ID from the provided asset keys.
 
     This is useful for generating op names that don't have collisions.
     """
-    sorted_asset_key_strs = sorted(asset_key.to_string() for asset_key in asset_keys)
-    sorted_check_key_strs = sorted(str(check_key) for check_key in check_keys)
-    return non_secure_md5_hash_str(
-        json.dumps(sorted_asset_key_strs + sorted_check_key_strs).encode("utf-8")
-    )[:8]
+    sorted_key_strs = sorted(str(key) for key in asset_or_check_keys)
+    return non_secure_md5_hash_str(json.dumps(sorted_key_strs).encode("utf-8"))[:8]
 
 
 @record
