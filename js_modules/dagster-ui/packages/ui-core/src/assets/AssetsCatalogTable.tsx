@@ -353,7 +353,6 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
     return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
   };
 
-  // Only consider assets that start with the prefix path
   const assetsWithPathPrefix = assets.filter((asset) =>
     prefixPath.every((part, index) => part === asset.key.path[index]),
   );
