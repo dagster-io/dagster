@@ -86,7 +86,7 @@ export const ContentRoot = memo(() => {
           <Route path="/automation">
             <AutomationRoot />
           </Route>
-          <Route path="/settings">
+          <Route path="/deployment">
             <SettingsRoot />
           </Route>
           <Route path="*" isNestingRoute>
