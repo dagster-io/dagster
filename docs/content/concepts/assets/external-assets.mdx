@@ -48,9 +48,9 @@ The following code declares a single non-materializable asset that represents a 
 Click the **Asset in the Dagster UI** tab to see how this asset would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/single_declaration.py
-from dagster import AssetsDefinition
+from dagster import AssetsDefinition, AssetSpec
 
-file_in_s3 = AssetsDefinition.single("file_in_s3")
+file_in_s3 = AssetsDefinition(specs=[AssetSpec("file_in_s3")])
 ```
 
 Like when you use the `@asset` decorator, this code results in an `AssetsDefinition` object that contains the definition of a single asset. But unlike an `AssetsDefinition` object produced by the `@asset` decorator, the resulting object does not include a materialization function for the asset.
@@ -88,10 +88,14 @@ In the following example, we have two assets: `raw_logs` and `processed_logs`. T
 Click the **Assets in the Dagster UI** tab to see how these assets would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/external_asset_deps.py
-from dagster import AssetsDefinition
+from dagster import AssetsDefinition, AssetSpec
 
-raw_logs = AssetsDefinition.single("raw_logs")
-processed_logs = AssetsDefinition.single("processed_logs", deps=[raw_logs])
+external_log_assets = AssetsDefinition(
+    specs=[
+        AssetSpec("raw_logs"),
+        AssetSpec("processed_logs", deps=["raw_logs"]),
+    ]
+)
 ```
 
 ---
@@ -125,13 +129,17 @@ Fully-managed assets can depend on non-materializable assets. In this example, t
 Click the **Assets in the Dagster UI** tab to see how these assets would be rendered in the Dagster UI.
 
 ```python file=/concepts/assets/external_assets/normal_asset_depending_on_external.py
-from dagster import AssetsDefinition, asset
+from dagster import AssetsDefinition, AssetSpec, asset
 
-raw_logs = AssetsDefinition.single("raw_logs")
-processed_logs = AssetsDefinition.single("processed_logs", deps=[raw_logs])
+external_log_assets = AssetsDefinition(
+    specs=[
+        AssetSpec("raw_logs"),
+        AssetSpec("processed_logs", deps=["raw_logs"]),
+    ]
+)
 
 
-@asset(deps=[processed_logs])
+@asset(deps=["processed_logs"])
 def aggregated_logs() -> None:
     # Loads "processed_log" into memory and performs some aggregation
     ...
@@ -222,6 +230,7 @@ You can log an <PyObject object="AssetMaterialization"/> from an [op](/concepts/
 from dagster import (
     AssetMaterialization,
     AssetsDefinition,
+    AssetSpec,
     Definitions,
     OpExecutionContext,
     job,
@@ -239,7 +248,9 @@ def a_job() -> None:
     an_op()
 
 
-defs = Definitions(assets=[AssetsDefinition.single("external_asset")], jobs=[a_job])
+defs = Definitions(
+    assets=[AssetsDefinition(specs=[AssetSpec("external_asset")])], jobs=[a_job]
+)
 ```
 
 ---

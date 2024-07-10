@@ -1,4 +1,8 @@
-from dagster import AssetsDefinition
+from dagster import AssetsDefinition, AssetSpec
 
-raw_logs = AssetsDefinition.single("raw_logs")
-processed_logs = AssetsDefinition.single("processed_logs", deps=[raw_logs])
+external_log_assets = AssetsDefinition(
+    specs=[
+        AssetSpec("raw_logs"),
+        AssetSpec("processed_logs", deps=["raw_logs"]),
+    ]
+)

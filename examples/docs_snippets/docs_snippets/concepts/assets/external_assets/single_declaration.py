@@ -1,3 +1,3 @@
-from dagster import AssetsDefinition
+from dagster import AssetsDefinition, AssetSpec
 
-file_in_s3 = AssetsDefinition.single("file_in_s3")
+file_in_s3 = AssetsDefinition(specs=[AssetSpec("file_in_s3")])
