@@ -1,5 +1,6 @@
 import os
 
+import duckdb as duckdblib
 import pandas as pd
 import pytest
 from dagster import asset, job, materialize, op
@@ -16,8 +17,14 @@ def test_resource(tmp_path):
 
     @asset
     def read_table(duckdb: DuckDBResource):
-        with duckdb.get_connection() as conn:
+        with duckdb.get_connection(read_only=True) as conn:
             res = conn.execute("SELECT * FROM my_table").fetchdf()
+
+            with pytest.raises(duckdblib.InvalidInputException) as exc_info:
+                conn.execute("CREATE TABLE your_table AS SELECT * FROM df")
+
+            # check if "read-only" is in the exception message
+            assert "read-only" in str(exc_info.value)
 
             assert res.equals(df)
 

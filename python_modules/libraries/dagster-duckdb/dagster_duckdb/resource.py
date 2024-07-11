@@ -47,13 +47,13 @@ class DuckDBResource(ConfigurableResource):
         return True
 
     @contextmanager
-    def get_connection(self):
+    def get_connection(self, read_only: bool = False):
         conn = backoff(
             fn=duckdb.connect,
             retry_on=(RuntimeError, duckdb.IOException),
             kwargs={
                 "database": self.database,
-                "read_only": False,
+                "read_only": read_only,
                 "config": {
                     "custom_user_agent": "dagster",
                     **self.connection_config,
