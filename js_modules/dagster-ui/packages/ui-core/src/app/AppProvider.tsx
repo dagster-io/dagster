@@ -44,6 +44,8 @@ import './blueprint.css';
 // when you copy-paste so they don't get pasted into editors, etc.
 patchCopyToRemoveZeroWidthUnderscores();
 
+const httpStatusCodesToRetry = [502, 503, 504, 429, 409];
+
 const idempotencyLink = new ApolloLink((operation, forward) => {
   if (/^\s*mutation/.test(operation.query.loc?.source.body ?? '')) {
     operation.setContext(({headers = {}}) => ({
@@ -112,7 +114,7 @@ export const AppProvider = (props: AppProviderProps) => {
       attempts: {
         max: 2,
         retryIf: (error, _operation) => {
-          return error && error.statusCode && [502, 503, 504].includes(error.statusCode);
+          return error && error.statusCode && httpStatusCodesToRetry.includes(error.statusCode);
         },
       },
       delay: {
