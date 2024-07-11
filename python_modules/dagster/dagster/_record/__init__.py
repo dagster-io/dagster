@@ -339,7 +339,7 @@ class JitCheckedNew:
         self._eval_ctx = eval_ctx
         self._new_frames = new_frames  # how many frames of __new__ there are
 
-    def __call__(self, cls, **kwargs):
+    def __call__(self, cls, *args, **kwargs):
         # update the context with callsite locals/globals to resolve
         # ForwardRefs that were unavailable at definition time.
         self._eval_ctx.update_from_frame(1 + self._new_frames)
@@ -354,7 +354,7 @@ class JitCheckedNew:
             _CHECKED_NEW,
         )
 
-        return self._nt_base.__new__(cls, **kwargs)
+        return self._nt_base.__new__(cls, *args, **kwargs)
 
     def _build_checked_new_str(self) -> str:
         kw_args_str, set_calls_str = build_args_and_assignment_strs(self._field_set, self._defaults)

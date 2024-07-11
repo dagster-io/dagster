@@ -21,6 +21,15 @@ if TYPE_CHECKING:
     from dagster._core.test_utils import TestType
 
 
+def test_kwargs_only() -> None:
+    @record
+    class MyClass:
+        foo: str
+
+    with pytest.raises(TypeError, match="takes 1 positional argument but 2 were given"):
+        MyClass("fdslk")  # type: ignore # good job type checker
+
+
 def test_runtime_typecheck() -> None:
     @record
     class MyClass:
