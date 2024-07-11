@@ -596,7 +596,7 @@ def multi_asset(
     args = DecoratorAssetsDefinitionBuilderArgs(
         name=name,
         op_description=description,
-        specs=check.opt_list_param(specs, "specs", of_type=AssetSpec),
+        specs=check.opt_sequence_param(specs, "specs", of_type=AssetSpec),
         check_specs_by_output_name=create_check_specs_by_output_name(check_specs),
         asset_out_map=check.opt_mapping_param(outs, "outs", key_type=str, value_type=AssetOut),
         upstream_asset_deps=_deps_and_non_argument_deps_to_asset_deps(
