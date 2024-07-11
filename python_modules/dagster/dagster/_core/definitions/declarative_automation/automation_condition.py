@@ -61,6 +61,11 @@ class AutomationCondition(ABC):
     def description(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def label(self) -> Optional[str]:
+        raise NotImplementedError()
+
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AssetConditionSnapshot(
