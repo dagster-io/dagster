@@ -2,6 +2,7 @@ import {AppTopNavRightOfLogo} from '@dagster-io/ui-core/app/AppTopNav/AppTopNavR
 import {FallthroughRoot} from '@dagster-io/ui-core/app/FallthroughRoot.oss';
 import {InjectedComponentContext} from '@dagster-io/ui-core/app/InjectedComponentContext';
 import {UserPreferences} from '@dagster-io/ui-core/app/UserSettingsDialog/UserPreferences.oss';
+import {AssetGraphHeader} from '@dagster-io/ui-core/assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '@dagster-io/ui-core/assets/AssetsOverviewRoot';
 
 export const InjectedComponents = ({children}: {children: React.ReactNode}) => {
@@ -12,6 +13,7 @@ export const InjectedComponents = ({children}: {children: React.ReactNode}) => {
         UserPreferences,
         AssetsOverview: AssetsOverviewRoot,
         FallthroughRoot,
+        AssetGraphHeader,
       }}
     >
       {children}
