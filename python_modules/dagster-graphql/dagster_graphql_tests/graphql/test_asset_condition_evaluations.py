@@ -3,7 +3,7 @@ from typing import Any, Mapping, Optional, Sequence
 from unittest.mock import PropertyMock, patch
 
 import dagster._check as check
-from dagster import AssetKey, RunRequest
+from dagster import AssetKey, AutomationCondition, RunRequest, asset, evaluate_automation_conditions
 from dagster._core.definitions.asset_daemon_cursor import AssetDaemonCursor
 from dagster._core.definitions.asset_subset import AssetSubset
 from dagster._core.definitions.auto_materialize_rule_evaluation import (
@@ -18,6 +18,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 from dagster._core.definitions.partition import PartitionsDefinition, StaticPartitionsDefinition
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import SensorType
+from dagster._core.instance import DagsterInstance
 from dagster._core.remote_representation.origin import RemoteInstigatorOrigin
 from dagster._core.scheduler.instigation import (
     InstigatorState,
@@ -266,7 +267,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!) {
 """
 
 
-QUERY = (
+LEGACY_QUERY = (
     FRAGMENTS
     + """
 query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
@@ -293,7 +294,7 @@ query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: Stri
 """
 )
 
-QUERY_FOR_SPECIFIC_PARTITION = (
+LEGACY_QUERY_FOR_SPECIFIC_PARTITION = (
     FRAGMENTS
     + """
 query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!, $evaluationId: Int!) {
@@ -304,7 +305,7 @@ query GetPartitionEvaluationQuery($assetKey: AssetKeyInput!, $partition: String!
 """
 )
 
-QUERY_FOR_EVALUATION_ID = (
+LEGACY_QUERY_FOR_EVALUATION_ID = (
     FRAGMENTS
     + """
 query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
@@ -325,6 +326,38 @@ query GetEvaluationsForEvaluationIdQuery($evaluationId: Int!) {
 }
 """
 )
+
+QUERY = """
+query GetEvaluationsQuery($assetKey: AssetKeyInput!, $limit: Int!, $cursor: String) {
+    assetConditionEvaluationRecordsOrError(assetKey: $assetKey, limit: $limit, cursor: $cursor) {
+        ... on AssetConditionEvaluationRecords {
+            records {
+                id
+                numRequested
+                assetKey {
+                    path
+                }
+                rootUniqueId
+                evaluationNodes {
+                    description
+                    label
+                    startTimestamp
+                    endTimestamp
+                    numTrue
+                    trueSubset {
+                        subsetValue {
+                            isPartitioned
+                            partitionKeys
+                        }
+                    }
+                    uniqueId
+                    childUniqueIds
+                }
+            }
+        }
+    }
+}
+"""
 
 
 class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
@@ -399,7 +432,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={"assetKey": {"path": ["asset_one"]}, "limit": 10, "cursor": None},
         )
         assert len(results.data["assetConditionEvaluationRecordsOrError"]["records"]) == 1
@@ -409,7 +442,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert len(results.data["assetConditionEvaluationRecordsOrError"]["records"]) == 1
@@ -433,7 +466,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY_FOR_EVALUATION_ID,
+            LEGACY_QUERY_FOR_EVALUATION_ID,
             variables={"evaluationId": 10},
         )
 
@@ -448,7 +481,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         # this evaluationId doesn't exist
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY_FOR_EVALUATION_ID,
+            LEGACY_QUERY_FOR_EVALUATION_ID,
             variables={"evaluationId": 12345},
         )
 
@@ -471,7 +504,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={
                 "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                 "limit": 10,
@@ -539,7 +572,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d", "e", "f"])
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={
                 "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                 "limit": 10,
@@ -618,7 +651,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={
                 "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                 "limit": 10,
@@ -655,7 +688,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         # test one of the true partitions
         specific_result = execute_dagster_graphql(
             graphql_context,
-            QUERY_FOR_SPECIFIC_PARTITION,
+            LEGACY_QUERY_FOR_SPECIFIC_PARTITION,
             variables={
                 "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                 "partition": "b",
@@ -684,7 +717,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         # test one of the false partitions
         specific_result = execute_dagster_graphql(
             graphql_context,
-            QUERY_FOR_SPECIFIC_PARTITION,
+            LEGACY_QUERY_FOR_SPECIFIC_PARTITION,
             variables={
                 "assetKey": {"path": ["upstream_static_partitioned_asset"]},
                 "partition": "d",
@@ -717,7 +750,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
@@ -735,7 +768,7 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
 
         results = execute_dagster_graphql(
             graphql_context,
-            QUERY,
+            LEGACY_QUERY,
             variables={"assetKey": {"path": ["asset_two"]}, "limit": 10, "cursor": None},
         )
         assert results.data == {
@@ -744,3 +777,62 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
                 "records": [],
             },
         }
+
+    def test_get_evaluations_with_partitions_updated(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        @asset(
+            partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]),
+            automation_condition=AutomationCondition.eager().with_label("blah"),
+        )
+        def A() -> None: ...
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["A"]}, "limit": 10, "cursor": None},
+        )
+        assert results.data == {"assetConditionEvaluationRecordsOrError": {"records": []}}
+
+        result = evaluate_automation_conditions([A], DagsterInstance.ephemeral())
+
+        check.not_none(
+            graphql_context.instance.schedule_storage
+        ).add_auto_materialize_asset_evaluations(
+            evaluation_id=10,
+            asset_evaluations=[
+                AssetConditionEvaluationWithRunIds(
+                    evaluation=result.results[0].serializable_evaluation,
+                    run_ids=frozenset({"runid1"}),
+                )
+            ],
+        )
+
+        results = execute_dagster_graphql(
+            graphql_context,
+            QUERY,
+            variables={"assetKey": {"path": ["A"]}, "limit": 10, "cursor": None},
+        )
+
+        records = results.data["assetConditionEvaluationRecordsOrError"]["records"]
+        assert len(records) == 1
+
+        record = records[0]
+        assert record["numRequested"] == 4
+
+        # all nodes in the tree
+        assert len(record["evaluationNodes"]) == 16
+
+        rootNode = record["evaluationNodes"][0]
+        assert rootNode["uniqueId"] == record["rootUniqueId"]
+        assert rootNode["description"] == "All of"
+        assert rootNode["label"] == "blah"
+        assert rootNode["numTrue"] == 4
+        assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b", "c", "d"}
+        assert len(rootNode["childUniqueIds"]) == 5
+
+        childNode = record["evaluationNodes"][1]
+        assert childNode["description"] == "Within latest time window"
+        assert childNode["label"] is None
+        assert childNode["numTrue"] == 4
+        assert len(childNode["childUniqueIds"]) == 0
