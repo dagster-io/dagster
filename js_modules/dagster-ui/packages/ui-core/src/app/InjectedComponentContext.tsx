@@ -4,6 +4,7 @@ import React, {useContext} from 'react';
 import type {AppTopNavRightOfLogo} from './AppTopNav/AppTopNavRightOfLogo.oss';
 import {FallthroughRoot} from './FallthroughRoot.oss';
 import type {UserPreferences} from './UserSettingsDialog/UserPreferences.oss';
+import {AssetGraphHeader} from '../assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '../assets/AssetsOverviewRoot';
 
 type ComponentType = keyof React.JSX.IntrinsicElements | React.JSXElementConstructor<any>;
@@ -21,6 +22,8 @@ type InjectedComponentContextType = {
   UserPreferences?: AComponentFromComponent<typeof UserPreferences> | null;
   AssetsOverview?: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
   FallthroughRoot?: AComponentFromComponent<typeof FallthroughRoot> | null;
+  AssetGraphHeader?: AComponentFromComponent<typeof AssetGraphHeader> | null;
+
   RunMetricsDialog?: AComponentWithProps<{
     runId: string;
     isOpen: boolean;
