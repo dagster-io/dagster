@@ -24,7 +24,7 @@ export default {
     // without pulling in the entire library.
     'components/Box': './src/components/Box.tsx',
     'components/Button': './src/components/Button.tsx',
-    'components/Colors': './src/components/Colors.tsx',
+    'components/Color': './src/components/Color.tsx',
     'components/Icon': './src/components/Icon.tsx',
   },
   output: {
