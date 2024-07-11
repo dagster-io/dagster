@@ -17,12 +17,12 @@ type AComponentWithProps<Props = Record<string, never>> =
   | React.MemoExoticComponent<(props: Props) => React.ReactNode>;
 
 type InjectedComponentContextType = {
-  AppTopNavRightOfLogo?: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
+  AppTopNavRightOfLogo: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
   OverviewPageAlerts?: AComponentWithProps | null;
-  UserPreferences?: AComponentFromComponent<typeof UserPreferences> | null;
-  AssetsOverview?: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
-  FallthroughRoot?: AComponentFromComponent<typeof FallthroughRoot> | null;
-  AssetGraphHeader?: AComponentFromComponent<typeof AssetGraphHeader> | null;
+  UserPreferences: AComponentFromComponent<typeof UserPreferences> | null;
+  AssetsOverview: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
+  FallthroughRoot: AComponentFromComponent<typeof FallthroughRoot> | null;
+  AssetGraphHeader: AComponentFromComponent<typeof AssetGraphHeader> | null;
 
   RunMetricsDialog?: AComponentWithProps<{
     runId: string;
@@ -30,7 +30,9 @@ type InjectedComponentContextType = {
     onClose: () => void;
   }> | null;
 };
-export const InjectedComponentContext = React.createContext<InjectedComponentContextType>({});
+export const InjectedComponentContext = React.createContext<InjectedComponentContextType>(
+  {} as any,
+);
 
 export function componentStub<TComponentKey extends keyof InjectedComponentContextType>(
   component: TComponentKey,
