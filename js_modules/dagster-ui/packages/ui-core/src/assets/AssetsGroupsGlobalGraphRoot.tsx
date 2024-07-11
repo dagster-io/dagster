@@ -2,7 +2,7 @@ import {Page} from '@dagster-io/ui-components';
 import {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {AssetGraphHeader} from './AssetsGraphHeader';
+import {AssetsGraphHeader} from './AssetsGraphHeader';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';
 import {
   globalAssetGraphPathFromString,
@@ -65,7 +65,7 @@ export const AssetsGroupsGlobalGraphRoot = () => {
 
   return (
     <Page style={{display: 'flex', flexDirection: 'column', paddingBottom: 0}}>
-      <AssetGraphHeader />
+      <AssetsGraphHeader />
 
       <AssetGraphExplorer
         fetchOptions={fetchOptions}

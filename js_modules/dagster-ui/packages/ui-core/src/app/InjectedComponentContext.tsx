@@ -7,8 +7,8 @@ import type {UserPreferences} from './UserSettingsDialog/UserPreferences.oss';
 import {assertUnreachable} from './Util';
 import {useAssetGraphExplorerFilters} from '../asset-graph/useAssetGraphExplorerFilters.oss';
 import {AssetPageHeader} from '../assets/AssetPageHeader.oss';
-import {AssetGraphHeader} from '../assets/AssetsGraphHeader.oss';
-import AssetsOverviewRoot from '../assets/AssetsOverviewRoot';
+import {AssetsGraphHeader} from '../assets/AssetsGraphHeader.oss';
+import AssetsOverviewRoot from '../assets/AssetsOverviewRoot.oss';
 import {useAssetCatalogFiltering} from '../assets/useAssetCatalogFiltering.oss';
 import {useAssetDefinitionFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 
@@ -27,7 +27,7 @@ type InjectedComponentContextType = {
   UserPreferences: AComponentFromComponent<typeof UserPreferences> | null;
   AssetsOverview: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
   FallthroughRoot: AComponentFromComponent<typeof FallthroughRoot> | null;
-  AssetGraphHeader: AComponentFromComponent<typeof AssetGraphHeader> | null;
+  AssetsGraphHeader: AComponentFromComponent<typeof AssetsGraphHeader> | null;
 
   RunMetricsDialog: AComponentWithProps<{
     runId: string;
