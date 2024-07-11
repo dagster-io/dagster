@@ -35,6 +35,7 @@ import {LoadingSpinner} from '../ui/Loading';
 type Asset = AssetTableFragment;
 
 const groupTableCache = new Map();
+const emptyArray: string[] = [];
 
 export const ASSET_CATALOG_TABLE_QUERY_VERSION = 1;
 const DEFAULT_BATCH_LIMIT = 10000;
@@ -60,6 +61,7 @@ export function useCachedAssets({
 
   return {cacheManager};
 }
+const requery = () => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache' as const}];
 
 export function useAllAssets({
   batchLimit = DEFAULT_BATCH_LIMIT,
@@ -209,12 +211,15 @@ export const AssetsCatalogTable = ({
 
   useBlockTraceUntilTrue('useAllAssets', !!assets?.length);
 
-  const {displayPathForAsset, displayed} =
-    view === 'flat'
-      ? buildFlatProps(filtered, prefixPath)
-      : buildNamespaceProps(filtered, prefixPath);
+  const {displayPathForAsset, displayed} = useMemo(
+    () =>
+      view === 'flat'
+        ? buildFlatProps(filtered, prefixPath)
+        : buildNamespaceProps(filtered, prefixPath),
+    [filtered, prefixPath, view],
+  );
 
-  const refreshState = useRefreshAtInterval<any>({
+  const refreshState = useRefreshAtInterval({
     refresh: query,
     intervalMs: FIFTEEN_SECONDS,
     leading: true,
@@ -285,10 +290,10 @@ export const AssetsCatalogTable = ({
         ) : null
       }
       refreshState={refreshState}
-      prefixPath={prefixPath || []}
+      prefixPath={prefixPath || emptyArray}
       searchPath={searchPath}
       displayPathForAsset={displayPathForAsset}
-      requery={(_) => [{query: ASSET_CATALOG_TABLE_QUERY, fetchPolicy: 'no-cache'}]}
+      requery={requery}
       computeKindFilter={computeKindFilter}
       storageKindFilter={storageKindFilter}
     />
@@ -346,35 +351,19 @@ function buildFlatProps(assets: Asset[], _: string[]) {
 }
 
 function buildNamespaceProps(assets: Asset[], prefixPath: string[]) {
-  // Return all assets from the next PAGE_SIZE namespaces - the AssetTable component will later
+  // Return all assets matching prefixPath - the AssetTable component will later
   // group them by namespace
 
   const namespaceForAsset = (asset: Asset) => {
     return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
   };
 
-  // Only consider assets that start with the prefix path
   const assetsWithPathPrefix = assets.filter((asset) =>
-    asset.key.path.join(',').startsWith(prefixPath.join(',')),
+    prefixPath.every((part, index) => part === asset.key.path[index]),
   );
-
-  const namespaces = Array.from(
-    new Set(assetsWithPathPrefix.map((asset) => JSON.stringify(namespaceForAsset(asset)))),
-  )
-    .map((x) => JSON.parse(x))
-    .sort();
 
   return {
     displayPathForAsset: namespaceForAsset,
-    displayed: filterAssetsByNamespace(
-      assetsWithPathPrefix,
-      namespaces.map((ns) => [...prefixPath, ...ns]),
-    ),
+    displayed: assetsWithPathPrefix,
   };
 }
-
-const filterAssetsByNamespace = (assets: Asset[], paths: string[][]) => {
-  return assets.filter((asset) =>
-    paths.some((path) => path.every((part, i) => part === asset.key.path[i])),
-  );
-};

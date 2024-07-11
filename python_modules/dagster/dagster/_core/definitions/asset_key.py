@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 import dagster._seven as seven
@@ -170,3 +170,31 @@ def key_prefix_from_coercible(key_prefix: CoercibleToAssetKeyPrefix) -> Sequence
         return key_prefix
     else:
         check.failed(f"Unexpected type for key_prefix: {type(key_prefix)}")
+
+
+@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
+class AssetCheckKey(NamedTuple):
+    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
+    check name uniquely identifies an asset check within a deployment.
+    """
+
+    asset_key: PublicAttr[AssetKey]
+    name: PublicAttr[str]
+
+    @staticmethod
+    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
+        return AssetCheckKey(
+            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
+            name=graphql_input["name"],
+        )
+
+    def to_user_string(self) -> str:
+        return f"{self.asset_key.to_user_string()}:{self.name}"
+
+    @staticmethod
+    def from_user_string(user_string: str) -> "AssetCheckKey":
+        asset_key_str, name = user_string.split(":")
+        return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
+
+
+AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
