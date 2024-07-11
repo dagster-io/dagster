@@ -87,6 +87,18 @@ export const LogsScrollingTable = (props: Props) => {
       );
     }
 
+    if (Object.keys(filter.levels).length === 0) {
+      return (
+        <Box margin={{top: 32}}>
+          <NonIdealState
+            icon="search"
+            title="No levels selected"
+            description="You have not selected any log levels. Choose at least one level to view logs."
+          />
+        </Box>
+      );
+    }
+
     return (
       <Inner $totalHeight={totalHeight}>
         <DynamicRowContainer $start={items[0]?.start ?? 0}>
