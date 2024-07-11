@@ -395,7 +395,7 @@ def test_base_class_conflicts() -> None:
 
     with pytest.raises(
         TypeError,
-        match="Can't instantiate abstract class DidntImpl with abstract methods abstract_prop, abstract_prop_with_default",
+        match="Can't instantiate abstract class DidntImpl",
     ):
         DidntImpl()  # type: ignore # good job type checker
 

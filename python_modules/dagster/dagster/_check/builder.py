@@ -151,15 +151,11 @@ def _coerce_type(
 
     # assume naked strings should be ForwardRefs
     if isinstance(ttype, str):
-        if eval_ctx is None:
-            failed(
-                f"Can not generate check calls from string {ttype} (assumed ForwardRef) without EvalContext"
-            )
         return eval_ctx.eval_forward_ref(ForwardRef(ttype))
+
     if isinstance(ttype, ForwardRef):
-        if eval_ctx is None:
-            failed(f"Can not evaluate ForwardRef {ttype} without passing in EvalContext")
         return eval_ctx.eval_forward_ref(ttype)
+
     if isinstance(ttype, TypeVar):
         return _coerce_type(ttype.__bound__, eval_ctx) if ttype.__bound__ else None
 
@@ -167,7 +163,7 @@ def _coerce_type(
     args = get_args(ttype)
 
     if _is_annotated(origin, args):
-        _process_annotated(args, eval_ctx)
+        _process_annotated(ttype, args, eval_ctx)
         return _coerce_type(args[0], eval_ctx)
 
     # Unions should become a tuple of types to pass to the of_type argument
@@ -232,13 +228,15 @@ def _is_annotated(origin, args):
     return (origin is Annotated and args) or (len(args) == 1 and args[0] == origin)
 
 
-def _process_annotated(args, eval_ctx: EvalContext):
-    ttype = args[0]
-    for arg in args[1:]:
+def _process_annotated(ttype, args, eval_ctx: EvalContext):
+    target_type = args[0]
+    # 3.9+: args[1:] has Annotated args, 3.8: its in __metadata__
+    annotated_args = getattr(ttype, "__metadata__", args[1:])
+    for arg in annotated_args:
         if isinstance(arg, ImportFrom):
-            if isinstance(ttype, ForwardRef):
+            if isinstance(target_type, ForwardRef):
                 eval_ctx.register_lazy_import(args[0].__forward_arg__, arg.module)
-            elif isinstance(ttype, str):
+            elif isinstance(target_type, str):
                 eval_ctx.register_lazy_import(args[0], arg.module)
             else:
                 failed(
@@ -279,7 +277,7 @@ def build_check_call_str(
             return name  # no-op
     else:
         if _is_annotated(origin, args):
-            _process_annotated(args, eval_ctx)
+            _process_annotated(ttype, args, eval_ctx)
             return build_check_call_str(args[0], f"{name}", eval_ctx)
 
         pair_left, pair_right = _container_pair_args(args, eval_ctx)
