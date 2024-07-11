@@ -45,7 +45,7 @@ import {
   useAssetGraphData,
   useFullAssetGraphData,
 } from './useAssetGraphData';
-import {useAssetGraphExplorerFilters} from './useAssetGraphExplorerFilters.oss';
+import {useAssetGraphExplorerFilters} from './useAssetGraphExplorerFilters';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';

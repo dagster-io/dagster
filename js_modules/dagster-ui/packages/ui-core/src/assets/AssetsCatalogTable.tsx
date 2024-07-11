@@ -16,7 +16,7 @@ import {
   AssetCatalogTableQuery,
   AssetCatalogTableQueryVariables,
 } from './types/AssetsCatalogTable.types';
-import {useAssetCatalogFiltering} from './useAssetCatalogFiltering.oss';
+import {useAssetCatalogFiltering} from './useAssetCatalogFiltering';
 import {AssetViewType, useAssetView} from './useAssetView';
 import {AppContext} from '../app/AppContext';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorFragment';

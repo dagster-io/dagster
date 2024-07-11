@@ -12,7 +12,7 @@ import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState.oss';
+import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';

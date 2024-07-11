@@ -5,7 +5,8 @@ import {Box} from '@dagster-io/ui-components';
 import React, {useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {AssetGlobalLineageLink, AssetPageHeader} from './AssetPageHeader.oss';
+import {AssetPageHeader} from './AssetPageHeader';
+import {AssetGlobalLineageLink} from './AssetPageHeader.oss';
 import {AssetView} from './AssetView';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {assetDetailsPathForKey} from './assetDetailsPathForKey';

@@ -12,7 +12,7 @@ import {ASSET_NODE_DEFINITION_FRAGMENT, AssetNodeDefinition} from './AssetNodeDe
 import {ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetNodeLineage} from './AssetNodeLineage';
 import {AssetNodeOverview, AssetNodeOverviewNonSDA} from './AssetNodeOverview';
-import {AssetPageHeader} from './AssetPageHeader.oss';
+import {AssetPageHeader} from './AssetPageHeader';
 import {AssetPartitions} from './AssetPartitions';
 import {AssetPlotsPage} from './AssetPlotsPage';
 import {AssetTabs} from './AssetTabs';

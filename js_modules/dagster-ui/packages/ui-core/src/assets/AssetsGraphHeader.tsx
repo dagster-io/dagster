@@ -1,3 +1,3 @@
 import {componentStub} from '../app/InjectedComponentContext';
 
-export const AssetGraphHeader = componentStub('AssetGraphHeader');
+export const AssetsGraphHeader = componentStub('AssetsGraphHeader');
