@@ -856,7 +856,7 @@ class AssetDaemon(DagsterDaemon):
 
         schedule_storage = check.not_none(instance.schedule_storage)
 
-        request_backfills = instance.da_emit_backfills()
+        request_backfills = instance.da_request_backfills()
 
         if is_retry:
             # Unfinished or retried tick already generated evaluations and run requests and cursor, now
@@ -985,6 +985,7 @@ class AssetDaemon(DagsterDaemon):
             # check that the run_request requires the backfill daemon rather than if the setting is enabled to
             # account for the setting changing between tick retries
             if run_request.requires_backfill_daemon():
+                asset_graph_subset = check.not_none(run_request.asset_graph_subset)
                 if instance.get_backfill(reserved_run_id):
                     self._logger.warn(
                         f"Run {reserved_run_id} already submitted on a previously interrupted tick, skipping"
@@ -995,7 +996,7 @@ class AssetDaemon(DagsterDaemon):
                             backfill_id=reserved_run_id,
                             dynamic_partitions_store=instance,
                             backfill_timestamp=get_current_timestamp(),
-                            asset_graph_subset=run_request.asset_graph_subset,
+                            asset_graph_subset=asset_graph_subset,
                             tags={
                                 **run_request.tags,
                                 AUTO_MATERIALIZE_TAG: "true",
@@ -1006,7 +1007,7 @@ class AssetDaemon(DagsterDaemon):
                         )
                     )
                 submitted_run_id = reserved_run_id
-                asset_keys = check.not_none(run_request.asset_graph_subset.asset_keys)
+                asset_keys = check.not_none(asset_graph_subset.asset_keys)
             else:
                 submitted_run = submit_asset_run(
                     run_id=reserved_run_id,

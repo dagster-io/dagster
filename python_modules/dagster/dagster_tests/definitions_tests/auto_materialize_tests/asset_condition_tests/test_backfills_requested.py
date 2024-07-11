@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from dagster import AutomationCondition
+from dagster._core.definitions.asset_key import AssetKey
 from dagster._core.definitions.time_window_partitions import TimeWindow
 
 from dagster_tests.definitions_tests.auto_materialize_tests.base_scenario import run_request
@@ -10,6 +11,8 @@ from ..scenario_specs import (
     hourly_partitions_def,
     two_assets_depend_on_one,
     two_assets_in_sequence,
+    two_disconnected_graphs,
+    two_partitions_def,
 )
 from .asset_condition_scenario import AutomationConditionScenarioState
 
@@ -40,6 +43,7 @@ def test_simple_eager_conditions_with_backfills() -> None:
     new_run_requests, _, _ = state.evaluate_daemon_tick(["B"])
     assert len(new_run_requests) == 1
     assert new_run_requests[0].requires_backfill_daemon()
+    assert new_run_requests[0].asset_graph_subset
     state = state.with_runs(
         *(
             run_request(ak, pk)
@@ -66,6 +70,61 @@ def test_simple_eager_conditions_with_backfills() -> None:
     # B does not get immediately requested again
     new_run_requests, _, _ = state.evaluate_daemon_tick(["B"])
     assert len(new_run_requests) == 0
+
+
+def test_disconnected_graphs_backfill() -> None:
+    state = (
+        AutomationConditionScenarioState(
+            two_disconnected_graphs,
+            automation_condition=AutomationCondition.eager(),
+            ensure_empty_result=False,
+            request_backfills=True,
+        )
+        .with_asset_properties(keys=["A", "B"], partitions_def=daily_partitions_def)
+        .with_asset_properties(keys=["C", "D"], partitions_def=two_partitions_def)
+        .with_current_time("2020-02-02T01:05:00")
+    )
+
+    # parent hasn't updated yet
+    new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "D"])
+    assert len(new_run_requests) == 0
+
+    # historical parent updated, doesn't matter
+    state = state.with_runs(run_request("A", "2019-07-05"))
+    new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "D"])
+    assert len(new_run_requests) == 0
+
+    # A updated, now can execute B, but not D
+    state = state.with_runs(run_request("A", "2020-02-01"))
+    new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "D"])
+    assert len(new_run_requests) == 1
+    assert new_run_requests[0].requires_backfill_daemon()
+    assert new_run_requests[0].asset_graph_subset
+    assert new_run_requests[0].asset_graph_subset.asset_keys == {AssetKey("B")}
+    state = state.with_runs(
+        *(
+            run_request(ak, pk)
+            for ak, pk in new_run_requests[0].asset_graph_subset.iterate_asset_partitions()
+        )
+    )
+
+    # now B has been materialized, so don't execute again
+    new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "D"])
+    assert len(new_run_requests) == 0
+
+    # new partition comes into being, parent hasn't been materialized yet
+    state = state.with_current_time_advanced(days=1)
+    new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "D"])
+    assert len(new_run_requests) == 0
+
+    # both A and C get materialized, B and D requested
+    state = state.with_runs(*(run_request("A", "2020-02-02"), run_request("C", "2")))
+    new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "D"])
+    assert len(new_run_requests) == 1
+    assert new_run_requests[0].requires_backfill_daemon()
+    assert new_run_requests[0].asset_graph_subset and new_run_requests[
+        0
+    ].asset_graph_subset.asset_keys == {AssetKey("B"), AssetKey("D")}
 
 
 def test_multiple_partitions_defs_backfill() -> None:
@@ -105,6 +164,7 @@ def test_multiple_partitions_defs_backfill() -> None:
     new_run_requests, _, _ = state.evaluate_daemon_tick(["B", "C"])
     assert len(new_run_requests) == 1
     assert new_run_requests[0].requires_backfill_daemon()
+    assert new_run_requests[0].asset_graph_subset
     state = state.with_runs(
         *(
             run_request(ak, pk)

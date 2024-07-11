@@ -58,6 +58,7 @@ def evaluate_automation_conditions(
     asset_selection: AssetSelection = AssetSelection.all(),
     evaluation_time: Optional[datetime.datetime] = None,
     cursor: Optional[AssetDaemonCursor] = None,
+    request_backfills: bool = False,
 ) -> EvaluateAutomationConditionsResult:
     """Evaluates the AutomationConditions of the provided assets, returning the results. Intended
     for use in unit tests.
@@ -74,6 +75,7 @@ def evaluate_automation_conditions(
         cursor (Optional[AssetDaemonCursor]):
             The cursor for the computation. If you are evaluating multiple ticks within a test, this
             value should be supplied from the `cursor` property of the returned `result` object.
+        request_backfills (bool): Whether to evaluate the automation conditions under the condition of DA requesting backfills. Defaults to False.
 
     Examples:
          .. code-block:: python
@@ -125,7 +127,7 @@ def evaluate_automation_conditions(
         data_time_resolver=data_time_resolver,
         respect_materialization_data_versions=False,
         auto_materialize_run_tags={},
-        request_backfills=False,  # TODO - is this old APIs? or should this get the value from the setting?
+        request_backfills=request_backfills,
     )
     results, requested_asset_partitions = evaluator.evaluate()
     cursor = AssetDaemonCursor(

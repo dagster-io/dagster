@@ -184,9 +184,8 @@ class AutomationConditionEvaluator:
         ).to_automation_condition()
 
         if asset_condition.is_rule_condition() and self.request_backfills:
-            # TODO update the copy of this exception to match the correct names
             raise DagsterInvalidDefinitionError(
-                "Cannot use AutoMaterializePolicies and request backfills. Please use AssetCondition or set setting to False"
+                "Cannot use AutoMaterializePolicies and request backfills. Please use AssetCondition or set DECLARATIVE_AUTOMATION_REQUEST_BACKFILLS to False."
             )
 
         legacy_context = LegacyRuleEvaluationContext.create(
