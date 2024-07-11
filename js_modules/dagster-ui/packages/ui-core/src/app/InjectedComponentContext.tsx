@@ -4,6 +4,7 @@ import React, {useContext} from 'react';
 import type {AppTopNavRightOfLogo} from './AppTopNav/AppTopNavRightOfLogo.oss';
 import {FallthroughRoot} from './FallthroughRoot.oss';
 import type {UserPreferences} from './UserSettingsDialog/UserPreferences.oss';
+import {AssetGraphHeader} from '../assets/AssetsGraphHeader.oss';
 import AssetsOverviewRoot from '../assets/AssetsOverviewRoot';
 
 type ComponentType = keyof React.JSX.IntrinsicElements | React.JSXElementConstructor<any>;
@@ -16,18 +17,22 @@ type AComponentWithProps<Props = Record<string, never>> =
   | React.MemoExoticComponent<(props: Props) => React.ReactNode>;
 
 type InjectedComponentContextType = {
-  AppTopNavRightOfLogo?: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
+  AppTopNavRightOfLogo: AComponentFromComponent<typeof AppTopNavRightOfLogo> | null;
   OverviewPageAlerts?: AComponentWithProps | null;
-  UserPreferences?: AComponentFromComponent<typeof UserPreferences> | null;
-  AssetsOverview?: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
-  FallthroughRoot?: AComponentFromComponent<typeof FallthroughRoot> | null;
+  UserPreferences: AComponentFromComponent<typeof UserPreferences> | null;
+  AssetsOverview: AComponentFromComponent<typeof AssetsOverviewRoot> | null;
+  FallthroughRoot: AComponentFromComponent<typeof FallthroughRoot> | null;
+  AssetGraphHeader: AComponentFromComponent<typeof AssetGraphHeader> | null;
+
   RunMetricsDialog?: AComponentWithProps<{
     runId: string;
     isOpen: boolean;
     onClose: () => void;
   }> | null;
 };
-export const InjectedComponentContext = React.createContext<InjectedComponentContextType>({});
+export const InjectedComponentContext = React.createContext<InjectedComponentContextType>(
+  {} as any,
+);
 
 export function componentStub<TComponentKey extends keyof InjectedComponentContextType>(
   component: TComponentKey,

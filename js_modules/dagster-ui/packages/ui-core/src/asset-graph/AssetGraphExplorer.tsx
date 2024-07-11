@@ -19,7 +19,6 @@ import styled from 'styled-components';
 
 import {AssetEdges} from './AssetEdges';
 import {AssetGraphBackgroundContextMenu} from './AssetGraphBackgroundContextMenu';
-import {useAssetGraphExplorerFilters} from './AssetGraphExplorerFilters';
 import {AssetGraphJobSidebar} from './AssetGraphJobSidebar';
 import {AssetNode, AssetNodeContextMenuWrapper, AssetNodeMinimal} from './AssetNode';
 import {AssetNodeMenuProps} from './AssetNodeMenu';
@@ -46,12 +45,13 @@ import {
   useAssetGraphData,
   useFullAssetGraphData,
 } from './useAssetGraphData';
+import {useAssetGraphExplorerFilters} from './useAssetGraphExplorerFilters.oss';
 import {AssetLocation, useFindAssetLocation} from './useFindAssetLocation';
 import {AssetLiveDataRefreshButton} from '../asset-data/AssetLiveDataProvider';
 import {LaunchAssetExecutionButton} from '../assets/LaunchAssetExecutionButton';
 import {LaunchAssetObservationButton} from '../assets/LaunchAssetObservationButton';
 import {AssetKey} from '../assets/types';
-import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {DEFAULT_MAX_ZOOM, SVGViewport} from '../graph/SVGViewport';
 import {useAssetLayout} from '../graph/asyncGraphLayout';
 import {closestNodeInDirection, isNodeOffscreen} from '../graph/common';

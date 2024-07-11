@@ -3,7 +3,7 @@ import React, {useContext, useEffect, useState} from 'react';
 
 import {GraphNode} from './Utils';
 import {CloudOSSContext} from '../app/CloudOSSContext';
-import {AssetFilterState} from '../assets/useAssetDefinitionFilterState';
+import {AssetFilterState} from '../assets/useAssetDefinitionFilterState.oss';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {ChangeReason} from '../graphql/types';
 import {useFilters} from '../ui/Filters';

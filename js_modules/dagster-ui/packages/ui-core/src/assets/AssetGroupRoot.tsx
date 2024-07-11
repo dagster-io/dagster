@@ -3,7 +3,7 @@ import {Box, Heading, Page, PageHeader, Tabs, Tag} from '@dagster-io/ui-componen
 import React, {useCallback, useMemo} from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {AssetGlobalLineageLink} from './AssetPageHeader';
+import {AssetGlobalLineageLink} from './AssetPageHeader.oss';
 import {AssetsCatalogTable} from './AssetsCatalogTable';
 import {useAutoMaterializeSensorFlag} from './AutoMaterializeSensorFlag';
 import {AutomaterializeDaemonStatusTag} from './AutomaterializeDaemonStatusTag';
@@ -12,7 +12,7 @@ import {
   AssetGroupMetadataQuery,
   AssetGroupMetadataQueryVariables,
 } from './types/AssetGroupRoot.types';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
+import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState.oss';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetNodeForGraphQueryFragment} from '../asset-graph/types/useAssetGraphData.types';
