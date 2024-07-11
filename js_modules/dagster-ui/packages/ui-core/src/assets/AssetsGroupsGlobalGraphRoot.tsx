@@ -8,7 +8,7 @@ import {
   globalAssetGraphPathFromString,
   globalAssetGraphPathToString,
 } from './globalAssetGraphPathToString';
-import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState.oss';
+import {useAssetDefinitionFilterState} from './useAssetDefinitionFilterState';
 import {useTrackPageView} from '../app/analytics';
 import {AssetGraphExplorer} from '../asset-graph/AssetGraphExplorer';
 import {AssetGraphFetchScope} from '../asset-graph/useAssetGraphData';

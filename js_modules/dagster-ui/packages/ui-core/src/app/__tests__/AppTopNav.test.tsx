@@ -16,11 +16,10 @@ describe('AppTopNav', () => {
     render(
       <InjectedComponentContext.Provider
         value={{
-          AppTopNavRightOfLogo,
-          AssetsOverview: null,
-          UserPreferences: null,
-          FallthroughRoot: null,
-          AssetGraphHeader: null,
+          components: {
+            AppTopNavRightOfLogo,
+          } as any,
+          hooks: {} as any,
         }}
       >
         <MockedProvider>
