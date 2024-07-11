@@ -186,7 +186,7 @@ When prompted, confirm the deletion.
 
 ## Managing code locations using the dagster-cloud CLI
 
-You can also use the `dagster-cloud workspace` CLI commands to:
+You can also use the `dagster-cloud deployment` CLI commands to:
 
 - [Add and update code locations](#adding-and-updating-code-locations)
 - [Delete code locations](#deleting-code-locations-1)
@@ -207,13 +207,13 @@ code_source:
   package_name: dagster_cloud_examples
 EOL
 
-dagster-cloud workspace add-location --from example_location.yaml
+dagster-cloud deployment add-location --from example_location.yaml
 ```
 
 Instead of creating a YAML file, you may also pass these values inline as command line options:
 
 ```shell
-dagster-cloud workspace add-location test_location \
+dagster-cloud deployment add-location test_location \
     --image dagster/dagster-cloud-examples:latest \
     --package-name dagster_cloud_examples
 ```
@@ -221,7 +221,7 @@ dagster-cloud workspace add-location test_location \
 You may also selectively overwrite parts of your YAML input using inline options:
 
 ```shell
-dagster-cloud workspace add-location \
+dagster-cloud deployment add-location \
     --from example_location.yaml \
     --image dagster/dagster-cloud-examples:1d9c5d
 ```
@@ -229,7 +229,7 @@ dagster-cloud workspace add-location \
 The arguments to the `add-location` and `update-location` commands are similar to the [keys in the YAML config editor in the **Deployment** tab](#adding-code-locations). To see all available options, run:
 
 ```shell
-dagster-cloud workspace add-location --help
+dagster-cloud deployment add-location --help
 ```
 
 **Note**: If updating an existing code location, the full set of information about the location must be specified even if only one piece of configuration is modified.
@@ -239,7 +239,7 @@ dagster-cloud workspace add-location --help
 Delete an existing code location from Dagster+ using the `delete-location` command:
 
 ```shell
-dagster-cloud workspace delete-location <LOCATION_NAME>
+dagster-cloud deployment delete-location <LOCATION_NAME>
 ```
 
 ### Syncing the workspace
@@ -266,5 +266,5 @@ locations:
 Reconcile the above file with Dagster+'s remote workspace by running:
 
 ```shell
-dagster-cloud workspace sync -w dagster_cloud.yaml
+dagster-cloud deployment sync-locations -w dagster_cloud.yaml
 ```
