@@ -2,12 +2,11 @@
 
 # 1.7.13 (core) / 0.23.13 (libraries)
 
-
 ### New
 
 - The `InputContext` passed to an `IOManager` ’s `load_input` function when invoking the `output_value` or `output_for_node` methods on `JobExecutionResult` now has the name `"dummy_input_name"` instead of `None`.
 - [dagster-ui] Asset materializations can now be reported from the dropdown menu in the asset list view.
-- [dagster-dbt] `DbtProject` is adopted and no longer experimental. Using `DbtProject` helps achieve a setup where the dbt manifest file and dbt dependencies are available and up-to-date, during development and in production. Check out the API docs for more: [https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject).
+- [dagster-dbt] `DbtProject` is adopted and no longer experimental. Using `DbtProject` helps achieve a setup where the dbt manifest file and dbt dependencies are available and up-to-date, during development and in production. Check out the API docs for more: [https://docs.dagster.io/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject).
 - [dagster-dbt] The `—use-dbt-project` flag was introduced for the cli command `dagster-dbt project scaffold`. Creating a Dagster project wrapping a dbt project using that flag will include a `DbtProject` .
 - [dagster-ui] The Dagster UI now loads events in batches of 1000 in the run log viewer, instead of batches of 10000. This value can be adjusted by setting the `DAGSTER_UI_EVENT_LOAD_CHUNK_SIZE` environment variable on the Dagster webserver.
 - Asset backfills will now retry if there is an unexpected exception raised in the middle of the backfill. Previously, they would only retry if there was a problem connecting to the code server while launching runs in the backfill.
@@ -37,7 +36,7 @@
 ### Breaking Changes
 
 - [dagster-dbt] The cli command `dagster-dbt project prepare-for-deployment` has been replaced by `dagster-dbt project prepare-and-package`.
-- [dagster-dbt] During development,`DbtProject` no longer prepares the dbt manifest file and dbt dependencies in its constructor during initialization. This process has been moved to `prepare_if_dev()`, that can be called on the `DbtProject` instance after initialization. Check out the API docs for more: [https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_dev](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_devhttps://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_dev).
+- [dagster-dbt] During development,`DbtProject` no longer prepares the dbt manifest file and dbt dependencies in its constructor during initialization. This process has been moved to `prepare_if_dev()`, that can be called on the `DbtProject` instance after initialization. Check out the API docs for more: [https://docs.dagster.io/\_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_dev](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_devhttps://docs.dagster.io/_apidocs/libraries/dagster-dbt#dagster_dbt.DbtProject.prepare_if_dev).
 
 ### Deprecations
 
@@ -58,7 +57,6 @@
 - [ui] Various improvements have been made to the asset health dashboard, which is now no longer experimental.
 - [ui] Fixed issues in per-event asset insights where bar charts incorrectly displayed events in reverse order, and with UTC timestamps.
 - Fixed a recent regression where creating an alert that notifies asset owners that are teams raises an error.
-
 
 # 1.7.12 (core)/ 0.23.12 (libraries)
 
