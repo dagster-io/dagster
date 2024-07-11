@@ -224,13 +224,17 @@ class PipesLambdaClient(PipesClient, TreatAsResourceParam):
         function_name: str,
         event: Mapping[str, Any],
         context: OpExecutionContext,
-    ):
+    ) -> PipesClientCompletedInvocation:
         """Synchronously invoke a lambda function, enriched with the pipes protocol.
 
         Args:
             function_name (str): The name of the function to use.
             event (Mapping[str, Any]): A JSON serializable object to pass as input to the lambda.
             context (OpExecutionContext): The context of the currently executing Dagster op or asset.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+            process.
         """
         with open_pipes_session(
             context=context,
@@ -321,7 +325,7 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
         worker_type: Optional[str] = None,
         number_of_workers: Optional[int] = None,
         execution_class: Optional[Literal["FLEX", "STANDARD"]] = None,
-    ):
+    ) -> PipesClientCompletedInvocation:
         """Start a Glue job, enriched with the pipes protocol.
 
         See also: `AWS API Documentation <https://docs.aws.amazon.com/goto/WebAPI/glue-2017-03-31/StartJobRun>`_
@@ -340,6 +344,10 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             worker_type (Optional[str]): The type of predefined worker that is allocated when a job runs.
             number_of_workers (Optional[int]): The number of workers that are allocated when a job runs.
             execution_class (Optional[Literal["FLEX", "STANDARD"]]): The execution property of a job run.
+
+        Returns:
+            PipesClientCompletedInvocation: Wrapper containing results reported by the external
+            process.
         """
         with open_pipes_session(
             context=context,
@@ -348,32 +356,31 @@ class PipesGlueClient(PipesClient, TreatAsResourceParam):
             extras=extras,
         ) as session:
             arguments = arguments or {}
-            assert arguments is not None
 
             pipes_args = session.get_bootstrap_cli_arguments()
 
             if isinstance(self._context_injector, PipesS3ContextInjector):
                 arguments.update(pipes_args)
 
+            params = {
+                "JobName": job_name,
+                "Arguments": arguments,
+                "JobRunId": job_run_id,
+                "AllocatedCapacity": allocated_capacity,
+                "Timeout": timeout,
+                "MaxCapacity": max_capacity,
+                "SecurityConfiguration": security_configuration,
+                "NotificationProperty": notification_property,
+                "WorkerType": worker_type,
+                "NumberOfWorkers": number_of_workers,
+                "ExecutionClass": execution_class,
+            }
+
+            # boto3 does not accept None as defaults for some of the parameters
+            # so we need to filter them out
+            params = {k: v for k, v in params.items() if v is not None}
+
             try:
-                params = {
-                    "JobName": job_name,
-                    "Arguments": arguments,
-                    "JobRunId": job_run_id,
-                    "AllocatedCapacity": allocated_capacity,
-                    "Timeout": timeout,
-                    "MaxCapacity": max_capacity,
-                    "SecurityConfiguration": security_configuration,
-                    "NotificationProperty": notification_property,
-                    "WorkerType": worker_type,
-                    "NumberOfWorkers": number_of_workers,
-                    "ExecutionClass": execution_class,
-                }
-
-                # boto3 does not accept None as defaults for some of the parameters
-                # so we need to filter them out
-                params = {k: v for k, v in params.items() if v is not None}
-
                 response = self._client.start_job_run(**params)
                 run_id = response["JobRunId"]
                 context.log.info(f"Started AWS Glue job {job_name} run: {run_id}")

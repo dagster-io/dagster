@@ -1,12 +1,10 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 from queue import Queue
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Mapping, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Mapping, Optional, Sequence, Union, cast
 
 from dagster_pipes import (
-    DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT,
     DAGSTER_PIPES_CONTEXT_ENV_VAR,
-    DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT,
     DAGSTER_PIPES_MESSAGES_ENV_VAR,
     PIPES_METADATA_TYPE_INFER,
     Method,
@@ -20,8 +18,8 @@ from dagster_pipes import (
     PipesOpenedData,
     PipesParams,
     PipesTimeWindow,
-    encode_cli_argument,
-    encode_env_var,
+    encode_param,
+    env_var_to_cli_argument,
 )
 from typing_extensions import TypeAlias
 
@@ -280,7 +278,7 @@ class PipesSession:
     context: OpExecutionContext
 
     @public
-    def get_bootstrap_env_vars(self) -> Dict[str, str]:
+    def get_bootstrap_env_vars(self) -> Mapping[str, str]:
         """Encode context injector and message reader params as environment variables.
 
         Passing environment variables is the typical way to expose the pipes I/O parameters
@@ -291,12 +289,12 @@ class PipesSession:
             serialized as json, compressed with gzip, and then base-64-encoded.
         """
         return {
-            param_name: encode_env_var(param_value)
+            param_name: encode_param(param_value)
             for param_name, param_value in self.get_bootstrap_params().items()
         }
 
     @public
-    def get_bootstrap_cli_arguments(self) -> Dict[str, str]:
+    def get_bootstrap_cli_arguments(self) -> Mapping[str, str]:
         """Encode context injector and message reader params as CLI arguments.
 
         Passing CLI arguments is an alternative way to expose the pipes I/O parameters to a pipes process.
@@ -304,15 +302,15 @@ class PipesSession:
 
         Returns:
             Mapping[str, str]: CLI arguments pass to the external process. The values are
-            serialized as json, compressed with gzip, and then base-64-encoded.
+            serialized as json, compressed with zlib, and then base64-encoded.
         """
         return {
-            DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT: encode_cli_argument(self.context_injector_params),
-            DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT: encode_cli_argument(self.message_reader_params),
+            env_var_to_cli_argument(param_name): encode_param(param_value)
+            for param_name, param_value in self.get_bootstrap_params().items()
         }
 
     @public
-    def get_bootstrap_params(self) -> Dict[str, Any]:
+    def get_bootstrap_params(self) -> Mapping[str, Any]:
         """Get the params necessary to bootstrap a launched pipes process. These parameters are typically
         are as environment variable. See `get_bootstrap_env_vars`. It is the context injector's
         responsibility to decide how to pass these parameters to the external environment.
