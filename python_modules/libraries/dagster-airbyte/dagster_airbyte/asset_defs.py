@@ -51,11 +51,13 @@ from dagster_airbyte.types import AirbyteTableMetadata
 from dagster_airbyte.utils import (
     generate_materializations,
     generate_table_schema,
+    get_schema_by_table_name,
     is_basic_normalization_operation,
     table_to_output_name_fn,
 )
 
 _table_to_output_name_fn = table_to_output_name_fn
+_get_schema_by_table_name = get_schema_by_table_name()
 
 
 def _build_airbyte_asset_defn_metadata(
@@ -501,27 +503,6 @@ class AirbyteConnectionMetadata(
             )
 
         return tables
-
-
-def _get_schema_by_table_name(
-    stream_table_metadata: Mapping[str, AirbyteTableMetadata],
-) -> Mapping[str, TableSchema]:
-    schema_by_base_table_name = [(k, v.schema) for k, v in stream_table_metadata.items()]
-    schema_by_normalization_table_name = list(
-        chain.from_iterable(
-            [
-                [
-                    (k, v.schema)
-                    for k, v in cast(
-                        Dict[str, AirbyteTableMetadata], meta.normalization_tables
-                    ).items()
-                ]
-                for meta in stream_table_metadata.values()
-            ]
-        )
-    )
-
-    return dict(schema_by_normalization_table_name + schema_by_base_table_name)
 
 
 class AirbyteCoreCacheableAssetsDefinition(CacheableAssetsDefinition):
