@@ -16,6 +16,7 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
+from dagster._record import copy
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
 from dagster._utils.warnings import disable_dagster_warnings
@@ -61,12 +62,18 @@ class AutomationCondition(ABC):
     def description(self) -> str:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def label(self) -> Optional[str]:
+        raise NotImplementedError()
+
     def get_snapshot(self, unique_id: str) -> AssetConditionSnapshot:
         """Returns a snapshot of this condition that can be used for serialization."""
         return AssetConditionSnapshot(
             class_name=self.__class__.__name__,
             description=self.description,
             unique_id=unique_id,
+            label=self.label,
         )
 
     def get_unique_id(self, *, parent_unique_id: Optional[str], index: Optional[int]) -> str:
@@ -96,6 +103,10 @@ class AutomationCondition(ABC):
     @abstractmethod
     def evaluate(self, context: "AutomationContext") -> "AutomationResult":
         raise NotImplementedError()
+
+    def with_label(self, label: Optional[str]) -> "AutomationCondition":
+        """Returns a copy of this AutomationCondition with a human-readable label."""
+        return copy(self, label=label)
 
     def __and__(self, other: "AutomationCondition") -> "AndAssetCondition":
         from .operators import AndAssetCondition

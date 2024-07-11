@@ -24,6 +24,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
     dep_key: AssetKey
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -55,6 +56,7 @@ class DepCondition(AutomationCondition):
     ignore_selection: Optional[
         Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
     ] = None
+    label: Optional[str] = None
 
     @property
     @abstractmethod

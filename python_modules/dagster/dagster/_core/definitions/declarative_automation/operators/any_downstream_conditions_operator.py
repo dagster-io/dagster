@@ -1,4 +1,4 @@
-from typing import AbstractSet, Sequence
+from typing import AbstractSet, Optional, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
 from dagster._record import record
@@ -17,6 +17,7 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
 
     downstream_keys: Sequence[AssetKey]
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -40,6 +41,8 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
 @whitelist_for_serdes
 @record
 class AnyDownstreamConditionsCondition(AutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Any downstream conditions"
