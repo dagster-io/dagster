@@ -1057,21 +1057,21 @@ def execute_asset_backfill_iteration(
             f"Asset backfill {updated_backfill.backfill_id} completed iteration with status {updated_backfill.status}."
         )
         logger.info(
-            "What this iteration of the backfill daemon did:\n"
+            "Backfill iteration summery:\n"
             f"**Assets materialized since last iteration:**\n {_asset_key_partition_key_iter_to_str(new_materialized_partitions.iterate_asset_partitions()) if new_materialized_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
             f"**Assets failed since last iteration and their downstream assets:**\n {_asset_key_partition_key_iter_to_str(new_failed_partitions.iterate_asset_partitions()) if new_failed_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets requested for this iteration:**\n {_asset_key_partition_key_iter_to_str(new_requested_partitions.iterate_asset_partitions()) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets requested by this iteration:**\n {_asset_key_partition_key_iter_to_str(new_requested_partitions.iterate_asset_partitions()) if new_requested_partitions.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
         )
 
         logger.info(
             "Everything the backfill daemon has done:\n"
             f"**Materialized assets:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_data.materialized_subset.iterate_asset_partitions()) if updated_backfill_data.materialized_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
             f"**Failed assets and their downstream assets:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_data.failed_and_downstream_subset.iterate_asset_partitions()) if updated_backfill_data.failed_and_downstream_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
-            f"**Assets requested for materialization:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_data.requested_subset.iterate_asset_partitions()) if updated_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
+            f"**Assets requested or in progress:**\n {_asset_key_partition_key_iter_to_str(updated_backfill_data.requested_subset.iterate_asset_partitions()) if updated_backfill_data.requested_subset.num_partitions_and_non_partitioned_assets > 0 else 'None'}\n"
         )
-        # logger.info(
-        #     f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
-        # )
+        logger.debug(
+            f"Updated asset backfill data for {updated_backfill.backfill_id}: {updated_backfill_data}"
+        )
 
     elif backfill.status == BulkActionStatus.CANCELING:
         if not instance.run_coordinator:
