@@ -23,8 +23,8 @@ import {BASIC_INSTIGATION_STATE_FRAGMENT} from '../overview/BasicInstigationStat
 import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {makeSensorKey} from '../sensors/makeSensorKey';
-import {CheckAllBox} from '../ui/CheckAllBox';
 import {useFilters} from '../ui/BaseFilters';
+import {CheckAllBox} from '../ui/CheckAllBox';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 

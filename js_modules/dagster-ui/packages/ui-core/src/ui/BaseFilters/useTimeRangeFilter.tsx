@@ -6,11 +6,11 @@ import isEqual from 'lodash/isEqual';
 import {useContext, useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 
+import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {TimeContext} from '../../app/time/TimeContext';
 import {browserTimezone} from '../../app/time/browserTimezone';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
 import {lazy} from '../../util/lazy';
-import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 
 const DateRangePicker = lazy(() => import('./DateRangePickerWrapper'));
 
