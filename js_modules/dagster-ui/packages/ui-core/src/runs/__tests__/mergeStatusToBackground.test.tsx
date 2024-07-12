@@ -1,29 +1,78 @@
 import {Colors} from '@dagster-io/ui-components';
 
 import {RunStatus} from '../../graphql/types';
-import {TimelineRun} from '../RunTimeline';
 import {mergeStatusToBackground} from '../mergeStatusToBackground';
 
 describe('mergeStatusToBackground', () => {
-  const failedA = {id: 'failed-a', status: RunStatus.FAILURE, startTime: 10, endTime: 50};
-  const failedB = {id: 'failed-b', status: RunStatus.FAILURE, startTime: 10, endTime: 50};
-  const succeededA = {id: 'succeeded-a', status: RunStatus.SUCCESS, startTime: 10, endTime: 50};
-  const succeededB = {id: 'succeeded-b', status: RunStatus.SUCCESS, startTime: 10, endTime: 50};
-  const inProgressA = {id: 'inProgress-a', status: RunStatus.STARTED, startTime: 10, endTime: 50};
-  const inProgressB = {id: 'inProgress-b', status: RunStatus.STARTED, startTime: 10, endTime: 50};
-  const queuedA = {id: 'queued-a', status: RunStatus.QUEUED, startTime: 10, endTime: 50};
-  const queuedB = {id: 'queued-b', status: RunStatus.QUEUED, startTime: 10, endTime: 50};
-  const scheduledA: TimelineRun = {
-    id: 'scheduled-a',
-    status: 'SCHEDULED',
+  const failedA = {
+    id: 'failed-a',
+    status: RunStatus.FAILURE,
     startTime: 10,
     endTime: 50,
+    automation: null,
   };
-  const scheduledB: TimelineRun = {
-    id: 'scheduled-b',
-    status: 'SCHEDULED',
+  const failedB = {
+    id: 'failed-b',
+    status: RunStatus.FAILURE,
     startTime: 10,
     endTime: 50,
+    automation: null,
+  };
+  const succeededA = {
+    id: 'succeeded-a',
+    status: RunStatus.SUCCESS,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const succeededB = {
+    id: 'succeeded-b',
+    status: RunStatus.SUCCESS,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const inProgressA = {
+    id: 'inProgress-a',
+    status: RunStatus.STARTED,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const inProgressB = {
+    id: 'inProgress-b',
+    status: RunStatus.STARTED,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const queuedA = {
+    id: 'queued-a',
+    status: RunStatus.QUEUED,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const queuedB = {
+    id: 'queued-b',
+    status: RunStatus.QUEUED,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const scheduledA = {
+    id: 'scheduled-a',
+    status: 'SCHEDULED' as const,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
+  };
+  const scheduledB = {
+    id: 'scheduled-b',
+    status: 'SCHEDULED' as const,
+    startTime: 10,
+    endTime: 50,
+    automation: null,
   };
 
   it('uses a single color if all runs are the same status', () => {

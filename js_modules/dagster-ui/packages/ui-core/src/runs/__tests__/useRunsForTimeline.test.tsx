@@ -230,12 +230,12 @@ describe('useRunsForTimeline', () => {
       expect(result.current.jobs).toHaveLength(buckets.length + 1);
     });
 
-    const pipeline0 = result.current.jobs.find((job) => job.jobName === 'pipeline0');
+    const pipeline0 = result.current.jobs.find((job) => job.name === 'pipeline0');
 
     expect(pipeline0).toEqual({
       key: 'pipeline0-repo1@repo1',
-      jobName: 'pipeline0',
-      jobType: 'job',
+      name: 'pipeline0',
+      type: 'job',
       repoAddress: {name: 'repo1', location: 'repo1'},
       path: '/locations/repo1@repo1/jobs/pipeline0',
       runs: [
@@ -244,6 +244,7 @@ describe('useRunsForTimeline', () => {
           status: RunStatus.SUCCESS,
           startTime: buckets[0]![0] * 1000,
           endTime: buckets[0]![1] * 1000,
+          automation: null,
         },
       ],
     });
@@ -497,6 +498,7 @@ describe('useRunsForTimeline', () => {
       status: 'SUCCESS',
       startTime: buckets[0]![0] * 1000,
       endTime: buckets[0]![1] * 1000,
+      automation: null,
     });
 
     expect(result.current.jobs[0]!.runs[1]).toEqual({
@@ -504,6 +506,7 @@ describe('useRunsForTimeline', () => {
       status: 'SUCCESS',
       startTime: buckets[0]![0] * 1000,
       endTime: buckets[0]![1] * 1000,
+      automation: null,
     });
 
     mockCbs.forEach((mockFn) => {
@@ -613,10 +616,10 @@ describe('useRunsForTimeline', () => {
       expect(result.current.jobs).toHaveLength(1);
     });
 
-    expect(result.current.jobs.find((job) => job.jobName === 'pipeline0')).toEqual({
+    expect(result.current.jobs.find((job) => job.name === 'pipeline0')).toEqual({
       key: 'pipeline0-repo1@repo1',
-      jobName: 'pipeline0',
-      jobType: 'job',
+      name: 'pipeline0',
+      type: 'job',
       repoAddress: {name: 'repo1', location: 'repo1'},
       path: '/locations/repo1@repo1/jobs/pipeline0',
       runs: [
@@ -625,12 +628,14 @@ describe('useRunsForTimeline', () => {
           id: 'cached-run',
           startTime: initialRange[0] * 1000,
           status: RunStatus.SUCCESS,
+          automation: null,
         },
         {
           endTime: initialRange[1] * 1000,
           id: '1-0',
           startTime: initialRange[0] * 1000,
           status: RunStatus.SUCCESS,
+          automation: null,
         },
       ],
     });
