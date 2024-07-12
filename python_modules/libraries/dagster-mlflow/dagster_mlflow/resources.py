@@ -12,6 +12,8 @@ from typing import Any, Optional
 import mlflow
 from dagster import Field, Noneable, Permissive, StringSource, resource
 from dagster._core.definitions.resource_definition import dagster_maintained_resource
+from dagster._utils.backoff import backoff
+from mlflow import MlflowException
 from mlflow.entities.run_status import RunStatus
 
 CONFIG_SCHEMA = {
@@ -128,10 +130,17 @@ class MlFlow(metaclass=MlflowMeta):
         dagster_run_id = dagster_run_id or self.dagster_run_id
         if experiment:
             # Check if a run with this dagster run id has already been started
-            # in mlflow, will get an empty dataframe if not
-            current_run_df = mlflow.search_runs(
-                experiment_ids=[experiment.experiment_id],
-                filter_string=f"tags.dagster_run_id='{dagster_run_id}'",
+            # in mlflow, will get an empty dataframe if not.
+            # Note: Search requests have a lower rate limit than others, so we
+            # need to limit/retry searches where possible.
+            current_run_df = backoff(
+                mlflow.search_runs,
+                retry_on=(MlflowException,),
+                kwargs={
+                    "experiment_ids": [experiment.experiment_id],
+                    "filter_string": f"tags.dagster_run_id='{dagster_run_id}'",
+                },
+                max_retries=3,
             )
             if not current_run_df.empty:
                 return current_run_df.run_id.values[0]

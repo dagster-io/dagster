@@ -421,9 +421,14 @@ def touch_file(path):
         os.utime(path, None)
 
 
-def _kill_on_event(termination_event):
-    termination_event.wait()
-    send_interrupt()
+def _termination_handler(
+    should_stop_event,  # multiprocessing.Event
+    is_done_event: threading.Event,
+):
+    should_stop_event.wait()
+    if not is_done_event.is_set():
+        # if we should stop but are not yet done, interrupt the MainThread
+        send_interrupt()
 
 
 def send_interrupt():
@@ -444,13 +449,13 @@ def send_interrupt():
 # Reading for the curious:
 #  * https://stackoverflow.com/questions/35772001/how-to-handle-the-signal-in-python-on-windows-machine
 #  * https://stefan.sofa-rockers.org/2013/08/15/handling-sub-process-hierarchies-python-linux-os-x/
-def start_termination_thread(termination_event):
-    check.inst_param(termination_event, "termination_event", ttype=type(multiprocessing.Event()))
+def start_termination_thread(should_stop_event, is_done_event: threading.Event):
+    check.inst_param(should_stop_event, "should_stop_event", ttype=type(multiprocessing.Event()))
 
     int_thread = threading.Thread(
-        target=_kill_on_event,
-        args=(termination_event,),
-        name="kill-on-event",
+        target=_termination_handler,
+        args=(should_stop_event, is_done_event),
+        name="termination-handler",
         daemon=True,
     )
     int_thread.start()

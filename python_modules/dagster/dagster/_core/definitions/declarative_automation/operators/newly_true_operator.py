@@ -2,6 +2,7 @@ from typing import Optional, Sequence
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.asset_subset import AssetSubset
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
@@ -9,6 +10,7 @@ from ..automation_context import AutomationContext
 
 
 @whitelist_for_serdes
+@record
 class NewlyTrueCondition(AutomationCondition):
     operand: AutomationCondition
 

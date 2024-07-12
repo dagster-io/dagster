@@ -18,8 +18,8 @@ from dagster_pipes import (
     PipesOpenedData,
     PipesParams,
     PipesTimeWindow,
+    _env_var_to_cli_argument,
     encode_param,
-    env_var_to_cli_argument,
 )
 from typing_extensions import TypeAlias
 
@@ -305,7 +305,7 @@ class PipesSession:
             serialized as json, compressed with zlib, and then base64-encoded.
         """
         return {
-            env_var_to_cli_argument(param_name): encode_param(param_value)
+            _env_var_to_cli_argument(param_name): encode_param(param_value)
             for param_name, param_value in self.get_bootstrap_params().items()
         }
 

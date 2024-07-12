@@ -16,7 +16,7 @@ import styled from 'styled-components';
 import {CapturedOrExternalLogPanel} from './CapturedLogPanel';
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
-import {LogsScrollingTable} from './LogsScrollingTable';
+import {LogsScrollingTableNew} from './LogsScrollingTableNew';
 import {LogType, LogsToolbar} from './LogsToolbar';
 import {RunActionButtons} from './RunActionButtons';
 import {RunContext} from './RunContext';
@@ -385,7 +385,7 @@ const RunWithData = ({
                   />
                 )
               ) : (
-                <LogsScrollingTable
+                <LogsScrollingTableNew
                   logs={logs}
                   filter={logsFilter}
                   filterStepKeys={logsFilterStepKeys}

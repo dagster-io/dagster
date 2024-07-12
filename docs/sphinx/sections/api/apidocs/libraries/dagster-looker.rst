@@ -12,6 +12,6 @@ your other data assets, and how changes to other data assets might impact your L
 Assets
 ======
 
-.. autodecorator:: looker_assets
+.. autofunction:: build_looker_asset_specs
 
 .. autoclass:: DagsterLookerTranslator

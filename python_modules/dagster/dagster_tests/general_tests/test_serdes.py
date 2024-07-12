@@ -3,7 +3,7 @@ import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 import pydantic
@@ -1050,6 +1050,48 @@ def test_record_kwargs():
         deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
     )
     r = MyRecord(name="CUSTOM", stuff=[1, 2, 3, 4, 5, 6])
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )
+
+
+def test_record_remap():
+    test_env = WhitelistMap.create()
+
+    # time 1: record object created with non-serializable field
+
+    class Complex:
+        def __init__(self, s: str):
+            self.s = s
+
+    @record
+    class Record_T1:
+        foo: Complex
+
+    assert Record_T1(foo=Complex("old"))
+
+    # time 2: record updated to serdes, to maintain API we use remapping
+
+    @_whitelist_for_serdes(test_env)
+    @record_custom(field_to_new_mapping={"foo_str": "foo"})
+    class Record_T2(IHaveNew):
+        foo_str: str
+
+        def __new__(cls, foo: Union[Complex, str]):
+            if isinstance(foo, Complex):
+                foo = foo.s
+
+            return super().__new__(
+                cls,
+                foo_str=foo,
+            )
+
+        @property
+        def foo(self):
+            return Complex(self.foo_str)
+
+    r = Record_T2(foo=Complex("old"))
     assert r
     assert (
         deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r

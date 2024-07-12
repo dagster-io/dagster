@@ -1,12 +1,14 @@
 from typing import AbstractSet, Sequence
 
 from dagster._core.definitions.asset_key import AssetKey
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
 
 
+@record
 class DownstreamConditionWrapperCondition(AutomationCondition):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
@@ -36,6 +38,7 @@ class DownstreamConditionWrapperCondition(AutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class AnyDownstreamConditionsCondition(AutomationCondition):
     @property
     def description(self) -> str:

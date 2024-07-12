@@ -25,9 +25,9 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -47,9 +47,9 @@ from .time_window_partitions import get_time_partition_key, get_time_partitions_
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-    from dagster._core.definitions.declarative_automation import AutomationCondition
-
-AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
 
 
 class ParentsPartitionsResult(NamedTuple):

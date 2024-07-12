@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, AbstractSet, Dict, Iterable, Mapping, NamedTuple, Optional, Set
 
 import dagster._check as check
-from dagster._core.definitions.asset_check_spec import AssetCheckKey, AssetCheckSpec
+from dagster._core.definitions.asset_check_spec import AssetCheckKey
 
 from ..errors import DagsterInvariantViolationError
 from .dependency import NodeHandle, NodeInputHandle, NodeOutputHandle
@@ -173,12 +173,6 @@ class AssetLayer(NamedTuple):
             )
         return next(iter(asset_keys))
 
-    def get_spec_for_asset_check(
-        self, node_handle: NodeHandle, asset_check_key: AssetCheckKey
-    ) -> Optional[AssetCheckSpec]:
-        assets_def = self.assets_defs_by_node_handle.get(node_handle)
-        return assets_def.get_spec_for_check_key(asset_check_key) if assets_def else None
-
     def get_output_name_for_asset_check(self, asset_check_key: AssetCheckKey) -> str:
         """Output name in the leaf op."""
         return self.node_output_handles_by_asset_check_key[asset_check_key].output_name
@@ -253,15 +247,16 @@ class AssetLayer(NamedTuple):
         assets_def = self.assets_defs_by_node_handle[node_handle]
         return {
             key
-            for key in assets_def.asset_or_check_keys_by_dep_op_output_handle[
+            for key in check.not_none(
+                assets_def.computation
+            ).asset_or_check_keys_by_dep_op_output_handle[
                 NodeOutputHandle(node_handle=node_handle.pop(), output_name=output_name)
             ]
             if isinstance(key, AssetKey)
         }
 
     def upstream_dep_op_handles(self, asset_key: AssetKey) -> AbstractSet[NodeHandle]:
-        op_handles_in_assets_def = self.asset_graph.get(
-            asset_key
-        ).assets_def.dep_op_handles_by_asset_or_check_key[asset_key]
+        computation = check.not_none(self.asset_graph.get(asset_key).assets_def.computation)
+        op_handles_in_assets_def = computation.dep_op_handles_by_asset_or_check_key[asset_key]
         outer_node_handle = NodeHandle(self.outer_node_names_by_asset_key[asset_key], parent=None)
         return {outer_node_handle.with_child(op_handle) for op_handle in op_handles_in_assets_def}

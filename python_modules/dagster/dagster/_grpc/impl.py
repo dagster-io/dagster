@@ -2,6 +2,7 @@
 
 import os
 import sys
+import threading
 from contextlib import contextmanager, nullcontext
 from typing import (
     TYPE_CHECKING,
@@ -192,7 +193,8 @@ def _run_in_subprocess(
     subprocess_status_handler,
     run_event_handler,
 ) -> None:
-    start_termination_thread(termination_event)
+    done_event = threading.Event()
+    start_termination_thread(termination_event, done_event)
     try:
         execute_run_args = deserialize_value(serialized_execute_run_args, ExecuteExternalJobArgs)
 
@@ -221,6 +223,9 @@ def _run_in_subprocess(
         )
         subprocess_status_handler(event)
         subprocess_status_handler(RunInSubprocessComplete())
+        # set events to stop the termination thread on exit
+        done_event.set()
+        termination_event.set()
         return
 
     subprocess_status_handler(StartRunInSubprocessSuccessful())
@@ -255,6 +260,9 @@ def _run_in_subprocess(
             )
         subprocess_status_handler(RunInSubprocessComplete())
         instance.dispose()
+        # set events to stop the termination thread on exit
+        done_event.set()
+        termination_event.set()
 
 
 def start_run_in_subprocess(

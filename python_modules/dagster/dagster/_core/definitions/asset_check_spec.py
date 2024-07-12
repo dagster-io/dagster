@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr
-from dagster._core.definitions.asset_key import AssetKey, CoercibleToAssetKey
+from dagster._core.definitions.asset_key import AssetCheckKey, AssetKey, CoercibleToAssetKey
 from dagster._core.definitions.metadata import RawMetadataMapping
 from dagster._serdes.serdes import whitelist_for_serdes
 
@@ -25,31 +25,6 @@ class AssetCheckSeverity(Enum):
 
     WARN = "WARN"
     ERROR = "ERROR"
-
-
-@whitelist_for_serdes(old_storage_names={"AssetCheckHandle"})
-class AssetCheckKey(NamedTuple):
-    """Check names are expected to be unique per-asset. Thus, this combination of asset key and
-    check name uniquely identifies an asset check within a deployment.
-    """
-
-    asset_key: PublicAttr[AssetKey]
-    name: PublicAttr[str]
-
-    @staticmethod
-    def from_graphql_input(graphql_input: Mapping[str, Any]) -> "AssetCheckKey":
-        return AssetCheckKey(
-            asset_key=AssetKey.from_graphql_input(graphql_input["assetKey"]),
-            name=graphql_input["name"],
-        )
-
-    def to_user_string(self) -> str:
-        return f"{self.asset_key.to_user_string()}:{self.name}"
-
-    @staticmethod
-    def from_user_string(user_string: str) -> "AssetCheckKey":
-        asset_key_str, name = user_string.split(":")
-        return AssetCheckKey(AssetKey.from_user_string(asset_key_str), name)
 
 
 class AssetCheckSpec(

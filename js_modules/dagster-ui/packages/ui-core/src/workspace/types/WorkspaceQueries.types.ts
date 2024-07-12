@@ -448,11 +448,3 @@ export type CodeLocationStatusQuery = {
         }>;
       };
 };
-
-export type LocationStatusEntryFragment = {
-  __typename: 'WorkspaceLocationStatusEntry';
-  id: string;
-  name: string;
-  loadStatus: Types.RepositoryLocationLoadStatus;
-  updateTimestamp: number;
-};

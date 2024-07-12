@@ -1,7 +1,7 @@
 from dagster import In, List, Optional, job, op
 
 
-def test_from_intermediates_from_multiple_outputs():
+def test_from_intermediates_from_multiple_outputs() -> None:
     @op
     def x():
         return "x"
@@ -22,19 +22,19 @@ def test_from_intermediates_from_multiple_outputs():
 
     assert result
     assert result.success
-    step_input_event = next(
+    step_input_data = next(
         (
-            evt
+            evt.step_input_data
             for evt in result.events_for_node("gather")
             if evt.event_type_value == "STEP_INPUT"
-            and evt.event_specific_data.input_name == "stuff"
         )
     )
-    assert step_input_event.event_specific_data[1].label == "stuff"
+    assert step_input_data.input_name == "stuff"
+    assert step_input_data.type_check_data.label == "stuff"
     assert result.output_for_node("gather") == "x and y"
 
 
-def test_from_intermediates_from_config():
+def test_from_intermediates_from_config() -> None:
     run_config = {"ops": {"x": {"inputs": {"string_input": {"value": "Dagster is great!"}}}}}
 
     @op
@@ -49,13 +49,13 @@ def test_from_intermediates_from_config():
 
     assert result
     assert result.success
-    step_input_event = next(
+    step_input_data = next(
         (
-            evt
+            evt.step_input_data
             for evt in result.events_for_node("x")
             if evt.event_type_value == "STEP_INPUT"
-            and evt.event_specific_data.input_name == "string_input"
         )
     )
-    assert step_input_event.event_specific_data[1].label == "string_input"
+    assert step_input_data.input_name == "string_input"
+    assert step_input_data.type_check_data.label == "string_input"
     assert result.output_for_node("x") == "Dagster is great!"

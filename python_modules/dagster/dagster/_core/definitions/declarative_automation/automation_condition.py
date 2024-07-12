@@ -16,9 +16,9 @@ from dagster._core.definitions.declarative_automation.serialized_objects import 
 )
 from dagster._core.definitions.partition import AllPartitionsSubset
 from dagster._core.definitions.time_window_partitions import BaseTimeWindowPartitionsSubset
-from dagster._model import DagsterModel
 from dagster._time import get_current_timestamp
 from dagster._utils.security import non_secure_md5_hash_str
+from dagster._utils.warnings import disable_dagster_warnings
 
 if TYPE_CHECKING:
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     )
 
 
-class AutomationCondition(ABC, DagsterModel):
+class AutomationCondition(ABC):
     @property
     def requires_cursor(self) -> bool:
         return False
@@ -266,28 +266,29 @@ class AutomationCondition(ABC, DagsterModel):
         - None of its parent partitions are missing
         - None of its parent partitions are currently part of an in-progress run
         """
-        became_missing_or_any_deps_updated = (
-            AutomationCondition.missing().newly_true()
-            | AutomationCondition.any_deps_match(
-                AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
+        with disable_dagster_warnings():
+            became_missing_or_any_deps_updated = (
+                AutomationCondition.missing().newly_true()
+                | AutomationCondition.any_deps_match(
+                    AutomationCondition.newly_updated() | AutomationCondition.will_be_requested()
+                )
             )
-        )
 
-        any_parent_missing = AutomationCondition.any_deps_match(
-            AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
-        )
-        any_parent_in_progress = AutomationCondition.any_deps_match(
-            AutomationCondition.in_progress()
-        )
-        return (
-            AutomationCondition.in_latest_time_window()
-            & became_missing_or_any_deps_updated.since(
-                AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+            any_parent_missing = AutomationCondition.any_deps_match(
+                AutomationCondition.missing() & ~AutomationCondition.will_be_requested()
             )
-            & ~any_parent_missing
-            & ~any_parent_in_progress
-            & ~AutomationCondition.in_progress()
-        )
+            any_parent_in_progress = AutomationCondition.any_deps_match(
+                AutomationCondition.in_progress()
+            )
+            return (
+                AutomationCondition.in_latest_time_window()
+                & became_missing_or_any_deps_updated.since(
+                    AutomationCondition.newly_requested() | AutomationCondition.newly_updated()
+                )
+                & ~any_parent_missing
+                & ~any_parent_in_progress
+                & ~AutomationCondition.in_progress()
+            )
 
     @experimental
     @staticmethod
@@ -305,17 +306,19 @@ class AutomationCondition(ABC, DagsterModel):
             schedule, or will be requested this tick
         - The asset partition has not been requested since the latest tick of the provided cron schedule
         """
-        cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
-        all_deps_updated_since_cron = AutomationCondition.all_deps_match(
-            AutomationCondition.newly_updated().since(cron_tick_passed)
-            | AutomationCondition.will_be_requested()
-        )
-        return (
-            AutomationCondition.in_latest_time_window()
-            & cron_tick_passed.since(AutomationCondition.newly_requested())
-            & all_deps_updated_since_cron
-        )
+        with disable_dagster_warnings():
+            cron_tick_passed = AutomationCondition.cron_tick_passed(cron_schedule, cron_timezone)
+            all_deps_updated_since_cron = AutomationCondition.all_deps_match(
+                AutomationCondition.newly_updated().since(cron_tick_passed)
+                | AutomationCondition.will_be_requested()
+            )
+            return (
+                AutomationCondition.in_latest_time_window()
+                & cron_tick_passed.since(AutomationCondition.newly_requested())
+                & all_deps_updated_since_cron
+            )
 
+    @experimental
     @staticmethod
     def any_downstream_conditions() -> "AnyDownstreamConditionsCondition":
         """Returns a condition which will represent the union of all distinct downstream conditions."""

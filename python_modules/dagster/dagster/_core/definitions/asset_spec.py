@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Any, Iterable, Mapping, NamedTuple, Optional, 
 
 import dagster._check as check
 from dagster._annotations import PublicAttr, experimental_param
+from dagster._core.definitions.declarative_automation.automation_condition import (
+    AutomationCondition,
+)
 from dagster._core.definitions.utils import validate_asset_owner
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.internal_init import IHasInternalInit
@@ -12,7 +15,7 @@ from .auto_materialize_policy import AutoMaterializePolicy
 from .events import AssetKey, CoercibleToAssetKey
 from .freshness_policy import FreshnessPolicy
 from .partition_mapping import PartitionMapping
-from .utils import validate_tags_strict
+from .utils import resolve_automation_condition, validate_tags_strict
 
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_dep import AssetDep, CoercibleToAssetDep
@@ -75,7 +78,7 @@ class AssetSpec(
             ("skippable", PublicAttr[bool]),
             ("code_version", PublicAttr[Optional[str]]),
             ("freshness_policy", PublicAttr[Optional[FreshnessPolicy]]),
-            ("auto_materialize_policy", PublicAttr[Optional[AutoMaterializePolicy]]),
+            ("automation_condition", PublicAttr[Optional[AutomationCondition]]),
             ("owners", PublicAttr[Sequence[str]]),
             ("tags", PublicAttr[Mapping[str, str]]),
         ],
@@ -122,9 +125,11 @@ class AssetSpec(
         group_name: Optional[str] = None,
         code_version: Optional[str] = None,
         freshness_policy: Optional[FreshnessPolicy] = None,
-        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
+        automation_condition: Optional[AutomationCondition] = None,
         owners: Optional[Sequence[str]] = None,
         tags: Optional[Mapping[str, str]] = None,
+        # TODO: FOU-243
+        auto_materialize_policy: Optional[AutoMaterializePolicy] = None,
     ):
         from dagster._core.definitions.asset_dep import coerce_to_deps_and_check_duplicates
 
@@ -149,10 +154,10 @@ class AssetSpec(
                 "freshness_policy",
                 FreshnessPolicy,
             ),
-            auto_materialize_policy=check.opt_inst_param(
-                auto_materialize_policy,
-                "auto_materialize_policy",
-                AutoMaterializePolicy,
+            automation_condition=check.opt_inst_param(
+                resolve_automation_condition(automation_condition, auto_materialize_policy),
+                "automation_condition",
+                AutomationCondition,
             ),
             owners=owners,
             tags=validate_tags_strict(tags) or {},
@@ -169,10 +174,12 @@ class AssetSpec(
         group_name: Optional[str],
         code_version: Optional[str],
         freshness_policy: Optional[FreshnessPolicy],
-        auto_materialize_policy: Optional[AutoMaterializePolicy],
+        automation_condition: Optional[AutomationCondition],
         owners: Optional[Sequence[str]],
         tags: Optional[Mapping[str, str]],
+        auto_materialize_policy: Optional[AutoMaterializePolicy],
     ) -> "AssetSpec":
+        check.invariant(auto_materialize_policy is None)
         return AssetSpec(
             key=key,
             deps=deps,
@@ -182,7 +189,7 @@ class AssetSpec(
             group_name=group_name,
             code_version=code_version,
             freshness_policy=freshness_policy,
-            auto_materialize_policy=auto_materialize_policy,
+            automation_condition=automation_condition,
             owners=owners,
             tags=tags,
         )
@@ -194,3 +201,12 @@ class AssetSpec(
             for dep in self.deps
             if dep.partition_mapping is not None
         }
+
+    @property
+    def auto_materialize_policy(self) -> Optional[AutoMaterializePolicy]:
+        # TODO: FOU-243
+        return (
+            self.automation_condition.as_auto_materialize_policy()
+            if self.automation_condition
+            else None
+        )

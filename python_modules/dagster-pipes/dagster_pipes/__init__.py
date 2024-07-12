@@ -796,12 +796,12 @@ class PipesEnvVarParamsLoader(PipesMappingParamsLoader):
         super().__init__(mapping=os.environ)
 
 
-def env_var_to_cli_argument(env_var: str) -> str:
+def _env_var_to_cli_argument(env_var: str) -> str:
     return f"--{env_var}".lower().replace("_", "-")
 
 
-DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT = env_var_to_cli_argument(DAGSTER_PIPES_CONTEXT_ENV_VAR)
-DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT = env_var_to_cli_argument(DAGSTER_PIPES_MESSAGES_ENV_VAR)
+DAGSTER_PIPES_CONTEXT_CLI_ARGUMENT = _env_var_to_cli_argument(DAGSTER_PIPES_CONTEXT_ENV_VAR)
+DAGSTER_PIPES_MESSAGES_CLI_ARGUMENT = _env_var_to_cli_argument(DAGSTER_PIPES_MESSAGES_ENV_VAR)
 
 DAGSTER_PIPES_CLI_PARSER = argparse.ArgumentParser(description="Dagster Pipes CLI interface")
 DAGSTER_PIPES_CLI_PARSER.add_argument(

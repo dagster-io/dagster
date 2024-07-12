@@ -9,6 +9,7 @@ import warnings
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import update_wrapper
 from pathlib import Path
 from signal import Signals
 from threading import Event
@@ -54,6 +55,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.launcher import RunLauncher
+from dagster._core.remote_representation import ExternalRepository
 from dagster._core.remote_representation.origin import InProcessCodeLocationOrigin
 from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.secrets import SecretsLoader
@@ -264,8 +266,8 @@ def poll_for_finished_run(
                 raise Exception("Timed out")
 
 
-def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30):
-    poll_for_event(instance, run_id, event_type="STEP_START", message=None, timeout=timeout)
+def poll_for_step_start(instance: DagsterInstance, run_id: str, timeout: float = 30, message=None):
+    poll_for_event(instance, run_id, event_type="STEP_START", message=message, timeout=timeout)
 
 
 def poll_for_event(
@@ -529,6 +531,16 @@ def create_test_daemon_workspace_context(
             yield workspace_process_context
 
 
+def load_external_repo(
+    workspace_context: WorkspaceProcessContext, repo_name: str
+) -> ExternalRepository:
+    code_location_entry = next(
+        iter(workspace_context.create_request_context().get_workspace_snapshot().values())
+    )
+    assert code_location_entry.code_location, code_location_entry.load_error
+    return code_location_entry.code_location.get_repository(repo_name)
+
+
 def remove_none_recursively(obj: T) -> T:
     """Remove none values from a dict. This can be used to support comparing provided config vs.
     config we retrive from kubernetes, which returns all fields, even those which have no value
@@ -696,6 +708,7 @@ def ignore_warning(message_substr: str):
             warnings.filterwarnings("ignore", message=message_substr)
             return func(*args, **kwargs)
 
+        update_wrapper(wrapper, func)
         return wrapper
 
     return decorator
@@ -762,3 +775,6 @@ def freeze_time(new_now: Union[datetime.datetime, float]):
         "dagster._time._mockable_get_current_timestamp", return_value=new_dt.timestamp()
     ), pendulum_freeze_time(new_pendulum_dt):
         yield
+
+
+class TestType: ...
