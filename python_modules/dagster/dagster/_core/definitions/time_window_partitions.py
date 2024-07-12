@@ -1053,7 +1053,15 @@ class TimeWindowPartitionsDefinition(
         return is_basic_hourly(self.cron_schedule)
 
 
-class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
+def DailyPartitionsDefinition(
+    start_date: Union[datetime, str],
+    end_date: Union[datetime, str, None] = None,
+    minute_offset: int = 0,
+    hour_offset: int = 0,
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> TimeWindowPartitionsDefinition:
     """A set of daily partitions.
 
     The first partition in the set will start at the start_date at midnight. The last partition
@@ -1086,30 +1094,18 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         DailyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=16)
         # creates partitions (2022-03-12-16:15, 2022-03-13-16:15), (2022-03-13-16:15, 2022-03-14-16:15), ...
     """
+    _fmt = fmt or DEFAULT_DATE_FORMAT
 
-    def __new__(
-        cls,
-        start_date: Union[datetime, str],
-        end_date: Union[datetime, str, None] = None,
-        minute_offset: int = 0,
-        hour_offset: int = 0,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
-        end_offset: int = 0,
-    ):
-        _fmt = fmt or DEFAULT_DATE_FORMAT
-
-        return super(DailyPartitionsDefinition, cls).__new__(
-            cls,
-            schedule_type=ScheduleType.DAILY,
-            start=start_date,
-            end=end_date,
-            minute_offset=minute_offset,
-            hour_offset=hour_offset,
-            timezone=timezone,
-            fmt=_fmt,
-            end_offset=end_offset,
-        )
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.DAILY,
+        start=start_date,
+        end=end_date,
+        minute_offset=minute_offset,
+        hour_offset=hour_offset,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
 
 
 def wrap_time_window_run_config_fn(
@@ -1148,7 +1144,7 @@ def daily_partitioned_config(
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
-    PartitionedConfig[DailyPartitionsDefinition],
+    PartitionedConfig[TimeWindowPartitionsDefinition],
 ]:
     """Defines run config over a set of daily partitions.
 
@@ -1192,7 +1188,7 @@ def daily_partitioned_config(
 
     def inner(
         fn: Callable[[datetime, datetime], Mapping[str, Any]],
-    ) -> PartitionedConfig[DailyPartitionsDefinition]:
+    ) -> PartitionedConfig[TimeWindowPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
         partitions_def = DailyPartitionsDefinition(
@@ -1216,7 +1212,14 @@ def daily_partitioned_config(
     return inner
 
 
-class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
+def HourlyPartitionsDefinition(
+    start_date: Union[datetime, str],
+    end_date: Union[datetime, str, None] = None,
+    minute_offset: int = 0,
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> TimeWindowPartitionsDefinition:
     """A set of hourly partitions.
 
     The first partition in the set will start on the start_date at midnight. The last partition
@@ -1252,28 +1255,17 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         HourlyPartitionsDefinition(start_date=datetime(2022, 03, 12), minute_offset=15)
         # creates partitions (2022-03-12-00:15, 2022-03-12-01:15), (2022-03-12-01:15, 2022-03-12-02:15), ...
     """
+    _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
-    def __new__(
-        cls,
-        start_date: Union[datetime, str],
-        end_date: Union[datetime, str, None] = None,
-        minute_offset: int = 0,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
-        end_offset: int = 0,
-    ):
-        _fmt = fmt or DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
-
-        return super(HourlyPartitionsDefinition, cls).__new__(
-            cls,
-            schedule_type=ScheduleType.HOURLY,
-            start=start_date,
-            end=end_date,
-            minute_offset=minute_offset,
-            timezone=timezone,
-            fmt=_fmt,
-            end_offset=end_offset,
-        )
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.HOURLY,
+        start=start_date,
+        end=end_date,
+        minute_offset=minute_offset,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
 
 
 def hourly_partitioned_config(
@@ -1285,7 +1277,7 @@ def hourly_partitioned_config(
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
-    PartitionedConfig[HourlyPartitionsDefinition],
+    PartitionedConfig[TimeWindowPartitionsDefinition],
 ]:
     """Defines run config over a set of hourly partitions.
 
@@ -1328,7 +1320,7 @@ def hourly_partitioned_config(
 
     def inner(
         fn: Callable[[datetime, datetime], Mapping[str, Any]],
-    ) -> PartitionedConfig[HourlyPartitionsDefinition]:
+    ) -> PartitionedConfig[TimeWindowPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
         partitions_def = HourlyPartitionsDefinition(
@@ -1497,7 +1489,16 @@ def monthly_partitioned_config(
     return inner
 
 
-class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
+def WeeklyPartitionsDefinition(
+    start_date: Union[datetime, str],
+    end_date: Union[datetime, str, None] = None,
+    minute_offset: int = 0,
+    hour_offset: int = 0,
+    day_offset: int = 0,
+    timezone: Optional[str] = None,
+    fmt: Optional[str] = None,
+    end_offset: int = 0,
+) -> TimeWindowPartitionsDefinition:
     """Defines a set of weekly partitions.
 
     The first partition in the set will start at the start_date. The last partition in the set will
@@ -1534,32 +1535,19 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         WeeklyPartitionsDefinition(start_date="2022-03-12", minute_offset=15, hour_offset=3, day_offset=6)
         # creates partitions (2022-03-12-03:15, 2022-03-19-03:15), (2022-03-19-03:15, 2022-03-26-03:15), ...
     """
+    _fmt = fmt or DEFAULT_DATE_FORMAT
 
-    def __new__(
-        cls,
-        start_date: Union[datetime, str],
-        end_date: Union[datetime, str, None] = None,
-        minute_offset: int = 0,
-        hour_offset: int = 0,
-        day_offset: int = 0,
-        timezone: Optional[str] = None,
-        fmt: Optional[str] = None,
-        end_offset: int = 0,
-    ):
-        _fmt = fmt or DEFAULT_DATE_FORMAT
-
-        return super(WeeklyPartitionsDefinition, cls).__new__(
-            cls,
-            schedule_type=ScheduleType.WEEKLY,
-            start=start_date,
-            end=end_date,
-            minute_offset=minute_offset,
-            hour_offset=hour_offset,
-            day_offset=day_offset,
-            timezone=timezone,
-            fmt=_fmt,
-            end_offset=end_offset,
-        )
+    return TimeWindowPartitionsDefinition(
+        schedule_type=ScheduleType.WEEKLY,
+        start=start_date,
+        end=end_date,
+        minute_offset=minute_offset,
+        hour_offset=hour_offset,
+        day_offset=day_offset,
+        timezone=timezone,
+        fmt=_fmt,
+        end_offset=end_offset,
+    )
 
 
 def weekly_partitioned_config(
@@ -1573,7 +1561,7 @@ def weekly_partitioned_config(
     tags_for_partition_fn: Optional[Callable[[datetime, datetime], Mapping[str, str]]] = None,
 ) -> Callable[
     [Callable[[datetime, datetime], Mapping[str, Any]]],
-    PartitionedConfig[WeeklyPartitionsDefinition],
+    PartitionedConfig[TimeWindowPartitionsDefinition],
 ]:
     """Defines run config over a set of weekly partitions.
 
@@ -1621,7 +1609,7 @@ def weekly_partitioned_config(
 
     def inner(
         fn: Callable[[datetime, datetime], Mapping[str, Any]],
-    ) -> PartitionedConfig[WeeklyPartitionsDefinition]:
+    ) -> PartitionedConfig[TimeWindowPartitionsDefinition]:
         check.callable_param(fn, "fn")
 
         partitions_def = WeeklyPartitionsDefinition(
@@ -2107,20 +2095,8 @@ class PartitionKeysTimeWindowPartitionsSubset(BaseTimeWindowPartitionsSubset):
         return f"PartitionKeysTimeWindowPartitionsSubset({self.get_partition_key_ranges(self.partitions_def)})"
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.remote_representation.external_data import (
-            external_time_window_partitions_definition_from_def,
-        )
-
-        # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
-        # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
-        # serializable. to do this, we just convert it to its external representation and back.
-        partitions_def = self.partitions_def
-        if type(self.partitions_def) != TimeWindowPartitionsSubset:
-            partitions_def = external_time_window_partitions_definition_from_def(
-                partitions_def
-            ).get_partitions_definition()
         return TimeWindowPartitionsSubset(
-            partitions_def, self.num_partitions, self.included_time_windows
+            self.partitions_def, self.num_partitions, self.included_time_windows
         )
 
     def __or__(self, other: "PartitionsSubset") -> "PartitionsSubset":
@@ -2448,21 +2424,6 @@ class TimeWindowPartitionsSubset(
         )
 
     def to_serializable_subset(self) -> "TimeWindowPartitionsSubset":
-        from dagster._core.remote_representation.external_data import (
-            external_time_window_partitions_definition_from_def,
-        )
-
-        # in cases where we're dealing with (e.g.) HourlyPartitionsDefinition, we need to convert
-        # this partitions definition into a raw TimeWindowPartitionsDefinition to make it
-        # serializable. to do this, we just convert it to its external representation and back.
-        # note that we rarely serialize subsets on the user code side of a serialization boundary,
-        # and so this conversion is rarely necessary.
-        partitions_def = self.partitions_def
-        if type(self.partitions_def) != TimeWindowPartitionsSubset:
-            partitions_def = external_time_window_partitions_definition_from_def(
-                partitions_def
-            ).get_partitions_definition()
-            return self.with_partitions_def(partitions_def)
         return self
 
 
