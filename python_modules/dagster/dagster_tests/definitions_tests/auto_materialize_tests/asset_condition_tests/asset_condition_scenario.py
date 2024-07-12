@@ -152,7 +152,11 @@ class AutomationConditionScenarioState(ScenarioState):
             evaluation_id=1,
             instance=self.instance,
             asset_graph=asset_graph,
-            cursor=AssetDaemonCursor.empty(),
+            cursor=AssetDaemonCursor.empty()._replace(
+                previous_condition_cursors=[self.condition_cursor]
+            )
+            if self.condition_cursor
+            else AssetDaemonCursor.empty(),
             materialize_run_tags={},
             observe_run_tags={},
             auto_observe_asset_keys=None,
@@ -167,7 +171,12 @@ class AutomationConditionScenarioState(ScenarioState):
             request_backfills=self.request_backfills,
         )
 
-        return daemon_context.evaluate()
+        run_requests, cursor, _ = daemon_context.evaluate()
+        new_state = dataclasses.replace(
+            self, condition_cursor=cursor.get_previous_condition_cursor(self.asset_key)
+        )
+
+        return new_state, run_requests
 
     def without_cursor(self) -> "AutomationConditionScenarioState":
         """Removes the previous evaluation state from the state. This is useful for testing
