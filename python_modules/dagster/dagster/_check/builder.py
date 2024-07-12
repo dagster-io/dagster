@@ -120,9 +120,16 @@ class EvalContext(NamedTuple):
             return type(ref.__forward_arg__, (_LazyImportPlaceholder,), {})
         try:
             if sys.version_info <= (3, 9):
-                return ref._evaluate(self.get_merged_ns(), {})  # noqa
+                return ref._evaluate(  # noqa
+                    globalns=self.get_merged_ns(),
+                    localns={},
+                )
             else:
-                return ref._evaluate(self.get_merged_ns(), {}, frozenset())  # noqa
+                return ref._evaluate(  # noqa
+                    globalns=self.get_merged_ns(),
+                    localns={},
+                    recursive_guard=frozenset(),
+                )
         except NameError as e:
             raise CheckError(
                 f"Unable to resolve {ref}, could not map string name to actual type using captured frames. "
