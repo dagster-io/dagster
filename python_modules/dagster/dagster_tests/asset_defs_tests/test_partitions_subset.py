@@ -79,7 +79,7 @@ composite = MultiPartitionsDefinition({"date": time_window_partitions, "abc": st
 def test_get_subset_type():
     assert composite.__class__.__name__ == MultiPartitionsDefinition.__name__
     assert static_partitions.__class__.__name__ == StaticPartitionsDefinition.__name__
-    assert time_window_partitions.__class__.__name__ == DailyPartitionsDefinition.__name__
+    assert time_window_partitions.__class__.__name__ == TimeWindowPartitionsDefinition.__name__
 
 
 def test_empty_subsets():
@@ -95,7 +95,7 @@ def test_empty_subsets():
     ],
 )
 def test_time_window_partitions_subset_serialization_deserialization(
-    partitions_def: DailyPartitionsDefinition,
+    partitions_def: TimeWindowPartitionsDefinition,
 ):
     time_window_partitions_def = TimeWindowPartitionsDefinition(
         start=partitions_def.start,

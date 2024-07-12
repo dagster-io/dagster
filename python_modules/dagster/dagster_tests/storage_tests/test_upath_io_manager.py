@@ -27,6 +27,7 @@ from dagster import (
     OutputContext,
     StaticPartitionsDefinition,
     TimeWindowPartitionMapping,
+    TimeWindowPartitionsDefinition,
     asset,
     build_init_resource_context,
     build_input_context,
@@ -184,8 +185,8 @@ def test_upath_io_manager_with_non_any_type_annotation(tmp_path: Path):
 
 
 def test_upath_io_manager_multiple_time_partitions(
-    daily: DailyPartitionsDefinition,
-    hourly: HourlyPartitionsDefinition,
+    daily: TimeWindowPartitionsDefinition,
+    hourly: TimeWindowPartitionsDefinition,
     start: datetime,
     dummy_io_manager: DummyIOManager,
 ):
@@ -355,7 +356,7 @@ def test_upath_io_manager_with_extension_static_partitions_with_dot():
 
 
 def test_partitioned_io_manager_preserves_single_partition_dependency(
-    daily: DailyPartitionsDefinition, dummy_io_manager: DummyIOManager
+    daily: TimeWindowPartitionsDefinition, dummy_io_manager: DummyIOManager
 ):
     @asset(partitions_def=daily)
     def upstream_asset():
@@ -375,8 +376,8 @@ def test_partitioned_io_manager_preserves_single_partition_dependency(
 
 def test_skip_type_check_for_multiple_partitions_with_no_type_annotation(
     start: datetime,
-    daily: DailyPartitionsDefinition,
-    hourly: HourlyPartitionsDefinition,
+    daily: TimeWindowPartitionsDefinition,
+    hourly: TimeWindowPartitionsDefinition,
     dummy_io_manager: DummyIOManager,
 ):
     @asset(partitions_def=hourly)
@@ -399,8 +400,8 @@ def test_skip_type_check_for_multiple_partitions_with_no_type_annotation(
 
 def test_skip_type_check_for_multiple_partitions_with_any_type(
     start: datetime,
-    daily: DailyPartitionsDefinition,
-    hourly: HourlyPartitionsDefinition,
+    daily: TimeWindowPartitionsDefinition,
+    hourly: TimeWindowPartitionsDefinition,
     dummy_io_manager: DummyIOManager,
 ):
     @asset(partitions_def=hourly)
@@ -541,7 +542,7 @@ def test_upath_io_manager_async_load_from_path(tmp_path: Path, json_data: Any):
 @requires_python38
 def test_upath_io_manager_async_multiple_time_partitions(
     tmp_path: Path,
-    daily: DailyPartitionsDefinition,
+    daily: TimeWindowPartitionsDefinition,
     start: datetime,
 ):
     manager = AsyncJSONIOManager(base_dir=str(tmp_path))
@@ -577,7 +578,7 @@ def test_upath_io_manager_async_multiple_time_partitions(
 @requires_python38
 def test_upath_io_manager_async_fail_on_missing_partitions(
     tmp_path: Path,
-    daily: DailyPartitionsDefinition,
+    daily: TimeWindowPartitionsDefinition,
     start: datetime,
 ):
     manager = AsyncJSONIOManager(base_dir=str(tmp_path))
@@ -611,7 +612,7 @@ def test_upath_io_manager_async_fail_on_missing_partitions(
 @requires_python38
 def test_upath_io_manager_async_allow_missing_partitions(
     tmp_path: Path,
-    daily: DailyPartitionsDefinition,
+    daily: TimeWindowPartitionsDefinition,
     start: datetime,
 ):
     manager = AsyncJSONIOManager(base_dir=str(tmp_path))
@@ -647,7 +648,7 @@ def test_upath_io_manager_async_allow_missing_partitions(
 
 
 def test_upath_can_transition_from_non_partitioned_to_partitioned(
-    tmp_path: Path, daily: DailyPartitionsDefinition, start: datetime
+    tmp_path: Path, daily: TimeWindowPartitionsDefinition, start: datetime
 ):
     my_io_manager = PickleIOManager(UPath(tmp_path))
 

@@ -21,7 +21,7 @@ class AssetSubsetSerializer(NamedTupleSerializer):
     """Ensures that the inner PartitionsSubset is converted to a serializable form if necessary."""
 
     def get_storage_name(self) -> str:
-        # override this method so all ValidAssetSubsets are serialzied as AssetSubsets
+        # override this method so all ValidAssetSubsets are serialized as AssetSubsets
         return "AssetSubset"
 
     def before_pack(self, value: "AssetSubset") -> "AssetSubset":
