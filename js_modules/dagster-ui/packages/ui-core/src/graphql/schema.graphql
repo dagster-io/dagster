@@ -3210,7 +3210,7 @@ type Query {
     sensorStatus: InstigationStatus
   ): SensorsOrError!
   instigationStateOrError(
-    instigationSelector: InstigationSelector
+    instigationSelector: InstigationSelector!
     id: String
   ): InstigationStateOrError!
   instigationStatesOrError(repositoryID: String!): InstigationStatesOrError!

@@ -3838,7 +3838,7 @@ export type QueryGraphOrErrorArgs = {
 
 export type QueryInstigationStateOrErrorArgs = {
   id?: InputMaybe<Scalars['String']['input']>;
-  instigationSelector?: InputMaybe<InstigationSelector>;
+  instigationSelector: InstigationSelector;
 };
 
 export type QueryInstigationStatesOrErrorArgs = {
