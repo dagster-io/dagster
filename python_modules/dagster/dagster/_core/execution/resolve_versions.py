@@ -93,7 +93,7 @@ def resolve_step_versions(
 
         input_version_dict = {
             input_name: step_input.source.compute_version(
-                step_versions, pipeline_def, resolved_run_config
+                step_versions, pipeline_def, resolved_run_config, step.node_handle, input_name
             )
             for input_name, step_input in step.step_input_dict.items()
         }
