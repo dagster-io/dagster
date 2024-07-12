@@ -112,6 +112,10 @@ class NodeInvocation(
             self._hash = hash_collection(self)
         return self._hash
 
+    @property
+    def resolved_name(self) -> str:
+        return self.alias or self.name
+
 
 class Node(ABC):
     """Node invocation within a graph. Identified by its name inside the graph."""

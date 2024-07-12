@@ -205,12 +205,12 @@ def build_asset_job(
         asset_graph, asset_graph.executable_asset_keys, partitions_def
     )
 
-    deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
+    deps, assets_defs_by_node_invocation = build_node_deps(asset_graph)
 
     # attempt to resolve cycles using multi-asset subsetting
     if _has_cycles(deps):
         asset_graph = _attempt_resolve_node_cycles(asset_graph)
-        deps, assets_defs_by_node_handle = build_node_deps(asset_graph)
+        deps, assets_defs_by_node_invocation = build_node_deps(asset_graph)
 
     node_defs = [
         asset.node_def
@@ -234,7 +234,10 @@ def build_asset_job(
 
     asset_layer = AssetLayer.from_graph_and_assets_node_mapping(
         graph_def=graph,
-        assets_defs_by_outer_node_handle=assets_defs_by_node_handle,
+        assets_defs_by_outer_node_name={
+            ni.resolved_name: assets_def
+            for ni, assets_def in assets_defs_by_node_invocation.items()
+        },
         asset_graph=asset_graph,
     )
 
@@ -435,17 +438,20 @@ def _infer_and_validate_common_partitions_def(
 
 
 def _get_blocking_asset_check_output_handles_by_asset_key(
-    assets_defs_by_node_handle: Mapping[NodeHandle, AssetsDefinition],
+    assets_defs_by_node_invocation: Mapping[NodeInvocation, AssetsDefinition],
 ) -> Mapping[AssetKey, AbstractSet[NodeOutputHandle]]:
     """For each asset key, returns the set of node output handles that correspond to asset check
     specs that should block the execution of downstream assets if they fail.
     """
     check_specs_by_node_output_handle: Mapping[NodeOutputHandle, AssetCheckSpec] = {}
 
-    for node_handle, assets_def in assets_defs_by_node_handle.items():
+    for node_invocation, assets_def in assets_defs_by_node_invocation.items():
         for output_name, check_spec in assets_def.check_specs_by_output_name.items():
             check_specs_by_node_output_handle[
-                NodeOutputHandle(node_handle=node_handle, output_name=output_name)
+                NodeOutputHandle(
+                    node_handle=NodeHandle(name=node_invocation.resolved_name, parent=None),
+                    output_name=output_name,
+                )
             ] = check_spec
 
     blocking_asset_check_output_handles_by_asset_key: Dict[AssetKey, Set[NodeOutputHandle]] = (
@@ -464,7 +470,7 @@ def build_node_deps(
     asset_graph: AssetGraph,
 ) -> Tuple[
     DependencyMapping[NodeInvocation],
-    Mapping[NodeHandle, AssetsDefinition],
+    Mapping[NodeInvocation, AssetsDefinition],
 ]:
     # sort so that nodes get a consistent name
     assets_defs = sorted(asset_graph.assets_defs, key=lambda ad: (sorted((ak for ak in ad.keys))))
@@ -473,7 +479,7 @@ def build_node_deps(
     # different names. we keep track of definitions that share a name and add a suffix to their
     # invocations to solve this issue
     collisions: Dict[str, int] = {}
-    assets_defs_by_node_handle: Dict[NodeHandle, AssetsDefinition] = {}
+    assets_defs_by_node_invocation: Dict[NodeInvocation, AssetsDefinition] = {}
     node_alias_and_output_by_asset_key: Dict[AssetKey, Tuple[str, str]] = {}
     for assets_def in (ad for ad in assets_defs if ad.is_executable):
         node_name = assets_def.node_def.name
@@ -485,23 +491,20 @@ def build_node_deps(
             node_alias = node_name
 
         # unique handle for each AssetsDefinition
-        assets_defs_by_node_handle[NodeHandle(node_alias, parent=None)] = assets_def
+        assets_defs_by_node_invocation[NodeInvocation(node_name, node_alias)] = assets_def
         for output_name, key in assets_def.keys_by_output_name.items():
             node_alias_and_output_by_asset_key[key] = (node_alias, output_name)
 
     blocking_asset_check_output_handles_by_asset_key = (
         _get_blocking_asset_check_output_handles_by_asset_key(
-            assets_defs_by_node_handle,
+            assets_defs_by_node_invocation,
         )
     )
 
     deps: Dict[NodeInvocation, Dict[str, IDependencyDefinition]] = {}
-    for node_handle, assets_def in assets_defs_by_node_handle.items():
+    for node_invocation, assets_def in assets_defs_by_node_invocation.items():
         # the key that we'll use to reference the node inside this AssetsDefinition
-        node_def_name = assets_def.node_def.name
-        alias = node_handle.name if node_handle.name != node_def_name else None
-        node_key = NodeInvocation(node_def_name, alias=alias)
-        deps[node_key] = {}
+        deps[node_invocation] = {}
 
         # TODO: We should be able to remove this after a refactor of `AssetsDefinition` and just use
         # a single method. At present using `keys_by_input_name` for asset checks only will exclude
@@ -543,27 +546,25 @@ def build_node_deps(
 
                 asset_dep_def = DependencyDefinition(upstream_node_alias, upstream_output_name)
                 if blocking_asset_check_output_handles:
-                    deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
+                    deps[node_invocation][input_name] = BlockingAssetChecksDependencyDefinition(
                         asset_check_dependencies=asset_check_deps, other_dependency=asset_dep_def
                     )
                 else:
-                    deps[node_key][input_name] = asset_dep_def
+                    deps[node_invocation][input_name] = asset_dep_def
             elif asset_check_deps:
-                deps[node_key][input_name] = BlockingAssetChecksDependencyDefinition(
+                deps[node_invocation][input_name] = BlockingAssetChecksDependencyDefinition(
                     asset_check_dependencies=asset_check_deps, other_dependency=None
                 )
-    return deps, assets_defs_by_node_handle
+    return deps, assets_defs_by_node_invocation
 
 
-def _has_cycles(
-    deps: DependencyMapping[NodeInvocation],
-) -> bool:
+def _has_cycles(deps: DependencyMapping[NodeInvocation]) -> bool:
     """Detect if there are cycles in a dependency dictionary."""
     try:
         node_deps: Dict[str, Set[str]] = {}
         for upstream_node, downstream_deps in deps.items():
             # handle either NodeInvocation or str
-            node_name = upstream_node.alias or upstream_node.name
+            node_name = upstream_node.resolved_name
             node_deps[node_name] = set()
             for dep in downstream_deps.values():
                 if isinstance(dep, DependencyDefinition):
