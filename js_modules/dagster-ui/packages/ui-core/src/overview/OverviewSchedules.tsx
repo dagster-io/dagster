@@ -22,7 +22,7 @@ import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
-import {useFilters} from '../ui/Filters';
+import {useFilters} from '../ui/BaseFilters';
 import {useCodeLocationFilter} from '../ui/Filters/useCodeLocationFilter';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';

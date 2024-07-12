@@ -24,7 +24,7 @@ import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {SensorBulkActionMenu} from '../sensors/SensorBulkActionMenu';
 import {makeSensorKey} from '../sensors/makeSensorKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
-import {useFilters} from '../ui/Filters';
+import {useFilters} from '../ui/BaseFilters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 

@@ -8,7 +8,8 @@ import {useAssetSearch} from './useAssetSearch';
 import {CloudOSSContext} from '../app/CloudOSSContext';
 import {isCanonicalStorageKindTag} from '../graph/KindTags';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useFilters} from '../ui/Filters';
+import {useFilters} from '../ui/BaseFilters';
+import {FilterObject} from '../ui/BaseFilters/useFilter';
 import {useAssetGroupFilter} from '../ui/Filters/useAssetGroupFilter';
 import {useAssetOwnerFilter, useAssetOwnersForAssets} from '../ui/Filters/useAssetOwnerFilter';
 import {useAssetTagFilter, useAssetTagsForAssets} from '../ui/Filters/useAssetTagFilter';
@@ -18,7 +19,6 @@ import {
   useAssetKindTagsForAssets,
   useComputeKindTagFilter,
 } from '../ui/Filters/useComputeKindTagFilter';
-import {FilterObject} from '../ui/Filters/useFilter';
 import {useStorageKindFilter} from '../ui/Filters/useStorageKindFilter';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 

@@ -24,7 +24,7 @@ import {useBlockTraceOnQueryResult} from '../performance/TraceContext';
 import {ScheduleBulkActionMenu} from '../schedules/ScheduleBulkActionMenu';
 import {makeScheduleKey} from '../schedules/makeScheduleKey';
 import {CheckAllBox} from '../ui/CheckAllBox';
-import {useFilters} from '../ui/Filters';
+import {useFilters} from '../ui/BaseFilters';
 import {useInstigationStatusFilter} from '../ui/Filters/useInstigationStatusFilter';
 import {SearchInputSpinner} from '../ui/SearchInputSpinner';
 

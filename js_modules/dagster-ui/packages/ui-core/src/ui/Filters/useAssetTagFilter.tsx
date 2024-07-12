@@ -2,9 +2,9 @@ import isEqual from 'lodash/isEqual';
 import memoize from 'lodash/memoize';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 import {buildTagString} from '../tagAsString';
 
 const emptyArray: any[] = [];
@@ -31,14 +31,8 @@ export const useAssetTagFilter = ({
       [allAssetTags],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => {
-      return (
-        <TruncatedTextWithFullTextOnHover
-          text={buildTagString({key: value.key, value: value.value})}
-        />
-      );
-    },
-    getStringValue: ({value, key}) => `${key}: ${value}`,
+    renderLabel,
+    getStringValue,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setTags?.(Array.from(values));
@@ -47,6 +41,13 @@ export const useAssetTagFilter = ({
     canSelectAll: false,
   });
 };
+
+export const renderLabel = ({value}: {value: DefinitionTag}) => {
+  return (
+    <TruncatedTextWithFullTextOnHover text={buildTagString({key: value.key, value: value.value})} />
+  );
+};
+export const getStringValue = ({value, key}: DefinitionTag) => `${key}: ${value}`;
 
 export const buildDefinitionTag = memoize(
   (tag: DefinitionTag) => {

@@ -252,7 +252,7 @@ export function SetFilterActiveState({
   state: Set<any>;
   getStringValue: (value: any) => string;
   getTooltipText: ((value: any) => string) | undefined;
-  onRemove: () => void;
+  onRemove?: () => void;
   renderLabel: (value: any) => JSX.Element;
   matchType: 'any-of' | 'all-of';
 }) {

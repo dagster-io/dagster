@@ -2,8 +2,8 @@ import {Box, Icon} from '@dagster-io/ui-components';
 import uniqBy from 'lodash/uniqBy';
 import {useMemo} from 'react';
 
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
@@ -28,19 +28,22 @@ export const useComputeKindTagFilter = ({
       [allComputeKindTags],
     ),
     menuWidth: '300px',
-    renderLabel: ({value}) => (
-      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-        <Icon name="compute_kind" />
-        <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
-      </Box>
-    ),
-    getStringValue: (value) => value,
+    renderLabel,
+    getStringValue,
     state: computeKindTags ?? emptyArray,
     onStateChanged: (values) => {
       setComputeKindTags?.(Array.from(values));
     },
   });
 };
+
+export const renderLabel = ({value}: {value: string}) => (
+  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+    <Icon name="compute_kind" />
+    <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
+  </Box>
+);
+export const getStringValue = (value: string) => value;
 
 export function useAssetKindTagsForAssets(
   assets: {definition?: {computeKind?: string | null} | null}[],

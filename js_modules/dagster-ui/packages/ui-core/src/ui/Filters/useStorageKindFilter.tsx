@@ -2,9 +2,9 @@ import {Box, Icon} from '@dagster-io/ui-components';
 import {useMemo} from 'react';
 
 import {buildDefinitionTag} from './useAssetTagFilter';
-import {useStaticSetFilter} from './useStaticSetFilter';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
+import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
