@@ -445,7 +445,7 @@ def get_step_input_source(
     ):
         # can only load from source asset if assets defs are available
         if asset_layer.asset_key_for_input(handle, input_handle.input_name):
-            return FromLoadableAsset(node_handle=handle, input_name=input_name)
+            return FromLoadableAsset()
         elif input_def.input_manager_key:
             return FromInputManager(node_handle=handle, input_name=input_name)
 

@@ -65,22 +65,19 @@ class AssetLayer(NamedTuple):
 
         for node_handle, assets_def in assets_defs_by_outer_node_handle.items():
             computation = check.not_none(assets_def.computation)
+            full_node_def = computation.full_node_def
             for input_name, input_asset_key in assets_def.node_keys_by_input_name.items():
                 input_handle = NodeInputHandle(node_handle=node_handle, input_name=input_name)
                 asset_key_by_input[input_handle] = input_asset_key
                 # resolve graph input to list of op inputs that consume it
-                node_input_handles = computation.full_node_def.resolve_input_to_destinations(
-                    input_handle
-                )
+                node_input_handles = full_node_def.resolve_input_to_destinations(input_handle)
                 for node_input_handle in node_input_handles:
                     asset_key_by_input[node_input_handle] = input_asset_key
 
             for output_name, asset_key in assets_def.node_keys_by_output_name.items():
                 # resolve graph output to the op output it comes from
-                inner_output_def, inner_node_handle = (
-                    computation.full_node_def.resolve_output_to_origin(
-                        output_name, handle=node_handle
-                    )
+                inner_output_def, inner_node_handle = full_node_def.resolve_output_to_origin(
+                    output_name, handle=node_handle
                 )
                 node_output_handle = NodeOutputHandle(
                     node_handle=inner_node_handle, output_name=inner_output_def.name
@@ -88,14 +85,16 @@ class AssetLayer(NamedTuple):
 
                 asset_keys_by_node_output_handle[node_output_handle] = asset_key
 
-                asset_key_by_input.update(
-                    {
-                        input_handle: asset_key
-                        for input_handle in computation.full_node_def.resolve_output_to_destinations(
-                            output_name, node_handle
-                        )
-                    }
+                destinations = full_node_def.resolve_output_to_destinations(
+                    output_name, node_handle
                 )
+                for destination in destinations:
+                    asset_key_by_input[destination] = asset_key
+                    if isinstance(full_node_def, GraphDefinition):
+                        for op_input_handle in full_node_def.get_node(
+                            destination.node_handle.pop()
+                        ).definition.resolve_input_to_destinations(destination):
+                            asset_key_by_input[op_input_handle] = asset_key
                 outer_node_names_by_asset_key[asset_key] = node_handle.name
 
             if len(assets_def.check_specs_by_output_name) > 0:
