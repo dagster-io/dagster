@@ -248,7 +248,7 @@ class BaseAirbyteResource(ConfigurableResource):
 
         return AirbyteOutput(job_details=job_details, connection_details=connection_details)
 
-    def materialize_from_sync(
+    def materialize_single_connection_from_sync(
         self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
     ):
         assets_def: Optional[AssetsDefinition] = None
@@ -283,6 +283,56 @@ class BaseAirbyteResource(ConfigurableResource):
                             )
             else:
                 for materialization in generate_materializations(ab_output):
+                    table_name = materialization.asset_key.path[-1]
+                    if table_name in destination_tables:
+                        yield Output(
+                            value=None,
+                            output_name=table_to_output_name_fn(table_name),
+                            metadata=materialization.metadata,
+                        )
+                        # Also materialize any normalization tables affiliated with this destination
+                        # e.g. nested objects, lists etc
+                        if normalization_tables:
+                            for dependent_table in normalization_tables.get(table_name, set()):
+                                yield Output(
+                                    value=None,
+                                    output_name=table_to_output_name_fn(dependent_table),
+                                )
+                    else:
+                        yield materialization
+
+    def materialize_from_sync(
+        self, context: Optional[Union[OpExecutionContext, AssetExecutionContext]] = None
+    ):
+        assets_def: Optional[AssetsDefinition] = None
+        with suppress(DagsterInvalidPropertyError):
+            assets_def = context.assets_def if context else None
+
+        if context and assets_def is not None:
+            # TODO: move in another function
+            airbyte_assets_def = assets_def
+            metadata_by_key = airbyte_assets_def.metadata_by_key or {}
+
+            connection_map = Mapping[str, Mapping]
+            for key in airbyte_assets_def.metadata_by_key.keys():
+                metadata = metadata_by_key.get(key, {})
+                connection_id = metadata.get("connection_id")
+
+                if connection_id not in connection_map:
+                    connection_map[connection_id] = {
+                        "destination_tables": metadata.get("destination_tables"),
+                        "normalization_tables": metadata.get("normalization_tables"),
+                    }
+
+            for connection_id in connection_map.keys():
+                destination_tables: Sequence[str] = connection_map.get("destination_tables")
+                normalization_tables = connection_map.get("normalization_tables")
+
+                ab_output = self.sync_and_poll(connection_id=connection_id)
+
+                # TODO: Handle key prefix from context
+                key_prefix = []
+                for materialization in generate_materializations(ab_output, key_prefix):
                     table_name = materialization.asset_key.path[-1]
                     if table_name in destination_tables:
                         yield Output(

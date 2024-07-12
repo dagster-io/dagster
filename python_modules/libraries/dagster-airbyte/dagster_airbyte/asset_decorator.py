@@ -134,6 +134,7 @@ def airbyte_assets(
     if not dagster_airbyte_translator:
         dagster_airbyte_translator = DagsterAirbyteTranslator()
 
+    # TODO: update to assets specs
     (
         deps,
         outs,
@@ -272,17 +273,22 @@ def build_airbyte_multi_asset_args(
         deps.append(*list((keys_by_input_name or {}).values()))
 
         # TODO: Update will work if collisions are handled
+        # TODO: update extra metadata after cleaning code
+        # TODO: update to asset specs
         outs.update(
             {
                 k: AssetOut(
                     key=v,
                     metadata=(
                         {
-                            k: cast(TableSchemaMetadataValue, v)
-                            for k, v in metadata_by_output_name.get(k, {}).items()
+                            **extra_metadata,
+                            **{
+                                k: cast(TableSchemaMetadataValue, v)
+                                for k, v in metadata_by_output_name.get(k, {}).items()
+                            },
                         }
                         if metadata_by_output_name
-                        else None
+                        else extra_metadata
                     ),
                     io_manager_key=io_manager_key,
                     freshness_policy=(
