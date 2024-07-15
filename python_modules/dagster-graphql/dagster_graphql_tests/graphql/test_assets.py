@@ -1064,6 +1064,23 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert len(materializations) == 1
         assert second_timestamp == int(materializations[0]["timestamp"])
 
+    def test_asset_node_in_pipeline_that_does_not_exist(
+        self, graphql_context: WorkspaceRequestContext
+    ):
+        selector = infer_job_selector(graphql_context, "two_assets_job")
+        selector["repositoryLocationName"] = "does_not_exist"
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_NODES_FROM_KEYS,
+            variables={
+                "pipelineSelector": selector,
+                "assetKeys": [{"path": ["asset_one"]}],
+            },
+        )
+        assert result.data
+        assert len(result.data["assetNodes"]) == 0
+
     def test_asset_node_in_pipeline(self, graphql_context: WorkspaceRequestContext):
         selector = infer_job_selector(graphql_context, "two_assets_job")
         result = execute_dagster_graphql(
