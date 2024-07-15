@@ -302,6 +302,33 @@ def test_setup(mock_atexit, context):
     mock_atexit.assert_called_once_with(mlf.end_run)
 
 
+@patch("atexit.unregister")
+def test_setup_with_passed_run_id(mock_atexit, context):
+    # Given: a mlflow_run_id of zero
+    context.resource_config["mlflow_run_id"] = 0
+
+    with patch.object(MlFlow, "_setup"):
+        # Given: a context  passed into the __init__ for MlFlow
+        mlf = MlFlow(context)
+
+    with patch.object(
+        MlFlow, "_get_current_run_id", return_value="run_id_mock"
+    ) as mock_get_current_run_id, patch.object(
+        MlFlow, "_set_active_run"
+    ) as mock_set_active_run, patch.object(MlFlow, "_set_all_tags") as mock_set_all_tags:
+        # When _setup is called
+        mlf._setup()  # noqa: SLF001
+        # Then
+        # - _get_current_run_id is called once with the experiment object
+        mock_get_current_run_id.assert_not_called()
+        # - _set_active_run is called once with the run_id returned from _get_current_run_id
+        mock_set_active_run.assert_called_once_with(run_id=0)
+        # - _set_all_tags is called once
+        mock_set_all_tags.assert_called_once()
+    # - atexit.unregister is called with mlf.end_run as an argument
+    mock_atexit.assert_called_once_with(mlf.end_run)
+
+
 @pytest.mark.parametrize("run_id", [None, 0, "12"])
 def test_set_active_run(context, run_id):
     with patch.object(MlFlow, "_setup"):
