@@ -9,7 +9,8 @@ export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
-export type FilterArgs<TValue> = {
+
+export type StaticBaseConfig<TValue> = {
   name: string;
   icon: IconName;
   renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -17,6 +18,10 @@ export type FilterArgs<TValue> = {
   getKey?: (value: TValue) => string;
   getStringValue: (value: TValue) => string;
   getTooltipText?: (value: TValue) => string;
+  matchType?: 'any-of' | 'all-of';
+};
+
+type FilterArgs<TValue> = StaticBaseConfig<TValue> & {
   allValues: SetFilterValue<TValue>[];
 
   // This hook is NOT a "controlled component". Changing state only updates the component's current state.
@@ -25,8 +30,8 @@ export type FilterArgs<TValue> = {
   // to the old state and pass that in.
   state?: Set<TValue> | TValue[];
   onStateChanged?: (state: Set<TValue>) => void;
+
   allowMultipleSelections?: boolean;
-  matchType?: 'any-of' | 'all-of';
   selectAllText?: React.ReactNode;
   canSelectAll?: boolean;
   menuWidth?: number | string;

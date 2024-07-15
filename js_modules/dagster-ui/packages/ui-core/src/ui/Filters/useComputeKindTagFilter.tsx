@@ -3,7 +3,7 @@ import uniqBy from 'lodash/uniqBy';
 import {useMemo} from 'react';
 
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
-import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
@@ -17,8 +17,7 @@ export const useComputeKindTagFilter = ({
   setComputeKindTags?: null | ((s: string[]) => void);
 }) => {
   return useStaticSetFilter<string>({
-    name: 'Compute kind',
-    icon: 'compute_kind',
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allComputeKindTags.map((value) => ({
@@ -28,22 +27,12 @@ export const useComputeKindTagFilter = ({
       [allComputeKindTags],
     ),
     menuWidth: '300px',
-    renderLabel,
-    getStringValue,
     state: computeKindTags ?? emptyArray,
     onStateChanged: (values) => {
       setComputeKindTags?.(Array.from(values));
     },
   });
 };
-
-export const renderLabel = ({value}: {value: string}) => (
-  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-    <Icon name="compute_kind" />
-    <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
-  </Box>
-);
-export const getStringValue = (value: string) => value;
 
 export function useAssetKindTagsForAssets(
   assets: {definition?: {computeKind?: string | null} | null}[],
@@ -57,3 +46,16 @@ export function useAssetKindTagsForAssets(
     [assets],
   );
 }
+
+export const BaseConfig: StaticBaseConfig<string> = {
+  name: 'Compute kind',
+  icon: 'compute_kind',
+  renderLabel: ({value}: {value: string}) => (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="compute_kind" />
+      <TruncatedTextWithFullTextOnHover tooltipText={value} text={value} />
+    </Box>
+  ),
+  getStringValue: (value: string) => value,
+  matchType: 'all-of',
+};

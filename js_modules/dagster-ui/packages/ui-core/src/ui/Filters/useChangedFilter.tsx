@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 
 import {ChangeReason} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
-import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const ALL_VALUES = Object.values(ChangeReason).map((reason) => ({
   key: reason,
@@ -19,13 +19,10 @@ export const useChangedFilter = ({
   setChangedInBranch?: null | ((s: ChangeReason[]) => void);
 }) => {
   return useStaticSetFilter<ChangeReason>({
-    name: 'Changed in branch',
-    icon: 'new_in_branch',
     allValues: ALL_VALUES,
     allowMultipleSelections: true,
     menuWidth: '300px',
-    renderLabel,
-    getStringValue,
+    ...BaseConfig,
 
     state: useMemo(() => new Set(changedInBranch ?? []), [changedInBranch]),
     onStateChanged: (values) => {
@@ -36,17 +33,22 @@ export const useChangedFilter = ({
   });
 };
 
-export const renderLabel = ({value}: {value: ChangeReason}) => (
-  <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-    <Icon name="new_in_branch" />
-    <TruncatedTextWithFullTextOnHover
-      tooltipText={value}
-      text={
-        <span style={{textTransform: 'capitalize'}}>
-          {value.toLocaleLowerCase().replace('_', ' ')}
-        </span>
-      }
-    />
-  </Box>
-);
-export const getStringValue = (value: ChangeReason) => value[0] + value.slice(1).toLowerCase();
+export const BaseConfig: StaticBaseConfig<ChangeReason> = {
+  name: 'Changed in branch',
+  icon: 'new_in_branch',
+  renderLabel: ({value}: {value: ChangeReason}) => (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="new_in_branch" />
+      <TruncatedTextWithFullTextOnHover
+        tooltipText={value}
+        text={
+          <span style={{textTransform: 'capitalize'}}>
+            {value.toLocaleLowerCase().replace('_', ' ')}
+          </span>
+        }
+      />
+    </Box>
+  ),
+  getStringValue: (value: ChangeReason) => value[0] + value.slice(1).toLowerCase(),
+  matchType: 'all-of',
+};

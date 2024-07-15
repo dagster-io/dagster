@@ -4,7 +4,7 @@ import {useMemo} from 'react';
 import {buildDefinitionTag} from './useAssetTagFilter';
 import {DefinitionTag} from '../../graphql/types';
 import {TruncatedTextWithFullTextOnHover} from '../../nav/getLeftNavItemsForOption';
-import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
@@ -19,8 +19,6 @@ export const useStorageKindFilter = ({
 }) => {
   const memoizedState = useMemo(() => storageKindTags?.map(buildDefinitionTag), [storageKindTags]);
   return useStaticSetFilter<DefinitionTag>({
-    name: 'Storage kind',
-    icon: 'storage_kind',
     allValues: useMemo(
       () =>
         allAssetStorageKindTags.map((value) => ({
@@ -30,23 +28,29 @@ export const useStorageKindFilter = ({
       [allAssetStorageKindTags],
     ),
     menuWidth: '300px',
-    renderLabel,
-    getStringValue,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setStorageKindTags?.(Array.from(values));
     },
-    matchType: 'all-of',
     canSelectAll: false,
+    ...BaseConfig,
   });
 };
 
-export const renderLabel = ({value: tag}: {value: DefinitionTag}) => {
-  return (
-    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-      <Icon name="storage_kind" />
-      <TruncatedTextWithFullTextOnHover tooltipText={tag.value} text={tag.value} />
-    </Box>
-  );
-};
 export const getStringValue = ({key, value}: DefinitionTag) => `${key}:${value}`;
+
+export const BaseConfig: StaticBaseConfig<DefinitionTag> = {
+  name: 'Storage kind',
+  icon: 'storage_kind',
+  renderLabel: ({value: tag}: {value: DefinitionTag}) => {
+    return (
+      <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+        <Icon name="storage_kind" />
+        <TruncatedTextWithFullTextOnHover tooltipText={tag.value} text={tag.value} />
+      </Box>
+    );
+  },
+  getStringValue,
+  getKey: getStringValue,
+  matchType: 'all-of',
+};

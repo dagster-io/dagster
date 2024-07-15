@@ -4,7 +4,7 @@ import {ComponentProps, useMemo} from 'react';
 import {assertUnreachable} from '../../app/Util';
 import {AssetOwner} from '../../graphql/types';
 import {useLaunchPadHooks} from '../../launchpad/LaunchpadHooksContext';
-import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 const emptyArray: any[] = [];
 
@@ -40,8 +40,7 @@ export const useAssetOwnerFilter = ({
       .filter((o) => o);
   }, [allAssetOwners, owners]);
   return useStaticSetFilter<AssetOwner>({
-    name: 'Owner',
-    icon: 'account_circle',
+    ...BaseConfig,
     allValues: useMemo(
       () =>
         allAssetOwners.map((value) => ({
@@ -51,8 +50,6 @@ export const useAssetOwnerFilter = ({
       [allAssetOwners],
     ),
     menuWidth: '300px',
-    renderLabel,
-    getStringValue,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setOwners?.(Array.from(values));
@@ -66,11 +63,6 @@ const UserDisplay = (
   const {UserDisplay: Component} = useLaunchPadHooks();
   return <Component {...props} />;
 };
-
-export const renderLabel = ({value}: {value: AssetOwner}) => (
-  <UserDisplay email={stringValueFromOwner(value)} isFilter={true} />
-);
-export const getStringValue = (value: AssetOwner) => stringValueFromOwner(value);
 
 export function useAssetOwnersForAssets(
   assets: {
@@ -111,3 +103,12 @@ function stringValueFromOwner(owner: AssetOwner) {
       assertUnreachable(typename);
   }
 }
+
+export const BaseConfig: StaticBaseConfig<AssetOwner> = {
+  name: 'Owner',
+  icon: 'account_circle',
+  renderLabel: ({value}: {value: AssetOwner}) => (
+    <UserDisplay email={stringValueFromOwner(value)} isFilter={true} />
+  ),
+  getStringValue: (value: AssetOwner) => stringValueFromOwner(value),
+};

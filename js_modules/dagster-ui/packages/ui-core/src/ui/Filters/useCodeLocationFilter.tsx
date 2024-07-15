@@ -5,7 +5,7 @@ import {WorkspaceContext} from '../../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../../workspace/buildRepoAddress';
 import {repoAddressAsHumanString} from '../../workspace/repoAddressAsString';
 import {RepoAddress} from '../../workspace/types';
-import {useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
+import {StaticBaseConfig, useStaticSetFilter} from '../BaseFilters/useStaticSetFilter';
 
 type Props =
   | {
@@ -58,8 +58,6 @@ export const useCodeLocationFilter = (
   );
 
   return useStaticSetFilter<RepoAddress>({
-    name: 'Code location',
-    icon: 'folder',
     state: repos ? repos : visibleRepoAddresses,
     allValues: useMemo(
       () =>
@@ -68,9 +66,6 @@ export const useCodeLocationFilter = (
         }),
       [allRepoAddresses],
     ),
-    getKey: getStringValue,
-    renderLabel,
-    getStringValue,
     onStateChanged: (state) => {
       if (setRepos) {
         setRepos(Array.from(state));
@@ -79,10 +74,18 @@ export const useCodeLocationFilter = (
       }
     },
     menuWidth: '500px',
+    ...BaseConfig,
   });
 };
 
-export const renderLabel = ({value}: {value: RepoAddress}) => (
-  <TruncatedTextWithFullTextOnHover text={repoAddressAsHumanString(value)} />
-);
-export const getStringValue = (value: RepoAddress) => repoAddressAsHumanString(value);
+const getStringValue = (value: RepoAddress) => repoAddressAsHumanString(value);
+
+export const BaseConfig: StaticBaseConfig<RepoAddress> = {
+  name: 'Code location',
+  icon: 'folder',
+  renderLabel: ({value}: {value: RepoAddress}) => (
+    <TruncatedTextWithFullTextOnHover text={repoAddressAsHumanString(value)} />
+  ),
+  getStringValue,
+  getKey: getStringValue,
+};
