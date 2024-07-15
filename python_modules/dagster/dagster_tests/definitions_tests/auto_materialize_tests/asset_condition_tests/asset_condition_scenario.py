@@ -140,44 +140,6 @@ class AutomationConditionScenarioState(ScenarioState):
 
         return new_state, result
 
-    def evaluate_daemon_tick(self, assets: Sequence[CoercibleToAssetKey]):
-        asset_graph = self.scenario_spec.with_asset_properties(
-            keys=assets,
-            auto_materialize_policy=AutoMaterializePolicy.from_asset_condition(
-                check.not_none(self.automation_condition)
-            ),
-        ).asset_graph
-
-        daemon_context = AssetDaemonContext(
-            evaluation_id=1,
-            instance=self.instance,
-            asset_graph=asset_graph,
-            cursor=AssetDaemonCursor.empty()._replace(
-                previous_condition_cursors=[self.condition_cursor]
-            )
-            if self.condition_cursor
-            else AssetDaemonCursor.empty(),
-            materialize_run_tags={},
-            observe_run_tags={},
-            auto_observe_asset_keys=None,
-            auto_materialize_asset_keys={
-                key
-                for key in asset_graph.materializable_asset_keys
-                if asset_graph.get(key).auto_materialize_policy is not None
-            },
-            respect_materialization_data_versions=False,
-            logger=self.logger,
-            evaluation_time=self.current_time,
-            request_backfills=self.request_backfills,
-        )
-
-        run_requests, cursor, _ = daemon_context.evaluate()
-        new_state = dataclasses.replace(
-            self, condition_cursor=cursor.get_previous_condition_cursor(self.asset_key)
-        )
-
-        return new_state, run_requests
-
     def without_cursor(self) -> "AutomationConditionScenarioState":
         """Removes the previous evaluation state from the state. This is useful for testing
         re-evaluating this data "from scratch" after much computation has occurred.
