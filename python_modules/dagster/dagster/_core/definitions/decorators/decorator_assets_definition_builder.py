@@ -20,6 +20,7 @@ from typing import (
 import dagster._check as check
 from dagster._config.config_schema import UserConfigSchema
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
+from dagster._core.definitions.asset_checks import AssetChecksDefinition
 from dagster._core.definitions.asset_dep import AssetDep
 from dagster._core.definitions.asset_in import AssetIn
 from dagster._core.definitions.asset_key import AssetKey
@@ -558,6 +559,16 @@ class DecoratorAssetsDefinitionBuilder:
             selected_asset_keys=None,  # not a subset so this is None
             selected_asset_check_keys=None,  # not a subset so this is none
             execution_type=self.args.execution_type,
+        )
+
+    def create_asset_checks_definition(self) -> AssetChecksDefinition:
+        op_def = self.create_op_definition()
+        return AssetChecksDefinition.create(
+            keys_by_input_name=self.asset_keys_by_input_name,
+            node_def=op_def,
+            resource_defs=self.args.assets_def_resource_defs,
+            check_specs_by_output_name=self.check_specs_by_output_name,
+            can_subset=False,
         )
 
     @cached_property
