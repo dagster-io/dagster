@@ -827,17 +827,24 @@ class TestAssetConditionEvaluations(ExecutingGraphQLContextTestMatrix):
         rootNode = record["evaluationNodes"][0]
         assert rootNode["uniqueId"] == record["rootUniqueId"]
         assert rootNode["userLabel"] == "blah"
-        assert (
-            rootNode["expandedLabel"]
-            == "(in_latest_time_window) AND (((became missing) OR (any parents updated)) SINCE ((newly_requested) OR (newly_updated))) AND (NOT (any parents missing)) AND (NOT (any parents in progress)) AND (NOT (in_progress))"
-        )
+        assert rootNode["expandedLabel"] == [
+            "(in_latest_time_window)",
+            "AND",
+            "(((became missing) OR (any parents updated)) SINCE ((newly_requested) OR (newly_updated)))",
+            "AND",
+            "(NOT (any parents missing))",
+            "AND",
+            "(NOT (any parents in progress))",
+            "AND",
+            "(NOT (in_progress))",
+        ]
         assert rootNode["numTrue"] == 0
         assert set(rootNode["trueSubset"]["subsetValue"]["partitionKeys"]) == set()
         assert len(rootNode["childUniqueIds"]) == 5
 
         childNode = record["evaluationNodes"][1]
         assert childNode["userLabel"] is None
-        assert childNode["expandedLabel"] == "in_latest_time_window"
+        assert childNode["expandedLabel"] == ["in_latest_time_window"]
         assert childNode["numTrue"] == 4
         assert set(childNode["trueSubset"]["subsetValue"]["partitionKeys"]) == {"a", "b", "c", "d"}
         assert len(childNode["childUniqueIds"]) == 0
