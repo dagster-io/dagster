@@ -694,7 +694,7 @@ export type AutomationConditionEvaluationNode = {
   candidateSubset: Maybe<AssetSubset>;
   childUniqueIds: Array<Scalars['String']['output']>;
   endTimestamp: Maybe<Scalars['Float']['output']>;
-  expandedLabel: Scalars['String']['output'];
+  expandedLabel: Array<Scalars['String']['output']>;
   isPartitioned: Scalars['Boolean']['output'];
   numTrue: Scalars['Int']['output'];
   startTimestamp: Maybe<Scalars['Float']['output']>;
@@ -6871,7 +6871,7 @@ export const buildAutomationConditionEvaluationNode = (
     endTimestamp:
       overrides && overrides.hasOwnProperty('endTimestamp') ? overrides.endTimestamp! : 4.53,
     expandedLabel:
-      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : 'sunt',
+      overrides && overrides.hasOwnProperty('expandedLabel') ? overrides.expandedLabel! : [],
     isPartitioned:
       overrides && overrides.hasOwnProperty('isPartitioned') ? overrides.isPartitioned! : true,
     numTrue: overrides && overrides.hasOwnProperty('numTrue') ? overrides.numTrue! : 5212,
