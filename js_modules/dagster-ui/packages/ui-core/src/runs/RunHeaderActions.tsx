@@ -41,7 +41,9 @@ export const RunHeaderActions = ({run, isJob}: {run: RunFragment; isJob: boolean
 
   const {rootServerURI} = useContext(AppContext);
   const {refetch} = useContext(RunsQueryRefetchContext);
-  const {RunMetricsDialog} = useContext(InjectedComponentContext);
+  const {
+    components: {RunMetricsDialog},
+  } = useContext(InjectedComponentContext);
 
   const copy = useCopyToClipboard();
   const history = useHistory();

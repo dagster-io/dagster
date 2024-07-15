@@ -3,7 +3,7 @@ import re
 import string
 from collections import namedtuple
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union
 
 import dagster._check as check
 import pydantic
@@ -296,10 +296,7 @@ def test_wrong_first_arg():
             def __new__(not_cls, field_two, field_one):  # type: ignore
                 return super(NotCls, not_cls).__new__(field_one, field_two)
 
-    assert (
-        str(exc_info.value)
-        == 'For namedtuple NotCls: First parameter must be _cls or cls. Got "not_cls".'
-    )
+    assert str(exc_info.value) == 'For NotCls: First parameter must be _cls or cls. Got "not_cls".'
 
 
 def test_incorrect_order():
@@ -311,9 +308,9 @@ def test_incorrect_order():
                 return super(WrongOrder, cls).__new__(field_one, field_two)
 
     assert (
-        str(exc_info.value) == "For namedtuple WrongOrder: "
+        str(exc_info.value) == "For WrongOrder: "
         "Params to __new__ must match the order of field declaration "
-        "in the namedtuple. Declared field number 1 in the namedtuple "
+        "for NamedTuples that are not @record based. Declared field number 1 in the namedtuple "
         'is "field_one". Parameter 1 in __new__ method is "field_two".'
     )
 
@@ -327,11 +324,12 @@ def test_missing_one_parameter():
                 return super(MissingFieldInNew, cls).__new__(field_one, field_two, None)
 
     assert (
-        str(exc_info.value) == "For namedtuple MissingFieldInNew: "
-        "Missing parameters to __new__. You have declared fields in "
-        "the named tuple that are not present as parameters to the "
+        str(exc_info.value) == "For MissingFieldInNew: "
+        "Missing parameters to __new__. You have declared fields "
+        "that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
-        "and pickling to work, these must match. Missing: ['field_three']"
+        "and pickling to work, these must match or kwargs and kwargs_fields must be used. "
+        "Missing: ['field_three']"
     )
 
 
@@ -346,11 +344,12 @@ def test_missing_many_parameters():
                 return super(MissingFieldsInNew, cls).__new__(field_one, field_two, None, None)
 
     assert (
-        str(exc_info.value) == "For namedtuple MissingFieldsInNew: "
-        "Missing parameters to __new__. You have declared fields in "
-        "the named tuple that are not present as parameters to the "
+        str(exc_info.value) == "For MissingFieldsInNew: "
+        "Missing parameters to __new__. You have declared fields "
+        "that are not present as parameters to the "
         "to the __new__ method. In order for both serdes serialization "
-        "and pickling to work, these must match. Missing: ['field_three', 'field_four']"
+        "and pickling to work, these must match or kwargs and kwargs_fields must be used. "
+        "Missing: ['field_three', 'field_four']"
     )
 
 
@@ -373,7 +372,7 @@ def test_extra_parameters_must_have_defaults():
                 return super(OldFieldsWithoutDefaults, cls).__new__(field_three, field_four)
 
     assert (
-        str(exc_info.value) == "For namedtuple OldFieldsWithoutDefaults: "
+        str(exc_info.value) == "For OldFieldsWithoutDefaults: "
         'Parameter "field_one" is a parameter to the __new__ '
         "method but is not a field in this namedtuple. "
         "The only reason why this should exist is that "
@@ -992,3 +991,108 @@ def test_record_subclass() -> None:
     c = Child(name="kiddo")
     r_str = serialize_value(c, whitelist_map=test_env)
     assert deserialize_value(r_str, whitelist_map=test_env) == c
+
+
+def test_record_kwargs():
+    test_env = WhitelistMap.create()
+
+    with pytest.raises(
+        SerdesUsageError,
+        match="Params to __new__ must match the order of field declaration for NamedTuples that are not @record based",
+    ):
+
+        @_whitelist_for_serdes(test_env, kwargs_fields={"name", "stuff"})
+        class _(NamedTuple("_", [("name", str), ("stuff", List[Any])])):
+            def __new__(cls, **kwargs): ...
+
+    with pytest.raises(
+        SerdesUsageError,
+        match="kwargs capture used in __new__ but kwargs_fields was not specified",
+    ):
+
+        @_whitelist_for_serdes(test_env)
+        @record_custom
+        class _:
+            name: str
+            stuff: List[Any]
+
+            def __new__(cls, **kwargs): ...
+
+    with pytest.raises(
+        SerdesUsageError,
+        match='Expected field "stuff" in kwargs_fields but it was not specified',
+    ):
+
+        @_whitelist_for_serdes(test_env, kwargs_fields={"name"})
+        @record_custom
+        class _:
+            name: str
+            stuff: List[Any]
+
+            def __new__(cls, **kwargs): ...
+
+    @_whitelist_for_serdes(test_env, kwargs_fields={"name", "stuff"})
+    @record_custom
+    class MyRecord:
+        name: str
+        stuff: List[Any]
+
+        def __new__(cls, **kwargs):
+            return super().__new__(
+                cls,
+                name=kwargs.get("name", ""),
+                stuff=kwargs.get("stuff", []),
+            )
+
+    r = MyRecord()
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )
+    r = MyRecord(name="CUSTOM", stuff=[1, 2, 3, 4, 5, 6])
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )
+
+
+def test_record_remap():
+    test_env = WhitelistMap.create()
+
+    # time 1: record object created with non-serializable field
+
+    class Complex:
+        def __init__(self, s: str):
+            self.s = s
+
+    @record
+    class Record_T1:
+        foo: Complex
+
+    assert Record_T1(foo=Complex("old"))
+
+    # time 2: record updated to serdes, to maintain API we use remapping
+
+    @_whitelist_for_serdes(test_env)
+    @record_custom(field_to_new_mapping={"foo_str": "foo"})
+    class Record_T2(IHaveNew):
+        foo_str: str
+
+        def __new__(cls, foo: Union[Complex, str]):
+            if isinstance(foo, Complex):
+                foo = foo.s
+
+            return super().__new__(
+                cls,
+                foo_str=foo,
+            )
+
+        @property
+        def foo(self):
+            return Complex(self.foo_str)
+
+    r = Record_T2(foo=Complex("old"))
+    assert r
+    assert (
+        deserialize_value(serialize_value(r, whitelist_map=test_env), whitelist_map=test_env) == r
+    )

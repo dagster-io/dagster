@@ -48,9 +48,10 @@ from .source_code import (
     AnchorBasedFilePathMapping as AnchorBasedFilePathMapping,
     CodeReferencesMetadataSet as CodeReferencesMetadataSet,
     CodeReferencesMetadataValue as CodeReferencesMetadataValue,
+    FilePathMapping as FilePathMapping,
     LocalFileCodeReference as LocalFileCodeReference,
     UrlCodeReference as UrlCodeReference,
-    link_to_git as link_to_git,
+    link_code_references_to_git as link_code_references_to_git,
     with_source_code_references as with_source_code_references,
 )
 from .table import (  # re-exported

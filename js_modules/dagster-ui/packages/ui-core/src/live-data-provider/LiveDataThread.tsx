@@ -1,5 +1,5 @@
 import {LiveDataThreadManager} from './LiveDataThreadManager';
-import {BATCHING_INTERVAL, BATCH_PARALLEL_FETCHES, BATCH_SIZE, threadIDToLimits} from './util';
+import {BATCH_PARALLEL_FETCHES, BATCH_SIZE, threadIDToLimits} from './util';
 
 export type LiveDataThreadID = string;
 
@@ -63,14 +63,12 @@ export class LiveDataThread<T> {
   }
 
   public startFetchLoop() {
-    if (this.intervals.length === this.parallelFetches) {
-      return;
+    if (this.activeFetches !== this.parallelFetches) {
+      requestAnimationFrame(this._batchedQueryKeys);
     }
-    const fetch = () => {
-      this._batchedQueryKeys();
-    };
-    setTimeout(fetch, BATCHING_INTERVAL);
-    this.intervals.push(setInterval(fetch, 5000));
+    if (this.intervals.length !== this.parallelFetches) {
+      this.intervals.push(setInterval(this._batchedQueryKeys, 5000));
+    }
   }
 
   public stopFetchLoop() {
@@ -80,7 +78,7 @@ export class LiveDataThread<T> {
     this.intervals = [];
   }
 
-  private async _batchedQueryKeys() {
+  private _batchedQueryKeys = async () => {
     if (this.activeFetches >= this.parallelFetches) {
       return;
     }
@@ -113,12 +111,10 @@ export class LiveDataThread<T> {
       }
 
       setTimeout(
-        () => {
-          doNextFetch();
-        },
+        doNextFetch,
         // If the poll rate is faster than 5 seconds lets use that instead
         Math.min(this.pollRate, 5000),
       );
     }
-  }
+  };
 }

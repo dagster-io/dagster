@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime
 from functools import cached_property, total_ordering
 from heapq import heapify, heappop, heappush
@@ -25,9 +25,9 @@ from typing import (
 
 import dagster._check as check
 from dagster._core.definitions.asset_check_spec import AssetCheckKey
+from dagster._core.definitions.asset_key import AssetKey, AssetKeyOrCheckKey
 from dagster._core.definitions.asset_subset import ValidAssetSubset
 from dagster._core.definitions.backfill_policy import BackfillPolicy
-from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.freshness_policy import FreshnessPolicy
 from dagster._core.definitions.metadata import ArbitraryMetadataMapping
 from dagster._core.definitions.partition import PartitionsDefinition
@@ -47,8 +47,9 @@ from .time_window_partitions import get_time_partition_key, get_time_partitions_
 if TYPE_CHECKING:
     from dagster._core.definitions.asset_graph_subset import AssetGraphSubset
     from dagster._core.definitions.auto_materialize_policy import AutoMaterializePolicy
-
-AssetKeyOrCheckKey = Union[AssetKey, AssetCheckKey]
+    from dagster._core.definitions.declarative_automation.automation_condition import (
+        AutomationCondition,
+    )
 
 
 class ParentsPartitionsResult(NamedTuple):
@@ -618,6 +619,21 @@ class BaseAssetGraph(ABC, Generic[T_AssetNode]):
             downstream_policies.add(asset.freshness_policy)
 
         return downstream_policies
+
+    @cached_method
+    def get_downstream_automation_conditions(
+        self, *, asset_key: AssetKey
+    ) -> Mapping["AutomationCondition", AbstractSet[AssetKey]]:
+        asset = self.get(asset_key)
+        downstream_conditions = defaultdict(set)
+        for child_key in asset.child_keys:
+            child_policy = self.get(child_key).auto_materialize_policy
+            child_condition = child_policy.asset_condition if child_policy else None
+            if child_condition:
+                downstream_conditions[child_condition].add(child_key)
+            for c, aks in self.get_downstream_automation_conditions(asset_key=child_key).items():
+                downstream_conditions[c].update(aks)
+        return downstream_conditions
 
     def bfs_filter_subsets(
         self,

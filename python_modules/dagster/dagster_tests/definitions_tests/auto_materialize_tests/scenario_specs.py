@@ -44,14 +44,15 @@ self_partition_mapping = TimeWindowPartitionMapping(start_offset=-1, end_offset=
 ##############
 one_asset = ScenarioSpec(asset_specs=[AssetSpec("A")])
 
-one_observable_asset = ScenarioSpec(
+one_upstream_observable_asset = ScenarioSpec(
     [
         AssetSpec(
             "A",
             metadata={
                 SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE: AssetExecutionType.OBSERVATION.value
             },
-        )
+        ),
+        AssetSpec("B", deps=["A"]),
     ]
 )
 

@@ -11,7 +11,6 @@ from dagster import (
     Definitions,
     MonthlyPartitionsDefinition,
 )
-from dagster._core.definitions.auto_materialize_rule_impls import MaterializeOnCronRule
 from dagster._core.definitions.materialize import materialize
 from dagster_embedded_elt.dlt import DagsterDltResource, DagsterDltTranslator, dlt_assets
 from dlt import Pipeline
@@ -94,10 +93,7 @@ def test_get_materialize_policy(dlt_pipeline: Pipeline):
         pass
 
     for item in assets.auto_materialize_policies_by_key.values():
-        assert any(
-            isinstance(rule, MaterializeOnCronRule) and rule.cron_schedule == "0 1 * * *"
-            for rule in item.rules
-        )
+        assert "0 1 * * *" in str(item)
 
 
 def test_example_pipeline_has_required_metadata_keys(dlt_pipeline: Pipeline):

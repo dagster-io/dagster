@@ -29,6 +29,7 @@ Dagster supports attaching a few different types of definition metadata:
 - [**Arbitrary metadata**](#arbitrary-metadata-using-the-metadata-parameter), such as the storage location of the table produced by the asset
 - [**Asset owners**](#asset-owners), which are the people and/or teams who own the asset
 - [**Table and column metadata**](#table-and-column-metadata), which provides additional context about a tabular asset, such as its schema or row count
+- [**Code references**](#code-references), which link to the source code of the asset locally or in your source control repository
 
 ### Arbitrary metadata using the metadata parameter
 
@@ -82,6 +83,10 @@ from dagster import asset
 @asset(owners=["richard.hendricks@hooli.com", "team:data-eng"])
 def leads(): ...
 ```
+
+### Code references
+
+Attaching code references to an asset definition allows you to easily navigate to the asset's source code, either locally in your editor or in your source control repository. For more information, refer to the [Code references guide](/guides/dagster/code-references).
 
 ---
 

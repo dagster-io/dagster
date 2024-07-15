@@ -53,14 +53,8 @@ from dagster._utils.warnings import normalize_renamed_param
 
 from ..decorator_utils import get_function_params
 from .asset_selection import AssetSelection, KeysAssetSelection
-from .run_request import (
-    AddDynamicPartitionsRequest,
-    DagsterRunReaction,
-    DeleteDynamicPartitionsRequest,
-    RunRequest,
-    SensorResult,
-    SkipReason,
-)
+from .dynamic_partitions_request import AddDynamicPartitionsRequest, DeleteDynamicPartitionsRequest
+from .run_request import DagsterRunReaction, RunRequest, SensorResult, SkipReason
 from .target import AutomationTarget, ExecutableDefinition, normalize_automation_target_def
 from .utils import check_valid_name
 
@@ -529,6 +523,23 @@ def _check_dynamic_partitions_requests(
             check.failed(f"Unexpected dynamic partition request type: {req}")
 
 
+def split_run_requests(
+    run_requests: Sequence[RunRequest],
+) -> Tuple[Sequence[RunRequest], Sequence[RunRequest]]:
+    """Splits RunRequests into those that must be handled by the backfill daemon and those
+    that can be handled by launching a single run.
+    """
+    run_requests_for_backfill_daemon = []
+    run_requests_for_single_runs = []
+    for run_request in run_requests:
+        if run_request.requires_backfill_daemon():
+            run_requests_for_backfill_daemon.append(run_request)
+        else:
+            run_requests_for_single_runs.append(run_request)
+
+    return run_requests_for_backfill_daemon, run_requests_for_single_runs
+
+
 class SensorDefinition(IHasInternalInit):
     """Define a sensor that initiates a set of runs based on some external state.
 
@@ -870,13 +881,26 @@ class SensorDefinition(IHasInternalInit):
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
         _check_dynamic_partitions_requests(dynamic_partitions_requests)
+
+        run_requests_for_backfill_daemon, run_requests_for_single_runs = split_run_requests(
+            run_requests
+        )
         resolved_run_requests = [
             run_request.with_replaced_attrs(
                 tags=merge_dicts(run_request.tags, DagsterRun.tags_for_sensor(self)),
             )
-            for run_request in self.resolve_run_requests(
-                run_requests, context, self._asset_selection, dynamic_partitions_requests
-            )
+            for run_request in [
+                *self.resolve_run_requests(
+                    run_requests_for_single_runs,
+                    context,
+                    self._asset_selection,
+                    dynamic_partitions_requests,
+                ),
+                *self.validate_backfill_requests(
+                    run_requests_for_backfill_daemon,
+                    context,
+                ),
+            ]
         ]
 
         return SensorExecutionData(
@@ -962,6 +986,35 @@ class SensorDefinition(IHasInternalInit):
                 resolved_run_requests.append(run_request)
 
         return resolved_run_requests
+
+    def validate_backfill_requests(
+        self,
+        run_requests: Sequence[RunRequest],
+        context: SensorEvaluationContext,
+    ) -> Sequence[RunRequest]:
+        for run_request in run_requests:
+            asset_selection = check.not_none(
+                self._asset_selection,
+                "Can only yield RunRequests with asset_graph_subset for sensors with an asset_selection",
+            )
+
+            if run_request.asset_graph_subset:
+                asset_keys = run_request.asset_graph_subset.asset_keys
+            else:
+                check.invariant(
+                    False,
+                    "RunRequest must have an asset_graph_subset to launch a backfill.",
+                )
+
+            unexpected_asset_keys = (AssetSelection.keys(*asset_keys) - asset_selection).resolve(
+                check.not_none(context.repository_def).asset_graph
+            )
+            if unexpected_asset_keys:
+                raise DagsterInvalidSubsetError(
+                    "RunRequest includes asset keys that are not part of sensor's asset_selection:"
+                    f" {unexpected_asset_keys}"
+                )
+        return run_requests
 
     @property
     def _target(self) -> Optional[AutomationTarget]:

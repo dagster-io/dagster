@@ -30,7 +30,9 @@ def with_auto_materialize_policy(
                     **assets_def.get_attributes_dict(),
                     **{
                         "specs": [
-                            spec._replace(auto_materialize_policy=auto_materialize_policy)
+                            spec._replace(
+                                automation_condition=auto_materialize_policy.to_automation_condition()
+                            )
                             for spec in assets_def.specs
                         ]
                     },

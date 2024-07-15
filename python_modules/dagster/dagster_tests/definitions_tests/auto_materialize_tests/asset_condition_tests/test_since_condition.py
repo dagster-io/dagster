@@ -1,5 +1,5 @@
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.declarative_automation import SinceCondition
+from dagster._core.definitions.declarative_automation.operators import SinceCondition
 from dagster._core.definitions.events import AssetKeyPartitionKey
 
 from ..scenario_specs import one_asset

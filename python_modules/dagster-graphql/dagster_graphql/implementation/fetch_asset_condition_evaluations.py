@@ -86,9 +86,7 @@ def fetch_asset_condition_evaluation_record_for_partition(
         else None
     )
     return GrapheneAssetConditionEvaluation(
-        record.get_evaluation_with_run_ids(partitions_def).evaluation,
-        partitions_def,
-        partition_key,
+        record.get_evaluation_with_run_ids(partitions_def).evaluation, partition_key
     )
 
 

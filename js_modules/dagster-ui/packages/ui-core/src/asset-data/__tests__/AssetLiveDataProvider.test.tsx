@@ -7,10 +7,10 @@ import {GraphQLError} from 'graphql/error';
 import {buildMockedAssetGraphLiveQuery} from './util';
 import {AssetKey, AssetKeyInput, buildAssetKey} from '../../graphql/types';
 import {LiveDataThreadID} from '../../live-data-provider/LiveDataThread';
+import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../../live-data-provider/util';
 import {getMockResultFn} from '../../testing/mocking';
 import {useAssetsBaseData} from '../AssetBaseDataProvider';
 import {AssetLiveDataProvider, __resetForJest} from '../AssetLiveDataProvider';
-import {BATCH_SIZE, SUBSCRIPTION_IDLE_POLL_RATE} from '../util';
 
 Object.defineProperty(document, 'visibilityState', {value: 'visible', writable: true});
 Object.defineProperty(document, 'hidden', {value: false, writable: true});

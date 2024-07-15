@@ -28,8 +28,18 @@ from dagster import (
 )
 from dagster._core.definitions import materialize
 from dagster._core.definitions.asset_graph import AssetGraph
+from dagster._core.definitions.asset_spec import (
+    SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE,
+    AssetExecutionType,
+)
+from dagster._core.definitions.data_version import DATA_VERSION_TAG
+from dagster._core.definitions.decorators.source_asset_decorator import observable_source_asset
 from dagster._core.definitions.definitions_class import create_repository_using_definitions_args
-from dagster._core.definitions.events import AssetMaterialization, CoercibleToAssetKey
+from dagster._core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+    CoercibleToAssetKey,
+)
 from dagster._core.definitions.executor_definition import in_process_executor
 from dagster._core.definitions.repository_definition.repository_definition import (
     RepositoryDefinition,
@@ -145,22 +155,41 @@ class ScenarioSpec:
 
                 assets.append(_multi_asset)
             else:
-                params = {
-                    "key",
-                    "deps",
-                    "group_name",
-                    "code_version",
-                    "auto_materialize_policy",
-                    "freshness_policy",
-                    "partitions_def",
-                    "metadata",
-                }
-                assets.append(
-                    asset(
-                        compute_fn=compute_fn,
+                execution_type_str = spec.metadata.get(SYSTEM_METADATA_KEY_ASSET_EXECUTION_TYPE)
+                execution_type = (
+                    AssetExecutionType[execution_type_str] if execution_type_str else None
+                )
+                # create an observable_source_asset or regular asset depending on the execution type
+                if execution_type == AssetExecutionType.OBSERVATION:
+                    # strip out the relevant paramters from the spec
+                    params = {"key", "group_name", "partitions_def", "metadata"}
+
+                    @observable_source_asset(
                         **{k: v for k, v in spec._asdict().items() if k in params},
                     )
-                )
+                    def osa() -> None: ...
+
+                    assets.append(osa)
+                else:
+                    # strip out the relevant paramters from the spec
+                    params = {
+                        "key",
+                        "deps",
+                        "group_name",
+                        "code_version",
+                        "automation_condition",
+                        "freshness_policy",
+                        "partitions_def",
+                        "metadata",
+                    }
+
+                    assets.append(
+                        asset(
+                            compute_fn=compute_fn,
+                            **{k: v for k, v in spec._asdict().items() if k in params},
+                        )
+                    )
+
         return assets
 
     @property
@@ -197,6 +226,9 @@ class ScenarioSpec:
     ) -> "ScenarioSpec":
         """Convenience method to update the properties of one or more assets in the scenario state."""
         new_asset_specs = []
+        if "auto_materialize_policy" in kwargs:
+            policy = kwargs.pop("auto_materialize_policy")
+            kwargs["automation_condition"] = policy.to_automation_condition() if policy else None
         for spec in self.asset_specs:
             if isinstance(spec, MultiAssetSpec):
                 partitions_def = kwargs.get("partitions_def", spec.partitions_def)
@@ -335,6 +367,20 @@ class ScenarioState:
             partition=partition_key,
         )
         self.instance.report_runless_asset_event(mat)
+        return self
+
+    def with_reported_observation(
+        self,
+        asset_key: CoercibleToAssetKey,
+        partition_key: Optional[str] = None,
+        data_version: Optional[str] = None,
+    ) -> Self:
+        obs = AssetObservation(
+            asset_key=asset_key,
+            partition=partition_key,
+            tags={DATA_VERSION_TAG: data_version} if data_version else None,
+        )
+        self.instance.report_runless_asset_event(obs)
         return self
 
     def _with_runs_with_status(self, status: DagsterRunStatus) -> Self:

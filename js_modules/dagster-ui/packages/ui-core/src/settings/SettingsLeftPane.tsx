@@ -12,28 +12,28 @@ const items: SideNavItemConfig[] = [
     type: 'link',
     icon: <Icon name="code_location" />,
     label: 'Code locations',
-    path: '/settings/locations',
+    path: '/deployment/locations',
   },
   {
     key: 'daemons',
     type: 'link',
     icon: <Icon name="sync_alt" />,
     label: 'Daemons',
-    path: '/settings/daemons',
+    path: '/deployment/daemons',
   },
   {
     key: 'concurrency-limits',
     type: 'link',
     icon: <Icon name="stacks" />,
     label: 'Concurrency limits',
-    path: '/settings/concurrency',
+    path: '/deployment/concurrency',
   },
   {
     key: 'config',
     type: 'link',
     icon: <Icon name="tune" />,
     label: 'Configuration (read-only)',
-    path: '/settings/config',
+    path: '/deployment/config',
   },
 ];
 

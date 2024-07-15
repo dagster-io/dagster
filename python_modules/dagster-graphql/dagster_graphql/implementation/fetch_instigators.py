@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import dagster._check as check
 from dagster._core.definitions.instigation_logger import get_instigation_log_records
@@ -19,10 +19,20 @@ if TYPE_CHECKING:
 def get_instigator_state_by_selector(
     graphene_info: "ResolveInfo",
     selector: InstigatorSelector,
+    instigator_id: Optional[CompoundID],
 ) -> Union["GrapheneInstigationState", "GrapheneInstigationStateNotFoundError"]:
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
 
     check.inst_param(selector, "selector", InstigatorSelector)
+
+    if instigator_id:
+        state = graphene_info.context.instance.get_instigator_state(
+            origin_id=instigator_id.external_origin_id,
+            selector_id=instigator_id.selector_id,
+        )
+        if state:
+            return GrapheneInstigationState(state)
+
     location = graphene_info.context.get_code_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 
@@ -44,22 +54,6 @@ def get_instigator_state_by_selector(
         return GrapheneInstigationStateNotFoundError(selector.name)
 
     return GrapheneInstigationState(current_state)
-
-
-def get_instigation_state_by_id(
-    graphene_info: "ResolveInfo",
-    instigator_id: CompoundID,
-):
-    from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStateNotFoundError
-
-    state = graphene_info.context.instance.get_instigator_state(
-        origin_id=instigator_id.external_origin_id,
-        selector_id=instigator_id.selector_id,
-    )
-    if state is None:
-        return GrapheneInstigationStateNotFoundError(instigator_id.to_string())
-
-    return GrapheneInstigationState(state)
 
 
 def get_instigation_states_by_repository_id(

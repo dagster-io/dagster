@@ -1,15 +1,21 @@
 from abc import abstractmethod
-from typing import AbstractSet, Optional
+from typing import TYPE_CHECKING, AbstractSet, Optional
+
+from typing_extensions import Annotated
 
 from dagster._core.definitions.asset_key import AssetKey
-from dagster._core.definitions.asset_selection import AssetSelection
 from dagster._core.definitions.base_asset_graph import BaseAssetGraph
+from dagster._record import ImportFrom, copy, record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
 
+if TYPE_CHECKING:
+    from dagster._core.definitions.asset_selection import AssetSelection
 
+
+@record
 class DepConditionWrapperCondition(AutomationCondition):
     """Wrapper object which evaluates a condition against a dependency and returns a subset
     representing the subset of downstream asset which has at least one parent which evaluated to
@@ -18,6 +24,7 @@ class DepConditionWrapperCondition(AutomationCondition):
 
     dep_key: AssetKey
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -40,10 +47,16 @@ class DepConditionWrapperCondition(AutomationCondition):
         )
 
 
+@record
 class DepCondition(AutomationCondition):
     operand: AutomationCondition
-    allow_selection: Optional[AssetSelection] = None
-    ignore_selection: Optional[AssetSelection] = None
+    allow_selection: Optional[
+        Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
+    ] = None
+    ignore_selection: Optional[
+        Annotated["AssetSelection", ImportFrom("dagster._core.definitions.asset_selection")]
+    ] = None
+    label: Optional[str] = None
 
     @property
     @abstractmethod
@@ -58,23 +71,23 @@ class DepCondition(AutomationCondition):
             description += f" except for {self.ignore_selection}"
         return description
 
-    def allow(self, selection: AssetSelection) -> "DepCondition":
+    def allow(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will only consider dependencies within the provided
         AssetSelection.
         """
         allow_selection = (
             selection if self.allow_selection is None else selection | self.allow_selection
         )
-        return self.model_copy(update={"allow_selection": allow_selection})
+        return copy(self, allow_selection=allow_selection)
 
-    def ignore(self, selection: AssetSelection) -> "DepCondition":
+    def ignore(self, selection: "AssetSelection") -> "DepCondition":
         """Returns a copy of this condition that will ignore dependencies within the provided
         AssetSelection.
         """
         ignore_selection = (
             selection if self.ignore_selection is None else selection | self.ignore_selection
         )
-        return self.model_copy(update={"ignore_selection": ignore_selection})
+        return copy(self, ignore_selection=ignore_selection)
 
     def _get_dep_keys(
         self, asset_key: AssetKey, asset_graph: BaseAssetGraph

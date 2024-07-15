@@ -15,8 +15,8 @@ parameters:
       - api_tests
       - cli_tests
       - core_tests_pydantic1
-      - core_tests_pydantic2
       - general_tests
+      - launcher_tests
       - daemon_tests
       - daemon_sensor_tests
       - scheduler_tests

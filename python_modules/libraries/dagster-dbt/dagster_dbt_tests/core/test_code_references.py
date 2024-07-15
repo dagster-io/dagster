@@ -9,7 +9,7 @@ from dagster._core.definitions.metadata.source_code import (
     AnchorBasedFilePathMapping,
     LocalFileCodeReference,
     UrlCodeReference,
-    link_to_git,
+    link_code_references_to_git,
     with_source_code_references,
 )
 from dagster._core.errors import DagsterInvalidDefinitionError
@@ -98,7 +98,7 @@ def test_link_to_git_wrapper(test_jaffle_shop_manifest: Dict[str, Any]) -> None:
     def my_dbt_assets(): ...
 
     defs = Definitions(
-        assets=link_to_git(
+        assets=link_code_references_to_git(
             with_source_code_references([my_dbt_assets]),
             git_url="https://github.com/dagster-io/jaffle_shop",
             git_branch="master",

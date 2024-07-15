@@ -15,6 +15,17 @@ function getSecurityPolicy() {
   return fs.readFileSync(path.join(__dirname, '../../../csp-header-dev.txt'), {encoding: 'utf8'});
 }
 
+function getPrefix(): string {
+  const next_public_url = process.env.NEXT_PUBLIC_URL;
+  if (next_public_url === undefined || next_public_url === '') {
+    return PREFIX_PLACEHOLDER;
+  }
+  if (next_public_url.endsWith('/')) {
+    return `${next_public_url}${PREFIX_PLACEHOLDER}`;
+  }
+  return `${next_public_url}/${PREFIX_PLACEHOLDER}`;
+}
+
 // eslint-disable-next-line import/no-default-export
 export default function Document() {
   const isDev = process.env.NODE_ENV === 'development';
@@ -24,6 +35,7 @@ export default function Document() {
     liveDataPollRate: LIVE_DATA_POLL_RATE_PLACEHOLDER,
     instanceId: isDev ? 'dev' : INSTANCE_ID_PLACEHOLDER,
   };
+  const prefix = getPrefix();
   return (
     <Html lang="en">
       <Head nonce="NONCE-PLACEHOLDER">
@@ -48,21 +60,9 @@ export default function Document() {
           // format the json...
           dangerouslySetInnerHTML={{__html: JSON.stringify(values, null, 2)}}
         />
-        <link
-          rel="manifest"
-          href={`${process.env.NEXT_PUBLIC_URL ?? ''}/manifest.json`}
-          crossOrigin="use-credentials"
-        />
-        <link
-          rel="icon"
-          type="image/png"
-          href={`${process.env.NEXT_PUBLIC_URL ?? ''}/favicon.png`}
-        />
-        <link
-          rel="icon"
-          type="image/svg+xml"
-          href={`${process.env.NEXT_PUBLIC_URL ?? ''}/favicon.svg`}
-        />
+        <link rel="manifest" href={`${prefix}/manifest.json`} crossOrigin="use-credentials" />
+        <link rel="icon" type="image/png" href={`${prefix}/favicon.png`} />
+        <link rel="icon" type="image/svg+xml" href={`${prefix}/favicon.svg`} />
       </Head>
       <body>
         <Main />

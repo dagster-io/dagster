@@ -733,7 +733,7 @@
         ]
       },
       {
-        "title": "dagster-plus CLI",
+        "title": "dagster-cloud CLI",
         "path": "/dagster-plus/managing-deployments/dagster-plus-cli"
       },
       {
@@ -1206,12 +1206,12 @@
             "title": "Experimental features",
             "children": [
               {
-                "title": "Airbyte ingestion as code",
-                "path": "/guides/dagster/airbyte-ingestion-as-code"
-              },
-              {
                 "title": "Asset versioning and caching",
                 "path": "/guides/dagster/asset-versioning-and-caching"
+              },
+              {
+                "title": "Linking to code in Dagster with code references",
+                "path": "/guides/dagster/code-references"
               }
             ]
           }

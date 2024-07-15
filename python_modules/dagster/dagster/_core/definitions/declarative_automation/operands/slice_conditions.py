@@ -4,6 +4,7 @@ from typing import Optional
 
 from dagster._core.asset_graph_view.asset_graph_view import AssetSlice
 from dagster._core.definitions.declarative_automation.utils import SerializableTimeDelta
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 from dagster._utils.schedules import reverse_cron_string_iterator
 
@@ -28,7 +29,10 @@ class SliceAutomationCondition(AutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class MissingAutomationCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Missing"
@@ -40,7 +44,10 @@ class MissingAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class InProgressAutomationCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Part of an in-progress run"
@@ -50,7 +57,10 @@ class InProgressAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class FailedAutomationCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Latest run failed"
@@ -60,7 +70,10 @@ class FailedAutomationCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class WillBeRequestedCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Will be requested this tick"
@@ -89,7 +102,10 @@ class WillBeRequestedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class NewlyRequestedCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Was requested on the previous tick"
@@ -101,7 +117,10 @@ class NewlyRequestedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class NewlyUpdatedCondition(SliceAutomationCondition):
+    label: Optional[str] = None
+
     @property
     def description(self) -> str:
         return "Updated since previous tick"
@@ -117,9 +136,11 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class CronTickPassedCondition(SliceAutomationCondition):
     cron_schedule: str
     cron_timezone: str
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
@@ -147,8 +168,10 @@ class CronTickPassedCondition(SliceAutomationCondition):
 
 
 @whitelist_for_serdes
+@record
 class InLatestTimeWindowCondition(SliceAutomationCondition):
     serializable_lookback_timedelta: Optional[SerializableTimeDelta] = None
+    label: Optional[str] = None
 
     @staticmethod
     def from_lookback_delta(

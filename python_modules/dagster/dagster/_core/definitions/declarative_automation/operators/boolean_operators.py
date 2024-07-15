@@ -1,18 +1,19 @@
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
-from dagster._annotations import experimental
+from dagster._record import record
 from dagster._serdes.serdes import whitelist_for_serdes
 
 from ..automation_condition import AutomationCondition, AutomationResult
 from ..automation_context import AutomationContext
 
 
-@experimental
 @whitelist_for_serdes
+@record
 class AndAssetCondition(AutomationCondition):
     """This class represents the condition that all of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition]
+    label: Optional[str] = None
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
@@ -35,12 +36,13 @@ class AndAssetCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@experimental
 @whitelist_for_serdes
+@record
 class OrAssetCondition(AutomationCondition):
     """This class represents the condition that any of its children evaluate to true."""
 
     operands: Sequence[AutomationCondition]
+    label: Optional[str] = None
 
     @property
     def children(self) -> Sequence[AutomationCondition]:
@@ -64,12 +66,13 @@ class OrAssetCondition(AutomationCondition):
         return AutomationResult.create_from_children(context, true_slice, child_results)
 
 
-@experimental
 @whitelist_for_serdes
+@record
 class NotAssetCondition(AutomationCondition):
     """This class represents the condition that none of its children evaluate to true."""
 
     operand: AutomationCondition
+    label: Optional[str] = None
 
     @property
     def description(self) -> str:
