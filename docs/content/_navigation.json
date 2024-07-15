@@ -110,6 +110,10 @@
               {
                 "title": "Checking data freshness",
                 "path": "/concepts/assets/asset-checks/checking-for-data-freshness"
+              },
+              {
+                "title": "Loading dbt tests as asset checks",
+                "path": "/integrations/dbt/loading-dbt-tests-as-asset-checks"
               }
             ]
           },
@@ -916,6 +920,10 @@
           {
             "title": "Using dbt with Dagster+",
             "path": "/integrations/dbt/using-dbt-with-dagster-plus"
+          },
+          {
+            "title": "Loading dbt tests as asset checks",
+            "path": "/integrations/dbt/loading-dbt-tests-as-asset-checks"
           },
           {
             "title": "Reference",
