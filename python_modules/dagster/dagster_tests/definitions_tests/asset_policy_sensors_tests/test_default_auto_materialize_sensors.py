@@ -123,7 +123,7 @@ def test_default_auto_materialize_sensors(instance_with_auto_materialize_sensors
 
     auto_materialize_sensor = auto_materialize_sensors[0]
 
-    assert auto_materialize_sensor.name == "default_auto_materialize_sensor"
+    assert auto_materialize_sensor.name == "default_automation_condition_sensor"
     assert external_repo.has_external_sensor(auto_materialize_sensor.name)
 
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=True)
@@ -154,7 +154,7 @@ def test_default_auto_materialize_sensors_without_observable(
 
     auto_materialize_sensor = sensors[0]
 
-    assert auto_materialize_sensor.name == "default_auto_materialize_sensor"
+    assert auto_materialize_sensor.name == "default_automation_condition_sensor"
     assert external_repo.has_external_sensor(auto_materialize_sensor.name)
 
     assert auto_materialize_sensor.asset_selection == AssetSelection.all(include_sources=False)
@@ -217,14 +217,14 @@ def test_combine_default_sensors_with_non_default_sensors(instance_with_auto_mat
     assert len(sensors) == 3
 
     assert external_repo.has_external_sensor("normal_sensor")
-    assert external_repo.has_external_sensor("default_auto_materialize_sensor")
+    assert external_repo.has_external_sensor("default_automation_condition_sensor")
     assert external_repo.has_external_sensor("my_custom_policy_sensor")
 
     asset_graph = external_repo.asset_graph
 
     # default sensor includes all assets that weren't covered by the custom one
 
-    default_sensor = external_repo.get_external_sensor("default_auto_materialize_sensor")
+    default_sensor = external_repo.get_external_sensor("default_automation_condition_sensor")
 
     assert (
         str(default_sensor.asset_selection)

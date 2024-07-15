@@ -213,8 +213,8 @@ class ExternalRepository:
     def get_utilized_env_vars(self) -> Mapping[str, Sequence[EnvVarConsumer]]:
         return self._utilized_env_vars
 
-    def get_default_auto_materialize_sensor_name(self):
-        return "default_auto_materialize_sensor"
+    def get_default_auto_materialize_sensor_name(self) -> str:
+        return "default_automation_condition_sensor"
 
     @property
     @cached_method
