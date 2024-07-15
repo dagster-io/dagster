@@ -9,7 +9,7 @@ export type SetFilterValue<T> = {
   value: T;
   match: string[];
 };
-type Args<TValue> = {
+export type FilterArgs<TValue> = {
   name: string;
   icon: IconName;
   renderLabel: (props: {value: TValue; isActive: boolean}) => JSX.Element;
@@ -57,7 +57,7 @@ export function useStaticSetFilter<TValue>({
   closeOnSelect = false,
   selectAllText,
   canSelectAll = true,
-}: Args<TValue>): StaticSetFilter<TValue> {
+}: FilterArgs<TValue>): StaticSetFilter<TValue> {
   const {StaticFilterSorter} = useContext(LaunchpadHooksContext);
 
   const allValues = useMemo(() => {

@@ -30,15 +30,8 @@ export const useStorageKindFilter = ({
       [allAssetStorageKindTags],
     ),
     menuWidth: '300px',
-    renderLabel: ({value: tag}) => {
-      return (
-        <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
-          <Icon name="storage_kind" />
-          <TruncatedTextWithFullTextOnHover tooltipText={tag.value} text={tag.value} />
-        </Box>
-      );
-    },
-    getStringValue: ({value}) => value,
+    renderLabel,
+    getStringValue,
     state: memoizedState ?? emptyArray,
     onStateChanged: (values) => {
       setStorageKindTags?.(Array.from(values));
@@ -47,3 +40,13 @@ export const useStorageKindFilter = ({
     canSelectAll: false,
   });
 };
+
+export const renderLabel = ({value: tag}: {value: DefinitionTag}) => {
+  return (
+    <Box flex={{direction: 'row', gap: 4, alignItems: 'center'}}>
+      <Icon name="storage_kind" />
+      <TruncatedTextWithFullTextOnHover tooltipText={tag.value} text={tag.value} />
+    </Box>
+  );
+};
+export const getStringValue = ({key, value}: DefinitionTag) => `${key}:${value}`;
