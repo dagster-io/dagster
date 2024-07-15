@@ -242,6 +242,16 @@ class AssetSelection(ABC, DagsterModel):
         else:
             check.failed(f"Invalid tag selection string: {string}. Must have no more than one '='.")
 
+    @staticmethod
+    def owner(owner: str) -> "AssetSelection":
+        """Returns a selection that includes assets that have the provided owner, and all the
+        asset checks that target them.
+
+        Args:
+            owner (str): The owner to select.
+        """
+        return OwnerAssetSelection(selected_owner=owner)
+
     @public
     @staticmethod
     def checks_for_assets(*assets_defs: AssetsDefinition) -> "AssetChecksForAssetKeysSelection":
@@ -864,6 +874,23 @@ class TagAssetSelection(AssetSelection):
 
     def __str__(self) -> str:
         return f"tag:{self.key}={self.value}"
+
+
+@whitelist_for_serdes
+class OwnerAssetSelection(AssetSelection):
+    selected_owner: str
+
+    def resolve_inner(
+        self, asset_graph: BaseAssetGraph, allow_missing: bool
+    ) -> AbstractSet[AssetKey]:
+        return {
+            key
+            for key in asset_graph.all_asset_keys
+            if self.selected_owner in asset_graph.get(key).owners
+        }
+
+    def __str__(self) -> str:
+        return f"owner:{self.selected_owner}"
 
 
 @whitelist_for_serdes
