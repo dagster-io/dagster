@@ -39,6 +39,15 @@ def test_single_asset_shell_command_blueprint() -> None:
     ).success
 
 
+def test_single_asset_shell_command_blueprint_key_prefix() -> None:
+    single_asset_blueprint = ShellCommandBlueprint(
+        assets=[AssetSpecModel(key=["prefix", "asset1"])], command=["echo", '"hello"']
+    )
+    defs = single_asset_blueprint.build_defs()
+    asset1 = cast(AssetsDefinition, next(iter(defs.assets)))
+    assert asset1.key == AssetKey(["prefix", "asset1"])
+
+
 def test_single_asset_shell_command_blueprint_str_command() -> None:
     single_asset_blueprint = ShellCommandBlueprint(
         assets=[AssetSpecModel(key="asset1")], command='echo "hello world"'

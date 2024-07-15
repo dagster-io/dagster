@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import AbstractSet, Any, Mapping, Optional, Sequence
+from typing import AbstractSet, Any, Mapping, Optional, Sequence, Union
 
 from dagster._core.definitions.asset_spec import AssetSpec
 from dagster._core.definitions.assets import unique_id_from_asset_and_check_keys
@@ -11,7 +11,7 @@ from dagster_blueprints.blueprint import Blueprint, BlueprintDefinitions
 
 
 class AssetSpecModel(DagsterModel):
-    key: str
+    key: Union[str, Sequence[str]]
     deps: Sequence[str] = []
     description: Optional[str] = None
     metadata: Mapping[str, Any] = {}
