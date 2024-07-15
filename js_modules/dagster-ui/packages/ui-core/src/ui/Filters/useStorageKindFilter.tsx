@@ -37,7 +37,7 @@ export const useStorageKindFilter = ({
   });
 };
 
-export const getStringValue = ({key, value}: DefinitionTag) => `${key}:${value}`;
+export const getStringValue = ({value}: DefinitionTag) => value;
 
 export const BaseConfig: StaticBaseConfig<DefinitionTag> = {
   name: 'Storage kind',

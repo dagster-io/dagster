@@ -1,5 +1,14 @@
-import {Box, Checkbox, IconName, Popover} from '@dagster-io/ui-components';
-import {Fragment, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {Box, Checkbox, Colors, IconName, Popover} from '@dagster-io/ui-components';
+import {
+  ComponentProps,
+  Fragment,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {FilterObject, FilterTag, FilterTagHighlightedText} from './useFilter';
 import {useUpdatingRef} from '../../hooks/useUpdatingRef';
@@ -249,18 +258,22 @@ export function SetFilterActiveState({
   getStringValue,
   onRemove,
   renderLabel,
-  matchType,
+  matchType = 'any-of',
   getTooltipText,
+  style,
 }: {
   name: string;
   icon: IconName;
   state: Set<any>;
   getStringValue: (value: any) => string;
-  getTooltipText: ((value: any) => string) | undefined;
+  getTooltipText?: ((value: any) => string) | undefined;
   onRemove?: () => void;
   renderLabel: (value: any) => JSX.Element;
-  matchType: 'any-of' | 'all-of';
+  matchType?: 'any-of' | 'all-of';
+  tagColor?: string;
+  style?: ComponentProps<typeof FilterTag>['style'];
 }) {
+  const highlightColor = style === 'light-blue' ? Colors.accentCyan() : undefined;
   const isAnyOf = matchType === 'any-of';
   const arr = useMemo(() => Array.from(state), [state]);
   const label = useMemo(() => {
@@ -273,7 +286,10 @@ export function SetFilterActiveState({
           {arr.map((value, index) => {
             return (
               <Fragment key={index}>
-                <FilterTagHighlightedText tooltipText={getTooltipText?.(value)}>
+                <FilterTagHighlightedText
+                  tooltipText={getTooltipText?.(value) ?? getStringValue?.(value)}
+                  color={highlightColor}
+                >
                   {getStringValue(value)}
                 </FilterTagHighlightedText>
                 {index < arr.length - 1 ? <>,&nbsp;</> : ''}
@@ -307,12 +323,14 @@ export function SetFilterActiveState({
               </Box>
             }
           >
-            <FilterTagHighlightedText>{`(${arr.length})`}</FilterTagHighlightedText>
+            <FilterTagHighlightedText
+              color={highlightColor}
+            >{`(${arr.length})`}</FilterTagHighlightedText>
           </Popover>
         </Box>
       );
     }
-  }, [arr, getStringValue, getTooltipText, isAnyOf, renderLabel]);
+  }, [arr, getStringValue, getTooltipText, highlightColor, isAnyOf, renderLabel]);
 
   if (arr.length === 0) {
     return null;
@@ -320,6 +338,7 @@ export function SetFilterActiveState({
   return (
     <FilterTag
       iconName={icon}
+      style={style}
       label={
         <Box flex={{direction: 'row', alignItems: 'center'}}>
           {capitalizeFirstLetter(name)}&nbsp;{label}
