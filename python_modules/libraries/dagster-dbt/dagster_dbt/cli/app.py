@@ -255,7 +255,6 @@ def project_scaffold_command(
             "--use-dbt-project-package-data-dir",
             help="Controls whether `DbtProject` is used.",
             is_flag=True,
-            hidden=True,
         ),
     ] = False,
 ) -> None:
