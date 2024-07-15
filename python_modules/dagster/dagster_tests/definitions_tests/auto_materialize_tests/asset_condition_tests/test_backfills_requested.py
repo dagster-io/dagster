@@ -219,9 +219,7 @@ def test_multiple_partitions_defs_backfill(mock_da_request_backfills) -> None:
             AssetDaemonScenarioState(
                 two_assets_depend_on_one.with_asset_properties(
                     keys=["B", "C"],
-                    automation_condition=AutomationCondition.any_deps_match(
-                        AutomationCondition.newly_updated()
-                    ),
+                    automation_condition=AutomationCondition.eager(),
                 ),
                 request_backfills=True,
                 instance=instance,
