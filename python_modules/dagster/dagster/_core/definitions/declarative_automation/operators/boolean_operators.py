@@ -23,6 +23,10 @@ class AndAssetCondition(AutomationCondition):
     def description(self) -> str:
         return "All of"
 
+    @property
+    def name(self) -> str:
+        return "AND"
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
         true_slice = context.candidate_slice
@@ -52,6 +56,10 @@ class OrAssetCondition(AutomationCondition):
     def description(self) -> str:
         return "Any of"
 
+    @property
+    def name(self) -> str:
+        return "OR"
+
     def evaluate(self, context: AutomationContext) -> AutomationResult:
         child_results: List[AutomationResult] = []
         true_slice = context.asset_graph_view.create_empty_slice(asset_key=context.asset_key)
@@ -77,6 +85,10 @@ class NotAssetCondition(AutomationCondition):
     @property
     def description(self) -> str:
         return "Not"
+
+    @property
+    def name(self) -> str:
+        return "NOT"
 
     @property
     def children(self) -> Sequence[AutomationCondition]:

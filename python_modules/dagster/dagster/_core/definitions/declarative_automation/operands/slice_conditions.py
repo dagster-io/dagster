@@ -37,6 +37,10 @@ class MissingAutomationCondition(SliceAutomationCondition):
     def description(self) -> str:
         return "Missing"
 
+    @property
+    def name(self) -> str:
+        return "missing"
+
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_missing_subslice(
             context.asset_key, from_slice=context.candidate_slice
@@ -52,6 +56,10 @@ class InProgressAutomationCondition(SliceAutomationCondition):
     def description(self) -> str:
         return "Part of an in-progress run"
 
+    @property
+    def name(self) -> str:
+        return "in_progress"
+
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_in_progress_asset_slice(asset_key=context.asset_key)
 
@@ -65,6 +73,10 @@ class FailedAutomationCondition(SliceAutomationCondition):
     def description(self) -> str:
         return "Latest run failed"
 
+    @property
+    def name(self) -> str:
+        return "failed"
+
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_failed_asset_slice(asset_key=context.asset_key)
 
@@ -77,6 +89,10 @@ class WillBeRequestedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Will be requested this tick"
+
+    @property
+    def name(self) -> str:
+        return "will_be_requested"
 
     def _executable_with_root_context_key(self, context: AutomationContext) -> bool:
         # TODO: once we can launch backfills via the asset daemon, this can be removed
@@ -110,6 +126,10 @@ class NewlyRequestedCondition(SliceAutomationCondition):
     def description(self) -> str:
         return "Was requested on the previous tick"
 
+    @property
+    def name(self) -> str:
+        return "newly_requested"
+
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.previous_requested_slice or context.asset_graph_view.create_empty_slice(
             asset_key=context.asset_key
@@ -124,6 +144,10 @@ class NewlyUpdatedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return "Updated since previous tick"
+
+    @property
+    def name(self) -> str:
+        return "newly_updated"
 
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         # if it's the first time evaluating, just return the empty slice
@@ -145,6 +169,10 @@ class CronTickPassedCondition(SliceAutomationCondition):
     @property
     def description(self) -> str:
         return f"New tick of {self.cron_schedule} ({self.cron_timezone})"
+
+    @property
+    def name(self) -> str:
+        return "cron_tick_passed"
 
     def _get_previous_cron_tick(self, effective_dt: datetime.datetime) -> datetime.datetime:
         previous_ticks = reverse_cron_string_iterator(
@@ -198,6 +226,10 @@ class InLatestTimeWindowCondition(SliceAutomationCondition):
             if self.lookback_timedelta
             else "Within latest time window"
         )
+
+    @property
+    def name(self) -> str:
+        return "in_latest_time_window"
 
     def compute_slice(self, context: AutomationContext) -> AssetSlice:
         return context.asset_graph_view.compute_latest_time_window_slice(

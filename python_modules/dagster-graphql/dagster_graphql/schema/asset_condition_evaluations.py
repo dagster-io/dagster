@@ -267,8 +267,8 @@ class GrapheneAssetConditionEvaluation(graphene.ObjectType):
 
 class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
     uniqueId = graphene.NonNull(graphene.String)
-    description = graphene.NonNull(graphene.String)
-    label = graphene.Field(graphene.String)
+    userLabel = graphene.Field(graphene.String)
+    expandedLabel = graphene.NonNull(graphene.String)
 
     startTimestamp = graphene.Field(graphene.Float)
     endTimestamp = graphene.Field(graphene.Float)
@@ -285,10 +285,11 @@ class GrapheneAutomationConditionEvaluationNode(graphene.ObjectType):
         name = "AutomationConditionEvaluationNode"
 
     def __init__(self, evaluation: AssetConditionEvaluation):
+        self._evaluation = evaluation
         super().__init__(
             uniqueId=evaluation.condition_snapshot.unique_id,
-            description=evaluation.condition_snapshot.description,
-            label=evaluation.condition_snapshot.label,
+            expandedLabel=_get_expanded_label(evaluation),
+            userLabel=evaluation.condition_snapshot.label,
             startTimestamp=evaluation.start_timestamp,
             endTimestamp=evaluation.end_timestamp,
             numTrue=evaluation.true_subset.size,
@@ -389,3 +390,19 @@ def _coerce_subset(maybe_subset):
     return GrapheneAssetSubset(
         AssetSubset(asset_key=maybe_subset.asset_key, value=DefaultPartitionsSubset(value))
     )
+
+
+def _get_expanded_label(evaluation: AssetConditionEvaluation, root: bool = True) -> str:
+    # don't use the user-provided label for the root of the expanded expression
+    if not root and evaluation.condition_snapshot.label is not None:
+        return evaluation.condition_snapshot.label
+
+    node_text = evaluation.condition_snapshot.name or evaluation.condition_snapshot.description
+    if len(evaluation.child_evaluations) == 0:
+        return node_text
+    elif len(evaluation.child_evaluations) == 1:
+        return f"{node_text} ({_get_expanded_label(evaluation.child_evaluations[0], root=False)})"
+    else:
+        return f" {node_text} ".join(
+            f"({_get_expanded_label(ce, root=False)})" for ce in evaluation.child_evaluations
+        )

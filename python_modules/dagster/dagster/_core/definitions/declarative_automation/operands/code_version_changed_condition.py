@@ -17,6 +17,10 @@ class CodeVersionChangedCondition(AutomationCondition):
         return "Asset code version changed since previous tick"
 
     @property
+    def name(self) -> str:
+        return "code_version_changed"
+
+    @property
     def requires_cursor(self) -> bool:
         return True
 

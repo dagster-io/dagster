@@ -3598,8 +3598,8 @@ type AssetConditionEvaluationRecord {
 
 type AutomationConditionEvaluationNode {
   uniqueId: String!
-  description: String!
-  label: String
+  userLabel: String
+  expandedLabel: String!
   startTimestamp: Float
   endTimestamp: Float
   numTrue: Int!
