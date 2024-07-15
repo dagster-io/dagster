@@ -38,7 +38,7 @@ from ..asset_in import AssetIn
 from ..asset_out import AssetOut
 from ..asset_spec import AssetExecutionType, AssetSpec
 from ..assets import AssetsDefinition
-from ..backfill_policy import BackfillPolicy, BackfillPolicyType
+from ..backfill_policy import BackfillPolicy
 from ..decorators.graph_decorator import graph
 from ..events import AssetKey, CoercibleToAssetKey, CoercibleToAssetKeyPrefix
 from ..input import GraphIn
@@ -405,19 +405,6 @@ def create_assets_def_from_fn_and_decorator_args(
         resources=args.resource_defs,
         out_asset_key=out_asset_key,
     )
-
-    with disable_dagster_warnings():
-        # check backfill policy is BackfillPolicyType.SINGLE_RUN for non-partitioned asset
-        if args.partitions_def is None:
-            check.param_invariant(
-                (
-                    args.backfill_policy.policy_type is BackfillPolicyType.SINGLE_RUN
-                    if args.backfill_policy
-                    else True
-                ),
-                "backfill_policy",
-                "Non partitioned asset can only have single run backfill policy",
-            )
 
     with disable_dagster_warnings():
         builder_args = DecoratorAssetsDefinitionBuilderArgs(
