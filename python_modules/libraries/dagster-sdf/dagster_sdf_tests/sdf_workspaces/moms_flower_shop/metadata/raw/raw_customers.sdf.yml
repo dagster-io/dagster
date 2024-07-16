@@ -8,11 +8,11 @@ table:
   classifiers:
     - RETENTION.d7
   # <<<<<
-   
+
   columns:
     - name: id
       description: A unique identifier of a mom's floewr shop customer
-      
+
     - name: first_name
       description: The first name of the customer
       # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
@@ -33,7 +33,7 @@ table:
       classifiers:
         - PII.email
       # <<<<<
-      
+
     - name: gender
       description: The gender of the customer
       # Uncomment to begin the "Enriching your Warehouse" tutorial >>>>>
@@ -47,4 +47,3 @@ table:
       classifiers:
         - PII.address
       # <<<<<
-    

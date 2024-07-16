@@ -20,10 +20,10 @@ workspace:
 ---
 environment:
   name: trino
-  
+
   defaults:
     dialect: trino
-  
+
   includes:
     - type: model
       path: models/
@@ -39,7 +39,7 @@ classifier:
 ---
 table:
   name: source
-  
+
   columns:
     - name: user_id
       classifiers:
