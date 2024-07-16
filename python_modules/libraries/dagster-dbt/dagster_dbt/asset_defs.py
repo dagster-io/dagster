@@ -331,6 +331,8 @@ def _get_dbt_op(
             kwargs["select"] = [
                 ".".join(fqns_by_output_name[output_name])
                 for output_name in context.selected_output_names
+                # outputs corresponding to asset checks from dbt tests won't be in this dict
+                if output_name in fqns_by_output_name
             ]
         # variables to pass into the command
         if partition_key_to_vars_fn:

@@ -509,6 +509,8 @@ class DbtCloudCacheableAssetsDefinition(CacheableAssetsDefinition):
                 selected_models = [
                     ".".join(fqns_by_output_name[output_name])
                     for output_name in context.op_execution_context.selected_output_names
+                    # outputs corresponding to asset checks from dbt tests won't be in this dict
+                    if output_name in fqns_by_output_name
                 ]
 
                 dbt_options.append(f"--select {' '.join(sorted(selected_models))}")

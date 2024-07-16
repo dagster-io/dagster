@@ -1209,6 +1209,29 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             return False
         return asset_layer.get(asset_key).is_observable
 
+    @property
+    def selected_output_names(self) -> AbstractSet[str]:
+        """Get the output names that correspond to the current selection of assets this execution is expected to materialize."""
+        # map selected asset keys to the output names they correspond to
+        assets_def = self.job_def.asset_layer.assets_def_for_node(self.node_handle)
+        if assets_def is not None:
+            computation = check.not_none(assets_def.computation)
+
+            selected_outputs: Set[str] = set()
+            for output_name in self.op.output_dict.keys():
+                if any(
+                    downstream_asset_key in computation.selected_asset_keys
+                    or downstream_asset_key in computation.selected_asset_check_keys
+                    for downstream_asset_key in self.job_def.asset_layer.downstream_dep_assets_and_checks(
+                        self.node_handle, output_name
+                    )
+                ):
+                    selected_outputs.add(output_name)
+
+            return selected_outputs
+        else:
+            return self.op.output_dict.keys()
+
 
 class TypeCheckContext:
     """The ``context`` object available to a type check function on a DagsterType."""
