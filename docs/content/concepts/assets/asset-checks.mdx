@@ -5,7 +5,7 @@ description: Asset checks are a way to define expectations about the quality of 
 
 # Asset checks
 
-Using asset checks, you can define and execute data quality checks on your [data assets](/concepts/assets/software-defined-assets) directly in Dagster. Each asset check tests some property of a data asset, such as:
+Using asset checks, you can define and execute different types of checks on your [data assets](/concepts/assets/software-defined-assets) directly in Dagster. Each asset check tests some property of a data asset, such as:
 
 - Ensuring a particular column, like an `ID`, doesn't contain null values
 - Verifying that a tabular asset adheres to a specified schema
@@ -47,7 +47,7 @@ Before continuing, you should be familiar with:
 
 ## How it works
 
-An asset check is a data quality check, [defined in code](/concepts/assets/asset-checks/define-execute-asset-checks), that targets one or more Dagster assets. You can use Python to define them, or if using dbt, load your [dbt tests into Dagster as asset checks](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks).
+Defined in code, asset checks are used to test some property of one or more Dagster assets. You can use Python to define them, or if using dbt, load your [dbt tests into Dagster as asset checks](/integrations/dbt/reference#loading-dbt-tests-as-asset-checks).
 
 Asset checks and their results are [visible in the UI](/concepts/assets/asset-checks/define-execute-asset-checks#using-asset-check-results), allowing you to communicate useful information about data quality, data freshness, and other issues to stakeholders. Asset check results can also be used to create conditional steps in your pipelines - for example, if a quality check fails, execution can be halted to prevent issues spreading downstream.
 
